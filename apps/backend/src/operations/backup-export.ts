@@ -44,11 +44,29 @@ const stateKey = (kind: ExportKind) => `export:${kind}`;
  * as a short archive. Opening `/dev/fd/1` creates a *new* description with
  * default blocking semantics onto the same pipe, so a reader that falls behind
  * simply makes tar wait. */
-function blockingStdout(): number {
-  // Write-only and nothing else. Node's "a"/"w" flags carry O_CREAT, which the
-  // kernel refuses on the magic symlink `/dev/fd/1` becomes when stdout is a
-  // pipe — the exact case this exists for.
-  return fs.openSync("/dev/fd/1", fs.constants.O_WRONLY);
+/** Writes one chunk to `fd`, however many syscalls that takes.
+ *
+ * Three things have to hold at once here, and only this loop holds all three.
+ * The bytes must not pile up in memory: a gigabyte of media pulled over a
+ * 2 MB/s link is far past the container's 384 MB, and Bun's buffered stdout
+ * writer met the OOM killer 47 MB in — which the puller stored as a whole
+ * archive. tar must not write to the fd itself: Bun leaves stdout non-blocking,
+ * and tar dies on the first EAGAIN with "Wrote only 6144 of 10240 bytes".
+ * Reopening the fd to get a blocking one fails too — Bun's stdout is a socket,
+ * and a socket cannot be opened through /dev/fd. So the export reads a chunk,
+ * writes it out completely, and only then reads the next: EAGAIN is waited out
+ * rather than passed on, which is exactly the backpressure a slow reader is
+ * owed. */
+function writeAll(fd: number, chunk: Uint8Array): void {
+  let offset = 0;
+  while (offset < chunk.byteLength) {
+    try {
+      offset += fs.writeSync(fd, chunk, offset);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EAGAIN") throw error;
+      Bun.sleepSync(1);
+    }
+  }
 }
 
 function mediaSources(config: EnvConfig): string[] {
@@ -82,13 +100,8 @@ export function exportStatus(backendDb: BackendDb, kind: ExportKind, now = new D
  * relative to DATA_DIR so the archive restores onto a fresh volume unchanged,
  * whatever the host path was when it was taken.
  *
- * tar writes to the destination directly rather than through this process. A
- * gigabyte of media pulled over a 2 MB/s link cannot be held in memory while the
- * reader catches up: passing the bytes through Bun's stdout writer buffered them
- * instead of applying backpressure, and the OOM killer ended the export 47 MB in
- * — which the puller stored as if it were the whole archive. Letting the kernel
- * own the pipe makes a slow reader slow tar down, which is the only correct
- * behaviour and needs no code. */
+ * The bytes travel chunk by chunk through `writeAll`, which is where the reason
+ * for that shape is written down. */
 export async function streamMediaArchive(
   config: EnvConfig,
   backendDb: BackendDb,
@@ -99,15 +112,10 @@ export async function streamMediaArchive(
   const relative = present.map((source) => path.relative(config.DATA_DIR, source));
   if (relative.some((entry) => entry.startsWith("..") || path.isAbsolute(entry)))
     throw new Error("every media directory must live under DATA_DIR for the archive to restore onto a fresh volume");
-  const out = destination === "inherit" ? blockingStdout() : destination;
-  const [exitCode, stderr] = await (async () => {
-    try {
-      const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: out, stderr: "pipe" });
-      return await Promise.all([child.exited, new Response(child.stderr).text()]);
-    } finally {
-      if (out !== destination) fs.closeSync(out);
-    }
-  })();
+  const fd = destination === "inherit" ? 1 : destination;
+  const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: "pipe", stderr: "pipe" });
+  for await (const chunk of child.stdout as ReadableStream<Uint8Array>) writeAll(fd, chunk);
+  const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
   // Recorded only on a clean exit: a truncated archive that counted as a backup
   // is worse than none, because `doctor` would then stay green over it.
   if (exitCode !== 0) throw new Error(`tar failed (${exitCode}): ${stderr.trim()}`);
