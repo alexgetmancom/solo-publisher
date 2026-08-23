@@ -27,16 +27,14 @@ export type NewsDigestRunResult =
   | { status: "disabled" | "not_due" | "missing_prompt" | "already_sent" }
   | { status: "failed"; error: string };
 
-const NEWS_DIGEST_JSON_SCHEMA = JSON.stringify({
-  type: "object",
-  properties: {
-    markdown: { type: "string", minLength: 1 },
-  },
-  required: ["markdown"],
-  additionalProperties: false,
-});
+/** No `--json-schema`. A schema obliges the model to produce the object as its
+ * answer, and it can satisfy that obligation without searching at all: the runs
+ * that failed all returned one sentence about the report they were going to
+ * write, with zero tool calls, while a run that searched made thirty-two. Asked
+ * for plain Markdown instead, the same prompt on the same Studio searched and
+ * answered. */
 const NEWS_DIGEST_OUTPUT_INSTRUCTIONS =
-  "Put the finished digest in the `markdown` field as a numbered Markdown list of 10 items, with one X source URL per item and no introduction or closing remarks around it.";
+  "Search X first, then answer with the finished report only: a numbered Markdown list of 10 items, one X source URL per item, no introduction or closing remarks.";
 const MIN_NEWS_DIGEST_CHARACTERS = 2_582;
 const MIN_NEWS_DIGEST_ITEMS = 10;
 const MIN_NEWS_DIGEST_SOURCE_LINKS = 10;
@@ -147,19 +145,7 @@ async function runGrok(config: BackendConfig, prompt: string, effort: NewsDigest
 
 async function runGrokAttempt(config: BackendConfig, prompt: string, effort: NewsDigestEffort, spawn: GrokSpawn): Promise<string> {
   const child = spawn(
-    [
-      config.GROK_CLI_PATH,
-      "--no-leader",
-      "--reasoning-effort",
-      effort,
-      "--output-format",
-      "json",
-      "--json-schema",
-      NEWS_DIGEST_JSON_SCHEMA,
-      "--always-approve",
-      "--single",
-      prompt,
-    ],
+    [config.GROK_CLI_PATH, "--no-leader", "--reasoning-effort", effort, "--output-format", "json", "--always-approve", "--single", prompt],
     {
       stdout: "pipe",
       stderr: "pipe",
@@ -207,31 +193,16 @@ function digestShape(markdown: string): { characters: number; items: number; sou
 }
 
 /**
- * Grok fills `structuredOutput` only when the whole reply is one JSON object. While it searches it
- * streams progress updates as further schema-shaped objects concatenated into `text`, which leaves
- * `structuredOutput` null — the digest is then the last complete object in `text`.
+ * The report, cut out of the reply. While it searches, Grok narrates its progress
+ * ("Ищу свежие посты…"), and that narration is concatenated straight onto the front of
+ * the answer without a line break — so the digest starts at the first numbered item,
+ * wherever in the text that falls. A reply with no numbered item at all is returned
+ * whole: the shape check rejects it, and the operator gets to read what came back.
  */
 function readMarkdown(response: object): string | null {
-  const structured = "structuredOutput" in response ? response.structuredOutput : null;
-  if (structured && typeof structured === "object" && "markdown" in structured && typeof structured.markdown === "string") {
-    return structured.markdown.trim();
-  }
   if (!("text" in response) || typeof response.text !== "string") return null;
   const value = response.text.trim();
-  // Walk candidate object starts backwards. `lastIndexOf` clamps a negative start to 0, so stop at 0
-  // explicitly rather than searching the same position forever.
-  for (let index = value.lastIndexOf("{"); index >= 0; index = index === 0 ? -1 : value.lastIndexOf("{", index - 1)) {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(value.slice(index));
-    } catch {
-      continue;
-    }
-    // Progress updates are schema-shaped too, so only a value that opens the numbered list is the digest.
-    if (parsed && typeof parsed === "object" && "markdown" in parsed && typeof parsed.markdown === "string") {
-      const markdown = parsed.markdown.trim();
-      if (markdown.startsWith("1.")) return markdown;
-    }
-  }
-  return null;
+  const narrated = value.search(/(?:^|[^\d])1\.\s+\*\*/);
+  if (narrated < 0) return value;
+  return value.slice(value.indexOf("1.", narrated)).trim();
 }

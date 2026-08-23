@@ -32,10 +32,7 @@ describe("daily news digest", () => {
         return {
           stdout: stream(
             JSON.stringify({
-              structuredOutput: {
-                markdown: completeDigest("Today's news"),
-              },
-              text: '{"markdown": "1. **Today\'s news**"}',
+              text: completeDigest("Today's news"),
               thought: "Internal reasoning must not be sent",
             }),
           ),
@@ -58,22 +55,14 @@ describe("daily news digest", () => {
 
       expect(await sendDailyNewsDigest(config, backendDb, bot, now, { spawn })).toEqual({ status: "sent" });
       expect(await sendDailyNewsDigest(config, backendDb, bot, now, { spawn })).toEqual({ status: "already_sent" });
-      expect(commands[0]?.slice(0, 7)).toEqual([
-        "grok",
-        "--no-leader",
-        "--reasoning-effort",
-        "xhigh",
-        "--output-format",
-        "json",
-        "--json-schema",
-      ]);
-      const schema = JSON.parse(commands[0]?.[7] ?? "{}");
-      expect(schema).toMatchObject({ properties: { markdown: { type: "string" } } });
-      // A `pattern` here makes the constrained decoder satisfy the regex and stop: the digest comes back as "1.".
-      expect(schema.properties.markdown.pattern).toBeUndefined();
-      expect(commands[0]?.slice(8, 10)).toEqual(["--always-approve", "--single"]);
-      expect(commands[0]?.[10]).toContain("Find today's AI news.");
-      expect(commands[0]?.[10]).toContain("`markdown` field");
+      expect(commands[0]?.slice(0, 6)).toEqual(["grok", "--no-leader", "--reasoning-effort", "xhigh", "--output-format", "json"]);
+      // No `--json-schema`: obliged to answer with the schema object, Grok can
+      // satisfy that without searching at all, and the runs that failed did
+      // exactly that — one sentence about the report, zero tool calls.
+      expect(commands[0]).not.toContain("--json-schema");
+      expect(commands[0]?.slice(6, 8)).toEqual(["--always-approve", "--single"]);
+      expect(commands[0]?.[8]).toContain("Find today's AI news.");
+      expect(commands[0]?.[8]).toContain("Search X first");
       expect(sent.map((item) => item.actorId)).toEqual([42, 7]);
       expect(sent.every((item) => item.document.filename === "news-digest-2026-07-20.md")).toBe(true);
       const first = sent.at(0);
@@ -93,7 +82,7 @@ describe("daily news digest", () => {
       const spawn: GrokSpawn = () => {
         runs += 1;
         return {
-          stdout: stream(JSON.stringify({ structuredOutput: { markdown: completeDigest("News") } })),
+          stdout: stream(JSON.stringify({ text: completeDigest("News") })),
           stderr: stream(""),
           exited: Promise.resolve(0),
           kill: () => {},
@@ -110,19 +99,15 @@ describe("daily news digest", () => {
     });
   });
 
-  it("takes the digest from the last text object when search progress left structuredOutput null", async () => {
+  it("cuts the report out of the progress narration Grok concatenates in front of it", async () => {
     await withDb(async (backendDb) => {
       settingsService(backendDb).setNewsDigest({ enabled: true, hour: 0, minute: 0, prompt: "A prompt" });
       const spawn: GrokSpawn = () => ({
-        // Grok streams progress updates as further schema-shaped objects; the digest is the last one.
+        // Verbatim shape of a real run: the narration runs straight into the
+        // first numbered item with no line break between them.
         stdout: stream(
           JSON.stringify({
-            structuredOutput: null,
-            text: [
-              JSON.stringify({ markdown: "Ищу в X, что реально обсуждают…" }),
-              JSON.stringify({ markdown: "Добиваю первоисточники…" }),
-              JSON.stringify({ markdown: completeDigest("Sonic × Fortnite") }),
-            ].join(""),
+            text: `Ищу свежие посты в X за последние 24 часа.Первый проход дал шум. Сужаю поиск.${completeDigest("Sonic × Fortnite")}`,
             thought: "Internal reasoning must not be sent",
           }),
         ),
@@ -151,15 +136,15 @@ describe("daily news digest", () => {
     });
   });
 
-  it("fails when Grok never finished the digest", async () => {
+  it("retries pure narration, then fails with what Grok said", async () => {
     await withDb(async (backendDb) => {
       settingsService(backendDb).setNewsDigest({ enabled: true, hour: 0, minute: 0, prompt: "A prompt" });
       let runs = 0;
       const spawn: GrokSpawn = () => {
         runs += 1;
         return {
-          // Only progress updates, no numbered list: shipping the chatter would be worse than failing.
-          stdout: stream(JSON.stringify({ structuredOutput: null, text: JSON.stringify({ markdown: "Ищу в X, что обсуждают…" }) })),
+          // Only narration, no numbered list: shipping the chatter would be worse than failing.
+          stdout: stream(JSON.stringify({ text: "Ищу в X, что обсуждают…" })),
           stderr: stream(""),
           exited: Promise.resolve(0),
           kill: () => {},
@@ -178,8 +163,11 @@ describe("daily news digest", () => {
 
       const result = await sendDailyNewsDigest(config, backendDb, bot, new Date("2026-07-20T07:30:00.000Z"), { spawn });
 
-      expect(result).toEqual({ status: "failed", error: "Grok CLI did not return news markdown" });
-      expect(runs).toBe(1);
+      expect(result.status).toBe("failed");
+      expect(result.status === "failed" && result.error).toContain("Grok answered: Ищу в X, что обсуждают…");
+      // Narration is a result like any other, so it is retried rather than
+      // abandoned on the first attempt.
+      expect(runs).toBe(2);
       expect(sent).toHaveLength(0);
     });
   });
@@ -192,7 +180,7 @@ describe("daily news digest", () => {
         commands.push(command);
         const markdown = commands.length === 1 ? "1. **Ищу свежие игровые факты в X за 24 часа**" : completeDigest("Finished report");
         return {
-          stdout: stream(JSON.stringify({ structuredOutput: { markdown } })),
+          stdout: stream(JSON.stringify({ text: markdown })),
           stderr: stream(""),
           exited: Promise.resolve(0),
           kill: () => {},
@@ -226,7 +214,7 @@ describe("daily news digest", () => {
     await withDb(async (backendDb) => {
       settingsService(backendDb).setNewsDigest({ enabled: true, hour: 0, minute: 0, prompt: "A prompt", effort: "medium" });
       const spawn: GrokSpawn = () => ({
-        stdout: stream(JSON.stringify({ structuredOutput: { markdown: "Сначала соберу свежие посты за 24 часа." } })),
+        stdout: stream(JSON.stringify({ text: "Сначала соберу свежие посты за 24 часа." })),
         stderr: stream(""),
         exited: Promise.resolve(0),
         kill: () => {},
@@ -264,7 +252,7 @@ describe("daily news digest", () => {
       const spawn: GrokSpawn = () => {
         runs += 1;
         return {
-          stdout: stream(JSON.stringify({ structuredOutput: { markdown: "1. **Still searching**".padEnd(3_000, "x") } })),
+          stdout: stream(JSON.stringify({ text: "1. **Still searching**".padEnd(3_000, "x") })),
           stderr: stream(""),
           exited: Promise.resolve(0),
           kill: () => {},
@@ -299,7 +287,7 @@ describe("daily news digest", () => {
     await withDb(async (backendDb) => {
       settingsService(backendDb).setNewsDigest({ enabled: true, hour: 0, minute: 0, prompt: "A prompt" });
       const spawn: GrokSpawn = () => ({
-        stdout: stream(JSON.stringify({ structuredOutput: { markdown: "  \n " } })),
+        stdout: stream(JSON.stringify({ text: "  \n " })),
         stderr: stream(""),
         exited: Promise.resolve(0),
         kill: () => {},
