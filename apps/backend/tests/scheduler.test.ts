@@ -3,6 +3,15 @@ import { startLoop } from "../src/foundation/scheduler.js";
 
 const tick = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Waits for a count to be reached rather than for a fixed stretch of wall
+ * clock. A loaded machine — the full test suite on one core — delivers 5ms
+ * timers late, and a fixed 25ms sleep then counts two heartbeats where it
+ * asked for three and fails a push gate that has nothing wrong with it. */
+async function until(condition: () => boolean, timeoutMs = 2_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!condition() && Date.now() < deadline) await tick(1);
+}
+
 describe("startLoop", () => {
   it("runs the task immediately rather than waiting out the first interval", async () => {
     let runs = 0;
@@ -22,7 +31,7 @@ describe("startLoop", () => {
     const loop = startLoop("repeat", 5, () => {
       runs += 1;
     });
-    await tick(60);
+    await until(() => runs > 2);
     loop.stop();
     const afterStop = runs;
     expect(afterStop).toBeGreaterThan(2);
@@ -83,7 +92,7 @@ describe("startLoop", () => {
       throw new Error("task blew up");
     });
     try {
-      await tick(50);
+      await until(() => runs > 2);
       expect(runs).toBeGreaterThan(2);
     } finally {
       loop.stop();
@@ -97,7 +106,7 @@ describe("startLoop", () => {
       await Promise.reject(new Error("await blew up"));
     });
     try {
-      await tick(50);
+      await until(() => runs > 2);
       expect(runs).toBeGreaterThan(2);
     } finally {
       loop.stop();
@@ -113,7 +122,7 @@ describe("startLoop", () => {
       },
     });
     try {
-      await tick(25);
+      await until(() => heartbeats > 2);
       expect(heartbeats).toBeGreaterThan(2);
     } finally {
       loop.stop();

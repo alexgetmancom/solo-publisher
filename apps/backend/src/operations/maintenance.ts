@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, notInArray, sql } from "drizzle-orm";
 import { freezeDisabledMetricSchedules } from "../analytics/collection/metric-schedule.js";
+import { X_ANALYTICS_SOURCE } from "../analytics/x-activity-linking.js";
 import { parsePublicationRef, publicationRef } from "../application/publication-ref.js";
 import { registeredPostTargetIds } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
@@ -441,6 +442,12 @@ function targetStateMismatches(backendDb: BackendDb): TargetStateMismatch[] {
        SELECT t.publication_key,t.target,t.status AS target_status,l.status AS job_status,l.last_error
        FROM publication_targets t JOIN latest l ON l.publication_key=t.publication_key AND l.target=t.target
        WHERE t.target NOT IN ('site_ru','site_en')
+         -- A target attached from an analytics export was never delivered by
+         -- this queue: the post exists on the platform, and whatever its old
+         -- job settled as says nothing about it. Comparing the two reported two
+         -- live X posts as inconsistent for a month, and repairing them would
+         -- have marked the live posts cancelled.
+         AND coalesce(json_extract(t.raw_json,'$.source'),'') <> '${X_ANALYTICS_SOURCE}'
        ORDER BY t.publication_key,t.target`,
     )
     .all() as TargetStateMismatch[];

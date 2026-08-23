@@ -1,6 +1,12 @@
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { editorialTexts, matchEditorialPost } from "./x-post-matching.js";
 
+/** Stamped on every row an X analytics export produced: the activity item, the
+ * metric samples, and the publication target the link attaches them to. A
+ * target carrying it was linked from analytics, never delivered by the queue,
+ * which is what tells the consistency report not to compare it to a job. */
+export const X_ANALYTICS_SOURCE = "x_csv_export";
+
 type XLink = { xPostId: string; publicationKey: string; matchedBy: "external_id" | "direct_text" };
 
 export type XAttachResult = {
@@ -70,7 +76,7 @@ export function attachXActivityToPosts(backendDb: BackendDb, apply: boolean): XA
         JSON.stringify([...ids]),
         `https://x.com/i/web/status/${link.xPostId}`,
         now,
-        JSON.stringify({ source: "x_csv_export", x_post_id: link.xPostId, matched_by: link.matchedBy }),
+        JSON.stringify({ source: X_ANALYTICS_SOURCE, x_post_id: link.xPostId, matched_by: link.matchedBy }),
       );
       linkItem.run(link.publicationKey, link.xPostId);
     }
@@ -80,7 +86,7 @@ export function attachXActivityToPosts(backendDb: BackendDb, apply: boolean): XA
     const insertedSamples = sqlite
       .prepare(
         `INSERT INTO metric_samples (publication_key, target, metric_name, value, sampled_at, source)
-         SELECT item.linked_publication_key,'x',snapshot.metric_name,snapshot.value,snapshot.sampled_at,'x_csv_export'
+         SELECT item.linked_publication_key,'x',snapshot.metric_name,snapshot.value,snapshot.sampled_at,'${X_ANALYTICS_SOURCE}'
          FROM x_activity_metric_snapshots AS snapshot
          INNER JOIN x_activity_items AS item ON item.x_post_id=snapshot.x_post_id
          WHERE item.linked_publication_key IS NOT NULL
@@ -88,13 +94,13 @@ export function attachXActivityToPosts(backendDb: BackendDb, apply: boolean): XA
              SELECT 1 FROM metric_samples AS sample
              WHERE sample.publication_key=item.linked_publication_key AND sample.target='x'
                AND sample.metric_name=snapshot.metric_name AND sample.sampled_at=snapshot.sampled_at
-               AND sample.source='x_csv_export')`,
+               AND sample.source='${X_ANALYTICS_SOURCE}')`,
       )
       .run();
     const updatedMetrics = sqlite
       .prepare(
         `INSERT INTO post_metrics (publication_key, target, metric_name, value, unit, source, sampled_at, error, raw_json)
-         SELECT item.linked_publication_key,'x',snapshot.metric_name,snapshot.value,'count','x_csv_export',snapshot.sampled_at,NULL,
+         SELECT item.linked_publication_key,'x',snapshot.metric_name,snapshot.value,'count','${X_ANALYTICS_SOURCE}',snapshot.sampled_at,NULL,
                 json_object('x_post_id',snapshot.x_post_id)
          FROM x_activity_metric_snapshots AS snapshot
          INNER JOIN x_activity_items AS item ON item.x_post_id=snapshot.x_post_id

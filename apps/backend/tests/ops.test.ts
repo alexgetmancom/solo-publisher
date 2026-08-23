@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { X_ANALYTICS_SOURCE } from "../src/analytics/x-activity-linking.js";
 import { TARGETS } from "../src/botTargets.js";
 import { metricSchedule } from "../src/db/schema.js";
 import { formatSupportSummary, seedFormatSupport } from "../src/operations/format-support.js";
@@ -401,6 +402,41 @@ describe("TypeScript operations tooling", () => {
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_jobs").get()).toEqual({ count: 0 });
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_metric_schedule").get()).toEqual({ count: 0 });
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_metric_snapshots").get()).toEqual({ count: 0 });
+    } finally {
+      backendDb.close();
+    }
+  });
+
+  it("does not call an X post attached from analytics a mismatch", () => {
+    // The post is on X; it just did not get there through this queue. Its old
+    // job was cancelled, and reading that as the truth about the target is how
+    // two live posts sat in the report for a month — and repairing them would
+    // have marked them cancelled and stopped their metrics.
+    const backendDb = openBackendDb(":memory:");
+    try {
+      const now = new Date().toISOString();
+      seedTextPost(backendDb, { postId: 2, actorId: 1, status: "published", ru: "text", now });
+      backendDb.sqlite
+        .query(
+          `INSERT INTO publication_targets(publication_key,target,status,external_id,url,updated_at,raw_json)
+           VALUES ('post:2','x','published','2075644218979057803','https://x.com/i/web/status/2075644218979057803',?,?)`,
+        )
+        .run(now, JSON.stringify({ source: X_ANALYTICS_SOURCE, x_post_id: "2075644218979057803", matched_by: "direct_text" }));
+      backendDb.sqlite
+        .query(
+          "INSERT INTO publish_jobs(publication_key,target,status,last_error,created_at,updated_at) VALUES ('post:2','x','cancelled','Cancelled by user',?,?)",
+        )
+        .run(now, now);
+      expect(publicationConsistencyReport(backendDb).targetMismatches).toEqual([]);
+
+      // A target this queue did deliver is still compared to its job.
+      backendDb.sqlite
+        .query("INSERT INTO publication_targets(publication_key,target,status,updated_at) VALUES ('post:2','telegram','published',?)")
+        .run(now);
+      backendDb.sqlite
+        .query("INSERT INTO publish_jobs(publication_key,target,status,created_at,updated_at) VALUES ('post:2','telegram','cancelled',?,?)")
+        .run(now, now);
+      expect(publicationConsistencyReport(backendDb).targetMismatches).toMatchObject([{ publication_key: "post:2", target: "telegram" }]);
     } finally {
       backendDb.close();
     }

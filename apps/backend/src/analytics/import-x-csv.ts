@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import { attachXActivityToPosts } from "./x-activity-linking.js";
+import { attachXActivityToPosts, X_ANALYTICS_SOURCE } from "./x-activity-linking.js";
 
 type CsvRow = Record<string, string>;
 type ParsedCsv = { headers: string[]; rows: CsvRow[] };
@@ -122,7 +122,7 @@ export function importXAnalyticsCsv(
         null,
         sampledAt,
         sampledAt,
-        JSON.stringify({ source: "x_csv_export", import_id: importRow.id }),
+        JSON.stringify({ source: X_ANALYTICS_SOURCE, import_id: importRow.id }),
       );
       activityItems += 1;
       for (const metric of metrics) {
