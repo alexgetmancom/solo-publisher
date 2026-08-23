@@ -47,7 +47,10 @@ async function runCli(argv: string[], overrides: (fixture: string) => Record<str
 
 describe("doctor CLI", () => {
   it("succeeds once the backup host has pulled this Studio's media", async () => {
+    // Through a pipe, which is what a puller gives it: an inherited stdout that
+    // Bun left non-blocking makes tar die on EAGAIN partway through.
     const exported = await runCli(["backup-stream", "--what", "media"]);
+    expect(exported.stderr).toBe("");
     expect(exported.exitCode).toBe(0);
     // Bytes, and only bytes: a JSON summary printed after the archive would
     // corrupt whatever the backup host wrote it into.

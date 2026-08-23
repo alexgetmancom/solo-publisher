@@ -36,6 +36,18 @@ const stateKey = (kind: ExportKind) => `export:${kind}`;
 
 /** The media trees a database export does not carry. They exist only on the
  * data volume, so losing it loses all of them at once. */
+/** A second, blocking handle on whatever stdout points at.
+ *
+ * Bun puts its own stdout into non-blocking mode, and a child that inherits it
+ * gets the same file description: tar then meets EAGAIN on the first full pipe
+ * buffer and dies with "Wrote only 6144 of 10240 bytes" — which a puller reads
+ * as a short archive. Opening `/dev/fd/1` creates a *new* description with
+ * default blocking semantics onto the same pipe, so a reader that falls behind
+ * simply makes tar wait. */
+function blockingStdout(): number {
+  return fs.openSync("/dev/fd/1", "a");
+}
+
 function mediaSources(config: EnvConfig): string[] {
   return [config.STUDIO_MEDIA_DIR, config.MEDIA_CACHE_DIR, config.STORY_CARD_DIR, config.SITE_PUBLIC_DIR];
 }
@@ -84,8 +96,15 @@ export async function streamMediaArchive(
   const relative = present.map((source) => path.relative(config.DATA_DIR, source));
   if (relative.some((entry) => entry.startsWith("..") || path.isAbsolute(entry)))
     throw new Error("every media directory must live under DATA_DIR for the archive to restore onto a fresh volume");
-  const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: destination, stderr: "pipe" });
-  const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+  const out = destination === "inherit" ? blockingStdout() : destination;
+  const [exitCode, stderr] = await (async () => {
+    try {
+      const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: out, stderr: "pipe" });
+      return await Promise.all([child.exited, new Response(child.stderr).text()]);
+    } finally {
+      if (out !== destination) fs.closeSync(out);
+    }
+  })();
   // Recorded only on a clean exit: a truncated archive that counted as a backup
   // is worse than none, because `doctor` would then stay green over it.
   if (exitCode !== 0) throw new Error(`tar failed (${exitCode}): ${stderr.trim()}`);
