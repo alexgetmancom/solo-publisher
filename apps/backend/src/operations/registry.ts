@@ -620,7 +620,7 @@ const operationDefs = {
     handler: async (context, input) =>
       input.what === "db"
         ? streamDatabase(context.db(), Bun.stdout.writer())
-        : streamMediaArchive(context.config(), context.db(), Bun.stdout.writer()),
+        : streamMediaArchive(context.config(), context.db(), "inherit"),
   }),
   restore: operation({
     summary: "Replace the database with a backup.",

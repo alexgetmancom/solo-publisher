@@ -51,17 +51,17 @@ describe("backup export", () => {
       await withDb(async (backendDb) => {
         expect(exportStatus(backendDb, "media").ok).toBe(false);
 
-        const sink = collector();
-        const bytes = await streamMediaArchive(config, backendDb, sink);
-        expect(bytes).toBeGreaterThan(0);
-        expect(sink.ended()).toBe(true);
-        // Written bytes have to reach the reader as the archive is produced. A
-        // sink that only queues them holds the whole archive in memory, and a
-        // gigabyte of media does not fit in this container.
-        expect(sink.flushes()).toBeGreaterThan(0);
-
+        // tar writes to the destination itself — a file here, the process's own
+        // stdout in production — so the archive never passes through memory.
         const archive = path.join(root, "media.tar.gz");
-        fs.writeFileSync(archive, sink.bytes());
+        const handle = fs.openSync(archive, "w");
+        try {
+          await streamMediaArchive(config, backendDb, handle);
+        } finally {
+          fs.closeSync(handle);
+        }
+        expect(fs.statSync(archive).size).toBeGreaterThan(0);
+
         // Paths travel relative to DATA_DIR, so the archive restores onto a
         // fresh volume whatever the host path was when it was taken.
         const names = new TextDecoder().decode(Bun.spawnSync(["tar", "-tzf", archive]).stdout);
@@ -69,9 +69,7 @@ describe("backup export", () => {
         expect(names).toContain("site/media/cover.jpg");
         expect(names).not.toContain(root);
 
-        const status = exportStatus(backendDb, "media");
-        expect(status.ok).toBe(true);
-        expect(status.bytes).toBe(bytes);
+        expect(exportStatus(backendDb, "media").ok).toBe(true);
       });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
@@ -117,7 +115,7 @@ describe("backup export", () => {
     try {
       await withDb(async (backendDb) => {
         fs.rmSync(config.DATA_DIR, { recursive: true, force: true });
-        await expect(streamMediaArchive(config, backendDb, collector())).rejects.toThrow();
+        await expect(streamMediaArchive(config, backendDb, "inherit")).rejects.toThrow();
         // A truncated archive counted as a backup is worse than none: `doctor`
         // would go green over it.
         expect(exportStatus(backendDb, "media").ok).toBe(false);

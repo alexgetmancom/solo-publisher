@@ -13,18 +13,11 @@ const EXPORT_MAX_AGE_DAYS = 7;
 
 export type ExportKind = "media" | "db";
 
-/** Where an export's bytes go. Bun's stdout writer satisfies it; a test passes
- * a collector. Deliberately not a WritableStream: stdout is a FileSink here,
- * and adapting it per call buys nothing.
- *
- * `flush` is not optional. A FileSink's `write` only queues, so an export whose
- * reader is a 2 MB/s SSH pipe buffers the whole archive in memory: a gigabyte of
- * media took the container's 384 MB limit and the OOM killer ended the export
- * 47 MB in, which the puller stored as a complete backup. */
+/** Where the database export's bytes go. Bun's stdout writer satisfies it; a
+ * test passes a collector. */
 export type ByteSink = { write(chunk: Uint8Array): unknown; flush(): unknown; end(): unknown };
 
-/** Big enough that flushing is not a syscall per kilobyte, small enough that a
- * slow reader cannot park much in memory. */
+/** Written and flushed in slices rather than as one buffer. */
 const FLUSH_BYTES = 4 * 1024 * 1024;
 
 /** Nothing is written to this host. Each export is a stream a backup host pulls
@@ -47,7 +40,7 @@ function mediaSources(config: EnvConfig): string[] {
   return [config.STUDIO_MEDIA_DIR, config.MEDIA_CACHE_DIR, config.STORY_CARD_DIR, config.SITE_PUBLIC_DIR];
 }
 
-export function recordExport(backendDb: BackendDb, kind: ExportKind, bytes: number, now = new Date()): void {
+export function recordExport(backendDb: BackendDb, kind: ExportKind, bytes: number | null, now = new Date()): void {
   const at = now.toISOString();
   unsafeDb(backendDb)
     .db.insert(workerState)
@@ -69,35 +62,35 @@ export function exportStatus(backendDb: BackendDb, kind: ExportKind, now = new D
   return { kind, at, bytes, ageDays, ok: ageDays !== null && ageDays <= EXPORT_MAX_AGE_DAYS };
 }
 
-/** Writes a gzipped tar of every media tree that exists to `sink`, then records
- * the export. Sources travel relative to DATA_DIR so the archive restores onto
- * a fresh volume unchanged, whatever the host path was when it was taken. */
-export async function streamMediaArchive(config: EnvConfig, backendDb: BackendDb, sink: ByteSink): Promise<number> {
+/** Writes a gzipped tar of every media tree that exists to `destination` — the
+ * process's own stdout in production — then records the export. Sources travel
+ * relative to DATA_DIR so the archive restores onto a fresh volume unchanged,
+ * whatever the host path was when it was taken.
+ *
+ * tar writes to the destination directly rather than through this process. A
+ * gigabyte of media pulled over a 2 MB/s link cannot be held in memory while the
+ * reader catches up: passing the bytes through Bun's stdout writer buffered them
+ * instead of applying backpressure, and the OOM killer ended the export 47 MB in
+ * — which the puller stored as if it were the whole archive. Letting the kernel
+ * own the pipe makes a slow reader slow tar down, which is the only correct
+ * behaviour and needs no code. */
+export async function streamMediaArchive(
+  config: EnvConfig,
+  backendDb: BackendDb,
+  destination: "inherit" | number,
+): Promise<number | null> {
   const present = mediaSources(config).filter((source) => fs.existsSync(source));
   if (!present.length) throw new Error("no media directories exist to export");
   const relative = present.map((source) => path.relative(config.DATA_DIR, source));
   if (relative.some((entry) => entry.startsWith("..") || path.isAbsolute(entry)))
     throw new Error("every media directory must live under DATA_DIR for the archive to restore onto a fresh volume");
-  const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: "pipe", stderr: "pipe" });
-  let bytes = 0;
-  let queued = 0;
-  for await (const chunk of child.stdout as ReadableStream<Uint8Array>) {
-    bytes += chunk.byteLength;
-    queued += chunk.byteLength;
-    await sink.write(chunk);
-    if (queued >= FLUSH_BYTES) {
-      await sink.flush();
-      queued = 0;
-    }
-  }
-  await sink.flush();
+  const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: destination, stderr: "pipe" });
   const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
-  // Recorded and ended only on a clean exit: a truncated archive that counted
-  // as a backup is worse than none, because `doctor` would then stay green.
+  // Recorded only on a clean exit: a truncated archive that counted as a backup
+  // is worse than none, because `doctor` would then stay green over it.
   if (exitCode !== 0) throw new Error(`tar failed (${exitCode}): ${stderr.trim()}`);
-  await sink.end();
-  recordExport(backendDb, "media", bytes);
-  return bytes;
+  recordExport(backendDb, "media", null);
+  return null;
 }
 
 /** Writes a consistent copy of the database to `sink`, then records the export.
