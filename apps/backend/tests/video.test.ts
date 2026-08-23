@@ -85,12 +85,7 @@ describe("video publication queue", () => {
       provider: "zernio",
       providerAccountId: "en-account",
     });
-    scheduleVideo(
-      backendDb,
-      draftId,
-      { instagram_reels: new Date(Date.now() + 60 * 60_000) },
-      { prepareLeadMinutes: 15, reminderMinutes: 5 },
-    );
+    scheduleVideo(backendDb, draftId, { instagram_reels: new Date(Date.now() + 60 * 60_000) }, { prepareLeadMinutes: 15 });
 
     expect(backendDb.db.select().from(videoDrafts).where(eq(videoDrafts.id, draftId)).get()?.locale).toBe("en");
     expect(listVideoTargets(backendDb, draftId)[0]).toMatchObject({ deliveryProvider: "zernio", providerAccountId: "en-account" });
@@ -333,13 +328,7 @@ describe("video publication queue", () => {
     replaceVideoTargets(backendDb, draftId, ["youtube_shorts", "instagram_reels"]);
     const youtubeAt = new Date(Date.now() + 60 * 60_000);
     const instagramAt = new Date(Date.now() + 2 * 60 * 60_000);
-    scheduleVideo(
-      backendDb,
-      draftId,
-      { youtube_shorts: youtubeAt, instagram_reels: instagramAt },
-      { prepareLeadMinutes: 15, reminderMinutes: 5 },
-      24,
-    );
+    scheduleVideo(backendDb, draftId, { youtube_shorts: youtubeAt, instagram_reels: instagramAt }, { prepareLeadMinutes: 15 }, 24);
 
     expect(listVideoTargets(backendDb, draftId)).toEqual(
       expect.arrayContaining([
@@ -371,12 +360,7 @@ describe("video publication queue", () => {
       provider: "zernio",
       providerAccountId: "maru-account",
     });
-    scheduleVideo(
-      backendDb,
-      draftId,
-      { instagram_reels: new Date(Date.now() + 60 * 60_000) },
-      { prepareLeadMinutes: 15, reminderMinutes: 5 },
-    );
+    scheduleVideo(backendDb, draftId, { instagram_reels: new Date(Date.now() + 60 * 60_000) }, { prepareLeadMinutes: 15 });
     expect(listVideoTargets(backendDb, draftId)[0]).toMatchObject({ deliveryProvider: "zernio", providerAccountId: "maru-account" });
   });
 
@@ -450,7 +434,7 @@ describe("video publication queue", () => {
     const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
     replaceVideoTargets(backendDb, draftId, ["instagram_reels"]);
     const initial = new Date(Date.now() + 60 * 60_000);
-    scheduleVideo(backendDb, draftId, { instagram_reels: initial }, { prepareLeadMinutes: 15, reminderMinutes: 5 });
+    scheduleVideo(backendDb, draftId, { instagram_reels: initial }, { prepareLeadMinutes: 15 });
     backendDb.db
       .update(videoJobs)
       .set({ status: "running", lockedBy: "worker-1", lockedAt: new Date().toISOString() })
@@ -460,12 +444,7 @@ describe("video publication queue", () => {
     // Clearing the lock here would break the worker's (id, lockedBy) fence and
     // let the requeued job publish the same target a second time.
     expect(() =>
-      scheduleVideo(
-        backendDb,
-        draftId,
-        { instagram_reels: new Date(Date.now() + 3 * 60 * 60_000) },
-        { prepareLeadMinutes: 15, reminderMinutes: 5 },
-      ),
+      scheduleVideo(backendDb, draftId, { instagram_reels: new Date(Date.now() + 3 * 60 * 60_000) }, { prepareLeadMinutes: 15 }),
     ).toThrow("err.video-job-running");
     expect(
       backendDb.db
@@ -486,7 +465,7 @@ describe("video publication queue", () => {
       backendDb,
       draftId,
       { youtube_shorts: initial, instagram_reels: new Date(initial.getTime() + 60 * 60_000) },
-      { prepareLeadMinutes: 15, reminderMinutes: 5 },
+      { prepareLeadMinutes: 15 },
     );
     backendDb.db
       .update(videoTargets)
@@ -495,7 +474,7 @@ describe("video publication queue", () => {
       .run();
 
     const instagramAt = new Date(Date.now() + 3 * 60 * 60_000);
-    scheduleVideo(backendDb, draftId, { instagram_reels: instagramAt }, { prepareLeadMinutes: 15, reminderMinutes: 5 });
+    scheduleVideo(backendDb, draftId, { instagram_reels: instagramAt }, { prepareLeadMinutes: 15 });
 
     expect(
       listVideoTargets(backendDb, draftId).map((target) => ({
@@ -513,12 +492,7 @@ describe("video publication queue", () => {
     const backendDb = testDb.open();
     const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
     replaceVideoTargets(backendDb, draftId, ["youtube_shorts"]);
-    scheduleVideo(
-      backendDb,
-      draftId,
-      { youtube_shorts: new Date(Date.now() + 60 * 60_000) },
-      { prepareLeadMinutes: 15, reminderMinutes: 5 },
-    );
+    scheduleVideo(backendDb, draftId, { youtube_shorts: new Date(Date.now() + 60 * 60_000) }, { prepareLeadMinutes: 15 });
     expect(() => replaceVideoTargets(backendDb, draftId, ["instagram_reels"])).toThrow("err.video-targets-locked");
     expect(listVideoTargets(backendDb, draftId).map((target) => target.target)).toEqual(["youtube_shorts"]);
   });

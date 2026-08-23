@@ -53,7 +53,9 @@ services:
       - ${STUDIO_MEDIA_STAGING_DIR_HOST:-./media-staging}:/data/media
       - ${STUDIO_SITE_MEDIA_DIR_HOST:-./site-media}:/data/site/media
       - ${BOT_API_DATA_DIR_HOST:-/home/deploy/bot-api/data}:/var/lib/telegram-bot-api:ro
-      - /home/deploy/.grok:/home/deploy/.grok
+      # One Grok state directory per Studio. Shared, two Studios wrote each
+      # other's sessions, locks and credentials through the same mount.
+      - ${STUDIO_GROK_DIR_HOST:?set this Studio's own Grok state directory}:/home/deploy/.grok
     ports:
       - "127.0.0.1:${STUDIO_PORT:?set the loopback port this Studio answers on}:8788"
     extra_hosts:

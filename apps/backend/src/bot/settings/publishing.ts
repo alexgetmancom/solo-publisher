@@ -142,8 +142,8 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
       .text(
         t(locale, "settings.clear"),
         settingsUpdate({
-          apply: () => createStudioServices(backendDb, config).settings.clearYoutubeSignature(actorId),
-          body: () => youtubeSignatureText(backendDb, config, actorId, locale),
+          apply: () => createStudioServices(backendDb, config).settings.clearYoutubeSignature(),
+          body: () => youtubeSignatureText(backendDb, config, locale),
           toast: t(locale, "settings.cleared"),
         }),
       )
@@ -179,7 +179,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
         .submenu(
           t(locale, "settings.youtube-signature"),
           YOUTUBE_SIGNATURE_MENU_ID,
-          settingsScreen(() => youtubeSignatureText(backendDb, config, actorId, locale)),
+          settingsScreen(() => youtubeSignatureText(backendDb, config, locale)),
         )
         .row();
     range.back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
@@ -213,10 +213,10 @@ export async function collectYoutubeSignature(
   text: string,
   settingsMenu: Menu<Context>,
 ): Promise<boolean> {
-  createStudioServices(backendDb, config).settings.setYoutubeSignature(actorId, text);
+  createStudioServices(backendDb, config).settings.setYoutubeSignature(text);
   const locale = settingsService(backendDb).locale(actorId);
   await ctx.reply(t(locale, "settings.youtube-saved"));
-  await ctx.reply(youtubeSignatureText(backendDb, config, actorId, locale), {
+  await ctx.reply(youtubeSignatureText(backendDb, config, locale), {
     parse_mode: "Markdown",
     reply_markup: settingsMenu.at(YOUTUBE_SIGNATURE_MENU_ID),
   });
@@ -262,8 +262,8 @@ function defaultTargetsText(backendDb: BackendDb, config: BackendConfig, locale:
   return `${t(locale, "settings.default-targets-title")}\n\n${t(locale, "settings.default-targets-active")}: *${escapeMarkdown(active || t(locale, "settings.default-targets-none"))}*\n\n${t(locale, "settings.default-targets-hint")}`;
 }
 
-function youtubeSignatureText(backendDb: BackendDb, config: BackendConfig, actorId: number, locale: StudioLocale): string {
-  const signature = createStudioServices(backendDb, config).settings.youtubeSignature(actorId);
+function youtubeSignatureText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
+  const signature = createStudioServices(backendDb, config).settings.youtubeSignature();
   return t(locale, "settings.youtube-body", {
     signature: signature ? escapeMarkdown(signature) : t(locale, "settings.youtube-not-set"),
   });

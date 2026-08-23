@@ -1,7 +1,6 @@
 import { syncStateFor } from "../analytics/snapshots/creator-store.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
-import { primaryStudioActorId } from "../studio/access.js";
 import { createStudioServices } from "../studio/services/index.js";
 
 /** What the settings screens hold, plus what the daily digest actually did.
@@ -11,14 +10,16 @@ import { createStudioServices } from "../studio/services/index.js";
 export function settingsReport(backendDb: BackendDb, config: BackendConfig) {
   const settings = createStudioServices(backendDb, config).settings;
   const newsDigest = settings.newsDigest();
-  const owner = primaryStudioActorId(config);
-  const timeConfig = settings.timeConfig(owner ?? 0, config);
+  const profile = settings.studioProfile();
   return {
-    timezone: timeConfig.TIMEZONE,
+    // The Studio's zone: the one the daily schedules below actually fire in.
+    timezone: profile.timezone,
+    youtubeSignature: settings.youtubeSignature(),
     newsDigest: {
       enabled: newsDigest.enabled,
       at: `${String(newsDigest.hour).padStart(2, "0")}:${String(newsDigest.minute).padStart(2, "0")}`,
       promptCharacters: newsDigest.prompt.length,
+      effort: newsDigest.effort,
       runs: syncStateFor(backendDb, "news_digest:"),
     },
     weeklyDigest: settings.weeklyDigest(),
@@ -27,7 +28,6 @@ export function settingsReport(backendDb: BackendDb, config: BackendConfig) {
       actorId,
       locale: settings.locale(actorId),
       notifications: settings.notifications(actorId),
-      youtubeSignature: settings.youtubeSignature(actorId),
     })),
   };
 }

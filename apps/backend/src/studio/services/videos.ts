@@ -307,13 +307,7 @@ async function scheduleOwnedVideo(
 ) {
   const draft = requireOwnedVideo(backendDb, config, actorId, publicationId);
   const technical = await validateVideoDraft(config, backendDb, publicationId);
-  scheduleVideo(
-    backendDb,
-    publicationId,
-    schedule,
-    { prepareLeadMinutes: config.VIDEO_PREPARE_LEAD_MINUTES, reminderMinutes: config.VIDEO_REMINDER_MINUTES },
-    technical.seconds,
-  );
+  scheduleVideo(backendDb, publicationId, schedule, { prepareLeadMinutes: config.VIDEO_PREPARE_LEAD_MINUTES }, technical.seconds);
   scheduleVideoReminders(backendDb, draft.actorId, publicationId, draft.label);
   return technical;
 }

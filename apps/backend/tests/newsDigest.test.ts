@@ -47,6 +47,7 @@ describe("daily news digest", () => {
       const sent: Array<{ actorId: number; document: InputFile }> = [];
       const bot = {
         api: {
+          sendMessage: async () => undefined,
           sendDocument: async (actorId: number, document: InputFile) => {
             sent.push({ actorId, document });
           },
@@ -61,7 +62,7 @@ describe("daily news digest", () => {
         "grok",
         "--no-leader",
         "--reasoning-effort",
-        "medium",
+        "xhigh",
         "--output-format",
         "json",
         "--json-schema",
@@ -98,7 +99,7 @@ describe("daily news digest", () => {
           kill: () => {},
         };
       };
-      const bot = { api: { sendDocument: async () => undefined } } as unknown as Bot;
+      const bot = { api: { sendDocument: async () => undefined, sendMessage: async () => undefined } } as unknown as Bot;
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }, MSK_STUDIO_PROFILE);
       const now = new Date("2026-07-20T07:30:00.000Z");
 
@@ -132,6 +133,7 @@ describe("daily news digest", () => {
       const sent: InputFile[] = [];
       const bot = {
         api: {
+          sendMessage: async () => undefined,
           sendDocument: async (_actorId: number, document: InputFile) => {
             sent.push(document);
           },
@@ -166,6 +168,7 @@ describe("daily news digest", () => {
       const sent: InputFile[] = [];
       const bot = {
         api: {
+          sendMessage: async () => undefined,
           sendDocument: async (_actorId: number, document: InputFile) => {
             sent.push(document);
           },
@@ -198,6 +201,7 @@ describe("daily news digest", () => {
       const sent: InputFile[] = [];
       const bot = {
         api: {
+          sendMessage: async () => undefined,
           sendDocument: async (_actorId: number, document: InputFile) => {
             sent.push(document);
           },
@@ -209,12 +213,47 @@ describe("daily news digest", () => {
 
       expect(result).toEqual({ status: "sent" });
       expect(commands).toHaveLength(2);
-      expect(commands.map((command) => command[3])).toEqual(["medium", "xhigh"]);
+      expect(commands.map((command) => command[3])).toEqual(["xhigh", "xhigh"]);
       expect(commands[1]?.at(-1)).toContain("Your previous result was incomplete: 46 characters, 1 numbered items and 0 X source links");
       expect(sent).toHaveLength(1);
       const raw = new TextDecoder().decode((await sent[0]?.toRaw()) as Uint8Array);
       expect(raw).toContain("Finished report");
       expect(raw).not.toContain("Ищу свежие");
+    });
+  });
+
+  it("tells every administrator when the digest failed, and at which effort", async () => {
+    await withDb(async (backendDb) => {
+      settingsService(backendDb).setNewsDigest({ enabled: true, hour: 0, minute: 0, prompt: "A prompt", effort: "medium" });
+      const spawn: GrokSpawn = () => ({
+        stdout: stream(JSON.stringify({ structuredOutput: { markdown: "Сначала соберу свежие посты за 24 часа." } })),
+        stderr: stream(""),
+        exited: Promise.resolve(0),
+        kill: () => {},
+      });
+      const messages: Array<{ actorId: number; text: string }> = [];
+      const documents: InputFile[] = [];
+      const bot = {
+        api: {
+          sendMessage: async (actorId: number, text: string) => {
+            messages.push({ actorId, text });
+          },
+          sendDocument: async (_actorId: number, document: InputFile) => {
+            documents.push(document);
+          },
+        },
+      } as unknown as Bot;
+      const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42,7" }, MSK_STUDIO_PROFILE);
+
+      const result = await sendDailyNewsDigest(config, backendDb, bot, new Date("2026-07-20T07:30:00.000Z"), { spawn });
+
+      expect(result.status).toBe("failed");
+      expect(documents).toHaveLength(0);
+      // Silence reads as "no news today", which is the one outcome that must
+      // never be indistinguishable from a working day.
+      expect(messages.map((message) => message.actorId)).toEqual([42, 7]);
+      expect(messages[0]?.text).toContain("effort medium");
+      expect(messages[0]?.text).toContain("Сначала соберу свежие посты");
     });
   });
 
@@ -234,6 +273,7 @@ describe("daily news digest", () => {
       const sent: InputFile[] = [];
       const bot = {
         api: {
+          sendMessage: async () => undefined,
           sendDocument: async (_actorId: number, document: InputFile) => {
             sent.push(document);
           },
@@ -243,10 +283,13 @@ describe("daily news digest", () => {
 
       const result = await sendDailyNewsDigest(config, backendDb, bot, new Date("2026-07-20T07:30:00.000Z"), { spawn });
 
-      expect(result).toEqual({
-        status: "failed",
-        error: "Grok news digest is incomplete: 3000 characters, 1 numbered items and 0 X source links; minimum 2582, 10 and 10",
-      });
+      expect(result.status).toBe("failed");
+      expect(result.status === "failed" && result.error).toContain(
+        "Grok news digest is incomplete at effort xhigh: 3000 characters, 1 numbered items and 0 X source links; minimum 2582, 10 and 10",
+      );
+      // The operator is told what Grok actually answered, because every stub so
+      // far has been a sentence about the report rather than the report.
+      expect(result.status === "failed" && result.error).toContain("Grok answered: 1. **Still searching**");
       expect(runs).toBe(2);
       expect(sent).toHaveLength(0);
     });
@@ -264,6 +307,7 @@ describe("daily news digest", () => {
       const sent: InputFile[] = [];
       const bot = {
         api: {
+          sendMessage: async () => undefined,
           sendDocument: async (_actorId: number, document: InputFile) => {
             sent.push(document);
           },
@@ -284,7 +328,7 @@ describe("daily news digest", () => {
       const spawn: GrokSpawn = () => {
         throw new Error("Grok should not start before the schedule");
       };
-      const bot = { api: { sendDocument: async () => undefined } } as unknown as Bot;
+      const bot = { api: { sendDocument: async () => undefined, sendMessage: async () => undefined } } as unknown as Bot;
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }, MSK_STUDIO_PROFILE);
 
       expect(await sendDailyNewsDigest(config, backendDb, bot, new Date("2026-07-20T06:59:00.000Z"), { spawn })).toEqual({

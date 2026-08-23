@@ -1,7 +1,6 @@
 import { and, eq, like } from "drizzle-orm";
 import type { StudioSettingsStore } from "../../application/ports.js";
 import {
-  botSettings,
   botUiSettings,
   studioBackupSettings,
   studioNewsDigestSettings,
@@ -9,6 +8,7 @@ import {
   studioNotificationSettings,
   studioProfile,
   studioWeeklyDigestSettings,
+  studioYoutubeSettings,
 } from "../schema.js";
 import type { BackendDatabase } from "../types.js";
 
@@ -73,10 +73,25 @@ export function createStudioSettingsStore(db: BackendDatabase): StudioSettingsSt
 
     saveNewsDigest(input) {
       db.insert(studioNewsDigestSettings)
-        .values({ id: 1, enabled: input.enabled, hour: input.hour, minute: input.minute, prompt: input.prompt, updatedAt: input.updatedAt })
+        .values({
+          id: 1,
+          enabled: input.enabled,
+          hour: input.hour,
+          minute: input.minute,
+          prompt: input.prompt,
+          effort: input.effort,
+          updatedAt: input.updatedAt,
+        })
         .onConflictDoUpdate({
           target: studioNewsDigestSettings.id,
-          set: { enabled: input.enabled, hour: input.hour, minute: input.minute, prompt: input.prompt, updatedAt: input.updatedAt },
+          set: {
+            enabled: input.enabled,
+            hour: input.hour,
+            minute: input.minute,
+            prompt: input.prompt,
+            effort: input.effort,
+            updatedAt: input.updatedAt,
+          },
         })
         .run();
     },
@@ -112,19 +127,16 @@ export function createStudioSettingsStore(db: BackendDatabase): StudioSettingsSt
         .all().length;
     },
 
-    botSettings(actorId) {
-      return db.select().from(botSettings).where(eq(botSettings.actorId, actorId)).get() ?? null;
+    youtubeSettings() {
+      return db.select().from(studioYoutubeSettings).where(eq(studioYoutubeSettings.id, 1)).get() ?? null;
     },
 
-    saveBotSettings(input) {
-      db.insert(botSettings)
-        .values(input)
+    saveYoutubeSettings(input) {
+      db.insert(studioYoutubeSettings)
+        .values({ id: 1, signature: input.signature, updatedAt: input.updatedAt })
         .onConflictDoUpdate({
-          target: botSettings.actorId,
-          set: {
-            youtubeSignature: input.youtubeSignature,
-            updatedAt: input.updatedAt,
-          },
+          target: studioYoutubeSettings.id,
+          set: { signature: input.signature, updatedAt: input.updatedAt },
         })
         .run();
     },

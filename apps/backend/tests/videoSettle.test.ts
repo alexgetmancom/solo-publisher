@@ -26,12 +26,7 @@ function stuckReel(backendDb: UnsafeBackendDb): number {
   const draftId = createTestVideoDraft(backendDb, 42, "/tmp/reel.mp4", 24);
   replaceVideoTargets(backendDb, draftId, ["instagram_reels"] as never);
   saveVideoMetadata(backendDb, draftId, "instagram_reels", { caption: "Clip" });
-  scheduleVideo(
-    backendDb,
-    draftId,
-    { instagram_reels: new Date(Date.now() + 60 * 60_000) },
-    { prepareLeadMinutes: 15, reminderMinutes: 5 },
-  );
+  scheduleVideo(backendDb, draftId, { instagram_reels: new Date(Date.now() + 60 * 60_000) }, { prepareLeadMinutes: 15 });
   backendDb.sqlite
     .prepare(
       "UPDATE video_targets SET status='verification_required', delivery_provider='zernio', provider_account_id='maru-account', last_error='worker_lost: video lock expired before completion'",

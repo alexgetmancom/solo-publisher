@@ -53,7 +53,7 @@ function countRows(backendDb: BackendDb, table: string): number {
 
 /** Compact health-oriented status shared by text-first and video-first Studios. */
 export function compactOperationsStatus(config: BackendConfig, backendDb: BackendDb) {
-  const expectedWorkers = expectedWorkerNames();
+  const expectedWorkers = expectedWorkerNames(Boolean(config.controllerBotToken));
   const workerRows = workers(backendDb, new Set(expectedWorkers));
   const observedWorkers = new Set(workerRows.map((worker) => worker.name));
   const missingWorkers = expectedWorkers.filter((name) => !observedWorkers.has(name));

@@ -49,11 +49,13 @@ socket and can only request a rollback using a private bearer-authenticated rout
    reach it at `http://bot-api:8081` over `agent_default` and mount its
    download directory read-only via `BOT_API_DATA_DIR_HOST`.
 
-   The backend containers also use the host's existing Grok CLI installation. Keep
-   `/home/deploy/.grok` present on the host and signed in; the compose file mounts
-   that directory into every Studio container and passes its absolute CLI path to the
-   backend. The mount is writable because Grok refreshes its credentials and keeps
-   headless-run state there.
+   The backend containers also use the host's Grok CLI installation, and each Studio
+   gets its own copy of it: `STUDIO_GROK_DIR_HOST` names a directory that only that
+   Studio mounts at `/home/deploy/.grok`. The mount is writable because Grok refreshes
+   its credentials and keeps sessions, locks and headless-run state there — which is
+   exactly why it cannot be shared: two Studios pointed at one directory write over
+   each other's sessions and credentials. Create a new Studio's directory by copying
+   a signed-in one (`cp -a /home/deploy/grok/alex /home/deploy/grok/<studio>`).
 
    The existing `threads` directory is already a bind mount to the second disk.
    Moving the public site-media root itself requires changing the web server's

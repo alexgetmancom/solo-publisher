@@ -14,7 +14,7 @@ import { recoverStaleSiteJobs, runSiteJobCycle, SITE_JOB_RESTART_LOCK_GRACE_SECO
 import { runVideoCycle } from "../delivery/video-worker.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
-import { recordWorkerHeartbeat } from "../foundation/runtime/worker-state.js";
+import { heartbeatLoop } from "../foundation/runtime/worker-state.js";
 import { type ScheduledLoop, startLoop } from "../foundation/scheduler.js";
 import { runNotificationCycle } from "../notifications/jobs.js";
 import { runObservabilityCycle } from "../observability/cycle.js";
@@ -23,8 +23,6 @@ import { pruneOperationalHistory, withMaintenanceLock } from "../operations/main
 import { recoverStalePublishJobs } from "../publishing/queue.js";
 import { recoverStoryCardJobs, runStoryCardCycle } from "../story-cards/worker.js";
 import { applyStoredCredentials } from "./config.js";
-
-const WORKER_HEARTBEAT_INTERVAL_SECONDS = 60;
 
 const WATCHDOG_INTERVAL_SECONDS = 60;
 const SITE_JOB_POLL_INTERVAL_SECONDS = 10;
@@ -57,32 +55,7 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
   const recoveredStoryCardsAtStartup = recoverStoryCardJobs(backendDb);
   if (recoveredStoryCardsAtStartup)
     log("warn", "recovered interrupted Story card locks on worker startup", { recovered: recoveredStoryCardsAtStartup });
-  const startWorkerLoop = (name: string, intervalMs: number, task: () => void | Promise<void>) => {
-    const heartbeatIntervalMs = WORKER_HEARTBEAT_INTERVAL_SECONDS * 1000;
-    let publishStartupHeartbeat = true;
-    return startLoop(name, intervalMs, task, {
-      onStart: () => {
-        if (!publishStartupHeartbeat) return;
-        publishStartupHeartbeat = false;
-        recordWorkerHeartbeat(backendDb, name, { phase: "running", heartbeat_interval_ms: heartbeatIntervalMs });
-      },
-      onHeartbeat: () => {
-        flushUsage(backendDb);
-        recordWorkerHeartbeat(backendDb, name, { heartbeat_interval_ms: heartbeatIntervalMs });
-      },
-      heartbeatIntervalMs,
-      onFinish: (error) => {
-        if (!error) return;
-        publishStartupHeartbeat = true;
-        recordWorkerHeartbeat(
-          backendDb,
-          name,
-          { phase: "failed", heartbeat_interval_ms: heartbeatIntervalMs },
-          error instanceof Error ? error.message : String(error),
-        );
-      },
-    });
-  };
+  const startWorkerLoop = heartbeatLoop(backendDb, startLoop, () => flushUsage(backendDb));
   return [
     // Meta renews its long-lived tokens by issuing new ones, and a lapsed token
     // cannot be renewed at all — so this runs far from the edge, daily, and

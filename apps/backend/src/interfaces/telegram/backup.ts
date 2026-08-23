@@ -6,6 +6,7 @@ import { InputFile } from "grammy";
 import { claimSync, markSynced } from "../../analytics/snapshots/creator-store.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
+import { t } from "../../foundation/i18n/index.js";
 import { log } from "../../foundation/logger.js";
 import { backupDatabase } from "../../operations/maintenance.js";
 import { settingsService } from "../../studio/services/settings.js";
@@ -73,6 +74,16 @@ export async function sendDailyBackup(
     return "sent";
   } catch (error) {
     log("warn", "daily backup not delivered", { error: String(error) });
+    // The day is already claimed, so nothing retries this until tomorrow. An
+    // operator who is never told has no way to know the copies stopped coming.
+    for (const actorId of config.CONTROLLER_ADMIN_IDS) {
+      const locale = settingsService(backendDb).locale(actorId);
+      try {
+        await bot.api.sendMessage(actorId, t(locale, "settings.backup-failed-notice", { error: String(error).slice(0, 1_000) }));
+      } catch (notifyError) {
+        log("warn", "backup failure notice was not delivered", { actorId, error: String(notifyError) });
+      }
+    }
     return "failed";
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });

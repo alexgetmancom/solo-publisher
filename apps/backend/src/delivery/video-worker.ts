@@ -4,7 +4,7 @@ import { publicationRef } from "../application/publication-ref.js";
 import { videoChannelIdentity } from "../channels/destinations.js";
 import { videoPublicUrl, videoSourcePath } from "../content/video-assets.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
-import { botSettings, videoJobs, videoTargets } from "../db/schema.js";
+import { studioYoutubeSettings, videoJobs, videoTargets } from "../db/schema.js";
 import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { instagramCredentialsForLocale } from "../foundation/external/instagram.js";
@@ -215,7 +215,7 @@ async function executeVideoJob(config: BackendConfig, backendDb: BackendDb, job:
   const locale = draft.locale === "en" ? "en" : "ru";
   const instagramCredentials = instagramCredentialsForLocale(config, locale);
   if (job.kind === "prepare") {
-    if (target.target === "youtube_shorts") return prepareYouTube(config, backendDb, job, target, draft, filePath, locale);
+    if (target.target === "youtube_shorts") return prepareYouTube(config, backendDb, job, target, filePath, locale);
     if (target.deliveryProvider === "zernio") return prepareZernio(backendDb, job, target);
     return prepareInstagram(config, backendDb, job, target, draft, metadata, instagramCredentials);
   }
@@ -238,7 +238,6 @@ async function prepareYouTube(
   backendDb: BackendDb,
   job: VideoJob,
   target: VideoTarget,
-  draft: VideoDraft,
   filePath: string,
   locale: "en" | "ru",
 ): Promise<boolean> {
@@ -246,7 +245,7 @@ async function prepareYouTube(
   const result = await prepareYouTubeVideo(
     config,
     filePath,
-    { ...metadata, description: composeYouTubeDescription(backendDb, draft.actorId, metadata) },
+    { ...metadata, description: composeYouTubeDescription(backendDb, metadata) },
     target.scheduledAt ?? new Date().toISOString(),
     locale,
   );
@@ -585,11 +584,14 @@ function requeueInstagramPreparation(tx: UnsafeBackendDb["db"], job: VideoJob, e
     .run();
 }
 
-function composeYouTubeDescription(backendDb: BackendDb, actorId: number, metadata: YouTubeMetadata): string {
+/** The signature belongs to the Studio's channel, not to whoever authored the
+ * draft: read per author, videos from the second administrator went out to the
+ * same channel unsigned. */
+function composeYouTubeDescription(backendDb: BackendDb, metadata: YouTubeMetadata): string {
   const signature = unsafeDb(backendDb)
-    .db.select({ value: botSettings.youtubeSignature })
-    .from(botSettings)
-    .where(eq(botSettings.actorId, actorId))
+    .db.select({ value: studioYoutubeSettings.signature })
+    .from(studioYoutubeSettings)
+    .where(eq(studioYoutubeSettings.id, 1))
     .get()
     ?.value.trim();
   const gameLine = metadata.gameUrl ? `📀 Steam: ${metadata.gameUrl}` : "";

@@ -13,7 +13,6 @@ export const studioProfile = sqliteTable("studio_profile", {
   timezoneLabel: text().notNull().default(DEFAULT_STUDIO_PROFILE.timezoneLabel),
   siteEnabled: integer().notNull().default(DEFAULT_STUDIO_PROFILE.siteEnabled),
   videoPrepareLeadMinutes: integer().notNull().default(DEFAULT_STUDIO_PROFILE.videoPrepareLeadMinutes),
-  videoReminderMinutes: integer().notNull().default(DEFAULT_STUDIO_PROFILE.videoReminderMinutes),
   videoRetentionHours: integer().notNull().default(DEFAULT_STUDIO_PROFILE.videoRetentionHours),
   /** Localized identity, keyed by the locales this Studio serves. */
   nameJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.nameJson),
@@ -61,6 +60,10 @@ export const studioNewsDigestSettings = sqliteTable("studio_news_digest_settings
   hour: integer().notNull().default(10),
   minute: integer().notNull().default(0),
   prompt: text().notNull().default(""),
+  /** How hard Grok thinks on every attempt. One value, not a ladder: a report
+   * that arrives at one effort and a stub at another is not a retry policy,
+   * it is two different jobs wearing one name. */
+  effort: text().notNull().default("xhigh"),
   updatedAt: text().notNull(),
 });
 
@@ -107,9 +110,12 @@ export const studioMediaAssets = sqliteTable(
   ],
 );
 
-export const botSettings = sqliteTable("bot_settings", {
-  actorId: integer().primaryKey(),
-  youtubeSignature: text().notNull().default(""),
+/** The signature appended to every YouTube description. One per Studio, like
+ * the channel it publishes to: held per administrator, it left videos owned by
+ * the other one going out to that same channel unsigned. */
+export const studioYoutubeSettings = sqliteTable("studio_youtube_settings", {
+  id: integer().primaryKey().default(1),
+  signature: text().notNull().default(""),
   updatedAt: text().notNull(),
 });
 

@@ -31,11 +31,9 @@ function readTimezone(backendDb: SettingsDependencies, actorId: number, fallback
   return timezone && isValidTimeZone(timezone) ? timezone : fallback;
 }
 
-function writeYoutubeSignature(backendDb: SettingsDependencies, actorId: number, value: string): void {
-  const signature = value === "-" ? "" : fixUrlSlashes(value);
-  backendDb.studioSettings.saveBotSettings({
-    actorId,
-    youtubeSignature: signature,
+function writeYoutubeSignature(backendDb: SettingsDependencies, value: string): void {
+  backendDb.studioSettings.saveYoutubeSettings({
+    signature: value === "-" ? "" : fixUrlSlashes(value),
     updatedAt: backendDb.clock.now().toISOString(),
   });
 }
@@ -51,9 +49,24 @@ function readBackup(backendDb: SettingsDependencies) {
   return { enabled: backendDb.studioSettings.backup()?.enabled !== 0 };
 }
 
+/** How hard Grok thinks. The CLI's own scale, narrowed to what this Studio has
+ * a reason to pick between. */
+export const NEWS_DIGEST_EFFORTS = ["low", "medium", "high", "xhigh"] as const;
+export type NewsDigestEffort = (typeof NEWS_DIGEST_EFFORTS)[number];
+
+function parseEffort(value: string | undefined): NewsDigestEffort {
+  return NEWS_DIGEST_EFFORTS.includes(value as NewsDigestEffort) ? (value as NewsDigestEffort) : "xhigh";
+}
+
 function readNewsDigest(backendDb: SettingsDependencies) {
   const row = backendDb.studioSettings.newsDigest();
-  return { enabled: row?.enabled === 1, hour: row?.hour ?? 10, minute: row?.minute ?? 0, prompt: row?.prompt?.trim() ?? "" };
+  return {
+    enabled: row?.enabled === 1,
+    hour: row?.hour ?? 10,
+    minute: row?.minute ?? 0,
+    prompt: row?.prompt?.trim() ?? "",
+    effort: parseEffort(row?.effort),
+  };
 }
 
 /** What this Studio is and how its deployment behaves, as an operator sees it. */
@@ -65,7 +78,6 @@ function readProfile(backendDb: SettingsDependencies) {
     siteEnabled: row.siteEnabled !== 0,
     video: {
       prepareLeadMinutes: row.videoPrepareLeadMinutes,
-      reminderMinutes: row.videoReminderMinutes,
       retentionHours: row.videoRetentionHours,
     },
     name: row.nameJson,
@@ -80,7 +92,6 @@ export type StudioProfileInput = {
   timezoneLabel?: string | undefined;
   siteEnabled?: boolean | undefined;
   prepareLeadMinutes?: number | undefined;
-  reminderMinutes?: number | undefined;
   retentionHours?: number | undefined;
   name?: LocalizedText | undefined;
   tagline?: LocalizedText | undefined;
@@ -102,11 +113,6 @@ export function settingsService(backendDb: SettingsDependencies) {
       )
         throw new StudioError("err.video-prepare-lead-range");
       if (
-        input.reminderMinutes != null &&
-        (!Number.isInteger(input.reminderMinutes) || input.reminderMinutes < 1 || input.reminderMinutes > 60)
-      )
-        throw new StudioError("err.reminder-range");
-      if (
         input.retentionHours != null &&
         (!Number.isInteger(input.retentionHours) || input.retentionHours < 24 || input.retentionHours > 720)
       )
@@ -116,7 +122,6 @@ export function settingsService(backendDb: SettingsDependencies) {
         ...(input.timezoneLabel != null ? { timezoneLabel: input.timezoneLabel.trim() } : {}),
         ...(input.siteEnabled != null ? { siteEnabled: Number(input.siteEnabled) } : {}),
         ...(input.prepareLeadMinutes != null ? { videoPrepareLeadMinutes: input.prepareLeadMinutes } : {}),
-        ...(input.reminderMinutes != null ? { videoReminderMinutes: input.reminderMinutes } : {}),
         ...(input.retentionHours != null ? { videoRetentionHours: input.retentionHours } : {}),
         ...(input.name != null ? { nameJson: input.name } : {}),
         ...(input.tagline != null ? { taglineJson: input.tagline } : {}),
@@ -171,24 +176,27 @@ export function settingsService(backendDb: SettingsDependencies) {
       });
       return next;
     },
-    setNewsDigest(input: Partial<{ enabled: boolean; hour: number; minute: number; prompt: string }>) {
+    setNewsDigest(input: Partial<{ enabled: boolean; hour: number; minute: number; prompt: string; effort: NewsDigestEffort }>) {
       if (input.hour != null && (!Number.isInteger(input.hour) || input.hour < 0 || input.hour > 23))
         throw new StudioError("err.news-digest-hour-range");
       if (input.minute != null && (!Number.isInteger(input.minute) || input.minute < 0 || input.minute > 59))
         throw new StudioError("err.news-digest-minute-range");
       if (input.prompt != null && input.prompt.trim().length > 10_000) throw new StudioError("err.news-digest-prompt-length");
+      if (input.effort != null && !NEWS_DIGEST_EFFORTS.includes(input.effort)) throw new StudioError("err.news-digest-effort-invalid");
       const current = readNewsDigest(backendDb);
       const next = {
         enabled: input.enabled ?? current.enabled,
         hour: input.hour ?? current.hour,
         minute: input.minute ?? current.minute,
         prompt: input.prompt == null ? current.prompt : input.prompt.trim(),
+        effort: input.effort ?? current.effort,
       };
       backendDb.studioSettings.saveNewsDigest({
         enabled: Number(next.enabled),
         hour: next.hour,
         minute: next.minute,
         prompt: next.prompt,
+        effort: next.effort,
         updatedAt: backendDb.clock.now().toISOString(),
       });
       return next;
@@ -228,14 +236,14 @@ export function settingsService(backendDb: SettingsDependencies) {
       if (current.postRemindersEnabled && !next.postRemindersEnabled) backendDb.studioSettings.cancelQueuedReminders(actorId, "post", now);
       return next;
     },
-    youtubeSignature(actorId: number): string {
-      return backendDb.studioSettings.botSettings(actorId)?.youtubeSignature.trim() ?? "";
+    youtubeSignature(): string {
+      return backendDb.studioSettings.youtubeSettings()?.signature.trim() ?? "";
     },
-    setYoutubeSignature(actorId: number, value: string): void {
-      writeYoutubeSignature(backendDb, actorId, value);
+    setYoutubeSignature(value: string): void {
+      writeYoutubeSignature(backendDb, value);
     },
-    clearYoutubeSignature(actorId: number): void {
-      writeYoutubeSignature(backendDb, actorId, "-");
+    clearYoutubeSignature(): void {
+      writeYoutubeSignature(backendDb, "-");
     },
     /** The platforms a new draft starts with, as a full on/off record. */
     defaultTargets(): Record<string, boolean> {

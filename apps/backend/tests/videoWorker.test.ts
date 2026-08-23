@@ -131,10 +131,7 @@ function dueDraft(backendDb: ReturnType<typeof testDb.open>, directory: string, 
     });
   }
   const at = new Date(Date.now() + 60 * 60_000);
-  scheduleVideo(backendDb, draftId, Object.fromEntries(targets.map((target) => [target, at])), {
-    prepareLeadMinutes: 15,
-    reminderMinutes: 5,
-  });
+  scheduleVideo(backendDb, draftId, Object.fromEntries(targets.map((target) => [target, at])), { prepareLeadMinutes: 15 });
   // Drizzle needs a predicate to update; the point here is only to make every
   // job of this draft due, so drive it through the raw handle.
   const past = new Date(Date.now() - 1_000).toISOString();

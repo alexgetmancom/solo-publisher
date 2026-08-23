@@ -15,7 +15,7 @@ function videoConfig() {
   return config;
 }
 
-const timing = { prepareLeadMinutes: 10, reminderMinutes: 15 };
+const timing = { prepareLeadMinutes: 10 };
 
 describe("video reschedule guard", () => {
   it("refuses to reschedule a platform that already published", () => {

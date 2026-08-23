@@ -60,10 +60,10 @@ describe("Studio service boundaries", () => {
       expect(settings.timeConfig(42, { TIMEZONE: "Europe/Moscow", TIMEZONE_LABEL: "MSK" })).toMatchObject({
         TIMEZONE: "America/New_York",
       });
-      settings.setYoutubeSignature(42, "https://example.com\\path");
-      expect(settings.youtubeSignature(42)).toBe("https://example.com/path");
-      settings.clearYoutubeSignature(42);
-      expect(settings.youtubeSignature(42)).toBe("");
+      settings.setYoutubeSignature("https://example.com\\path");
+      expect(settings.youtubeSignature()).toBe("https://example.com/path");
+      settings.clearYoutubeSignature();
+      expect(settings.youtubeSignature()).toBe("");
     } finally {
       backendDb.close();
     }

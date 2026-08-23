@@ -142,7 +142,17 @@ describe("buildSettingsMenu", () => {
     const config = loadTestConfig({});
 
     const labels = await settingsMenuLabels(config, backendDb, "settings-news-digest");
-    expect(labels).toEqual(["◻️ News digest", "🕒 Delivery time: 10:00", "✏️ Change prompt", "▶️ Send now", "← Notifications"]);
+    expect(labels).toEqual([
+      "◻️ News digest",
+      "🕒 Delivery time: 10:00",
+      "low",
+      "medium",
+      "high",
+      "● xhigh",
+      "✏️ Change prompt",
+      "▶️ Send now",
+      "← Notifications",
+    ]);
   });
 
   it("offers the manual analytics inputs no platform API provides", async () => {

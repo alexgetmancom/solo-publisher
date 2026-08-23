@@ -32,8 +32,8 @@ describe("application persistence ports", () => {
           notifications = input;
         },
         cancelQueuedReminders: () => 0,
-        botSettings: () => null,
-        saveBotSettings: () => {},
+        youtubeSettings: () => null,
+        saveYoutubeSettings: () => {},
         saveLocale: () => {},
         saveTimezone: (input) => {
           timezone = input;
@@ -51,13 +51,21 @@ describe("application persistence ports", () => {
     expect(settings.timezone(42, "Europe/Moscow")).toBe("America/New_York");
     expect(settings.setWeeklyDigest({ enabled: true, weekday: 2 })).toEqual({ enabled: true, weekday: 2 });
     expect(weeklyDigest).toEqual({ enabled: 1, weekday: 2, updatedAt: "2026-01-02T03:04:05.000Z" });
-    expect(settings.setNewsDigest({ enabled: true, hour: 8, minute: 30, prompt: "news" })).toEqual({
+    expect(settings.setNewsDigest({ enabled: true, hour: 8, minute: 30, prompt: "news", effort: "high" })).toEqual({
       enabled: true,
       hour: 8,
       minute: 30,
       prompt: "news",
+      effort: "high",
     });
-    expect(newsDigest).toEqual({ enabled: 1, hour: 8, minute: 30, prompt: "news", updatedAt: "2026-01-02T03:04:05.000Z" });
+    expect(newsDigest).toEqual({
+      enabled: 1,
+      hour: 8,
+      minute: 30,
+      prompt: "news",
+      effort: "high",
+      updatedAt: "2026-01-02T03:04:05.000Z",
+    });
     expect(settings.setNotifications(42, { videoRemindersEnabled: false, reminderMinutes: 15 })).toEqual({
       videoRemindersEnabled: false,
       postRemindersEnabled: true,

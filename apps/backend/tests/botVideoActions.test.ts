@@ -74,12 +74,7 @@ describe("video card controls", () => {
     backendDb = openVideoDb();
     const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
     replaceVideoTargets(backendDb, draftId, ["instagram_reels"]);
-    scheduleVideo(
-      backendDb,
-      draftId,
-      { instagram_reels: new Date(Date.now() + 3_600_000) },
-      { prepareLeadMinutes: 10, reminderMinutes: 15 },
-    );
+    scheduleVideo(backendDb, draftId, { instagram_reels: new Date(Date.now() + 3_600_000) }, { prepareLeadMinutes: 10 });
     let options: { reply_markup?: unknown } | undefined;
     const ctx = {
       callbackQuery: { data: publicationCallback("video", "edit_menu", [draftId]), message: { message_id: 10 } },

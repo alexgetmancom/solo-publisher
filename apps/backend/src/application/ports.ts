@@ -219,7 +219,7 @@ export type StudioSettingsStore = {
   backup(): StudioBackupSettingsRecord | null;
   saveBackup(input: { enabled: number; updatedAt: string }): void;
   newsDigest(): StudioNewsDigestSettingsRecord | null;
-  saveNewsDigest(input: { enabled: number; hour: number; minute: number; prompt: string; updatedAt: string }): void;
+  saveNewsDigest(input: { enabled: number; hour: number; minute: number; prompt: string; effort: string; updatedAt: string }): void;
   saveNotifications(input: {
     actorId: number;
     videoRemindersEnabled: number;
@@ -229,8 +229,8 @@ export type StudioSettingsStore = {
     updatedAt: string;
   }): void;
   cancelQueuedReminders(actorId: number, publicationKind: PublicationKind, now: string): number;
-  botSettings(actorId: number): StudioBotSettingsRecord | null;
-  saveBotSettings(input: { actorId: number; youtubeSignature: string; updatedAt: string }): void;
+  youtubeSettings(): StudioYoutubeSettingsRecord | null;
+  saveYoutubeSettings(input: { signature: string; updatedAt: string }): void;
   saveLocale(input: { actorId: number; locale: string; updatedAt: string }): void;
   saveTimezone(input: { actorId: number; timezone: string; updatedAt: string }): void;
 };
@@ -246,7 +246,6 @@ export type StudioProfileRecord = {
   timezoneLabel: string;
   siteEnabled: number;
   videoPrepareLeadMinutes: number;
-  videoReminderMinutes: number;
   videoRetentionHours: number;
   nameJson: LocalizedText;
   taglineJson: LocalizedText;
@@ -284,12 +283,13 @@ type StudioNewsDigestSettingsRecord = {
   hour: number;
   minute: number;
   prompt: string;
+  effort: string;
   updatedAt: string;
 };
 
-type StudioBotSettingsRecord = {
-  actorId: number;
-  youtubeSignature: string;
+type StudioYoutubeSettingsRecord = {
+  id: number;
+  signature: string;
   updatedAt: string;
 };
 

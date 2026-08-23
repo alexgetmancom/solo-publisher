@@ -14,7 +14,7 @@ export function healthReport(config: BackendConfig, backendDb: BackendDb) {
     .from(credentialChecks)
     .all()
     .filter((credential) => activeCapabilityTargets.has(credential.target));
-  const expectedWorkers = expectedWorkerNames();
+  const expectedWorkers = expectedWorkerNames(Boolean(config.controllerBotToken));
   const expectedWorkerSet = new Set(expectedWorkers);
   const workers = unsafeDb(backendDb)
     .db.select()

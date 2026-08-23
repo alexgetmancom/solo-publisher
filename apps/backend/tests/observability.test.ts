@@ -344,7 +344,7 @@ function insertExpectedWorkers(
   backendDb: ReturnType<typeof openBackendDb>,
   overrides: Record<string, Record<string, boolean | string>> = {},
 ): void {
-  for (const name of expectedWorkerNames()) insertWorker(backendDb, name, overrides[name] ?? { phase: "idle" });
+  for (const name of expectedWorkerNames(true)) insertWorker(backendDb, name, overrides[name] ?? { phase: "idle" });
 }
 
 function insertAlertEvent(backendDb: ReturnType<typeof openBackendDb>, severity: string, ackedAt: string | null): void {
@@ -509,7 +509,7 @@ describe("healthReport", () => {
       backendDb.db.delete(channelConnections).run();
       const report = healthReport(readyConfig(), backendDb);
       expect(report).toMatchObject({ ok: false, pendingAlerts: 0, credentials: [], workers: [] });
-      expect(report.missingWorkers).toEqual(expectedWorkerNames());
+      expect(report.missingWorkers).toEqual(expectedWorkerNames(true));
     } finally {
       backendDb.close();
     }

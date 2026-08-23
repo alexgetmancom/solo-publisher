@@ -281,7 +281,11 @@ const en = {
   "settings.news-digest-unavailable": "The Telegram bot is unavailable.",
   "settings.news-digest-document-caption": "📰 News digest",
   "settings.news-digest-body":
-    "📰 *News digest*\n\nStatus: *{status}*\nDelivery: *every day at {time} ({timezone})*\nPrompt: *{prompt}*\n\nGrok runs the saved prompt and sends its response as a Markdown file.",
+    "📰 *News digest*\n\nStatus: *{status}*\nDelivery: *every day at {time} ({timezone})*\nThinking: *{effort}*\nPrompt: *{prompt}*\n\nGrok runs the saved prompt and sends its response as a Markdown file. A run that fails arrives as a message instead, with what Grok answered.",
+  "settings.news-digest-effort-set": "Thinking: {effort}",
+  "settings.backup-failed-notice": "🗄 Today's database copy was not made.\n\n{error}",
+  "settings.news-digest-failed-notice":
+    "📰 The news digest did not come out today.\n\n{error}\n\nPress “Send now” on the news digest screen to try again.",
   "settings.timezone-body":
     "🕒 *Time zone*\n\nCurrent: `{timezone}`\n\nChoose the time zone used for scheduling, queue cards and publication notifications.",
   "settings.timezone-set": "Time zone: {timezone}",
@@ -573,6 +577,7 @@ const en = {
   "video.no-audio": "no audio",
   "video.fps-unknown": "FPS unknown",
   "err.reminder-range": "Reminder interval must be between 1 and 60 minutes.",
+  "err.news-digest-effort-invalid": "Thinking level must be low, medium, high or xhigh.",
   "err.video-prepare-lead-range": "Video prepare lead must be between 1 and 120 minutes.",
   "err.video-retention-range": "Prepared media retention must be between 24 and 720 hours.",
   "err.weekday-range": "Digest weekday must be between 0 and 6.",
@@ -1011,7 +1016,11 @@ const ru = {
   "settings.news-digest-unavailable": "Telegram-бот недоступен.",
   "settings.news-digest-document-caption": "📰 Новостной дайджест",
   "settings.news-digest-body":
-    "📰 *Новостной дайджест*\n\nСтатус: *{status}*\nОтправка: *каждый день в {time} ({timezone})*\nПромпт: *{prompt}*\n\nGrok запускается с сохранённым промптом и присылает ответ Markdown-файлом.",
+    "📰 *Новостной дайджест*\n\nСтатус: *{status}*\nОтправка: *каждый день в {time} ({timezone})*\nМышление: *{effort}*\nПромпт: *{prompt}*\n\nGrok запускается с сохранённым промптом и присылает ответ Markdown-файлом. Если прогон не удался, вместо файла приходит сообщение с тем, что ответил Grok.",
+  "settings.news-digest-effort-set": "Мышление: {effort}",
+  "settings.backup-failed-notice": "🗄 Сегодняшняя копия базы не сделана.\n\n{error}",
+  "settings.news-digest-failed-notice":
+    "📰 Новостной дайджест сегодня не вышел.\n\n{error}\n\nНажмите «Отправить сейчас» на экране дайджеста, чтобы попробовать снова.",
   "settings.timezone-body":
     "🕒 *Часовой пояс*\n\nТекущий: `{timezone}`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях.",
   "settings.timezone-set": "Часовой пояс: {timezone}",
@@ -1304,6 +1313,7 @@ const ru = {
   "video.no-audio": "без звука",
   "video.fps-unknown": "FPS неизвестен",
   "err.reminder-range": "Интервал напоминания должен быть от 1 до 60 минут.",
+  "err.news-digest-effort-invalid": "Уровень мышления: low, medium, high или xhigh.",
   "err.video-prepare-lead-range": "Подготовка видео должна начинаться за 1–120 минут до слота.",
   "err.video-retention-range": "Срок хранения подготовленного медиа должен быть от 24 до 720 часов.",
   "err.weekday-range": "День дайджеста должен быть числом от 0 до 6.",

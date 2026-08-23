@@ -4,6 +4,7 @@ import { refreshTelegramAnalyticsDashboards } from "../../bot/analytics-screen.j
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
+import { heartbeatLoop } from "../../foundation/runtime/worker-state.js";
 import { type ScheduledLoop, startLoop } from "../../foundation/scheduler.js";
 import { deliverPendingAlerts } from "../../observability/alerts.js";
 import { sendWeeklyAnalyticsSummary } from "./analytics-summary.js";
@@ -19,40 +20,41 @@ export function startTelegramWorkers(config: BackendConfig, backendDb: BackendDb
   if (!bot) return [];
   const interfacePollMs = config.IDLE_POLL_INTERVAL_SECONDS * 1000;
   const dailyPollMs = DAILY_INTERFACE_POLL_INTERVAL_SECONDS * 1000;
+  const startInterfaceLoop = heartbeatLoop(backendDb, startLoop);
   return [
-    startLoop("telegram-albums", 1000, async () => {
+    startInterfaceLoop("telegram-albums", 1000, async () => {
       const completed = await finalizePendingAlbums(bot, backendDb, config);
       if (completed) log("info", "album drafts finalized", { completed });
     }),
-    startLoop("telegram-events", interfacePollMs, async () => {
+    startInterfaceLoop("telegram-events", interfacePollMs, async () => {
       const events = await consumeTelegramEvents(backendDb, bot, config);
       if (events) log("debug", "telegram event loop tick", { events });
     }),
-    startLoop("telegram-alerts", interfacePollMs, async () => {
+    startInterfaceLoop("telegram-alerts", interfacePollMs, async () => {
       const actorId = config.CONTROLLER_ADMIN_IDS[0];
       const alerts = await deliverPendingAlerts(backendDb, {
         ...(actorId === undefined ? {} : { sendAlert: async (text) => void (await bot.api.sendMessage(actorId, text)) }),
       });
       if (alerts) log("debug", "telegram alert loop tick", { alerts });
     }),
-    startLoop("telegram-weekly-summary", dailyPollMs, async () => {
+    startInterfaceLoop("telegram-weekly-summary", dailyPollMs, async () => {
       const weeklySummary = await sendWeeklyAnalyticsSummary(config, backendDb, bot);
       if (weeklySummary) log("debug", "telegram weekly summary delivered");
     }),
-    startLoop("telegram-daily-backup", dailyPollMs, async () => {
+    startInterfaceLoop("telegram-daily-backup", dailyPollMs, async () => {
       const backup = await sendDailyBackup(config, backendDb, bot);
       if (backup !== "not_due" && backup !== "disabled") log("debug", "telegram daily backup tick", { status: backup });
     }),
-    startLoop("telegram-editorial-inbox", dailyPollMs, async () => {
+    startInterfaceLoop("telegram-editorial-inbox", dailyPollMs, async () => {
       const editorialInbox = await sendDailyEditorialInbox(config, backendDb, bot);
       if (editorialInbox) log("debug", "telegram editorial inbox delivered");
     }),
-    startLoop("telegram-news-digest", dailyPollMs, async () => {
+    startInterfaceLoop("telegram-news-digest", dailyPollMs, async () => {
       const newsDigest = await sendDailyNewsDigest(config, backendDb, bot);
       if (newsDigest.status !== "not_due" && newsDigest.status !== "disabled")
         log("debug", "telegram news digest loop tick", { status: newsDigest.status });
     }),
-    startLoop("telegram-analytics-dashboard", 60 * 60 * 1000, async () => {
+    startInterfaceLoop("telegram-analytics-dashboard", 60 * 60 * 1000, async () => {
       const refreshed = await refreshTelegramAnalyticsDashboards(bot, backendDb, config);
       if (refreshed) log("debug", "analytics dashboards refreshed", { refreshed });
     }),

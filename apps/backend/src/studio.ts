@@ -13,7 +13,6 @@ export const DEFAULT_STUDIO_PROFILE = {
   timezoneLabel: "UTC",
   siteEnabled: 0,
   videoPrepareLeadMinutes: 15,
-  videoReminderMinutes: 5,
   videoRetentionHours: 24,
   nameJson: { en: "", ru: "" },
   taglineJson: { en: "", ru: "" },
@@ -32,7 +31,7 @@ export type StudioConfig = {
   siteEnabled: boolean;
   /** What this Studio says it is, resolved per language. */
   site: (locale: "en" | "ru") => { name: string; tagline: string; about: string; profiles: StudioSocialProfile[] };
-  video: { prepare_lead_minutes: number; reminder_minutes: number; retention_hours: number };
+  video: { prepare_lead_minutes: number; retention_hours: number };
 };
 
 /**
@@ -67,7 +66,6 @@ export function studioConfig(ports: Pick<ApplicationPorts, "studioSettings">): S
       const row = read();
       return {
         prepare_lead_minutes: row.videoPrepareLeadMinutes,
-        reminder_minutes: row.videoReminderMinutes,
         retention_hours: row.videoRetentionHours,
       };
     },

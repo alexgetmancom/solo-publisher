@@ -6,7 +6,7 @@ import { describeError, t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { sendDailyNewsDigest } from "../../interfaces/telegram/news-digest.js";
 import { createStudioServices } from "../../studio/services/index.js";
-import { settingsService } from "../../studio/services/settings.js";
+import { NEWS_DIGEST_EFFORTS, settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
 import {
   BACKUP_MENU_ID,
@@ -139,7 +139,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         t(locale, "settings.back-to-news-digest"),
         settingsUpdate({
           apply: () => clearConversationState(backendDb, actorId, "settings"),
-          body: () => newsDigestText(backendDb, config, actorId, locale),
+          body: () => newsDigestText(backendDb, config, locale),
         }),
       );
   });
@@ -153,7 +153,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         `${settings.enabled ? "✅" : "◻️"} ${t(locale, "settings.news-digest-enabled")}`,
         settingsUpdate({
           apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ enabled: !settings.enabled }),
-          body: () => newsDigestText(backendDb, config, actorId, locale),
+          body: () => newsDigestText(backendDb, config, locale),
         }),
       )
       .row()
@@ -162,6 +162,17 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         NEWS_DIGEST_TIME_MENU_ID,
         settingsScreen(() => newsDigestTimeText(backendDb, config, actorId, locale)),
       )
+      .row();
+    for (const effort of NEWS_DIGEST_EFFORTS)
+      range.text(
+        `${settings.effort === effort ? "● " : ""}${effort}`,
+        settingsUpdate({
+          apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ effort }),
+          body: () => newsDigestText(backendDb, config, locale),
+          toast: t(locale, "settings.news-digest-effort-set", { effort }),
+        }),
+      );
+    range
       .row()
       .text(t(locale, "settings.news-digest-prompt-edit"), async (ctx) => {
         beginSettingsInput(backendDb, actorId, "news_digest_prompt");
@@ -210,7 +221,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       .submenu(
         t(locale, "settings.news-digest"),
         NEWS_DIGEST_MENU_ID,
-        settingsScreen(() => newsDigestText(backendDb, config, actorId, locale)),
+        settingsScreen(() => newsDigestText(backendDb, config, locale)),
       )
       .row()
       .submenu(
@@ -241,7 +252,7 @@ export async function collectNewsDigestPrompt(
   try {
     createStudioServices(backendDb, config).settings.setNewsDigest({ prompt: text === "-" ? "" : text });
     await ctx.reply(t(locale, "settings.news-digest-prompt-saved"));
-    await ctx.reply(newsDigestText(backendDb, config, actorId, locale), {
+    await ctx.reply(newsDigestText(backendDb, config, locale), {
       parse_mode: "Markdown",
       reply_markup: settingsMenu.at(NEWS_DIGEST_MENU_ID),
     });
@@ -301,15 +312,17 @@ function backupText(backendDb: BackendDb, config: BackendConfig, locale: StudioL
   });
 }
 
-function newsDigestText(backendDb: BackendDb, config: BackendConfig, actorId: number, locale: StudioLocale): string {
+function newsDigestText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
   const services = createStudioServices(backendDb, config);
   const settings = services.settings.newsDigest();
   return t(locale, "settings.news-digest-body", {
     status: settings.enabled ? t(locale, "settings.on") : t(locale, "settings.off"),
     time: formatTime(settings.hour, settings.minute),
-    // The digest fires in the Studio's own zone, which is the one this operator
-    // set: printing the deployment default here made the two disagree on screen.
-    timezone: services.settings.timeConfig(actorId, config).TIMEZONE_LABEL,
+    // The Studio's zone, because that is the one the digest fires in. Printing
+    // this operator's personal zone made the screen promise a different hour
+    // than the schedule keeps.
+    timezone: config.TIMEZONE_LABEL,
+    effort: settings.effort,
     prompt: settings.prompt ? t(locale, "settings.news-digest-prompt-set") : t(locale, "settings.news-digest-prompt-missing"),
   });
 }

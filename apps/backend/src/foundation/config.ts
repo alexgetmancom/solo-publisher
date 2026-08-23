@@ -113,7 +113,7 @@ const envSchema = z
     MEDIA_PROCESSOR_TIMEOUT_SECONDS: z.coerce.number().int().min(10).max(3600).default(900),
     STORY_CARD_ASSETS_DIR: z.string().default("/app/apps/backend/assets/story-card"),
     STORY_CARD_RENDERER_ENTRY: z.string().default("/app/story-renderer/renderer-process.js"),
-    // VIDEO_PREPARE_LEAD_MINUTES / VIDEO_REMINDER_MINUTES / VIDEO_MEDIA_RETENTION_HOURS
+    // VIDEO_PREPARE_LEAD_MINUTES / VIDEO_MEDIA_RETENTION_HOURS
     // are owned by the studio_profile row (see withStudioProfile); they are not
     // env-configurable.
     THREADS_RU_ACCESS_TOKEN: z.string().optional(),
@@ -259,7 +259,6 @@ export type BackendConfig = EnvConfig & {
   ZERNIO_API_KEY?: string;
   DISCORD_BOT_TOKEN?: string;
   VIDEO_PREPARE_LEAD_MINUTES: number;
-  VIDEO_REMINDER_MINUTES: number;
   VIDEO_MEDIA_RETENTION_HOURS: number;
   TIMEZONE: string;
   TIMEZONE_LABEL: string;
@@ -279,7 +278,6 @@ export function withStudioProfile(env: EnvConfig, ports: Pick<ApplicationPorts, 
     TIMEZONE: { get: () => studio.timezone, enumerable: true },
     TIMEZONE_LABEL: { get: () => studio.timezoneLabel, enumerable: true },
     VIDEO_PREPARE_LEAD_MINUTES: { get: () => studio.video.prepare_lead_minutes, enumerable: true },
-    VIDEO_REMINDER_MINUTES: { get: () => studio.video.reminder_minutes, enumerable: true },
     VIDEO_MEDIA_RETENTION_HOURS: { get: () => studio.video.retention_hours, enumerable: true },
   });
 }

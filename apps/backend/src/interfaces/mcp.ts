@@ -179,17 +179,18 @@ const studioToolDefs = {
     },
   }),
   studio_youtube_signature: tool({
-    description: "Read the authenticated owner's YouTube description signature.",
+    description: "Read this Studio's YouTube description signature.",
     schema: z.object({}),
-    handler: (studio, actorId) => ({ signature: studio.settings.youtubeSignature(actorId) }),
+    handler: (studio) => ({ signature: studio.settings.youtubeSignature() }),
   }),
   studio_youtube_signature_update: tool({
-    description: "Set or clear the authenticated owner's YouTube description signature.",
+    description:
+      "Set or clear this Studio's YouTube description signature. It reaches every video on the Studio's channel, whoever authored it.",
     schema: z.object({ signature: z.string().max(500) }),
     mutates: true,
-    handler: (studio, actorId, input) => {
-      studio.settings.setYoutubeSignature(actorId, input.signature);
-      return { signature: studio.settings.youtubeSignature(actorId), updated: true };
+    handler: (studio, _actorId, input) => {
+      studio.settings.setYoutubeSignature(input.signature);
+      return { signature: studio.settings.youtubeSignature(), updated: true };
     },
   }),
   studio_notification_settings_update: tool({
@@ -636,7 +637,7 @@ export async function mcpResponse(
       result: {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: "alexgetman-studio-mcp", version: "2.1.0" },
+        serverInfo: { name: "solo-publisher-studio-mcp", version: "2.1.0" },
       },
     };
   if (request.method === "tools/list")

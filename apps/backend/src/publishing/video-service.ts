@@ -219,7 +219,7 @@ export function scheduleVideo(
   backendDb: BackendDb,
   videoDraftId: number,
   schedule: Partial<Record<VideoTarget, Date>>,
-  timing: { prepareLeadMinutes: number; reminderMinutes: number },
+  timing: { prepareLeadMinutes: number },
   durationSeconds?: number,
 ): void {
   const now = new Date();
