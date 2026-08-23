@@ -407,6 +407,24 @@ describe("TypeScript operations tooling", () => {
     }
   });
 
+  it("counts journal events over a window, not over the whole year it keeps", () => {
+    const backendDb = openBackendDb(":memory:");
+    try {
+      const now = new Date("2026-08-23T00:00:00.000Z");
+      const recent = new Date(now.getTime() - 3 * 24 * 3600_000).toISOString();
+      const old = new Date(now.getTime() - 60 * 24 * 3600_000).toISOString();
+      backendDb.sqlite
+        .query("INSERT INTO publication_events(publication_key,event_type,severity,message,created_at) VALUES (?,?,?,?,?), (?,?,?,?,?)")
+        .run("post:1", "target.failed", "error", "old failure", old, "post:2", "target.failed", "error", "recent failure", recent);
+
+      const audit = auditOperations(backendDb, now);
+      expect(audit.postEventsByType).toEqual([{ severity: "error", eventType: "target.failed", count: 1, latest: recent }]);
+      expect(audit.eventsSince).toBe(new Date(now.getTime() - 30 * 24 * 3600_000).toISOString());
+    } finally {
+      backendDb.close();
+    }
+  });
+
   it("does not call an X post attached from analytics a mismatch", () => {
     // The post is on X; it just did not get there through this queue. Its old
     // job was cancelled, and reading that as the truth about the target is how

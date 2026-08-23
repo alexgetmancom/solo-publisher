@@ -51,6 +51,8 @@ type OperationalRetentionResult = {
 };
 
 const RETENTION_BATCH_SIZE = 2_000;
+/** How far back `audit` counts journal events. */
+const AUDIT_EVENT_WINDOW_DAYS = 30;
 const POST_EVENTS_RETENTION_DAYS = 365;
 const OPS_ACTIONS_RETENTION_DAYS = 365;
 const SITE_PAGEVIEWS_RETENTION_DAYS = 730;
@@ -148,8 +150,15 @@ export function applyMetricsBackfill(
   return rows.length;
 }
 
-export function auditOperations(backendDb: BackendDb): Record<string, unknown> {
+export function auditOperations(backendDb: BackendDb, now = new Date()): Record<string, unknown> {
+  // The journal keeps a year, and counting all of it made this report read as
+  // an archaeology dig: 831 delivery failures, the newest of them five weeks
+  // old, next to a pipeline with nothing wrong. The window is what an audit is
+  // asking about; the history is still there, and `timeline` reads it per
+  // publication.
+  const eventsSince = new Date(now.getTime() - AUDIT_EVENT_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
   return {
+    eventsSince,
     postEventsByType: unsafeDb(backendDb)
       .db.select({
         severity: publicationEvents.severity,
@@ -158,6 +167,7 @@ export function auditOperations(backendDb: BackendDb): Record<string, unknown> {
         latest: sql<string | null>`max(${publicationEvents.createdAt})`,
       })
       .from(publicationEvents)
+      .where(gte(publicationEvents.createdAt, eventsSince))
       .groupBy(publicationEvents.severity, publicationEvents.eventType)
       .orderBy(publicationEvents.severity, publicationEvents.eventType)
       .all(),

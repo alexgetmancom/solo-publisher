@@ -244,6 +244,7 @@ const operationDefs = {
   }),
   audit: operation({
     summary: "Failed jobs, stuck targets and publication inconsistencies across both pipelines.",
+    note: "event counts cover the last 30 days, reported as `eventsSince`; consistency and delivery state are current, not windowed",
     schema: z.object({}),
     mutates: false,
     agent: true,
