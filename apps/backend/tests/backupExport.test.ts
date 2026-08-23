@@ -7,11 +7,16 @@ import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 /** Collects an export the way the backup host's `ssh … > file` does. */
-function collector(): ByteSink & { bytes: () => Uint8Array; ended: () => boolean } {
+function collector(): ByteSink & { bytes: () => Uint8Array; ended: () => boolean; flushes: () => number } {
   const chunks: Uint8Array[] = [];
   let ended = false;
+  let flushes = 0;
   return {
     write: (chunk: Uint8Array) => chunks.push(new Uint8Array(chunk)),
+    flush: () => {
+      flushes += 1;
+    },
+    flushes: () => flushes,
     end: () => {
       ended = true;
     },
@@ -50,6 +55,10 @@ describe("backup export", () => {
         const bytes = await streamMediaArchive(config, backendDb, sink);
         expect(bytes).toBeGreaterThan(0);
         expect(sink.ended()).toBe(true);
+        // Written bytes have to reach the reader as the archive is produced. A
+        // sink that only queues them holds the whole archive in memory, and a
+        // gigabyte of media does not fit in this container.
+        expect(sink.flushes()).toBeGreaterThan(0);
 
         const archive = path.join(root, "media.tar.gz");
         fs.writeFileSync(archive, sink.bytes());

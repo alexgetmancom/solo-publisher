@@ -15,8 +15,17 @@ export type ExportKind = "media" | "db";
 
 /** Where an export's bytes go. Bun's stdout writer satisfies it; a test passes
  * a collector. Deliberately not a WritableStream: stdout is a FileSink here,
- * and adapting it per call buys nothing. */
-export type ByteSink = { write(chunk: Uint8Array): unknown; end(): unknown };
+ * and adapting it per call buys nothing.
+ *
+ * `flush` is not optional. A FileSink's `write` only queues, so an export whose
+ * reader is a 2 MB/s SSH pipe buffers the whole archive in memory: a gigabyte of
+ * media took the container's 384 MB limit and the OOM killer ended the export
+ * 47 MB in, which the puller stored as a complete backup. */
+export type ByteSink = { write(chunk: Uint8Array): unknown; flush(): unknown; end(): unknown };
+
+/** Big enough that flushing is not a syscall per kilobyte, small enough that a
+ * slow reader cannot park much in memory. */
+const FLUSH_BYTES = 4 * 1024 * 1024;
 
 /** Nothing is written to this host. Each export is a stream a backup host pulls
  * over SSH and stores where this deployment cannot reach it: a Studio that held
@@ -71,10 +80,17 @@ export async function streamMediaArchive(config: EnvConfig, backendDb: BackendDb
     throw new Error("every media directory must live under DATA_DIR for the archive to restore onto a fresh volume");
   const child = Bun.spawn(["tar", "-czf", "-", "-C", config.DATA_DIR, ...relative], { stdout: "pipe", stderr: "pipe" });
   let bytes = 0;
+  let queued = 0;
   for await (const chunk of child.stdout as ReadableStream<Uint8Array>) {
     bytes += chunk.byteLength;
+    queued += chunk.byteLength;
     await sink.write(chunk);
+    if (queued >= FLUSH_BYTES) {
+      await sink.flush();
+      queued = 0;
+    }
   }
+  await sink.flush();
   const [exitCode, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
   // Recorded and ended only on a clean exit: a truncated archive that counted
   // as a backup is worse than none, because `doctor` would then stay green.
@@ -89,7 +105,10 @@ export async function streamMediaArchive(config: EnvConfig, backendDb: BackendDb
  * mid-export cannot tear it. */
 export async function streamDatabase(backendDb: BackendDb, sink: ByteSink): Promise<number> {
   const snapshot = unsafeDb(backendDb).sqlite.serialize();
-  await sink.write(snapshot);
+  for (let offset = 0; offset < snapshot.byteLength; offset += FLUSH_BYTES) {
+    await sink.write(snapshot.subarray(offset, offset + FLUSH_BYTES));
+    await sink.flush();
+  }
   await sink.end();
   recordExport(backendDb, "db", snapshot.byteLength);
   return snapshot.byteLength;
