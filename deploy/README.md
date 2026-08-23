@@ -132,6 +132,31 @@ skill that drives it. That setup is driven by an agent rather than by hand:
 [../plugin/setup-prompt.md](../plugin/setup-prompt.md) is the prompt, and
 [../plugin/README.md](../plugin/README.md) describes the plugin itself.
 
+## Backups, which this host does not keep
+
+Nothing on this machine holds a backup, and nothing here holds a key to the
+machine that does. VM-106 dials in nightly with a key pinned to
+`/home/deploy/bin/alexgetman-backup-export`, a forced command that accepts
+`backup-export <what> <studio>` and can do nothing else — no shell, no path of
+the caller's choosing, no write anywhere. Whoever takes this host cannot reach,
+rewrite or delete what is stored at home.
+
+Four streams per Studio. `media` and `db` come from the Studio's own operations
+CLI, so what they contain follows the code that writes those trees; two hand-kept
+file lists that stopped matching the deployment are what silently broke media
+backups for eight days in August 2026. `runtime-config` and `deploy-state` are
+tars of this host's own files, which no Studio knows about.
+
+The puller stages each stream, verifies it — `gzip -t` on the archive, the SQLite
+header on the database, `tar -tf` on the rest — and only then writes it to its
+restic repository. A stream piped straight in stored whatever arrived, and an
+empty snapshot looks exactly like a backup in every listing.
+
+Each Studio records its own successful exports, and `ops doctor` fails a
+deployment whose media has not been pulled for a week. That check is for
+*absence*: a puller that errors can report it, a backup machine that is switched
+off cannot.
+
 ## Optional remote worker targets
 
 Remote workers run the same deploy-agent protocol with a different `service` and
