@@ -33,7 +33,6 @@ if (!image) {
 
 const container = `image-smoke-${process.pid}`;
 const volume = `image-smoke-${process.pid}`;
-const backupVolume = `image-smoke-backup-${process.pid}`;
 const port = 18000 + (process.pid % 20000);
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "image-smoke-"));
 const dataDir = path.join(root, "data");
@@ -64,7 +63,6 @@ async function run(command: string[]): Promise<{ code: number; out: string }> {
 async function cleanup(): Promise<void> {
   await run(["docker", "rm", "-f", container]);
   await run(["docker", "volume", "rm", "-f", volume]);
-  await run(["docker", "volume", "rm", "-f", backupVolume]);
   fs.rmSync(root, { recursive: true, force: true });
 }
 
@@ -108,8 +106,6 @@ try {
     `127.0.0.1:${port}:8788`,
     "-v",
     `${volume}:/data`,
-    "-v",
-    `${backupVolume}:/backups`,
     "-e",
     "DATA_DIR=/data",
     "-e",
@@ -146,11 +142,9 @@ try {
     "sh",
     "-v",
     `${volume}:/data`,
-    "-v",
-    `${backupVolume}:/backups`,
     image,
     "-c",
-    "chown -R 1000:1000 /data /backups && printf smoke > /backups/media-smoke.tar.gz && chown 1000:1000 /backups/media-smoke.tar.gz",
+    "chown -R 1000:1000 /data",
   ]);
   if (owned.code !== 0) throw new Error(`smoke volume preparation failed: ${owned.out}`);
 
@@ -220,6 +214,24 @@ try {
 
   // In parallel: each of these spawns a fresh bun in the container, and this
   // step sits on the critical path between the image build and the deploy.
+  // `doctor` fails a Studio whose media has never been pulled off it, so the
+  // export runs first — which is also the only place the streaming path is
+  // exercised inside the real image, tar and all.
+  // Counted in the container: the stream is gzip, and decoding it as text here
+  // to measure it would mangle the very bytes being checked.
+  const exported = await run([
+    "docker",
+    "exec",
+    "-u",
+    "bun",
+    container,
+    "sh",
+    "-c",
+    "bun /app/ops/cli.js backup-stream --what media | wc -c",
+  ]);
+  const exportedBytes = Number(exported.out.trim());
+  check(exported.code === 0 && exportedBytes > 0, "ops backup-stream --what media", `exit ${exported.code}, ${exported.out.trim()} bytes`);
+
   const opsCommands = ["doctor", "status", "audit", "format-support"];
   const opsResults = await Promise.all(
     opsCommands.map((command) => run(["docker", "exec", "-u", "bun", container, "bun", "/app/ops/cli.js", command])),
