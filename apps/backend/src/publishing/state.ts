@@ -81,25 +81,41 @@ export function publicationStatus(jobStatuses: string[]): "published" | "failed"
  * audit reported every such post as a permanent mismatch, and `repair --apply`
  * closed it as published. The next settling job put it back, and when no further
  * job ever settled -- the usual case, since the pending locale has no job yet --
- * the wrong status simply stood. One function now, for both. */
+ * the wrong status simply stood. One function now, for both.
+ *
+ * "Enabled" here means enabled, connected, and not yet queued: a target that
+ * already has a job is out of the operator's hands. */
 export function effectivePublicationStatus(
-  jobStatuses: string[],
+  jobs: Array<{ target: string; status: string }>,
   plan: Record<string, unknown> | null,
   registeredTargets: Set<string>,
 ): "published" | "failed" | "scheduled" | "cancelled" | null {
-  const status = publicationStatus(jobStatuses);
+  const status = publicationStatus(jobs.map((job) => job.status));
   if (!status) return null;
-  return status === "published" && hasPendingLocaleSchedule(plan, registeredTargets) ? "scheduled" : status;
+  const queued = new Set(jobs.map((job) => job.target));
+  return status === "published" && hasPendingLocaleSchedule(plan, registeredTargets, queued) ? "scheduled" : status;
 }
 
 /** A target the Studio no longer publishes to cannot hold a publication open.
  * The queue screen has always read the plan through the channel registry and
  * this rule read the raw plan, so a plan naming a disconnected target showed as
  * finished in the interface and stayed `scheduled` in the data. */
-function hasPendingLocaleSchedule(plan: Record<string, unknown> | null, registeredTargets: Set<string>): boolean {
+function hasPendingLocaleSchedule(
+  plan: Record<string, unknown> | null,
+  registeredTargets: Set<string>,
+  queuedTargets: Set<string>,
+): boolean {
   if (plan?.mode !== "scheduled") return false;
   const targets = Object.fromEntries(
-    Object.entries(planObject(plan.targets)).map(([target, enabled]) => [target, Boolean(enabled) && registeredTargets.has(target)]),
+    Object.entries(planObject(plan.targets)).map(([target, enabled]) => [
+      target,
+      // A target that already has a delivery job is not waiting on a date: the
+      // operator said when it goes out by queueing it, whatever the plan's
+      // locale field still holds. Without this a publication delivered to every
+      // enabled target stayed `scheduled` for good, and the audit reported it
+      // as a mismatch that nothing could ever settle.
+      Boolean(enabled) && registeredTargets.has(target) && !queuedTargets.has(target),
+    ]),
   );
   return hasUnscheduledLocale(targets, planScheduleAt(plan, "ru"), planScheduleAt(plan, "en"));
 }

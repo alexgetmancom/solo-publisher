@@ -1,15 +1,9 @@
 import { describe, expect, it } from "bun:test";
+import type { ExportStatus } from "../src/operations/backup-export.js";
 import { doctorChecks } from "../src/operations/doctor.js";
-import type { MediaBackupStatus } from "../src/operations/media-backup.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
-const backedUp: MediaBackupStatus = {
-  directory: "/backups",
-  onDataVolume: false,
-  latest: { path: "/backups/media-20260820T000000Z.tar.gz", createdAt: "2026-08-20T00:00:00.000Z", bytes: 1 },
-  ageDays: 1,
-  ok: true,
-};
+const backedUp: ExportStatus = { kind: "media", at: "2026-08-20T00:00:00.000Z", bytes: 1, ageDays: 1, ok: true };
 
 describe("doctor checks", () => {
   it("reports optional authoring interfaces without failing a site-only Studio", () => {
@@ -28,14 +22,14 @@ describe("doctor checks", () => {
     expect(result.checks.commandCenterTokenConfigured).toBe(true);
   });
 
-  it("fails a deployment whose media has no off-volume backup", () => {
+  it("fails a deployment whose media has not left the host", () => {
     const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "command-center" });
     const directories = [{ name: "DATA_DIR", path: "/data", writable: true }];
-    const missing = doctorChecks(config, directories, { ...backedUp, latest: null, ageDays: null, ok: false });
-    expect(missing.requiredChecks.mediaBackedUp).toBe(false);
+    const never = doctorChecks(config, directories, { ...backedUp, at: null, bytes: null, ageDays: null, ok: false });
+    expect(never.requiredChecks.mediaBackedUp).toBe(false);
 
-    // A copy on the volume it is meant to survive is not a backup.
-    const onVolume = doctorChecks(config, directories, { ...backedUp, onDataVolume: true, ok: false });
-    expect(onVolume.requiredChecks.mediaBackedUp).toBe(false);
+    // An export the backup host stopped repeating is no better than none.
+    const stale = doctorChecks(config, directories, { ...backedUp, ageDays: 9, ok: false });
+    expect(stale.requiredChecks.mediaBackedUp).toBe(false);
   });
 });

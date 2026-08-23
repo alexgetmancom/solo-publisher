@@ -57,10 +57,6 @@ const envSchema = z
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     PORT: z.coerce.number().int().positive().default(8788),
     BIND_HOST: z.string().default("127.0.0.1"),
-    /** Where `backup` and `backup-media` write. Deliberately its own setting
-     * and not derived: a backup under DATA_DIR is lost with the volume it
-     * exists to survive, and `doctor` fails a deployment that points it there. */
-    BACKUP_DIR: z.string().default("/backups"),
     /** The one mounted volume. Every pipeline path below is derived from it,
      * because five separately settable paths meant five ways to point one of
      * them off the volume — a database or a media tree written to the

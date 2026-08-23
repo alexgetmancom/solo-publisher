@@ -11,17 +11,19 @@ afterEach(() => {
   fixtureDir = null;
 });
 
-async function runDoctor(overrides: (fixture: string) => Record<string, string> = () => ({})) {
+function fixture(): { dir: string; dataDir: string } {
+  if (fixtureDir) return { dir: fixtureDir, dataDir: path.join(fixtureDir, "data") };
   fixtureDir = mkdtempSync(path.join(tmpdir(), "solo-publisher-doctor-"));
   const dataDir = path.join(fixtureDir, "data");
-  // The backup directory sits beside the data volume, never inside it — the
-  // deployment shape doctor is asserting about.
-  const backupDir = path.join(fixtureDir, "backups");
-  mkdirSync(dataDir);
-  mkdirSync(backupDir);
-  writeFileSync(path.join(backupDir, "media-20260820T000000Z.tar.gz"), "archive");
+  mkdirSync(path.join(dataDir, "video-media"), { recursive: true });
+  writeFileSync(path.join(dataDir, "video-media", "clip.mp4"), "video bytes");
+  return { dir: fixtureDir, dataDir };
+}
+
+async function runCli(argv: string[], overrides: (fixture: string) => Record<string, string> = () => ({})) {
+  const { dir, dataDir } = fixture();
   const child = Bun.spawn(
-    ["bun", fileURLToPath(new URL("../src/cli.ts", import.meta.url)), "doctor", "--db", path.join(fixtureDir, "pipeline.db")],
+    ["bun", fileURLToPath(new URL("../src/cli.ts", import.meta.url)), ...argv, "--db", path.join(dir, "pipeline.db")],
     {
       env: {
         ...process.env,
@@ -29,8 +31,7 @@ async function runDoctor(overrides: (fixture: string) => Record<string, string> 
         DEPLOYMENT_ENV: "development",
         COMMAND_CENTER_TOKEN: "command-center",
         DATA_DIR: dataDir,
-        BACKUP_DIR: backupDir,
-        ...overrides(fixtureDir),
+        ...overrides(dir),
       },
       stdout: "pipe",
       stderr: "pipe",
@@ -38,30 +39,34 @@ async function runDoctor(overrides: (fixture: string) => Record<string, string> 
   );
   const [exitCode, stdout, stderr] = await Promise.all([
     child.exited,
-    new Response(child.stdout).text(),
+    new Response(child.stdout).bytes(),
     new Response(child.stderr).text(),
   ]);
-  return { exitCode, stdout, stderr };
+  return { exitCode, stdout: new TextDecoder().decode(stdout), bytes: stdout, stderr };
 }
 
 describe("doctor CLI", () => {
-  it("succeeds for a healthy Studio with no optional authoring interface", async () => {
-    const result = await runDoctor();
+  it("succeeds once the backup host has pulled this Studio's media", async () => {
+    const exported = await runCli(["backup-stream", "--what", "media"]);
+    expect(exported.exitCode).toBe(0);
+    // Bytes, and only bytes: a JSON summary printed after the archive would
+    // corrupt whatever the backup host wrote it into.
+    expect(exported.bytes.slice(0, 2)).toEqual(new Uint8Array([0x1f, 0x8b]));
+
+    const result = await runCli(["doctor"]);
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain('"ok": true');
   });
 
-  it("fails a deployment whose media backup lives on the data volume", async () => {
-    // A copy inside DATA_DIR is lost with the volume it is meant to survive.
-    const result = await runDoctor((fixture) => ({ BACKUP_DIR: path.join(fixture, "data", "backups") }));
+  it("fails a deployment whose media has never been pulled off it", async () => {
+    const result = await runCli(["doctor"]);
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('"mediaBackedUp": false');
-    expect(result.stdout).toContain('"onDataVolume": true');
   });
 
   it("exits nonzero when its report is not ok", async () => {
-    const result = await runDoctor(() => ({ CONTROLLER_BOT_TOKEN: "half-configured" }));
+    const result = await runCli(["doctor"], () => ({ CONTROLLER_BOT_TOKEN: "half-configured" }));
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('"ok": false');
     expect(result.stdout).toContain("CONTROLLER_ADMIN_IDS");

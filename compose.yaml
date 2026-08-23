@@ -56,7 +56,6 @@ services:
       DATA_DIR: /data
       # Never under DATA_DIR: a backup on the volume it exists to survive is
       # not a backup, and `doctor` fails an install that puts it there.
-      BACKUP_DIR: /backups
       PUBLIC_MEDIA_BASE_URL: https://${DOMAIN:?set DOMAIN to the hostname this Studio answers on}/media/staging
       PUBLIC_BASE_URL: https://${DOMAIN:?set DOMAIN to the hostname this Studio answers on}
       NODE_ENV: production
@@ -75,7 +74,6 @@ services:
       # disk. Point this at off-host storage; `backup-media` writes here and
       # `doctor` fails until it has, because the database backup Telegram sends
       # every day does not carry media.
-      - ${BACKUP_DIR_HOST:-./backups}:/backups
     # No published ports: the application is reachable only through Caddy.
     expose:
       - "8788"

@@ -19,6 +19,7 @@ import {
 import { diagnoseMediaProcessor, mediaProcessorStatus, reprocessPostMedia } from "../src/operations/media-processor.js";
 import { compactOperationsStatus } from "../src/operations/status.js";
 import { publicationTimeline } from "../src/operations/timeline.js";
+import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -402,6 +403,54 @@ describe("TypeScript operations tooling", () => {
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_jobs").get()).toEqual({ count: 0 });
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_metric_schedule").get()).toEqual({ count: 0 });
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_metric_snapshots").get()).toEqual({ count: 0 });
+    } finally {
+      backendDb.close();
+    }
+  });
+
+  it("closes a publication whose every enabled target was delivered, dated or not", () => {
+    // The plan is `scheduled` and its English locale never got a date, but both
+    // enabled targets already went out. Post #125 in production sat in this
+    // state for a month: reported as a mismatch every run, and unfixable —
+    // repairing it would have set a published post back to scheduled.
+    const backendDb = openBackendDb(":memory:");
+    registerTestChannels(backendDb, TEXT_TEST_CHANNELS);
+    try {
+      const now = new Date().toISOString();
+      seedTextPost(backendDb, {
+        postId: 3,
+        actorId: 1,
+        status: "published",
+        ru: "text",
+        now,
+        targets: { telegram: true, threads_en: true },
+        publishMode: "scheduled",
+        scheduledAt: now,
+      });
+      for (const target of ["telegram", "threads_en"])
+        backendDb.sqlite
+          .query("INSERT INTO publish_jobs(publication_key,target,status,created_at,updated_at) VALUES ('post:3',?,'published',?,?)")
+          .run(target, now, now);
+      expect(publicationConsistencyReport(backendDb).publicationMismatches).toEqual([]);
+
+      // An enabled target that was never queued still holds the publication
+      // open: that locale is genuinely waiting on a date.
+      seedTextPost(backendDb, {
+        postId: 4,
+        actorId: 1,
+        status: "published",
+        ru: "text",
+        now,
+        targets: { telegram: true, threads_en: true },
+        publishMode: "scheduled",
+        scheduledAt: now,
+      });
+      backendDb.sqlite
+        .query("INSERT INTO publish_jobs(publication_key,target,status,created_at,updated_at) VALUES ('post:4','telegram','published',?,?)")
+        .run(now, now);
+      expect(publicationConsistencyReport(backendDb).publicationMismatches).toEqual([
+        { post_id: 4, status: "published", expected: "scheduled" },
+      ]);
     } finally {
       backendDb.close();
     }

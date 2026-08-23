@@ -23,7 +23,6 @@ services:
       DATA_DIR: /data
       # Never under DATA_DIR — a backup on the volume it exists to survive is
       # not a backup, and `doctor` fails a deployment that puts it there.
-      BACKUP_DIR: /backups
       NODE_ENV: production
       DEPLOYMENT_ENV: production
       BIND_HOST: 0.0.0.0
@@ -47,7 +46,6 @@ services:
       GROK_CLI_PATH: /home/deploy/.grok/bin/grok
     volumes:
       - ${STUDIO_DATA_DIR_HOST:-./data}:/data
-      - ${STUDIO_BACKUP_DIR_HOST:?set a backup directory outside the data volume}:/backups
       - ${STUDIO_MEDIA_CACHE_DIR_HOST:-./media-cache}:/data/media-cache
       - ${STUDIO_VIDEO_MEDIA_DIR_HOST:-./video-media}:/data/video-media
       - ${STUDIO_MEDIA_STAGING_DIR_HOST:-./media-staging}:/data/media

@@ -20,6 +20,7 @@ import { retryVideoTarget } from "../publishing/video-service.js";
 import { settleVideoTarget } from "../publishing/video-settle.js";
 import type { VideoTarget } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
+import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
 import { doctorChecks } from "./doctor.js";
@@ -35,7 +36,6 @@ import {
   restoreDatabase,
   withMaintenanceLock,
 } from "./maintenance.js";
-import { backupMedia, mediaBackupStatus } from "./media-backup.js";
 import { diagnoseMediaProcessor, mediaJobReport, mediaProcessorStatus, reprocessPostMedia } from "./media-processor.js";
 import { formatPostText, postText } from "./post-text.js";
 import { purgePublication } from "./publication-purge.js";
@@ -78,6 +78,9 @@ export type OperationDef<S extends z.ZodType = z.ZodType> = {
   handler: (context: OperationContext, input: z.infer<S>) => unknown | Promise<unknown>;
   /** Terminal rendering. Without one the result prints as JSON. */
   format?: (result: never) => string;
+  /** The handler writes bytes to stdout itself. The CLI prints nothing after
+   * it: a JSON summary appended to an archive corrupts the archive. */
+  streams?: true;
   /** What the mutation journal attaches this run to. Defaults to the operation's
    * own normalized `--ref`; an operation whose subject no longer exists when it
    * returns says so by naming no ref. */
@@ -227,8 +230,8 @@ const operationDefs = {
     handler: (context) => {
       const config = context.config();
       const dataDirectories = checkDataDirectoriesWritable(requiredDataDirectories(config));
-      const mediaBackup = mediaBackupStatus(config);
-      const { requiredChecks, checks } = doctorChecks(config, dataDirectories, mediaBackup);
+      const mediaExport = exportStatus(context.db(), "media");
+      const { requiredChecks, checks } = doctorChecks(config, dataDirectories, mediaExport);
       const capabilities = capabilityReport(config, context.db());
       return {
         ok: Object.values(requiredChecks).every(Boolean) && capabilities.every((capability) => capability.status === "ready"),
@@ -237,7 +240,7 @@ const operationDefs = {
         publicBaseUrl: config.PUBLIC_BASE_URL,
         checks,
         dataDirectories,
-        mediaBackup,
+        mediaExport,
         capabilities,
       };
     },
@@ -605,13 +608,19 @@ const operationDefs = {
     agent: false,
     handler: async (context, input) => ({ ok: true, path: await backupDatabase(context.db(), context.dbPath, input.output) }),
   }),
-  "backup-media": operation({
-    summary: "Archive the media trees a database backup does not carry.",
-    schema: z.object({ output: example(z.string().optional(), "DIRECTORY").describe("destination directory") }),
-    mutates: true,
+  "backup-stream": operation({
+    summary: "Write one backup stream to stdout for a backup host to pull.",
+    schema: z.object({
+      what: example(z.enum(["media", "db"]).describe("media trees or the database"), "media"),
+    }),
+    mutates: false,
     agent: false,
-    note: "Video, posters, story cards and site assets. Writes off the data volume, and refuses a destination inside it — `backup` covers the database only, and `doctor` fails until this has run within a week.",
-    handler: async (context, input) => ({ ok: true, ...(await backupMedia(context.config(), input.output)) }),
+    streams: true,
+    note: "Nothing is written to this host: the stream is meant for `ssh <studio> ops backup-stream --what media > …` from the machine that keeps the backups. `doctor` fails once no media stream has been pulled for a week.",
+    handler: async (context, input) =>
+      input.what === "db"
+        ? streamDatabase(context.db(), Bun.stdout.writer())
+        : streamMediaArchive(context.config(), context.db(), Bun.stdout.writer()),
   }),
   restore: operation({
     summary: "Replace the database with a backup.",

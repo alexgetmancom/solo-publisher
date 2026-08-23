@@ -61,11 +61,6 @@ describe("loadConfig", () => {
     expect(config.PUBLIC_MEDIA_BASE_URL).toBe("https://studio.example.com/media/staging");
   });
 
-  it("keeps backups off the volume they exist to survive", () => {
-    // A default under DATA_DIR would look like a backup and die with the disk.
-    expect(loadTestConfig({}).BACKUP_DIR).toBe("/backups");
-  });
-
   it("uses controller token as primary bot token", () => {
     const config = loadTestConfig({ CONTROLLER_BOT_TOKEN: "controller" });
     expect(config.controllerBotToken).toBe("controller");

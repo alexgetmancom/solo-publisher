@@ -50,9 +50,9 @@ describe("host proxy topology", () => {
     expect(studio).toContain("${STUDIO:?");
     expect(studio).toContain("PUBLIC_BASE_URL: ${STUDIO_PUBLIC_BASE_URL:?");
     expect(studio).toContain("${STUDIO_PORT:?");
-    // A backup that lives on the volume it protects is not one.
-    expect(studio).toContain("${STUDIO_BACKUP_DIR_HOST:?");
-    expect(studio).toContain("BACKUP_DIR: /backups");
+    // Backups leave as streams a backup host pulls; a Studio that wrote them
+    // to a directory of its own would keep them where it loses them.
+    expect(studio).not.toContain("/backups");
   });
 
   it("lets the second Studio reach every Command Center endpoint its dashboard calls", () => {
@@ -99,7 +99,7 @@ describe("host proxy topology", () => {
       // channel username is a live channel someone else would post into.
       expect(file).not.toContain("TELEGRAM_CHANNEL_USERNAME=alexgetmancom");
     }
-    expect(compose).toContain("BACKUP_DIR: /backups");
+    expect(compose).not.toContain("/backups");
     // The domain has no default at all: Caddy would request a certificate for
     // whatever it is told, and the application would publish it in its feeds.
     expect(compose).toContain("${DOMAIN:?");

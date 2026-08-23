@@ -39,11 +39,7 @@ export function refreshPublicationStatus(backendDb: BackendDb, postId: number): 
   const registeredTargets = registeredPostTargetIds(backendDb);
   const plan = publicationPlanFromDb(unsafeDb(backendDb).db, postId, registeredTargets);
   emitLocaleCompletion(backendDb, postId, all, plan);
-  const effectiveStatus = effectivePublicationStatus(
-    all.map((job) => job.status),
-    plan,
-    registeredTargets,
-  );
+  const effectiveStatus = effectivePublicationStatus(all, plan, registeredTargets);
   if (!effectiveStatus) return;
   const now = backendDb.clock.now().toISOString();
   // The completion event is announced once per transition, so the transition

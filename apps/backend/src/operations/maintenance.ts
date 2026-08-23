@@ -465,15 +465,17 @@ function targetStateMismatches(backendDb: BackendDb): TargetStateMismatch[] {
 }
 
 function publicationStateMismatches(backendDb: BackendDb): PublicationStateMismatch[] {
+  // Target and status together, because the pending-locale rule has to know
+  // which targets already carry a job — a status list alone cannot say.
   const rows = unsafeDb(backendDb)
     .sqlite.query(
       `SELECT d.post_id,d.status,
-              group_concat(x.status) AS statuses
+              group_concat(x.target || ' ' || x.status, char(10)) AS jobs
        FROM drafts d
        LEFT JOIN (
-         SELECT publication_key,status FROM publish_jobs
+         SELECT publication_key,target,status FROM publish_jobs
          UNION ALL
-         SELECT publication_key,status FROM site_jobs
+         SELECT publication_key,reason AS target,status FROM site_jobs
        ) x ON x.publication_key='post:'||d.post_id
        WHERE d.post_id IS NOT NULL
        GROUP BY d.post_id
@@ -482,13 +484,19 @@ function publicationStateMismatches(backendDb: BackendDb): PublicationStateMisma
     .all() as Array<{
     post_id: number;
     status: string;
-    statuses: string | null;
+    jobs: string | null;
   }>;
   const registeredTargets = registeredPostTargetIds(backendDb);
   return rows.flatMap((row) => {
     if (row.status === "cancelled") return [];
     const expected = effectivePublicationStatus(
-      (row.statuses ?? "").split(",").filter(Boolean).map(normalizeArchivedJobStatus),
+      (row.jobs ?? "")
+        .split("\n")
+        .filter(Boolean)
+        .map((entry) => {
+          const separator = entry.indexOf(" ");
+          return { target: entry.slice(0, separator), status: normalizeArchivedJobStatus(entry.slice(separator + 1)) };
+        }),
       publicationPlanFromDb(unsafeDb(backendDb).db, row.post_id, registeredTargets),
       registeredTargets,
     );

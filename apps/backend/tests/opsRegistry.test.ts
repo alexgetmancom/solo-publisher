@@ -19,7 +19,7 @@ afterEach(() => {
 const HOST_ONLY = [
   "guide",
   "backup",
-  "backup-media",
+  "backup-stream",
   "restore",
   "import-x-analytics",
   "import-manual-analytics",

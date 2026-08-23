@@ -36,9 +36,11 @@ socket and can only request a rollback using a private bearer-authenticated rout
    rollback histories. Maru's host health endpoint must be bound to `127.0.0.1:8789`.
 
    The media paths in the committed environments live on the mounted
-   `/mnt/alex-media` disk. `STUDIO_BACKUP_DIR_HOST` stays outside the data
-   directory: `doctor` fails a deployment whose media backup lives on the
-   volume it exists to survive. `DEPLOY_AGENT_HOST_GATEWAY` in each Studio's
+   `/mnt/alex-media` disk. No Studio writes backups to this host at all: both are
+   pulled as streams by the backup machine at home, which reaches in with a key
+   pinned to `/home/deploy/bin/alexgetman-backup-export`, and `doctor` fails a
+   deployment whose media has not been pulled for a week.
+   `DEPLOY_AGENT_HOST_GATEWAY` in each Studio's
    environment must name the same address the agent binds: Docker's own
    `host-gateway` points at the default bridge, while the agent listens on the
    gateway of `agent_default`, and a container aimed at the wrong one reaches

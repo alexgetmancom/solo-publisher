@@ -67,9 +67,10 @@ alongside the app and lifts the limit to 2 GB.
 
 When Telegram is configured, the Studio sends you a copy of its database every
 day, silently, in the same Telegram chat you author from. Media files are not in
-it and have their own command, which must be run on a schedule — `doctor`
-reports the deployment unhealthy until an archive newer than a week is there.
-[Backups](backups.md) covers both halves.
+it and never leave on their own: the Studio emits them as a stream and a machine
+you control pulls it. `doctor` reports the deployment unhealthy until that has
+happened within the week. [Backups](backups.md) covers both halves and carries
+the forced-command recipe for the pulling side.
 
 ## Updating
 
