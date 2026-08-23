@@ -2,6 +2,7 @@ import { InlineKeyboard } from "grammy";
 import { confirmationKeyboard } from "../../bot/dialog-ui.js";
 
 import { publicationCallback } from "../../bot/publication-callback.js";
+import { screenCallback } from "../../bot/screen-callback.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
@@ -109,7 +110,7 @@ export function videoPreview(
   // question and change nothing.
   if (draft.status !== "cancelled")
     keyboard.text(t(locale, "vpreview.cancel-pub"), publicationCallback("video", "cancel", [draft.id])).row();
-  keyboard.text(t(locale, "queue.back-btn"), "queue_home");
+  keyboard.text(t(locale, "queue.back-btn"), screenCallback("queue_home"));
   return { text: lines.join("\n"), keyboard };
 }
 

@@ -9,6 +9,7 @@ import { telegramPostProgressCard } from "../interfaces/telegram/control-cards.j
 
 import { type PostProgressState, type PostProgressStatus, postProgressState } from "../studio/services/post-progress.js";
 import { settingsService } from "../studio/services/settings.js";
+import { screenCallback } from "./screen-callback.js";
 import { isUnchangedMessageEdit } from "./telegram-errors.js";
 
 /** Telegram renderer over the transport-free Studio progress state. */
@@ -56,10 +57,11 @@ export function renderPostProgress(
   const keyboard = new InlineKeyboard();
   keyboard.text(
     t(locale, details ? "progress.hide-details" : "progress.show-details"),
-    `${details ? "progress" : "progress_details"}:${state.draftId}`,
+    details ? screenCallback("progress", [state.draftId]) : screenCallback("progress_details", [state.draftId]),
   );
-  if (counts.waiting + counts.publishing > 0) keyboard.text(t(locale, "progress.cancel-remaining"), `progress_cancel:${state.draftId}`);
-  keyboard.row().text(t(locale, "common.menu"), "menu_home");
+  if (counts.waiting + counts.publishing > 0)
+    keyboard.text(t(locale, "progress.cancel-remaining"), screenCallback("progress_cancel", [state.draftId]));
+  keyboard.row().text(t(locale, "common.menu"), screenCallback("menu_home"));
   return { text: lines.join("\n"), keyboard };
 }
 

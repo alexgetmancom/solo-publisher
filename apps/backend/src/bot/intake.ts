@@ -16,6 +16,7 @@ import { cancelPromptKeyboard } from "./dialog-ui.js";
 import { executePublicationEffects, type PublicationEffect, type PublicationMessageResult } from "./effects.js";
 import { extractMessage } from "./message.js";
 import { createPostFromMessage } from "./post-screen.js";
+import { screenCallback } from "./screen-callback.js";
 import { attachVideoAsset } from "./video-conversation.js";
 import { saveVideoState } from "./video-ui.js";
 
@@ -29,10 +30,6 @@ const MARKDOWN_EXTENSIONS = [".md", ".markdown", ".mdx"];
  * the whole rule, which is why the short-text and bare-video readings need no
  * way back: they are not close calls. */
 const POST_WITHOUT_ASKING = 900;
-
-export const INTAKE_CANCEL = "intake_cancel";
-export const INTAKE_KIND_PREFIX = "intake_kind:";
-export const INTAKE_LOCALE_PREFIX = "intake_locale:";
 
 /** What captured material can become. A kind is offered only when the material
  * can actually become it -- a message with no video file cannot be a video
@@ -54,7 +51,7 @@ export async function openIntake(ctx: Context, backendDb: BackendDb, mode: "repl
       type: "screen",
       mode,
       text: t(locale, "intake.prompt"),
-      options: { reply_markup: cancelPromptKeyboard(locale, INTAKE_CANCEL) },
+      options: { reply_markup: cancelPromptKeyboard(locale, screenCallback("intake_cancel")) },
     },
   ]);
 }
@@ -130,9 +127,11 @@ export async function applyIntakeKind(
       data: { ...(captured as unknown as Record<string, unknown>) },
       controlMessageId: null,
     });
-    const keyboard = new InlineKeyboard().text(t(locale, "intake.article-publish"), `${INTAKE_KIND_PREFIX}article_confirm`).row();
-    if (!asked) keyboard.text(t(locale, "intake.rather-post"), `${INTAKE_KIND_PREFIX}post`).row();
-    keyboard.text(t(locale, "common.cancel"), INTAKE_CANCEL);
+    const keyboard = new InlineKeyboard()
+      .text(t(locale, "intake.article-publish"), screenCallback("intake_kind", ["article_confirm"]))
+      .row();
+    if (!asked) keyboard.text(t(locale, "intake.rather-post"), screenCallback("intake_kind", ["post"])).row();
+    keyboard.text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
     return [
       {
         type: "screen",
@@ -152,10 +151,10 @@ export async function applyIntakeKind(
     controlMessageId: null,
   });
   const keyboard = new InlineKeyboard()
-    .text(t(locale, "video.language-ru"), `${INTAKE_LOCALE_PREFIX}ru`)
-    .text(t(locale, "video.language-en"), `${INTAKE_LOCALE_PREFIX}en`)
+    .text(t(locale, "video.language-ru"), screenCallback("intake_locale", ["ru"]))
+    .text(t(locale, "video.language-en"), screenCallback("intake_locale", ["en"]))
     .row()
-    .text(t(locale, "common.cancel"), INTAKE_CANCEL);
+    .text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
   return [{ type: "screen", mode, text: t(locale, "video.choose-language"), options: { reply_markup: keyboard } }];
 }
 
@@ -209,12 +208,12 @@ export function cancelIntake(backendDb: BackendDb, actorId: number): void {
 }
 
 function chooseKindScreen(locale: StudioLocale, captured: Captured): PublicationEffect {
-  const keyboard = new InlineKeyboard().text(t(locale, "intake.kind-post"), `${INTAKE_KIND_PREFIX}post`);
+  const keyboard = new InlineKeyboard().text(t(locale, "intake.kind-post"), screenCallback("intake_kind", ["post"]));
   // Physics, not judgement: an Article carries no video, and a video
   // publication has nothing to publish without a file.
-  if (!captured.video) keyboard.text(t(locale, "intake.kind-article"), `${INTAKE_KIND_PREFIX}article`);
-  else keyboard.text(t(locale, "intake.kind-video"), `${INTAKE_KIND_PREFIX}video`);
-  keyboard.row().text(t(locale, "common.cancel"), INTAKE_CANCEL);
+  if (!captured.video) keyboard.text(t(locale, "intake.kind-article"), screenCallback("intake_kind", ["article"]));
+  else keyboard.text(t(locale, "intake.kind-video"), screenCallback("intake_kind", ["video"]));
+  keyboard.row().text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
   return {
     type: "screen",
     mode: "reply",

@@ -6,6 +6,7 @@ import { settingsService } from "../studio/services/settings.js";
 import { getConversationState } from "./conversation-state.js";
 import type { PublicationEffect } from "./effects.js";
 import { type PublicationKind, publicationCallback, versionedCallback } from "./publication-callback.js";
+import { screenCallback } from "./screen-callback.js";
 
 type DialogButton = { label: string; callback: string };
 
@@ -73,6 +74,6 @@ export function resultNavigationKeyboard(locale: StudioLocale): InlineKeyboard {
  * There is one queue screen, so there is one button back to it: the drafts and
  * the upcoming publications are two sections of it, never two destinations. */
 export function appendResultNavigation(keyboard: InlineKeyboard, locale: StudioLocale): InlineKeyboard {
-  keyboard.text(t(locale, "queue.back-btn"), "queue_home").text(t(locale, "common.menu"), "menu_home");
+  keyboard.text(t(locale, "queue.back-btn"), screenCallback("queue_home")).text(t(locale, "common.menu"), screenCallback("menu_home"));
   return keyboard;
 }

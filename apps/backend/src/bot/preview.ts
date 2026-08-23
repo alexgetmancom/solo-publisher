@@ -21,6 +21,7 @@ import { postProgressState } from "../studio/services/post-progress.js";
 import { appendResultNavigation, confirmationKeyboard } from "./dialog-ui.js";
 import { publicationCallback } from "./publication-callback.js";
 import { createPublicationScheduleEngine, scheduleTimeKeyboard } from "./scheduling.js";
+import { screenCallback } from "./screen-callback.js";
 import { appendUnlandedControls, type UnlandedTarget } from "./unlanded-controls.js";
 
 const DRAFT_VIEWS = [
@@ -115,7 +116,7 @@ export function draftPreview(
         keyboard.text(`${targets[target] ? "✓" : "□"} ${label}`, publicationCallback("post", "toggle", [draftId, target]));
       keyboard.row();
     }
-    keyboard.text(t(locale, "post.back-to-preview"), publicationCallback("post", "view", [draftId, "overview"])).row();
+    keyboard.text(t(locale, "post.back-to-preview"), publicationCallback("post", "view", [draftId, "overview"]));
     const enabled = enabledTargetLabels(targets) || t(locale, "post.none");
     return {
       text: `📝 *${t(locale, "post.platforms-title", { id: draftId })}*\n\n${t(locale, "post.active")}: *${enabled}*\n\n${t(locale, "post.toggle-hint")}`,
@@ -231,7 +232,7 @@ export function draftPreview(
     keyboard
       .text(t(locale, "post.cancel-publication"), publicationCallback("post", "cancel", [draftId, "confirm_cancel"]))
       .row()
-      .text(t(locale, "queue.back-btn"), "queue_home");
+      .text(t(locale, "queue.back-btn"), screenCallback("queue_home"));
     return {
       text: `${draftHeader(draftId, targets, locale)}\n\n${t(locale, "post.scheduled-ru")}: ${formatZonedDateTime(draft.scheduled_at ? String(draft.scheduled_at) : null, timeConfig.TIMEZONE, timeConfig.TIMEZONE_LABEL)}${servesEn ? `\n${t(locale, "post.scheduled-en")}: ${formatZonedDateTime(draft.scheduled_en_at ? String(draft.scheduled_en_at) : null, timeConfig.TIMEZONE, timeConfig.TIMEZONE_LABEL)}` : ""}`,
       keyboard,

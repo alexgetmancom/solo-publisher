@@ -11,56 +11,18 @@ const retryableDeploymentStatuses = new Set([408, 425, 429, 502, 503, 504]);
 type DeploymentRollbackResult = { ok: true; release: string; currentRevision: string } | { ok: false; message: string };
 type FetchImplementation = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 type SleepImplementation = (milliseconds: number) => Promise<void>;
-type DeploymentRollback = { target: string; revision: string };
 
 const defaultSleep: SleepImplementation = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-function deploymentCallback(action: string, target: string, revision: string): string {
-  if (!targetPattern.test(target)) throw new Error("deployment target must be a short lowercase identifier");
-  if (!releasePattern.test(revision)) throw new Error("deployment revision must be a Git SHA");
-  return `${action}:${target}:${revision}`;
+/** What a deployment control may name. Telegram allows 64 bytes of callback
+ * data, and "deploy_rollback:" plus a seven-character profile leaves room for a
+ * full 40-character Git SHA -- so both are checked, at the button and at the tap. */
+export function isDeploymentTarget(value: string): boolean {
+  return targetPattern.test(value);
 }
 
-export function deploymentRollbackCallback(target: string, revision: string): string {
-  return deploymentCallback("deploy_rollback", target, revision);
-}
-
-export function parseDeploymentRollbackCallback(value: string): DeploymentRollback | null {
-  return parseDeploymentCallback(value, "deploy_rollback");
-}
-
-export function deploymentPromoteCallback(target: string, revision: string): string {
-  return deploymentCallback("deploy_promote", target, revision);
-}
-
-export function parseDeploymentPromoteCallback(value: string): DeploymentRollback | null {
-  return parseDeploymentCallback(value, "deploy_promote");
-}
-
-// Ask-then-confirm callbacks. Kept under a short prefix (not "deploy_rollback_ask")
-// so the 64-byte callback_data budget still fits a full 40-character Git SHA.
-export function parseDeploymentRollbackAskCallback(value: string): DeploymentRollback | null {
-  return parseDeploymentCallback(value, "deploy_rb_ask");
-}
-
-export function parseDeploymentPromoteAskCallback(value: string): DeploymentRollback | null {
-  return parseDeploymentCallback(value, "deploy_pr_ask");
-}
-
-export function deploymentMenuCallback(revision: string): string {
-  if (!releasePattern.test(revision)) throw new Error("deployment revision must be a Git SHA");
-  return `deploy_menu:${revision}`;
-}
-
-export function parseDeploymentMenuCallback(value: string): string | null {
-  const [action, revision, extra] = value.split(":");
-  return action === "deploy_menu" && extra === undefined && revision && releasePattern.test(revision) ? revision : null;
-}
-
-function parseDeploymentCallback(value: string, action: string): DeploymentRollback | null {
-  const [receivedAction, target, revision, extra] = value.split(":");
-  if (receivedAction !== action || extra !== undefined || !target || !revision) return null;
-  return targetPattern.test(target) && releasePattern.test(revision) ? { target, revision } : null;
+export function isDeploymentRevision(value: string): boolean {
+  return releasePattern.test(value);
 }
 
 export async function requestDeploymentRollback(

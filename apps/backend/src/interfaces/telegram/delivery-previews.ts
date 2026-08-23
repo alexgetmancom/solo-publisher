@@ -1,4 +1,5 @@
 import { type Context, InlineKeyboard, InputFile } from "grammy";
+import { screenCallback } from "../../bot/screen-callback.js";
 import type { BackendDb } from "../../db/client.js";
 import { splitText } from "../../delivery/social/payload.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -28,7 +29,7 @@ export async function sendTelegramDeliveryPreviews(
       if (projection.targets.length) await sendProjectionContent(ctx, projection, !hasVideo, locale);
       if (hasVideo)
         await ctx.reply(t(locale, "preview.video-ready"), {
-          reply_markup: new InlineKeyboard().text(t(locale, "preview.show-video"), `delivery_preview_video:${projection.id}`),
+          reply_markup: new InlineKeyboard().text(t(locale, "preview.show-video"), previewCallback("video", projection.id)),
         });
       if (projection.notes.length)
         await ctx.reply(projection.notes.map((note) => `ℹ️ ${escapeMarkdown(note)}`).join("\n"), { parse_mode: "Markdown" });
@@ -97,51 +98,58 @@ function isVideo(media: Record<string, unknown>): boolean {
   return String(media.type ?? "photo").toLowerCase() === "video";
 }
 
-/** Callback-only Telegram adapter for deferred heavy video previews. */
-export async function handleTelegramDeliveryPreviewCallback(ctx: Context, backendDb: BackendDb, config: BackendConfig): Promise<boolean> {
-  const data = ctx.callbackQuery?.data ?? "";
-  const view = PREVIEW_VIEWS.find((item) => data.startsWith(item.prefix));
-  if (!view) return false;
-  const projectionId = data.slice(view.prefix.length);
+/** One of the three deferred views of a delivery preview: the heavy video, the
+ * Threads rendering, or back to the Telegram one. The projection id is two
+ * arguments -- what kind of publication and which one -- because a callback
+ * argument cannot carry the separator itself. */
+export async function showDeliveryPreview(
+  ctx: Context,
+  backendDb: BackendDb,
+  config: BackendConfig,
+  view: DeliveryPreviewView,
+  publication: { kind: string; id: number },
+): Promise<void> {
   const actorId = Number(ctx.from?.id);
-  const [kind, idText] = projectionId.split(":");
-  const id = Number(idText);
-  if (!Number.isSafeInteger(id) || !Number.isSafeInteger(actorId)) return false;
-  const delivery =
-    kind === "video"
-      ? createStudioServices(backendDb, config).videos.preview(actorId, id).delivery
-      : kind === "post"
-        ? createStudioServices(backendDb, config).posts.preview(actorId, id).delivery
-        : null;
-  const projection = delivery?.projections.find((item) => item.id === projectionId);
   const locale = settingsService(backendDb).locale(actorId);
+  const services = createStudioServices(backendDb, config);
+  const delivery =
+    publication.kind === "video"
+      ? services.videos.preview(actorId, publication.id).delivery
+      : publication.kind === "post"
+        ? services.posts.preview(actorId, publication.id).delivery
+        : null;
+  const projectionId = `${publication.kind}:${publication.id}`;
+  const projection = delivery?.projections.find((item) => item.id === projectionId);
   // The preview belongs to a draft that has changed since: say so rather than
   // acknowledging a tap that then does nothing.
   await ctx.answerCallbackQuery(projection ? undefined : { text: t(locale, "action.card-stale") });
-  if (!projection) return true;
-  if (view.name === "threads") {
+  if (!projection) return;
+  if (view === "threads") {
     const target = projection.targets.find((item) => item === "threads_ru" || item === "threads_en");
-    if (!target) return true;
+    if (!target) return;
     await ctx.editMessageText(threadsPreviewText(target, projection.text, projection.entities, Boolean(projection.threadsChain), locale), {
-      reply_markup: new InlineKeyboard().text(t(locale, "preview.show-telegram"), `${TELEGRAM_VIEW_PREFIX}${projection.id}`),
+      reply_markup: new InlineKeyboard().text(t(locale, "preview.show-telegram"), previewCallback("telegram", projection.id)),
     });
-    return true;
+    return;
   }
-  if (view.name === "telegram") {
+  if (view === "telegram") {
     await ctx.editMessageText(...deliveryHeader(projection, locale));
-    return true;
+    return;
   }
   await sendMedia(ctx, projection.media, "", []);
-  return true;
 }
 
-const TELEGRAM_VIEW_PREFIX = "delivery_preview_telegram:";
+export type DeliveryPreviewView = "video" | "threads" | "telegram";
 
-const PREVIEW_VIEWS = [
-  { name: "video", prefix: "delivery_preview_video:" },
-  { name: "threads", prefix: "delivery_preview_threads:" },
-  { name: "telegram", prefix: TELEGRAM_VIEW_PREFIX },
-] as const;
+/** A projection id is "post:12"; the registry takes it as two arguments. Each
+ * view names its screen outright, so the button graph can see all three. */
+function previewCallback(view: DeliveryPreviewView, projectionId: string): string {
+  const [kind, id] = projectionId.split(":");
+  const args = [kind ?? "", id ?? ""];
+  if (view === "video") return screenCallback("delivery_preview_video", args);
+  if (view === "threads") return screenCallback("delivery_preview_threads", args);
+  return screenCallback("delivery_preview_telegram", args);
+}
 
 function deliveryHeader(
   projection: DeliveryProjection,
@@ -150,7 +158,7 @@ function deliveryHeader(
   const targets = projection.targets.join(" · ") || t(locale, "preview.no-compatible-target");
   const threadsTarget = projection.targets.find((item) => item === "threads_ru" || item === "threads_en");
   const reply_markup = threadsTarget
-    ? new InlineKeyboard().text(t(locale, "preview.show-threads"), `delivery_preview_threads:${projection.id}`)
+    ? new InlineKeyboard().text(t(locale, "preview.show-threads"), previewCallback("threads", projection.id))
     : undefined;
   return [
     `👁 *${escapeMarkdown(projection.label)}*\n${escapeMarkdown(targets)}`,

@@ -26,6 +26,7 @@ import {
   requireSessionRevision,
 } from "./publication-callback.js";
 import { publicationRenderers } from "./publication-renderers.js";
+import { screenCallback } from "./screen-callback.js";
 import { handleVideoConversationMessage } from "./video-conversation.js";
 
 type CallbackRouterContext = Omit<PublicationActionContext, "args" | "pipeline" | "services" | "renderer"> & {
@@ -45,7 +46,8 @@ const INVALID_ENTITY_TEXT: Record<PublicationKind, MessageKey> = {
   video: "err.video-reopen-create",
 };
 
-const UNKNOWN_KEYBOARD = (locale: StudioLocale): InlineKeyboard => new InlineKeyboard().text(t(locale, "menu.work-queue"), "queue_home");
+const UNKNOWN_KEYBOARD = (locale: StudioLocale): InlineKeyboard =>
+  new InlineKeyboard().text(t(locale, "menu.work-queue"), screenCallback("queue_home"));
 
 /** Dispatches a Telegram publication callback through the single action registry. */
 export async function handlePublicationCallback(

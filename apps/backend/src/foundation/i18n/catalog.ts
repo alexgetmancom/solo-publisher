@@ -587,8 +587,6 @@ const en = {
   "ops.promote-q": "Deploy {revision} to {target} now?",
   "ops.rolling-back": "⏳ Rolling back {target}…",
   "ops.deploying": "⏳ Deploying {target} ({revision})…",
-  "ops.cancelled": "Cancelled",
-  "ops.cancelled-body": "🚫 Cancelled. No change was made.",
   "ops.done": "✅ Done: now running {revision}.",
   "ops.failed": "❌ Failed: {message}",
   // Command Center (web dashboard). `cc.` rather than `ops.`, which the release
@@ -1320,8 +1318,6 @@ const ru = {
   "ops.promote-q": "Раскатить {revision} на {target} сейчас?",
   "ops.rolling-back": "⏳ Откатываю {target}…",
   "ops.deploying": "⏳ Раскатываю {target} ({revision})…",
-  "ops.cancelled": "Отменено",
-  "ops.cancelled-body": "🚫 Отменено. Ничего не изменилось.",
   "ops.done": "✅ Готово: сейчас работает {revision}.",
   "ops.failed": "❌ Не получилось: {message}",
   // Command Center (веб-дашборд)

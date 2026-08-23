@@ -7,28 +7,25 @@ import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { renderPostProgress } from "./progress.js";
 
-/** Render and update one durable publication-progress card in place. */
-export async function handleProgressCallback(ctx: Context, backendDb: BackendDb, config: BackendConfig): Promise<boolean> {
-  const data = ctx.callbackQuery?.data ?? "";
-  const details = data.match(/^progress_details:(\d+)$/);
-  const overview = data.match(/^progress:(\d+)$/);
-  const cancel = data.match(/^progress_cancel:(\d+)$/);
-  const match = details ?? overview ?? cancel;
-  if (!match) return false;
-  const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-  const draftId = Number(match[1]);
-  if (!Number.isSafeInteger(draftId)) {
-    await ctx.answerCallbackQuery({ text: t(locale, "progress.bad-draft-id") });
-    return true;
-  }
+/** Renders and updates one durable publication-progress card in place. The
+ * three buttons it carries -- details, overview, cancel the rest -- are three
+ * declared screens, so the card no longer parses its own callback data. */
+export async function showPostProgress(
+  ctx: Context,
+  backendDb: BackendDb,
+  config: BackendConfig,
+  draftId: number,
+  view: { details: boolean; cancelRemaining?: true },
+): Promise<void> {
   const actorId = Number(ctx.from?.id);
-  if (cancel) {
-    createStudioServices(backendDb, config).posts.cancelJobs(actorId, draftId);
+  const locale = settingsService(backendDb).locale(actorId);
+  const posts = createStudioServices(backendDb, config).posts;
+  if (view.cancelRemaining) {
+    posts.cancelJobs(actorId, draftId);
     await ctx.answerCallbackQuery({ text: t(locale, "progress.remaining-cancelled") });
   } else await ctx.answerCallbackQuery();
-  const progress = renderPostProgress(createStudioServices(backendDb, config).posts.progress(actorId, draftId), locale, Boolean(details));
+  const progress = renderPostProgress(posts.progress(actorId, draftId), locale, view.details);
   await ctx.editMessageText(progress.text, { parse_mode: "Markdown", reply_markup: progress.keyboard });
   const messageId = ctx.callbackQuery?.message && "message_id" in ctx.callbackQuery.message ? ctx.callbackQuery.message.message_id : null;
-  if (messageId && ctx.chat?.id) setTelegramPostProgressCard(backendDb, draftId, Number(ctx.chat.id), messageId, Boolean(details));
-  return true;
+  if (messageId && ctx.chat?.id) setTelegramPostProgressCard(backendDb, draftId, Number(ctx.chat.id), messageId, view.details);
 }

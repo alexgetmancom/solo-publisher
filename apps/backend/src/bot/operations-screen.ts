@@ -2,66 +2,53 @@ import { type Context, InlineKeyboard } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import { withActionLock } from "../foundation/action-lock.js";
 import type { BackendConfig } from "../foundation/config.js";
-import {
-  deploymentMenuCallback,
-  parseDeploymentMenuCallback,
-  parseDeploymentPromoteAskCallback,
-  parseDeploymentPromoteCallback,
-  parseDeploymentRollbackAskCallback,
-  parseDeploymentRollbackCallback,
-  requestDeploymentPromote,
-  requestDeploymentRollback,
-} from "../foundation/deployment.js";
+import { isDeploymentRevision, isDeploymentTarget, requestDeploymentPromote, requestDeploymentRollback } from "../foundation/deployment.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { settingsService } from "../studio/services/settings.js";
+import { type ScreenCallback, screenCallback } from "./screen-callback.js";
 
 /** Operations callbacks are deliberately outside content/post screens.
  * Every deploy action is ask -> confirm -> progress -> result, all as edits
  * to the same message, so a tap never looks like it silently did nothing. */
-export async function handleOperationsCallback(ctx: Context, backendDb: BackendDb, config: BackendConfig): Promise<boolean> {
-  const data = ctx.callbackQuery?.data ?? "";
+export async function handleOperationsCallback(
+  ctx: Context,
+  backendDb: BackendDb,
+  config: BackendConfig,
+  callback: ScreenCallback,
+): Promise<boolean> {
   const locale = settingsService(backendDb).locale(ctx.from?.id ?? 0);
+  const target = callback.args.target ?? "";
+  const revision = callback.args.revision ?? "";
+  // The target and the release are still validated where they are read: the
+  // registry guarantees the shape of a callback, never the meaning of it.
+  const deployment = isDeploymentTarget(target) && isDeploymentRevision(revision) ? { target, revision } : null;
 
-  const rollbackAsk = parseDeploymentRollbackAskCallback(data);
-  if (rollbackAsk) return askConfirmation(ctx, locale, "rollback", rollbackAsk.target, rollbackAsk.revision);
+  if (callback.id === "deploy_rb_ask" || callback.id === "deploy_pr_ask") {
+    if (!deployment) return false;
+    return askConfirmation(ctx, locale, callback.id === "deploy_rb_ask" ? "rollback" : "promote", deployment.target, deployment.revision);
+  }
 
-  const promoteAsk = parseDeploymentPromoteAskCallback(data);
-  if (promoteAsk) return askConfirmation(ctx, locale, "promote", promoteAsk.target, promoteAsk.revision);
-
-  const menuRevision = parseDeploymentMenuCallback(data);
-  if (menuRevision) {
+  if (callback.id === "deploy_menu") {
+    if (!isDeploymentRevision(revision)) return false;
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(deploymentMenuText(locale, menuRevision), {
-      reply_markup: deploymentMenuKeyboard(locale, menuRevision),
-    });
+    await ctx.editMessageText(deploymentMenuText(locale, revision), { reply_markup: deploymentMenuKeyboard(locale, revision) });
     return true;
   }
 
-  if (data === "deploy_cancel") {
-    await ctx.answerCallbackQuery({ text: t(locale, "ops.cancelled") });
-    await ctx.editMessageText(t(locale, "ops.cancelled-body"), { reply_markup: new InlineKeyboard() });
-    return true;
-  }
-
-  const rollback = parseDeploymentRollbackCallback(data);
-  if (rollback) {
-    await runDeployAction(ctx, locale, data, rollback.revision, t(locale, "ops.rolling-back", { target: rollback.target }), () =>
-      requestDeploymentRollback(config, rollback.target, rollback.revision),
+  if (!deployment) return false;
+  const lockKey = `${callback.id}:${deployment.target}:${deployment.revision}`;
+  if (callback.id === "deploy_rollback") {
+    await runDeployAction(ctx, locale, lockKey, deployment.revision, t(locale, "ops.rolling-back", { target: deployment.target }), () =>
+      requestDeploymentRollback(config, deployment.target, deployment.revision),
     );
     return true;
   }
-
-  const promote = parseDeploymentPromoteCallback(data);
-  if (promote) {
-    const progress = t(locale, "ops.deploying", { target: promote.target, revision: promote.revision.slice(0, 12) });
-    await runDeployAction(ctx, locale, data, promote.revision, progress, () =>
-      requestDeploymentPromote(config, promote.target, promote.revision),
-    );
-    return true;
-  }
-
-  return false;
+  const progress = t(locale, "ops.deploying", { target: deployment.target, revision: deployment.revision.slice(0, 12) });
+  await runDeployAction(ctx, locale, lockKey, deployment.revision, progress, () =>
+    requestDeploymentPromote(config, deployment.target, deployment.revision),
+  );
+  return true;
 }
 
 async function askConfirmation(
@@ -76,12 +63,13 @@ async function askConfirmation(
     action === "rollback"
       ? t(locale, "ops.rollback-q", { target })
       : t(locale, "ops.promote-q", { target, revision: revision.slice(0, 12) });
-  const confirmData = action === "rollback" ? `deploy_rollback:${target}:${revision}` : `deploy_promote:${target}:${revision}`;
+  const confirmData =
+    action === "rollback" ? screenCallback("deploy_rollback", [target, revision]) : screenCallback("deploy_promote", [target, revision]);
   const original = ctx.callbackQuery?.message && "text" in ctx.callbackQuery.message ? ctx.callbackQuery.message.text : undefined;
   await ctx.editMessageText(`${original ? `${original}\n\n` : ""}⚠️ ${question}`, {
     reply_markup: new InlineKeyboard()
       .text(t(locale, "common.confirm"), confirmData)
-      .text(t(locale, "common.back"), deploymentMenuCallback(revision)),
+      .text(t(locale, "common.back"), screenCallback("deploy_menu", [revision])),
   });
   return true;
 }
@@ -130,11 +118,11 @@ async function finishDeployAction(
 
 function deploymentMenuKeyboard(locale: StudioLocale, revision: string): InlineKeyboard {
   return new InlineKeyboard()
-    .text(t(locale, "ops.rollback-btn", { target: "alex" }), `deploy_rb_ask:alex:${revision}`)
+    .text(t(locale, "ops.rollback-btn", { target: "alex" }), screenCallback("deploy_rb_ask", ["alex", revision]))
     .row()
-    .text(t(locale, "ops.promote-btn", { target: "maru" }), `deploy_pr_ask:maru:${revision}`)
+    .text(t(locale, "ops.promote-btn", { target: "maru" }), screenCallback("deploy_pr_ask", ["maru", revision]))
     .row()
-    .text(t(locale, "ops.promote-btn", { target: "worker" }), `deploy_pr_ask:worker:${revision}`);
+    .text(t(locale, "ops.promote-btn", { target: "worker" }), screenCallback("deploy_pr_ask", ["worker", revision]));
 }
 
 function deploymentMenuText(locale: StudioLocale, revision: string): string {

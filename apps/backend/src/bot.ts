@@ -1,37 +1,21 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { Bot, type Context } from "grammy";
-import { handleAnalyticsCallback } from "./bot/analytics-screen.js";
 import { runCallbackBoundary } from "./bot/callback-boundary.js";
-import { runCallbackAction } from "./bot/callback-effects.js";
 import { handlePublicationCallback, handlePublicationMessage } from "./bot/callback-router.js";
-import { resultNavigationKeyboard } from "./bot/dialog-ui.js";
-import { executePublicationEffects, type PublicationEffect } from "./bot/effects.js";
-import {
-  applyIntakeKind,
-  applyIntakeVideoLocale,
-  cancelIntake,
-  handleIntakeMessage,
-  INTAKE_CANCEL,
-  INTAKE_KIND_PREFIX,
-  INTAKE_LOCALE_PREFIX,
-  openIntake,
-  publishReviewedArticle,
-} from "./bot/intake.js";
-import { mainMenuText, persistentKeyboard, showMainMenu } from "./bot/menu-render.js";
+import { executePublicationEffects } from "./bot/effects.js";
+import { handleIntakeMessage, openIntake } from "./bot/intake.js";
+import { persistentKeyboard, showMainMenu } from "./bot/menu-render.js";
 import { buildMainMenu } from "./bot/navigation.js";
-import { handleOperationsCallback } from "./bot/operations-screen.js";
-import { handleProgressCallback } from "./bot/progress-screen.js";
 import { parseSessionCallback } from "./bot/publication-callback.js";
-import { showQueue, showQueueAttention } from "./bot/queue.js";
+import { parseScreenCallback } from "./bot/screen-callback.js";
+import { SCREEN_ROUTES } from "./bot/screen-routes.js";
 import { buildSettingsMenu, handleSettingsMessage, showSettings } from "./bot/settings/index.js";
 import type { BackendDb } from "./db/client.js";
 import { actorFromTelegramUser } from "./foundation/actors.js";
 import type { BackendConfig } from "./foundation/config.js";
-import { describeError, type MessageKey, t } from "./foundation/i18n/index.js";
+import { type MessageKey, t } from "./foundation/i18n/index.js";
 import type { StudioLocale } from "./foundation/locale.js";
 import { log } from "./foundation/logger.js";
-import { clearTelegramAnalyticsDashboard } from "./interfaces/telegram/control-cards.js";
-import { handleTelegramDeliveryPreviewCallback } from "./interfaces/telegram/delivery-previews.js";
 import { trackUsageAsync } from "./observability/usage.js";
 import { settingsService } from "./studio/services/settings.js";
 
@@ -122,168 +106,24 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
     await handlePublicationMessage(ctx, backendDb, config);
   });
 
-  const callbackRoutes: CallbackRoute[] = [
-    {
-      name: "intake-kind",
-      matches: (data) => data.startsWith(INTAKE_KIND_PREFIX),
-      handle: async (ctx) => {
-        const choice = callbackData(ctx).slice(INTAKE_KIND_PREFIX.length);
-        return runIntakeAction(ctx, async (actorId, locale) => {
-          if (choice === "article_confirm") {
-            const { title } = publishReviewedArticle(backendDb, config, actorId);
-            return [
-              {
-                type: "screen",
-                mode: "reply",
-                text: t(locale, "intake.article-published", { title }),
-                options: { reply_markup: resultNavigationKeyboard(locale) },
-              },
-            ];
-          }
-          if (choice !== "post" && choice !== "article" && choice !== "video") return [];
-          return applyIntakeKind(ctx, backendDb, config, choice);
-        });
-      },
-    },
-    {
-      name: "intake-video-locale",
-      matches: (data) => data.startsWith(INTAKE_LOCALE_PREFIX),
-      handle: async (ctx) => {
-        const choice = callbackData(ctx).slice(INTAKE_LOCALE_PREFIX.length);
-        return runIntakeAction(ctx, async (actorId) => {
-          if (choice !== "ru" && choice !== "en") return [];
-          return applyIntakeVideoLocale(ctx, backendDb, config, actorId, choice);
-        });
-      },
-    },
-    {
-      name: "intake-cancel",
-      matches: (data) => data === INTAKE_CANCEL,
-      handle: async (ctx) =>
-        runIntakeAction(ctx, async (actorId) => {
-          cancelIntake(backendDb, actorId);
-          return [{ type: "main-menu", menu: mainMenu, text: mainMenuText(backendDb, config, actorId), edit: true }];
-        }),
-    },
-    {
-      name: "queue",
-      matches: (data) => data === "queue_home",
-      handle: async (ctx) => {
-        await ctx.answerCallbackQuery();
-        await showQueue(ctx, backendDb, config);
-        return true;
-      },
-    },
-    {
-      name: "queue-attention",
-      matches: (data) => data === "queue_attention",
-      handle: async (ctx) => {
-        await ctx.answerCallbackQuery();
-        await showQueueAttention(ctx, backendDb, config);
-        return true;
-      },
-    },
-    {
-      name: "queue-attention-page",
-      matches: (data) => data.startsWith("queue_attention_page:"),
-      handle: async (ctx) => {
-        const value = callbackData(ctx).slice("queue_attention_page:".length);
-        const page = value === "noop" ? 0 : Number(value);
-        await ctx.answerCallbackQuery();
-        if (value !== "noop" && Number.isSafeInteger(page) && page >= 0) await showQueueAttention(ctx, backendDb, config, page);
-        return true;
-      },
-    },
-    {
-      name: "queue-page",
-      matches: (data) => data.startsWith("queue_page:"),
-      handle: async (ctx) => {
-        const value = callbackData(ctx).slice("queue_page:".length);
-        const page = value === "noop" ? 0 : Number(value);
-        await ctx.answerCallbackQuery();
-        if (value !== "noop" && Number.isSafeInteger(page) && page >= 0) await showQueue(ctx, backendDb, config, page);
-        return true;
-      },
-    },
-    {
-      name: "menu-home",
-      matches: (data) => data === "menu_home",
-      handle: async (ctx) => {
-        clearTelegramAnalyticsDashboard(backendDb, Number(ctx.from?.id));
-        await ctx.answerCallbackQuery();
-        await showMainMenu(ctx, backendDb, config, mainMenu, true);
-        return true;
-      },
-    },
-    {
-      name: "progress",
-      matches: (data) => data.startsWith("progress"),
-      handle: async (ctx) => handleProgressCallback(ctx, backendDb, config),
-    },
-    {
-      name: "delivery-preview",
-      matches: (data) => data.startsWith("delivery_preview_"),
-      handle: async (ctx) => handleTelegramDeliveryPreviewCallback(ctx, backendDb, config),
-    },
-    {
-      name: "analytics",
-      matches: (data) => data.startsWith("analytics_") || data.startsWith("archive_"),
-      handle: async (ctx) => handleAnalyticsCallback(ctx, backendDb, config),
-    },
-    {
-      name: "publication",
-      matches: (data) => parseSessionCallback(data).callback !== null,
-      handle: async (ctx) => handlePublicationCallback(ctx, backendDb, config, mainMenu),
-    },
-    {
-      name: "operations",
-      matches: (data) => data.startsWith("deploy_"),
-      handle: async (ctx) => handleOperationsCallback(ctx, backendDb, config),
-    },
-  ];
-
   bot.on("callback_query:data", async (ctx) => {
-    const routeData = parseCallbackData(ctx);
-    const route = callbackRoutes.find((candidate) => candidate.matches(routeData));
-    // A route that declines the tap leaves it unanswered, and an unanswered tap
-    // spins in the client until it times out. Say so instead.
-    if (route && (await route.handle(ctx))) return;
+    const data = ctx.callbackQuery.data;
+    // Publication controls carry their own namespace and registry; everything
+    // else is a declared screen. Nothing is matched by prefix any more, so
+    // "analytics_post" can no longer swallow "analytics_post_archive", and a
+    // tap that fits neither table is answered instead of left spinning.
+    if (parseSessionCallback(data).callback) {
+      await handlePublicationCallback(ctx, backendDb, config, mainMenu);
+      return;
+    }
+    const callback = parseScreenCallback(data);
+    const handled = callback
+      ? await SCREEN_ROUTES[callback.id]({ ctx, backendDb, config, mainMenu, args: callback.args, callback })
+      : false;
+    if (handled) return;
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
     await ctx.answerCallbackQuery({ text: t(locale, "action.unknown") });
   });
-
-  /** The intake's own controls, run the way every publication control is: one
-   * acknowledgement, one tap at a time, and a failure the operator can read.
-   * The whole intake shares a lock key, because two of its buttons pressed
-   * together would otherwise both store a video and open two drafts. */
-  async function runIntakeAction(
-    ctx: Context,
-    produce: (actorId: number, locale: StudioLocale) => Promise<readonly PublicationEffect[]>,
-  ): Promise<boolean> {
-    const actorId = Number(ctx.from?.id);
-    const locale = settingsService(backendDb).locale(actorId);
-    await runCallbackAction(
-      ctx,
-      backendDb,
-      { locale, lockKey: `${actorId}:intake`, describe: (error) => describeError(locale, error) },
-      () => produce(actorId, locale),
-    );
-    return true;
-  }
-}
-
-type CallbackRoute = {
-  name: string;
-  matches: (data: string) => boolean;
-  handle: (ctx: Context) => Promise<boolean>;
-};
-
-function callbackData(ctx: Context): string {
-  return ctx.callbackQuery?.data ?? "";
-}
-
-function parseCallbackData(ctx: Context): string {
-  return parseSessionCallback(callbackData(ctx)).data;
 }
 
 function localizedTextVariants(keys: readonly MessageKey[]): string[] {

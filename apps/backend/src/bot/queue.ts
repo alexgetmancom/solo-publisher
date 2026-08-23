@@ -11,6 +11,7 @@ import type { StudioQueueAttentionItem, StudioQueueItem, StudioQueueSnapshot } f
 import { settingsService } from "../studio/services/settings.js";
 import { publicationCallback } from "./publication-callback.js";
 import { formatQueueTime } from "./queue-time.js";
+import { screenCallback } from "./screen-callback.js";
 import { ignoringUnchangedEdit } from "./telegram-errors.js";
 
 const QUEUE_PAGE_SIZE = 10;
@@ -22,6 +23,26 @@ type QueueScreen = { text: string; items: QueuePage; currentPage: number; pages:
 export async function showQueue(ctx: Context, backendDb: BackendDb, config: BackendConfig, page = 0): Promise<void> {
   const actorId = ctx.from?.id;
   if (actorId === undefined) return;
+  const view = queueView(backendDb, config, actorId, page);
+  await replaceQueueMessage(ctx, view.text, view.keyboard);
+}
+
+export async function showQueueAttention(ctx: Context, backendDb: BackendDb, config: BackendConfig, page = 0): Promise<void> {
+  const actorId = ctx.from?.id;
+  if (actorId === undefined) return;
+  const view = attentionView(backendDb, config, actorId, page);
+  await replaceQueueMessage(ctx, view.text, view.keyboard);
+}
+
+/** The queue as text and buttons, without a Telegram call. Sending it is the
+ * screen's other half; keeping the two apart is what lets the whole surface be
+ * written down and reviewed. */
+export function queueView(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  page = 0,
+): { text: string; keyboard: InlineKeyboard } {
   const locale = settingsService(backendDb).locale(actorId);
   const services = createStudioServices(backendDb, config);
   const timeConfig = services.settings.timeConfig(actorId, config);
@@ -33,20 +54,25 @@ export async function showQueue(ctx: Context, backendDb: BackendDb, config: Back
   for (const item of pageItems.upcoming) keyboard.text(itemButton(item, now, locale, timeConfig.TIMEZONE), itemCallback(item)).row();
   for (const item of pageItems.drafts) keyboard.text(`${kindIcon(item.kind)} ${item.label}`, itemCallback(item)).row();
   if (snapshot.attention.length)
-    keyboard.text(t(locale, "queue.attention-btn", { count: snapshot.attention.length }), "queue_attention").row();
+    keyboard.text(t(locale, "queue.attention-btn", { count: snapshot.attention.length }), screenCallback("queue_attention")).row();
   if (pages > 1) {
+    if (currentPage > 0) keyboard.text("←", screenCallback("queue_page", [currentPage - 1]));
+    keyboard.text(`${currentPage + 1}/${pages}`, screenCallback("noop"));
+    if (currentPage < pages - 1) keyboard.text("→", screenCallback("queue_page", [currentPage + 1]));
     keyboard.row();
-    if (currentPage > 0) keyboard.text("←", `queue_page:${currentPage - 1}`);
-    keyboard.text(`${currentPage + 1}/${pages}`, "queue_page:noop");
-    if (currentPage < pages - 1) keyboard.text("→", `queue_page:${currentPage + 1}`);
   }
-  keyboard.row().text(t(locale, "common.menu"), "menu_home");
-  await replaceQueueMessage(ctx, text, keyboard);
+  // Every row above closes itself, so the footer opens no empty one: Telegram
+  // renders a blank row as a gap the operator can tap into.
+  keyboard.text(t(locale, "common.menu"), screenCallback("menu_home"));
+  return { text, keyboard };
 }
 
-export async function showQueueAttention(ctx: Context, backendDb: BackendDb, config: BackendConfig, page = 0): Promise<void> {
-  const actorId = ctx.from?.id;
-  if (actorId === undefined) return;
+export function attentionView(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  page = 0,
+): { text: string; keyboard: InlineKeyboard } {
   const locale = settingsService(backendDb).locale(actorId);
   const services = createStudioServices(backendDb, config);
   const timeConfig = services.settings.timeConfig(actorId, config);
@@ -60,12 +86,12 @@ export async function showQueueAttention(ctx: Context, backendDb: BackendDb, con
     keyboard.text(`${kindIcon(item.kind)} ${item.label}`, itemCallback(item)).row();
   }
   if (pages > 1) {
-    if (currentPage > 0) keyboard.text("←", `queue_attention_page:${currentPage - 1}`);
-    keyboard.text(`${currentPage + 1}/${pages}`, "queue_attention_page:noop");
-    if (currentPage < pages - 1) keyboard.text("→", `queue_attention_page:${currentPage + 1}`);
+    if (currentPage > 0) keyboard.text("←", screenCallback("queue_attention_page", [currentPage - 1]));
+    keyboard.text(`${currentPage + 1}/${pages}`, screenCallback("noop"));
+    if (currentPage < pages - 1) keyboard.text("→", screenCallback("queue_attention_page", [currentPage + 1]));
     keyboard.row();
   }
-  keyboard.text(t(locale, "common.back"), "queue_home").text(t(locale, "common.menu"), "menu_home");
+  keyboard.text(t(locale, "common.back"), screenCallback("queue_home")).text(t(locale, "common.menu"), screenCallback("menu_home"));
   const lines = [`⚠️ *${t(locale, "queue.attention-title")}*`, ""];
   if (!items.length) lines.push(t(locale, "queue.no-attention"));
   else
@@ -74,7 +100,7 @@ export async function showQueueAttention(ctx: Context, backendDb: BackendDb, con
         `• ${formatQueueTime(item.time, now, locale, timeConfig.TIMEZONE)} — ${kindIcon(item.kind)} ${escapeMarkdown(item.label)}`,
       );
   if (pages > 1) lines.push("", t(locale, "queue.page", { page: currentPage + 1, pages }));
-  await replaceQueueMessage(ctx, lines.join("\n"), keyboard);
+  return { text: lines.join("\n"), keyboard };
 }
 
 export function queueScreen(snapshot: StudioQueueSnapshot, locale: StudioLocale, timeZone: string, page = 0): QueueScreen {
