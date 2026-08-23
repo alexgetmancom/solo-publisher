@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, isNull, like, lt, lte, or } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { analyticsSync, creatorProfileSnapshots, creatorProfiles, socialComments } from "../../db/schema.js";
 
@@ -185,4 +185,16 @@ export function upsertComment(
 export function metricNumber(value: unknown): number {
   const parsed = typeof value === "number" ? value : Number(value ?? 0);
   return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+
+/** Sync rows whose source starts with a prefix, newest first. The daily jobs
+ * key one row per day, so this is how an operator sees what the last runs did. */
+export function syncStateFor(backendDb: BackendDb, prefix: string, limit = 7) {
+  return unsafeDb(backendDb)
+    .db.select()
+    .from(analyticsSync)
+    .where(like(analyticsSync.source, `${prefix}%`))
+    .orderBy(desc(analyticsSync.source))
+    .limit(limit)
+    .all();
 }

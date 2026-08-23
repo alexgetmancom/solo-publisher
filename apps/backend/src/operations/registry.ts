@@ -42,6 +42,7 @@ import { purgePublication } from "./publication-purge.js";
 import { resolvePublicationRef } from "./publication-ref.js";
 import { publishText } from "./publish.js";
 import { findPublication, formatPublicationMatches, formatRecentPublications, recentPublications } from "./recent.js";
+import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
 import { backfillSiteImageMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
@@ -162,6 +163,14 @@ const operationDefs = {
     note: "start here for any worker, queue, configuration or publication question",
     handler: (context) => buildOperationsGuide(context.dbPath, operationCatalog()),
     format: formatOperationsGuide,
+  }),
+  settings: operation({
+    summary: "Studio settings as the bot screens hold them, and what the last daily news digests did.",
+    note: "A failed digest records its error and is not due again for a day, so `runs` is where a missing digest is explained.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => settingsReport(context.db(), context.config()),
   }),
   "studio-profile": operation({
     summary: "What this Studio publishes as, its time zone, whether it serves a public site, and video timing.",
