@@ -117,7 +117,6 @@ try {
     "-e",
     "VIDEO_MEDIA_DIR=/data/video-media",
     "-e",
-    "-e",
     "BIND_HOST=0.0.0.0",
     "-e",
     "PORT=8788",
