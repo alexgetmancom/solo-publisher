@@ -45,7 +45,10 @@ const stateKey = (kind: ExportKind) => `export:${kind}`;
  * default blocking semantics onto the same pipe, so a reader that falls behind
  * simply makes tar wait. */
 function blockingStdout(): number {
-  return fs.openSync("/dev/fd/1", "a");
+  // Write-only and nothing else. Node's "a"/"w" flags carry O_CREAT, which the
+  // kernel refuses on the magic symlink `/dev/fd/1` becomes when stdout is a
+  // pipe — the exact case this exists for.
+  return fs.openSync("/dev/fd/1", fs.constants.O_WRONLY);
 }
 
 function mediaSources(config: EnvConfig): string[] {
