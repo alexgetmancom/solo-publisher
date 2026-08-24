@@ -66,7 +66,9 @@ function stubYouTube(perLocale: Record<string, unknown>): { calls: string[]; res
       const locale = authorization.endsWith("token-en") ? "en" : "ru";
       if (init.method === "PUT") return Response.json({});
       const answer = perLocale[locale];
-      if (answer instanceof Error) return new Response(JSON.stringify({ error: answer.message }), { status: 403 });
+      // The message is the body YouTube sent, verbatim: re-encoding it as JSON
+      // escaped the very keys the screen reads it by.
+      if (answer instanceof Error) return new Response(answer.message, { status: 403 });
       return Response.json(answer ?? { items: [] });
     },
     { preconnect: original.preconnect },
@@ -167,6 +169,72 @@ describe("stream screen", () => {
       expect(sent.at(-1)).toContain("Стримс");
       expect(buttons.at(-1)).not.toContain("💬 Say in chat");
       expect(buttons.at(-1)).toContain("✏️ Title");
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  /** The screen an operator opens while streaming must not be a place errors
+   * pile up. A channel with live streaming switched off answers 403 forever
+   * and has no stream; that is not news, and it read as a wall of JSON. */
+  it("says nothing about a channel that simply has live streaming switched off", async () => {
+    const backendDb = studioDb();
+    const off = new Error('{"error":{"code":403,"errors":[{"reason":"liveStreamingNotEnabled"}]}}');
+    const youtube = stubYouTube({ ru: live, en: off });
+    try {
+      sent.length = 0;
+      await showStreamScreen(ctxWith(), backendDb, config);
+      expect(sent.at(-1)).toContain("Стримс");
+      expect(sent.at(-1)).not.toContain("EN");
+      expect(sent.at(-1)).not.toContain("403");
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  it("reports a real fault as one line, not as the JSON document it arrived in", async () => {
+    const backendDb = studioDb();
+    const quota = new Error('{"error":{"code":403,"message":"The request cannot be completed because you have exceeded your quota."}}');
+    const youtube = stubYouTube({ ru: live, en: quota });
+    try {
+      sent.length = 0;
+      await showStreamScreen(ctxWith(), backendDb, config);
+      expect(sent.at(-1)).toContain("exceeded your quota");
+      expect(sent.at(-1)).not.toContain("googleapis.com");
+      expect(sent.at(-1)).not.toContain('"code"');
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  /** Every YouTube stream is a new broadcast that opens with an empty
+   * description, so the value the operator wants is the one they typed last
+   * time -- offered to reuse, never applied on its own. */
+  it("offers the last stream's description when this one opened empty", async () => {
+    const backendDb = studioDb();
+    const withHistory = {
+      items: [
+        { id: "bc-live", snippet: { title: "Стримс", description: "", liveChatId: "chat-1" }, status: { lifeCycleStatus: "live" } },
+        {
+          id: "bc-old",
+          snippet: { title: "Прошлый", description: "Ссылки под эфиром", actualEndTime: "2026-08-20T21:00:00Z" },
+          status: { lifeCycleStatus: "complete" },
+        },
+        {
+          id: "bc-older",
+          snippet: { title: "Позапрошлый", description: "Старое описание", actualEndTime: "2026-08-01T21:00:00Z" },
+          status: { lifeCycleStatus: "complete" },
+        },
+      ],
+    };
+    const youtube = stubYouTube({ ru: withHistory, en: { items: [] } });
+    try {
+      const effects = await promptStreamField(ctxWith(), backendDb, config, "description");
+      expect(effects[0]).toMatchObject({ text: expect.stringContaining("Ссылки под эфиром") });
+      expect(effects[0]).not.toMatchObject({ text: expect.stringContaining("Старое описание") });
     } finally {
       youtube.restore();
       backendDb.close();

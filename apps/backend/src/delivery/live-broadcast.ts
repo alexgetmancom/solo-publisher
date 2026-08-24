@@ -21,6 +21,9 @@ export type LiveBroadcast = {
   /** The chat attached to this broadcast, which exists only while it is on the
    * air and only when the channel left chat enabled. No id, no chat. */
   liveChatId: string | null;
+  /** When this stream actually ended, which is the only ordering a finished
+   * broadcast has: it never carried a scheduled start to be sorted by. */
+  endedAt: string | null;
   url: string;
 };
 
@@ -42,7 +45,14 @@ export const LIVE_DESCRIPTION_LIMIT = 5000;
 type BroadcastList = {
   items?: Array<{
     id?: string;
-    snippet?: { title?: string; description?: string; scheduledStartTime?: string; isDefaultBroadcast?: boolean; liveChatId?: string };
+    snippet?: {
+      title?: string;
+      description?: string;
+      scheduledStartTime?: string;
+      isDefaultBroadcast?: boolean;
+      liveChatId?: string;
+      actualEndTime?: string;
+    };
     status?: { lifeCycleStatus?: LifeCycleStatus };
   }>;
 };
@@ -72,6 +82,7 @@ async function listBroadcasts(token: string, fetchImpl: typeof fetch): Promise<L
             description: item.snippet?.description ?? "",
             scheduledStartTime: item.snippet?.scheduledStartTime ?? null,
             liveChatId: item.snippet?.liveChatId ?? null,
+            endedAt: item.snippet?.actualEndTime ?? null,
             url: `https://www.youtube.com/watch?v=${item.id}`,
           },
         ]

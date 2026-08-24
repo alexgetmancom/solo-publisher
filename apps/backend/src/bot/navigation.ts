@@ -19,20 +19,22 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
   // the stream that is running right now. They share no step and no card, and
   // one entry point that asked which of them this was made the operator answer
   // a question they had already answered by choosing the button.
-  menu
-    .text(
-      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.text"),
-      (ctx) => openIntake(ctx, backendDb, "text", "edit"),
-    )
-    .text(
-      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.video"),
-      (ctx) => openIntake(ctx, backendDb, "video", "edit"),
-    )
-    .text(
-      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.streams"),
-      (ctx) => showStreamScreen(ctx, backendDb, config, "edit"),
-    )
-    .row();
+  //
+  // Text and video are unconditional, as they have been: a draft is written
+  // before its channels are connected, and the targets inside are what a
+  // connection turns on. A stream is not like that. It is not a draft this
+  // Studio holds, it is a thing happening on a YouTube account right now, so a
+  // Studio with no YouTube account has no screen to open -- only credentials to
+  // fail to refresh, which is what this button did on Alex.
+  menu.dynamic((ctx, range) => {
+    const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
+    range
+      .text(t(locale, "menu.text"), (ctx) => openIntake(ctx, backendDb, "text", "edit"))
+      .text(t(locale, "menu.video"), (ctx) => openIntake(ctx, backendDb, "video", "edit"));
+    if (createStudioServices(backendDb, config).streams.channels().length)
+      range.text(t(locale, "menu.streams"), (ctx) => showStreamScreen(ctx, backendDb, config, "edit"));
+  });
+  menu.row();
   menu.text(
     (ctx) => {
       const locale = settingsService(backendDb).locale(Number(ctx.from?.id));

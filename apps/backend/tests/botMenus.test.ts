@@ -6,12 +6,13 @@ import { buildMainMenu } from "../src/bot/navigation.js";
 import { buildSettingsMenu } from "../src/bot/settings/index.js";
 import { isAdmin } from "../src/bot.js";
 import { registerChannel } from "../src/channels/registry.js";
-import type { BackendDb } from "../src/db/client.js";
+import type { BackendDb, UnsafeBackendDb } from "../src/db/client.js";
 import type { BackendConfig } from "../src/foundation/config.js";
+import { registerTestChannels } from "./helpers/channels.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
-let backendDb: BackendDb | null = null;
+let backendDb: UnsafeBackendDb | null = null;
 
 afterEach(() => {
   backendDb?.close();
@@ -101,6 +102,7 @@ describe("buildMainMenu", () => {
 
   it("offers one way in per entity, and analytics", async () => {
     backendDb = openBackendDb(":memory:");
+    registerTestChannels(backendDb, ["youtube_ru"]);
     const config = loadTestConfig({});
     const labels = await mainMenuLabels(config, backendDb);
     expect(labels.some((text) => /text/i.test(text))).toBe(true);
@@ -113,15 +115,29 @@ describe("buildMainMenu", () => {
    * stream running right now. They share no step and no card. */
   it("gives the three entities the whole first row", async () => {
     backendDb = openBackendDb(":memory:");
-    const config = loadTestConfig({});
-    const settingsMenu = buildSettingsMenu(config, backendDb);
-    const mainMenu = buildMainMenu(config, backendDb, settingsMenu);
-    const rows: Array<Array<{ text: string }>> = await (
-      mainMenu as unknown as { render: (ctx: Context) => Promise<Array<Array<{ text: string }>>> }
-    ).render(fakeCtx);
-    expect(rows[0]?.map((button) => button.text)).toEqual(["📝 Text", "🎬 Video", "🔴 Streams"]);
+    registerTestChannels(backendDb, ["youtube_ru"]);
+    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video", "🔴 Streams"]);
+  });
+
+  /** A Studio that publishes video to Instagram and has no YouTube account has
+   * no stream to open a screen about -- only credentials that were never
+   * issued, which is what that button spent its time failing to refresh. Text
+   * and video stay: a draft is written before its channels are connected. */
+  it("drops the stream button on a Studio with no YouTube channel", async () => {
+    backendDb = openBackendDb(":memory:");
+    registerTestChannels(backendDb, ["instagram_ru", "telegram"]);
+    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video"]);
   });
 });
+
+async function firstRow(backendDb: UnsafeBackendDb): Promise<string[] | undefined> {
+  const config = loadTestConfig({});
+  const mainMenu = buildMainMenu(config, backendDb, buildSettingsMenu(config, backendDb));
+  const rows: Array<Array<{ text: string }>> = await (
+    mainMenu as unknown as { render: (ctx: Context) => Promise<Array<Array<{ text: string }>>> }
+  ).render(fakeCtx);
+  return rows[0]?.map((button) => button.text);
+}
 
 describe("buildSettingsMenu", () => {
   it("groups every setting under a category instead of one flat list", async () => {

@@ -30,6 +30,25 @@ export function videoLocales(backendDb: BackendDb): VideoLocale[] {
   return ordered(videoDestinations(backendDb).map((destination) => destination.locale));
 }
 
+/**
+ * The YouTube channels this Studio has, which is a narrower question than which
+ * languages it publishes video in: a Studio can publish video to Instagram
+ * alone and have no YouTube account at all.
+ *
+ * This one takes no fresh-install fallback. "Both languages" is a sensible
+ * default for a pipeline that is about to be set up; for live streaming it
+ * would mean asking Google to refresh credentials that were never issued, and
+ * the answer to that is an error rather than an empty list.
+ */
+export function youtubeLocales(backendDb: BackendDb): VideoLocale[] {
+  const connected = new Set(
+    videoDestinations(backendDb)
+      .filter((destination) => destination.profile.startsWith("youtube"))
+      .map((destination) => destination.locale),
+  );
+  return LOCALE_ORDER.filter((locale) => connected.has(locale as VideoLocale)) as VideoLocale[];
+}
+
 /** Reading order everywhere a language is a column, a row or a heading. */
 const LOCALE_ORDER: TargetLocale[] = ["ru", "en"];
 

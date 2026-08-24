@@ -14,6 +14,7 @@ import {
   LIVE_DESCRIPTION_LIMIT,
   LIVE_TITLE_LIMIT,
   type LiveBroadcast,
+  previousValue,
   type StudioStream,
 } from "../studio/services/streams.js";
 import { clearConversationState, getConversationState, saveConversationState } from "./conversation-state.js";
@@ -109,13 +110,21 @@ export async function promptStreamField(
     {
       type: "screen",
       mode: "edit",
-      text: t(locale, ASK[field], {
-        current: field === "chat" ? "" : found.chosen.broadcast[field] || t(locale, "stream.description-empty"),
-        limit: String(FIELD_LIMIT[field]),
-      }),
+      text: t(locale, ASK[field], { current: currentValue(locale, found, field), limit: String(FIELD_LIMIT[field]) }),
       options: { reply_markup: cancelPromptKeyboard(locale, screenCallback("stream_home")) },
     },
   ];
+}
+
+/** What the prompt shows under "now". A stream that opened with this field
+ * empty gets the last stream's value offered beside it: nothing carries over
+ * between YouTube streams, so that is the text the operator would retype. */
+function currentValue(locale: StudioLocale, found: StudioStream, field: StreamField): string {
+  if (field === "chat" || !found.chosen) return "";
+  const value = found.chosen.broadcast[field].trim();
+  if (value) return value;
+  const previous = previousValue(found, field);
+  return previous ? t(locale, "stream.previous", { value: previous }) : t(locale, "stream.description-empty");
 }
 
 /** Applies a value the operator typed for the field the screen asked about. */

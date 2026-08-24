@@ -64,6 +64,7 @@ const en = {
   "stream.ask-chat":
     "Send the message for the stream chat, up to {limit} characters. It goes out as the channel and cannot be taken back.{current}",
   "stream.say": "💬 Say in chat",
+  "stream.previous": "empty. Last stream had: {value}",
   "stream.said": "💬 Sent to chat: {value}",
   "stream.need-text": "Send the new value as text.",
   "stream.title-changed": "✅ Title changed: {value}",
@@ -821,6 +822,7 @@ const ru = {
   "stream.ask-description": "Пришлите новое описание, до {limit} знаков.\n\nСейчас: {current}",
   "stream.ask-chat": "Пришлите сообщение для чата трансляции, до {limit} знаков. Уйдёт от имени канала, отменить нельзя.{current}",
   "stream.say": "💬 Написать в чат",
+  "stream.previous": "пусто. На прошлом стриме было: {value}",
   "stream.said": "💬 Отправлено в чат: {value}",
   "stream.need-text": "Пришлите новое значение текстом.",
   "stream.title-changed": "✅ Название изменено: {value}",
