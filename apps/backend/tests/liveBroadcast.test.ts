@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { currentYouTubeBroadcast, retitleYouTubeBroadcast } from "../src/delivery/live-broadcast.js";
+import { retitleYouTubeBroadcast, youtubeBroadcastInventory } from "../src/delivery/live-broadcast.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 /**
@@ -8,7 +8,8 @@ import { loadTestConfig } from "./helpers/studio-config.js";
  * a snippet update that drops the description wipes it on air, a second lookup
  * between read and write would rename whichever stream is live by then, and
  * `mine` alongside `broadcastStatus` is an error YouTube only reports at run
- * time.
+ * time. Which broadcast is chosen decides whether a rename reaches the current
+ * audience or the next one, so every branch of that choice is pinned too.
  */
 
 const config = loadTestConfig({
@@ -30,39 +31,72 @@ function stub(responses: (call: Call) => unknown): { calls: Call[]; fetchImpl: t
   return { calls, fetchImpl };
 }
 
-const ACTIVE = {
-  items: [
-    {
-      id: "bc-live",
-      snippet: { title: "Old title", description: "Stream notes", scheduledStartTime: "2026-08-24T18:00:00Z" },
-    },
-  ],
+const PERSISTENT = {
+  id: "bc-default",
+  snippet: { title: "Stream key title", description: "Key notes", isDefaultBroadcast: true },
+  status: { lifeCycleStatus: "ready" },
 };
+const LIVE = {
+  id: "bc-live",
+  snippet: { title: "Old title", description: "Stream notes", scheduledStartTime: "2026-08-24T18:00:00Z" },
+  status: { lifeCycleStatus: "live" },
+};
+const ONLY_LIVE = { items: [LIVE] };
 
-describe("currentYouTubeBroadcast", () => {
-  it("asks for the live stream by status alone, without the incompatible mine filter", async () => {
-    const { calls, fetchImpl } = stub(() => ACTIVE);
-    const broadcast = await currentYouTubeBroadcast(config, "ru", fetchImpl);
-    expect(broadcast).toMatchObject({ id: "bc-live", status: "active", title: "Old title" });
+describe("youtubeBroadcastInventory", () => {
+  it("asks for every broadcast by status alone, without the incompatible mine filter", async () => {
+    const { calls, fetchImpl } = stub(() => ONLY_LIVE);
+    const result = await youtubeBroadcastInventory(config, "ru", fetchImpl);
+    expect(result.chosen).toMatchObject({ id: "bc-live", title: "Old title", lifeCycleStatus: "live" });
     const list = calls.find((call) => call.url.includes("liveBroadcasts"));
-    expect(list?.url).toContain("broadcastStatus=active");
+    expect(list?.url).toContain("broadcastStatus=all");
     expect(list?.url).not.toContain("mine=");
   });
 
-  it("falls back to the next scheduled stream when nothing is on the air", async () => {
-    const { fetchImpl } = stub((call) => (call.url.includes("broadcastStatus=active") ? { items: [] } : ACTIVE));
-    expect(await currentYouTubeBroadcast(config, "ru", fetchImpl)).toMatchObject({ id: "bc-live", status: "upcoming" });
+  it("renames the stream on the air rather than the persistent one behind the key", async () => {
+    const { fetchImpl } = stub(() => ({ items: [PERSISTENT, LIVE] }));
+    expect((await youtubeBroadcastInventory(config, "ru", fetchImpl)).chosen).toMatchObject({ id: "bc-live" });
   });
 
-  it("reports no broadcast between streams rather than failing", async () => {
+  /** The reusable-key channel: nothing is `active` between streams, and the
+   * title set now is the one the next stream opens under. */
+  it("falls back to the persistent broadcast when nothing is on the air", async () => {
+    const { fetchImpl } = stub(() => ({ items: [PERSISTENT] }));
+    expect((await youtubeBroadcastInventory(config, "ru", fetchImpl)).chosen).toMatchObject({ id: "bc-default", isDefault: true });
+  });
+
+  it("takes the soonest scheduled event when there is no persistent broadcast", async () => {
+    const later = {
+      id: "bc-later",
+      snippet: { title: "Later", scheduledStartTime: "2026-08-26T18:00:00Z" },
+      status: { lifeCycleStatus: "ready" },
+    };
+    const sooner = {
+      id: "bc-sooner",
+      snippet: { title: "Sooner", scheduledStartTime: "2026-08-25T18:00:00Z" },
+      status: { lifeCycleStatus: "ready" },
+    };
+    const { fetchImpl } = stub(() => ({ items: [later, sooner] }));
+    expect((await youtubeBroadcastInventory(config, "ru", fetchImpl)).chosen).toMatchObject({ id: "bc-sooner" });
+  });
+
+  it("never offers a finished stream, whose rename would reach an audience that already left", async () => {
+    const done = { id: "bc-done", snippet: { title: "Yesterday", isDefaultBroadcast: true }, status: { lifeCycleStatus: "complete" } };
+    const { fetchImpl } = stub(() => ({ items: [done] }));
+    const result = await youtubeBroadcastInventory(config, "ru", fetchImpl);
+    expect(result.chosen).toBeNull();
+    expect(result.broadcasts).toHaveLength(1);
+  });
+
+  it("reports no broadcast on an empty channel rather than failing", async () => {
     const { fetchImpl } = stub(() => ({ items: [] }));
-    expect(await currentYouTubeBroadcast(config, "ru", fetchImpl)).toBeNull();
+    expect((await youtubeBroadcastInventory(config, "ru", fetchImpl)).chosen).toBeNull();
   });
 });
 
 describe("retitleYouTubeBroadcast", () => {
   it("writes the broadcast the read returned and resends the fields the update would clear", async () => {
-    const { calls, fetchImpl } = stub(() => ACTIVE);
+    const { calls, fetchImpl } = stub(() => ONLY_LIVE);
     const result = await retitleYouTubeBroadcast(config, "  New title  ", "ru", fetchImpl);
     expect(result).toMatchObject({ id: "bc-live", title: "New title" });
     const update = calls.find((call) => call.method === "PUT");
@@ -73,8 +107,19 @@ describe("retitleYouTubeBroadcast", () => {
     expect(calls.filter((call) => call.method === "PUT")).toHaveLength(1);
   });
 
+  /** A persistent broadcast has no scheduled start, and sending an empty one
+   * back is a 400 rather than a no-op. */
+  it("omits the scheduled start the persistent broadcast does not have", async () => {
+    const { calls, fetchImpl } = stub(() => ({ items: [PERSISTENT] }));
+    await retitleYouTubeBroadcast(config, "New title", "ru", fetchImpl);
+    expect(JSON.parse(String(calls.find((call) => call.method === "PUT")?.body))).toEqual({
+      id: "bc-default",
+      snippet: { title: "New title", description: "Key notes" },
+    });
+  });
+
   it("refuses a title YouTube would reject before touching the channel", async () => {
-    const { calls, fetchImpl } = stub(() => ACTIVE);
+    const { calls, fetchImpl } = stub(() => ONLY_LIVE);
     await expect(retitleYouTubeBroadcast(config, "x".repeat(101), "ru", fetchImpl)).rejects.toThrow("100 characters");
     expect(calls).toHaveLength(0);
   });

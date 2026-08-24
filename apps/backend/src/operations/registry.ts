@@ -9,7 +9,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { currentYouTubeBroadcast, LIVE_TITLE_LIMIT, retitleYouTubeBroadcast } from "../delivery/live-broadcast.js";
+import { LIVE_TITLE_LIMIT, retitleYouTubeBroadcast, youtubeBroadcastInventory } from "../delivery/live-broadcast.js";
 import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -221,16 +221,16 @@ const operationDefs = {
       }),
   }),
   "live-title": operation({
-    summary: "The title of the YouTube broadcast that is on the air, or of the next scheduled one.",
-    note: "Nothing streaming and nothing scheduled reports no broadcast; that is the normal answer between streams, not a failure.",
+    summary: "Every YouTube broadcast the channel holds, and which one a rename would land on.",
+    note: "A stream on the air wins; otherwise the persistent broadcast behind the reusable stream key, whose title the next stream opens under.",
     schema: z.object({ locale: youtubeChannelOption }),
     mutates: false,
     agent: true,
-    handler: (context, input) => currentYouTubeBroadcast(context.config(), input.locale, context.fetchImpl),
+    handler: (context, input) => youtubeBroadcastInventory(context.config(), input.locale, context.fetchImpl),
   }),
   "live-title-set": operation({
-    summary: "Rename the live YouTube broadcast while it is on the air.",
-    note: `Takes effect for viewers immediately. At most ${LIVE_TITLE_LIMIT} characters; the description and scheduled start are preserved.`,
+    summary: "Rename the YouTube broadcast that live-title reports as chosen.",
+    note: `On the air it reaches viewers immediately; off the air it sets the title the next stream opens under. At most ${LIVE_TITLE_LIMIT} characters; the description and scheduled start are preserved.`,
     schema: z.object({
       title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new broadcast title"),
       locale: youtubeChannelOption,

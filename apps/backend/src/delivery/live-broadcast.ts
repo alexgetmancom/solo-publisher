@@ -2,19 +2,32 @@ import type { BackendConfig } from "../foundation/config.js";
 import { type VideoLocale, youtubeAccessToken } from "../foundation/external/youtube.js";
 import { requestJson } from "../foundation/http.js";
 
-/** What YouTube calls a broadcast's lifecycle once it is worth showing an
- * operator: a stream that is on the air, or the next one that is not yet. */
-type BroadcastStatus = "active" | "upcoming";
+/** YouTube's own lifecycle vocabulary, kept verbatim: an operator comparing this
+ * against YouTube Studio should not have to translate a renaming of it. */
+type LifeCycleStatus = "created" | "ready" | "testing" | "live" | "complete" | "revoked";
 
 export type LiveBroadcast = {
   id: string;
-  status: BroadcastStatus;
+  lifeCycleStatus: LifeCycleStatus;
+  /** The persistent broadcast behind the reusable stream key — the one whose
+   * title carries from one stream to the next, the way a Twitch title does.
+   * A channel has at most one. */
+  isDefault: boolean;
   title: string;
   description: string;
   /** YouTube rejects a snippet update that does not carry this back, so it is
    * read even though nothing here displays it. */
   scheduledStartTime: string | null;
   url: string;
+};
+
+/** What a title change would land on, and everything it was chosen from: which
+ * broadcast a channel is renaming is exactly the thing that is invisible from
+ * outside, and it decides whether the change shows up on air or on the next
+ * stream. */
+export type LiveBroadcastInventory = {
+  chosen: LiveBroadcast | null;
+  broadcasts: LiveBroadcast[];
 };
 
 /** A live title is the video's title: the same 100 characters, counted the same
@@ -24,50 +37,80 @@ export const LIVE_TITLE_LIMIT = 100;
 type BroadcastList = {
   items?: Array<{
     id?: string;
-    snippet?: { title?: string; description?: string; scheduledStartTime?: string };
+    snippet?: { title?: string; description?: string; scheduledStartTime?: string; isDefaultBroadcast?: boolean };
+    status?: { lifeCycleStatus?: LifeCycleStatus };
   }>;
 };
 
-async function listBroadcasts(token: string, status: BroadcastStatus, fetchImpl: typeof fetch): Promise<LiveBroadcast | null> {
-  // `broadcastStatus` already scopes the list to the authorized channel, and
-  // passing `mine` alongside it is an incompatible-filter error rather than a
-  // narrower query.
+/**
+ * Every broadcast the channel still holds, live or not.
+ *
+ * `broadcastStatus=active` answers only for a stream already on the air, which
+ * left a channel that streams through a reusable key looking empty whenever it
+ * was between streams — its persistent broadcast is `ready`, not `active`.
+ * `mine` is not passed alongside: exactly one filter is allowed.
+ */
+async function listBroadcasts(token: string, fetchImpl: typeof fetch): Promise<LiveBroadcast[]> {
   const response = await requestJson<BroadcastList>(
     fetchImpl,
-    `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastType=all&broadcastStatus=${status}`,
+    "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastType=all&broadcastStatus=all&maxResults=50",
     { headers: { Authorization: `Bearer ${token}` } },
   );
-  const item = response.items?.[0];
-  if (!item?.id) return null;
-  return {
-    id: item.id,
-    status,
-    title: item.snippet?.title ?? "",
-    description: item.snippet?.description ?? "",
-    scheduledStartTime: item.snippet?.scheduledStartTime ?? null,
-    url: `https://www.youtube.com/watch?v=${item.id}`,
-  };
+  return (response.items ?? []).flatMap((item) =>
+    item.id
+      ? [
+          {
+            id: item.id,
+            lifeCycleStatus: item.status?.lifeCycleStatus ?? "created",
+            isDefault: item.snippet?.isDefaultBroadcast === true,
+            title: item.snippet?.title ?? "",
+            description: item.snippet?.description ?? "",
+            scheduledStartTime: item.snippet?.scheduledStartTime ?? null,
+            url: `https://www.youtube.com/watch?v=${item.id}`,
+          },
+        ]
+      : [],
+  );
 }
 
 /**
- * The broadcast a title change would land on: the one on the air, or else the
- * next scheduled one. A channel that is neither streaming nor scheduled has
- * nothing to retitle and says so with `null`.
+ * The broadcast a title change belongs on.
+ *
+ * A stream on the air wins: that title is what an audience is reading right
+ * now. Otherwise the persistent broadcast, whose title is what the next stream
+ * will open under. A one-off scheduled event is the last resort, and only the
+ * soonest one — renaming an event further out would retitle a stream nobody
+ * asked about.
  */
-export async function currentYouTubeBroadcast(
+function chooseBroadcast(broadcasts: LiveBroadcast[]): LiveBroadcast | null {
+  const live = broadcasts.filter((broadcast) => broadcast.lifeCycleStatus === "live" || broadcast.lifeCycleStatus === "testing");
+  if (live.length > 0) return live[0] as LiveBroadcast;
+  const persistent = broadcasts.find((broadcast) => broadcast.isDefault && broadcast.lifeCycleStatus !== "complete");
+  if (persistent) return persistent;
+  const upcoming = broadcasts
+    .filter(
+      (broadcast) =>
+        broadcast.scheduledStartTime !== null && broadcast.lifeCycleStatus !== "complete" && broadcast.lifeCycleStatus !== "revoked",
+    )
+    .sort((left, right) => (left.scheduledStartTime as string).localeCompare(right.scheduledStartTime as string));
+  return upcoming[0] ?? null;
+}
+
+export async function youtubeBroadcastInventory(
   config: BackendConfig,
   locale: VideoLocale = "ru",
   fetchImpl: typeof fetch = fetch,
-): Promise<LiveBroadcast | null> {
-  return resolveBroadcast(await youtubeAccessToken(config, fetchImpl, locale), fetchImpl);
+): Promise<LiveBroadcastInventory> {
+  return inventory(await youtubeAccessToken(config, fetchImpl, locale), fetchImpl);
 }
 
-async function resolveBroadcast(token: string, fetchImpl: typeof fetch): Promise<LiveBroadcast | null> {
-  return (await listBroadcasts(token, "active", fetchImpl)) ?? (await listBroadcasts(token, "upcoming", fetchImpl));
+async function inventory(token: string, fetchImpl: typeof fetch): Promise<LiveBroadcastInventory> {
+  const broadcasts = await listBroadcasts(token, fetchImpl);
+  return { chosen: chooseBroadcast(broadcasts), broadcasts };
 }
 
 /**
- * Renames the live broadcast, in place, while it is on the air.
+ * Renames the broadcast a title change belongs on, in place.
  *
  * `liveBroadcasts.update` clears every snippet field the request omits, so the
  * description and the scheduled start are read back and resent verbatim — and
@@ -85,7 +128,7 @@ export async function retitleYouTubeBroadcast(
   if (trimmed.length > LIVE_TITLE_LIMIT)
     throw new Error(`YouTube allows ${LIVE_TITLE_LIMIT} characters in a live title; this one has ${trimmed.length}.`);
   const token = await youtubeAccessToken(config, fetchImpl, locale);
-  const current = await resolveBroadcast(token, fetchImpl);
+  const current = (await inventory(token, fetchImpl)).chosen;
   if (!current) return null;
   await requestJson(fetchImpl, "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet", {
     method: "PUT",
