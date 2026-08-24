@@ -9,6 +9,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
+import { currentYouTubeBroadcast, LIVE_TITLE_LIMIT, retitleYouTubeBroadcast } from "../delivery/live-broadcast.js";
 import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -120,6 +121,10 @@ const localizedTextOption = (description: string) =>
     .describe(description)
     .transform((value) => (value == null ? undefined : (JSON.parse(value) as LocalizedText)));
 const localeOption = z.enum(["ru", "en"]).optional().describe("restrict to one language");
+/** Which connected YouTube channel to act on. Unlike `localeOption` this is not
+ * a filter: every call reaches exactly one channel, and the Russian one is the
+ * one that streams. */
+const youtubeChannelOption = z.enum(["ru", "en"]).default("ru").describe("which connected YouTube channel");
 /** Non-empty wherever it is optional: `--target=` used to reach the dispatcher
  * as the empty string, which reads as "no target given" and silently widens the
  * command to every target the publication has. An option spelled with nothing
@@ -214,6 +219,25 @@ const operationDefs = {
         about: input.about,
         profiles: input.profiles,
       }),
+  }),
+  "live-title": operation({
+    summary: "The title of the YouTube broadcast that is on the air, or of the next scheduled one.",
+    note: "Nothing streaming and nothing scheduled reports no broadcast; that is the normal answer between streams, not a failure.",
+    schema: z.object({ locale: youtubeChannelOption }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => currentYouTubeBroadcast(context.config(), input.locale, context.fetchImpl),
+  }),
+  "live-title-set": operation({
+    summary: "Rename the live YouTube broadcast while it is on the air.",
+    note: `Takes effect for viewers immediately. At most ${LIVE_TITLE_LIMIT} characters; the description and scheduled start are preserved.`,
+    schema: z.object({
+      title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new broadcast title"),
+      locale: youtubeChannelOption,
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => retitleYouTubeBroadcast(context.config(), input.title, input.locale, context.fetchImpl),
   }),
   status: operation({
     summary: "Worker heartbeats, publication counts and metric schedule health.",
