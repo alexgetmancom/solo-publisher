@@ -2,7 +2,6 @@ import type { Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
-import { StudioError } from "../foundation/errors.js";
 import type { VideoLocale } from "../foundation/external/youtube.js";
 import type { MessageKey } from "../foundation/i18n/index.js";
 import { t } from "../foundation/i18n/index.js";
@@ -98,7 +97,10 @@ export async function promptStreamField(
   const actorId = Number(ctx.from?.id);
   const locale = settingsService(backendDb).locale(actorId);
   const found = await createStudioServices(backendDb, config).streams.current();
-  if (!found.chosen) return [streamScreen(locale, found, "edit")];
+  // The screen was drawn while a stream was running and tapped after it ended.
+  // Redrawing it alone would answer a tap on "Title" with a card that quietly
+  // says something else, so the tap is answered in words as well.
+  if (!found.chosen) return [{ type: "toast", text: t(locale, "stream.gone") }, streamScreen(locale, found, "edit")];
   saveConversationState(backendDb, actorId, {
     kind: "stream",
     draftId: null,
@@ -127,7 +129,14 @@ function currentValue(locale: StudioLocale, found: StudioStream, field: StreamFi
   return previous ? t(locale, "stream.previous", { value: previous }) : t(locale, "stream.description-empty");
 }
 
-/** Applies a value the operator typed for the field the screen asked about. */
+/**
+ * Applies a value the operator typed for the field the screen asked about.
+ *
+ * Nothing here throws. A tapped button ends in `runCallbackAction`, where a
+ * failure becomes a toast; a typed message has no such boundary, so an error
+ * raised here reached `bot.catch`, which logs -- and the operator, who had just
+ * typed a new title, saw the bot say nothing at all.
+ */
 export async function handleStreamMessage(ctx: Context, backendDb: BackendDb, config: BackendConfig): Promise<PublicationMessageResult> {
   const actorId = Number(ctx.from?.id);
   const state = getConversationState(backendDb, actorId, "stream");
@@ -142,25 +151,34 @@ export async function handleStreamMessage(ctx: Context, backendDb: BackendDb, co
   const keyboard = new InlineKeyboard()
     .text(t(locale, "stream.back"), screenCallback("stream_home"))
     .text(t(locale, "common.menu"), screenCallback("menu_home"));
-  if (field === "chat") {
-    const liveChatId = typeof state.data.liveChatId === "string" ? state.data.liveChatId : "";
-    if (!liveChatId) throw new StudioError("stream.gone");
-    await streams.say(channel, liveChatId, text);
-    return {
-      handled: true,
-      effects: [
-        { type: "screen", mode: "reply", text: t(locale, "stream.said", { value: text.trim() }), options: { reply_markup: keyboard } },
-      ],
-    };
-  }
-  const updated = await streams.edit(channel, field === "title" ? { title: text } : { description: text });
-  // The stream ended between the prompt and the answer: there is no broadcast
-  // left that this value belongs to, and the next one is not it.
-  if (!updated) throw new StudioError("stream.gone");
-  return {
+  const answer = (text: string): PublicationMessageResult => ({
     handled: true,
-    effects: [{ type: "screen", mode: "reply", text: confirmation(locale, field, updated), options: { reply_markup: keyboard } }],
-  };
+    effects: [{ type: "screen", mode: "reply", text, options: { reply_markup: keyboard } }],
+  });
+  try {
+    if (field === "chat") {
+      const liveChatId = typeof state.data.liveChatId === "string" ? state.data.liveChatId : "";
+      // The prompt was opened against a stream that has since ended, or one
+      // whose chat was never there. Either way this line has nowhere to go.
+      if (!liveChatId) return answer(t(locale, "stream.gone"));
+      await streams.say(channel, liveChatId, text);
+      return answer(t(locale, "stream.said", { value: text.trim() }));
+    }
+    const updated = await streams.edit(channel, field === "title" ? { title: text } : { description: text });
+    // The stream ended between the prompt and the answer: there is no broadcast
+    // left that this value belongs to, and the next one is not it.
+    if (!updated) return answer(t(locale, "stream.gone"));
+    return answer(confirmation(locale, field, updated));
+  } catch (error) {
+    return answer(t(locale, "stream.failed", { error: describeStreamError(error) }));
+  }
+}
+
+/** One line out of whatever Google answered, so a refusal reads as a reason
+ * rather than as a document. */
+function describeStreamError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return /"(?:message|error_description)":\s*"([^"]+)"/.exec(message)?.[1] ?? message.slice(0, 200);
 }
 
 function confirmation(locale: StudioLocale, field: "title" | "description", broadcast: LiveBroadcast): string {

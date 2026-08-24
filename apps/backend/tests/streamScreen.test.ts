@@ -241,6 +241,58 @@ describe("stream screen", () => {
     }
   });
 
+  /** A tap ends in the callback runner, which turns a failure into a toast. A
+   * typed message has no such boundary: raising there reached the logs and the
+   * operator, who had just typed a new title, saw nothing at all. */
+  it("answers the typed value even when the stream ended while it was being typed", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: live, en: { items: [] } });
+    try {
+      await promptStreamField(ctxWith(), backendDb, config, "title");
+      youtube.restore();
+      const ended = stubYouTube({ ru: { items: [] }, en: { items: [] } });
+      try {
+        const result = await handleStreamMessage(ctxWith({ text: "Пилим бота" }), backendDb, config);
+        expect(result.handled).toBe(true);
+        expect(result.effects[0]).toMatchObject({ text: expect.stringContaining("No stream is running any more") });
+      } finally {
+        ended.restore();
+      }
+    } finally {
+      backendDb.close();
+    }
+  });
+
+  it("reports a refusal from YouTube instead of raising into the log", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: live, en: { items: [] } });
+    try {
+      await promptStreamField(ctxWith(), backendDb, config, "chat");
+      youtube.restore();
+      const refusing = stubYouTube({ ru: new Error('{"error":{"message":"The live chat is no longer live."}}') });
+      try {
+        const result = await handleStreamMessage(ctxWith({ text: "Привет" }), backendDb, config);
+        expect(result.effects[0]).toMatchObject({ text: expect.stringContaining("The live chat is no longer live.") });
+      } finally {
+        refusing.restore();
+      }
+    } finally {
+      backendDb.close();
+    }
+  });
+
+  it("says so when a button is tapped after the stream it was drawn for ended", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: { items: [] }, en: { items: [] } });
+    try {
+      const effects = await promptStreamField(ctxWith(), backendDb, config, "title");
+      expect(effects[0]).toMatchObject({ type: "toast", text: expect.stringContaining("No stream is running any more") });
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
   it("offers no edit buttons when nothing is running", async () => {
     const backendDb = studioDb();
     const youtube = stubYouTube({ ru: { items: [] }, en: { items: [] } });
