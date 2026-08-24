@@ -10,6 +10,7 @@ import { parseSessionCallback } from "./bot/publication-callback.js";
 import { parseScreenCallback } from "./bot/screen-callback.js";
 import { SCREEN_ROUTES } from "./bot/screen-routes.js";
 import { buildSettingsMenu, handleSettingsMessage, showSettings } from "./bot/settings/index.js";
+import { handleStreamMessage, showStreamScreen } from "./bot/stream-screen.js";
 import type { BackendDb } from "./db/client.js";
 import { actorFromTelegramUser } from "./foundation/actors.js";
 import type { BackendConfig } from "./foundation/config.js";
@@ -93,11 +94,21 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
   bot.hears("⚙️", async (ctx) => {
     await showSettings(ctx, backendDb, settingsMenu);
   });
-  bot.hears(localizedTextVariants(["menu.new-material"]), async (ctx) => {
-    await openIntake(ctx, backendDb);
+  bot.hears(localizedTextVariants(["menu.text"]), async (ctx) => {
+    await openIntake(ctx, backendDb, "text");
+  });
+  bot.hears(localizedTextVariants(["menu.video"]), async (ctx) => {
+    await openIntake(ctx, backendDb, "video");
+  });
+  bot.hears(localizedTextVariants(["menu.streams"]), async (ctx) => {
+    await showStreamScreen(ctx, backendDb, config);
   });
   bot.on("message", async (ctx) => {
     if (await handleSettingsMessage(ctx, backendDb, config, settingsMenu)) return;
+    // The stream screen asked for one value and is waiting for exactly it.
+    const stream = await handleStreamMessage(ctx, backendDb, config);
+    if (stream.effects.length) await executePublicationEffects(ctx, backendDb, stream.effects);
+    if (stream.handled) return;
     // The intake owns the first message only while it is still deciding what
     // that message is; anything it declines falls through unchanged.
     const intake = await handleIntakeMessage(ctx, backendDb, config);

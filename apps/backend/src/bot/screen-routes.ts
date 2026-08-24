@@ -27,6 +27,7 @@ import { handleOperationsCallback } from "./operations-screen.js";
 import { showPostProgress } from "./progress-screen.js";
 import { showQueue, showQueueAttention } from "./queue.js";
 import { type ScreenCallback, type ScreenId, screenNumber } from "./screen-callback.js";
+import { promptStreamField, showStreamScreen } from "./stream-screen.js";
 
 /** What every screen handler is handed: the bot's own dependencies, plus the
  * arguments this button declared. */
@@ -161,6 +162,17 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
     return true;
   },
   delivery_preview_threads: (screen) => threadsPreview(screen),
+  stream_home: async ({ ctx, backendDb, config }) => {
+    await ctx.answerCallbackQuery();
+    await showStreamScreen(ctx, backendDb, config, "edit");
+    return true;
+  },
+  stream_field: (screen) =>
+    intakeAction(screen, async () => {
+      const field = screen.args.field;
+      if (field !== "title" && field !== "description" && field !== "chat") return [];
+      return promptStreamField(screen.ctx, screen.backendDb, screen.config, field);
+    }),
   intake_kind: (screen) =>
     intakeAction(screen, async (actorId, locale) => {
       const choice = screen.args.choice;

@@ -9,15 +9,28 @@ import { showAnalyticsDashboard } from "./analytics-screen.js";
 import { openIntake } from "./intake.js";
 import { showQueue } from "./queue.js";
 import { SETTINGS_MENU_ID } from "./settings/index.js";
+import { showStreamScreen } from "./stream-screen.js";
 
 const MAIN_MENU_ID = "main-menu";
 
 export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, settingsMenu: Menu<Context>): Menu<Context> {
   const menu = new Menu<Context>(MAIN_MENU_ID);
+  // Three entities, three ways in: a text publication, a video publication and
+  // the stream that is running right now. They share no step and no card, and
+  // one entry point that asked which of them this was made the operator answer
+  // a question they had already answered by choosing the button.
   menu
     .text(
-      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.new-material"),
-      (ctx) => openIntake(ctx, backendDb, "edit"),
+      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.text"),
+      (ctx) => openIntake(ctx, backendDb, "text", "edit"),
+    )
+    .text(
+      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.video"),
+      (ctx) => openIntake(ctx, backendDb, "video", "edit"),
+    )
+    .text(
+      (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.streams"),
+      (ctx) => showStreamScreen(ctx, backendDb, config, "edit"),
     )
     .row();
   menu.text(

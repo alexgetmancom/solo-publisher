@@ -95,7 +95,7 @@ export type StudioPostStore = {
   publicationSource(postId: number): Record<string, unknown>;
 };
 
-export type ConversationSessionKind = "intake" | "post" | "video" | "settings";
+export type ConversationSessionKind = "intake" | "post" | "video" | "settings" | "stream";
 
 export type ConversationSessionRecord = {
   actorId: number;

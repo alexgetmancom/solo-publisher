@@ -1,0 +1,188 @@
+import { describe, expect, it } from "bun:test";
+import { getConversationState } from "../src/bot/conversation-state.js";
+import { handleStreamMessage, promptStreamField, showStreamScreen } from "../src/bot/stream-screen.js";
+import { registerTestChannels } from "./helpers/channels.js";
+import { openBackendDb } from "./helpers/open-db.js";
+import { loadTestConfig } from "./helpers/studio-config.js";
+
+/**
+ * The stream screen edits a channel with an audience on it, so what is pinned
+ * here is which channel that turns out to be. A Studio has more than one
+ * YouTube account and only ever streams on one of them at a time; asking the
+ * operator which is a question YouTube already answers, and answering it wrong
+ * renames a stream nobody is watching.
+ */
+
+const config = loadTestConfig({
+  CONTROLLER_BOT_TOKEN: "bot-token",
+  CONTROLLER_ADMIN_IDS: "42",
+  YOUTUBE_RU_CLIENT_ID: "client",
+  YOUTUBE_RU_CLIENT_SECRET: "secret",
+  YOUTUBE_RU_REFRESH_TOKEN: "refresh-ru",
+  YOUTUBE_EN_CLIENT_ID: "client",
+  YOUTUBE_EN_CLIENT_SECRET: "secret",
+  YOUTUBE_EN_REFRESH_TOKEN: "refresh-en",
+});
+
+const sent: string[] = [];
+const buttons: string[][] = [];
+
+function ctxWith(message: Record<string, unknown> = {}) {
+  return {
+    from: { id: 42 },
+    chat: { id: 42 },
+    message,
+    reply: async (text: string, options?: { reply_markup?: { inline_keyboard?: Array<Array<{ text: string }>> } }) => {
+      sent.push(text);
+      buttons.push((options?.reply_markup?.inline_keyboard ?? []).flat().map((button) => button.text));
+      return { message_id: sent.length };
+    },
+  } as never;
+}
+
+function studioDb() {
+  const backendDb = openBackendDb(":memory:");
+  registerTestChannels(backendDb, ["youtube_ru", "youtube_en"]);
+  return backendDb;
+}
+
+/** Answers as two separate channels. The two are told apart by the credential
+ * the caller presents, never by request order: the Studio asks both at once,
+ * and a stub that counted calls attributed half the answers to the wrong
+ * channel. */
+function stubYouTube(perLocale: Record<string, unknown>): { calls: string[]; restore: () => void } {
+  const original = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = Object.assign(
+    async (url: string | URL | Request, init: RequestInit = {}) => {
+      const href = String(url);
+      const body = init.body ? String(init.body) : "";
+      calls.push(`${init.method ?? "GET"} ${href}${body ? ` ${body}` : ""}`);
+      if (href.includes("oauth2.googleapis.com")) {
+        const locale = body.includes("refresh-en") ? "en" : "ru";
+        return Response.json({ access_token: `token-${locale}` });
+      }
+      const authorization = new Headers(init.headers).get("authorization") ?? "";
+      const locale = authorization.endsWith("token-en") ? "en" : "ru";
+      if (init.method === "PUT") return Response.json({});
+      const answer = perLocale[locale];
+      if (answer instanceof Error) return new Response(JSON.stringify({ error: answer.message }), { status: 403 });
+      return Response.json(answer ?? { items: [] });
+    },
+    { preconnect: original.preconnect },
+  ) as typeof fetch;
+  return { calls, restore: () => (globalThis.fetch = original) };
+}
+
+const live = {
+  items: [{ id: "bc-live", snippet: { title: "Стримс", description: "", liveChatId: "chat-1" }, status: { lifeCycleStatus: "live" } }],
+};
+
+describe("stream screen", () => {
+  it("edits the channel that is on the air, not the first one connected", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: { items: [] }, en: live });
+    try {
+      const effects = await promptStreamField(ctxWith(), backendDb, config, "title");
+      expect(effects[0]).toMatchObject({ text: expect.stringContaining("Стримс") });
+      expect(getConversationState(backendDb, 42, "stream")?.data.channel).toBe("en");
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  /** A channel that cannot stream at all answers 403 forever. That is "no
+   * stream here", not an outage, and it must not hide the channel that does
+   * have one -- nor vanish from the screen unmentioned. */
+  it("keeps working when one channel refuses, and says which one did", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: live, en: new Error("The user is not enabled for live streaming.") });
+    try {
+      sent.length = 0;
+      await showStreamScreen(ctxWith(), backendDb, config);
+      expect(sent.at(-1)).toContain("Стримс");
+      expect(sent.at(-1)).toContain("EN");
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  it("sends the typed value to the channel the prompt was opened against", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: { items: [] }, en: live });
+    try {
+      await promptStreamField(ctxWith(), backendDb, config, "title");
+      const result = await handleStreamMessage(ctxWith({ text: "Пилим бота" }), backendDb, config);
+      expect(result.handled).toBe(true);
+      const update = youtube.calls.find((call) => call.startsWith("PUT"));
+      expect(update).toContain('"title":"Пилим бота"');
+      // The dialog is over: the next message is an ordinary one again.
+      expect(getConversationState(backendDb, 42, "stream")).toBeNull();
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  it("declines a value that is not text rather than sending an empty title", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: live });
+    try {
+      await promptStreamField(ctxWith(), backendDb, config, "title");
+      const result = await handleStreamMessage(ctxWith({ photo: [{ file_id: "p" }] }), backendDb, config);
+      expect(result.handled).toBe(true);
+      expect(youtube.calls.some((call) => call.startsWith("PUT"))).toBe(false);
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  it("says one thing in the chat of the stream the prompt was opened against", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: { items: [] }, en: live });
+    try {
+      await promptStreamField(ctxWith(), backendDb, config, "chat");
+      await handleStreamMessage(ctxWith({ text: "Погнали" }), backendDb, config);
+      const insert = youtube.calls.find((call) => call.includes("liveChat/messages"));
+      expect(insert).toContain('"liveChatId":"chat-1"');
+      expect(insert).toContain('"messageText":"Погнали"');
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  /** A stream that is not on the air has no chat, and a button that posts into
+   * nothing is a button that reports failure for a living. */
+  it("offers no chat button on a stream that has not started", async () => {
+    const backendDb = studioDb();
+    const starting = { items: [{ id: "bc-soon", snippet: { title: "Стримс" }, status: { lifeCycleStatus: "ready" } }] };
+    const youtube = stubYouTube({ ru: starting, en: { items: [] } });
+    try {
+      sent.length = 0;
+      await showStreamScreen(ctxWith(), backendDb, config);
+      expect(sent.at(-1)).toContain("Стримс");
+      expect(buttons.at(-1)).not.toContain("💬 Say in chat");
+      expect(buttons.at(-1)).toContain("✏️ Title");
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+
+  it("offers no edit buttons when nothing is running", async () => {
+    const backendDb = studioDb();
+    const youtube = stubYouTube({ ru: { items: [] }, en: { items: [] } });
+    try {
+      sent.length = 0;
+      await showStreamScreen(ctxWith(), backendDb, config);
+      expect(sent.at(-1)).toContain("No stream is running");
+    } finally {
+      youtube.restore();
+      backendDb.close();
+    }
+  });
+});

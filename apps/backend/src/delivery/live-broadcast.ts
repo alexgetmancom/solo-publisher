@@ -18,6 +18,9 @@ export type LiveBroadcast = {
   /** YouTube rejects a snippet update that does not carry this back, so it is
    * read even though nothing here displays it. */
   scheduledStartTime: string | null;
+  /** The chat attached to this broadcast, which exists only while it is on the
+   * air and only when the channel left chat enabled. No id, no chat. */
+  liveChatId: string | null;
   url: string;
 };
 
@@ -33,11 +36,13 @@ export type LiveBroadcastInventory = {
 /** A live title is the video's title: the same 100 characters, counted the same
  * way. Rejecting here beats a 400 the operator has to translate. */
 export const LIVE_TITLE_LIMIT = 100;
+/** And a live description is the video's description. */
+export const LIVE_DESCRIPTION_LIMIT = 5000;
 
 type BroadcastList = {
   items?: Array<{
     id?: string;
-    snippet?: { title?: string; description?: string; scheduledStartTime?: string; isDefaultBroadcast?: boolean };
+    snippet?: { title?: string; description?: string; scheduledStartTime?: string; isDefaultBroadcast?: boolean; liveChatId?: string };
     status?: { lifeCycleStatus?: LifeCycleStatus };
   }>;
 };
@@ -66,6 +71,7 @@ async function listBroadcasts(token: string, fetchImpl: typeof fetch): Promise<L
             title: item.snippet?.title ?? "",
             description: item.snippet?.description ?? "",
             scheduledStartTime: item.snippet?.scheduledStartTime ?? null,
+            liveChatId: item.snippet?.liveChatId ?? null,
             url: `https://www.youtube.com/watch?v=${item.id}`,
           },
         ]
@@ -73,27 +79,33 @@ async function listBroadcasts(token: string, fetchImpl: typeof fetch): Promise<L
   );
 }
 
+/** A stream that has ended is beyond an edit anyone would see, and a revoked
+ * one is beyond editing at all. */
+const EDITABLE = new Set<LifeCycleStatus>(["created", "ready", "testing", "live"]);
+
 /**
- * The broadcast a title change belongs on.
+ * The broadcast an edit belongs on.
  *
- * A stream on the air wins: that title is what an audience is reading right
- * now. Otherwise the persistent broadcast, whose title is what the next stream
- * will open under. A one-off scheduled event is the last resort, and only the
- * soonest one — renaming an event further out would retitle a stream nobody
- * asked about.
+ * A stream on the air wins: its title is what an audience is reading right
+ * now. Everything else has not started, and the soonest of those is the one
+ * being set up — the broadcast this channel opened moments ago and is about to
+ * go live with, ahead of an event scheduled for next week.
+ *
+ * A broadcast waiting on its first byte is `ready` and carries no scheduled
+ * start at all, which is exactly what an operator naming a stream just before
+ * going live is looking at. Ordering by start time alone left it unreachable,
+ * so the stream could not be named until it was already on the air.
  */
 function chooseBroadcast(broadcasts: LiveBroadcast[]): LiveBroadcast | null {
-  const live = broadcasts.filter((broadcast) => broadcast.lifeCycleStatus === "live" || broadcast.lifeCycleStatus === "testing");
-  if (live.length > 0) return live[0] as LiveBroadcast;
-  const persistent = broadcasts.find((broadcast) => broadcast.isDefault && broadcast.lifeCycleStatus !== "complete");
-  if (persistent) return persistent;
-  const upcoming = broadcasts
-    .filter(
-      (broadcast) =>
-        broadcast.scheduledStartTime !== null && broadcast.lifeCycleStatus !== "complete" && broadcast.lifeCycleStatus !== "revoked",
-    )
-    .sort((left, right) => (left.scheduledStartTime as string).localeCompare(right.scheduledStartTime as string));
-  return upcoming[0] ?? null;
+  const candidates = broadcasts.filter((broadcast) => EDITABLE.has(broadcast.lifeCycleStatus));
+  const onAir = candidates.find((broadcast) => broadcast.lifeCycleStatus === "live" || broadcast.lifeCycleStatus === "testing");
+  return onAir ?? candidates.sort((left, right) => startOrder(left).localeCompare(startOrder(right)))[0] ?? null;
+}
+
+/** Sorts an unscheduled broadcast ahead of every scheduled one: it carries no
+ * start time because it is waiting on the encoder, not because it is far off. */
+function startOrder(broadcast: LiveBroadcast): string {
+  return broadcast.scheduledStartTime ?? "";
 }
 
 export async function youtubeBroadcastInventory(
@@ -109,38 +121,81 @@ async function inventory(token: string, fetchImpl: typeof fetch): Promise<LiveBr
   return { chosen: chooseBroadcast(broadcasts), broadcasts };
 }
 
+/** What an operator can change about a stream from the bot. Both fields travel
+ * in one snippet, so both are one request; naming them separately here is only
+ * so that changing one never has to restate the other. */
+export type BroadcastEdit = { title?: string; description?: string };
+
 /**
- * Renames the broadcast a title change belongs on, in place.
+ * Edits the broadcast a change belongs on, in place.
  *
  * `liveBroadcasts.update` clears every snippet field the request omits, so the
- * description and the scheduled start are read back and resent verbatim — and
- * the write names the broadcast id that read returned, never a second lookup,
- * so a stream that ends mid-command fails instead of retitling its successor.
+ * field that is not being changed is read back and resent verbatim — and the
+ * write names the broadcast id that read returned, never a second lookup, so a
+ * stream that ends mid-command fails instead of editing its successor.
  */
-export async function retitleYouTubeBroadcast(
+export async function editYouTubeBroadcast(
   config: BackendConfig,
-  title: string,
+  edit: BroadcastEdit,
   locale: VideoLocale = "ru",
   fetchImpl: typeof fetch = fetch,
 ): Promise<LiveBroadcast | null> {
-  const trimmed = title.trim();
-  if (!trimmed) throw new Error("A live title cannot be empty.");
-  if (trimmed.length > LIVE_TITLE_LIMIT)
-    throw new Error(`YouTube allows ${LIVE_TITLE_LIMIT} characters in a live title; this one has ${trimmed.length}.`);
+  const title = edit.title?.trim();
+  const description = edit.description?.trim();
+  if (title === undefined && description === undefined) throw new Error("Nothing to change: name a title or a description.");
+  if (title !== undefined && !title) throw new Error("A live title cannot be empty.");
+  if (title !== undefined && title.length > LIVE_TITLE_LIMIT)
+    throw new Error(`YouTube allows ${LIVE_TITLE_LIMIT} characters in a live title; this one has ${title.length}.`);
+  if (description !== undefined && description.length > LIVE_DESCRIPTION_LIMIT)
+    throw new Error(`YouTube allows ${LIVE_DESCRIPTION_LIMIT} characters in a live description; this one has ${description.length}.`);
   const token = await youtubeAccessToken(config, fetchImpl, locale);
   const current = (await inventory(token, fetchImpl)).chosen;
   if (!current) return null;
+  const next = { ...current, ...(title === undefined ? {} : { title }), ...(description === undefined ? {} : { description }) };
   await requestJson(fetchImpl, "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet", {
     method: "PUT",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" },
     body: JSON.stringify({
       id: current.id,
       snippet: {
-        title: trimmed,
-        description: current.description,
+        title: next.title,
+        description: next.description,
         ...(current.scheduledStartTime ? { scheduledStartTime: current.scheduledStartTime } : {}),
       },
     }),
   });
-  return { ...current, title: trimmed };
+  return next;
+}
+
+/** A chat message is one line, and YouTube counts it in characters. */
+export const LIVE_CHAT_LIMIT = 200;
+
+/**
+ * Says one thing in the stream's chat, as the channel.
+ *
+ * There is no idempotency to have here: YouTube gives a chat insert no
+ * deduplication key, and a message that arrived twice is two messages an
+ * audience reads. So this is never retried automatically -- a failure is
+ * reported to the operator, who can see the chat and decide, which a retry loop
+ * cannot.
+ */
+export async function sayInYouTubeChat(
+  config: BackendConfig,
+  liveChatId: string,
+  message: string,
+  locale: VideoLocale = "ru",
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  const text = message.trim();
+  if (!text) throw new Error("A chat message cannot be empty.");
+  if (text.length > LIVE_CHAT_LIMIT)
+    throw new Error(`YouTube allows ${LIVE_CHAT_LIMIT} characters in a chat message; this one has ${text.length}.`);
+  const token = await youtubeAccessToken(config, fetchImpl, locale);
+  await requestJson(fetchImpl, "https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({
+      snippet: { liveChatId, type: "textMessageEvent", textMessageDetails: { messageText: text } },
+    }),
+  });
 }

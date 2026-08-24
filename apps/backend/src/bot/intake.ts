@@ -6,6 +6,7 @@ import { type DraftMessage, firstNonEmptyLine } from "../content/message.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { StudioError } from "../foundation/errors.js";
+import type { MessageKey } from "../foundation/i18n/index.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
@@ -37,20 +38,41 @@ const POST_WITHOUT_ASKING = 900;
  * shown, never judged: a short piece can be an article and a long one a post. */
 type MaterialKind = "post" | "article" | "video";
 
-type CapturedVideo = { fileId: string; name: string; mime: string };
-type Captured = { message: DraftMessage; markdown: string | null; video: CapturedVideo | null };
+/** The ways into the intake, and what each one accepts.
+ *
+ * A text publication and a video publication are different entities with
+ * different flows, so they are different buttons; the intake still decides
+ * post-or-article, because that one is a genuine reading of the same text
+ * rather than a choice the operator already made. The entry carries what it
+ * takes rather than the intake branching on who called it. */
+const INTAKE_ENTRIES = {
+  text: { accepts: ["post", "article"], prompt: "intake.prompt-text", rejected: "intake.need-text" },
+  video: { accepts: ["video"], prompt: "intake.prompt-video", rejected: "intake.need-video" },
+} as const satisfies Record<string, { accepts: readonly MaterialKind[]; prompt: MessageKey; rejected: MessageKey }>;
 
-/** The one entry point for anything new. It captures the material first and
- * asks what it is second, because that is the order the operator has it in. */
-export async function openIntake(ctx: Context, backendDb: BackendDb, mode: "reply" | "edit" = "reply"): Promise<void> {
+export type IntakeEntry = keyof typeof INTAKE_ENTRIES;
+
+function accepts(entry: IntakeEntry, kind: MaterialKind): boolean {
+  return (INTAKE_ENTRIES[entry].accepts as readonly MaterialKind[]).includes(kind);
+}
+
+type CapturedVideo = { fileId: string; name: string; mime: string };
+type Captured = { message: DraftMessage; markdown: string | null; video: CapturedVideo | null; entry: IntakeEntry };
+
+/** Opens one of the intakes. It captures the material first and asks what it
+ * is second, because that is the order the operator has it in -- which is also
+ * why the video entry is a prompt for a file and not a language: a button
+ * handler has no message to fetch a file from, so asking anything before the
+ * file is what drops the upload. */
+export async function openIntake(ctx: Context, backendDb: BackendDb, entry: IntakeEntry, mode: "reply" | "edit" = "reply"): Promise<void> {
   const actorId = Number(ctx.from?.id);
   const locale = settingsService(backendDb).locale(actorId);
-  saveConversationState(backendDb, actorId, { kind: "intake", draftId: null, step: "awaiting", data: {}, controlMessageId: null });
+  saveConversationState(backendDb, actorId, { kind: "intake", draftId: null, step: "awaiting", data: { entry }, controlMessageId: null });
   await executePublicationEffects(ctx, backendDb, [
     {
       type: "screen",
       mode,
-      text: t(locale, "intake.prompt"),
+      text: t(locale, INTAKE_ENTRIES[entry].prompt),
       options: { reply_markup: cancelPromptKeyboard(locale, screenCallback("intake_cancel")) },
     },
   ]);
@@ -68,6 +90,7 @@ export async function handleIntakeMessage(ctx: Context, backendDb: BackendDb, co
     return { handled: false, effects: [] };
   }
   const locale = settingsService(backendDb).locale(actorId);
+  const entry = entryOf(backendDb, actorId);
   const message = extractMessage(ctx);
   const document = ctx.message && "document" in ctx.message ? ctx.message.document : undefined;
   const markdown = document && isMarkdown(document) ? await downloadDocument(ctx, config, document) : null;
@@ -77,7 +100,12 @@ export async function handleIntakeMessage(ctx: Context, backendDb: BackendDb, co
   // intake stays open, so the next message is still the first one.
   if (markdown === null && !message.text.trim() && message.media.length === 0)
     return { handled: true, effects: [{ type: "screen", mode: "reply", text: t(locale, "intake.unsupported") }] };
-  const captured: Captured = { message: markdown === null ? message : { ...message, text: markdown }, markdown, video };
+  const captured: Captured = { message: markdown === null ? message : { ...message, text: markdown }, markdown, video, entry };
+  // Material this entry does not take. The intake stays open rather than
+  // guessing: a video sent to the text button is a video, and the operator
+  // wanted the other button, not a post with a video stuck to it.
+  if (!offeredKinds(captured).length)
+    return { handled: true, effects: [{ type: "screen", mode: "reply", text: t(locale, INTAKE_ENTRIES[entry].rejected) }] };
   saveConversationState(backendDb, actorId, {
     kind: "intake",
     draftId: null,
@@ -90,13 +118,19 @@ export async function handleIntakeMessage(ctx: Context, backendDb: BackendDb, co
   return { handled: true, effects: [chooseKindScreen(locale, captured)] };
 }
 
+/** What this material could become here: the kinds it physically can be,
+ * narrowed to the ones the entry the operator chose actually takes. */
+function offeredKinds(captured: Captured): MaterialKind[] {
+  const possible: MaterialKind[] = captured.video ? ["video", "post"] : ["post", "article"];
+  return possible.filter((kind) => accepts(captured.entry, kind));
+}
+
 /** The kind the material plainly is, or null when both readings are live.
  * Every rule here reads something the material carries, never how it reads. */
 function decideKind(captured: Captured): MaterialKind | null {
+  const offered = offeredKinds(captured);
+  if (offered.length === 1) return offered[0] as MaterialKind;
   if (captured.markdown !== null) return "article";
-  // A video file the operator sent without a caption: the caption is a post's
-  // text, and a video publication gets its title and description in the wizard.
-  if (captured.video) return captured.message.text.trim() ? null : "video";
   return captured.message.text.length <= POST_WITHOUT_ASKING ? "post" : null;
 }
 
@@ -207,12 +241,15 @@ export function cancelIntake(backendDb: BackendDb, actorId: number): void {
   clearConversationState(backendDb, actorId, "intake");
 }
 
+const KIND_LABEL: Record<MaterialKind, MessageKey> = {
+  post: "intake.kind-post",
+  article: "intake.kind-article",
+  video: "intake.kind-video",
+};
+
 function chooseKindScreen(locale: StudioLocale, captured: Captured): PublicationEffect {
-  const keyboard = new InlineKeyboard().text(t(locale, "intake.kind-post"), screenCallback("intake_kind", ["post"]));
-  // Physics, not judgement: an Article carries no video, and a video
-  // publication has nothing to publish without a file.
-  if (!captured.video) keyboard.text(t(locale, "intake.kind-article"), screenCallback("intake_kind", ["article"]));
-  else keyboard.text(t(locale, "intake.kind-video"), screenCallback("intake_kind", ["video"]));
+  const keyboard = new InlineKeyboard();
+  for (const kind of offeredKinds(captured)) keyboard.text(t(locale, KIND_LABEL[kind]), screenCallback("intake_kind", [kind]));
   keyboard.row().text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
   return {
     type: "screen",
@@ -247,7 +284,14 @@ function capturedFrom(backendDb: BackendDb, actorId: number): Captured {
     message: { text: message.text ?? "", media: message.media ?? [], entities: message.entities ?? [] },
     markdown: typeof data?.markdown === "string" ? data.markdown : null,
     video: (data?.video as CapturedVideo | null) ?? null,
+    entry: data?.entry === "video" ? "video" : "text",
   };
+}
+
+/** Which button opened this intake. A session that predates the split is a
+ * text one: that is what the single entry point mostly took. */
+function entryOf(backendDb: BackendDb, actorId: number): IntakeEntry {
+  return getConversationState(backendDb, actorId, "intake")?.data.entry === "video" ? "video" : "text";
 }
 
 function isMarkdown(document: { file_name?: string; mime_type?: string } | undefined): boolean {

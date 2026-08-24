@@ -32,6 +32,8 @@ export const SCREEN_ARGUMENTS = {
   progress_details: ["draft"],
   progress_cancel: ["draft"],
   delivery_preview_threads: ["kind", "id"],
+  stream_home: [],
+  stream_field: ["field"],
   intake_kind: ["choice"],
   intake_locale: ["locale"],
   intake_cancel: [],

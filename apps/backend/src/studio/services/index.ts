@@ -9,6 +9,7 @@ import { mediaService } from "./media.js";
 import { postService } from "./posts.js";
 import { queueService } from "./queue.js";
 import { settingsService } from "./settings.js";
+import { streamService } from "./streams.js";
 import { videoService } from "./videos.js";
 
 export type StudioServices = {
@@ -20,6 +21,7 @@ export type StudioServices = {
   analytics: ReturnType<typeof analyticsService>;
   capabilities: ReturnType<typeof studioCapabilityService>;
   settings: ReturnType<typeof settingsService>;
+  streams: ReturnType<typeof streamService>;
   dashboard: (actorId: number, locale: StudioLocale) => ReturnType<typeof studioDashboard>;
 };
 
@@ -44,6 +46,7 @@ export function createStudioServices(backendDb: BackendDb, config: BackendConfig
     analytics: analyticsService(backendDb, config),
     capabilities: studioCapabilityService(config, backendDb),
     settings: settingsService(backendDb),
+    streams: streamService(backendDb, config),
     dashboard: (actorId: number, locale: StudioLocale) => studioDashboard(backendDb, config, actorId, locale),
   };
   studioInstances.set(backendDb, { config, services });

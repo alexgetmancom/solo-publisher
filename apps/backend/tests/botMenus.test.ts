@@ -99,16 +99,19 @@ describe("buildMainMenu", () => {
     );
   });
 
-  it("offers one intake for new material, and analytics", async () => {
+  it("offers one way in per entity, and analytics", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
     const labels = await mainMenuLabels(config, backendDb);
-    expect(labels.some((text) => /new material/i.test(text))).toBe(true);
-    expect(labels.some((text) => /new video/i.test(text))).toBe(false);
+    expect(labels.some((text) => /text/i.test(text))).toBe(true);
+    expect(labels.some((text) => /video/i.test(text))).toBe(true);
+    expect(labels.some((text) => /streams/i.test(text))).toBe(true);
     expect(labels.some((text) => /analytics/i.test(text))).toBe(true);
   });
 
-  it("gives the intake the whole first row", async () => {
+  /** Three entities, one row: a text publication, a video publication and the
+   * stream running right now. They share no step and no card. */
+  it("gives the three entities the whole first row", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
     const settingsMenu = buildSettingsMenu(config, backendDb);
@@ -116,7 +119,7 @@ describe("buildMainMenu", () => {
     const rows: Array<Array<{ text: string }>> = await (
       mainMenu as unknown as { render: (ctx: Context) => Promise<Array<Array<{ text: string }>>> }
     ).render(fakeCtx);
-    expect(rows[0]?.map((button) => button.text)).toEqual(["📥 New material"]);
+    expect(rows[0]?.map((button) => button.text)).toEqual(["📝 Text", "🎬 Video", "🔴 Streams"]);
   });
 });
 

@@ -35,8 +35,8 @@ function buttonRows(effect: { options?: Record<string, unknown> }): string[] {
   return (markup?.inline_keyboard ?? []).flat().map((button) => button.text);
 }
 
-async function capture(backendDb: ReturnType<typeof openBackendDb>, message: Record<string, unknown>) {
-  await openIntake(ctxWith({ text: "" }), backendDb);
+async function capture(backendDb: ReturnType<typeof openBackendDb>, message: Record<string, unknown>, entry: "text" | "video" = "text") {
+  await openIntake(ctxWith({ text: "" }), backendDb, entry);
   return handleIntakeMessage(ctxWith(message), backendDb, config);
 }
 
@@ -67,18 +67,33 @@ describe("bot intake", () => {
     }
   });
 
-  it("takes a captioned video as an open question and a bare one as a video publication", async () => {
+  /** The caption used to make this an open question, because one entry point
+   * could not tell a post with a video from a video publication. The button
+   * answers it now: material handed to Video is a video, caption or not. */
+  it("takes a video handed to the video button as a video publication, caption or not", async () => {
     const backendDb = openBackendDb(":memory:");
     try {
-      const captioned = await capture(backendDb, {
-        document: { file_id: "v1", file_name: "clip.mp4", mime_type: "video/mp4" },
-        caption: "look",
-      });
-      expect(buttonRows(captioned.effects[0] as never)).toEqual(["📝 Post", "🎬 Video publication", "← Cancel"]);
-      const bare = await capture(backendDb, { document: { file_id: "v2", file_name: "clip.mp4", mime_type: "video/mp4" } });
+      await capture(backendDb, { document: { file_id: "v1", file_name: "clip.mp4", mime_type: "video/mp4" }, caption: "look" }, "video");
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("video_locale");
-      // A post always carries its text; a video sent without any is not one.
-      expect(buttonRows(bare.effects[0] as never)).not.toContain("📝 Actually, this is a post");
+      await capture(backendDb, { document: { file_id: "v2", file_name: "clip.mp4", mime_type: "video/mp4" } }, "video");
+      expect(getConversationState(backendDb, 42, "intake")?.step).toBe("video_locale");
+    } finally {
+      backendDb.close();
+    }
+  });
+
+  /** A post carries video perfectly well, so the text button takes one and
+   * attaches it. The other direction has nothing to make: a video publication
+   * without a file is not a publication. */
+  it("attaches a video to a post under the text button, and sends bare text back from the video one", async () => {
+    const backendDb = openBackendDb(":memory:");
+    try {
+      const video = await capture(backendDb, { document: { file_id: "v4", file_name: "clip.mp4", mime_type: "video/mp4" } }, "text");
+      expect(video.effects[0]).toMatchObject({ card: { kind: "post" } });
+      const text = await capture(backendDb, { text: "Just words." }, "video");
+      expect(text.effects[0]).toMatchObject({ text: expect.stringContaining("📝") });
+      // The intake stays open, so the next message is still the first one.
+      expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
     } finally {
       backendDb.close();
     }
@@ -87,7 +102,7 @@ describe("bot intake", () => {
   it("does not download a bare video until the language is answered", async () => {
     const backendDb = openBackendDb(":memory:");
     try {
-      await capture(backendDb, { document: { file_id: "v3", file_name: "clip.mp4", mime_type: "video/mp4" } });
+      await capture(backendDb, { document: { file_id: "v3", file_name: "clip.mp4", mime_type: "video/mp4" } }, "video");
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM studio_media_assets").get()).toEqual({ count: 0 });
     } finally {
       backendDb.close();

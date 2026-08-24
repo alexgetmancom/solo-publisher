@@ -9,7 +9,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { LIVE_TITLE_LIMIT, retitleYouTubeBroadcast, youtubeBroadcastInventory } from "../delivery/live-broadcast.js";
+import { editYouTubeBroadcast, LIVE_DESCRIPTION_LIMIT, LIVE_TITLE_LIMIT, youtubeBroadcastInventory } from "../delivery/live-broadcast.js";
 import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -220,24 +220,38 @@ const operationDefs = {
         profiles: input.profiles,
       }),
   }),
-  "live-title": operation({
-    summary: "Every YouTube broadcast the channel holds, and which one a rename would land on.",
-    note: "A stream on the air wins; otherwise the persistent broadcast behind the reusable stream key, whose title the next stream opens under.",
+  live: operation({
+    summary: "Every YouTube broadcast the channel holds, and which one an edit would land on.",
+    note: "A stream on the air wins; otherwise the one closest to starting. Between streams a channel holds nothing to edit, which is the normal answer and not a failure.",
     schema: z.object({ locale: youtubeChannelOption }),
     mutates: false,
     agent: true,
     handler: (context, input) => youtubeBroadcastInventory(context.config(), input.locale, context.fetchImpl),
   }),
-  "live-title-set": operation({
-    summary: "Rename the YouTube broadcast that live-title reports as chosen.",
-    note: `On the air it reaches viewers immediately; off the air it sets the title the next stream opens under. At most ${LIVE_TITLE_LIMIT} characters; the description and scheduled start are preserved.`,
-    schema: z.object({
-      title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new broadcast title"),
-      locale: youtubeChannelOption,
-    }),
+  "live-set": operation({
+    summary: "Change the title or the description of the YouTube broadcast that `live` reports as chosen.",
+    note: `On the air it reaches viewers immediately. At most ${LIVE_TITLE_LIMIT} characters of title and ${LIVE_DESCRIPTION_LIMIT} of description; the field left out keeps its current value.`,
+    schema: z
+      .object({
+        title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new broadcast title").optional(),
+        description: z.string().trim().describe("the new broadcast description").optional(),
+        locale: youtubeChannelOption,
+      })
+      .refine((input) => input.title !== undefined || input.description !== undefined, {
+        message: "name a --title, a --description, or both",
+      }),
     mutates: true,
     agent: true,
-    handler: (context, input) => retitleYouTubeBroadcast(context.config(), input.title, input.locale, context.fetchImpl),
+    handler: (context, input) =>
+      editYouTubeBroadcast(
+        context.config(),
+        {
+          ...(input.title === undefined ? {} : { title: input.title }),
+          ...(input.description === undefined ? {} : { description: input.description }),
+        },
+        input.locale,
+        context.fetchImpl,
+      ),
   }),
   status: operation({
     summary: "Worker heartbeats, publication counts and metric schedule health.",

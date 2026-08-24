@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { retitleYouTubeBroadcast, youtubeBroadcastInventory } from "../src/delivery/live-broadcast.js";
+import { editYouTubeBroadcast, youtubeBroadcastInventory } from "../src/delivery/live-broadcast.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 /**
@@ -65,6 +65,21 @@ describe("youtubeBroadcastInventory", () => {
     expect((await youtubeBroadcastInventory(config, "ru", fetchImpl)).chosen).toMatchObject({ id: "bc-default", isDefault: true });
   });
 
+  /** What "Go live" actually leaves on the channel between the click and the
+   * first byte: no schedule, not the default broadcast, `ready`. Ordering by
+   * start time alone left this one unreachable, so the stream could not be
+   * named until it was already on the air. */
+  it("chooses the stream waiting on the encoder, which carries no scheduled start at all", async () => {
+    const starting = { id: "bc-starting", snippet: { title: "Стримс" }, status: { lifeCycleStatus: "ready" } };
+    const scheduled = {
+      id: "bc-later",
+      snippet: { title: "Later", scheduledStartTime: "2026-08-26T18:00:00Z" },
+      status: { lifeCycleStatus: "ready" },
+    };
+    const { fetchImpl } = stub(() => ({ items: [scheduled, starting] }));
+    expect((await youtubeBroadcastInventory(config, "ru", fetchImpl)).chosen).toMatchObject({ id: "bc-starting" });
+  });
+
   it("takes the soonest scheduled event when there is no persistent broadcast", async () => {
     const later = {
       id: "bc-later",
@@ -94,10 +109,10 @@ describe("youtubeBroadcastInventory", () => {
   });
 });
 
-describe("retitleYouTubeBroadcast", () => {
+describe("editYouTubeBroadcast", () => {
   it("writes the broadcast the read returned and resends the fields the update would clear", async () => {
     const { calls, fetchImpl } = stub(() => ONLY_LIVE);
-    const result = await retitleYouTubeBroadcast(config, "  New title  ", "ru", fetchImpl);
+    const result = await editYouTubeBroadcast(config, { title: "  New title  " }, "ru", fetchImpl);
     expect(result).toMatchObject({ id: "bc-live", title: "New title" });
     const update = calls.find((call) => call.method === "PUT");
     expect(JSON.parse(String(update?.body))).toEqual({
@@ -111,22 +126,38 @@ describe("retitleYouTubeBroadcast", () => {
    * back is a 400 rather than a no-op. */
   it("omits the scheduled start the persistent broadcast does not have", async () => {
     const { calls, fetchImpl } = stub(() => ({ items: [PERSISTENT] }));
-    await retitleYouTubeBroadcast(config, "New title", "ru", fetchImpl);
+    await editYouTubeBroadcast(config, { title: "New title" }, "ru", fetchImpl);
     expect(JSON.parse(String(calls.find((call) => call.method === "PUT")?.body))).toEqual({
       id: "bc-default",
       snippet: { title: "New title", description: "Key notes" },
     });
   });
 
+  it("changes the description without disturbing the title beside it in the same snippet", async () => {
+    const { calls, fetchImpl } = stub(() => ONLY_LIVE);
+    const result = await editYouTubeBroadcast(config, { description: "  Ссылки под эфиром  " }, "ru", fetchImpl);
+    expect(result).toMatchObject({ title: "Old title", description: "Ссылки под эфиром" });
+    expect(JSON.parse(String(calls.find((call) => call.method === "PUT")?.body))).toEqual({
+      id: "bc-live",
+      snippet: { title: "Old title", description: "Ссылки под эфиром", scheduledStartTime: "2026-08-24T18:00:00Z" },
+    });
+  });
+
+  it("refuses an edit that names neither field rather than rewriting the snippet with itself", async () => {
+    const { calls, fetchImpl } = stub(() => ONLY_LIVE);
+    await expect(editYouTubeBroadcast(config, {}, "ru", fetchImpl)).rejects.toThrow("Nothing to change");
+    expect(calls).toHaveLength(0);
+  });
+
   it("refuses a title YouTube would reject before touching the channel", async () => {
     const { calls, fetchImpl } = stub(() => ONLY_LIVE);
-    await expect(retitleYouTubeBroadcast(config, "x".repeat(101), "ru", fetchImpl)).rejects.toThrow("100 characters");
+    await expect(editYouTubeBroadcast(config, { title: "x".repeat(101) }, "ru", fetchImpl)).rejects.toThrow("100 characters");
     expect(calls).toHaveLength(0);
   });
 
   it("changes nothing when there is no broadcast to rename", async () => {
     const { calls, fetchImpl } = stub(() => ({ items: [] }));
-    expect(await retitleYouTubeBroadcast(config, "New title", "ru", fetchImpl)).toBeNull();
+    expect(await editYouTubeBroadcast(config, { title: "New title" }, "ru", fetchImpl)).toBeNull();
     expect(calls.some((call) => call.method === "PUT")).toBe(false);
   });
 });

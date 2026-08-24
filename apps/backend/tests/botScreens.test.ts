@@ -19,6 +19,7 @@ import {
   NOTIFICATIONS_MENU_ID,
   PUBLISHING_MENU_ID,
 } from "../src/bot/settings/shared.js";
+import { showStreamScreen } from "../src/bot/stream-screen.js";
 import { createDraftFromMessage } from "../src/content/drafts.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { videoPreview } from "../src/interfaces/telegram/video-preview.js";
@@ -118,6 +119,46 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
   return parts.join("\n");
 }
 
+/** The stream screen renders what YouTube is doing right now, so it is the one
+ * screen the surface cannot record without answering for YouTube. Both states
+ * are recorded: a stream on the air carries a chat, and one that has not
+ * started has no chat to say anything in. */
+async function streamScreens(
+  backendDb: UnsafeBackendDb,
+  ctx: Context,
+  sent: Array<{ text: string; keyboard?: InlineKeyboard }>,
+): Promise<string[]> {
+  registerTestChannels(backendDb, ["youtube_ru"]);
+  const config = loadTestConfig({
+    YOUTUBE_RU_CLIENT_ID: "client",
+    YOUTUBE_RU_CLIENT_SECRET: "secret",
+    YOUTUBE_RU_REFRESH_TOKEN: "refresh",
+  });
+  const screens: string[] = [];
+  const original = globalThis.fetch;
+  try {
+    for (const [name, status, snippet] of [
+      ["on the air", "live", { title: "Стримс", description: "", liveChatId: "chat-1" }],
+      ["starting", "ready", { title: "Стримс", description: "" }],
+      ["nothing running", null, null],
+    ] as const) {
+      globalThis.fetch = Object.assign(
+        async (url: string | URL) =>
+          String(url).includes("oauth2")
+            ? Response.json({ access_token: "token" })
+            : Response.json({ items: status ? [{ id: "bc-1", snippet, status: { lifeCycleStatus: status } }] : [] }),
+        { preconnect: original.preconnect },
+      ) as typeof fetch;
+      await showStreamScreen(ctx, backendDb, config);
+      const screen = sent.at(-1);
+      screens.push(section(`Stream · ${name}`, screen?.keyboard ? keyboardRows(screen.keyboard) : []));
+    }
+  } finally {
+    globalThis.fetch = original;
+  }
+  return screens;
+}
+
 async function intakeScreens(backendDb: UnsafeBackendDb): Promise<string[]> {
   const screens: string[] = [];
   const sent: Array<{ text: string; keyboard?: InlineKeyboard }> = [];
@@ -129,9 +170,10 @@ async function intakeScreens(backendDb: UnsafeBackendDb): Promise<string[]> {
       return { message_id: sent.length };
     },
   } as unknown as Context;
-  await openIntake(ctx, backendDb);
+  await openIntake(ctx, backendDb, "text");
   const prompt = sent.at(-1);
   screens.push(section("Intake · prompt", prompt?.keyboard ? keyboardRows(prompt.keyboard) : []));
+  screens.push(...(await streamScreens(backendDb, ctx, sent)));
   return screens;
 }
 
