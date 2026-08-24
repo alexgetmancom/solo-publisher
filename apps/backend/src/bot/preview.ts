@@ -196,10 +196,7 @@ export function draftPreview(
     const unavailable = unavailableTargetLabels(targets, media.ru, media.enEffective);
     return {
       text: `${draftHeader(draftId, targets, locale)}\n\n⚠️ *${t(locale, "post.publish-now-q")}*\n${t(locale, "post.will-send-to")}: ${available}.${unavailable ? `\n⚠️ ${t(locale, "post.will-skip-no-media", { targets: unavailable })}` : ""}`,
-      keyboard: confirmationKeyboard(
-        { label: t(locale, "post.publish-now-btn"), callback: publicationCallback("post", "publish_confirm", [draftId]) },
-        { label: t(locale, "common.back"), callback: publicationCallback("post", "view", [draftId, "overview"]) },
-      ),
+      keyboard: confirmPublishKeyboard(draftId, locale, Boolean(targets.threads_ru || targets.threads_en)),
     };
   }
 
@@ -328,6 +325,17 @@ function canEditLocale(backendDb: BackendDb, config: BackendConfig, actorId: num
 /** EN falls back to RU media at publish time, so the preview counts both the raw
  * EN attachments (to warn about the fallback) and the effective ones (to decide
  * which targets can actually receive the post). */
+/** The publish confirmation carries the Threads rendering, because a preview
+ * per language plus a Threads message per language is four messages for a tap
+ * nobody made. Here it is one button next to the one that publishes. */
+function confirmPublishKeyboard(draftId: number, locale: StudioLocale, threads: boolean): InlineKeyboard {
+  const keyboard = new InlineKeyboard();
+  if (threads) keyboard.text(t(locale, "preview.show-threads"), screenCallback("delivery_preview_threads", ["post", draftId]));
+  keyboard.text(t(locale, "post.publish-now-btn"), publicationCallback("post", "publish_confirm", [draftId]));
+  keyboard.row().text(t(locale, "common.back"), publicationCallback("post", "view", [draftId, "overview"]));
+  return keyboard;
+}
+
 function mediaCounts(mediaRuJson: string | null, mediaEnJson: string | null): { ru: number; en: number; enEffective: number } {
   const ru = safeMediaCount(mediaRuJson);
   const en = safeMediaCount(mediaEnJson);

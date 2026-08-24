@@ -156,6 +156,10 @@ describe("video callback dispatch", () => {
           cardMessageId = nextMessageId;
           return { message_id: nextMessageId };
         },
+        replyWithVideo: async () => {
+          nextMessageId += 1;
+          return { message_id: nextMessageId };
+        },
         api: { editMessageText: async () => undefined },
       }) as unknown as Context;
     const current = () => {

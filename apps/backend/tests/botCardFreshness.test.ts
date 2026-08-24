@@ -90,10 +90,10 @@ describe("Telegram card freshness", () => {
 
       await handlePublicationCallback(context(postAction("publish", [draftId]), 10), backendDb, config);
 
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 17 });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 15 });
       expect(
         isStaleCardCallback(
-          context(postAction("publish_confirm", [draftId]), 17),
+          context(postAction("publish_confirm", [draftId]), 15),
           backendDb,
           postPublication("publish_confirm", [draftId]),
         ),
@@ -271,6 +271,7 @@ describe("Telegram card freshness", () => {
           answerCallbackQuery: async () => true,
           editMessageText: async () => undefined,
           reply: async () => ({ message_id: ++nextMessageId }),
+          replyWithVideo: async () => ({ message_id: ++nextMessageId }),
           api: { editMessageText: async () => undefined },
         }) as unknown as Context;
 

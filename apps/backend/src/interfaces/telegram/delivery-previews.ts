@@ -1,5 +1,4 @@
-import { type Context, InlineKeyboard, InputFile } from "grammy";
-import { screenCallback } from "../../bot/screen-callback.js";
+import { type Context, InputFile } from "grammy";
 import type { BackendDb } from "../../db/client.js";
 import { splitText } from "../../delivery/social/payload.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -14,6 +13,11 @@ import { settingsService } from "../../studio/services/settings.js";
 
 const TELEGRAM_MEDIA_GROUP_LIMIT = 10;
 
+/** Telegram allows 1024 characters in a caption; a preview stops short of that
+ * so the text it shows is the post's own, never a silently trimmed one. Past
+ * the budget the media goes first and the text follows as its own message. */
+const PREVIEW_CAPTION_LIMIT = 1000;
+
 /** Telegram renderer for Studio delivery projections. It owns no planning decisions. */
 export async function sendTelegramDeliveryPreviews(
   ctx: Context,
@@ -25,12 +29,7 @@ export async function sendTelegramDeliveryPreviews(
     // swallow the previews that follow it.
     try {
       await ctx.reply(...deliveryHeader(projection, locale));
-      const hasVideo = projection.targets.length > 0 && projection.media.some(isVideo);
-      if (projection.targets.length) await sendProjectionContent(ctx, projection, !hasVideo, locale);
-      if (hasVideo)
-        await ctx.reply(t(locale, "preview.video-ready"), {
-          reply_markup: new InlineKeyboard().text(t(locale, "preview.show-video"), previewCallback("video", projection.id)),
-        });
+      if (projection.targets.length) await sendProjectionContent(ctx, projection, locale);
       if (projection.notes.length)
         await ctx.reply(projection.notes.map((note) => `ℹ️ ${escapeMarkdown(note)}`).join("\n"), { parse_mode: "Markdown" });
     } catch (error) {
@@ -44,19 +43,13 @@ export async function sendTelegramArchiveMedia(ctx: Context, media: Record<strin
   await sendMedia(ctx, media, "", []);
 }
 
-async function sendProjectionContent(
-  ctx: Context,
-  projection: DeliveryProjection,
-  includeVideo = true,
-  locale: StudioLocale = "en",
-): Promise<void> {
+async function sendProjectionContent(ctx: Context, projection: DeliveryProjection, locale: StudioLocale = "en"): Promise<void> {
   const metadata = projection.metadata ? formatMetadata(projection.metadata, locale) : "";
   const text = [projection.text, metadata].filter(Boolean).join("\n\n");
   // Metadata is preview-only and has no source entities; retain formatting only
   // when the projection contains its original post text unchanged.
   const entities = metadata ? [] : projection.entities;
-  const media = includeVideo ? projection.media : projection.media.filter((item) => !isVideo(item));
-  await sendMedia(ctx, media, text, entities);
+  await sendMedia(ctx, projection.media, text, entities);
 }
 
 type RenderableMedia = { source: InputFile | string; video: boolean };
@@ -74,7 +67,7 @@ async function sendMedia(ctx: Context, media: Record<string, unknown>[], text: s
     if (text) await ctx.reply(text, entityOptions(entities, text.length));
     return;
   }
-  const hasCaption = Boolean(text && text.length <= 1024);
+  const hasCaption = Boolean(text && text.length <= PREVIEW_CAPTION_LIMIT);
   const caption = hasCaption ? { caption: text, ...captionEntityOptions(entities, text.length) } : {};
   if (items.length > 1) {
     const group = items.map((item, index) => ({
@@ -98,15 +91,14 @@ function isVideo(media: Record<string, unknown>): boolean {
   return String(media.type ?? "photo").toLowerCase() === "video";
 }
 
-/** One of the three deferred views of a delivery preview: the heavy video, the
- * Threads rendering, or back to the Telegram one. The projection id is two
- * arguments -- what kind of publication and which one -- because a callback
- * argument cannot carry the separator itself. */
-export async function showDeliveryPreview(
+/** The one deferred view of a delivery: every Threads rendering the draft
+ * carries, one message per language. It hangs off the publish confirmation
+ * rather than the previews themselves, which is why it takes the publication
+ * -- what kind and which one -- and not a single projection. */
+export async function sendThreadsPreviews(
   ctx: Context,
   backendDb: BackendDb,
   config: BackendConfig,
-  view: DeliveryPreviewView,
   publication: { kind: string; id: number },
 ): Promise<void> {
   const actorId = Number(ctx.from?.id);
@@ -118,52 +110,19 @@ export async function showDeliveryPreview(
       : publication.kind === "post"
         ? services.posts.preview(actorId, publication.id).delivery
         : null;
-  const projectionId = `${publication.kind}:${publication.id}`;
-  const projection = delivery?.projections.find((item) => item.id === projectionId);
-  // The preview belongs to a draft that has changed since: say so rather than
-  // acknowledging a tap that then does nothing.
-  await ctx.answerCallbackQuery(projection ? undefined : { text: t(locale, "action.card-stale") });
-  if (!projection) return;
-  if (view === "threads") {
+  const renderings = (delivery?.projections ?? []).flatMap((projection) => {
     const target = projection.targets.find((item) => item === "threads_ru" || item === "threads_en");
-    if (!target) return;
-    await ctx.editMessageText(threadsPreviewText(target, projection.text, projection.entities, Boolean(projection.threadsChain), locale), {
-      reply_markup: new InlineKeyboard().text(t(locale, "preview.show-telegram"), previewCallback("telegram", projection.id)),
-    });
-    return;
-  }
-  if (view === "telegram") {
-    await ctx.editMessageText(...deliveryHeader(projection, locale));
-    return;
-  }
-  await sendMedia(ctx, projection.media, "", []);
+    return target ? [threadsPreviewText(target, projection.text, projection.entities, Boolean(projection.threadsChain), locale)] : [];
+  });
+  // The confirmation belongs to a draft that has changed since: say so rather
+  // than acknowledging a tap that then does nothing.
+  await ctx.answerCallbackQuery(renderings.length ? undefined : { text: t(locale, "action.card-stale") });
+  for (const rendering of renderings) await ctx.reply(rendering);
 }
 
-export type DeliveryPreviewView = "video" | "threads" | "telegram";
-
-/** A projection id is "post:12"; the registry takes it as two arguments. Each
- * view names its screen outright, so the button graph can see all three. */
-function previewCallback(view: DeliveryPreviewView, projectionId: string): string {
-  const [kind, id] = projectionId.split(":");
-  const args = [kind ?? "", id ?? ""];
-  if (view === "video") return screenCallback("delivery_preview_video", args);
-  if (view === "threads") return screenCallback("delivery_preview_threads", args);
-  return screenCallback("delivery_preview_telegram", args);
-}
-
-function deliveryHeader(
-  projection: DeliveryProjection,
-  locale: StudioLocale,
-): [string, { parse_mode: "Markdown"; reply_markup?: InlineKeyboard }] {
+function deliveryHeader(projection: DeliveryProjection, locale: StudioLocale): [string, { parse_mode: "Markdown" }] {
   const targets = projection.targets.join(" · ") || t(locale, "preview.no-compatible-target");
-  const threadsTarget = projection.targets.find((item) => item === "threads_ru" || item === "threads_en");
-  const reply_markup = threadsTarget
-    ? new InlineKeyboard().text(t(locale, "preview.show-threads"), previewCallback("threads", projection.id))
-    : undefined;
-  return [
-    `👁 *${escapeMarkdown(projection.label)}*\n${escapeMarkdown(targets)}`,
-    { parse_mode: "Markdown", ...(reply_markup ? { reply_markup } : {}) },
-  ];
+  return [`👁 *${escapeMarkdown(projection.label)}*\n${escapeMarkdown(targets)}`, { parse_mode: "Markdown" }];
 }
 
 export function threadsPreviewText(
