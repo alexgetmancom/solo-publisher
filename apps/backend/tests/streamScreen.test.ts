@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { getConversationState } from "../src/bot/conversation-state.js";
 import { handleStreamMessage, promptStreamField, showStreamScreen } from "../src/bot/stream-screen.js";
+import { streamService } from "../src/studio/services/streams.js";
 import { registerTestChannels } from "./helpers/channels.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -81,13 +82,16 @@ const live = {
 };
 
 describe("stream screen", () => {
-  it("edits the channel that is on the air, not the first one connected", async () => {
+  /** Every connected surface is shown, because one typed line goes to all of
+   * them and the operator has to see which. */
+  it("shows each connected surface with what it is currently saying", async () => {
     const backendDb = studioDb();
     const youtube = stubYouTube({ ru: { items: [] }, en: live });
     try {
-      const effects = await promptStreamField(ctxWith(), backendDb, config, "title");
-      expect(effects[0]).toMatchObject({ text: expect.stringContaining("Стримс") });
-      expect(getConversationState(backendDb, 42, "stream")?.data.channel).toBe("en");
+      const found = await streamService(backendDb, config).current();
+      expect(found.places.map((place) => place.label)).toEqual(["YouTube RU", "YouTube EN"]);
+      expect(found.places.find((place) => place.label === "YouTube EN")).toMatchObject({ title: "Стримс", live: true, editable: true });
+      expect(found.places.find((place) => place.label === "YouTube RU")).toMatchObject({ editable: false });
     } finally {
       youtube.restore();
       backendDb.close();
@@ -186,7 +190,6 @@ describe("stream screen", () => {
       sent.length = 0;
       await showStreamScreen(ctxWith(), backendDb, config);
       expect(sent.at(-1)).toContain("Стримс");
-      expect(sent.at(-1)).not.toContain("EN");
       expect(sent.at(-1)).not.toContain("403");
     } finally {
       youtube.restore();
@@ -254,7 +257,7 @@ describe("stream screen", () => {
       try {
         const result = await handleStreamMessage(ctxWith({ text: "Пилим бота" }), backendDb, config);
         expect(result.handled).toBe(true);
-        expect(result.effects[0]).toMatchObject({ text: expect.stringContaining("No stream is running any more") });
+        expect(String((result.effects[0] as { text: string }).text)).toContain("nothing to edit until a stream starts");
       } finally {
         ended.restore();
       }
@@ -299,7 +302,7 @@ describe("stream screen", () => {
     try {
       sent.length = 0;
       await showStreamScreen(ctxWith(), backendDb, config);
-      expect(sent.at(-1)).toContain("No stream is running");
+      expect(sent.at(-1)).toContain("nothing running");
     } finally {
       youtube.restore();
       backendDb.close();

@@ -10,6 +10,7 @@ import type { VideoLocale } from "../publishing/video-types.js";
 import { metaOauthConnectUrl } from "./meta-oauth.js";
 import { META_PROVIDERS, type MetaOauthPlatform } from "./meta-providers.js";
 import { registerChannel } from "./registry.js";
+import { redeemTwitchDevice, startTwitchDevice, TWITCH_TOKEN_TARGET } from "./twitch-oauth.js";
 import { xOauthAuthorizeUrl } from "./x-oauth.js";
 import { installYouTubeToken, youtubeTokenTarget } from "./youtube-tokens.js";
 
@@ -22,7 +23,7 @@ const YOUTUBE_TOKEN_URL = "https://oauth2.googleapis.com/token";
  * general scope is one of the four `videos.insert` accepts. */
 const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube";
 
-export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube"] as const;
+export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube", "twitch"] as const;
 export type ConnectPlatform = (typeof CONNECT_PLATFORMS)[number];
 
 /**
@@ -74,6 +75,15 @@ const CONNECT_PROVIDERS: Record<ConnectPlatform, ConnectProvider> = {
     // X's own start route is guarded for the dashboard, so what an interface
     // hands over is the platform's link, which already carries a sealed state.
     link: (config, _locale, now) => xOauthAuthorizeUrl(config, now),
+  },
+  twitch: {
+    kind: "device",
+    label: "Twitch",
+    // One account per Studio: Twitch has no per-language channels here, so no
+    // surface asks which one is meant.
+    perLocale: false,
+    missing: (config) => missingSettings(config, ["TWITCH_CLIENT_ID", "TOKEN_ENCRYPTION_KEY"]),
+    start: startTwitchConnect,
   },
   youtube: {
     kind: "device",
@@ -185,6 +195,34 @@ async function startYouTubeDevice(
   return { verificationUrl: device.verification_url, userCode: device.user_code, expiresInSeconds };
 }
 
+/** Asks Twitch for the code the operator types on twitch.tv/activate, and keeps
+ * the half that redeems it until the credentials worker sees the approval. */
+async function startTwitchConnect(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  _locale: VideoLocale,
+  fetchImpl: typeof fetch,
+  now: Date,
+): Promise<DeviceStart> {
+  const key = encryptionKey(config.TOKEN_ENCRYPTION_KEY);
+  if (!key) throw new Error("TOKEN_ENCRYPTION_KEY is required to connect an account");
+  const device = await startTwitchDevice(config, fetchImpl);
+  const row = {
+    sealedDeviceCode: seal(device.deviceCode, key),
+    userCode: device.userCode,
+    verificationUrl: device.verificationUrl,
+    intervalSeconds: device.intervalSeconds,
+    expiresAt: new Date(now.getTime() + device.expiresInSeconds * 1000).toISOString(),
+    updatedAt: now.toISOString(),
+  };
+  unsafeDb(backendDb)
+    .db.insert(deviceAuthorizations)
+    .values({ target: TWITCH_TOKEN_TARGET, ...row, createdAt: now.toISOString() })
+    .onConflictDoUpdate({ target: deviceAuthorizations.target, set: row })
+    .run();
+  return { verificationUrl: device.verificationUrl, userCode: device.userCode, expiresInSeconds: device.expiresInSeconds };
+}
+
 function pendingDeviceAuthorizations(backendDb: BackendDb): (typeof deviceAuthorizations.$inferSelect)[] {
   return unsafeDb(backendDb).db.select().from(deviceAuthorizations).all();
 }
@@ -196,10 +234,15 @@ function forgetDeviceAuthorization(backendDb: BackendDb, target: string): void {
 /**
  * Finishes every device authorization the operator has approved.
  *
- * Google answers a device flow by being polled, and the credentials worker is
+ * A device flow is answered by being polled, and the credentials worker is
  * where that belongs: an operator who started the connection from a chat, a
  * terminal or an agent has nothing left to hold open, and the approval lands in
  * the same place regardless of which surface began it.
+ *
+ * Two platforms answer here now, so the loop asks which one a pending row
+ * belongs to instead of assuming. It used to send every device code to Google's
+ * token endpoint with Google's credentials, which a Twitch code would have been
+ * refused by -- and the refusal would have read as the operator saying no.
  */
 export async function redeemDeviceAuthorizations(
   config: BackendConfig,
@@ -211,34 +254,76 @@ export async function redeemDeviceAuthorizations(
   if (!key) return 0;
   let connected = 0;
   for (const pending of pendingDeviceAuthorizations(backendDb)) {
-    const locale: VideoLocale = pending.target.endsWith("_en") ? "en" : "ru";
     if (new Date(pending.expiresAt).getTime() <= now.getTime()) {
       forgetDeviceAuthorization(backendDb, pending.target);
       log("warn", "device authorization expired before it was approved", { target: pending.target });
       continue;
     }
-    const { clientId, clientSecret } = youtubeCredentials(config, locale);
-    const answer = await requestJson<{ refresh_token?: string; error?: string }>(fetchImpl, YOUTUBE_TOKEN_URL, {
-      method: "POST",
-      body: formBody({
-        client_id: clientId ?? "",
-        client_secret: clientSecret ?? "",
-        device_code: open(pending.sealedDeviceCode, key),
-        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-      }),
-    }).catch((error: unknown) => ({ error: String(error) }) as { refresh_token?: string; error?: string });
-    // Still waiting for the operator to approve, which is the ordinary answer.
-    if (answer.error && (answer.error.includes("authorization_pending") || answer.error.includes("slow_down"))) continue;
-    if (!answer.refresh_token) {
-      forgetDeviceAuthorization(backendDb, pending.target);
-      log("warn", "device authorization was refused", { target: pending.target, error: answer.error ?? "no refresh token" });
+    const deviceCode = open(pending.sealedDeviceCode, key);
+    const outcome =
+      pending.target === TWITCH_TOKEN_TARGET
+        ? await redeemTwitch(config, backendDb, deviceCode, fetchImpl, now)
+        : await redeemYouTube(config, backendDb, pending.target, deviceCode, fetchImpl, now);
+    if (outcome.status === "pending") continue;
+    forgetDeviceAuthorization(backendDb, pending.target);
+    if (outcome.status === "refused") {
+      log("warn", "device authorization was refused", { target: pending.target, error: outcome.reason });
       continue;
     }
-    installYouTubeToken(config, backendDb, locale, answer.refresh_token, now);
-    registerChannel(backendDb, { platform: "youtube", locale, provider: "native", source: "interface" });
-    forgetDeviceAuthorization(backendDb, pending.target);
     connected += 1;
-    log("info", "YouTube channel connected", { target: pending.target });
+    log("info", "channel connected", { target: pending.target, account: outcome.account });
   }
   return connected;
+}
+
+type RedeemOutcome = { status: "pending" } | { status: "refused"; reason: string } | { status: "connected"; account: string };
+
+async function redeemTwitch(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  deviceCode: string,
+  fetchImpl: typeof fetch,
+  now: Date,
+): Promise<RedeemOutcome> {
+  const answer = await redeemTwitchDevice(config, backendDb, deviceCode, fetchImpl, now);
+  if (answer.status !== "connected") return answer;
+  // The registry keeps one row per platform and language, and Twitch has no
+  // per-language accounts. It takes the neutral one and carries the login in
+  // its label, so what the operator reads is the account rather than a
+  // language the connection does not have.
+  registerChannel(backendDb, {
+    platform: "twitch",
+    locale: "ru",
+    provider: "native",
+    source: "interface",
+    label: `Twitch · ${answer.login}`,
+  });
+  return { status: "connected", account: answer.login };
+}
+
+async function redeemYouTube(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  target: string,
+  deviceCode: string,
+  fetchImpl: typeof fetch,
+  now: Date,
+): Promise<RedeemOutcome> {
+  const locale: VideoLocale = target.endsWith("_en") ? "en" : "ru";
+  const { clientId, clientSecret } = youtubeCredentials(config, locale);
+  const answer = await requestJson<{ refresh_token?: string; error?: string }>(fetchImpl, YOUTUBE_TOKEN_URL, {
+    method: "POST",
+    body: formBody({
+      client_id: clientId ?? "",
+      client_secret: clientSecret ?? "",
+      device_code: deviceCode,
+      grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+    }),
+  }).catch((error: unknown) => ({ error: String(error) }) as { refresh_token?: string; error?: string });
+  // Still waiting for the operator to approve, which is the ordinary answer.
+  if (answer.error && (answer.error.includes("authorization_pending") || answer.error.includes("slow_down"))) return { status: "pending" };
+  if (!answer.refresh_token) return { status: "refused", reason: answer.error ?? "no refresh token" };
+  installYouTubeToken(config, backendDb, locale, answer.refresh_token, now);
+  registerChannel(backendDb, { platform: "youtube", locale, provider: "native", source: "interface" });
+  return { status: "connected", account: `YouTube ${locale.toUpperCase()}` };
 }

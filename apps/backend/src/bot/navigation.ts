@@ -31,7 +31,7 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
     range
       .text(t(locale, "menu.text"), (ctx) => openIntake(ctx, backendDb, "text", "edit"))
       .text(t(locale, "menu.video"), (ctx) => openIntake(ctx, backendDb, "video", "edit"));
-    if (createStudioServices(backendDb, config).streams.channels().length)
+    if (createStudioServices(backendDb, config).streams.connected())
       range.text(t(locale, "menu.streams"), (ctx) => showStreamScreen(ctx, backendDb, config, "edit"));
   });
   menu.row();

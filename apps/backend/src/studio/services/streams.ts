@@ -1,7 +1,8 @@
 import { youtubeLocales } from "../../channels/locales.js";
+import { listChannels } from "../../channels/registry.js";
+import { type TwitchAuth, twitchAuth } from "../../channels/twitch-oauth.js";
 import type { BackendDb } from "../../db/client.js";
 import {
-  type BroadcastEdit,
   editYouTubeBroadcast,
   LIVE_CHAT_LIMIT,
   LIVE_DESCRIPTION_LIMIT,
@@ -10,115 +11,242 @@ import {
   sayInYouTubeChat,
   youtubeBroadcastInventory,
 } from "../../delivery/live-broadcast.js";
+import { sayInTwitchChat, TWITCH_CHAT_LIMIT, TWITCH_TITLE_LIMIT, twitchChannel, updateTwitchChannel } from "../../delivery/twitch.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import type { VideoLocale } from "../../foundation/external/youtube.js";
 
-export type { LiveBroadcast };
-/** What the platform will accept, republished here so a screen can say it in a
- * prompt without reaching past this service for the number. */
-export { LIVE_CHAT_LIMIT, LIVE_DESCRIPTION_LIMIT, LIVE_TITLE_LIMIT };
+/** What an operator can change about a stream from the bot. */
+export type StreamField = "title" | "description" | "chat";
 
-/** One of the Studio's YouTube channels, as the stream screen sees it. A
- * channel that answered carries its streams; one that could not carries why,
- * unless the reason is that the account never had live streaming switched on. */
-export type StreamChannel = { locale: VideoLocale; broadcasts: LiveBroadcast[]; error: string | null };
-
-export type StudioStream = {
-  chosen: { locale: VideoLocale; broadcast: LiveBroadcast } | null;
-  channels: StreamChannel[];
+/**
+ * The smallest limit any connected surface will accept for a field.
+ *
+ * One typed line goes to every surface at once, so the prompt has to state the
+ * strictest of them: Twitch takes 140 characters of title and YouTube 100, and
+ * a line written to the larger is refused by the smaller after the operator
+ * already pressed send.
+ */
+export const FIELD_LIMIT: Record<StreamField, number> = {
+  title: Math.min(LIVE_TITLE_LIMIT, TWITCH_TITLE_LIMIT),
+  description: LIVE_DESCRIPTION_LIMIT,
+  chat: Math.min(LIVE_CHAT_LIMIT, TWITCH_CHAT_LIMIT),
 };
 
 /**
- * The live stream a Studio is running, and the edits an operator can make to
- * it.
+ * One place an edit can land: a YouTube broadcast or a Twitch channel.
  *
- * Which YouTube channel is a question the platform answers: a person streams on
- * one channel at a time, and the one on the air is the one they mean. A Studio
- * with two connected channels asked about it on every edit, which is a question
- * the operator had already answered by going live.
+ * The two are not the same object wearing different names. A YouTube title
+ * belongs to a broadcast that exists only around a stream and carries a
+ * description; a Twitch title belongs to the channel itself, survives the
+ * stream ending, and has no description at all. `description: null` says the
+ * surface has no such field, which is different from having an empty one.
  */
+export type StreamPlace = {
+  surface: "youtube" | "twitch";
+  label: string;
+  title: string;
+  description: string | null;
+  live: boolean;
+  url: string;
+  /** Whether this place can take an edit at all right now. YouTube between
+   * streams has no broadcast to edit; a Twitch channel always does. */
+  editable: boolean;
+  chatId: string | null;
+  /** What this surface last called a stream, for a field the current one opened
+   * empty. Nothing carries over between YouTube broadcasts, so this is the text
+   * the operator would otherwise retype; a Twitch title never went anywhere and
+   * has none. */
+  previous: { title: string | null; description: string | null };
+  error: string | null;
+};
+
+export type StudioStream = { places: StreamPlace[] };
+
+/** What one surface did with one typed line. Two surfaces answer differently to
+ * the same edit -- Twitch renames a channel that is not streaming, YouTube has
+ * nothing to rename -- so the screen reports them apart rather than averaging
+ * them into one sentence. */
+export type StreamOutcome = { label: string; status: "done" | "skipped" | "failed"; detail: string };
+
 export function streamService(backendDb: BackendDb, config: BackendConfig) {
+  const youtube = () => youtubeLocales(backendDb);
+  const hasTwitch = () => listChannels(backendDb).some((channel) => channel.platform === "twitch");
+
+  async function auth(fetchImpl: typeof fetch): Promise<TwitchAuth | null> {
+    return hasTwitch() ? twitchAuth(config, backendDb, fetchImpl) : null;
+  }
+
   return {
-    /** The channels this screen can speak for at all. No channels, no screen:
-     * the menu asks this before it offers the button. */
-    channels(): VideoLocale[] {
-      return youtubeLocales(backendDb);
+    /** Whether this Studio has anywhere to stream at all. No surfaces, no
+     * screen: the menu asks this before it offers the button. */
+    connected(): boolean {
+      return youtube().length > 0 || hasTwitch();
     },
+
     async current(fetchImpl: typeof fetch = fetch): Promise<StudioStream> {
-      const channels = await Promise.all(
-        youtubeLocales(backendDb).map(async (locale): Promise<StreamChannel> => {
-          try {
-            const { broadcasts } = await youtubeBroadcastInventory(config, locale, fetchImpl);
-            return { locale, broadcasts, error: null };
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return { locale, broadcasts: [], error: isLiveStreamingOff(message) ? null : shortReason(error) };
-          }
-        }),
-      );
-      const candidates = channels.flatMap(({ locale, broadcasts }) => {
-        const [broadcast] = broadcasts;
-        return broadcast ? [{ locale, broadcast }] : [];
-      });
-      const onAir = candidates.find(({ broadcast }) => broadcast.lifeCycleStatus === "live" || broadcast.lifeCycleStatus === "testing");
-      return { chosen: onAir ?? candidates[0] ?? null, channels };
+      const [broadcasts, twitch] = await Promise.all([
+        youtubePlaces(config, youtube(), fetchImpl),
+        twitchPlace(auth(fetchImpl), fetchImpl),
+      ]);
+      return { places: [...twitch, ...broadcasts] };
     },
-    /** Applies one edit to the named channel's chosen broadcast. The channel is
-     * named by the caller rather than resolved again, so a stream starting on
-     * the other one between the prompt and the answer is never the one edited. */
-    edit(locale: VideoLocale, edit: BroadcastEdit, fetchImpl: typeof fetch = fetch): Promise<LiveBroadcast | null> {
-      return editYouTubeBroadcast(config, edit, locale, fetchImpl);
-    },
-    /** Says one thing in the chat of the stream the prompt was opened against.
-     * The chat id comes from that same screen: a stream that ended meanwhile
-     * has no chat, and YouTube refuses the id rather than posting into the
-     * next stream's chat. */
-    say(locale: VideoLocale, liveChatId: string, message: string, fetchImpl: typeof fetch = fetch): Promise<void> {
-      return sayInYouTubeChat(config, liveChatId, message, locale, fetchImpl);
+
+    /**
+     * Applies one typed line everywhere it belongs, and says what each place
+     * did with it.
+     *
+     * The places are resolved again here rather than carried from the screen: a
+     * YouTube edit names the broadcast id from its own read, so re-reading is
+     * what keeps a stream that ended from handing its successor the title, and
+     * a Twitch channel has no id to race.
+     */
+    async apply(field: StreamField, value: string, fetchImpl: typeof fetch = fetch): Promise<StreamOutcome[]> {
+      const { places } = await this.current(fetchImpl);
+      const twitch = await auth(fetchImpl);
+      return Promise.all(places.map((place) => applyTo(config, place, field, value, twitch, fetchImpl)));
     },
   };
 }
 
+async function applyTo(
+  config: BackendConfig,
+  place: StreamPlace,
+  field: StreamField,
+  value: string,
+  twitch: TwitchAuth | null,
+  fetchImpl: typeof fetch,
+): Promise<StreamOutcome> {
+  const skip = (detail: string): StreamOutcome => ({ label: place.label, status: "skipped", detail });
+  if (place.error) return skip(place.error);
+  if (field === "description" && place.description === null) return skip("no description field");
+  if (field === "chat" && !place.live) return skip("not on the air");
+  if (field !== "chat" && !place.editable) return skip("nothing to edit until a stream starts");
+  try {
+    if (place.surface === "twitch") {
+      if (!twitch) return skip("not connected");
+      if (field === "chat") await sayInTwitchChat(twitch, value, fetchImpl);
+      else await updateTwitchChannel(twitch, { title: value }, fetchImpl);
+      return { label: place.label, status: "done", detail: "" };
+    }
+    const locale: VideoLocale = place.label.endsWith("EN") ? "en" : "ru";
+    if (field === "chat") {
+      if (!place.chatId) return skip("no chat");
+      await sayInYouTubeChat(config, place.chatId, value, locale, fetchImpl);
+    } else {
+      const updated = await editYouTubeBroadcast(config, field === "title" ? { title: value } : { description: value }, locale, fetchImpl);
+      if (!updated) return skip("the stream ended");
+    }
+    return { label: place.label, status: "done", detail: "" };
+  } catch (error) {
+    return { label: place.label, status: "failed", detail: shortReason(error) };
+  }
+}
+
+async function youtubePlaces(config: BackendConfig, locales: readonly VideoLocale[], fetchImpl: typeof fetch): Promise<StreamPlace[]> {
+  return Promise.all(
+    locales.map(async (locale): Promise<StreamPlace> => {
+      const label = `YouTube ${locale.toUpperCase()}`;
+      try {
+        const { chosen, broadcasts } = await youtubeBroadcastInventory(config, locale, fetchImpl);
+        const live = chosen?.lifeCycleStatus === "live" || chosen?.lifeCycleStatus === "testing";
+        return {
+          surface: "youtube",
+          label,
+          title: chosen?.title ?? "",
+          description: chosen?.description ?? "",
+          live,
+          url: chosen?.url ?? "",
+          editable: chosen !== null,
+          chatId: chosen?.liveChatId ?? null,
+          previous: {
+            title: previousValue(broadcasts, chosen, "title"),
+            description: previousValue(broadcasts, chosen, "description"),
+          },
+          error: null,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // An account that never had live streaming switched on answers 403
+        // forever. That is a property of the account, not a fault of this
+        // request, and it has no stream -- which is what an unusable place
+        // already says. Reporting it would be noise on every screen.
+        if (isLiveStreamingOff(message)) return absent(label, "youtube");
+        return { ...absent(label, "youtube"), error: shortReason(error) };
+      }
+    }),
+  );
+}
+
+async function twitchPlace(pending: Promise<TwitchAuth | null>, fetchImpl: typeof fetch): Promise<StreamPlace[]> {
+  const auth = await pending.catch(() => null);
+  if (!auth) return [];
+  try {
+    const channel = await twitchChannel(auth, fetchImpl);
+    return [
+      {
+        surface: "twitch",
+        label: "Twitch",
+        title: channel.title,
+        // Twitch has no description on a channel, and an empty box the operator
+        // can type into would silently discard what they wrote.
+        description: null,
+        live: channel.live,
+        url: channel.url,
+        // The title belongs to the channel, so it can be set with nothing on
+        // the air -- and the next stream opens under it.
+        editable: true,
+        chatId: auth.broadcasterId,
+        previous: { title: null, description: null },
+        error: null,
+      },
+    ];
+  } catch (error) {
+    return [{ ...absent("Twitch", "twitch"), error: shortReason(error) }];
+  }
+}
+
+function absent(label: string, surface: "youtube" | "twitch"): StreamPlace {
+  return {
+    surface,
+    label,
+    title: "",
+    description: null,
+    live: false,
+    url: "",
+    editable: false,
+    chatId: null,
+    previous: { title: null, description: null },
+    error: null,
+  };
+}
+
+/**
+ * What this channel last called a stream, offered for a field the current one
+ * opened empty.
+ *
+ * Offered, never applied: copying a description forward on its own would
+ * republish the previous stream's links onto one already on the air.
+ */
+function previousValue(broadcasts: readonly LiveBroadcast[], chosen: LiveBroadcast | null, field: "title" | "description"): string | null {
+  const finished = broadcasts
+    .filter((broadcast) => broadcast.id !== chosen?.id && broadcast.endedAt !== null && broadcast[field].trim())
+    .sort((left, right) => String(right.endedAt).localeCompare(String(left.endedAt)));
+  return finished[0]?.[field].trim() ?? null;
+}
+
 /** The account was never switched on for live streaming. YouTube says so in a
  * machine-readable reason, which is the part worth matching; the sentence
- * beside it is prose and changes.
- *
- * This is not a failure to report: it answers 403 forever, it is a property of
- * the account rather than of this request, and "YouTube EN did not answer"
- * followed by a stack of JSON is noise on a screen the operator opens while
- * streaming. Such a channel has no streams, which `broadcasts: []` already
- * says. An expired credential or an outage is a real fault and keeps its line.
- */
+ * beside it is prose and changes. */
 function isLiveStreamingOff(message: string): boolean {
   return message.includes("liveStreamingNotEnabled");
 }
 
-/** One line an operator can act on, out of a JSON error document. */
+/** One line an operator can act on, out of a JSON error document. Two Google
+ * services and Twitch answer here: the first describes a fault under "message",
+ * OAuth under "error_description", and Twitch under "message" as well. */
 function shortReason(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  // Two shapes, because two Google services answer here: the API describes a
-  // fault under "message", and OAuth under "error_description".
   const described = /"(?:message|error_description)":\s*"([^"]+)"/.exec(message)?.[1];
   const status = /failed: (\d{3})/.exec(message)?.[1];
   return described ?? (status ? `HTTP ${status}` : message.slice(0, 200));
-}
-
-/**
- * What this channel last called a stream, for a field the current one left
- * empty.
- *
- * Nothing carries over between streams on YouTube: every one is a new
- * broadcast, opening with an empty description and an automatic title. The
- * previous value is the thing the operator would otherwise retype, so the
- * prompt offers it -- as text to reuse, never applied on its own. Copying a
- * description forward silently would republish the last stream's links onto
- * one that is already on the air.
- */
-export function previousValue(stream: StudioStream, field: "title" | "description"): string | null {
-  if (!stream.chosen) return null;
-  const channel = stream.channels.find(({ locale }) => locale === stream.chosen?.locale);
-  const finished = (channel?.broadcasts ?? [])
-    .filter((broadcast) => broadcast.id !== stream.chosen?.broadcast.id && broadcast.endedAt !== null && broadcast[field].trim())
-    .sort((left, right) => String(right.endedAt).localeCompare(String(left.endedAt)));
-  return finished[0]?.[field].trim() ?? null;
 }

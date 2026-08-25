@@ -9,7 +9,6 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { editYouTubeBroadcast, LIVE_DESCRIPTION_LIMIT, LIVE_TITLE_LIMIT, youtubeBroadcastInventory } from "../delivery/live-broadcast.js";
 import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -21,6 +20,7 @@ import { retryVideoTarget } from "../publishing/video-service.js";
 import { settleVideoTarget } from "../publishing/video-settle.js";
 import type { VideoTarget } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
+import { streamService } from "../studio/services/streams.js";
 import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
@@ -124,7 +124,6 @@ const localeOption = z.enum(["ru", "en"]).optional().describe("restrict to one l
 /** Which connected YouTube channel to act on. Unlike `localeOption` this is not
  * a filter: every call reaches exactly one channel, and the Russian one is the
  * one that streams. */
-const youtubeChannelOption = z.enum(["ru", "en"]).default("ru").describe("which connected YouTube channel");
 /** Non-empty wherever it is optional: `--target=` used to reach the dispatcher
  * as the empty string, which reads as "no target given" and silently widens the
  * command to every target the publication has. An option spelled with nothing
@@ -221,37 +220,43 @@ const operationDefs = {
       }),
   }),
   live: operation({
-    summary: "Every YouTube broadcast the channel holds, and which one an edit would land on.",
-    note: "A stream on the air wins; otherwise the one closest to starting. Between streams a channel holds nothing to edit, which is the normal answer and not a failure.",
-    schema: z.object({ locale: youtubeChannelOption }),
+    summary: "Every surface this Studio streams on, and what each is showing right now.",
+    note: "Twitch carries a channel title that survives the stream ending; YouTube carries a broadcast that exists only around one. Between streams a YouTube channel has nothing to edit, which is the normal answer and not a failure.",
+    schema: z.object({}),
     mutates: false,
     agent: true,
-    handler: (context, input) => youtubeBroadcastInventory(context.config(), input.locale, context.fetchImpl),
+    handler: (context) => streamService(context.db(), context.config()).current(context.fetchImpl),
   }),
   "live-set": operation({
-    summary: "Change the title or the description of the YouTube broadcast that `live` reports as chosen.",
-    note: `On the air it reaches viewers immediately. At most ${LIVE_TITLE_LIMIT} characters of title and ${LIVE_DESCRIPTION_LIMIT} of description; the field left out keeps its current value.`,
+    summary: "Change the title or the description of the running stream, everywhere it is running.",
+    note: "One line goes to every connected surface, and each answers for itself: Twitch takes a title off the air, YouTube has nothing to rename until a broadcast exists, and only YouTube has a description.",
     schema: z
       .object({
-        title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new broadcast title").optional(),
-        description: z.string().trim().describe("the new broadcast description").optional(),
-        locale: youtubeChannelOption,
+        title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new stream title").optional(),
+        description: z.string().trim().describe("the new stream description, YouTube only").optional(),
       })
       .refine((input) => input.title !== undefined || input.description !== undefined, {
         message: "name a --title, a --description, or both",
       }),
     mutates: true,
     agent: true,
-    handler: (context, input) =>
-      editYouTubeBroadcast(
-        context.config(),
-        {
-          ...(input.title === undefined ? {} : { title: input.title }),
-          ...(input.description === undefined ? {} : { description: input.description }),
-        },
-        input.locale,
-        context.fetchImpl,
-      ),
+    handler: async (context, input) => {
+      const streams = streamService(context.db(), context.config());
+      return {
+        ...(input.title === undefined ? {} : { title: await streams.apply("title", input.title, context.fetchImpl) }),
+        ...(input.description === undefined
+          ? {}
+          : { description: await streams.apply("description", input.description, context.fetchImpl) }),
+      };
+    },
+  }),
+  "live-say": operation({
+    summary: "Say one line in the chat of every stream that is on the air.",
+    note: "It goes out as the channel and cannot be taken back, and it is never retried: neither platform offers a deduplication key, so a line that arrived twice is two lines an audience reads.",
+    schema: z.object({ message: example(z.string().trim().min(1), "Погнали").describe("the chat message") }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => streamService(context.db(), context.config()).apply("chat", input.message, context.fetchImpl),
   }),
   status: operation({
     summary: "Worker heartbeats, publication counts and metric schedule health.",

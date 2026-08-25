@@ -50,6 +50,7 @@ function registeredRequirements(config: BackendConfig, backendDb: BackendDb): Ma
         channel.targetId,
         channel.provider === "zernio" ? ["ZERNIO_API_KEY"] : (PLATFORM_PROFILES[channel.targetId]?.requirements ?? []),
       );
+    else if (channel.platform === "twitch") requirements.set(channel.id, ["TWITCH_CLIENT_ID", "TOKEN_ENCRYPTION_KEY"]);
     else if (channel.platform === "youtube" || channel.platform === "instagram")
       requirements.set(channel.id, videoChannelRequirements(channel.platform, channel.locale, channel.provider));
   }

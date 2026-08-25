@@ -11,8 +11,9 @@ export const VIDEO_TARGET_PLATFORM = {
 
 /** Platforms a Studio can hold an account for. The video pipeline publishes to
  * the two named in VIDEO_TARGET_PLATFORM; TikTok is only ever collected from,
- * through a provider, so it is a real channel that is never a delivery target. */
-export const ACCOUNT_PLATFORMS = ["instagram", "tiktok", "youtube"] as const;
+ * through a provider, and Twitch is only ever steered live, so both are real
+ * channels that are never delivery targets. */
+export const ACCOUNT_PLATFORMS = ["instagram", "tiktok", "twitch", "youtube"] as const;
 
 type VideoSourceMetadata = { videoDurationMs?: number };
 export type YouTubeMetadata = { title: string; description: string; tags: string[]; gameUrl?: string } & VideoSourceMetadata;
