@@ -93,10 +93,24 @@ describe("buildMainMenu", () => {
     };
 
     expect(renderMainMenuHeadline({ upcoming: null, published }, "ru", "Europe/Moscow", now)).toBe(
-      "✅ Вчера, 15:08 · 📝 🚨 DeepSeek больше не...",
+      "✅ Вчера, 15:08 · DeepSeek больше не дешевый",
     );
     expect(renderMainMenuHeadline({ upcoming, published }, "ru", "Europe/Moscow", now)).toBe(
-      "⏭ Завтра, 20:00 · 🎬 УКРАЛИ ВСЁ И СБЕЖАЛИ...",
+      "⏭ Завтра, 20:00 · УКРАЛИ ВСЁ И СБЕЖАЛИ НА ВЕРТОЛЕТЕ?!",
+    );
+  });
+
+  it("drops the day name for today, and truncates a label past the headline width", () => {
+    const now = new Date("2026-08-13T18:00:00.000Z");
+    const upcoming = {
+      id: 3,
+      label: "🚨 OpenAI возвращает ограничение на бесплатные запросы уже завтра",
+      time: new Date("2026-08-13T19:30:00.000Z"),
+      kind: "post" as const,
+    };
+
+    expect(renderMainMenuHeadline({ upcoming, published: null }, "ru", "Europe/Moscow", now)).toBe(
+      "⏭ 22:30 · OpenAI возвращает ограничение на бесплат...",
     );
   });
 

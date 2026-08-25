@@ -5,6 +5,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { truncateUnicode } from "../foundation/text.js";
+import { formatZonedClock, zonedDayDistance } from "../foundation/time.js";
 import { queueService, type StudioQueueActivity } from "../studio/services/queue.js";
 import { settingsService } from "../studio/services/settings.js";
 import { formatQueueTime } from "./queue-time.js";
@@ -50,11 +51,26 @@ export function renderMainMenuHeadline(
   const item = activity.upcoming ?? activity.published;
   if (!item) return t(locale, "menu.queue-empty");
   const prefix = activity.upcoming ? (activity.upcoming.overdue ? "⏰" : "⏭") : "✅";
-  const kind = item.kind === "post" ? "📝" : "🎬";
-  return `${prefix} ${formatQueueTime(item.time, now, locale, timeZone)} · ${kind} ${headlineLabel(item.label)}`;
+  return `${prefix} ${headlineTime(item.time, now, locale, timeZone)} · ${headlineLabel(item.label)}`;
 }
 
+/** The headline says the time of one item, so today needs no name: it is what
+ * the nearest queued publication almost always is, and the word costs the room
+ * the label is short of. The queue list, which spans days, keeps the full form. */
+function headlineTime(time: Date, now: Date, locale: StudioLocale, timeZone: string): string {
+  if (zonedDayDistance(time, now, timeZone) === 0) return formatZonedClock(time, locale, timeZone);
+  return formatQueueTime(time, now, locale, timeZone);
+}
+
+/** What the headline shows of the item itself.
+ *
+ * The kind icon is gone: the buttons directly under this line are the text and
+ * video screens with those same two icons, so on the headline it only competed
+ * with the status. The label's own leading emoji goes for the same reason --
+ * posts here open with one, and beside the status marker it read as decoration
+ * rather than as the state of the queue. */
 function headlineLabel(value: string): string {
-  const limit = 20;
-  return Array.from(value).length > limit ? `${truncateUnicode(value, limit)}...` : value;
+  const label = value.replace(/^\p{Extended_Pictographic}(\uFE0F|\p{Emoji_Modifier})*\s*/u, "").trim() || value;
+  const limit = 40;
+  return Array.from(label).length > limit ? `${truncateUnicode(label, limit)}...` : label;
 }

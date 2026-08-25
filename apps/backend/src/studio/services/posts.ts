@@ -8,6 +8,7 @@ import { listStudioMediaAssets, mediaItemsFromAssets, requireStudioMediaAssets }
 import { draftLocaleContent } from "../../content/draft-content.js";
 import { createDraftFromMessage } from "../../content/drafts.js";
 import type { DraftMessage } from "../../content/message.js";
+import { emphasizeTitle } from "../../content/title-emphasis.js";
 import type { BackendDb } from "../../db/client.js";
 import { recordDomainEvent } from "../../domain/events.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -462,7 +463,7 @@ function prepareDraftContentEdit(
     if (input.media.length) update[ru ? "mediaRuJson" : "mediaEnJson"] = JSON.stringify(input.media);
     if (!input.replaceMediaOnly && input.text) {
       update[ru ? "textRu" : "textEnApproved"] = input.text;
-      update[ru ? "textRuEntitiesJson" : "textEnEntitiesJson"] = JSON.stringify(input.entities);
+      update[ru ? "textRuEntitiesJson" : "textEnEntitiesJson"] = JSON.stringify(emphasizeTitle(input.text, input.entities));
       // The waiver was given for a specific text the author had read. New text is
       // a new decision, so the 500-character rule applies again until waived anew.
       update.threadsChainApproved = 0;

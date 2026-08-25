@@ -3,6 +3,7 @@ import { publicationRef } from "../application/publication-ref.js";
 import { targetsRecord } from "../botTargets.js";
 import { recordDomainEvent } from "../domain/events.js";
 import type { DraftMessage } from "./message.js";
+import { emphasizeTitle } from "./title-emphasis.js";
 
 /** Content aggregate for a draft before it enters a publication plan. */
 export function createDraftFromMessage(
@@ -18,7 +19,7 @@ export function createDraftFromMessage(
     textEnApproved: message.textEnApproved ?? null,
     targetsJson: configured?.targetsJson ?? JSON.stringify(targetsRecord(ports.studioSettings.profile().defaultTargetsJson)),
     mediaRuJson: message.media.length ? JSON.stringify(message.media) : null,
-    textRuEntitiesJson: JSON.stringify(message.entities),
+    textRuEntitiesJson: JSON.stringify(emphasizeTitle(message.text, message.entities)),
     ...(configured?.storyPublishMode ? { storyPublishMode: configured.storyPublishMode } : {}),
   });
   recordDomainEvent(ports.events, {
