@@ -187,8 +187,15 @@ function platformAnalyticsTable(backendDb: BackendDb, since: string, days: Analy
   const totalGrowth = measured.length ? measured.reduce((sum, row) => sum + (row.growth ?? 0), 0) : null;
   const all = t(locale, "sdash.all");
   const headers = [t(locale, "sdash.platform-col"), "👥", "📈", "👁", "♥", "💬", "↗", "🔖"];
+  // A platform that did nothing this period costs a full row of zeroes and
+  // reads exactly as loud as the one that earned the views. Its name is still
+  // worth saying -- silence on a connected channel is information -- so the
+  // quiet ones are named on one line under the table instead.
+  const audienceOf = (platform: string) => followerCount(profileMap.get(platform)?.dataJson);
+  const quiet = rows.filter((row) => isQuiet(row.value, row.growth, audienceOf(row.platform)));
+  const loud = rows.filter((row) => !isQuiet(row.value, row.growth, audienceOf(row.platform)));
   const tableRows = [
-    ...rows.map((row) => ({ label: platformLabel(backendDb, row.platform), ...row })),
+    ...loud.map((row) => ({ label: platformLabel(backendDb, row.platform), ...row })),
     { platform: "all", label: all, growth: totalGrowth, value: totalContent },
   ].map((row) => [
     row.label,
@@ -200,7 +207,21 @@ function platformAnalyticsTable(backendDb: BackendDb, since: string, days: Analy
     dash(row.value.shares),
     row.platform === "youtube" || row.platform.startsWith("youtube_") ? "—" : dash(row.value.saves),
   ]);
-  return [tableBlock(headers, tableRows)];
+  const blocks: Block[] = [tableBlock(headers, tableRows)];
+  // Seven emoji column headers with nothing anywhere saying what they mean.
+  blocks.push(textBlock(t(locale, "analytics.legend")));
+  if (quiet.length)
+    blocks.push(
+      textBlock(t(locale, "analytics.quiet", { platforms: quiet.map((row) => platformLabel(backendDb, row.platform)).join(", ") })),
+    );
+  return blocks;
+}
+
+/** Every number the row would carry is zero, its audience included -- a
+ * platform with followers and no activity still reports the followers, which is
+ * the whole point of that column. */
+function isQuiet(value: ContentMetrics, growth: number | null, audience: number): boolean {
+  return !audience && !growth && !value.views && !value.likes && !value.comments && !value.shares && !value.saves;
 }
 
 function publishedPostTable(backendDb: BackendDb, since: string, locale: StudioLocale): Block[] {

@@ -6,7 +6,7 @@ import { showAnalyticsDashboard } from "../src/bot/analytics-screen.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { creatorProfiles, metricSamples, publicationTargets, videoMetricSnapshots } from "../src/db/schema.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
-import { TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
+import { registerTestChannels, TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { withDb as withFixtureDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js";
@@ -225,6 +225,31 @@ describe("creator analytics dashboards", () => {
       // 50 views of growth, not 950 lifetime and not a dropped row: with the
       // baseline pruned there is no third answer the report could give.
       expect(studioAnalyticsDashboard(backendDb, "overview", 30, "ru").text).toContain("| Telegram | 0 | — | 50 |");
+    });
+  });
+
+  /** Seven emoji headers with no legend, and rows carrying nothing at all,
+   * cost the same screen height as the platform that earned the views. */
+  it("names the columns and folds a platform with nothing to report", async () => {
+    await withDb(async (backendDb) => {
+      registerTestChannels(backendDb, ["telegram", "instagram_ru", "telegram_stories"]);
+      const now = new Date().toISOString();
+      backendDb.db
+        .insert(creatorProfiles)
+        .values([
+          { platform: "telegram", dataJson: { followersCount: 142 }, updatedAt: now },
+          { platform: "instagram_ru", dataJson: { followersCount: 273 }, updatedAt: now },
+          { platform: "telegram_stories", dataJson: { followersCount: 0 }, updatedAt: now },
+        ])
+        .run();
+
+      const overview = studioAnalyticsDashboard(backendDb, "overview", 7, "ru").text;
+
+      expect(overview).toContain("👥 аудитория");
+      expect(overview).toContain("Тихо за период: Telegram Stories");
+      // An audience with no activity is still an audience, and keeps its row.
+      expect(overview).toContain("| Instagram RU | 273 |");
+      expect(overview).toContain("| Telegram | 142 |");
     });
   });
 

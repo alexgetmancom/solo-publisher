@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Menu } from "@grammyjs/menu";
 import type { Context, InlineKeyboard } from "grammy";
+import { analyticsKeyboard } from "../src/bot/analytics-screen.js";
 import { openIntake } from "../src/bot/intake.js";
 import { buildMainMenu } from "../src/bot/navigation.js";
 import { draftPreview } from "../src/bot/preview.js";
@@ -118,6 +119,8 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     parts.push(section(`Video card · ${view}`, keyboardRows(preview.keyboard)));
   }
 
+  for (const view of ["overview", "posts", "video"] as const)
+    parts.push(section(`Analytics · ${view}`, keyboardRows(analyticsKeyboard("en", view, 7))));
   parts.push(section("Work queue", keyboardRows(queueView(backendDb, config, 42).keyboard)));
   parts.push(section("Work queue · needs attention", keyboardRows(attentionView(backendDb, config, 42).keyboard)));
 

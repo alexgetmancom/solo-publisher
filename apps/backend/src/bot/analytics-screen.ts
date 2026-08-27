@@ -13,6 +13,7 @@ import { sendTelegramArchiveMedia } from "../interfaces/telegram/delivery-previe
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { screenCallback } from "./screen-callback.js";
+import { choiceLabel } from "./settings/shared.js";
 import { ignoringUnchangedEdit, isUnchangedMessageEdit } from "./telegram-errors.js";
 
 /** The sections this screen offers. The analytics read model also renders an
@@ -166,38 +167,37 @@ export async function refreshTelegramAnalyticsDashboards(bot: Bot, backendDb: Ba
   return results.filter(Boolean).length;
 }
 
-function analyticsKeyboard(locale: StudioLocale, section: AnalyticsSection, days: 1 | 7 | 30): InlineKeyboard {
-  const callback = (nextDays: 1 | 7 | 30) => screenCallback("analytics_section", [section, nextDays]);
+export function analyticsKeyboard(locale: StudioLocale, section: AnalyticsSection, days: 1 | 7 | 30): InlineKeyboard {
   const keyboard = new InlineKeyboard();
+  // Three rows of buttons used to look alike while doing three different jobs:
+  // filtering, switching section, and leaving for another screen. The period is
+  // one control now, the section keeps its three, and everything that navigates
+  // away sits on the last row with the way out.
   keyboard
-    .text(periodButtonLabel(locale, 1, days), callback(1))
-    .text(periodButtonLabel(locale, 7, days), callback(7))
-    .text(periodButtonLabel(locale, 30, days), callback(30))
+    .text(
+      t(locale, "analytics.period", { period: t(locale, `analytics.period-${days}`) }),
+      screenCallback("analytics_section", [section, nextPeriod(days)]),
+    )
     .row();
-  keyboard.text(
-    t(locale, section === "overview" ? "analytics.overview-active" : "analytics.overview"),
-    screenCallback("analytics_section", ["overview", days]),
-  );
-  keyboard.text(
-    t(locale, section === "posts" ? "analytics.posts-section-active" : "analytics.posts-section"),
-    screenCallback("analytics_section", ["posts", days]),
-  );
-  keyboard.text(
-    t(locale, section === "video" ? "analytics.video-section-active" : "analytics.video-section"),
-    screenCallback("analytics_section", ["video", days]),
-  );
+  for (const [name, key] of [
+    ["overview", "analytics.overview"],
+    ["posts", "analytics.posts-section"],
+    ["video", "analytics.video-section"],
+  ] as const)
+    keyboard.text(choiceLabel(section === name, t(locale, key)), screenCallback("analytics_section", [name, days]));
   // The archive is reached from here or from nowhere: every screen under it
   // links back to screenCallback("archive_home"), and nothing linked in.
   keyboard
     .row()
     .text(t(locale, "analytics.milestones-btn"), screenCallback("analytics_milestones", [0]))
-    .text(t(locale, "analytics.archive-btn"), screenCallback("archive_home"));
-  keyboard.row().text(t(locale, "common.menu"), screenCallback("menu_home"));
+    .text(t(locale, "analytics.archive-btn"), screenCallback("archive_home"))
+    .text(t(locale, "common.menu"), screenCallback("menu_home"));
   return keyboard;
 }
 
-function periodButtonLabel(locale: StudioLocale, period: 1 | 7 | 30, selected: 1 | 7 | 30): string {
-  return t(locale, period === selected ? `analytics.period-${period}-active` : `analytics.period-${period}`);
+/** The periods in the order the button walks them. */
+function nextPeriod(days: 1 | 7 | 30): 1 | 7 | 30 {
+  return days === 1 ? 7 : days === 7 ? 30 : 1;
 }
 
 /** Page arithmetic follows the page size the archive itself used, so the
