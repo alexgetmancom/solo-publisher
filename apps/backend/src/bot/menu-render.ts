@@ -71,7 +71,7 @@ function headlineTime(time: Date, now: Date, locale: StudioLocale, timeZone: str
  * rather than as the state of the queue. */
 function headlineLabel(value: string): string {
   const label = value.replace(/^\p{Extended_Pictographic}(\uFE0F|\p{Emoji_Modifier})*\s*/u, "").trim() || value;
-  const limit = 25;
+  const limit = 20;
   if (Array.from(label).length <= limit) return label;
   // The line has to survive one row on a phone, and the status marker and the
   // time are spent before the label starts. Cutting mid-word looked like the

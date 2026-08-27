@@ -95,9 +95,7 @@ describe("buildMainMenu", () => {
     expect(renderMainMenuHeadline({ upcoming: null, published }, "ru", "Europe/Moscow", now)).toBe(
       "✅ Вчера, 15:08 · DeepSeek больше не...",
     );
-    expect(renderMainMenuHeadline({ upcoming, published }, "ru", "Europe/Moscow", now)).toBe(
-      "⏭ Завтра, 20:00 · УКРАЛИ ВСЁ И СБЕЖАЛИ НА...",
-    );
+    expect(renderMainMenuHeadline({ upcoming, published }, "ru", "Europe/Moscow", now)).toBe("⏭ Завтра, 20:00 · УКРАЛИ ВСЁ И СБЕЖАЛИ...");
   });
 
   it("drops the day name for today, and truncates a label past the headline width", () => {
@@ -120,11 +118,11 @@ describe("buildMainMenu", () => {
     const headline = (label: string) =>
       renderMainMenuHeadline({ upcoming: null, published: { id: 1, label, time: at, kind: "post" as const } }, "ru", "Europe/Moscow", now);
 
-    // "Тибо Саламанка собирается" is the limit to the character.
-    expect(headline("🚨 Тибо Саламанка собирается сбросить лимиты Codex")).toBe("✅ 12:31 · Тибо Саламанка собирается...");
-    expect(headline("⚡️ GLM 5.3 Flash сдвигает границу Парето")).toBe("✅ 12:31 · GLM 5.3 Flash сдвигает...");
+    // "Тибо Саламанка снова" is the limit to the character.
+    expect(headline("🚨 Тибо Саламанка снова сбросит лимиты Codex")).toBe("✅ 12:31 · Тибо Саламанка снова...");
+    expect(headline("⚡️ GLM 5.3 Flash сдвигает границу Парето")).toBe("✅ 12:31 · GLM 5.3 Flash...");
     // One word longer than the whole line leaves no boundary to fall back to.
-    expect(headline("Экстраординарноедлинноесловобезпробелов дальше")).toBe("✅ 12:31 · Экстраординарноедлинноесл...");
+    expect(headline("Экстраординарноедлинноесловобезпробелов дальше")).toBe("✅ 12:31 · Экстраординарноедлин...");
     expect(headline("Короткий пост")).toBe("✅ 12:31 · Короткий пост");
   });
 
