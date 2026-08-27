@@ -227,9 +227,9 @@ describe("buildSettingsMenu", () => {
     expect(labels.some((text) => /youtube/i.test(text))).toBe(false);
   });
 
-  it("offers every direct publication route and YouTube from the channels screen", async () => {
+  it("offers every direct publication route and YouTube from the connect screen", async () => {
     backendDb = openBackendDb(":memory:");
-    const labels = await settingsMenuLabels(loadTestConfig({}), backendDb, "settings-channels");
+    const labels = await settingsMenuLabels(loadTestConfig({}), backendDb, "settings-channel-connect");
 
     for (const target of ["Telegram", "Discord", "Telegram Stories", "Instagram Stories RU", "Instagram Stories EN"])
       expect(labels.some((text) => text.includes(target))).toBe(true);
@@ -237,12 +237,20 @@ describe("buildSettingsMenu", () => {
     expect(labels.some((text) => text.includes("YouTube EN"))).toBe(true);
   });
 
-  it("offers channel disable controls and no unconnected default targets", async () => {
+  /** The list names channels and nothing else: connecting lives one screen
+   * over, and disabling one lives behind its card and a confirmation. */
+  it("lists a connected channel with its state, and keeps disabling off the list", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
     registerChannel(backendDb, { platform: "telegram", locale: "ru", provider: "native", targetId: "telegram", label: "Telegram" });
 
-    expect(await settingsMenuLabels(config, backendDb, "settings-channels")).toContain("Disable Telegram");
+    const labels = await settingsMenuLabels(config, backendDb, "settings-channels");
+    // No credentials in the test config, so the glyph is the warning one.
+    expect(labels).toContain("⚠️ Telegram");
+    expect(labels).toContain("＋ Connect a channel");
+    expect(labels.some((text) => text.includes("Disable"))).toBe(false);
+    expect(await settingsMenuLabels(config, backendDb, "settings-channel")).toEqual(["🗑 Disable channel", "← Channels"]);
+    expect(await settingsMenuLabels(config, backendDb, "settings-channel-disable")).toEqual(["🗑 Yes, disable", "← Cancel"]);
     expect(await settingsMenuLabels(config, backendDb, "settings-default-targets")).toEqual(["✓ Telegram", "← Publishing"]);
   });
 

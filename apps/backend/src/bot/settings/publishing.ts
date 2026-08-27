@@ -15,6 +15,9 @@ import { clearConversationState } from "../conversation-state.js";
 import {
   backToSettings,
   beginSettingsInput,
+  CHANNEL_CONNECT_MENU_ID,
+  CHANNEL_DISABLE_MENU_ID,
+  CHANNEL_MENU_ID,
   CHANNELS_MENU_ID,
   DEFAULT_TARGETS_MENU_ID,
   PUBLISHING_MENU_ID,
@@ -25,24 +28,95 @@ import {
 
 const discoveredAccounts = new Map<number, { locale: "ru" | "en"; options: ZernioConnectionOption[] }>();
 
+/** Which channel's card the operator is looking at. The list and the card are
+ * two screens over one collection, so the card has to be told which row opened
+ * it; grammY menus carry no payload of their own. */
+const openChannel = new Map<number, string>();
+
 export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
+  /** The channel list: one button per channel, two to a row, each carrying its
+   * own state. The screen used to print every channel as a line of text and
+   * then repeat all of them as full-width "Disable X" buttons -- the same
+   * twelve names twice, with connecting, reconnecting and disabling stacked in
+   * one column, so the most destructive action sat between two harmless ones. */
   const channels = new Menu<Context>(CHANNELS_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+    const actorId = Number(ctx.from?.id);
+    const locale = settingsService(backendDb).locale(actorId);
+    const report = createStudioServices(backendDb, config).channels.report();
+    report.forEach((channel, index) => {
+      range.submenu(
+        `${channelGlyph(channel)} ${channel.label}`,
+        CHANNEL_MENU_ID,
+        settingsScreen(() => {
+          openChannel.set(actorId, channel.id);
+          return channelCardText(backendDb, config, locale, channel.id);
+        }),
+      );
+      if (index % 2 === 1) range.row();
+    });
+    if (report.length % 2 === 1) range.row();
+    range
+      .submenu(
+        t(locale, "settings.channels-connect"),
+        CHANNEL_CONNECT_MENU_ID,
+        settingsScreen(() => connectText(locale), true),
+      )
+      .row()
+      .back(
+        t(locale, "settings.back-to-publishing"),
+        settingsUpdate({
+          apply: () => openChannel.delete(actorId),
+          body: () => t(locale, "settings.category-publishing-body"),
+          plainText: true,
+        }),
+      );
+  });
+
+  const channelCard = new Menu<Context>(CHANNEL_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+    const actorId = Number(ctx.from?.id);
+    const locale = settingsService(backendDb).locale(actorId);
+    range
+      .submenu(
+        t(locale, "settings.disable-channel"),
+        CHANNEL_DISABLE_MENU_ID,
+        settingsScreen(() => disableConfirmText(backendDb, config, locale, openChannel.get(actorId)), true),
+      )
+      .row()
+      .back(
+        t(locale, "settings.back-to-channels"),
+        settingsScreen(() => channelsText(backendDb, config, locale), true),
+      );
+  });
+
+  /** Disabling takes a channel out of every future publication, and the button
+   * for it used to be one tap away from the buttons that merely reconnect one.
+   * A miss there is not recoverable from this screen. */
+  const channelDisable = new Menu<Context>(CHANNEL_DISABLE_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+    const actorId = Number(ctx.from?.id);
+    const locale = settingsService(backendDb).locale(actorId);
+    range
+      // Two levels up, not one: the card it came from is about to describe a
+      // channel that no longer exists.
+      .text(t(locale, "settings.disable-channel-yes"), async (ctx: Context & MenuFlavor) => {
+        const channelId = openChannel.get(actorId);
+        if (channelId) createStudioServices(backendDb, config).channels.disable(channelId);
+        openChannel.delete(actorId);
+        await ctx.answerCallbackQuery({ text: t(locale, "settings.channel-disabled") });
+        await ctx.editMessageText(channelsText(backendDb, config, locale));
+        ctx.menu.nav(CHANNELS_MENU_ID);
+      })
+      .row()
+      .back(
+        t(locale, "common.cancel"),
+        settingsScreen(() => channelCardText(backendDb, config, locale, openChannel.get(actorId))),
+      );
+  });
+
+  const channelConnect = new Menu<Context>(CHANNEL_CONNECT_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
     const studioChannels = createStudioServices(backendDb, config).channels;
     const discovered = discoveredAccounts.get(actorId);
-    for (const channel of studioChannels.report())
-      range
-        .text(
-          t(locale, "settings.disable-channel", { target: channel.label }),
-          settingsUpdate({
-            apply: () => studioChannels.disable(channel.id),
-            body: () => channelsText(backendDb, config, locale),
-            toast: t(locale, "settings.channel-disabled"),
-            plainText: true,
-          }),
-        )
-        .row();
     if (discovered) {
       for (const option of discovered.options) {
         range
@@ -50,7 +124,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
             await studioChannels.connectZernio(option.accountId, discovered.locale, option.key);
             discoveredAccounts.delete(actorId);
             await ctx.answerCallbackQuery({ text: t(locale, "settings.channel-connected") });
-            await ctx.editMessageText(channelsText(backendDb, config, locale));
+            await ctx.editMessageText(connectText(locale));
           })
           .row();
       }
@@ -89,7 +163,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
           t(locale, "settings.enable-target", { target: target.label }),
           settingsUpdate({
             apply: () => studioChannels.connectTarget(target.id),
-            body: () => channelsText(backendDb, config, locale),
+            body: () => connectText(locale),
             toast: t(locale, "settings.channel-connected"),
             plainText: true,
           }),
@@ -101,10 +175,10 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
         .text("➕ Zernio · EN", (ctx) => discoverZernio(ctx, actorId, "en", locale))
         .row();
     range.back(
-      t(locale, "settings.back-to-publishing"),
+      t(locale, "settings.back-to-channels"),
       settingsUpdate({
         apply: () => discoveredAccounts.delete(actorId),
-        body: () => t(locale, "settings.category-publishing-body"),
+        body: () => channelsText(backendDb, config, locale),
         plainText: true,
       }),
     );
@@ -184,6 +258,9 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
         .row();
     range.back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
   });
+  channels.register(channelCard);
+  channelCard.register(channelDisable);
+  channels.register(channelConnect);
   publishing.register(channels);
   publishing.register(defaultTargets);
   publishing.register(youtubeSignature);
@@ -197,7 +274,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
       discoveredAccounts.set(actorId, { locale: channelLocale, options });
       const supportedAccounts = new Set(options.map(({ accountId }) => accountId));
       await ctx.answerCallbackQuery({ text: t(locale, "settings.channels-found", { count: options.length }) });
-      await ctx.editMessageText(channelsText(backendDb, config, locale, options.length, accounts.length - supportedAccounts.size));
+      await ctx.editMessageText(connectText(locale, options.length, accounts.length - supportedAccounts.size));
       await ctx.menu.update();
     } catch {
       await ctx.answerCallbackQuery({ text: t(locale, "settings.channels-error"), show_alert: true });
@@ -230,22 +307,48 @@ function channelPlatformLabel(platform: string): string {
   return "Instagram";
 }
 
-function channelsText(
-  backendDb: BackendDb,
-  config: BackendConfig,
-  locale: StudioLocale,
-  discoveredCount?: number,
-  hiddenCount = 0,
-): string {
-  const rows = createStudioServices(backendDb, config)
+function channelsText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
+  const report = createStudioServices(backendDb, config).channels.report();
+  if (!report.length) return `${t(locale, "settings.channels-title")}\n\n${t(locale, "settings.channels-none")}`;
+  return `${t(locale, "settings.channels-title")}\n\n${t(locale, "settings.channels-count", { count: report.length })}`;
+}
+
+/** One channel, in full: the details the list used to repeat for all of them. */
+function channelCardText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale, channelId: string | undefined): string {
+  const channel = createStudioServices(backendDb, config)
     .channels.report()
-    .map(
-      (channel) =>
-        `• ${channel.label} — ${channel.provider}${channel.providerAccountId ? ` · ${channel.providerAccountId}` : ""} · ${t(locale, channel.status === "ready" ? "settings.channel-ready" : "settings.channel-missing", { count: channel.missing.length })}`,
-    );
+    .find((candidate) => candidate.id === channelId);
+  if (!channel) return `${t(locale, "settings.channels-title")}\n\n${t(locale, "settings.channels-none")}`;
+  return t(locale, "settings.channel-card", {
+    status: channelGlyph(channel),
+    label: escapeMarkdown(channel.label),
+    provider: escapeMarkdown(channel.provider),
+    account: escapeMarkdown(channel.providerAccountId ?? t(locale, "settings.channel-account-none")),
+    state: escapeMarkdown(channelState(locale, channel)),
+  });
+}
+
+function disableConfirmText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale, channelId: string | undefined): string {
+  const channel = createStudioServices(backendDb, config)
+    .channels.report()
+    .find((candidate) => candidate.id === channelId);
+  return t(locale, "settings.disable-channel-confirm", { target: channel?.label ?? "" });
+}
+
+function connectText(locale: StudioLocale, discoveredCount?: number, hiddenCount = 0): string {
   const suffix = discoveredCount == null ? "" : `\n\n${t(locale, "settings.channels-pick", { count: discoveredCount })}`;
   const hidden = hiddenCount ? `\n${t(locale, "settings.channels-unsupported", { count: hiddenCount })}` : "";
-  return `${t(locale, "settings.channels-title")}\n\n${rows.join("\n") || t(locale, "settings.channels-none")}${suffix}${hidden}`;
+  return `${t(locale, "settings.channels-connect")}${suffix}${hidden}`;
+}
+
+/** A channel's state as one character, so the list reads down its left edge. */
+function channelGlyph(channel: { status: string }): string {
+  if (channel.status === "ready") return "✅";
+  return channel.status === "disabled" ? "⏸" : "⚠️";
+}
+
+function channelState(locale: StudioLocale, channel: { status: string; missing: string[] }): string {
+  return t(locale, channel.status === "ready" ? "settings.channel-ready" : "settings.channel-missing", { count: channel.missing.length });
 }
 
 function connectedTargets(backendDb: BackendDb): (typeof TARGETS)[number][] {

@@ -11,6 +11,9 @@ import { attentionView, queueView } from "../src/bot/queue.js";
 import { buildSettingsMenu } from "../src/bot/settings/index.js";
 import {
   ANALYTICS_MENU_ID,
+  CHANNEL_CONNECT_MENU_ID,
+  CHANNEL_DISABLE_MENU_ID,
+  CHANNEL_MENU_ID,
   CHANNELS_MENU_ID,
   DEFAULT_TARGETS_MENU_ID,
   GENERAL_MENU_ID,
@@ -82,6 +85,9 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     ["Settings", undefined],
     ["Settings · Publishing", PUBLISHING_MENU_ID],
     ["Settings · Publishing · Channels", CHANNELS_MENU_ID],
+    ["Settings · Publishing · Channels · One channel", CHANNEL_MENU_ID],
+    ["Settings · Publishing · Channels · One channel · Disable", CHANNEL_DISABLE_MENU_ID],
+    ["Settings · Publishing · Channels · Connect", CHANNEL_CONNECT_MENU_ID],
     ["Settings · Publishing · Default targets", DEFAULT_TARGETS_MENU_ID],
     ["Settings · Notifications", NOTIFICATIONS_MENU_ID],
     ["Settings · Notifications · Publication notices", NOTIFICATION_SETTINGS_MENU_ID],
