@@ -71,6 +71,17 @@ function headlineTime(time: Date, now: Date, locale: StudioLocale, timeZone: str
  * rather than as the state of the queue. */
 function headlineLabel(value: string): string {
   const label = value.replace(/^\p{Extended_Pictographic}(\uFE0F|\p{Emoji_Modifier})*\s*/u, "").trim() || value;
-  const limit = 40;
-  return Array.from(label).length > limit ? `${truncateUnicode(label, limit)}...` : label;
+  const limit = 25;
+  if (Array.from(label).length <= limit) return label;
+  // The line has to survive one row on a phone, and the status marker and the
+  // time are spent before the label starts. Cutting mid-word looked like the
+  // text had been damaged rather than shortened, so the cut falls back to the
+  // last word that fits whole -- unless the first word alone overruns, which
+  // leaves nothing to fall back to.
+  const clipped = truncateUnicode(label, limit);
+  // A cut that already lands on a word boundary keeps the word it just fitted.
+  const whole = clipped.trimEnd().length < clipped.length || Array.from(label)[limit] === " ";
+  const lastSpace = clipped.lastIndexOf(" ");
+  const kept = whole || lastSpace <= 0 ? clipped.trimEnd() : clipped.slice(0, lastSpace);
+  return `${kept}...`;
 }

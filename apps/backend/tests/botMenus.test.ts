@@ -93,10 +93,10 @@ describe("buildMainMenu", () => {
     };
 
     expect(renderMainMenuHeadline({ upcoming: null, published }, "ru", "Europe/Moscow", now)).toBe(
-      "✅ Вчера, 15:08 · DeepSeek больше не дешевый",
+      "✅ Вчера, 15:08 · DeepSeek больше не...",
     );
     expect(renderMainMenuHeadline({ upcoming, published }, "ru", "Europe/Moscow", now)).toBe(
-      "⏭ Завтра, 20:00 · УКРАЛИ ВСЁ И СБЕЖАЛИ НА ВЕРТОЛЕТЕ?!",
+      "⏭ Завтра, 20:00 · УКРАЛИ ВСЁ И СБЕЖАЛИ НА...",
     );
   });
 
@@ -109,9 +109,23 @@ describe("buildMainMenu", () => {
       kind: "post" as const,
     };
 
-    expect(renderMainMenuHeadline({ upcoming, published: null }, "ru", "Europe/Moscow", now)).toBe(
-      "⏭ 22:30 · OpenAI возвращает ограничение на бесплат...",
-    );
+    expect(renderMainMenuHeadline({ upcoming, published: null }, "ru", "Europe/Moscow", now)).toBe("⏭ 22:30 · OpenAI возвращает...");
+  });
+
+  /** The headline gets one row on a phone, and a cut through the middle of a
+   * word read as damaged text rather than as a shortened line. */
+  it("cuts the label at a word, and keeps a word that fitted exactly", () => {
+    const now = new Date("2026-08-27T11:30:00.000Z");
+    const at = new Date("2026-08-27T09:31:00.000Z");
+    const headline = (label: string) =>
+      renderMainMenuHeadline({ upcoming: null, published: { id: 1, label, time: at, kind: "post" as const } }, "ru", "Europe/Moscow", now);
+
+    // "Тибо Саламанка собирается" is the limit to the character.
+    expect(headline("🚨 Тибо Саламанка собирается сбросить лимиты Codex")).toBe("✅ 12:31 · Тибо Саламанка собирается...");
+    expect(headline("⚡️ GLM 5.3 Flash сдвигает границу Парето")).toBe("✅ 12:31 · GLM 5.3 Flash сдвигает...");
+    // One word longer than the whole line leaves no boundary to fall back to.
+    expect(headline("Экстраординарноедлинноесловобезпробелов дальше")).toBe("✅ 12:31 · Экстраординарноедлинноесл...");
+    expect(headline("Короткий пост")).toBe("✅ 12:31 · Короткий пост");
   });
 
   it("offers one way in per entity, and analytics", async () => {
