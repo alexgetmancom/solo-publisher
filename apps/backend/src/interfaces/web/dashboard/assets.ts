@@ -1,22 +1,10 @@
+import { ORDERED_TEXT_TARGET_IDS } from "../../../analytics/reach/text-targets.js";
 import { TARGETS } from "../../../botTargets.js";
-
-const ORDERED_IDS = [
-  "site_en",
-  "site_ru",
-  "threads_en",
-  "threads_ru",
-  "instagram_stories",
-  "instagram_stories_ru",
-  "telegram",
-  "x",
-  "discord",
-  "telegram_stories",
-] as const;
 
 type TargetInfo = { id: string; label: string; locale: string; kind: string };
 
 /** Static presentation metadata for the Operations dashboard. */
-export const ORDERED_TARGETS: TargetInfo[] = ORDERED_IDS.map((id) => {
+export const ORDERED_TARGETS: TargetInfo[] = ORDERED_TEXT_TARGET_IDS.map((id) => {
   const found = TARGETS.find((target) => target.id === id);
   return found ? { id: found.id, label: found.label, locale: found.locale, kind: found.kind } : null;
 }).filter((target) => target !== null) as TargetInfo[];

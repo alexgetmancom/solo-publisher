@@ -1,4 +1,4 @@
-import type { PipelinePost } from "./types.js";
+import type { PipelinePost } from "../../../analytics/pipeline-payload.js";
 
 function targetPublicUrl(target: string, externalId: string | null = null, url: string | null = null): string | null {
   if (url) return url.replace("threads.net", "threads.com");

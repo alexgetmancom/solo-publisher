@@ -1,4 +1,4 @@
-import { latestAtOrBefore, type PeriodDay, type ReachSeries } from "./daily-reach.js";
+import { latestAtOrBefore, type PeriodDay, type ReachSeries } from "../../../analytics/reach/daily-reach.js";
 
 export type VideoMetrics = {
   views: number;

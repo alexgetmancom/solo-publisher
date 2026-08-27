@@ -1,7 +1,7 @@
-import { ORDERED_TARGETS } from "./assets.js";
+import type { PipelinePost } from "../pipeline-payload.js";
 import { type DailyReach, dailyReach, emptyDailyReach, type PeriodDay } from "./daily-reach.js";
 import { textReachSeries, type XActivitySeries } from "./text-reach.js";
-import type { PipelinePost } from "./types.js";
+import { ORDERED_TEXT_TARGET_IDS } from "./text-targets.js";
 
 /**
  * Read model behind the text half of the unified overview — the twin of
@@ -28,14 +28,7 @@ export function textOverviewOf(
   timeZone: string,
 ): TextOverview {
   const covered = new Set(xSeries.map((entry) => entry.linkedPublicationKey).filter((key): key is string => Boolean(key)));
-  const series = [
-    ...textReachSeries(
-      posts,
-      ORDERED_TARGETS.map((target) => target.id),
-      covered,
-    ),
-    ...xSeries,
-  ];
+  const series = [...textReachSeries(posts, [...ORDERED_TEXT_TARGET_IDS], covered), ...xSeries];
   const byTarget: Record<string, Record<string, DailyReach>> = {};
   for (const target of new Set(series.map((entry) => entry.target))) {
     byTarget[target] = dailyReach(

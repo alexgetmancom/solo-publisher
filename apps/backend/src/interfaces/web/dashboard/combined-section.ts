@@ -1,3 +1,6 @@
+import type { PipelineData, PipelinePost } from "../../../analytics/pipeline-payload.js";
+import { type DailyReach, emptyReachCounters, type ReachCounters } from "../../../analytics/reach/daily-reach.js";
+import { type TextOverview, textDailyReach } from "../../../analytics/reach/text-overview.js";
 import type { XActivityDashboardItem } from "../../../analytics/x-activity-dashboard.js";
 import { targetLocale } from "../../../botTargets.js";
 import { escapeHtml } from "../../../foundation/html.js";
@@ -20,13 +23,10 @@ import {
   scaleTotals,
   type Totals,
 } from "./combined-math.js";
-import { type DailyReach, emptyReachCounters, type ReachCounters } from "./daily-reach.js";
 import { formatMetricValue } from "./format.js";
 import { renderHeroCard, renderHeroMicroMetrics, type TextHeroMetrics, type VideoHeroMetrics } from "./hero-section.js";
 import { localeQuery } from "./locale-links.js";
 import { renderOverviewPublicationList } from "./table.js";
-import { type TextOverview, textDailyReach } from "./text-overview.js";
-import type { PipelineData, PipelinePost } from "./types.js";
 import type { VideoOverview } from "./video-overview.js";
 import { additionalXActivityPosts } from "./x-activity-posts.js";
 

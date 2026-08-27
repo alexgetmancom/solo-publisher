@@ -1,4 +1,5 @@
 import { audienceGrowthByPlatform } from "../../../analytics/metric-deltas.js";
+import { type DailyReach, dailyReach, emptyDailyReach, latestAtOrBefore, type PeriodDay } from "../../../analytics/reach/daily-reach.js";
 import { metricNumber } from "../../../analytics/snapshots/creator-store.js";
 import { publicationRef } from "../../../application/publication-ref.js";
 import { videoDestinations } from "../../../channels/destinations.js";
@@ -12,7 +13,6 @@ import {
   videoDestination,
   videoTargetLabel,
 } from "../../../publishing/video-types.js";
-import { type DailyReach, dailyReach, emptyDailyReach, latestAtOrBefore, type PeriodDay } from "./daily-reach.js";
 import { type VideoSnapshot, videoReachSeries } from "./video-overview-calendar.js";
 
 /**

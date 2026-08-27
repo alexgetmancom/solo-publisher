@@ -1,12 +1,12 @@
 import { describe, expect, it } from "bun:test";
+import type { PipelinePost } from "../src/analytics/pipeline-payload.js";
+import { calendarDays } from "../src/analytics/reach/daily-reach.js";
+import { textDailyReach, textOverviewOf } from "../src/analytics/reach/text-overview.js";
 import type { XActivityDashboardItem } from "../src/analytics/x-activity-dashboard.js";
 import { creatorProfileSnapshots, videoDrafts, videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
 import { type CombinedSectionInput, renderCombinedSection } from "../src/interfaces/web/dashboard/combined-section.js";
-import { calendarDays } from "../src/interfaces/web/dashboard/daily-reach.js";
 import { renderHeroCard } from "../src/interfaces/web/dashboard/hero-section.js";
 import { buildOverviewData, loadDashboardReadModel } from "../src/interfaces/web/dashboard/overview-data.js";
-import { textDailyReach, textOverviewOf } from "../src/interfaces/web/dashboard/text-overview.js";
-import type { PipelinePost } from "../src/interfaces/web/dashboard/types.js";
 import {
   createVideoOverviewCache,
   emptyVideoOverview,

@@ -1,5 +1,5 @@
+import type { PipelinePost } from "../../../analytics/pipeline-payload.js";
 import type { XActivityDashboardItem } from "../../../analytics/x-activity-dashboard.js";
-import type { PipelinePost } from "./types.js";
 
 /** Standalone X activity in the single shape used by dashboard charts and
  * publication lists. Linked activity is already represented by its post. */

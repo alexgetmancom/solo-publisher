@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { calendarDays, calendarKey, latestAtOrBefore, periodReach } from "../src/analytics/reach/daily-reach.js";
 import { isCurrentCalendarDay } from "../src/foundation/time.js";
-import { calendarDays, calendarKey, latestAtOrBefore, periodReach } from "../src/interfaces/web/dashboard/daily-reach.js";
 import {
   periodSubscriberDelta,
   type VideoMetrics,

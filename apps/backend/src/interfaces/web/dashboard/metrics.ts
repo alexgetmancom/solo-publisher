@@ -1,8 +1,8 @@
+import type { DashboardMetricName, PipelinePost } from "../../../analytics/pipeline-payload.js";
 import { escapeHtml } from "../../../foundation/html.js";
 import { jsonArray } from "../../../json.js";
 import { formatMetricValue } from "./format.js";
 import { getTargetUrl } from "./target-url.js";
-import type { DashboardMetricName, PipelinePost } from "./types.js";
 
 const DASHBOARD_METRICS = ["views", "likes", "replies", "reposts"] as const satisfies readonly DashboardMetricName[];
 

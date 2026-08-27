@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import type { PipelinePost } from "../src/analytics/pipeline-payload.js";
 import { renderOverviewSparkline } from "../src/interfaces/web/dashboard/chart.js";
 import { formatMetricValue, getMskDateString, shortPipelineText } from "../src/interfaces/web/dashboard/format.js";
 import { renderHeroCard, renderHeroMicroMetrics } from "../src/interfaces/web/dashboard/hero-section.js";
@@ -6,7 +7,6 @@ import { formatMedia, getTargetMetric, postMetricTotals, targetCell } from "../s
 import { renderDashboardShell } from "../src/interfaces/web/dashboard/shell.js";
 import { renderOverviewPublicationList, renderPublicationDetails } from "../src/interfaces/web/dashboard/table.js";
 import { getTargetUrl } from "../src/interfaces/web/dashboard/target-url.js";
-import type { PipelinePost } from "../src/interfaces/web/dashboard/types.js";
 
 function post(overrides: Partial<PipelinePost> = {}): PipelinePost {
   return { post_id: 106, ...overrides };

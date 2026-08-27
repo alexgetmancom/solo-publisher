@@ -1,3 +1,4 @@
+import type { PipelinePost } from "../../../analytics/pipeline-payload.js";
 import { escapeHtml } from "../../../foundation/html.js";
 import { t } from "../../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../../foundation/locale.js";
@@ -5,7 +6,6 @@ import { ORDERED_TARGETS, PLATFORM_ICONS, platformKey, VIDEO_PLATFORM_ICON_KEYS 
 import { formatMetricValue, shortPipelineText } from "./format.js";
 import { getTargetMetric, getTargetStatus, postMetricTotals } from "./metrics.js";
 import { getTargetUrl } from "./target-url.js";
-import type { PipelinePost } from "./types.js";
 import type { VideoContentItem } from "./video-overview.js";
 
 const DETAIL_BATCH_SIZE = 10;

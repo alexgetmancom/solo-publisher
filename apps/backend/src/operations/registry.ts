@@ -1,6 +1,7 @@
 import * as z from "zod";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
 import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
+import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
 import type { LocalizedProfiles, LocalizedText } from "../application/ports.js";
@@ -396,6 +397,18 @@ const operationDefs = {
     agent: true,
     note: "run after every import-x-analytics",
     handler: (context, input) => xAnalyticsReport(context.db(), input.limit),
+  }),
+  "x-reach": operation({
+    summary: "The daily X reach bars the overview draws, computed here from this database.",
+    schema: z.object({
+      from: example(z.string().min(1), "ISO").describe("first moment of the window"),
+      to: example(z.string().min(1), "ISO").describe("last moment of the window"),
+      item: z.string().optional().describe("an X post id, to print its raw published_at and every reading of it"),
+    }),
+    mutates: false,
+    agent: true,
+    note: "use when a chart and a CSV disagree: this answers at the source, past the read model and the HTML cache",
+    handler: (context, input) => xReachProbe(context.db(), input.from, input.to, context.config().TIMEZONE, input.item),
   }),
   "x-relink": operation({
     summary: "Attach already-imported X activity to editorial posts and project its metrics.",

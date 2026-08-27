@@ -1,3 +1,7 @@
+import type { PipelineData, PipelinePost } from "../../../analytics/pipeline-payload.js";
+import { calendarDays } from "../../../analytics/reach/daily-reach.js";
+import { type TextOverview, textOverviewOf } from "../../../analytics/reach/text-overview.js";
+import { xActivityReachSeries } from "../../../analytics/reach/text-reach.js";
 import type { XActivityDashboardItem } from "../../../analytics/x-activity-dashboard.js";
 import { xActivityDashboardRange } from "../../../analytics/x-activity-dashboard.js";
 import type { AudienceView } from "../../../botTargets.js";
@@ -8,12 +12,8 @@ import { log } from "../../../foundation/logger.js";
 import { zonedRollingPeriodBounds, zonedSlot } from "../../../foundation/time.js";
 import { dashboardPipelineHistoryPayload } from "../../../operations/read-model.js";
 import type { CombinedSectionInput, PlatformMetric } from "./combined-section.js";
-import { calendarDays } from "./daily-reach.js";
 import { audiencePlatformFollowers } from "./ops-sections.js";
 import { rollingPeriodDates } from "./period-controls.js";
-import { type TextOverview, textOverviewOf } from "./text-overview.js";
-import { xActivityReachSeries } from "./text-reach.js";
-import type { PipelineData, PipelinePost } from "./types.js";
 import { createVideoOverviewCache, setVideoOverviewCacheRange, type VideoOverview, videoOverview } from "./video-overview.js";
 
 type OverviewCache = ReturnType<typeof createVideoOverviewCache>;

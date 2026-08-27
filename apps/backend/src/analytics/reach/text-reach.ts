@@ -1,6 +1,6 @@
-import type { XActivityDashboardItem, XActivityMetricSample } from "../../../analytics/x-activity-dashboard.js";
+import type { PipelinePost } from "../pipeline-payload.js";
+import type { XActivityDashboardItem, XActivityMetricSample } from "../x-activity-dashboard.js";
 import type { ReachCounters, ReachSample, ReachSeries } from "./daily-reach.js";
-import type { PipelinePost } from "./types.js";
 
 /**
  * The text feed's adapters onto the shared reach vocabulary.

@@ -1,4 +1,4 @@
-import { zonedDateParts, zonedSlot } from "../../../foundation/time.js";
+import { zonedDateParts, zonedSlot } from "../../foundation/time.js";
 
 /**
  * One vocabulary for "what did a day earn", shared by both halves of the
