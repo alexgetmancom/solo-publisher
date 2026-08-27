@@ -6,7 +6,7 @@ import { drafts, postLocales, publicationTargets } from "../db/schema.js";
 
 /** How many posts back the "usual" target set is learned from. Wide enough that
  * one skipped delivery cannot remove a target from the baseline, short enough
- * that a target retired months ago stops being reported as missing. */
+ * that a target retired months ago stops being noted as absent. */
 const BASELINE_POSTS = 20;
 
 type DeliveredTarget = { target: string; status: string; url: string | null };
@@ -18,17 +18,27 @@ type PublicationRow = {
   status: string;
   headline: string;
   targets: DeliveredTarget[];
-  missingTargets: string[];
+  /** Targets that were created for this post and did not reach the audience. */
+  undelivered: DeliveredTarget[];
+  /** Usual targets this post never had a job for — a choice at composition time,
+   * not a delivery gap. Reported so an unusual set is visible, never as a fault. */
+  absentTargets: string[];
 };
 
 type RecentPublications = { expectedTargets: string[]; posts: PublicationRow[] };
 
 type PublicationMatches = { query: string; expectedTargets: string[]; matches: PublicationRow[] };
 
-/** Recent publications with their per-target delivery state, and the targets a
- * post is missing relative to what its neighbours got. Answers "which post is
- * this, and where did it not go" — the question that otherwise takes a handful
- * of ad-hoc SQL queries against production before any repair can be scoped. */
+/** Recent publications with their per-target delivery state. Answers "which post
+ * is this, and where did it not go" — the question that otherwise takes a handful
+ * of ad-hoc SQL queries against production before any repair can be scoped.
+ *
+ * Two different facts, kept apart. A target that was created and did not publish
+ * is a failure and reads as one. A target this post never had is a decision made
+ * when it was composed — most posts go everywhere, some deliberately go to one
+ * channel — and calling that missing made every deliberate choice look like a
+ * fault: eight such reports in one fortnight, all of them intentional, which is
+ * how a report stops being read before the fortnight that matters. */
 export function recentPublications(backendDb: BackendDb, limit: number): RecentPublications {
   const rows = publicationRows(backendDb, Math.max(limit, BASELINE_POSTS));
   const expectedTargets = usualTargets(rows);
@@ -125,7 +135,8 @@ function describe(row: RawRow, expectedTargets: string[]): PublicationRow {
     status: row.status,
     headline: headline(row.text),
     targets: row.targets,
-    missingTargets: expectedTargets.filter((target) => !present.has(target)),
+    undelivered: row.targets.filter((target) => target.status !== "published"),
+    absentTargets: expectedTargets.filter((target) => !present.has(target)),
   };
 }
 
@@ -149,11 +160,10 @@ export function formatPublicationMatches(report: PublicationMatches): string {
 }
 
 function publicationLine(post: PublicationRow): string {
-  const failed = post.targets.filter((target) => target.status !== "published").map((target) => `${target.target}=${target.status}`);
+  const failed = post.undelivered.map((target) => `${target.target}=${target.status}`);
   const trailer = [
-    post.missingTargets.length > 0 ? `MISSING ${post.missingTargets.join(",")}` : "",
-    failed.length > 0 ? failed.join(" ") : "",
-    post.missingTargets.length === 0 && failed.length === 0 ? "ok" : "",
+    failed.length > 0 ? `FAILED ${failed.join(" ")}` : "ok",
+    post.absentTargets.length > 0 ? `not sent: ${post.absentTargets.join(",")}` : "",
   ]
     .filter(Boolean)
     .join("  ");
