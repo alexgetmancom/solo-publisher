@@ -16,6 +16,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
 import { capabilityReport } from "../observability/capabilities.js";
+import { repairStoredDates } from "../observability/date-repair.js";
 import { usageReport } from "../observability/usage.js";
 import { publishArticle } from "../publishing/article-publish.js";
 import { retryVideoTarget } from "../publishing/video-service.js";
@@ -302,6 +303,14 @@ const operationDefs = {
         capabilities,
       };
     },
+  }),
+  "dates-repair": operation({
+    summary: "Make every stored date a date: normalise SQLite's own spelling, drop readings stamped with a moment that never happened.",
+    schema: z.object({ apply: applyOption }),
+    mutates: true,
+    agent: true,
+    note: "run when `audit` reports storedDates; fix whatever wrote them first, or they come back",
+    handler: (context, input) => repairStoredDates(context.db(), input.apply),
   }),
   audit: operation({
     summary: "Failed jobs, stuck targets, publication inconsistencies across both pipelines, and stored dates that are not dates.",
