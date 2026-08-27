@@ -65,6 +65,46 @@ function renderOverview(
   );
 }
 
+function writeExport(rows: string[][], name = "account_analytics_content_2026-08-14_2026-08-27.csv"): string {
+  const directory = mkdtempSync(join(tmpdir(), "x-activity-guard-"));
+  const file = join(directory, name);
+  writeFileSync(file, [HEADERS.join(","), ...rows.map((row) => row.join(","))].join("\n"), "utf8");
+  return file;
+}
+
+describe("x analytics import guards", () => {
+  const row = ["200", '"Thu, Aug 20, 2026"', "A standalone post", "https://x.com/test/status/200", "1000", ...Array(12).fill("0")];
+
+  /** A reading is keyed by the moment it was taken, so a wrong moment cannot be
+   * corrected by importing again: it sorts above every window and disappears
+   * from the charts while every report still lists it. */
+  it("refuses a sampled_at that is not a full instant", () => {
+    const backendDb = openBackendDb(":memory:");
+    try {
+      const file = writeExport([row]);
+      // What a shell left of "2026-08-27T14:01:34Z" after cutting at the last colon.
+      expect(() => importXAnalyticsCsv(backendDb, file, "34Z")).toThrow(/full ISO timestamp/);
+      expect(() => importXAnalyticsCsv(backendDb, file, "2026-08-27")).toThrow(/full ISO timestamp/);
+      expect(importXAnalyticsCsv(backendDb, file, "2026-08-27T14:01:34Z").rows).toBe(1);
+    } finally {
+      backendDb.close();
+    }
+  });
+
+  /** The export dates a post by calendar day; resolving that day against the
+   * importing machine's timezone put one file on two different days. */
+  it("dates a post by the day the export names, wherever it is imported", () => {
+    const backendDb = openBackendDb(":memory:");
+    try {
+      importXAnalyticsCsv(backendDb, writeExport([row]), "2026-08-27T14:01:34Z");
+      const item = backendDb.db.select().from(xActivityItems).all()[0];
+      expect(item?.publishedAt).toBe("2026-08-20T00:00:00.000Z");
+    } finally {
+      backendDb.close();
+    }
+  });
+});
+
 describe("X Activity", () => {
   it("records a published X target idempotently and reads the newest metric snapshots", () => {
     const backendDb = openBackendDb(":memory:");

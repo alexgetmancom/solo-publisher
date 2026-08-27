@@ -4,6 +4,8 @@ import path from "node:path";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { attachXActivityToPosts, X_ANALYTICS_SOURCE } from "./x-activity-linking.js";
 
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/u;
+
 type CsvRow = Record<string, string>;
 type ParsedCsv = { headers: string[]; rows: CsvRow[] };
 
@@ -48,7 +50,12 @@ export function importXAnalyticsCsv(
   // is the only thing carrying the window it covers.
   sourceName = path.basename(sourcePath),
 ): XCsvImportResult {
-  if (Number.isNaN(Date.parse(sampledAt))) throw new Error("--sampled-at must be an ISO timestamp");
+  // Anything `Date` will swallow is not good enough: "34Z" is the first of
+  // January 2034, and a timestamp mangled on its way through a shell arrived as
+  // a valid-looking moment, stamped a whole import with it, and sorted every
+  // one of its readings above every window the dashboard asks for.
+  if (!ISO_INSTANT.test(sampledAt) || Number.isNaN(Date.parse(sampledAt)))
+    throw new Error("--sampled-at must be a full ISO timestamp, for example 2026-08-27T14:01:34Z");
   const { headers, rows } = parseCsv(fs.readFileSync(sourcePath, "utf8"));
   if (!rows.length || !rows[0]?.["Идентификатор поста"]) throw new Error("Expected an X Analytics CSV with the column Идентификатор поста");
   // A column this export does not carry is missing data, not a zero. Writing 0
@@ -165,9 +172,19 @@ function activityKind(text: string): "reply" | "repost" | "standalone" {
   return /^@[\p{L}\p{N}_]+/u.test(text) ? "reply" : "standalone";
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * The export dates a post by calendar day and says nothing about the hour, so
+ * the day is all there is to keep. `new Date("Thu, Aug 20, 2026")` resolves that
+ * day against the timezone of whatever machine runs the import, which put the
+ * same file on different days depending on where it was imported from.
+ */
 function xPublishedAt(value: string | undefined): string | null {
-  const parsed = new Date(value ?? "");
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  const match = (value ?? "").match(/([A-Z][a-z]{2}) (\d{1,2}), (\d{4})/u);
+  const month = match ? MONTHS.indexOf(match[1] ?? "") : -1;
+  if (!match || month < 0) return null;
+  return new Date(Date.UTC(Number(match[3]), month, Number(match[2]))).toISOString();
 }
 
 function exportPeriod(sourceName: string): [string | null, string | null] {

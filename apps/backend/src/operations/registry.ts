@@ -4,6 +4,7 @@ import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
 import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
+import { deleteXImport } from "../analytics/x-import-delete.js";
 import type { LocalizedProfiles, LocalizedText } from "../application/ports.js";
 import { publicationRef } from "../application/publication-ref.js";
 import { targetIdsFor } from "../botTargets.js";
@@ -112,6 +113,19 @@ function ask(question: string): string {
 const refSpelling = (value: string): string => (/^\d+$/.test(value) ? publicationRef("post", Number(value)) : value);
 const refOption = example(z.string().trim().min(1), "post:160").describe("publication ref").transform(refSpelling);
 const applyOption = z.boolean().default(false).describe("perform the change; omitted it reports the plan only");
+
+/** A full instant, not whatever `Date` will swallow.
+ *
+ * `new Date("34Z")` is the first of January 2034, so a timestamp mangled on its
+ * way through a shell arrived as a valid-looking moment and stamped a whole
+ * import with it. Readings are keyed by the moment they were taken, so nothing
+ * later corrected them: they simply sorted above every window and vanished from
+ * the charts while every report still listed them. */
+const isoInstant = z
+  .string()
+  .refine((value) => !Number.isNaN(Date.parse(value)) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(value), {
+    message: "must be a full ISO timestamp, for example 2026-08-27T14:01:34Z",
+  });
 
 /** A string this Studio publishes about itself, given as JSON keyed by language.
  * Both languages are always supplied: an option that merged into the stored
@@ -410,6 +424,14 @@ const operationDefs = {
     note: "use when a chart and a CSV disagree: this answers at the source, past the read model and the HTML cache",
     handler: (context, input) => xReachProbe(context.db(), input.from, input.to, context.config().TIMEZONE, input.item),
   }),
+  "x-import-delete": operation({
+    summary: "Remove one X CSV import and every reading it wrote, leaving its posts in place.",
+    schema: z.object({ import: z.coerce.number().int().min(1).describe("the import id from x-analytics"), apply: applyOption }),
+    mutates: true,
+    agent: true,
+    note: "for an import whose readings are stamped with a moment that never happened: a re-import cannot overwrite them",
+    handler: (context, input) => deleteXImport(context.db(), input.import, input.apply),
+  }),
   "x-relink": operation({
     summary: "Attach already-imported X activity to editorial posts and project its metrics.",
     schema: z.object({ apply: applyOption }),
@@ -693,7 +715,7 @@ const operationDefs = {
     summary: "Import an X analytics CSV export.",
     schema: z.object({
       file: example(z.string().min(1), "PATH").describe("CSV path on this host"),
-      sampled_at: example(z.string().min(1), "ISO").describe(
+      sampled_at: example(isoInstant, "ISO").describe(
         "when the export was taken: the file's own mtime in ISO UTC, never now — it stamps the metric history",
       ),
     }),
