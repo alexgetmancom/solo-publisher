@@ -32,6 +32,12 @@ Getting these wrong publishes to a live audience twice, and no reviewer or type 
 - A migration is rehearsed on a fresh copy of the production database before it is pushed: the
   squashed baseline is generated from the ORM schema and cannot show what production's own
   schema and data carry.
+- Dates are text here and every query compares them as text, so a value that is not a date does not
+  fail — it sorts, and the row disappears from a window while every report still lists it. A `_at`
+  column holds a full ISO instant, a `_on` column a calendar day, both produced by `toISOString()`
+  and never by SQLite's `CURRENT_TIMESTAMP` or a host-local `new Date(text)`. Anything arriving from
+  outside is checked against that shape before it is stored, not merely handed to `Date`, which reads
+  `"34Z"` as the year 2034. `ops audit` reports what slipped through as `storedDates`.
 
 # Language
 
