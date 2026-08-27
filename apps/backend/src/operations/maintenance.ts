@@ -17,6 +17,7 @@ import {
   videoTargets,
 } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { dateIntegrity } from "../observability/date-integrity.js";
 import { publicationPlanFromDb } from "../publishing/source-store.js";
 import { effectivePublicationStatus } from "../publishing/state.js";
 
@@ -159,6 +160,10 @@ export function auditOperations(backendDb: BackendDb, now = new Date()): Record<
   const eventsSince = new Date(now.getTime() - AUDIT_EVENT_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
   return {
     eventsSince,
+    // Empty is the only healthy answer, and it is checked here rather than in
+    // doctor because a value that is not a date is a fact about the data, not
+    // about this deployment's configuration.
+    storedDates: dateIntegrity(backendDb),
     postEventsByType: unsafeDb(backendDb)
       .db.select({
         severity: publicationEvents.severity,

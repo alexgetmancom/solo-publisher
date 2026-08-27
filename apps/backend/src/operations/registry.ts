@@ -304,8 +304,8 @@ const operationDefs = {
     },
   }),
   audit: operation({
-    summary: "Failed jobs, stuck targets and publication inconsistencies across both pipelines.",
-    note: "event counts cover the last 30 days, reported as `eventsSince`; consistency and delivery state are current, not windowed",
+    summary: "Failed jobs, stuck targets, publication inconsistencies across both pipelines, and stored dates that are not dates.",
+    note: "event counts cover the last 30 days, reported as `eventsSince`; consistency, delivery state and `storedDates` are current, not windowed. A non-empty `storedDates` means a column is holding a value every query will compare as text and no report will show as wrong: fix the writer, then the rows",
     schema: z.object({}),
     mutates: false,
     agent: true,

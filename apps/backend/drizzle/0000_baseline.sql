@@ -742,28 +742,28 @@ CREATE UNIQUE INDEX `idx_video_targets_draft_target` ON `video_targets` (`video_
 CREATE INDEX `idx_video_targets_status_schedule` ON `video_targets` (`status`,`scheduled_at`);
 --> statement-breakpoint
 INSERT INTO knowledge_entities ("id", "kind", "slug", "title_ru", "title_en", "created_at", "updated_at", "parent_entity_id") VALUES
-  (3, 'company', 'anthropic', 'Anthropic', 'Anthropic', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL),
-  (4, 'company', 'openai', 'OpenAI', 'OpenAI', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL),
-  (5, 'company', 'google', 'Google', 'Google', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL),
-  (6, 'company', 'moonshot-ai', 'Moonshot AI', 'Moonshot AI', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL),
-  (7, 'model', 'claude', 'Claude', 'Claude', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 3),
-  (8, 'model', 'fable-5', 'Fable 5', 'Fable 5', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 3),
-  (9, 'model', 'gpt-5-6-sol', 'GPT-5.6 Sol', 'GPT-5.6 Sol', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 4),
-  (10, 'model', 'gemini-3-6-flash', 'Gemini 3.6 Flash', 'Gemini 3.6 Flash', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 5),
-  (11, 'model', 'kimi-k3', 'Kimi K3', 'Kimi K3', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 6),
-  (12, 'topic', 'codex', 'Codex', 'Codex', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL);
+  (3, 'company', 'anthropic', 'Anthropic', 'Anthropic', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', NULL),
+  (4, 'company', 'openai', 'OpenAI', 'OpenAI', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', NULL),
+  (5, 'company', 'google', 'Google', 'Google', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', NULL),
+  (6, 'company', 'moonshot-ai', 'Moonshot AI', 'Moonshot AI', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', NULL),
+  (7, 'model', 'claude', 'Claude', 'Claude', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', 3),
+  (8, 'model', 'fable-5', 'Fable 5', 'Fable 5', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', 3),
+  (9, 'model', 'gpt-5-6-sol', 'GPT-5.6 Sol', 'GPT-5.6 Sol', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', 4),
+  (10, 'model', 'gemini-3-6-flash', 'Gemini 3.6 Flash', 'Gemini 3.6 Flash', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', 5),
+  (11, 'model', 'kimi-k3', 'Kimi K3', 'Kimi K3', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', 6),
+  (12, 'topic', 'codex', 'Codex', 'Codex', '1970-01-01T00:00:00.000Z', '1970-01-01T00:00:00.000Z', NULL);
 --> statement-breakpoint
 INSERT INTO knowledge_entity_aliases ("entity_id", "alias", "created_at") VALUES
-  (3, 'Anthropic', CURRENT_TIMESTAMP),
-  (4, 'OpenAI', CURRENT_TIMESTAMP),
-  (5, 'Google', CURRENT_TIMESTAMP),
-  (6, 'Moonshot AI', CURRENT_TIMESTAMP),
-  (7, 'Claude', CURRENT_TIMESTAMP),
-  (8, 'Fable 5', CURRENT_TIMESTAMP),
-  (9, 'GPT-5.6 Sol', CURRENT_TIMESTAMP),
-  (10, 'Gemini 3.6 Flash', CURRENT_TIMESTAMP),
-  (11, 'Kimi K3', CURRENT_TIMESTAMP),
-  (8, 'Fable', CURRENT_TIMESTAMP),
-  (9, 'GPT 5.6 Sol', CURRENT_TIMESTAMP);
+  (3, 'Anthropic', '1970-01-01T00:00:00.000Z'),
+  (4, 'OpenAI', '1970-01-01T00:00:00.000Z'),
+  (5, 'Google', '1970-01-01T00:00:00.000Z'),
+  (6, 'Moonshot AI', '1970-01-01T00:00:00.000Z'),
+  (7, 'Claude', '1970-01-01T00:00:00.000Z'),
+  (8, 'Fable 5', '1970-01-01T00:00:00.000Z'),
+  (9, 'GPT-5.6 Sol', '1970-01-01T00:00:00.000Z'),
+  (10, 'Gemini 3.6 Flash', '1970-01-01T00:00:00.000Z'),
+  (11, 'Kimi K3', '1970-01-01T00:00:00.000Z'),
+  (8, 'Fable', '1970-01-01T00:00:00.000Z'),
+  (9, 'GPT 5.6 Sol', '1970-01-01T00:00:00.000Z');
 --> statement-breakpoint
 INSERT INTO `studio_profile` (`id`, `updated_at`) VALUES (1, '1970-01-01T00:00:00.000Z');
