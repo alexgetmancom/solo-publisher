@@ -87,7 +87,7 @@ describe("creatorPostArchive", () => {
 describe("creatorPostMetrics", () => {
   it("sums only the newest sample per target and metric", () => {
     return withDb((backendDb) => {
-      publishedPost(backendDb, { postId: 106, text: "Post text", mediaCount: 2, dateMsk: "2026-07-27" });
+      publishedPost(backendDb, { postId: 106, text: "Post text", mediaCount: 2, dateMsk: "2026-07-27T00:00:00.000Z" });
       // An append-only history: summing every row would report 30 views, not 20.
       sample(backendDb, { postId: 106, target: "x", metricName: "views", value: 10 });
       sample(backendDb, { postId: 106, target: "x", metricName: "views", value: 20 });

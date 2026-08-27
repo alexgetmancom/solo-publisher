@@ -212,7 +212,8 @@ describe("creator analytics deltas", () => {
           {
             platform: "youtube_ru",
             account: "marux",
-            sampledOn: "stale",
+            // The bucket is the day the reading belongs to, not a label for it.
+            sampledOn: stale.slice(0, 10),
             metricsJson: { viewCount: 100 },
             source: "youtube_data_api",
             sampledAt: stale,
@@ -220,7 +221,7 @@ describe("creator analytics deltas", () => {
           {
             platform: "youtube_ru",
             account: "marux",
-            sampledOn: "current",
+            sampledOn: now.toISOString().slice(0, 10),
             metricsJson: { viewCount: 300 },
             source: "youtube_data_api",
             sampledAt: now.toISOString(),

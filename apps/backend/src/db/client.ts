@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import type { ApplicationPorts } from "../application/ports.js";
 import { queueDraftStoryCards, readyStoryCardMedia, setStoryPublishMode, storyCardsForDraft } from "../story-cards/store.js";
+import { installDateGuards } from "./date-guards.js";
 import { createActionableIssueStore } from "./repositories/actionable-issues.js";
 import { createChannelStore } from "./repositories/channels.js";
 import { createConversationSessionStore } from "./repositories/conversation-sessions.js";
@@ -67,6 +68,8 @@ export function openBackendDb(path: string, timeout = 30_000): BackendDb {
   sqlite.run("PRAGMA foreign_keys = OFF");
   migrate(db, { migrationsFolder: migrationsFolder() });
   sqlite.run("PRAGMA foreign_keys = ON");
+  // After the migrations, so a column created by one is guarded from the start.
+  installDateGuards(sqlite);
   const clock = { now: () => new Date() };
   const backendDb: UnsafeBackendDb = {
     sqlite,

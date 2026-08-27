@@ -18,6 +18,8 @@ export type DateViolation = { table: string; column: string; expects: "instant" 
  */
 const INSTANT = "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]*";
 const DAY = "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]";
+/** An hourly collector files its snapshot under the truncated timestamp. */
+const HOUR = `${DAY}T[0-9][0-9]`;
 
 /** `_on` and an export's period are calendar days; everything else is a moment. */
 function expectationFor(column: string): "instant" | "day" | null {
@@ -39,12 +41,13 @@ export function dateIntegrity(backendDb: BackendDb): DateViolation[] {
     for (const column of columns) {
       const expects = expectationFor(column.name);
       if (!expects || !/text|char|clob/iu.test(column.type)) continue;
+      const patterns = expects === "instant" ? [INSTANT] : [DAY, HOUR];
       const row = sqlite
         .prepare(
           `SELECT COUNT(*) AS rows, MIN("${column.name}") AS sample FROM "${table}"
-           WHERE "${column.name}" IS NOT NULL AND "${column.name}" NOT GLOB ?`,
+           WHERE "${column.name}" IS NOT NULL AND ${patterns.map(() => `"${column.name}" NOT GLOB ?`).join(" AND ")}`,
         )
-        .get(expects === "instant" ? INSTANT : DAY) as { rows: number; sample: string | null };
+        .get(...patterns) as { rows: number; sample: string | null };
       if (row.rows > 0) violations.push({ table, column: column.name, expects, rows: row.rows, sample: row.sample });
     }
   }
