@@ -30,27 +30,32 @@ function expectationFor(column: string): { patterns: string[]; shape: string } |
 }
 
 export function installDateGuards(sqlite: Database): number {
-  const tables = (
-    sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as Array<{ name: string }>
-  ).map((row) => row.name);
+  // One query for every column in the database: a PRAGMA per table costs more
+  // than the triggers themselves, and this runs on every open.
+  const columns = sqlite
+    .prepare(
+      `SELECT m.name AS "table", info.name AS "column", info.type AS "type"
+         FROM sqlite_master AS m
+         JOIN pragma_table_info(m.name) AS info
+        WHERE m.type='table' AND m.name NOT LIKE 'sqlite_%'`,
+    )
+    .all() as Array<{ table: string; column: string; type: string }>;
   const wanted = new Map<string, string>();
-  for (const table of tables) {
-    for (const column of sqlite.prepare(`PRAGMA table_info("${table}")`).all() as Array<{ name: string; type: string }>) {
-      const expectation = expectationFor(column.name);
-      if (!expectation || !/text|char|clob/iu.test(column.type)) continue;
-      const message = `${table}.${column.name} must be ${expectation.shape}`;
-      const rejects = expectation.patterns.map((pattern) => `NEW."${column.name}" NOT GLOB '${pattern}'`).join(" AND ");
-      for (const [event, clause] of [
-        ["insert", `BEFORE INSERT ON "${table}"`],
-        ["update", `BEFORE UPDATE OF "${column.name}" ON "${table}"`],
-      ] as const)
-        wanted.set(
-          `${PREFIX}${table}_${column.name}_${event}`,
-          `CREATE TRIGGER "${PREFIX}${table}_${column.name}_${event}" ${clause}
-           FOR EACH ROW WHEN NEW."${column.name}" IS NOT NULL AND ${rejects}
-           BEGIN SELECT RAISE(ABORT, '${message.replace(/'/gu, "''")}'); END`,
-        );
-    }
+  for (const { table, column, type } of columns) {
+    const expectation = expectationFor(column);
+    if (!expectation || !/text|char|clob/iu.test(type)) continue;
+    const message = `${table}.${column} must be ${expectation.shape}`;
+    const rejects = expectation.patterns.map((pattern) => `NEW."${column}" NOT GLOB '${pattern}'`).join(" AND ");
+    for (const [event, clause] of [
+      ["insert", `BEFORE INSERT ON "${table}"`],
+      ["update", `BEFORE UPDATE OF "${column}" ON "${table}"`],
+    ] as const)
+      wanted.set(
+        `${PREFIX}${table}_${column}_${event}`,
+        `CREATE TRIGGER "${PREFIX}${table}_${column}_${event}" ${clause}
+         FOR EACH ROW WHEN NEW."${column}" IS NOT NULL AND ${rejects}
+         BEGIN SELECT RAISE(ABORT, '${message.replace(/'/gu, "''")}'); END`,
+      );
   }
   const existing = new Set(
     (sqlite.prepare(`SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE '${PREFIX}%'`).all() as Array<{ name: string }>).map(
@@ -59,12 +64,12 @@ export function installDateGuards(sqlite: Database): number {
   );
   // A column that stopped being a date, or a table that is gone, leaves a
   // trigger behind that would guard nothing and confuse the next reader.
-  for (const name of existing) if (!wanted.has(name)) sqlite.run(`DROP TRIGGER IF EXISTS "${name}"`);
-  let installed = 0;
-  for (const [name, statement] of wanted)
-    if (!existing.has(name)) {
-      sqlite.run(statement);
-      installed += 1;
-    }
-  return installed;
+  const stale = [...existing].filter((name) => !wanted.has(name));
+  const missing = [...wanted].filter(([name]) => !existing.has(name));
+  if (!stale.length && !missing.length) return 0;
+  sqlite.transaction(() => {
+    for (const name of stale) sqlite.run(`DROP TRIGGER IF EXISTS "${name}"`);
+    for (const [, statement] of missing) sqlite.run(statement);
+  })();
+  return missing.length;
 }
