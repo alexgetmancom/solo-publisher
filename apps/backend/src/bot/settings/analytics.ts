@@ -10,17 +10,11 @@ import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
-import {
-  ANALYTICS_MENU_ID,
-  backToSettings,
-  beginSettingsInput,
-  settingsScreen,
-  settingsUpdate,
-  THREADS_FOLLOWERS_MENU_ID,
-  X_IMPORT_MENU_ID,
-} from "./shared.js";
+import { beginSettingsInput, settingsUpdate, THREADS_FOLLOWERS_MENU_ID, X_IMPORT_MENU_ID } from "./shared.js";
 
-export function buildAnalyticsMenu(backendDb: BackendDb): Menu<Context> {
+/** The two analytics screens. They used to hang off a category of their own,
+ * which held nothing but them: a screen whose only job was to be passed through. */
+export function buildAnalyticsMenus(backendDb: BackendDb, systemBody: (locale: StudioLocale) => string): Menu<Context>[] {
   const threadsFollowers = new Menu<Context>(THREADS_FOLLOWERS_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
@@ -31,10 +25,11 @@ export function buildAnalyticsMenu(backendDb: BackendDb): Menu<Context> {
         await ctx.reply(t(locale, "settings.threads-ask", { account: account.toUpperCase() }));
       });
     range.row().back(
-      t(locale, "settings.back-to-analytics"),
+      t(locale, "settings.back-to-system"),
       settingsUpdate({
         apply: () => clearConversationState(backendDb, actorId, "settings"),
-        body: () => analyticsText(backendDb, locale),
+        body: () => systemBody(locale),
+        plainText: true,
       }),
     );
   });
@@ -50,38 +45,16 @@ export function buildAnalyticsMenu(backendDb: BackendDb): Menu<Context> {
       })
       .row()
       .back(
-        t(locale, "settings.back-to-analytics"),
+        t(locale, "settings.back-to-system"),
         settingsUpdate({
           apply: () => clearConversationState(backendDb, actorId, "settings"),
-          body: () => analyticsText(backendDb, locale),
+          body: () => systemBody(locale),
+          plainText: true,
         }),
       );
   });
 
-  const analytics = new Menu<Context>(ANALYTICS_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
-    const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-    range
-      .submenu(
-        t(locale, "settings.threads-followers"),
-        THREADS_FOLLOWERS_MENU_ID,
-        settingsScreen(() => threadsFollowersText(backendDb, locale)),
-      )
-      .row()
-      .submenu(
-        t(locale, "settings.x-import"),
-        X_IMPORT_MENU_ID,
-        settingsScreen(() => t(locale, "settings.x-import-body")),
-      )
-      .row()
-      .back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
-  });
-  analytics.register(threadsFollowers);
-  analytics.register(xImport);
-  return analytics;
-}
-
-export function analyticsText(backendDb: BackendDb, locale: StudioLocale): string {
-  return t(locale, "settings.category-analytics-body", followerCounts(backendDb, locale));
+  return [threadsFollowers, xImport];
 }
 
 /** The stored follower counts as both screens print them, unknown included. */
@@ -164,7 +137,7 @@ export async function collectXAnalyticsCsv(
   return true;
 }
 
-function threadsFollowersText(backendDb: BackendDb, locale: StudioLocale): string {
+export function threadsFollowersText(backendDb: BackendDb, locale: StudioLocale): string {
   return t(locale, "settings.threads-body", {
     ...followerCounts(backendDb, locale),
     updated: manualThreadsFollowers(backendDb).updatedAt?.slice(0, 16).replace("T", " ") ?? t(locale, "settings.threads-unknown"),

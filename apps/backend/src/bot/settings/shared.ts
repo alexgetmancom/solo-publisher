@@ -8,8 +8,7 @@ import { clearConversationState, saveConversationState } from "../conversation-s
 export const SETTINGS_MENU_ID = "settings-menu";
 export const PUBLISHING_MENU_ID = "settings-publishing";
 export const NOTIFICATIONS_MENU_ID = "settings-notifications-category";
-export const ANALYTICS_MENU_ID = "settings-analytics";
-export const GENERAL_MENU_ID = "settings-general";
+export const SYSTEM_MENU_ID = "settings-system";
 export const NOTIFICATION_SETTINGS_MENU_ID = "settings-notifications";
 export const WEEKLY_DIGEST_MENU_ID = "settings-weekly-digest";
 export const BACKUP_MENU_ID = "settings-backup";
@@ -57,6 +56,18 @@ export function backToSettings(backendDb: BackendDb) {
  * re-render the screen it lives on. Every toggle, preset and picker in settings
  * does exactly this, and spelling it out per button is how one of them ends up
  * without its answerCallbackQuery -- these menus do not auto-answer. */
+/** One vocabulary for the state of a control, because the screens had three.
+ * A switch was ✅/◻️ here and ✓/□ there, a chosen option carried a leading ●
+ * on one screen and nothing at all on another -- the reminder row printed bare
+ * numbers, so the setting in force could not be read off the keyboard. */
+export function switchLabel(on: boolean, label: string): string {
+  return `${on ? "✅" : "⬜"} ${label}`;
+}
+
+export function choiceLabel(chosen: boolean, label: string): string {
+  return `${chosen ? "●" : "○"} ${label}`;
+}
+
 export function settingsUpdate(options: {
   apply: () => void;
   body: () => string;

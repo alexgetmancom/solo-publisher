@@ -8,15 +8,21 @@ import { createStudioServices } from "../../studio/services/index.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
 import { persistentKeyboard } from "../menu-render.js";
+import { buildAnalyticsMenus, threadsFollowersText } from "./analytics.js";
+import { backupText, buildBackupMenu } from "./notifications.js";
 import {
+  BACKUP_MENU_ID,
   backToSettings,
   beginSettingsInput,
-  GENERAL_MENU_ID,
+  choiceLabel,
   LANGUAGE_MENU_ID,
   SETTINGS_MENU_ID,
+  SYSTEM_MENU_ID,
   settingsScreen,
   settingsUpdate,
+  THREADS_FOLLOWERS_MENU_ID,
   TIMEZONE_MENU_ID,
+  X_IMPORT_MENU_ID,
 } from "./shared.js";
 
 const TIMEZONE_OPTIONS = [
@@ -37,13 +43,17 @@ const TIMEZONE_OPTIONS = [
   ["America/Los_Angeles", "America/Los_Angeles"],
 ] as const;
 
-export function buildGeneralMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
+/** Everything that is about this machine rather than about a publication: the
+ * clock it keeps, the language it speaks, the copy it takes of itself, and the
+ * numbers no platform API will give us. Time zone and language used to be a
+ * category of two, and the analytics pair a category of two more. */
+export function buildSystemMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
   const language = new Menu<Context>(LANGUAGE_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
     for (const target of STUDIO_LOCALES) range.text(STUDIO_LOCALE_NAMES[target], (ctx) => switchLanguage(ctx, target));
     range.row().back(
-      t(locale, "settings.back-to-general"),
-      settingsScreen(() => t(locale, "settings.category-general-body"), true),
+      t(locale, "settings.back-to-system"),
+      settingsScreen(() => t(locale, "settings.category-system-body"), true),
     );
   });
 
@@ -56,7 +66,7 @@ export function buildGeneralMenu(config: BackendConfig, backendDb: BackendDb): M
     for (let index = 0; index < options.length; index += 2) {
       for (const [zone, label] of options.slice(index, index + 2))
         range.text(
-          `${zone === current ? "●" : "○"} ${label}`,
+          choiceLabel(zone === current, label),
           settingsUpdate({
             apply: () => service.setTimezone(actorId, zone),
             body: () => timezoneText(backendDb, config, actorId, locale),
@@ -71,16 +81,16 @@ export function buildGeneralMenu(config: BackendConfig, backendDb: BackendDb): M
       await ctx.reply(t(locale, "settings.timezone-input-prompt"));
     });
     range.row().back(
-      t(locale, "settings.back-to-general"),
+      t(locale, "settings.back-to-system"),
       settingsUpdate({
         apply: () => clearConversationState(backendDb, actorId, "settings"),
-        body: () => t(locale, "settings.category-general-body"),
+        body: () => t(locale, "settings.category-system-body"),
         plainText: true,
       }),
     );
   });
 
-  const general = new Menu<Context>(GENERAL_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+  const system = new Menu<Context>(SYSTEM_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
     range
@@ -89,18 +99,37 @@ export function buildGeneralMenu(config: BackendConfig, backendDb: BackendDb): M
         TIMEZONE_MENU_ID,
         settingsScreen(() => timezoneText(backendDb, config, actorId, locale)),
       )
-      .row()
       .submenu(
         t(locale, "settings.language"),
         LANGUAGE_MENU_ID,
         settingsScreen(() => t(locale, "settings.language-title"), true),
       )
       .row()
+      .submenu(
+        t(locale, "settings.backup"),
+        BACKUP_MENU_ID,
+        settingsScreen(() => backupText(backendDb, config, locale)),
+      )
+      .submenu(
+        t(locale, "settings.threads-followers"),
+        THREADS_FOLLOWERS_MENU_ID,
+        settingsScreen(() => threadsFollowersText(backendDb, locale)),
+      )
+      .row()
+      .submenu(
+        t(locale, "settings.x-import"),
+        X_IMPORT_MENU_ID,
+        settingsScreen(() => t(locale, "settings.x-import-body")),
+      )
+      .row()
       .back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
   });
-  general.register(language);
-  general.register(timezone);
-  return general;
+  system.register(language);
+  system.register(timezone);
+  system.register(buildBackupMenu(config, backendDb));
+  for (const menu of buildAnalyticsMenus(backendDb, (actorLocale) => t(actorLocale, "settings.category-system-body")))
+    system.register(menu);
+  return system;
 
   async function switchLanguage(ctx: Context & MenuFlavor, locale: StudioLocale): Promise<void> {
     const actorId = Number(ctx.from?.id);

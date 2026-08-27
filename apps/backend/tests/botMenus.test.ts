@@ -172,7 +172,7 @@ describe("buildSettingsMenu", () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
     const labels = await settingsMenuLabels(config, backendDb);
-    expect(labels).toEqual(["📡 Publishing", "🔔 Notifications", "📊 Analytics", "⚙️ General", "← Menu"]);
+    expect(labels).toEqual(["📡 Publishing", "🔔 Notifications", "⚙️ System", "← Menu"]);
   });
 
   it("keeps the news digest under notifications", async () => {
@@ -190,11 +190,11 @@ describe("buildSettingsMenu", () => {
 
     const labels = await settingsMenuLabels(config, backendDb, "settings-news-digest");
     expect(labels).toEqual([
-      "◻️ News digest",
+      "⬜ News digest",
       "🕒 Delivery time: 10:00",
-      "low",
-      "medium",
-      "high",
+      "○ low",
+      "○ medium",
+      "○ high",
       "● xhigh",
       "✏️ Change prompt",
       "▶️ Send now",
@@ -202,12 +202,15 @@ describe("buildSettingsMenu", () => {
     ]);
   });
 
-  it("offers the manual analytics inputs no platform API provides", async () => {
+  /** Manual analytics, the database copy, the clock and the language are all
+   * about this machine rather than about a publication; they used to be two
+   * categories holding two entries each. */
+  it("gathers the machine's own settings under System", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
-    const labels = await settingsMenuLabels(config, backendDb, "settings-analytics");
-    expect(labels.some((text) => /threads followers/i.test(text))).toBe(true);
-    expect(labels.some((text) => /import x csv/i.test(text))).toBe(true);
+    const labels = await settingsMenuLabels(config, backendDb, "settings-system");
+    expect(labels).toEqual(["🕒 Time zone", "🌐 Language", "🗄 Database backup", "👥 Threads followers", "📈 Import X CSV", "← Settings"]);
+    expect(await settingsMenuLabels(config, backendDb, "settings-notifications-category")).not.toContain("🗄 Database backup");
   });
 
   it("shows the YouTube signature entry when a YouTube channel is connected", async () => {
@@ -251,7 +254,7 @@ describe("buildSettingsMenu", () => {
     expect(labels.some((text) => text.includes("Disable"))).toBe(false);
     expect(await settingsMenuLabels(config, backendDb, "settings-channel")).toEqual(["🗑 Disable channel", "← Channels"]);
     expect(await settingsMenuLabels(config, backendDb, "settings-channel-disable")).toEqual(["🗑 Yes, disable", "← Cancel"]);
-    expect(await settingsMenuLabels(config, backendDb, "settings-default-targets")).toEqual(["✓ Telegram", "← Publishing"]);
+    expect(await settingsMenuLabels(config, backendDb, "settings-default-targets")).toEqual(["✅ Telegram", "← Publishing"]);
   });
 
   it("does not offer default targets before a channel is connected", async () => {

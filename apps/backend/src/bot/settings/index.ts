@@ -6,18 +6,12 @@ import { t } from "../../foundation/i18n/index.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState, getConversationState } from "../conversation-state.js";
 import { mainMenuText } from "../menu-render.js";
-import { analyticsText, buildAnalyticsMenu, collectThreadsFollowers, collectXAnalyticsCsv } from "./analytics.js";
-import { buildGeneralMenu, collectTimezone } from "./general.js";
+import { collectThreadsFollowers, collectXAnalyticsCsv } from "./analytics.js";
+
 import { buildNotificationsMenu, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
 import { buildPublishingMenu, collectYoutubeSignature } from "./publishing.js";
-import {
-  ANALYTICS_MENU_ID,
-  GENERAL_MENU_ID,
-  isNavigationMessage,
-  NOTIFICATIONS_MENU_ID,
-  PUBLISHING_MENU_ID,
-  SETTINGS_MENU_ID,
-} from "./shared.js";
+import { isNavigationMessage, NOTIFICATIONS_MENU_ID, PUBLISHING_MENU_ID, SETTINGS_MENU_ID, SYSTEM_MENU_ID } from "./shared.js";
+import { buildSystemMenu, collectTimezone } from "./system.js";
 
 export { SETTINGS_MENU_ID } from "./shared.js";
 
@@ -51,8 +45,7 @@ export async function handleSettingsMessage(
 export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb, bot: Bot | null = null): Menu<Context> {
   const publishing = buildPublishingMenu(config, backendDb);
   const notifications = buildNotificationsMenu(config, backendDb, bot);
-  const analytics = buildAnalyticsMenu(backendDb);
-  const general = buildGeneralMenu(config, backendDb);
+  const system = buildSystemMenu(config, backendDb);
 
   const settings = new Menu<Context>(SETTINGS_MENU_ID, { autoAnswer: false });
   settings.dynamic((ctx, range) => {
@@ -62,20 +55,14 @@ export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb, b
         await ctx.answerCallbackQuery();
         await ctx.editMessageText(t(locale, "settings.category-publishing-body"));
       })
-      .row()
       .submenu(t(locale, "settings.category-notifications"), NOTIFICATIONS_MENU_ID, async (ctx) => {
         await ctx.answerCallbackQuery();
         await ctx.editMessageText(t(locale, "settings.category-notifications-body"));
       })
       .row()
-      .submenu(t(locale, "settings.category-analytics"), ANALYTICS_MENU_ID, async (ctx) => {
+      .submenu(t(locale, "settings.category-system"), SYSTEM_MENU_ID, async (ctx) => {
         await ctx.answerCallbackQuery();
-        await ctx.editMessageText(analyticsText(backendDb, locale), { parse_mode: "Markdown" });
-      })
-      .row()
-      .submenu(t(locale, "settings.category-general"), GENERAL_MENU_ID, async (ctx) => {
-        await ctx.answerCallbackQuery();
-        await ctx.editMessageText(t(locale, "settings.category-general-body"));
+        await ctx.editMessageText(t(locale, "settings.category-system-body"));
       })
       .row()
       .back(t(locale, "common.menu"), async (ctx) => {
@@ -85,8 +72,7 @@ export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb, b
   });
   settings.register(publishing);
   settings.register(notifications);
-  settings.register(analytics);
-  settings.register(general);
+  settings.register(system);
   return settings;
 }
 

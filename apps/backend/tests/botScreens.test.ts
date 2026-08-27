@@ -10,17 +10,17 @@ import { postProgress } from "../src/bot/progress.js";
 import { attentionView, queueView } from "../src/bot/queue.js";
 import { buildSettingsMenu } from "../src/bot/settings/index.js";
 import {
-  ANALYTICS_MENU_ID,
+  BACKUP_MENU_ID,
   CHANNEL_CONNECT_MENU_ID,
   CHANNEL_DISABLE_MENU_ID,
   CHANNEL_MENU_ID,
   CHANNELS_MENU_ID,
   DEFAULT_TARGETS_MENU_ID,
-  GENERAL_MENU_ID,
   NEWS_DIGEST_MENU_ID,
   NOTIFICATION_SETTINGS_MENU_ID,
   NOTIFICATIONS_MENU_ID,
   PUBLISHING_MENU_ID,
+  SYSTEM_MENU_ID,
 } from "../src/bot/settings/shared.js";
 import { showStreamScreen } from "../src/bot/stream-screen.js";
 import { createDraftFromMessage } from "../src/content/drafts.js";
@@ -92,8 +92,8 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     ["Settings · Notifications", NOTIFICATIONS_MENU_ID],
     ["Settings · Notifications · Publication notices", NOTIFICATION_SETTINGS_MENU_ID],
     ["Settings · Notifications · News digest", NEWS_DIGEST_MENU_ID],
-    ["Settings · Analytics", ANALYTICS_MENU_ID],
-    ["Settings · General", GENERAL_MENU_ID],
+    ["Settings · System", SYSTEM_MENU_ID],
+    ["Settings · System · Backup", BACKUP_MENU_ID],
   ] as const) {
     parts.push(section(title, await menuRows(id ? settingsMenu.at(id) : settingsMenu)));
   }

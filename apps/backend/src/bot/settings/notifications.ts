@@ -12,6 +12,7 @@ import {
   BACKUP_MENU_ID,
   backToSettings,
   beginSettingsInput,
+  choiceLabel,
   formatTime,
   NEWS_DIGEST_MENU_ID,
   NEWS_DIGEST_TIME_MENU_ID,
@@ -19,6 +20,7 @@ import {
   NOTIFICATIONS_MENU_ID,
   settingsScreen,
   settingsUpdate,
+  switchLabel,
   WEEKLY_DIGEST_MENU_ID,
   weekdayLabel,
 } from "./shared.js";
@@ -34,28 +36,32 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       createStudioServices(backendDb, config).settings.setNotifications(actorId, input);
     range
       .text(
-        `${settings.videoRemindersEnabled ? "✅" : "◻️"} ${t(locale, "settings.video-reminder-label")}`,
+        switchLabel(settings.videoRemindersEnabled, t(locale, "settings.video-reminder-label")),
         settingsUpdate({ apply: () => setNotifications({ videoRemindersEnabled: !settings.videoRemindersEnabled }), body }),
       )
       .text(
-        `${settings.postRemindersEnabled ? "✅" : "◻️"} ${t(locale, "settings.post-reminder-label")}`,
+        switchLabel(settings.postRemindersEnabled, t(locale, "settings.post-reminder-label")),
         settingsUpdate({ apply: () => setNotifications({ postRemindersEnabled: !settings.postRemindersEnabled }), body }),
       )
       .row()
       .text(
-        `${settings.completionEnabled ? "✅" : "◻️"} ${t(locale, "settings.completion-label")}`,
+        switchLabel(settings.completionEnabled, t(locale, "settings.completion-label")),
         settingsUpdate({ apply: () => setNotifications({ completionEnabled: !settings.completionEnabled }), body }),
       )
       .row();
-    for (const minutes of [1, 5, 10, 15, 30] as const)
+    // Three to a row: the markers made every label wider, and five of them
+    // squeezed the digits on a phone.
+    for (const [index, minutes] of ([1, 5, 10, 15, 30] as const).entries()) {
       range.text(
-        String(minutes),
+        choiceLabel(settings.reminderMinutes === minutes, t(locale, "settings.minutes-option", { minutes })),
         settingsUpdate({
           apply: () => setNotifications({ reminderMinutes: minutes }),
           body,
           toast: t(locale, "settings.minutes-toast", { minutes }),
         }),
       );
+      if (index % 3 === 2) range.row();
+    }
     range.row().back(
       t(locale, "settings.back-to-notifications"),
       settingsScreen(() => t(locale, "settings.category-notifications-body"), true),
@@ -70,7 +76,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
     const body = () => weeklyDigestText(backendDb, config, locale);
     range
       .text(
-        `${settings.enabled ? "✅" : "◻️"} ${t(locale, "settings.weekly-digest-enabled")}`,
+        switchLabel(settings.enabled, t(locale, "settings.weekly-digest-enabled")),
         settingsUpdate({
           apply: () => createStudioServices(backendDb, config).settings.setWeeklyDigest({ enabled: !settings.enabled }),
           body,
@@ -79,7 +85,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       .row();
     for (const weekday of [1, 2, 3, 4, 5, 6, 0] as const) {
       range.text(
-        `${settings.weekday === weekday ? "● " : ""}${weekdayLabel(locale, weekday)}`,
+        choiceLabel(settings.weekday === weekday, weekdayLabel(locale, weekday)),
         settingsUpdate({
           apply: () => createStudioServices(backendDb, config).settings.setWeeklyDigest({ weekday }),
           body,
@@ -94,32 +100,13 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
     );
   });
 
-  const backup = new Menu<Context>(BACKUP_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
-    const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-
-    const settings = createStudioServices(backendDb, config).settings.backup();
-    range
-      .text(
-        `${settings.enabled ? "✅" : "◻️"} ${t(locale, "settings.backup-enabled")}`,
-        settingsUpdate({
-          apply: () => createStudioServices(backendDb, config).settings.setBackup({ enabled: !settings.enabled }),
-          body: () => backupText(backendDb, config, locale),
-        }),
-      )
-      .row()
-      .back(
-        t(locale, "settings.back-to-notifications"),
-        settingsScreen(() => t(locale, "settings.category-notifications-body"), true),
-      );
-  });
-
   const newsDigestTime = new Menu<Context>(NEWS_DIGEST_TIME_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
     const settings = createStudioServices(backendDb, config).settings.newsDigest();
     for (let hour = 0; hour < 24; hour += 1) {
       range.text(
-        `${settings.hour === hour && settings.minute === 0 ? "● " : ""}${formatTime(hour, 0)}`,
+        choiceLabel(settings.hour === hour && settings.minute === 0, formatTime(hour, 0)),
         settingsUpdate({
           apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ hour, minute: 0 }),
           body: () => newsDigestTimeText(backendDb, config, actorId, locale),
@@ -150,7 +137,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
     const settings = createStudioServices(backendDb, config).settings.newsDigest();
     range
       .text(
-        `${settings.enabled ? "✅" : "◻️"} ${t(locale, "settings.news-digest-enabled")}`,
+        switchLabel(settings.enabled, t(locale, "settings.news-digest-enabled")),
         settingsUpdate({
           apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ enabled: !settings.enabled }),
           body: () => newsDigestText(backendDb, config, locale),
@@ -165,7 +152,7 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       .row();
     for (const effort of NEWS_DIGEST_EFFORTS)
       range.text(
-        `${settings.effort === effort ? "● " : ""}${effort}`,
+        choiceLabel(settings.effort === effort, effort),
         settingsUpdate({
           apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ effort }),
           body: () => newsDigestText(backendDb, config, locale),
@@ -211,7 +198,6 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         NOTIFICATION_SETTINGS_MENU_ID,
         settingsScreen(() => notificationSettingsText(backendDb, config, actorId, locale)),
       )
-      .row()
       .submenu(
         t(locale, "settings.weekly-digest"),
         WEEKLY_DIGEST_MENU_ID,
@@ -224,20 +210,36 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         settingsScreen(() => newsDigestText(backendDb, config, locale)),
       )
       .row()
-      .submenu(
-        t(locale, "settings.backup"),
-        BACKUP_MENU_ID,
-        settingsScreen(() => backupText(backendDb, config, locale)),
-      )
-      .row()
       .back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
   });
   notifications.register(notificationSettings);
   notifications.register(weeklyDigest);
-  notifications.register(backup);
   notifications.register(newsDigest);
   newsDigest.register(newsDigestTime);
   return notifications;
+}
+
+/** A database copy is not something the bot tells you about, it is something
+ * the machine does; it sat under Notifications only because nothing else here
+ * held maintenance. */
+export function buildBackupMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
+  return new Menu<Context>(BACKUP_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+    const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
+    const settings = createStudioServices(backendDb, config).settings.backup();
+    range
+      .text(
+        switchLabel(settings.enabled, t(locale, "settings.backup-enabled")),
+        settingsUpdate({
+          apply: () => createStudioServices(backendDb, config).settings.setBackup({ enabled: !settings.enabled }),
+          body: () => backupText(backendDb, config, locale),
+        }),
+      )
+      .row()
+      .back(
+        t(locale, "settings.back-to-system"),
+        settingsScreen(() => t(locale, "settings.category-system-body"), true),
+      );
+  });
 }
 
 export async function collectNewsDigestPrompt(
@@ -306,7 +308,7 @@ function weeklyDigestText(backendDb: BackendDb, config: BackendConfig, locale: S
   });
 }
 
-function backupText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
+export function backupText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
   return t(locale, "settings.backup-body", {
     status: createStudioServices(backendDb, config).settings.backup().enabled ? t(locale, "settings.on") : t(locale, "settings.off"),
   });

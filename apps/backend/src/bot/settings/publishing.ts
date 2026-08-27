@@ -23,6 +23,7 @@ import {
   PUBLISHING_MENU_ID,
   settingsScreen,
   settingsUpdate,
+  switchLabel,
   YOUTUBE_SIGNATURE_MENU_ID,
 } from "./shared.js";
 
@@ -192,7 +193,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
     const rows = connectedTargets(backendDb);
     rows.forEach(({ id, label }, index) => {
       range.text(
-        `${selected[id] ? "✓" : "□"} ${label}`,
+        switchLabel(Boolean(selected[id]), label),
         settingsUpdate({ apply: () => studioSettings.toggleDefaultTarget(id), body: () => defaultTargetsText(backendDb, config, locale) }),
       );
       if (index % 2 === 1) range.row();
@@ -241,7 +242,6 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
         CHANNELS_MENU_ID,
         settingsScreen(() => channelsText(backendDb, config, locale), true),
       )
-      .row()
       .submenu(
         t(locale, "settings.default-targets"),
         DEFAULT_TARGETS_MENU_ID,
