@@ -3,6 +3,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 import { publicationRef } from "../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, postLocales, publicationTargets } from "../db/schema.js";
+import { isPartialDelivery } from "../publishing/state.js";
 
 /** How many posts back the "usual" target set is learned from. Wide enough that
  * one skipped delivery cannot remove a target from the baseline, short enough
@@ -109,7 +110,7 @@ function publicationRows(backendDb: BackendDb, limit: number): RawRow[] {
   const byPost = new Map<string, DeliveredTarget[]>();
   for (const row of delivered) {
     const list = byPost.get(row.publicationKey) ?? [];
-    list.push({ target: row.target, status: row.status, url: row.url, partial: row.status !== "published" && Boolean(row.externalId) });
+    list.push({ target: row.target, status: row.status, url: row.url, partial: isPartialDelivery(row.status, row.externalId) });
     byPost.set(row.publicationKey, list);
   }
   return rows.map((row) => {

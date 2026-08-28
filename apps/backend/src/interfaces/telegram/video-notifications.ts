@@ -12,7 +12,7 @@ import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { log } from "../../foundation/logger.js";
 import { truncateUnicode } from "../../foundation/text.js";
-import { isAudienceMutationRetryable, isPostTargetRetryable } from "../../publishing/state.js";
+import { isAudienceMutationRetryable, isPartialDelivery, isPostTargetRetryable } from "../../publishing/state.js";
 import { getVideoDraft } from "../../publishing/video-data.js";
 import type { VideoTarget } from "../../publishing/video-types.js";
 import { VIDEO_TARGETS, videoTargetLabel } from "../../publishing/video-types.js";
@@ -219,14 +219,6 @@ async function forEachAdmin(actorIds: number[], deliver: (actorId: number) => Pr
 
 type CompletionTarget = { target: string; status: string; error: string | null; partial: boolean };
 
-/** A target that did not finish while something of it is already live. The
- * status alone cannot say it -- a half-published chain settles as `failed` --
- * and a card that calls that "не опубликовано" is read as the bot lying about
- * a post the author can see on the platform. */
-function isPartial(status: string, externalId: string | null): boolean {
-  return status !== "published" && Boolean(externalId);
-}
-
 function completionTargets(backendDb: BackendDb, ref: string | null): CompletionTarget[] {
   const publication = parsePublicationRef(ref);
   if (!publication || publication.kind === "draft") return [];
@@ -254,7 +246,7 @@ function completionTargets(backendDb: BackendDb, ref: string | null): Completion
   const latest = new Map<string, CompletionTarget & { jobId: number }>();
   for (const job of jobs)
     if (!latest.has(job.target))
-      latest.set(job.target, { ...job, partial: isPartial(job.status, delivered.get(job.target)?.externalId ?? null) });
+      latest.set(job.target, { ...job, partial: isPartialDelivery(job.status, delivered.get(job.target)?.externalId ?? null) });
   const site = unsafeDb(backendDb)
     .db.select({ reason: siteJobs.reason, status: siteJobs.status, error: siteJobs.lastError, jobId: siteJobs.jobId })
     .from(siteJobs)

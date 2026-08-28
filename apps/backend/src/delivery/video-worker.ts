@@ -11,8 +11,9 @@ import { withJobHeartbeat } from "../foundation/runtime/job-heartbeat.js";
 import { isTargetAuthBlocked, recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
 import { trackUsageAsync } from "../observability/usage.js";
 import { classifyPublishError } from "../publishing/errors.js";
-import { failedJobTransition } from "../publishing/job-policy.js";
+import { failedJobTransition, videoStepMayHaveReachedAudience } from "../publishing/job-policy.js";
 import { PUBLISH_CLAIM_LIMIT } from "../publishing/queue.js";
+import { publishRetryPolicy } from "../publishing/queue-state.js";
 import { isVideoTargetFinal } from "../publishing/state.js";
 import { getVideoDraft, refreshVideoDraftStatus, type VideoJob } from "../publishing/video-data.js";
 import type { InstagramMetadata, VideoMetadata, YouTubeMetadata } from "../publishing/video-types.js";
@@ -445,11 +446,7 @@ function completeVideoJob(backendDb: BackendDb, job: VideoJob): boolean {
 
 function failVideoJob(backendDb: BackendDb, job: VideoJob, cause: unknown, config: BackendConfig): boolean {
   const error = cause instanceof Error ? cause.message : String(cause);
-  const transition = failedJobTransition(cause, job.attemptCount, {
-    maxAttempts: PUBLISH_MAX_ATTEMPTS,
-    backoffBaseSeconds: PUBLISH_BACKOFF_BASE_SECONDS,
-    backoffMaxSeconds: PUBLISH_BACKOFF_MAX_SECONDS,
-  });
+  const transition = failedJobTransition(cause, job.attemptCount, publishRetryPolicy());
   if (cause instanceof InstagramContainerProcessingError && transition.attempt < PUBLISH_MAX_ATTEMPTS) {
     const now = new Date().toISOString();
     let failed = false;
@@ -617,12 +614,8 @@ export function recoverVideoLocks(backendDb: BackendDb, config: BackendConfig): 
       if (!job.lockedAt) continue;
       const error = "worker_lost: video lock expired before completion";
       const target = job.videoTargetId == null ? null : tx.select().from(videoTargets).where(eq(videoTargets.id, job.videoTargetId)).get();
-      const ambiguous = job.kind === "publish" || (job.kind === "prepare" && target?.target === "youtube_shorts");
-      const transition = failedJobTransition(new Error(error), job.attemptCount, {
-        maxAttempts: PUBLISH_MAX_ATTEMPTS,
-        backoffBaseSeconds: PUBLISH_BACKOFF_BASE_SECONDS,
-        backoffMaxSeconds: PUBLISH_BACKOFF_MAX_SECONDS,
-      });
+      const ambiguous = videoStepMayHaveReachedAudience(job.kind, target?.target);
+      const transition = failedJobTransition(new Error(error), job.attemptCount, publishRetryPolicy());
       const retry = !ambiguous && transition.status === "queued";
       const status = ambiguous ? "verification_required" : transition.status;
       const updated = tx

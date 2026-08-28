@@ -7,6 +7,7 @@ import { type BackendDb, unsafeDb } from "../db/client.js";
 import { articleLocales, articles } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { primaryStudioActorId } from "../studio/access.js";
+import { newDeliveryPayload } from "./delivery-payload.js";
 import { enqueuePublishJobTx } from "./queue.js";
 
 type PublishArticleInput = {
@@ -67,7 +68,8 @@ export function publishArticle(backendDb: BackendDb, config: BackendConfig, inpu
         enqueuePublishJobTx(db, {
           publicationKey,
           target,
-          payload: { locale: input.locale, title, text: body.text, entities: body.entities, media: [] },
+          // A brand-new article: nothing of it has been published anywhere.
+          payload: newDeliveryPayload({ locale: input.locale, title, text: body.text, entities: body.entities, media: [] }),
           publishAt: now,
         });
       return { ok: true, article_id: article.id, ref: publicationKey, title, targets, queued: true };

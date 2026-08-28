@@ -5,6 +5,7 @@ import { handlePublicationCallback } from "../src/bot/callback-router.js";
 import { publicationCallback } from "../src/bot/publication-callback.js";
 import { publicationTargets, publishJobs } from "../src/db/schema.js";
 import { consumeTelegramEvents } from "../src/interfaces/telegram/event-consumer.js";
+import { newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { HttpPublishError } from "../src/publishing/errors.js";
 import { claimDuePublishJobs, enqueuePublishJobTx, failPublishJob } from "../src/publishing/queue.js";
 import { withDb } from "./helpers/db.js";
@@ -31,7 +32,7 @@ describe("post recovery scenario", () => {
         enqueuePublishJobTx(backendDb.db, {
           publicationKey: "post:700",
           target,
-          payload: { text: "Night post" },
+          payload: newDeliveryPayload({ text: "Night post" }),
         });
 
       const claimed = claimDuePublishJobs(backendDb, 2, "scenario-worker");

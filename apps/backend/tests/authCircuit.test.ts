@@ -12,6 +12,7 @@ import {
   recordTokenPing,
   shouldPingToken,
 } from "../src/observability/auth-circuit.js";
+import { newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { HttpPublishError } from "../src/publishing/errors.js";
 import { claimDuePublishJobs, enqueuePublishJobTx, failPublishJob } from "../src/publishing/queue.js";
 import { withOpenDb } from "./helpers/db.js";
@@ -61,7 +62,7 @@ describe("auth circuit breaker", () => {
         enqueuePublishJobTx(backendDb.db, {
           publicationKey: `post:${messageId}`,
           target: "test_platform",
-          payload: { text: "hi" } as JsonObject,
+          payload: newDeliveryPayload({ text: "hi" }),
         });
 
       for (let i = 0; i < 3; i++) {

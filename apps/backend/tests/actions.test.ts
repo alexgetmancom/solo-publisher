@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { asc, count, eq } from "drizzle-orm";
 import { drafts, opsActions, publicationTargets, publishJobs, siteJobs } from "../src/db/schema.js";
 import { runOperationCommand } from "../src/operations/commands.js";
+import { newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { enqueuePublishJobTx } from "../src/publishing/queue.js";
 import { postService } from "../src/studio/services/posts.js";
 import { registerTestChannels } from "./helpers/channels.js";
@@ -13,7 +14,7 @@ describe("command center actions", () => {
   it("rebuilds retried jobs from the source using the target locale", () =>
     withDb(async (backendDb) => {
       const now = new Date().toISOString();
-      const source = {};
+      const source = newDeliveryPayload({});
       seedTextPost(backendDb, {
         postId: 52,
         messageId: 492,
@@ -96,7 +97,7 @@ describe("command center actions", () => {
   it("deletes a selected locale target and queues its replacement", () =>
     withDb(async (backendDb) => {
       const now = new Date().toISOString();
-      const source = { text_ru: "RU", text_en: "EN", media: [], media_en: [] };
+      const source = newDeliveryPayload({ text_ru: "RU", text_en: "EN", media: [], media_en: [] });
       seedTextPost(backendDb, { postId: 9, ru: "RU", en: "EN", now });
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:9",
@@ -129,7 +130,7 @@ describe("command center actions", () => {
   it("does not requeue a newer target when deletion loses its external-id fence", () =>
     withDb(async (backendDb) => {
       const now = new Date().toISOString();
-      const source = { text_ru: "RU", text_en: "EN", media: [], media_en: [] };
+      const source = newDeliveryPayload({ text_ru: "RU", text_en: "EN", media: [], media_en: [] });
       seedTextPost(backendDb, { postId: 19, ru: "RU", en: "EN", now });
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:19",
@@ -178,7 +179,7 @@ describe("command center actions", () => {
   it("marks a deleted target's delivery job cancelled when it stays down", () =>
     withDb(async (backendDb) => {
       const now = new Date().toISOString();
-      const source = { text_ru: "RU", text_en: "EN", media: [], media_en: [] };
+      const source = newDeliveryPayload({ text_ru: "RU", text_en: "EN", media: [], media_en: [] });
       seedTextPost(backendDb, { postId: 21, ru: "RU", en: "EN", now });
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:21",
@@ -212,7 +213,7 @@ describe("command center actions", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:20",
         target: "threads_en",
-        payload: { text: "RU", text_en: "EN" },
+        payload: newDeliveryPayload({ text: "RU", text_en: "EN" }),
       });
       backendDb.db.update(publishJobs).set({ status: "failed", lastError: "boom" }).where(eq(publishJobs.jobId, jobId)).run();
       backendDb.sqlite.exec("CREATE TRIGGER reject_ops_audit BEFORE INSERT ON ops_actions BEGIN SELECT RAISE(ABORT, 'audit failed'); END");
@@ -322,7 +323,7 @@ describe("command center actions", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:61",
         target: "threads_en",
-        payload: { text: "RU", text_en: "EN" },
+        payload: newDeliveryPayload({ text: "RU", text_en: "EN" }),
       });
       // Mid-flight: a worker holds the lock and has already reached the provider.
       backendDb.db
@@ -347,7 +348,7 @@ describe("command center actions", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:62",
         target: "threads_en",
-        payload: { text: "RU", text_en: "EN" },
+        payload: newDeliveryPayload({ text: "RU", text_en: "EN" }),
       });
       backendDb.db
         .update(publishJobs)

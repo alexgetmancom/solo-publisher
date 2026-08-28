@@ -1,9 +1,9 @@
 import { and, desc, eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { publishJobs } from "../db/schema.js";
+import { resumedDeliveryPayload, resumeState } from "../publishing/delivery-payload.js";
 import { refreshPublicationOwner } from "../publishing/publication-owner.js";
 import { parsePayload, upsertPostTarget } from "../publishing/queue-state.js";
-import { resumeState } from "../publishing/resume.js";
 import type { ResolvedPublicationRef } from "./publication-ref.js";
 
 type ResumeFromInput = {
@@ -66,7 +66,7 @@ export function resumeTargetFrom(backendDb: BackendDb, input: ResumeFromInput): 
       .update(publishJobs)
       .set({
         status: "queued",
-        payloadJson: { ...payload, [resumeKey]: [input.externalId] },
+        payloadJson: resumedDeliveryPayload(payload, resumeKey, [input.externalId]),
         attemptCount: 0,
         publishAt: now,
         nextAttemptAt: null,

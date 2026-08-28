@@ -3,10 +3,10 @@ import { isSiteTarget, targetLocale } from "../botTargets.js";
 import { textLocale } from "../content/text-locale.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { drafts, publicationTargets, publishJobs, siteJobs } from "../db/schema.js";
+import { continuedDeliveryPayload, hasResumeState, newDeliveryPayload, restartedDeliveryPayload } from "./delivery-payload.js";
 import { requeuedPostTarget, requeuedPublishJobColumns } from "./job-policy.js";
 import { localizeTargetPayload } from "./payload.js";
 import { insertEvent, parsePayload } from "./queue-state.js";
-import { hasResumeState, resumeState } from "./resume.js";
 
 /**
  * The one way a publication target goes back into the queue.
@@ -165,8 +165,10 @@ function requeueSocialTarget(
   // gone -- an operator removed them, or the edit path took them down to
   // replace them -- and continuing a chain onto a deleted message is the same
   // error pointing the other way.
-  const resume = options.audienceReached === "resume" ? resumeState(parsePayload(row.payloadJson)) : {};
-  const payload = { ...localizeTargetPayload(source(), target), ...resume };
+  const payload =
+    options.audienceReached === "resume"
+      ? continuedDeliveryPayload(parsePayload(row.payloadJson), localizeTargetPayload(source(), target))
+      : restartedDeliveryPayload(localizeTargetPayload(source(), target), "operator_republish");
   const refused = unpublishable(payload, target);
   if (refused) return { target, outcome: "not_retryable", status: row.status, reason: refused };
   // Asked in the same breath as the write it guards, off the row that is about
@@ -193,7 +195,8 @@ function requeueSocialTarget(
 }
 
 function createPublishJob(tx: RequeueDb, scope: RequeueScope, target: string, source: Record<string, unknown>, now: string): RequeueResult {
-  const payload = localizeTargetPayload(source, target);
+  // A target that never had a job has published nothing by definition.
+  const payload = newDeliveryPayload(localizeTargetPayload(source, target));
   // `localizeTargetPayload` always returns its keys, so the `Object.keys(...)
   // === 0` this used to test was never the empty case, and a target whose
   // language the publication has nothing in got a job all the same.

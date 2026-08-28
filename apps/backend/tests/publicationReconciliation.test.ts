@@ -12,6 +12,7 @@ import {
   videoTargets,
 } from "../src/db/schema.js";
 import { RECONCILE_MAX_ATTEMPTS, runPublicationReconciliation } from "../src/delivery/publication-reconciliation.js";
+import { newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { refreshPublicationStatus } from "../src/publishing/publication-status.js";
 import { enqueuePublishJobTx } from "../src/publishing/queue.js";
 import { replaceVideoTargets } from "../src/publishing/video-service.js";
@@ -181,7 +182,7 @@ describe("publication reconciliation", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:81",
         target: "threads_ru",
-        payload: { text: "published" },
+        payload: newDeliveryPayload({ text: "published" }),
       });
       const now = new Date().toISOString();
       // One attempt short of the budget, so this cycle is the one that exhausts it.
@@ -234,7 +235,7 @@ describe("publication reconciliation", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:82",
         target: "threads_ru",
-        payload: { text: "published through Zernio" },
+        payload: newDeliveryPayload({ text: "published through Zernio" }),
       });
       const now = new Date().toISOString();
       backendDb.db.update(publishJobs).set({ status: "verification_required", updatedAt: now }).where(eq(publishJobs.jobId, jobId)).run();
@@ -279,7 +280,7 @@ describe("publication reconciliation", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:83",
         target: "threads_ru",
-        payload: { text: "retried before it turned ambiguous" },
+        payload: newDeliveryPayload({ text: "retried before it turned ambiguous" }),
       });
       const now = new Date().toISOString();
       const config = loadTestConfig({ PUBLISH_MAX_ATTEMPTS: "3", THREADS_RU_ACCESS_TOKEN: "token" });
@@ -320,7 +321,7 @@ describe("publication reconciliation", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:84",
         target: "threads_ru",
-        payload: { text: "unknown outcome" },
+        payload: newDeliveryPayload({ text: "unknown outcome" }),
       });
       const now = new Date().toISOString();
       // One attempt short of the budget, so this cycle is the one that exhausts it.
@@ -355,7 +356,7 @@ describe("publication reconciliation", () => {
       const jobId = enqueuePublishJobTx(backendDb.db, {
         publicationKey: "post:82",
         target: "telegram",
-        payload: { text: "unknown" },
+        payload: newDeliveryPayload({ text: "unknown" }),
       });
       const now = new Date().toISOString();
       // One attempt short of the budget, so this cycle is the one that exhausts it.

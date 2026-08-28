@@ -2,6 +2,7 @@ import { asc, eq, or } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, publicationTargets } from "../db/schema.js";
+import { isPartialDelivery } from "../publishing/state.js";
 
 /** Read-only target verification for the Operations CLI and API. */
 export async function verifyPostTargets(backendDb: BackendDb, ref: string): Promise<Record<string, unknown>[]> {
@@ -37,7 +38,7 @@ export async function verifyPostTargets(backendDb: BackendDb, ref: string): Prom
         return {
           ...record,
           ok: false,
-          partial: Boolean(record.externalId),
+          partial: isPartialDelivery(record.status, record.externalId),
           reason: record.externalId ? `published_in_part:${record.externalId}` : (record.error ?? "not_published"),
         };
       if (!record.url) return { ...record, ok: true, partial: false, reason: "no_public_url_known" };

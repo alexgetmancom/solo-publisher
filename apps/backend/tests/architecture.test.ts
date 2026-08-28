@@ -117,6 +117,31 @@ describe("architecture fitness", () => {
     for (const file of writers) expect(source(file)).toMatch(/resumeState|hasResumeState|resumeKey/);
   });
 
+  /** Three surfaces report the same delivery -- the bot's card, `ops recent`,
+   * `ops verify` -- and each one that spelled "half published" itself gave a
+   * different answer. They ask one function now, and this is what keeps them
+   * asking it. */
+  it("keeps every delivery surface reading partial publication from one place", () => {
+    for (const file of [
+      "apps/backend/src/interfaces/telegram/video-notifications.ts",
+      "apps/backend/src/operations/recent.ts",
+      "apps/backend/src/operations/verify.ts",
+    ]) {
+      expect(source(file)).toContain("isPartialDelivery");
+      // The expression itself, written out again, is the drift this prevents.
+      expect(source(file)).not.toMatch(/!==\s*"published"\s*&&\s*Boolean/);
+    }
+  });
+
+  /** The compiler already refuses a payload that was not built by one of the
+   * four constructors, which is the real guard. This says the same thing about
+   * the constructors themselves: they are the only place allowed to assert the
+   * brand, so a fifth way to make one cannot appear quietly. */
+  it("keeps the delivery payload's brand assertable in one file", () => {
+    const asserting = sourceFiles("apps/backend/src").filter((file) => source(file).includes("as DeliveryPayload"));
+    expect(asserting).toEqual(["apps/backend/src/publishing/delivery-payload.ts"]);
+  });
+
   it("keeps infrastructure adapters behind the composition root", () => {
     const client = source("apps/backend/src/db/client.ts");
     expect(client).toContain("createDraftStore(db, clock)");

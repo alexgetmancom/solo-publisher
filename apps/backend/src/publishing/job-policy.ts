@@ -1,4 +1,4 @@
-import type { JsonObject } from "../db/schema.js";
+import type { DeliveryPayload } from "./delivery-payload.js";
 import { classifyPublishError, nextRetryAt, type PublishErrorClass, retryAfterSecondsFromError } from "./errors.js";
 
 type RetryPolicy = { maxAttempts: number; backoffBaseSeconds: number; backoffMaxSeconds: number };
@@ -61,6 +61,19 @@ export function mayHaveReachedAudience(phase: string | null | undefined): boolea
   return phase === null ? false : !PHASES_BEFORE_PROVIDER.includes(phase as string);
 }
 
+/** The same question for a video job, which is divided into steps rather than
+ * phases. Closed on the safe side for the same reason: `publish`, and any kind
+ * this build has not heard of, may already have put something in front of an
+ * audience. Only preparation is safe, and only where preparation does not
+ * upload -- a YouTube upload exists on the platform the moment it succeeds.
+ *
+ * It used to be written as `kind === "publish" || (kind === "prepare" && ...)`,
+ * which is the same list read from the dangerous end: a step added later would
+ * have defaulted to "nothing happened" and been delivered again. */
+export function videoStepMayHaveReachedAudience(kind: string | null | undefined, target: string | null | undefined): boolean {
+  return kind === "prepare" ? target === "youtube_shorts" : true;
+}
+
 /** The columns a publish job takes on when it re-enters the queue. Two paths
  * requeue jobs and they mean different things -- Studio retries a target that
  * failed, `ops retry` restores one whatever state it reached -- so *which*
@@ -72,7 +85,7 @@ export function mayHaveReachedAudience(phase: string | null | undefined): boolea
  * `mayHaveReachedAudience` to decide whether a lost worker may already have hit
  * the provider, and the ops path used to leave it set, so a later stale lock on
  * a clean retry was misreported as needing manual verification. */
-export function requeuedPublishJobColumns(payload: JsonObject, now: string) {
+export function requeuedPublishJobColumns(payload: DeliveryPayload, now: string) {
   return {
     status: "queued" as const,
     attemptCount: 0,

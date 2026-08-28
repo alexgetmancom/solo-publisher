@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { and, eq, inArray, ne } from "drizzle-orm";
+import { publicationRef } from "../application/publication-ref.js";
 import { videoSourcePath } from "../content/video-assets.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { videoDrafts, videoJobs, videoTargets } from "../db/schema.js";
@@ -302,24 +303,43 @@ export function retryVideoTarget(backendDb: BackendDb, videoDraftId: number, tar
   if (!target || !isAudienceMutationRetryable(target.status)) throw new StudioError("err.retry-only-failed");
   const now = new Date();
   const nowIso = now.toISOString();
+  // The same distinction the publish queue draws by name: a delivery that
+  // carries what it already put on the platform is continued, one that carries
+  // nothing starts over. Video spells it for the single platform where it
+  // happens -- a YouTube upload survives a failed publish and is the thing the
+  // retry continues from -- but it is the same question, asked before the row
+  // that holds the answer is overwritten.
+  const continuesFromUpload = targetName === "youtube_shorts" && Boolean(target.externalId);
   unsafeDb(backendDb).db.transaction((tx) => {
-    const reusePreparedYouTube = targetName === "youtube_shorts" && Boolean(target.externalId);
     tx.update(videoTargets)
       .set({
-        status: reusePreparedYouTube ? "prepared" : "scheduled",
-        ...(reusePreparedYouTube ? {} : { externalId: null, externalUrl: null, preparedAt: null }),
+        status: continuesFromUpload ? "prepared" : "scheduled",
+        ...(continuesFromUpload ? {} : { externalId: null, externalUrl: null, preparedAt: null }),
         lastError: null,
         updatedAt: nowIso,
       })
       .where(eq(videoTargets.id, target.id))
       .run();
-    if (!reusePreparedYouTube) insertVideoJob(tx, videoDraftId, target.id, "prepare", nowIso);
+    if (!continuesFromUpload) insertVideoJob(tx, videoDraftId, target.id, "prepare", nowIso);
     insertVideoJob(tx, videoDraftId, target.id, "publish", new Date(now.getTime() + 60_000).toISOString());
     tx.update(videoDrafts)
       .set({ status: "scheduled", retentionUntil: null, updatedAt: nowIso })
       .where(eq(videoDrafts.id, videoDraftId))
       .run();
   });
+  // The id this row named is now referenced by nothing: whatever it pointed at
+  // on the platform, no command can reach it again. The post queue journals the
+  // same loss for the same reason -- it is the only record that object ever
+  // existed.
+  if (!continuesFromUpload && target.externalId)
+    backendDb.events.record({
+      ref: publicationRef("video", videoDraftId),
+      target: targetName,
+      type: "publish.target.identity_dropped",
+      severity: "warn",
+      message: `${targetName} was retried while it still named a live upload; that upload is no longer referenced`,
+      details: { external_id: target.externalId, url: target.externalUrl, provider_post_id: target.providerPostId },
+    });
 }
 
 export type VideoTechnicalCheck = {

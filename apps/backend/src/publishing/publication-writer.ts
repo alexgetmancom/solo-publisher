@@ -2,11 +2,11 @@ import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { isSiteTarget, targetLocale } from "../botTargets.js";
 import type { UnsafeBackendDb } from "../db/client.js";
 import { drafts, postLocales, publishJobs, siteJobs } from "../db/schema.js";
+import { hasResumeState, newDeliveryPayload } from "./delivery-payload.js";
 import { localizeTargetPayload } from "./payload.js";
 import type { PublicationPlan } from "./publication-plan.js";
 import { enqueuePublishJobTx } from "./queue.js";
 import { parsePayload } from "./queue-state.js";
-import { hasResumeState } from "./resume.js";
 
 export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: PublicationPlan): void {
   for (const locale of plan.locales) {
@@ -93,7 +93,9 @@ export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: Public
       enqueuePublishJobTx(tx, {
         publicationKey: plan.publicationKey,
         target,
-        payload: localizeTargetPayload(plan.payload, target),
+        // Every target still here is one the plan may build from scratch: the
+        // half-delivered ones were kept above and never reach this loop.
+        payload: newDeliveryPayload(localizeTargetPayload(plan.payload, target)),
         publishAt,
       });
   }

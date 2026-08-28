@@ -48,6 +48,18 @@ export function isAudienceMutationRetryable(status: string): status is "failed" 
   return AUDIENCE_MUTATION_RETRYABLE_STATUSES.some((retryable) => retryable === status);
 }
 
+/** A delivery that did not finish while something of it is already live: a
+ * chain whose first message went out, a locale that published and then failed.
+ * No status says it -- the row sits in `failed` or `queued` and names a post at
+ * the same time -- so every surface that reports delivery has to ask the same
+ * question, and each one that spelled it itself got a different answer. The bot
+ * said "не опубликовано" about a post its author could see on the platform,
+ * which is how a correct system gets called a liar.
+ */
+export function isPartialDelivery(status: string, externalId: string | null | undefined): boolean {
+  return status !== "published" && Boolean(externalId);
+}
+
 /** Site verification is the exception: rendering the same page again replaces
  * one deterministic artifact, so an ambiguous verification cannot duplicate a
  * publication. */

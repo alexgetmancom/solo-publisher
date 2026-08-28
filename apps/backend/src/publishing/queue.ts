@@ -9,6 +9,7 @@ import { insertPublishJobSchema } from "../db/validation.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
+import { type DeliveryPayload, hasResumeState, resumedDeliveryPayload } from "./delivery-payload.js";
 import { classifyPublishError, normalizePublishResult, type PublishResult } from "./errors.js";
 import { failedJobTransition, mayHaveReachedAudience, partialPublicationTransition } from "./job-policy.js";
 import { refreshPublicationOwner } from "./publication-owner.js";
@@ -26,7 +27,6 @@ import {
   upsertPostTarget,
   verificationStatus,
 } from "./queue-state.js";
-import { hasResumeState } from "./resume.js";
 
 export const PUBLISH_CLAIM_LIMIT = 20;
 
@@ -413,7 +413,7 @@ function settlePartialPublication(
   const { attempt, status, nextAttemptAt } = partialPublicationTransition(job.attemptCount, partialRetryPolicy());
   const retry = status === "queued";
   const error = String(result.error ?? `${job.target} partial publication`);
-  const payload = { ...parsePayload(job.payloadJson), [payloadKey]: ids };
+  const payload = resumedDeliveryPayload(parsePayload(job.payloadJson), payloadKey, ids);
   const settled = withLease(backendDb, jobId, (tx) => {
     // A queued row is unique per (publication_key, target); clear any competing one
     // before this job re-enters the queue, and clear superseded rows once this
@@ -643,7 +643,9 @@ export function enqueuePublishJobTx(db: UnsafeBackendDb["db"], input: EnqueuePub
 
 type EnqueuePublishJobInput = {
   target: string;
-  payload: JsonObject;
+  /** Branded on purpose: a job may only be created with a payload whose author
+   * has said what the delivery has already published. See delivery-payload.ts. */
+  payload: DeliveryPayload;
   publicationKey: string;
   publishAt?: string | null;
 };
