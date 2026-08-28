@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { eq } from "drizzle-orm";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { drafts, publishJobs } from "../src/db/schema.js";
 import { type OperationContext, runOperation } from "../src/operations/registry.js";
