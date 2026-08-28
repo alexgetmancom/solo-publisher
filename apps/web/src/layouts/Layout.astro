@@ -1,4 +1,5 @@
 ---
+import { THEME_BOOT_SCRIPT, THEME_TOGGLE_SCRIPT } from "../../../../shared/theme-script.js";
 import { stripLeadingEmojis } from "../../../backend/src/content/text.js";
 import { BRAND_ASSET_VERSION } from "../utils/brand";
 import { siteUrlFromContext } from "../utils/site";
@@ -66,23 +67,7 @@ const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").rep
     <meta name="description" content={cleanDescription} />
     <meta name="robots" content={robots} />
     <meta name="theme-color" content="#080B10" />
-    <script is:inline>
-      // Runs before first paint: without it the document renders in the default
-      // dark theme and then flips, which reads as a flash. Must stay inline and
-      // un-deferred for that reason.
-      (() => {
-        try {
-          const stored = localStorage.getItem("theme");
-          const mode = stored === "light" || stored === "dark" ? stored : "system";
-          const theme = mode === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : mode;
-          document.documentElement.setAttribute("data-theme", theme);
-          document.documentElement.setAttribute("data-theme-mode", mode);
-        } catch {
-          document.documentElement.setAttribute("data-theme", "dark");
-          document.documentElement.setAttribute("data-theme-mode", "system");
-        }
-      })();
-    </script>
+    <script is:inline set:html={THEME_BOOT_SCRIPT}></script>
     {analyticsEnabled && (<>
     <script is:inline>
       window.Fusionaly = window.Fusionaly || {};
@@ -170,7 +155,7 @@ const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").rep
     <main class="container" id="main-content" tabindex="-1"><slot /></main>
     <script>
       import "../scripts/site-interactions.ts";
-      import "../scripts/theme-toggle.ts";
     </script>
+    <script is:inline set:html={THEME_TOGGLE_SCRIPT}></script>
   </body>
 </html>

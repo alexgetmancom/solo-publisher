@@ -2,7 +2,6 @@ import { describe, expect, it, mock } from "bun:test";
 import type { Bot } from "grammy";
 import { refreshPostControlCard } from "../src/bot/progress.js";
 import { alertDedup, botUiSettings, publishJobs, siteJobs, videoDrafts, videoTargets } from "../src/db/schema.js";
-import { recordDomainEvent } from "../src/domain/events.js";
 import { setTelegramPostCard, setTelegramPostProgressCard, setTelegramVideoCard } from "../src/interfaces/telegram/control-cards.js";
 import { consumeTelegramEvents } from "../src/interfaces/telegram/event-consumer.js";
 import { refreshVideoControlCard, sendStudioCompletion, sendStudioReminder } from "../src/interfaces/telegram/video-notifications.js";
@@ -81,8 +80,8 @@ describe("Telegram event consumer", () => {
 
   it("drops an undeliverable event instead of blocking every event behind it", async () =>
     withDb(async (backendDb) => {
-      recordDomainEvent(backendDb.events, milestone("first"));
-      recordDomainEvent(backendDb.events, milestone("second"));
+      backendDb.events.record(milestone("first"));
+      backendDb.events.record(milestone("second"));
       // Telegram's real failure here is a 403 from a user who blocked the bot:
       // permanent, chat-specific, and no reason to stall the whole queue.
       const sendMessage = mock(async (_chatId: number, text: string) => {
@@ -101,7 +100,7 @@ describe("Telegram event consumer", () => {
 
   it("delivers each event exactly once across repeated ticks", async () =>
     withDb(async (backendDb) => {
-      recordDomainEvent(backendDb.events, milestone("only"));
+      backendDb.events.record(milestone("only"));
       const sendMessage = mock(async () => ({ message_id: 1, date: 1, chat: { id: 42, type: "private" as const } }));
       const bot = { api: { sendMessage } } as unknown as Bot;
 
@@ -112,7 +111,7 @@ describe("Telegram event consumer", () => {
 
   it("durably reserves an event before calling Telegram", async () =>
     withDb(async (backendDb) => {
-      recordDomainEvent(backendDb.events, milestone("reserved"));
+      backendDb.events.record(milestone("reserved"));
       const sendMessage = mock(async () => {
         expect(backendDb.db.select().from(alertDedup).all()).toHaveLength(1);
         return { message_id: 1, date: 1, chat: { id: 42, type: "private" as const } };
@@ -280,7 +279,7 @@ describe("Telegram event consumer", () => {
           },
         ])
         .run();
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: "post:113",
         target: "en",
         type: "delivery.post.locale.completed",
@@ -349,7 +348,7 @@ describe("Telegram event consumer", () => {
           updatedAt: now,
         })
         .run();
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: "post:110",
         type: "delivery.post.completed",
         severity: "info",

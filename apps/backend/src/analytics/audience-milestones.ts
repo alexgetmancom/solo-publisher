@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import { type ChannelConnection, listChannels } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { alertDedup, analyticsRollups, creatorProfiles } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { type AudienceGroup, audienceConnectionIdentity, audienceGroup, uniqueAudienceConnections } from "./audience-groups.js";
 import { metricNumber } from "./snapshots/creator-store.js";
 
@@ -117,7 +116,7 @@ function recordMilestone(backendDb: BackendDb, scope: MilestoneScope, threshold:
   if (unsafeDb(backendDb).db.select().from(alertDedup).where(eq(alertDedup.alertKey, key)).get()) return false;
   const now = new Date().toISOString();
   unsafeDb(backendDb).db.insert(alertDedup).values({ alertKey: key, lastSentAt: now, suppressedCount: 0 }).run();
-  return recordDomainEvent(backendDb.events, {
+  return backendDb.events.record({
     type: "analytics.milestone.reached",
     severity: "info",
     target: scope.target,

@@ -6,6 +6,7 @@ import { pendingAlbums } from "../src/db/schema.js";
 import { unsafeDb } from "../src/db/unsafe.js";
 import { t } from "../src/foundation/i18n/index.js";
 import { registerTestChannels } from "./helpers/channels.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -41,9 +42,8 @@ async function capture(backendDb: ReturnType<typeof openBackendDb>, message: Rec
 }
 
 describe("bot intake", () => {
-  it("makes a short text a post without asking and without offering to undo it", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("makes a short text a post without asking and without offering to undo it", () =>
+    withDb(async (backendDb) => {
       const result = await capture(backendDb, { text: "Short enough to be obvious." });
       expect(result.effects[0]).toMatchObject({ card: { kind: "post" } });
       // An article is written long or written in a file. Neither is true here,
@@ -51,63 +51,44 @@ describe("bot intake", () => {
       expect(buttonRows(result.effects[0] as never)).not.toContain("📄 Actually, this is an article");
       expect(getConversationState(backendDb, 42, "intake")).toBeNull();
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM drafts").get()).toEqual({ count: 1 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("asks once the text is long enough for both readings to be live", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("asks once the text is long enough for both readings to be live", () =>
+    withDb(async (backendDb) => {
       const result = await capture(backendDb, { text: "x".repeat(901) });
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("choose");
       expect(buttonRows(result.effects[0] as never)).toEqual(["📝 Post", "📄 Article", "← Cancel"]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   /** The caption used to make this an open question, because one entry point
    * could not tell a post with a video from a video publication. The button
    * answers it now: material handed to Video is a video, caption or not. */
-  it("takes a video handed to the video button as a video publication, caption or not", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("takes a video handed to the video button as a video publication, caption or not", () =>
+    withDb(async (backendDb) => {
       await capture(backendDb, { document: { file_id: "v1", file_name: "clip.mp4", mime_type: "video/mp4" }, caption: "look" }, "video");
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("video_locale");
       await capture(backendDb, { document: { file_id: "v2", file_name: "clip.mp4", mime_type: "video/mp4" } }, "video");
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("video_locale");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   /** A post carries video perfectly well, so the text button takes one and
    * attaches it. The other direction has nothing to make: a video publication
    * without a file is not a publication. */
-  it("attaches a video to a post under the text button, and sends bare text back from the video one", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("attaches a video to a post under the text button, and sends bare text back from the video one", () =>
+    withDb(async (backendDb) => {
       const video = await capture(backendDb, { document: { file_id: "v4", file_name: "clip.mp4", mime_type: "video/mp4" } }, "text");
       expect(video.effects[0]).toMatchObject({ card: { kind: "post" } });
       const text = await capture(backendDb, { text: "Just words." }, "video");
       expect(text.effects[0]).toMatchObject({ text: expect.stringContaining("📝") });
       // The intake stays open, so the next message is still the first one.
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not download a bare video until the language is answered", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not download a bare video until the language is answered", () =>
+    withDb(async (backendDb) => {
       await capture(backendDb, { document: { file_id: "v3", file_name: "clip.mp4", mime_type: "video/mp4" } }, "video");
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM studio_media_assets").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("makes a markdown file an article without asking, and offers the post reading back", async () => {
     const backendDb = openBackendDb(":memory:");
@@ -122,17 +103,13 @@ describe("bot intake", () => {
     }
   });
 
-  it("takes the first line as the title when the material has no heading, and shows it", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("takes the first line as the title when the material has no heading, and shows it", () =>
+    withDb(async (backendDb) => {
       await capture(backendDb, { text: `Why delivery settles\n\n${"x".repeat(901)}` });
       const [review] = await applyIntakeKind(ctxWith({}), backendDb, config, "article");
       expect((review as { text: string }).text).toContain("Why delivery settles");
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("article_review");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("publishes a confirmed article and closes the intake", async () => {
     const backendDb = openBackendDb(":memory:");
@@ -150,9 +127,8 @@ describe("bot intake", () => {
     }
   });
 
-  it("turns the captured material into a post draft and closes the intake", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("turns the captured material into a post draft and closes the intake", () =>
+    withDb(async (backendDb) => {
       await capture(backendDb, { text: "x".repeat(901) });
       const effects = await applyIntakeKind(ctxWith({}), backendDb, config, "post");
       expect(effects[0]).toMatchObject({ card: { kind: "post" } });
@@ -160,14 +136,10 @@ describe("bot intake", () => {
       expect(backendDb.sqlite.query("SELECT source_text AS text_ru FROM post_locales WHERE locale='ru'").all()).toEqual([
         { text_ru: "x".repeat(901) },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("hands an album to the album collector instead of keeping its first photo", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("hands an album to the album collector instead of keeping its first photo", () =>
+    withDb(async (backendDb) => {
       const album = (fileId: string) => ({
         media_group_id: "album-1",
         caption: "",
@@ -187,32 +159,21 @@ describe("bot intake", () => {
       expect(rows).toHaveLength(1);
       expect(JSON.parse(String(rows[0]?.mediaJson))).toHaveLength(2);
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM drafts").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("refuses material no publication can carry, and keeps waiting", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("refuses material no publication can carry, and keeps waiting", () =>
+    withDb(async (backendDb) => {
       // A voice note has no text and no media the bot can publish; capturing it
       // used to produce an empty draft with an empty card.
       const result = await capture(backendDb, { voice: { file_id: "voice-1", duration: 3 } });
       expect(result.effects).toEqual([{ type: "screen", mode: "reply", text: t("en", "intake.unsupported") }]);
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM drafts").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("stays out of the way when no intake is open", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("stays out of the way when no intake is open", () =>
+    withDb(async (backendDb) => {
       const result = await handleIntakeMessage(ctxWith({ text: "stray" }), backendDb, config);
       expect(result.handled).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

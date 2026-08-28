@@ -4,7 +4,6 @@ import { isSiteTarget, targetLocale } from "../botTargets.js";
 import { registeredPostTargetIds } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, publicationEvents, publishJobs, siteJobs } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { publicationPlanFromDb } from "./source-store.js";
 import { effectivePublicationStatus, isPostJobFinal, planObject, planScheduleAt } from "./state.js";
 
@@ -60,7 +59,7 @@ export function refreshPublicationStatus(backendDb: BackendDb, postId: number): 
     all.every((job) => isPostJobFinal(job.status))
   ) {
     const counts = postJobCounts(all);
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: publicationRef("post", postId),
       type: "delivery.post.completed",
       severity: "info",
@@ -121,7 +120,7 @@ function emitLocaleCompletion(backendDb: BackendDb, postId: number, jobs: Public
     if (alreadyEmitted) continue;
 
     const counts = postJobCounts(completed);
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: publicationRef("post", postId),
       type: "delivery.post.locale.completed",
       target: locale,

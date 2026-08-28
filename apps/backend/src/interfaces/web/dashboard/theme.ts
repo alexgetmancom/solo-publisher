@@ -13,10 +13,11 @@
  * and on the site, in both themes. Renaming a token in one place fails there
  * rather than silently leaving the other half unstyled.
  *
- * SWITCHING. Same as the site: a data-theme attribute on <html> set by an
- * inline script before first paint, plus data-theme-mode holding which of the
- * three modes (system, light, dark) the operator picked. System is the default
- * and stores nothing; an explicit choice is stored in localStorage.
+ * SWITCHING. Same as the site, and the same source: shared/theme-script.ts sets
+ * data-theme on <html> before first paint, plus data-theme-mode holding which of
+ * the three modes (system, light, dark) the operator picked. System is the
+ * default and stores nothing; an explicit choice is stored in localStorage. The
+ * glyph on the button is CSS keyed off data-theme-mode, in the shell stylesheet.
  *
  * On the palette: the values below collapse what used to be roughly twenty
  * near-identical greys (#d7dee8, #d8e0e9, #d6dee8, #dce4ed ...) into one text
@@ -147,66 +148,7 @@ html[data-theme="light"] {
 }
 `;
 
-/**
- * Applied before first paint. Inline and blocking on purpose: deferring it
- * renders the whole dashboard in the wrong theme and then repaints.
- */
-export const DASHBOARD_THEME_BOOT_SCRIPT = `
-(() => {
-  try {
-    const stored = localStorage.getItem("theme");
-    const mode = stored === "light" || stored === "dark" ? stored : "system";
-    const theme = mode === "system"
-      ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
-      : mode;
-    document.documentElement.setAttribute("data-theme", theme);
-    document.documentElement.setAttribute("data-theme-mode", mode);
-  } catch {
-    document.documentElement.setAttribute("data-theme", "dark");
-    document.documentElement.setAttribute("data-theme-mode", "system");
-  }
-})();
-`;
-
-/**
- * Click handling. Mirrors apps/web/src/scripts/theme-toggle.ts: the button
- * cycles system -> light -> dark, and the OS setting is followed live while the
- * mode is system.
- */
-export const DASHBOARD_THEME_TOGGLE_SCRIPT = `
-  const THEME_CYCLE = ['system', 'light', 'dark'];
-  const THEME_GLYPH = { system: '\\u25D0', light: '\\u2600', dark: '\\u263E' };
-  const themeModeOf = () => {
-    const value = document.documentElement.getAttribute('data-theme-mode');
-    return value === 'light' || value === 'dark' ? value : 'system';
-  };
-  const applyTheme = (mode) => {
-    const theme = mode === 'system'
-      ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-      : mode;
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.setAttribute('data-theme-mode', mode);
-    document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-      button.textContent = THEME_GLYPH[mode];
-    });
-  };
-  applyTheme(themeModeOf());
-  document.addEventListener('click', (event) => {
-    const button = event.target instanceof Element ? event.target.closest('[data-theme-toggle]') : null;
-    if (!button) return;
-    const next = THEME_CYCLE[(THEME_CYCLE.indexOf(themeModeOf()) + 1) % THEME_CYCLE.length];
-    try {
-      if (next === 'system') localStorage.removeItem('theme');
-      else localStorage.setItem('theme', next);
-    } catch {}
-    applyTheme(next);
-  });
-  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-    if (themeModeOf() === 'system') applyTheme('system');
-  });
-`;
-
 /** Markup for the switch. Sits in the tab bar, next to the period controls. */
 export function dashboardThemeToggleHtml(label: string): string {
-  return `<button type="button" class="theme-toggle" data-theme-toggle aria-label="${label}">\u25D0</button>`;
+  return `<button type="button" class="theme-toggle" data-theme-toggle aria-label="${label}"></button>`;
 }

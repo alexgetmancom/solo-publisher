@@ -4,7 +4,7 @@ import process from "node:process";
 import { and, eq, isNull, lt, lte, or } from "drizzle-orm";
 import { recordPublishedXActivity } from "../analytics/x-activity-store.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
-import { type JsonObject, publishJobs } from "../db/schema.js";
+import { type JsonObject, publicationTargets, publishJobs } from "../db/schema.js";
 import { insertPublishJobSchema } from "../db/validation.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -26,6 +26,7 @@ import {
   upsertPostTarget,
   verificationStatus,
 } from "./queue-state.js";
+import { hasResumeState } from "./resume.js";
 
 export const PUBLISH_CLAIM_LIMIT = 20;
 
@@ -92,6 +93,45 @@ export function claimPublishJob(
       )
       .get();
     if (!row) return null;
+    // The last gate before a delivery runs, and the only one no caller can go
+    // around: whatever queued this job -- a retry, a replan, a repair, code not
+    // written yet -- a job whose target already names a post on the platform,
+    // and which carries nothing saying which part of it went out, cannot be
+    // delivered. Publishing it is the duplicate; refusing it is a state a human
+    // or the reconciliation sweep can still resolve.
+    const delivered = tx
+      .select({ externalId: publicationTargets.externalId })
+      .from(publicationTargets)
+      .where(and(eq(publicationTargets.publicationKey, row.publicationKey), eq(publicationTargets.target, row.target)))
+      .get();
+    if (delivered?.externalId && !hasResumeState(parsePayload(row.payloadJson))) {
+      const error = `duplicate_refused: ${row.target} already published ${delivered.externalId} and this job carries nothing to continue from`;
+      tx.update(publishJobs)
+        .set({ status: "verification_required", nextAttemptAt: null, lockedBy: null, lockedAt: null, lastError: error, updatedAt: now })
+        .where(and(eq(publishJobs.jobId, jobId), eq(publishJobs.status, "queued")))
+        .run();
+      upsertPostTarget(tx, {
+        publicationKey: row.publicationKey,
+        target: row.target,
+        status: "verification_required",
+        externalId: delivered.externalId,
+        error,
+        skipped: 0,
+        updatedAt: now,
+        rawJson: JSON.stringify({ job_id: row.jobId, duplicate_refused: true }),
+      });
+      insertEvent(
+        tx,
+        row.publicationKey,
+        row.target,
+        "publish.job.duplicate_refused",
+        "error",
+        error,
+        { job_id: row.jobId, external_id: delivered.externalId },
+        now,
+      );
+      return null;
+    }
     const locked = tx
       .update(publishJobs)
       // currentPhase belongs to the attempt, not to the job: a new claim starts

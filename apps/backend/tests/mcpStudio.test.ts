@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { createApiHandler } from "../src/api.js";
 import { studioMediaAssets } from "../src/db/schema.js";
 import { registerTestChannels } from "./helpers/channels.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js";
 
@@ -19,9 +20,8 @@ function request(app: ReturnType<typeof createApiHandler>, body: unknown, author
 }
 
 describe("Studio MCP", () => {
-  it("exposes owner-bound Studio commands only to the configured bearer token and audits mutations", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("exposes owner-bound Studio commands only to the configured bearer token and audits mutations", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig(
         {
           CONTROLLER_ADMIN_IDS: "42",
@@ -125,14 +125,10 @@ describe("Studio MCP", () => {
       );
       const signatureUpdateBody = (await signatureUpdate.json()) as { result: { content: Array<{ text: string }> } };
       expect(signatureUpdateBody.result.content[0]?.text).toContain("https://example.com");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("uses the same owner-bound Video Studio commands as Telegram", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("uses the same owner-bound Video Studio commands as Telegram", () =>
+    withDb(async (backendDb) => {
       const token = "a".repeat(16);
       const config = loadTestConfig(
         { CONTROLLER_ADMIN_IDS: "42", MCP_STUDIO_TOKEN: token, MCP_STUDIO_ACTOR_ID: "42" },
@@ -216,10 +212,7 @@ describe("Studio MCP", () => {
           .prepare("SELECT COUNT(*) AS count FROM publication_events WHERE event_type='studio.mcp.command' AND publication_key='video:1'")
           .get(),
       ).toEqual({ count: 3 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("uploads a transport-neutral asset and attaches it through the owner-bound MCP contract", async () => {
     const backendDb = openBackendDb(":memory:");
@@ -281,9 +274,8 @@ describe("Studio MCP", () => {
     }
   });
 
-  it("accepts a notification without answering it", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("accepts a notification without answering it", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig(
         { CONTROLLER_ADMIN_IDS: "42", MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "42" },
         SITE_STUDIO_PROFILE,
@@ -299,14 +291,10 @@ describe("Studio MCP", () => {
 
       const handshake = await request(app, { jsonrpc: "2.0", id: 1, method: "initialize" });
       expect(await handshake.json()).toMatchObject({ result: { protocolVersion: "2024-11-05" } });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("refuses to publish one language into the other's audience", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("refuses to publish one language into the other's audience", () =>
+    withDb(async (backendDb) => {
       const token = "a".repeat(16);
       const config = loadTestConfig(
         {
@@ -359,8 +347,5 @@ describe("Studio MCP", () => {
         { target: "threads_en", text: english },
         { target: "threads_ru", text: russian },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

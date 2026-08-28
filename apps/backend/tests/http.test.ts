@@ -5,10 +5,12 @@ import { join } from "node:path";
 import { createApiHandler } from "../src/api.js";
 import { listChannels } from "../src/channels/registry.js";
 import { createDraftFromMessage } from "../src/content/drafts.js";
+import type { UnsafeBackendDb } from "../src/db/client.js";
 import type { BackendConfig } from "../src/foundation/config.js";
 import { publishDraftToQueue } from "../src/publishing/publication-workflow.js";
 import { channelService } from "../src/studio/services/channels.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
+import { withOpenDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -29,6 +31,8 @@ function tempDb() {
   registerTestChannels(backendDb, TEXT_TEST_CHANNELS);
   return backendDb;
 }
+
+const withTempDb = <T>(fn: (backendDb: UnsafeBackendDb) => T | Promise<T>): Promise<T> => withOpenDb(tempDb, fn);
 
 function createApiApp(config: BackendConfig, backendDb: ReturnType<typeof openBackendDb>) {
   const handler = createApiHandler({ config, backendDb });
@@ -90,9 +94,8 @@ describe("Astro endpoint controller", () => {
     }
   });
 
-  it("does not let a URL token authorize command-center mutations", async () => {
-    const backendDb = tempDb();
-    try {
+  it("does not let a URL token authorize command-center mutations", () =>
+    withTempDb(async (backendDb) => {
       const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
       // A URL token is readable in proxy logs and Referer headers, so it
       // authorizes reads only: a mutation has to carry a header, form field or
@@ -106,10 +109,7 @@ describe("Astro endpoint controller", () => {
           })
         ).status,
       ).toBe(403);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("connects a direct publication target from an authenticated Command Center form", async () => {
     const backendDb = openBackendDb(join(tempDir("alexgetman-channel-connect-"), "pipeline.db"), 5000);
@@ -173,9 +173,8 @@ describe("Astro endpoint controller", () => {
     }
   });
 
-  it("stops a run of command-center login guesses", async () => {
-    const backendDb = tempDb();
-    try {
+  it("stops a run of command-center login guesses", () =>
+    withTempDb(async (backendDb) => {
       const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
       const app = createApiApp(config, backendDb);
       const origin = new URL(config.COMMAND_CENTER_URL).origin;
@@ -197,14 +196,10 @@ describe("Astro endpoint controller", () => {
       correct.set("token", "secret");
       const signIn = await app.request("/command-center", { method: "POST", body: correct, headers: { origin } });
       expect(signIn.status).toBe(303);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("serves a stable compact command-center fingerprint", async () => {
-    const backendDb = tempDb();
-    try {
+  it("serves a stable compact command-center fingerprint", () =>
+    withTempDb(async (backendDb) => {
       const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
       const firstResponse = await app.request("/api/command-center/fingerprint", { headers: { "X-Command-Token": "secret" } });
       const secondResponse = await app.request("/api/command-center/fingerprint", { headers: { "X-Command-Token": "secret" } });
@@ -224,14 +219,10 @@ describe("Astro endpoint controller", () => {
       expect(second).toEqual(first);
       expect(JSON.stringify(first).length).toBeLessThan(200);
       expect((await app.request("/api/command-center/fingerprint")).status).toBe(403);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("loads publication details in bounded authenticated batches", async () => {
-    const backendDb = tempDb();
-    try {
+  it("loads publication details in bounded authenticated batches", () =>
+    withTempDb(async (backendDb) => {
       const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
       expect((await app.request("/api/command-center/publication-details")).status).toBe(403);
       const response = await app.request("/api/command-center/publication-details?period=1&offset=0&limit=50", {
@@ -240,14 +231,10 @@ describe("Astro endpoint controller", () => {
       const payload = (await response.json()) as { html: string; total: number; loaded: number; remaining: number };
       expect(response.status).toBe(200);
       expect(payload).toEqual({ html: "", total: 0, loaded: 0, remaining: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("serves engagement and MCP routes", async () => {
-    const backendDb = tempDb();
-    try {
+  it("serves engagement and MCP routes", () =>
+    withTempDb(async (backendDb) => {
       const app = createApiApp(
         loadTestConfig({
           CLIENT_IP_HASH_SALT: "test-salt-value!",
@@ -296,14 +283,10 @@ describe("Astro endpoint controller", () => {
         }),
       });
       expect(await limitedFeedback.json()).toMatchObject({ error: { code: -32000, message: "rate limit exceeded" } });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("runs authenticated command-center repair actions", async () => {
-    const backendDb = tempDb();
-    try {
+  it("runs authenticated command-center repair actions", () =>
+    withTempDb(async (backendDb) => {
       const draftId = createDraftFromMessage(backendDb, 42, { text: "Исходник", textEn: "Original", entities: [], media: [] });
       const postId = publishDraftToQueue(backendDb, draftId);
       const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
@@ -348,10 +331,7 @@ describe("Astro endpoint controller", () => {
       });
       expect(failed.status).toBe(400);
       expect(await failed.json()).toEqual({ detail: "Action failed" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("renders the full command center through the framework-neutral controller", async () => {
     const backendDb = tempDb();

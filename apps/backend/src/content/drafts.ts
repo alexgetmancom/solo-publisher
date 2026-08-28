@@ -1,7 +1,6 @@
 import type { ApplicationPorts } from "../application/ports.js";
 import { publicationRef } from "../application/publication-ref.js";
 import { targetsRecord } from "../botTargets.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { DraftMessage } from "./message.js";
 import { emphasizeTitle } from "./title-emphasis.js";
 
@@ -22,7 +21,7 @@ export function createDraftFromMessage(
     textRuEntitiesJson: JSON.stringify(emphasizeTitle(message.text, message.entities)),
     ...(configured?.storyPublishMode ? { storyPublishMode: configured.storyPublishMode } : {}),
   });
-  recordDomainEvent(ports.events, {
+  ports.events.record({
     ref: publicationRef("draft", createdId),
     type: "content.draft.created",
     severity: "info",

@@ -1,6 +1,5 @@
 import { listChannels } from "../channels/registry.js";
 import type { BackendDb } from "../db/client.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { instagramCredentialsForLocale, instagramGraphHost } from "../foundation/external/instagram.js";
 import { type ThreadsTarget, threadsCredentials } from "../foundation/external/threads.js";
@@ -169,7 +168,7 @@ export async function checkTokenHealth(config: BackendConfig, backendDb: Backend
       recordTokenPing(backendDb, probe.target, expiresAt);
       recordAuthSuccess(backendDb, probe.target);
       if (expiresAt && new Date(expiresAt).getTime() - Date.now() < EXPIRY_WARNING_WINDOW_MS) {
-        recordDomainEvent(backendDb.events, {
+        backendDb.events.record({
           target: probe.target,
           type: "credential.token_expiring_soon",
           severity: "warn",

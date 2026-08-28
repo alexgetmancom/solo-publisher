@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { emphasizeTitle } from "../src/content/title-emphasis.js";
 import { postService } from "../src/studio/services/posts.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("emphasizeTitle", () => {
@@ -29,9 +29,8 @@ describe("emphasizeTitle", () => {
 });
 
 describe("a post's title through the Studio", () => {
-  it("bolds the title on creation and on either language's replacement text", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("bolds the title on creation and on either language's replacement text", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, TEXT_TEST_CHANNELS);
       const posts = postService(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }));
       const draftId = posts.create(42, { text: "Заголовок\n\nТело поста.", entities: [], media: [] });
@@ -41,8 +40,5 @@ describe("a post's title through the Studio", () => {
       const draft = posts.get(42, draftId);
       expect(JSON.parse(String(draft.text_ru_entities_json))).toEqual([{ type: "bold", offset: 0, length: 15 }]);
       expect(JSON.parse(String(draft.text_en_entities_json))).toEqual([{ type: "bold", offset: 0, length: 8 }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

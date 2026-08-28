@@ -7,7 +7,6 @@ import { enrichPublishedPostEntities } from "../content/entity-enrichment.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { createEntityEnrichmentStore } from "../db/repositories/entity-enrichment.js";
 import { draftEntityCandidates, draftEntityLinks, drafts, knowledgeEntities } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { trackUsageSync } from "../observability/usage.js";
 import { readyStoryCardMedia } from "../story-cards/store.js";
 import { assertPublicationPreflight } from "./preflight.js";
@@ -64,7 +63,7 @@ function publishDraftToQueueInternal(backendDb: BackendDb, draftId: number, opti
     { behavior: "immediate" },
   );
   refreshPublicationStatus(backendDb, postId);
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("post", postId),
     type: "publishing.plan.created",
     severity: "info",

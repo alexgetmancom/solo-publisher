@@ -1,11 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { creatorMilestoneHistory } from "../src/analytics/reports/milestone-history.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 
 describe("milestone history", () => {
-  it("lists reached milestones newest first with local achievement times", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("lists reached milestones newest first with local achievement times", () =>
+    withDb(async (backendDb) => {
       backendDb.sqlite
         .prepare("INSERT INTO publication_events(event_type,severity,message,created_at) VALUES (?, 'info', ?, ?), (?, 'info', ?, ?)")
         .run(
@@ -22,8 +21,5 @@ describe("milestone history", () => {
       expect(history.total).toBe(2);
       expect(history.items.map((item) => item.message)).toEqual(["🎉 X EN: 500 подписчиков!", "🎉 Telegram RU: 250 подписчиков!"]);
       expect(history.text).toContain("03.01.2026, 13:30 — 🎉 X EN: 500 подписчиков!");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

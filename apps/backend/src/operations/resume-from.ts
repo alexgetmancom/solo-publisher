@@ -1,7 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { publishJobs } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { refreshPublicationOwner } from "../publishing/publication-owner.js";
 import { parsePayload, upsertPostTarget } from "../publishing/queue-state.js";
 import { resumeState } from "../publishing/resume.js";
@@ -90,7 +89,7 @@ export function resumeTargetFrom(backendDb: BackendDb, input: ResumeFromInput): 
       error: null,
       updatedAt: now,
     });
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: input.ref.publicationKey,
       target: input.target,
       type: "publish.target.resumed_from",

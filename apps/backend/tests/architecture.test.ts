@@ -28,11 +28,7 @@ const applicationPersistenceExceptions = new Set<string>();
 
 describe("architecture fitness", () => {
   it("keeps application ports and domain event policy independent from infrastructure", () => {
-    for (const file of [
-      "apps/backend/src/application/ports.ts",
-      "apps/backend/src/domain/events.ts",
-      "apps/backend/src/content/drafts.ts",
-    ]) {
+    for (const file of ["apps/backend/src/application/ports.ts", "apps/backend/src/content/drafts.ts"]) {
       const text = source(file);
       expect(text).not.toMatch(/from ["'][^"']*\/db\//);
       expect(text).not.toMatch(/from ["']drizzle-orm/);
@@ -72,10 +68,6 @@ describe("architecture fitness", () => {
   });
 
   it("routes domain events through the durable event port", () => {
-    const events = source("apps/backend/src/domain/events.ts");
-    expect(events).toContain("events: EventStore");
-    expect(events).toContain("return events.record(input)");
-
     const producerFiles = [
       "apps/backend/src/content/assets.ts",
       "apps/backend/src/content/drafts.ts",
@@ -85,7 +77,13 @@ describe("architecture fitness", () => {
       "apps/backend/src/studio/services/posts.ts",
       "apps/backend/src/studio/services/videos.ts",
     ];
-    for (const file of producerFiles) expect(source(file)).not.toMatch(/recordDomainEvent\(backendDb,/);
+    // The port is the only way in: a producer reaching for the events table
+    // itself would bypass the cooldown and the clock the store owns.
+    for (const file of producerFiles) {
+      const text = source(file);
+      expect(text).toContain(".events.record(");
+      expect(text).not.toContain("publicationEvents");
+    }
   });
 
   /** The publish job's payload is where a delivery keeps what it has already

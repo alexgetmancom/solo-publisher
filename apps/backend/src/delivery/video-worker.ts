@@ -5,7 +5,6 @@ import { videoChannelIdentity } from "../channels/destinations.js";
 import { videoPublicUrl, videoSourcePath } from "../content/video-assets.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { studioYoutubeSettings, videoJobs, videoTargets } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { instagramCredentialsForLocale } from "../foundation/external/instagram.js";
 import { withJobHeartbeat } from "../foundation/runtime/job-heartbeat.js";
@@ -144,7 +143,7 @@ export function recordVideoCompletionIfFinal(backendDb: BackendDb, videoDraftId:
   // provider that never answers must not turn into silence.
   if (targets.some((target) => awaitingProviderConfirmation(target, now))) return;
   const failed = targets.filter((target) => target.status === "failed" || target.status === "verification_required").length;
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("video", videoDraftId),
     type: "delivery.video.completed",
     severity: failed ? "warn" : "info",
@@ -263,7 +262,7 @@ async function prepareYouTube(
     try {
       await keepYouTubeUploadPrivate(config, result.id, locale);
     } catch (error) {
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: publicationRef("video", job.videoDraftId),
         type: "studio.notification.video_cancelled",
         severity: "warn",
@@ -420,7 +419,7 @@ function updateActiveVideoTarget(
 }
 
 function recordVideoProgressEvent(backendDb: BackendDb, job: VideoJob, type: string): void {
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("video", job.videoDraftId),
     type,
     severity: "info",
@@ -677,7 +676,7 @@ function recordVideoTargetOutcome(
   // provider takes it before the platform does, and the sweep answers within
   // the minute. Announcing that as an incident cried wolf on every Reel.
   const awaitingProvider = outcome === "verification_required" && Boolean(target?.providerPostId);
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("video", job.videoDraftId),
     type: `video.target.${outcome}`,
     severity: outcome === "failed" ? "error" : awaitingProvider ? "info" : "warn",

@@ -6,7 +6,7 @@ import { clearVideoState, getVideoState, saveVideoState } from "../src/bot/video
 import type { BackendDb } from "../src/db/client.js";
 import { conversationSessions } from "../src/db/schema.js";
 import { unsafeDb } from "../src/db/unsafe.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 
 function setPostAdminState(
   db: BackendDb,
@@ -57,9 +57,8 @@ describe("Telegram dialog state", () => {
     expect(postStateStep({ step: "schedule_confirm", data: { locale: "ru", value: "not-a-date" } })).toBeNull();
   });
 
-  it("stores the step name beside its structured parameters", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("stores the step name beside its structured parameters", () =>
+    withDb(async (backendDb: BackendDb) => {
       setPostAdminState(backendDb, 42, { type: "edit_text", locale: "ru" }, 7, 9);
       expect(unsafeDb(backendDb).db.select().from(conversationSessions).where(eq(conversationSessions.actorId, 42)).get()).toMatchObject({
         step: "edit_text",
@@ -79,14 +78,10 @@ describe("Telegram dialog state", () => {
         wizardStep: { type: "edit_text", locale: "en" },
         step: { type: "edit_text", locale: "en" },
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("increments post revisions and refuses to clear a newer dialog", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("increments post revisions and refuses to clear a newer dialog", () =>
+    withDb(async (backendDb: BackendDb) => {
       const first = setPostAdminState(backendDb, 42, { type: "edit_text", locale: "ru" }, 7, 9);
       const second = setPostAdminState(backendDb, 42, { type: "edit_text", locale: "en" }, 7, 10);
 
@@ -94,28 +89,20 @@ describe("Telegram dialog state", () => {
       expect(clearPostAdminStateIfCurrent(backendDb, 42, { type: "edit_text", locale: "en" }, 7, first)).toBe(false);
       expect(clearPostAdminStateIfCurrent(backendDb, 42, { type: "edit_text", locale: "en" }, 7, second)).toBe(true);
       expect(getPostState(backendDb, 42)).toBeNull();
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("increments video revisions and rejects writes from an older wizard", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("increments video revisions and rejects writes from an older wizard", () =>
+    withDb(async (backendDb: BackendDb) => {
       const first = saveVideoState(backendDb, 42, { draftId: null, step: "asset", selected: [], data: {} });
       const second = saveVideoState(backendDb, 42, { ...first, step: "schedule_choice" });
 
       expect(second.revision).toBe(first.revision + 1);
       expect(() => saveVideoState(backendDb, 42, first)).toThrow("action.session-stale");
       expect(getVideoState(backendDb, 42)).toMatchObject({ step: "schedule_choice", revision: second.revision });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps the video control message in its column across a session reload", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("keeps the video control message in its column across a session reload", () =>
+    withDb(async (backendDb: BackendDb) => {
       saveVideoState(backendDb, 42, {
         draftId: 7,
         step: "schedule_confirm",
@@ -131,14 +118,10 @@ describe("Telegram dialog state", () => {
         data_json: JSON.stringify({ schedule: { youtube_shorts: "2026-08-04T12:00:00.000Z" }, selectedTargets: ["youtube_shorts"] }),
       });
       expect(getVideoState(backendDb, 42)).toMatchObject({ controlMessageId: 27 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("retires a malformed individual schedule step", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("retires a malformed individual schedule step", () =>
+    withDb(async (backendDb: BackendDb) => {
       unsafeDb(backendDb)
         .db.insert(conversationSessions)
         .values({
@@ -152,28 +135,20 @@ describe("Telegram dialog state", () => {
         .run();
 
       expect(getVideoState(backendDb, 42)).toBeNull();
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not reuse a video revision after a session is cleared", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("does not reuse a video revision after a session is cleared", () =>
+    withDb(async (backendDb: BackendDb) => {
       const first = saveVideoState(backendDb, 42, { draftId: null, step: "asset", selected: [], data: {} });
       clearVideoState(backendDb, 42);
       const second = saveVideoState(backendDb, 42, { draftId: null, step: "asset", selected: [], data: {} });
 
       expect(second.revision).toBeGreaterThan(first.revision);
       expect(getVideoState(backendDb, 42)).toMatchObject({ revision: second.revision, step: "asset" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps one active conversation when settings input replaces a publication flow", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("keeps one active conversation when settings input replaces a publication flow", () =>
+    withDb(async (backendDb: BackendDb) => {
       setPostAdminState(backendDb, 42, { type: "edit_text", locale: "ru" }, 7, 9);
       saveConversationState(backendDb, 42, {
         kind: "settings",
@@ -185,14 +160,10 @@ describe("Telegram dialog state", () => {
 
       expect(getConversationState(backendDb, 42, "post")).toBeNull();
       expect(getConversationState(backendDb, 42, "settings")).toMatchObject({ step: "timezone", revision: 1 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("expires a stale post state instead of applying an old text reply", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("expires a stale post state instead of applying an old text reply", () =>
+    withDb(async (backendDb: BackendDb) => {
       const expired = new Date(Date.now() - 31 * 60_000).toISOString();
       unsafeDb(backendDb)
         .db.insert(conversationSessions)
@@ -211,14 +182,10 @@ describe("Telegram dialog state", () => {
       expect(unsafeDb(backendDb).db.select().from(conversationSessions).where(eq(conversationSessions.actorId, 42)).get()).toMatchObject({
         revision: 1,
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("expires a stale video session instead of reopening its old wizard", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("expires a stale video session instead of reopening its old wizard", () =>
+    withDb(async (backendDb: BackendDb) => {
       const expired = new Date(Date.now() - 31 * 60_000).toISOString();
       unsafeDb(backendDb)
         .db.insert(conversationSessions)
@@ -243,14 +210,10 @@ describe("Telegram dialog state", () => {
       ).toMatchObject({
         active: 0,
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("drops malformed persisted state instead of dispatching an unknown step", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("drops malformed persisted state instead of dispatching an unknown step", () =>
+    withDb(async (backendDb: BackendDb) => {
       unsafeDb(backendDb)
         .db.insert(conversationSessions)
         .values({
@@ -273,8 +236,5 @@ describe("Telegram dialog state", () => {
       ).toMatchObject({
         active: 0,
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

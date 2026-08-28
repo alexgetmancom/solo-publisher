@@ -20,6 +20,7 @@ import { diagnoseMediaProcessor, mediaProcessorStatus, reprocessPostMedia } from
 import { compactOperationsStatus } from "../src/operations/status.js";
 import { publicationTimeline } from "../src/operations/timeline.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -33,9 +34,8 @@ function insertVideoAsset(backendDb: ReturnType<typeof openBackendDb>): void {
 }
 
 describe("TypeScript operations tooling", () => {
-  it("builds a durable publication timeline with parsed details and durations", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("builds a durable publication timeline with parsed details and durations", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       backendDb.sqlite
         .query(
@@ -53,10 +53,7 @@ describe("TypeScript operations tooling", () => {
       const timeline = publicationTimeline(backendDb, "post:106");
       expect(timeline.jobs).toEqual([expect.objectContaining({ target: "telegram", durationMs: 25 })]);
       expect(timeline.events).toEqual([expect.objectContaining({ details: { phase: "provider.publish", duration_ms: 25 } })]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("diagnoses the remote media processor with an authenticated idempotent fixture", async () => {
     const config = loadTestConfig({
@@ -77,9 +74,8 @@ describe("TypeScript operations tooling", () => {
     });
   });
 
-  it("keeps media reprocessing read-only unless apply is explicit", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps media reprocessing read-only unless apply is explicit", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       backendDb.sqlite
         .query(
@@ -88,10 +84,7 @@ describe("TypeScript operations tooling", () => {
         .run(JSON.stringify({ locale: "en", media: [{ type: "IMAGE", localPath: "/tmp/source.jpg" }] }), now, now);
       const plan = await reprocessPostMedia(backendDb, loadTestConfig({}), "post:106", false);
       expect(plan).toMatchObject({ ok: true, apply: false, count: 1 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("creates a consistent SQLite backup", async () => {
     const directory = mkdtempSync(join(tmpdir(), "alexgetman-backup-"));
@@ -112,9 +105,8 @@ describe("TypeScript operations tooling", () => {
     }
   });
 
-  it("seeds all media capability cases", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("seeds all media capability cases", () =>
+    withDb(async (backendDb) => {
       seedFormatSupport(backendDb);
       expect(formatSupportSummary(backendDb)).toHaveLength(9);
       // One row per (target, format), derived rather than restated: a new target
@@ -122,14 +114,10 @@ describe("TypeScript operations tooling", () => {
       expect((backendDb.sqlite.prepare("SELECT count(*) AS count FROM format_support").get() as { count: number }).count).toBe(
         TARGETS.length * 9,
       );
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("plans and applies a metrics backfill under a maintenance lock", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("plans and applies a metrics backfill under a maintenance lock", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 1, now });
       backendDb.sqlite
@@ -145,14 +133,10 @@ describe("TypeScript operations tooling", () => {
           .get(),
       ).toEqual({ check_count: 0, frozen_at: null });
       expect((backendDb.sqlite.prepare("SELECT count(*) AS count FROM maintenance_locks").get() as { count: number }).count).toBe(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps frozen terminal metric history out of audit errors", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps frozen terminal metric history out of audit errors", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       backendDb.db
         .insert(metricSchedule)
@@ -162,14 +146,10 @@ describe("TypeScript operations tooling", () => {
         ])
         .run();
       expect(auditOperations(backendDb).metricScheduleErrors).toEqual([{ target: "telegram", count: 1, latest: now }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps publication status compact while reporting publication health", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps publication status compact while reporting publication health", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 1, now });
       backendDb.sqlite
@@ -206,14 +186,10 @@ describe("TypeScript operations tooling", () => {
       });
       expect(JSON.stringify(status).length).toBeLessThan(2_000);
       expect(status).not.toHaveProperty("jobs");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports actionable video failures in Studio status", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reports actionable video failures in Studio status", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       insertVideoAsset(backendDb);
       backendDb.sqlite
@@ -239,14 +215,10 @@ describe("TypeScript operations tooling", () => {
         jobs: { total: 1, byStatus: { failed: 1 } },
       });
       expect(status.posts.total).toBe(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports only actionable video failures, not draft or cancelled lifecycle history", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reports only actionable video failures, not draft or cancelled lifecycle history", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       insertVideoAsset(backendDb);
       for (const [id, status] of [
@@ -269,14 +241,10 @@ describe("TypeScript operations tooling", () => {
       expect(auditOperations(backendDb).recentVideoFailures).toEqual([
         expect.objectContaining({ videoDraftId: 3, status: "failed", lastError: "boom" }),
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports a published video target whose publish job still says failed", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reports a published video target whose publish job still says failed", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       insertVideoAsset(backendDb);
       backendDb.sqlite
@@ -308,14 +276,10 @@ describe("TypeScript operations tooling", () => {
         status: "completed",
         last_error: null,
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("surfaces unresolved ordinary and video publications separately from failures", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("surfaces unresolved ordinary and video publications separately from failures", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       insertVideoAsset(backendDb);
       backendDb.sqlite
@@ -347,14 +311,10 @@ describe("TypeScript operations tooling", () => {
       expect(audit.recentVideoVerificationRequired).toEqual([
         expect.objectContaining({ videoDraftId: 1, target: "instagram_reels", lastError: "timeout" }),
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("repairs orphaned publication rows and canonical state mismatches", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("repairs orphaned publication rows and canonical state mismatches", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       backendDb.sqlite.run("PRAGMA foreign_keys=OFF");
       backendDb.sqlite.query("INSERT INTO metric_schedule(publication_key,target,updated_at) VALUES ('post:orphan','telegram',?)").run(now);
@@ -403,10 +363,7 @@ describe("TypeScript operations tooling", () => {
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_jobs").get()).toEqual({ count: 0 });
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_metric_schedule").get()).toEqual({ count: 0 });
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_metric_snapshots").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("closes a publication whose every enabled target was delivered, dated or not", () => {
     // The plan is `scheduled` and its English locale never got a date, but both
@@ -456,9 +413,8 @@ describe("TypeScript operations tooling", () => {
     }
   });
 
-  it("counts journal events over a window, not over the whole year it keeps", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("counts journal events over a window, not over the whole year it keeps", () =>
+    withDb(async (backendDb) => {
       const now = new Date("2026-08-23T00:00:00.000Z");
       const recent = new Date(now.getTime() - 3 * 24 * 3600_000).toISOString();
       const old = new Date(now.getTime() - 60 * 24 * 3600_000).toISOString();
@@ -469,10 +425,7 @@ describe("TypeScript operations tooling", () => {
       const audit = auditOperations(backendDb, now);
       expect(audit.postEventsByType).toEqual([{ severity: "error", eventType: "target.failed", count: 1, latest: recent }]);
       expect(audit.eventsSince).toBe(new Date(now.getTime() - 30 * 24 * 3600_000).toISOString());
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("does not call an X post attached from analytics a mismatch", () => {
     // The post is on X; it just did not get there through this queue. Its old
@@ -509,9 +462,8 @@ describe("TypeScript operations tooling", () => {
     }
   });
 
-  it("scopes publication repair without deleting unrelated orphan rows", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("scopes publication repair without deleting unrelated orphan rows", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       backendDb.sqlite.query("INSERT INTO metric_schedule(publication_key,target,updated_at) VALUES ('post:orphan','telegram',?)").run(now);
       for (const postId of [1, 2]) {
@@ -538,13 +490,9 @@ describe("TypeScript operations tooling", () => {
       expect(backendDb.sqlite.query("SELECT status FROM publication_targets WHERE publication_key='post:2'").get()).toEqual({
         status: "failed",
       });
-    } finally {
-      backendDb.close();
-    }
-  });
-  it("leaves a publication open while a locale still has no date", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+    }));
+  it("leaves a publication open while a locale still has no date", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       // RU went out; EN is an enabled target the operator has not dated yet, so
       // the publication is deliberately still scheduled. The channels are
@@ -581,14 +529,10 @@ describe("TypeScript operations tooling", () => {
 
       expect(repairPublicationConsistency(backendDb)).toMatchObject({ repairedPublications: 0 });
       expect(backendDb.sqlite.query("SELECT status FROM drafts WHERE post_id=70").get()).toEqual({ status: "scheduled" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("still repairs a publication whose locales are all settled", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("still repairs a publication whose locales are all settled", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 71, status: "scheduled", now });
       backendDb.sqlite
@@ -599,8 +543,5 @@ describe("TypeScript operations tooling", () => {
 
       expect(repairPublicationConsistency(backendDb)).toMatchObject({ repairedPublications: 1 });
       expect(backendDb.sqlite.query("SELECT status FROM drafts WHERE post_id=71").get()).toEqual({ status: "published" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

@@ -24,10 +24,10 @@ import {
   type Totals,
 } from "./combined-math.js";
 import { formatMetricValue } from "./format.js";
-import { renderHeroCard, renderHeroMicroMetrics, type TextHeroMetrics, type VideoHeroMetrics } from "./hero-section.js";
+import { type HeroMetrics, renderHeroCard, renderHeroMicroMetrics } from "./hero-section.js";
 import { localeQuery } from "./locale-links.js";
 import { renderOverviewPublicationList } from "./table.js";
-import type { VideoOverview } from "./video-overview.js";
+import type { VideoContentItem, VideoOverview } from "./video-overview.js";
 import { additionalXActivityPosts } from "./x-activity-posts.js";
 
 /**
@@ -114,8 +114,32 @@ export function renderCombinedSection(input: CombinedSectionInput, locale: Studi
   const videoHero = videoHeroMetrics(input, periodDays, previousVideoTotals, locale);
   // Both halves stay on screen whatever is filtered: a filter narrows its own
   // half, it does not take the other one away.
-  const textColumn = renderOverviewColumn("text", input, textHero, posts, extraX, locale);
-  const videoColumn = renderOverviewColumn("video", input, videoHero, [], [], locale);
+  const textColumn = renderOverviewColumn(
+    {
+      hero: textHero,
+      color: TEXT_COLOR,
+      titleKey: "cc.overview.text",
+      viewParam: input.textView ? ["view", input.textView] : null,
+      trackLocales: input.textLocales,
+      showMetricFilter: true,
+      publications: { posts: input.textView === "x" ? [...posts, ...extraX] : posts, targetIds: selectedTextTargetIds(input), videos: [] },
+    },
+    input,
+    locale,
+  );
+  const videoColumn = renderOverviewColumn(
+    {
+      hero: videoHero,
+      color: VIDEO_COLOR,
+      titleKey: "cc.overview.video",
+      viewParam: input.videoView ? ["video_view", input.videoView] : null,
+      trackLocales: input.videoLocales,
+      showMetricFilter: false,
+      publications: { posts: [], targetIds: [], videos: input.video.items },
+    },
+    input,
+    locale,
+  );
 
   // Both halves reserve the same number of destination rows — the tallest of the
   // four columns — so their publication lists start on one line without either
@@ -155,63 +179,31 @@ type OverviewPlatformRow = {
   secondary?: boolean;
 };
 
-function renderOverviewColumn(
-  kind: "text",
-  input: CombinedSectionInput,
-  hero: TextHeroMetrics,
-  posts: PipelinePost[],
-  extraX: PipelinePost[],
-  locale: StudioLocale,
-): string;
-function renderOverviewColumn(
-  kind: "video",
-  input: CombinedSectionInput,
-  hero: VideoHeroMetrics,
-  posts: PipelinePost[],
-  extraX: PipelinePost[],
-  locale: StudioLocale,
-): string;
-function renderOverviewColumn(
-  kind: OverviewKind,
-  input: CombinedSectionInput,
-  hero: TextHeroMetrics | VideoHeroMetrics,
-  posts: PipelinePost[],
-  extraX: PipelinePost[],
-  locale: StudioLocale,
-): string {
-  const color = kind === "text" ? TEXT_COLOR : VIDEO_COLOR;
-  const currentX = kind === "text" ? extraX : [];
-  const textTargetIds = selectedTextTargetIds(input);
+/** Everything one half of the overview does differently, named once by its
+ * caller. The renderer below then draws a track without asking which one it is. */
+type OverviewTrack = {
+  hero: HeroMetrics;
+  color: string;
+  titleKey: "cc.overview.text" | "cc.overview.video";
+  /** The query parameter this half uses to carry its own drill-down, if it has one. */
+  viewParam: readonly [string, string] | null;
+  trackLocales: readonly string[];
+  showMetricFilter: boolean;
+  publications: { posts: PipelinePost[]; targetIds: string[]; videos: VideoContentItem[] };
+};
+
+function renderOverviewColumn(track: OverviewTrack, input: CombinedSectionInput, locale: StudioLocale): string {
+  const kind = track.hero.kind;
   const history = overviewHistory(input, kind);
   const platformRows = overviewPlatformRows(input, kind, locale);
-  const showMetricFilter = kind === "text";
   // The list loader is per half: each one asks only for its own publications.
   const moreParams = new URLSearchParams({ period: String(input.periodDays), week_offset: String(input.weekOffset), track: kind });
   if (locale === "en") moreParams.set("locale", "en");
-  if (kind === "text" && input.textView) moreParams.set("view", input.textView);
-  if (kind === "video" && input.videoView) moreParams.set("video_view", input.videoView);
+  if (track.viewParam) moreParams.set(track.viewParam[0], track.viewParam[1]);
   const moreUrl = `/api/command-center/publication-details?${moreParams.toString()}`;
-  const publicationMarkup =
-    kind === "text"
-      ? renderOverviewPublicationList(
-          locale,
-          input.textLocales,
-          input.textView === "x" ? [...posts, ...currentX] : posts,
-          textTargetIds,
-          [],
-          {
-            limit: 4,
-            moreUrl,
-          },
-        )
-      : renderOverviewPublicationList(locale, input.textLocales, [], [], input.video.items, { limit: 4, moreUrl });
-  const heroMarkup =
-    kind === "text" ? renderHeroCard("text", hero as TextHeroMetrics, locale) : renderHeroCard("video", hero as VideoHeroMetrics, locale);
-  const microMarkup =
-    kind === "text"
-      ? renderHeroMicroMetrics("text", hero as TextHeroMetrics, locale)
-      : renderHeroMicroMetrics("video", hero as VideoHeroMetrics, locale);
-  const title = t(locale, kind === "text" ? "cc.overview.text" : "cc.overview.video");
+  const { posts, targetIds, videos } = track.publications;
+  const publicationMarkup = renderOverviewPublicationList(locale, input.textLocales, posts, targetIds, videos, { limit: 4, moreUrl });
+  const title = t(locale, track.titleKey);
   const activeRow = platformRows.find((row) => row.active);
   // The filter has to say it is on and how to get out; without that the only way
   // back was editing the URL.
@@ -222,10 +214,10 @@ function renderOverviewColumn(
   const historyRightLabel = t(locale, input.periodDays === 1 ? "cc.overview.today" : "cc.overview.period-end");
   return `<section class="overview-track overview-track--${kind}">
     ${filterChip}
-    ${heroMarkup}
-    ${renderOverviewSparkline(history, color, t(locale, "cc.overview.views-over-time", { track: title }), historyLabel, historyRightLabel, locale)}
-    ${microMarkup}
-    ${renderOverviewPlatforms(input, kind, platformRows, showMetricFilter, locale, kind === "text" ? input.textLocales : input.videoLocales)}
+    ${renderHeroCard(track.hero, locale)}
+    ${renderOverviewSparkline(history, track.color, t(locale, "cc.overview.views-over-time", { track: title }), historyLabel, historyRightLabel, locale)}
+    ${renderHeroMicroMetrics(track.hero, locale)}
+    ${renderOverviewPlatforms(input, track, platformRows, locale)}
     <div class="overview-publications" id="overview-publications-${kind}">
       <div class="overview-kicker">${t(locale, "cc.overview.publications")}</div>
       ${publicationMarkup}
@@ -235,13 +227,11 @@ function renderOverviewColumn(
 
 function renderOverviewPlatforms(
   input: CombinedSectionInput,
-  kind: OverviewKind,
+  track: OverviewTrack,
   rows: OverviewPlatformRow[],
-  showMetricFilter: boolean,
   locale: StudioLocale,
-  trackLocales: readonly string[],
 ): string {
-  const color = kind === "text" ? TEXT_COLOR : VIDEO_COLOR;
+  const { color, showMetricFilter, trackLocales } = track;
   const metricValue = (row: OverviewPlatformRow): number | null => (input.platformMetric === "reach" ? row.views : row.followers);
   const total = rows.reduce((sum, row) => sum + (metricValue(row) ?? 0), 0);
   const localeTotal = (locale: string) =>
@@ -465,7 +455,7 @@ function medianDailyViews(daily: Record<string, DailyReach>, input: CombinedSect
   return input.periodDays === 1 ? median.views : scaleTotals(median, input.periodDays).views;
 }
 
-function textHeroMetrics(input: CombinedSectionInput, postCount: number, locale: StudioLocale): TextHeroMetrics {
+function textHeroMetrics(input: CombinedSectionInput, postCount: number, locale: StudioLocale): HeroMetrics {
   const daily = textDailyReach(input.textReach, selectedTextTargetIds(input));
   const period = sumDays(daily, dayKeys(input.rangeEnd, input.periodDays));
   const median = medianDailyViews(daily, input);
@@ -473,7 +463,7 @@ function textHeroMetrics(input: CombinedSectionInput, postCount: number, locale:
   // counted it as both.
   const reactions = period.reactions + period.reposts;
   return {
-    postCount,
+    kind: "text",
     views: period.views,
     freshViews: dayKeys(input.rangeEnd, input.periodDays).reduce((total, key) => total + (daily[key]?.freshViews ?? 0), 0),
     medianViews: median,
@@ -490,7 +480,7 @@ function textHeroMetrics(input: CombinedSectionInput, postCount: number, locale:
   };
 }
 
-function videoHeroMetrics(input: CombinedSectionInput, periodDays: number, fallbackMedian: Totals, locale: StudioLocale): VideoHeroMetrics {
+function videoHeroMetrics(input: CombinedSectionInput, periodDays: number, fallbackMedian: Totals, locale: StudioLocale): HeroMetrics {
   const median = hasVideoHistory(input.medianVideo)
     ? medianVideoViews(input.medianVideo, periodDays)
     : hasVideoHistory(input.previousVideo) && periodDays === 1
@@ -500,7 +490,7 @@ function videoHeroMetrics(input: CombinedSectionInput, periodDays: number, fallb
         : null;
   const progressPercent = metricProgress(input.video.totals.views, median?.views ?? null);
   return {
-    videoCount: input.video.totals.posts,
+    kind: "video",
     views: input.video.totals.views,
     freshViews: dayKeys(input.rangeEnd, input.periodDays).reduce((total, key) => total + (input.videoReach[key]?.freshViews ?? 0), 0),
     medianViews: median?.views ?? null,

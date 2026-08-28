@@ -70,7 +70,7 @@ export function runNotificationCycle(backendDb: BackendDb, limit = 50): number {
   let delivered = 0;
   for (const job of jobs) {
     // Claim and emit as one unit. Marking the job delivered first meant a
-    // failing recordDomainEvent silently swallowed the reminder: the job was
+    // failing event write silently swallowed the reminder: the job was
     // terminal, and nothing left to retry.
     const emitted = unsafeDb(backendDb).db.transaction((tx) => {
       const claimed = tx

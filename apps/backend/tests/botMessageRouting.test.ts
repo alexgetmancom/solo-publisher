@@ -7,13 +7,12 @@ import { createDraftFromMessage, requireDraft } from "../src/content/drafts.js";
 import { pendingAlbums } from "../src/db/schema.js";
 import { unsafeDb } from "../src/db/unsafe.js";
 import { t } from "../src/foundation/i18n/index.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("Telegram publication message routing", () => {
-  it("does not send a text message from an active video session to the post handler", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not send a text message from an active video session to the post handler", () =>
+    withDb(async (backendDb) => {
       saveVideoState(backendDb, 42, { draftId: 7, step: "schedule_choice", selected: [], data: {} });
       const replies: string[] = [];
       const ctx = {
@@ -31,14 +30,10 @@ describe("Telegram publication message routing", () => {
       expect(await handlePublicationMessage(ctx, backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }))).toBe(true);
       expect(replies).toEqual([t("en", "video.awaiting-button")]);
       expect(unsafeDb(backendDb).sqlite.prepare("SELECT count(*) AS count FROM drafts").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not send a text message from an active post session to the video handler", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not send a text message from an active post session to the video handler", () =>
+    withDb(async (backendDb) => {
       const draftId = createDraftFromMessage(backendDb, 42, { text: "Before", textEn: "Before", entities: [], media: [] });
       saveConversationState(backendDb, 42, { kind: "post", draftId, step: "edit_text", data: { locale: "ru" }, controlMessageId: null });
       const ctx = {
@@ -51,14 +46,10 @@ describe("Telegram publication message routing", () => {
       expect(await handlePublicationMessage(ctx, backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }))).toBe(true);
       expect(requireDraft(backendDb, draftId).text_ru).toBe("This must stay in the post flow");
       expect(unsafeDb(backendDb).sqlite.prepare("SELECT count(*) AS count FROM video_drafts").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("sends an album through the active post flow before parsing its input step", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("sends an album through the active post flow before parsing its input step", () =>
+    withDb(async (backendDb) => {
       const draftId = createDraftFromMessage(backendDb, 42, { text: "Before", textEn: "Before", entities: [], media: [] });
       saveConversationState(backendDb, 42, {
         kind: "post",
@@ -81,8 +72,5 @@ describe("Telegram publication message routing", () => {
 
       expect(await handlePublicationMessage(ctx, backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }))).toBe(true);
       expect(unsafeDb(backendDb).db.select().from(pendingAlbums).all()).toHaveLength(1);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

@@ -3,7 +3,7 @@ import type { Context } from "grammy";
 import { runCallbackAction } from "../src/bot/callback-effects.js";
 import { StudioError } from "../src/foundation/errors.js";
 import { t } from "../src/foundation/i18n/index.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 
 type Answer = { text?: string } | undefined;
 
@@ -23,9 +23,8 @@ function ctxWith(answers: Answer[], replies: string[]) {
 }
 
 describe("tapped controls", () => {
-  it("acknowledges a tap that produced only a screen", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("acknowledges a tap that produced only a screen", () =>
+    withDb(async (backendDb) => {
       const answers: Answer[] = [];
       const replies: string[] = [];
       await runCallbackAction(ctxWith(answers, replies), backendDb, { locale: "en", lockKey: "42:screen", describe: String }, async () => [
@@ -33,14 +32,10 @@ describe("tapped controls", () => {
       ]);
       expect(answers).toEqual([undefined]);
       expect(replies).toEqual(["Done"]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("turns a failure into a toast instead of an unanswered tap", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("turns a failure into a toast instead of an unanswered tap", () =>
+    withDb(async (backendDb) => {
       const answers: Answer[] = [];
       await runCallbackAction(
         ctxWith(answers, []),
@@ -53,14 +48,10 @@ describe("tapped controls", () => {
       // Answering before the work is done spends the only acknowledgement
       // Telegram allows, and the operator is left looking at nothing.
       expect(answers).toEqual([{ text: t("en", "intake.expired") }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("refuses the second tap while the first is still running", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("refuses the second tap while the first is still running", () =>
+    withDb(async (backendDb) => {
       const answers: Answer[] = [];
       let runs = 0;
       let release: () => void = () => undefined;
@@ -82,8 +73,5 @@ describe("tapped controls", () => {
 
       expect(runs).toBe(1);
       expect(answers).toContainEqual({ text: t("en", "action.in-flight") });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

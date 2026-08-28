@@ -2,13 +2,12 @@ import { describe, expect, it } from "bun:test";
 import type { Bot } from "grammy";
 import { sendWeeklyAnalyticsSummary } from "../src/interfaces/telegram/analytics-summary.js";
 import { settingsService } from "../src/studio/services/settings.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig, MSK_STUDIO_PROFILE } from "./helpers/studio-config.js";
 
 describe("weekly analytics summary", () => {
-  it("uses one Studio-wide setting and sends to every administrator", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("uses one Studio-wide setting and sends to every administrator", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42,7" }, MSK_STUDIO_PROFILE);
       settingsService(backendDb).setWeeklyDigest({ enabled: true, weekday: 1 });
       const sent: number[] = [];
@@ -25,21 +24,14 @@ describe("weekly analytics summary", () => {
       expect(sent).toEqual([42, 7]);
       expect(await sendWeeklyAnalyticsSummary(config, backendDb, bot, mondayAfterNine)).toBe(false);
       expect(sent).toEqual([42, 7]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("waits until 21:00 in the Studio timezone", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("waits until 21:00 in the Studio timezone", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }, MSK_STUDIO_PROFILE);
       settingsService(backendDb).setWeeklyDigest({ weekday: 1 });
       const bot = { api: { sendMessage: async () => undefined } } as unknown as Bot;
 
       expect(await sendWeeklyAnalyticsSummary(config, backendDb, bot, new Date("2026-07-27T17:59:00.000Z"))).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

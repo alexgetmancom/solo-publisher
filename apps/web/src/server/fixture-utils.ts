@@ -1,6 +1,6 @@
 import { zonedDateParts, zonedSlot } from "../../../backend/src/foundation/time.js";
 
-export const HOUR_MS = 3_600_000;
+const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 
 export function iso(date: Date): string {
@@ -9,6 +9,11 @@ export function iso(date: Date): string {
 
 export function hoursAgo(hours: number, now = new Date()): Date {
   return new Date(now.getTime() - hours * HOUR_MS);
+}
+
+/** How long a fixture publication has been live, in hours. */
+export function hoursSince(publishedAt: string): number {
+  return (Date.now() - new Date(publishedAt).getTime()) / HOUR_MS;
 }
 
 export function daysAgo(days: number, now = new Date()): Date {

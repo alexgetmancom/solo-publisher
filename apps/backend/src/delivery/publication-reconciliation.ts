@@ -6,7 +6,6 @@ import { videoChannelIdentity } from "../channels/destinations.js";
 import { targetRouting } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { publicationTargets, publishJobs, videoDrafts, videoJobs, videoTargets } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { PUBLISH_BACKOFF_BASE_SECONDS, PUBLISH_BACKOFF_MAX_SECONDS, PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { jsonObject } from "../json.js";
@@ -165,7 +164,7 @@ export async function runPublicationReconciliation(
     });
     if (!confirmed) continue;
     refreshPublicationOwner(backendDb, row.target.publicationKey);
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: row.target.publicationKey,
       target: row.target.target,
       type: "publish.job.reconciled",
@@ -288,7 +287,7 @@ export async function runPublicationReconciliation(
     // The publication held its outcome until this answer, so this is where the
     // operator finally hears it — once, and true.
     recordVideoCompletionIfFinal(backendDb, row.target.videoDraftId);
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: publicationRef("video", row.target.videoDraftId),
       target: row.target.target,
       type: "video.target.reconciled",
@@ -318,7 +317,7 @@ export async function runPublicationReconciliation(
     .filter((value): value is string => Boolean(value))
     .sort();
   if (unresolvedTimes.length) {
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       type: "studio.notification.publication_verification_required",
       severity: "warn",
       message: `${unresolvedTimes.length} publication(s) still require verification; oldest since ${unresolvedTimes[0]}`,

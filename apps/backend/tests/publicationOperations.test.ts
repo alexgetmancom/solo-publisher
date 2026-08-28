@@ -7,6 +7,7 @@ import { runOperation } from "../src/operations/registry.js";
 import { publicationTimeline } from "../src/operations/timeline.js";
 import { createStudioServices } from "../src/studio/services/index.js";
 import { registerTestChannels } from "./helpers/channels.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoAsset, createTestVideoDraft } from "./helpers/video.js";
@@ -37,9 +38,8 @@ function connectThreads(backendDb: ReturnType<typeof openBackendDb>): void {
   });
 }
 
-it("publishes operator text to exactly the requested target in one operation", async () => {
-  const backendDb = openBackendDb(":memory:");
-  try {
+it("publishes operator text to exactly the requested target in one operation", () =>
+  withDb(async (backendDb) => {
     connectThreads(backendDb);
     const result = (await runOperation("publish", context(backendDb), {
       locale: "ru",
@@ -68,10 +68,7 @@ it("publishes operator text to exactly the requested target in one operation", a
     expect(backendDb.sqlite.query("SELECT target FROM publish_jobs WHERE publication_key='post:'||?").all(result.post_id)).toEqual([
       { target: "threads_ru" },
     ]);
-  } finally {
-    backendDb.close();
-  }
-});
+  }));
 
 it("does not require a Story decision when every Story target is disabled", () => {
   const backendDb = openBackendDb(":memory:");
@@ -109,9 +106,8 @@ it("does not require a Story decision when every Story target is disabled", () =
   }
 });
 
-it("purges an absent publication and every stored publication path", async () => {
-  const backendDb = openBackendDb(":memory:");
-  try {
+it("purges an absent publication and every stored publication path", () =>
+  withDb(async (backendDb) => {
     connectThreads(backendDb);
     const published = (await runOperation("publish", context(backendDb), {
       locale: "ru",
@@ -176,10 +172,7 @@ it("purges an absent publication and every stored publication path", async () =>
     expect(backendDb.sqlite.query("SELECT COUNT(*) AS count FROM studio_notification_jobs WHERE ref=?").get(published.ref)).toEqual({
       count: 0,
     });
-  } finally {
-    backendDb.close();
-  }
-});
+  }));
 
 it("purges a video publication whose reel is gone, and the source it was the last to hold", async () => {
   const backendDb = openBackendDb(":memory:");
@@ -273,9 +266,8 @@ it("keeps a source another draft still points at, and the asset row with it", as
   }
 });
 
-it("shows the operator every target the command would touch, not only the delivered ones", async () => {
-  const backendDb = openBackendDb(":memory:");
-  try {
+it("shows the operator every target the command would touch, not only the delivered ones", () =>
+  withDb(async (backendDb) => {
     connectThreads(backendDb);
     const published = (await runOperation("publish", context(backendDb), {
       locale: "ru",
@@ -293,14 +285,10 @@ it("shows the operator every target the command would touch, not only the delive
 
     expect(plan.targets).toEqual([{ target: "threads_ru", status: "queued", url: null, published: false }]);
     expect(plan.hint).toBe("re-run with apply to perform it");
-  } finally {
-    backendDb.close();
-  }
-});
+  }));
 
-it("keeps the identity of a live post it was told to publish again", async () => {
-  const backendDb = openBackendDb(":memory:");
-  try {
+it("keeps the identity of a live post it was told to publish again", () =>
+  withDb(async (backendDb) => {
     connectThreads(backendDb);
     const published = (await runOperation("publish", context(backendDb), {
       locale: "ru",
@@ -328,14 +316,10 @@ it("keeps the identity of a live post it was told to publish again", async () =>
         details_json: string;
       },
     ).toEqual({ details_json: JSON.stringify({ external_id: "LIVE-1", url: "https://threads.net/p/LIVE-1" }) });
-  } finally {
-    backendDb.close();
-  }
-});
+  }));
 
-it("refuses to purge when a target changed while it was being verified", async () => {
-  const backendDb = openBackendDb(":memory:");
-  try {
+it("refuses to purge when a target changed while it was being verified", () =>
+  withDb(async (backendDb) => {
     connectThreads(backendDb);
     const published = (await runOperation("publish", context(backendDb), {
       locale: "ru",
@@ -369,14 +353,10 @@ it("refuses to purge when a target changed while it was being verified", async (
     expect(backendDb.sqlite.query("SELECT COUNT(*) AS count FROM publication_targets WHERE publication_key=?").get(published.ref)).toEqual({
       count: 2,
     });
-  } finally {
-    backendDb.close();
-  }
-});
+  }));
 
-it("proves a Threads post absent by asking Threads, not by its login-walled permalink", async () => {
-  const backendDb = openBackendDb(":memory:");
-  try {
+it("proves a Threads post absent by asking Threads, not by its login-walled permalink", () =>
+  withDb(async (backendDb) => {
     connectThreads(backendDb);
     const published = (await runOperation("publish", context(backendDb), {
       locale: "ru",
@@ -408,7 +388,4 @@ it("proves a Threads post absent by asking Threads, not by its login-walled perm
     const result = (await runOperation("purge", context(backendDb, gone), { ref: published.ref, apply: true })) as { applied: boolean };
     expect(result.applied).toBe(true);
     expect(publicationTimeline(backendDb, published.ref).targets).toEqual([]);
-  } finally {
-    backendDb.close();
-  }
-});
+  }));

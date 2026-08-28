@@ -4,19 +4,16 @@ import os from "node:os";
 import path from "node:path";
 import { flushUsage } from "../src/observability/usage.js";
 import { createStudioServices } from "../src/studio/services/index.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("Studio service boundaries", () => {
-  it("reuses the service bundle for one database and configuration", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reuses the service bundle for one database and configuration", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({});
       expect(createStudioServices(backendDb, config)).toBe(createStudioServices(backendDb, config));
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("imports byte and file media through one facade with content deduplication", async () => {
     const backendDb = openBackendDb(":memory:");
@@ -48,9 +45,8 @@ describe("Studio service boundaries", () => {
     }
   });
 
-  it("keeps locale and YouTube signature in the shared settings service", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps locale and YouTube signature in the shared settings service", () =>
+    withDb(async (backendDb) => {
       const settings = createStudioServices(backendDb, loadTestConfig({})).settings;
       expect(settings.locale(42)).toBe("en");
       settings.setLocale(42, "ru");
@@ -64,14 +60,10 @@ describe("Studio service boundaries", () => {
       expect(settings.youtubeSignature()).toBe("https://example.com/path");
       settings.clearYoutubeSignature();
       expect(settings.youtubeSignature()).toBe("");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("registers channels through the shared channel service", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("registers channels through the shared channel service", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({});
       const channels = createStudioServices(backendDb, config).channels;
       const result = channels.connect({
@@ -91,14 +83,10 @@ describe("Studio service boundaries", () => {
         { feature_key: "studio.channel.connect", calls: 1 },
         { feature_key: "studio.channel.list", calls: 1 },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps every analytics operation behind the shared Studio boundary", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps every analytics operation behind the shared Studio boundary", () =>
+    withDb(async (backendDb) => {
       const analytics = createStudioServices(backendDb, loadTestConfig({})).analytics;
 
       expect(analytics.postArchive(0, "en").total).toBe(0);
@@ -108,8 +96,5 @@ describe("Studio service boundaries", () => {
       expect(analytics.videoArchive(0, "en").total).toBe(0);
       expect(typeof analytics.videoMetrics(999, "en")).toBe("string");
       expect(await analytics.audienceAnalysis("en")).toContain("🤖");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

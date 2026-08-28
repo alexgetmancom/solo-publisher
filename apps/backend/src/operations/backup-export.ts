@@ -102,11 +102,7 @@ export function exportStatus(backendDb: BackendDb, kind: ExportKind, now = new D
  *
  * The bytes travel chunk by chunk through `writeAll`, which is where the reason
  * for that shape is written down. */
-export async function streamMediaArchive(
-  config: EnvConfig,
-  backendDb: BackendDb,
-  destination: "inherit" | number,
-): Promise<number | null> {
+export async function streamMediaArchive(config: EnvConfig, backendDb: BackendDb, destination: "inherit" | number): Promise<number | null> {
   const present = mediaSources(config).filter((source) => fs.existsSync(source));
   if (!present.length) throw new Error("no media directories exist to export");
   const relative = present.map((source) => path.relative(config.DATA_DIR, source));

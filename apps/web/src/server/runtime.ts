@@ -2,7 +2,6 @@ import { createBot } from "../../../backend/src/bot.js";
 import { type BackendDb, openBackendDb } from "../../../backend/src/db/client.js";
 import type { RawBackendDb } from "../../../backend/src/db/unsafe.js";
 import { unsafeDb } from "../../../backend/src/db/unsafe.js";
-import { recordDomainEvent } from "../../../backend/src/domain/events.js";
 import { type BackendConfig, loadConfig } from "../../../backend/src/foundation/config.js";
 import { configureLogging, log } from "../../../backend/src/foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../../../backend/src/foundation/runtime/data-dirs.js";
@@ -64,7 +63,7 @@ function reportUnwritableDataDirectories(config: BackendConfig, backendDb: Backe
   if (!unwritable.length) return;
   const summary = unwritable.map((check) => `${check.name} (${check.path}): ${check.error}`).join("; ");
   log("error", "one or more data directories are not writable by this process", { directories: unwritable });
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: "runtime:data-dirs",
     type: "runtime.data_directory_unwritable",
     severity: "error",

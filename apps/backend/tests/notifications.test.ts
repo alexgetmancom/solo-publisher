@@ -1,10 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
+import type { UnsafeBackendDb } from "../src/db/client.js";
 import { publicationEvents, studioNotificationJobs } from "../src/db/schema.js";
 import { cancelScheduledNotifications, runNotificationCycle, scheduleReminder } from "../src/notifications/jobs.js";
 import { postService } from "../src/studio/services/posts.js";
 import { settingsService } from "../src/studio/services/settings.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
+import { withOpenDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoDraft } from "./helpers/video.js";
@@ -16,10 +18,11 @@ function openNotificationDb() {
   return backendDb;
 }
 
+const withNotificationDb = <T>(fn: (backendDb: UnsafeBackendDb) => T | Promise<T>): Promise<T> => withOpenDb(openNotificationDb, fn);
+
 describe("Studio notifications", () => {
-  it("creates durable interface-neutral reminders and honours cancellation", () => {
-    const backendDb = openNotificationDb();
-    try {
+  it("creates durable interface-neutral reminders and honours cancellation", () =>
+    withNotificationDb(async (backendDb) => {
       const videoId = createTestVideoDraft(backendDb, 42, "owner-video", 24);
       scheduleReminder(backendDb, {
         actorId: 42,
@@ -46,14 +49,10 @@ describe("Studio notifications", () => {
       });
       cancelScheduledNotifications(backendDb, `video:${videoId}`);
       expect(runNotificationCycle(backendDb)).toBe(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not remind about a publication that is already due", () => {
-    const backendDb = openNotificationDb();
-    try {
+  it("does not remind about a publication that is already due", () =>
+    withNotificationDb(async (backendDb) => {
       scheduleReminder(backendDb, {
         actorId: 42,
         ref: "post:1",
@@ -65,14 +64,10 @@ describe("Studio notifications", () => {
       });
 
       expect(backendDb.db.select().from(studioNotificationJobs).all()).toHaveLength(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("uses the owner's stored reminder interval when scheduling a post", () => {
-    const backendDb = openNotificationDb();
-    try {
+  it("uses the owner's stored reminder interval when scheduling a post", () =>
+    withNotificationDb(async (backendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       settingsService(backendDb).setNotifications(42, { reminderMinutes: 17 });
       const posts = postService(backendDb, config);
@@ -97,14 +92,10 @@ describe("Studio notifications", () => {
           .where(eq(studioNotificationJobs.ref, `post:${secondPostId}`))
           .all(),
       ).toHaveLength(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("cancels queued reminders when the owner disables reminders", () => {
-    const backendDb = openNotificationDb();
-    try {
+  it("cancels queued reminders when the owner disables reminders", () =>
+    withNotificationDb(async (backendDb) => {
       const videoId = createTestVideoDraft(backendDb, 42, "owner-video", 24);
       scheduleReminder(backendDb, {
         actorId: 42,
@@ -121,14 +112,10 @@ describe("Studio notifications", () => {
       expect(backendDb.db.select({ status: studioNotificationJobs.status }).from(studioNotificationJobs).all()).toEqual([
         { status: "cancelled" },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps text reminders when video reminders are switched off", () => {
-    const backendDb = openNotificationDb();
-    try {
+  it("keeps text reminders when video reminders are switched off", () =>
+    withNotificationDb(async (backendDb) => {
       scheduleReminder(backendDb, {
         actorId: 42,
         ref: "post:7",
@@ -152,8 +139,5 @@ describe("Studio notifications", () => {
       expect(backendDb.db.select({ status: studioNotificationJobs.status }).from(studioNotificationJobs).all()).toEqual([
         { status: "cancelled" },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

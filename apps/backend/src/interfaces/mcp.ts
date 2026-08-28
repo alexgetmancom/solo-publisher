@@ -1,7 +1,6 @@
 import * as z from "zod";
 import { publicationRef } from "../application/publication-ref.js";
 import type { BackendDb } from "../db/client.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { STUDIO_LOCALES } from "../foundation/locale.js";
 import { log } from "../foundation/logger.js";
@@ -676,7 +675,7 @@ async function runStudioTool(
   // trail is best-effort and the caller still sees the success it earned.
   if (def.mutates)
     try {
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: def.ref ? def.ref(input, result) : null,
         type: "studio.mcp.command",
         severity: "info",
@@ -712,7 +711,7 @@ function submitFeedback(backendDb: BackendDb, args: JsonObject, clientKey: strin
   const input = parseArgs(feedbackToolDef.schema, args);
   const name = input.name || "Anonymous Agent";
   if (rateLimited(clientKey)) throw new McpToolError(-32000, "rate limit exceeded");
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: "mcp:feedback",
     target: "mcp",
     type: "mcp.feedback.received",

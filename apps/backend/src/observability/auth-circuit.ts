@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { credentialChecks } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 
 // A dead token retried on every publish attempt just re-triggers the same
 // 401/403 against the provider, which is exactly the kind of repeated
@@ -63,7 +62,7 @@ export function recordAuthFailure(backendDb: BackendDb, target: string): void {
       .run();
   }
   if (tripped && streak === AUTH_FAILURE_THRESHOLD) {
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       target,
       type: "credential.auth_circuit_tripped",
       severity: "error",

@@ -1,7 +1,6 @@
 import { and, desc, eq, gte, lt } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { publishJobs, siteJobs } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { ALERT_COOLDOWN_SECONDS } from "./alerts.js";
 
@@ -26,7 +25,7 @@ export function recordPublicationFailures(backendDb: BackendDb): void {
     .limit(100)
     .all();
   for (const job of stale)
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: job.publicationKey,
       type: "queue.stale",
       severity: "error",
@@ -40,7 +39,7 @@ export function recordPublicationFailures(backendDb: BackendDb): void {
   // that would turn one failed publication into a new Telegram alert every
   // cooldown window forever.
   for (const job of failedSite)
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: job.publicationKey,
       type: "site.build.failed",
       severity: "error",

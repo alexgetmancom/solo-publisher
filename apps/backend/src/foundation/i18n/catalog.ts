@@ -76,7 +76,6 @@ const en = {
   "stream.title-changed": "✅ Title changed: {value}",
   "stream.description-changed": "✅ Description changed.",
   "stream.gone": "⚪️ No stream is running any more, so nothing was changed. Start one and try again.",
-  "stream.failed": "⚠️ YouTube refused it: {error}",
   "stream.channel-error": "⚠️ YouTube {channel} did not answer: {error}",
   "menu.work-queue": "📋 Work queue",
   "menu.work-queue-count": "📋 Work queue · {count}",
@@ -180,7 +179,6 @@ const en = {
   "progress.show-details": "Show details",
   "progress.hide-details": "Hide details",
   "progress.cancel-remaining": "Cancel remaining",
-  "progress.bad-draft-id": "Bad draft id",
   "progress.remaining-cancelled": "Remaining work cancelled",
   // Post-card callbacks
   "action.invalid-post": "Invalid post",
@@ -844,7 +842,6 @@ const ru = {
   "stream.title-changed": "✅ Название изменено: {value}",
   "stream.description-changed": "✅ Описание изменено.",
   "stream.gone": "⚪️ Эфира больше нет — ничего не изменено. Запустите стрим и повторите.",
-  "stream.failed": "⚠️ YouTube отказал: {error}",
   "stream.channel-error": "⚠️ YouTube {channel} не ответил: {error}",
   "menu.work-queue": "📋 Очередь",
   "menu.work-queue-count": "📋 Очередь · {count}",
@@ -948,7 +945,6 @@ const ru = {
   "progress.show-details": "Показать детали",
   "progress.hide-details": "Скрыть детали",
   "progress.cancel-remaining": "Отменить оставшиеся",
-  "progress.bad-draft-id": "Неверный id черновика",
   "progress.remaining-cancelled": "Оставшаяся работа отменена",
   // Post-card callbacks
   "action.invalid-post": "Некорректный пост",

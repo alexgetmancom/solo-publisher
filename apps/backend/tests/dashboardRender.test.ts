@@ -24,7 +24,7 @@ function published(target: string, metrics: Record<string, number> = {}): Partia
 describe("dashboard formatting", () => {
   it("does not show a views delta while the selected period is still zero", () => {
     const metrics = {
-      postCount: 0,
+      kind: "text" as const,
       views: 0,
       freshViews: 0,
       medianViews: 10_600,
@@ -40,7 +40,7 @@ describe("dashboard formatting", () => {
       progressPercent: 0,
     };
 
-    const html = renderHeroCard("text", metrics, "ru");
+    const html = renderHeroCard(metrics, "ru");
 
     expect(html).toContain("<strong>0</strong>");
     expect(html).not.toContain("−100%");
@@ -50,9 +50,8 @@ describe("dashboard formatting", () => {
 
   it("formats video completion as a percentage with one decimal place", () => {
     const html = renderHeroMicroMetrics(
-      "video",
       {
-        videoCount: 1,
+        kind: "video",
         views: 100,
         freshViews: 40,
         medianViews: null,

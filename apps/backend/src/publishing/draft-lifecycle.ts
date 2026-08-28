@@ -2,7 +2,6 @@ import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, postLocales, publishJobs, siteJobs } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { discardDraftStoryCards } from "../story-cards/store.js";
 
 export function scheduledDrafts(backendDb: BackendDb): Array<{ id: number; scheduledAt: string | null; scheduledEnAt: string | null }> {
@@ -75,7 +74,7 @@ export function cancelDraft(backendDb: BackendDb, draftId: number): void {
       .run();
   });
   discardDraftStoryCards(unsafeDb(backendDb).db, draftId);
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("draft", draftId),
     type: "publishing.draft.cancelled",
     severity: "info",
@@ -104,7 +103,7 @@ export function cancelPendingPostJobs(backendDb: BackendDb, draftId: number): vo
       .where(and(eq(siteJobs.publicationKey, publicationKey), inArray(siteJobs.status, ["queued", "failed"])))
       .run();
   });
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("draft", draftId),
     type: "publishing.remaining.cancelled",
     severity: "warn",

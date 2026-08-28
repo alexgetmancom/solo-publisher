@@ -1,7 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { publicationTargets, publishJobs } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { refreshPublicationOwner } from "../publishing/publication-owner.js";
 import type { ResolvedPublicationRef } from "./publication-ref.js";
 
@@ -86,7 +85,7 @@ export function settleAmbiguousTarget(backendDb: BackendDb, input: SettleInput):
       })
       .where(and(eq(publicationTargets.publicationKey, input.ref.publicationKey), eq(publicationTargets.target, input.target)))
       .run();
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: input.ref.publicationKey,
       target: input.target,
       type: found ? "publish.job.settled_published" : "publish.job.settled_absent",

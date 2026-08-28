@@ -1,11 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { flushUsage, recordUsage, trackUsageAsync, trackUsageSync, usageReport } from "../src/observability/usage.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 
 describe("runtime usage telemetry", () => {
-  it("aggregates successful and failed calls by day without changing operation errors", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("aggregates successful and failed calls by day without changing operation errors", () =>
+    withDb(async (backendDb) => {
       expect(trackUsageSync(backendDb, "studio.queue.read", () => "ok")).toBe("ok");
       await expect(
         trackUsageAsync(backendDb, "studio.queue.read", async () => {
@@ -21,14 +20,10 @@ describe("runtime usage telemetry", () => {
       expect(row.successes).toBe(1);
       expect(row.failures).toBe(1);
       expect(row.total_duration_ms).toBeGreaterThanOrEqual(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports a window and marks known operations that have gone unused", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reports a window and marks known operations that have gone unused", () =>
+    withDb(async (backendDb) => {
       const now = new Date("2026-08-01T12:00:00.000Z");
       recordUsage(backendDb, "publishing.plan.create", true, 12, new Date("2026-08-01T10:00:00.000Z"));
       recordUsage(backendDb, "publishing.plan.create", true, 20, new Date("2026-07-31T10:00:00.000Z"));
@@ -45,8 +40,5 @@ describe("runtime usage telemetry", () => {
       expect(old).toMatchObject({ calls: 0, failures: 0, unused: true });
       expect(never).toMatchObject({ calls: 0, unused: true, firstSeenAt: null, lastSeenAt: null });
       expect(milestoneHistory).toMatchObject({ calls: 0, unused: true, firstSeenAt: null, lastSeenAt: null });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

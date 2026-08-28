@@ -3,7 +3,6 @@ import { and, asc, eq, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { publicationRef } from "../../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { videoDrafts, videoMetricSchedule, videoTargets } from "../../db/schema.js";
-import { recordDomainEvent } from "../../domain/events.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { instagramCredentialsForLocale, instagramGraphHost } from "../../foundation/external/instagram.js";
 import { youtubeAccessToken } from "../../foundation/external/youtube.js";
@@ -106,7 +105,7 @@ export async function runVideoMetricSchedule(config: BackendConfig, backendDb: B
       const terminal = isTerminalMetricError(normalized);
       const frozen = localizedTasks.filter((task) => finishVideoMetricTask(backendDb, task, message, terminal));
       if (frozen.length)
-        recordDomainEvent(backendDb.events, {
+        backendDb.events.record({
           ref: `analytics:youtube:${locale}`,
           target: "youtube_shorts",
           type: "analytics.video_metrics.frozen",
@@ -136,7 +135,7 @@ export async function runVideoMetricSchedule(config: BackendConfig, backendDb: B
       );
       if (frozen) {
         const ref = publicationRef("video", task.videoDraftId);
-        recordDomainEvent(backendDb.events, {
+        backendDb.events.record({
           ref,
           target: task.target,
           type: "analytics.video_metrics.frozen",

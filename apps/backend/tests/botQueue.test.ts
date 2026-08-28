@@ -5,15 +5,14 @@ import { draftStoryCards, publicationTargets, publishJobs, videoDrafts, videoTar
 import type { StudioQueueSnapshot } from "../src/studio/services/queue.js";
 import { queueService } from "../src/studio/services/queue.js";
 import { registerTestChannels } from "./helpers/channels.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoAsset } from "./helpers/video.js";
 
 describe("Telegram work queue", () => {
-  it("keeps a scheduled publication whose time has passed, marked as overdue", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps a scheduled publication whose time has passed, marked as overdue", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["telegram"]);
       const past = new Date(Date.now() - 60 * 60_000).toISOString();
       seedTextPost(backendDb, {
@@ -30,14 +29,10 @@ describe("Telegram work queue", () => {
       const snapshot = queueService(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "7" })).snapshot(7);
       expect(snapshot.upcoming).toMatchObject([{ id: 11, kind: "post", overdue: true }]);
       expect(JSON.stringify(queueScreen(snapshot, "en", "UTC"))).toContain("Nobody sent this");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("finds the latest successful publication across posts and videos", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("finds the latest successful publication across posts and videos", () =>
+    withDb(async (backendDb) => {
       const postPublishedAt = "2026-08-12T12:00:00.000Z";
       const videoPublishedAt = "2026-08-11T12:00:00.000Z";
       seedTextPost(backendDb, {
@@ -88,14 +83,10 @@ describe("Telegram work queue", () => {
         kind: "post",
         time: new Date(postPublishedAt),
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("separates upcoming work, unfinished drafts and actual failed targets", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("separates upcoming work, unfinished drafts and actual failed targets", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       const scheduledAt = new Date(Date.now() + 60 * 60_000).toISOString();
       seedTextPost(backendDb, {
@@ -156,14 +147,10 @@ describe("Telegram work queue", () => {
       expect(snapshot.upcoming[0]?.label).toBe("Запланированный пост");
       expect(snapshot.drafts.map((item) => item.label)).toEqual(["Чужой черновик", "Черновик поста", "Черновик видео"]);
       expect(snapshot.attention).toEqual([{ id: 1, label: "Запланированный пост", kind: "post", time: new Date(now) }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps recent scheduled videos visible after the queue history exceeds its cap", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps recent scheduled videos visible after the queue history exceeds its cap", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       backendDb.db
         .insert(videoDrafts)
@@ -210,14 +197,10 @@ describe("Telegram work queue", () => {
       expect(snapshot.upcoming).toEqual([
         expect.objectContaining({ id: scheduled.id, label: "Recent scheduled video", kind: "video", targets: 1 }),
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps a partially scheduled post actionable instead of showing a past time as upcoming", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps a partially scheduled post actionable instead of showing a past time as upcoming", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["telegram", "threads_en"]);
       const now = new Date().toISOString();
       const ruAt = new Date(Date.now() + 60 * 60_000).toISOString();
@@ -243,14 +226,10 @@ describe("Telegram work queue", () => {
       const snapshot = queueService(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "7" })).snapshot(7);
       expect(snapshot.upcoming).toHaveLength(0);
       expect(snapshot.drafts.map((item) => item.label)).toEqual(["⏳ RU then EN", "⏳ RU already handled"]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not park a draft on a language this Studio publishes nothing in", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not park a draft on a language this Studio publishes nothing in", () =>
+    withDb(async (backendDb) => {
       // Maru connected Telegram and Threads RU only. A draft left over from when
       // an EN target was enabled must still go out on its RU date: waiting for an
       // EN time nobody can give held two posts in the queue indefinitely.
@@ -271,10 +250,7 @@ describe("Telegram work queue", () => {
       expect(snapshot.upcoming.map((item) => ({ label: item.label, targets: item.targets }))).toEqual([
         { label: "RU only Studio", targets: 2 },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("keeps queue item details in buttons instead of duplicating them in the message", () => {
     const snapshot: StudioQueueSnapshot = {
@@ -309,23 +285,18 @@ describe("Telegram work queue", () => {
     expect(text).not.toContain("Failed clip");
   });
 
-  it("keeps a queue label well-formed when truncation reaches an emoji", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps a queue label well-formed when truncation reaches an emoji", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { draftId: 301, actorId: 7, status: "needs_review", ru: `${"x".repeat(37)}😀 after the limit`, now });
 
       const label = queueService(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "7" })).snapshot(7).drafts[0]?.label;
       expect(label).toBe(`${"x".repeat(37)}😀`);
       expect(label).not.toMatch(/[\uD800-\uDFFF]/u);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps the inline queue button well-formed after label truncation", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps the inline queue button well-formed after label truncation", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       const scheduledAt = new Date(Date.now() + 60 * 60_000).toISOString();
       const draft = backendDb.db
@@ -371,10 +342,7 @@ describe("Telegram work queue", () => {
       const buttonText = options?.reply_markup?.inline_keyboard?.[0]?.[0]?.text;
       expect(buttonText).toBeTruthy();
       encodeURIComponent(buttonText ?? "");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("paginates every queue section without dropping items", () => {
     // Upcoming items are paged by the day they fall on, so eleven of them a

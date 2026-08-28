@@ -10,7 +10,6 @@ import { createDraftFromMessage } from "../../content/drafts.js";
 import type { DraftMessage } from "../../content/message.js";
 import { emphasizeTitle } from "../../content/title-emphasis.js";
 import type { BackendDb } from "../../db/client.js";
-import { recordDomainEvent } from "../../domain/events.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
 import { truncateUnicode } from "../../foundation/text.js";
@@ -81,7 +80,7 @@ export function replanScheduledPostAfterStoryCardFailure(backendDb: BackendDb, c
       backendDb.storyCards.forDraft(draftId).some((card) => card.status === "failed"),
   );
   if (!replanned) return false;
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("draft", draftId),
     type: "studio.notification.story-cards.failed",
     severity: "error",
@@ -216,7 +215,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       });
       backendDb.storyCards.queue(draftId);
       replanScheduledPostAfterMutation(backendDb, config, draftId);
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: publicationRef("draft", draftId),
         type: "content.draft.media_attached",
         severity: "info",
@@ -235,7 +234,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       });
       backendDb.storyCards.queue(draftId);
       replanScheduledPostAfterMutation(backendDb, config, draftId);
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: publicationRef("draft", draftId),
         type: "content.draft.media_removed",
         severity: "info",
@@ -301,7 +300,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
       backendDb.drafts.update(draftId, { threadsChainApproved: 1, updatedAt: backendDb.clock.now().toISOString() });
       replanScheduledPostAfterMutation(backendDb, config, draftId);
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: publicationRef("draft", draftId),
         type: "content.draft.threads-chain-approved",
         severity: "info",
@@ -509,7 +508,7 @@ function withDraftRollback<T>(
 }
 
 function recordEditEvent(backendDb: BackendDb, draftId: number, input: EditInput): void {
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     ref: publicationRef("draft", draftId),
     type: "content.draft.edited",
     severity: "info",

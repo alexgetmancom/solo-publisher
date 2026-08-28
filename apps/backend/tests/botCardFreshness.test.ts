@@ -18,7 +18,7 @@ import {
 } from "../src/interfaces/telegram/control-cards.js";
 import { replaceVideoTargets } from "../src/publishing/video-service.js";
 import { registerTestChannels } from "./helpers/channels.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoAsset, createTestVideoDraft } from "./helpers/video.js";
 
@@ -49,9 +49,8 @@ function videoPublication(action: string, args: readonly (string | number)[] = [
 }
 
 describe("Telegram card freshness", () => {
-  it("rejects a mutation from a replaced post card but allows the current one", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("rejects a mutation from a replaced post card but allows the current one", () =>
+    withDb(async (backendDb: BackendDb) => {
       setTelegramPostCard(backendDb, 7, 100, 20);
       expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("publish", [7]))).toBe(true);
       expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("publish", [7]))).toBe(false);
@@ -61,14 +60,10 @@ describe("Telegram card freshness", () => {
       expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("threads_chain", [7]))).toBe(false);
       expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("story_schedule_all", [7]))).toBe(true);
       expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("story_schedule_all", [7]))).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("tracks the publish confirmation card after delivery previews", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("tracks the publish confirmation card after delivery previews", () =>
+    withDb(async (backendDb: BackendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       const draftId = createDraftFromMessage(backendDb, 42, {
         text: "Video post",
@@ -98,14 +93,10 @@ describe("Telegram card freshness", () => {
           postPublication("publish_confirm", [draftId]),
         ),
       ).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("tracks the message that now renders an inline post screen", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("tracks the message that now renders an inline post screen", () =>
+    withDb(async (backendDb: BackendDb) => {
       const draftId = createDraftFromMessage(backendDb, 42, { text: "Card", textEn: "Card", entities: [], media: [] });
       const ctx = {
         from: { id: 42 },
@@ -127,14 +118,10 @@ describe("Telegram card freshness", () => {
       ]);
 
       expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 20 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("tracks a new manual schedule confirmation message", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("tracks a new manual schedule confirmation message", () =>
+    withDb(async (backendDb: BackendDb) => {
       const draftId = createDraftFromMessage(backendDb, 42, { text: "Card", textEn: "Card", entities: [], media: [] });
       const ctx = {
         from: { id: 42 },
@@ -153,14 +140,10 @@ describe("Telegram card freshness", () => {
       ]);
 
       expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 21 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps the Story scheduling flow on the message that renders its next screen", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("keeps the Story scheduling flow on the message that renders its next screen", () =>
+    withDb(async (backendDb: BackendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       registerTestChannels(backendDb as UnsafeBackendDb, ["telegram_stories", "instagram_stories"]);
       const draftId = createDraftFromMessage(backendDb, 42, { text: "Card", textEn: "Card", entities: [], media: [] });
@@ -194,14 +177,10 @@ describe("Telegram card freshness", () => {
       await handlePublicationCallback(context(postAction("sched_pick", [draftId, "ru", "0800"]), 11), backendDb, config);
       await handlePublicationCallback(context(postAction("sched_pick", [draftId, "en", "1800"]), 11), backendDb, config);
       expect(JSON.stringify(draftPreview(backendDb, draftId, config, "en"))).toContain(`edit_ru:${draftId}`);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("rejects a mutation from a replaced video card", () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("rejects a mutation from a replaced video card", () =>
+    withDb(async (backendDb: BackendDb) => {
       setTelegramVideoCard(backendDb, 7, 100, 20);
       expect(isStaleCardCallback(callbackContext(19), backendDb, videoPublication("schedule", [7]))).toBe(true);
       expect(isStaleCardCallback(callbackContext(19), backendDb, videoPublication("sched_pick", [7, "youtube_shorts", "2100"]))).toBe(true);
@@ -212,14 +191,10 @@ describe("Telegram card freshness", () => {
       expect(isStaleCardCallback(callbackContext(19), backendDb, videoPublication("retry", [7, "youtube_shorts", "notice"]))).toBe(false);
       expect(isStaleCardCallback(callbackContext(19), backendDb, videoPublication("cancel_confirm", [7]))).toBe(false);
       expect(isStaleCardCallback(callbackContext(19), backendDb, videoPublication("view", [7, "overview"]))).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("rebases the durable video card when a scheduling prompt becomes a new message", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("rebases the durable video card when a scheduling prompt becomes a new message", () =>
+    withDb(async (backendDb: BackendDb) => {
       const now = new Date().toISOString();
       const draftId = unsafeDb(backendDb)
         .db.insert(videoDrafts)
@@ -250,14 +225,10 @@ describe("Telegram card freshness", () => {
       );
 
       expect(telegramVideoCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 21 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps a two-platform video schedule on the latest Telegram control message", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("keeps a two-platform video schedule on the latest Telegram control message", () =>
+    withDb(async (backendDb: BackendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       const draftId = createTestVideoDraft(backendDb, 42, "clip.mp4", 24);
       replaceVideoTargets(backendDb, draftId, ["youtube_shorts", "instagram_reels"]);
@@ -303,8 +274,5 @@ describe("Telegram card freshness", () => {
           videoPublication("sched_confirm", [draftId]),
         ),
       ).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

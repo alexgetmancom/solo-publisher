@@ -11,7 +11,6 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
@@ -957,7 +956,7 @@ export async function runOperation(name: string, context: OperationContext, args
  * write as a failed operation invites a retry that publishes twice. */
 function journalMutation(context: OperationContext, name: string, def: OperationDef, input: unknown): void {
   try {
-    recordDomainEvent(context.db().events, {
+    context.db().events.record({
       ref: def.journalRef ? def.journalRef(input as never) : refOf(input),
       type: "operations.command",
       severity: "info",

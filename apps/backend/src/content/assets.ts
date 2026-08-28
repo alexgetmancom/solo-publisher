@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import type { StudioMediaAssetRecord } from "../application/ports.js";
 import type { BackendDb } from "../db/client.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { fileExtension, imageExtension, imageExtensionForContentType, mediaContentType } from "../foundation/media-types.js";
 
@@ -84,7 +83,7 @@ export async function importStudioMediaFile(backendDb: BackendDb, config: Backen
   // Only the import that actually created the row announces it: a lost race and
   // a plain re-upload are both "this asset already exists", not a new import.
   if (inserted)
-    recordDomainEvent(backendDb.events, {
+    backendDb.events.record({
       ref: `asset:${asset.id}`,
       type: "content.media.imported",
       severity: "info",

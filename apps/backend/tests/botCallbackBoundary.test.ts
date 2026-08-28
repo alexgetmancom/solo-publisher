@@ -3,7 +3,7 @@ import type { Context } from "grammy";
 import { runCallbackBoundary } from "../src/bot/callback-boundary.js";
 import type { BackendDb } from "../src/db/client.js";
 import { StudioError } from "../src/foundation/errors.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 
 function callbackContext(id: string, answers: Array<{ text?: string } | undefined>): Context {
   return {
@@ -14,23 +14,18 @@ function callbackContext(id: string, answers: Array<{ text?: string } | undefine
 }
 
 describe("Telegram callback boundary", () => {
-  it("translates handler errors into an actionable toast", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("translates handler errors into an actionable toast", () =>
+    withDb(async (backendDb: BackendDb) => {
       const answers: Array<{ text?: string } | undefined> = [];
       await runCallbackBoundary(callbackContext("boundary-error", answers), backendDb, async () => {
         throw new StudioError("err.post-not-yours");
       });
 
       expect(answers).toEqual([{ text: "Draft is not available to this user." }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("runs a redelivered callback only once", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("runs a redelivered callback only once", () =>
+    withDb(async (backendDb: BackendDb) => {
       const answers: Array<{ text?: string } | undefined> = [];
       let executions = 0;
       const next = async () => {
@@ -41,8 +36,5 @@ describe("Telegram callback boundary", () => {
 
       expect(executions).toBe(1);
       expect(answers).toEqual([undefined]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

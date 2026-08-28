@@ -1,14 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { zonedRollingPeriodBounds } from "../src/foundation/time.js";
 import { pipelineOverviewPayload } from "../src/operations/read-model.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig, MSK_STUDIO_PROFILE } from "./helpers/studio-config.js";
 
 describe("dashboard read model bounds", () => {
-  it("puts a publication in the period it reached its audience, not the one it was drafted in", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("puts a publication in the period it reached its audience, not the one it was drafted in", () =>
+    withDb(async (backendDb) => {
       const [todayStart] = zonedRollingPeriodBounds(0, 1, "Europe/Moscow");
       const publishedToday = new Date(Date.parse(todayStart) + 60_000).toISOString();
       const draftedThreeDaysAgo = new Date(Date.parse(todayStart) - 3 * 86_400_000).toISOString();
@@ -25,14 +24,10 @@ describe("dashboard read model bounds", () => {
       // missing from the only view its author was looking at.
       const today = pipelineOverviewPayload(loadTestConfig({}, MSK_STUDIO_PROFILE), backendDb, 0, 1);
       expect(today.posts.map((post) => post.post_id)).toEqual([1]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("filters samples, aggregates them into time buckets, and omits provider raw payloads", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("filters samples, aggregates them into time buckets, and omits provider raw payloads", () =>
+    withDb(async (backendDb) => {
       const [periodStart] = zonedRollingPeriodBounds(0, 1, "Europe/Moscow");
       const periodStartMs = Date.parse(periodStart);
       const [periodStart30] = zonedRollingPeriodBounds(0, 30, "Europe/Moscow");
@@ -105,8 +100,5 @@ describe("dashboard read model bounds", () => {
       expect(compact.posts[0]).toMatchObject({ post_id: 1, telegram_url: expect.any(String) });
       expect(compact.posts[0]?.targets).toEqual({ telegram: { status: "published", url: null } });
       expect(compact.posts[0]?.metrics).toEqual({ telegram: { views: { value: 250 } } });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

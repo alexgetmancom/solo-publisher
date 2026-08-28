@@ -1,13 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import { clientIpHash } from "../src/engagement/identity.js";
 import { metricsSummary, recordPageview } from "../src/engagement/pageviews.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("site engagement", () => {
-  it("uses SQLite counters for pageviews and ignores untrusted forwarded IPs", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("uses SQLite counters for pageviews and ignores untrusted forwarded IPs", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({ CLIENT_IP_HASH_SALT: "test-salt-value!", TRUSTED_CLIENT_IP_HEADER: "x-real-ip" });
       recordPageview(backendDb, "/article/");
       recordPageview(backendDb, "/article/");
@@ -23,8 +22,5 @@ describe("site engagement", () => {
         config,
       );
       expect(left).toBe(right);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

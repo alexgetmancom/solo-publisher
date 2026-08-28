@@ -3,6 +3,7 @@ import type { PipelinePost } from "../src/analytics/pipeline-payload.js";
 import { calendarDays } from "../src/analytics/reach/daily-reach.js";
 import { textDailyReach, textOverviewOf } from "../src/analytics/reach/text-overview.js";
 import type { XActivityDashboardItem } from "../src/analytics/x-activity-dashboard.js";
+import type { UnsafeBackendDb } from "../src/db/client.js";
 import { creatorProfileSnapshots, videoDrafts, videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
 import { type CombinedSectionInput, renderCombinedSection } from "../src/interfaces/web/dashboard/combined-section.js";
 import { renderHeroCard } from "../src/interfaces/web/dashboard/hero-section.js";
@@ -15,6 +16,7 @@ import {
 } from "../src/interfaces/web/dashboard/video-overview.js";
 import { xActivityPost } from "../src/interfaces/web/dashboard/x-activity-posts.js";
 import { registerTestChannels, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
+import { withOpenDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoAsset } from "./helpers/video.js";
@@ -27,6 +29,8 @@ function openOverviewDb() {
   registerTestChannels(backendDb, VIDEO_TEST_CHANNELS);
   return backendDb;
 }
+
+const withOverviewDb = <T>(fn: (backendDb: UnsafeBackendDb) => T | Promise<T>): Promise<T> => withOpenDb(openOverviewDb, fn);
 
 /** rollingPeriodDates hands the renderer a UTC-midnight Date carrying the
  * zone's calendar fields; the chart reads it back with getUTC*. */
@@ -270,9 +274,8 @@ function seedCrosspostedVideo(backendDb: ReturnType<typeof openBackendDb>): void
 }
 
 describe("unified overview video read model", () => {
-  it("includes videos published during the selected current day", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("includes videos published during the selected current day", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb, new Date().toISOString());
       const config = loadTestConfig({});
 
@@ -281,16 +284,12 @@ describe("unified overview video read model", () => {
 
       expect(overview.video.items).toHaveLength(1);
       expect(overview.video.totals.posts).toBe(1);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   // The text side has always shown one row per post with a badge for the places
   // it went; a clip that went to two destinations now reads the same way.
-  it("keeps one clip on two destinations as one publication", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("keeps one clip on two destinations as one publication", () =>
+    withOverviewDb(async (backendDb) => {
       seedCrosspostedVideo(backendDb);
       const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
@@ -302,14 +301,10 @@ describe("unified overview video read model", () => {
       expect(overview.items[0]?.url).toBe("https://example.com/youtube_shorts");
       // Both destinations still stand on their own in the platform panel.
       expect(overview.platforms.filter((platform) => platform.views > 0).map((platform) => platform.views)).toEqual([600, 400]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports the latest sample per publication and names the destination", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("reports the latest sample per publication and names the destination", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
@@ -329,14 +324,10 @@ describe("unified overview video read model", () => {
       expect(overview.platforms[0]?.followers).toBe(8_400);
       expect(overview.summary.completionRate).toBe(50);
       expect(overview.summary.subscribers).toBeNull();
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("uses a collected permalink when an older video target has no stored URL", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("uses a collected permalink when an older video target has no stored URL", () =>
+    withOverviewDb(async (backendDb) => {
       const publishedAt = hoursAgo(3);
       const draft = backendDb.db
         .insert(videoDrafts)
@@ -378,14 +369,10 @@ describe("unified overview video read model", () => {
       const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
       expect(overview.items[0]?.url).toBe("https://www.instagram.com/reel/CODE123/");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps declared destinations and their audiences independent of the period", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("keeps declared destinations and their audiences independent of the period", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       seedLocalizedVideoProfiles(backendDb);
       const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
@@ -397,26 +384,18 @@ describe("unified overview video read model", () => {
       const quiet = videoOverview(backendDb, new Date(Date.now() - 10 * 86_400_000), new Date(Date.now() - 5 * 86_400_000));
       expect(quiet.platforms.map((platform) => platform.label)).toEqual(["YouTube RU", "YouTube EN", "Instagram RU", "Instagram EN"]);
       expect(quiet.platforms.every((platform) => platform.views === 0)).toBe(true);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("excludes publications outside the window", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("excludes publications outside the window", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const older = videoOverview(backendDb, new Date(Date.now() - 10 * 86_400_000), new Date(Date.now() - 5 * 86_400_000));
       expect(older.items).toHaveLength(0);
       expect(older.totals.views).toBe(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("freezes a historical period and exposes later lifetime growth separately", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("freezes a historical period and exposes later lifetime growth separately", () =>
+    withOverviewDb(async (backendDb) => {
       seedHistoricalVideo(backendDb);
       const overview = videoOverview(backendDb, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-07-30T20:59:59.999Z"));
 
@@ -430,14 +409,10 @@ describe("unified overview video read model", () => {
       expect(overview.dailyByDay["2026-07-30"]?.subscribers).toBe(7);
       expect(overview.dailyByDay["2026-07-30"]?.views).toBe(870);
       expect(overview.viewEvents.map((event) => event.value)).toEqual([100, 800]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("sums daily increments for a multi-day period instead of lifetime totals", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("sums daily increments for a multi-day period instead of lifetime totals", () =>
+    withOverviewDb(async (backendDb) => {
       seedHistoricalVideo(backendDb);
       const overview = videoOverview(backendDb, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-07-31T20:59:59.999Z"));
 
@@ -447,17 +422,13 @@ describe("unified overview video read model", () => {
       expect(overview.dailyByDay["2026-07-30"]?.subscribers).toBe(7);
       expect(overview.dailyByDay["2026-07-31"]?.subscribers).toBe(0);
       expect(overview.items[0]?.afterPeriodViews).toBe(800);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   // The bug this locks: a day used to mean "what clips published that day
   // earned" when it was the selected day, and "what the whole catalogue earned"
   // on every other bar of the same chart — 3k against 65k for one date.
-  it("reports catalogue reach for a day whose clips were published earlier", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("reports catalogue reach for a day whose clips were published earlier", () =>
+    withOverviewDb(async (backendDb) => {
       seedHistoricalVideo(backendDb);
       const cache = createVideoOverviewCache(24 * 60 * 60);
       setVideoOverviewCacheRange(cache, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-08-01T20:59:59.999Z"));
@@ -474,10 +445,7 @@ describe("unified overview video read model", () => {
       expect(quietDay.dailyByDay["2026-07-31"]?.freshViews).toBe(0);
       expect(quietDay.totals.posts).toBe(0);
       expect(quietDay.platforms.find((platform) => platform.label === "YouTube RU")?.views).toBe(714);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });
 
 describe("text daily reach", () => {
@@ -605,9 +573,8 @@ describe("unified overview rendering", () => {
     platformMetric: "reach" as const,
   };
 
-  it("draws one locale column for a half that publishes one language", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("draws one locale column for a half that publishes one language", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
       // The text half of a Studio with only Russian channels used to carry a
@@ -624,14 +591,10 @@ describe("unified overview rendering", () => {
       expect(textPlatforms).not.toContain("<span>EN</span>");
       expect(videoPlatforms).toContain("--locale-columns:2");
       expect(videoPlatforms).toContain("<span>EN</span>");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("shows both halves separately and never their sum", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("shows both halves separately and never their sum", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
       const html = renderOverview({ ...baseInput, video });
@@ -656,10 +619,7 @@ describe("unified overview rendering", () => {
       expect(html).not.toContain("Детальная динамика и публикации");
       expect(html).not.toContain('class="overview-details"');
       expect(html).not.toContain('class="metric-chart--dual"');
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("compares a multi-day period with the previous thirty days of daily norm", () => {
     const post = (views: number, daysAgo: number): PipelinePost => ({
@@ -729,9 +689,8 @@ describe("unified overview rendering", () => {
     expect(html).toContain("<strong>200</strong>");
   });
 
-  it("derives the locale badge from the data rather than from the platform name", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("derives the locale badge from the data rather than from the platform name", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
       // The seeded draft is Russian, so its platform is badged RU.
@@ -758,10 +717,7 @@ describe("unified overview rendering", () => {
       expect(ru).not.toContain('title="X"');
       // The badge is gone with the split: the column already names the locale.
       expect(html).not.toContain('class="overview-platform__name"');
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("switches platform rows between reach and followers", () => {
     const followers = [
@@ -824,7 +780,7 @@ describe("unified overview rendering", () => {
 
   it("turns the heading gauge green once the norm is beaten", () => {
     const metrics = {
-      postCount: 3,
+      kind: "text" as const,
       views: 4_128,
       freshViews: 1_200,
       medianViews: 3_600,
@@ -839,8 +795,8 @@ describe("unified overview rendering", () => {
       projectionViews: 9_300,
       progressPercent: 114,
     };
-    const won = renderHeroCard("text", metrics, "ru");
-    const behind = renderHeroCard("text", { ...metrics, views: 1_200, paceLabel: "до нормы 2.4k", progressPercent: 33 }, "ru");
+    const won = renderHeroCard(metrics, "ru");
+    const behind = renderHeroCard({ ...metrics, views: 1_200, paceLabel: "до нормы 2.4k", progressPercent: 33 }, "ru");
 
     expect(won).toContain("overview-hero-card__heading--win");
     // The norm is an aside on the number's line, not a stacked second KPI.
@@ -1017,9 +973,8 @@ describe("unified overview rendering", () => {
     expect(html).toContain("<strong>42</strong>");
   });
 
-  it("filters one half without disturbing the other", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("filters one half without disturbing the other", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
       const post: PipelinePost = {
@@ -1042,14 +997,10 @@ describe("unified overview rendering", () => {
       expect(html).toContain('class="overview-track overview-track--video');
       expect(html).toContain("video_view=youtube_shorts%3Aru");
       expect(html).toContain("view=telegram");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("points each half's list loader at its own publications", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("points each half's list loader at its own publications", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const loaded = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
       // Both lists have to overflow before either offers to load more.
@@ -1069,21 +1020,14 @@ describe("unified overview rendering", () => {
       // posts when it was asked for more.
       expect(html).toContain("publication-details?period=1&amp;week_offset=0&amp;track=text");
       expect(html).toContain("publication-details?period=1&amp;week_offset=0&amp;track=video");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps both halves available in the single overview mode", () => {
-    const backendDb = openOverviewDb();
-    try {
+  it("keeps both halves available in the single overview mode", () =>
+    withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
       const html = renderOverview({ ...baseInput, video });
       expect(html).toContain("YouTube RU");
       expect(html).toContain("Telegram");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

@@ -3,7 +3,6 @@ import pLimit from "p-limit";
 import { targetRouting } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { publishJobs } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { PUBLISH_HEARTBEAT_INTERVAL_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -148,7 +147,7 @@ export async function runDeliveryPublishCycle(
   // would journal an article's settlement against a post that does not exist.
   for (const publicationKey of new Set(jobs.map((job) => job.publicationKey).filter(Boolean))) {
     try {
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: publicationKey,
         type: "delivery.publication.settled",
         severity: "info",
@@ -224,7 +223,7 @@ async function timedDeliveryPhase<T>(
     const durationMs = Date.now() - startedAt;
     timings[timingKey] = durationMs;
     try {
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: job.publicationKey,
         target: job.target,
         type: "publish.job.phase",
@@ -246,7 +245,7 @@ async function timedDeliveryPhase<T>(
   } catch (error) {
     timings[timingKey] = Date.now() - startedAt;
     try {
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: job.publicationKey,
         target: job.target,
         type: "publish.job.phase",

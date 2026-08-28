@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { type JsonValue, workerState } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 import { gitRevision } from "../foundation/runtime/git.js";
 import { ALERT_COOLDOWN_SECONDS } from "./alerts.js";
 
@@ -87,7 +86,7 @@ export function recordProcessRestart(backendDb: BackendDb, revision = gitRevisio
   writeRuntimeState(backendDb, { bootId: BOOT_ID, bootedAt, revision, restartsAt });
 
   const previousUptimeSeconds = previous.bootedAt ? Math.round((Date.parse(bootedAt) - Date.parse(previous.bootedAt)) / 1000) : null;
-  recordDomainEvent(backendDb.events, {
+  backendDb.events.record({
     type: looping ? "runtime.restart.looping" : "runtime.restarted",
     severity: looping ? "error" : "info",
     target: "runtime",
@@ -135,7 +134,7 @@ export function recordMemoryPressure(backendDb: BackendDb, limitBytes: number | 
   const usedPercent = Math.round((rss / limitBytes) * 100);
   if (usedPercent < MEMORY_ALERT_PERCENT) return false;
   const toMb = (bytes: number) => Math.round(bytes / 1024 / 1024);
-  return recordDomainEvent(backendDb.events, {
+  return backendDb.events.record({
     type: "runtime.memory.pressure",
     severity: "warn",
     target: "runtime",

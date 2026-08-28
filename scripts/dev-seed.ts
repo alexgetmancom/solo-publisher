@@ -88,9 +88,8 @@ const { imagePaths } = seedSiteFixture({ dbPath, publicDir, posts });
 console.log(`Seeded ${posts.length} post(s), first with ${galleryImages} image(s); ${imagePaths.length} media file(s) written.`);
 
 if (withDashboard) {
-  const seed = parity ? seedOverviewParityFixture : seedDashboardFixture;
   const { targetRows, sampleRows } = parity
-    ? seed({ dbPath, postIds: posts.map((post) => post.postId) })
+    ? seedOverviewParityFixture({ dbPath, postIds: posts.map((post) => post.postId) })
     : seedDashboardFixture({
         dbPath,
         postIds: posts.map((post) => post.postId),

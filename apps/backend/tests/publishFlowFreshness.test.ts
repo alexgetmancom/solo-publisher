@@ -12,7 +12,7 @@ import {
   telegramVideoCard,
 } from "../src/interfaces/telegram/control-cards.js";
 import { replaceVideoTargets } from "../src/publishing/video-service.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoDraft } from "./helpers/video.js";
 
@@ -33,9 +33,8 @@ function parsed(value: string): PublicationCallback {
 }
 
 describe("video publication card flow", () => {
-  it("keeps the immediate confirmation on the current video card", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("keeps the immediate confirmation on the current video card", () =>
+    withDb(async (backendDb: BackendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       const draftId = createTestVideoDraft(backendDb, 42, "clip.mp4", 24);
       replaceVideoTargets(backendDb, draftId, ["youtube_shorts"]);
@@ -53,16 +52,12 @@ describe("video publication card flow", () => {
           parsed(publicationCallback("video", "publish_confirm", [draftId])),
         ),
       ).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });
 
 describe("post publication card flow", () => {
-  it("tracks the publish confirmation card after delivery previews", async () => {
-    const backendDb: BackendDb = openBackendDb(":memory:");
-    try {
+  it("tracks the publish confirmation card after delivery previews", () =>
+    withDb(async (backendDb: BackendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       const draftId = createDraftFromMessage(backendDb, 42, {
         text: "Video post",
@@ -91,8 +86,5 @@ describe("post publication card flow", () => {
           parsed(publicationCallback("post", "publish_confirm", [draftId])),
         ),
       ).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

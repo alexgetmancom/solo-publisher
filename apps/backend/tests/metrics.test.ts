@@ -5,14 +5,14 @@ import { createMetricCollectors, SUPPORTED_METRIC_TARGETS } from "../src/analyti
 import { claimDueMetricTasks, type MetricTask } from "../src/analytics/collection/metric-schedule.js";
 import { runMetricsCycle } from "../src/analytics/collection/metrics-cycle.js";
 import { metricSamples, metricSchedule, postMetrics, publicationTargets, workerState } from "../src/db/schema.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
+import type { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("metrics cycle", () => {
-  it("schedules published targets and persists metric samples", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("schedules published targets and persists metric samples", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:1", "threads_ru");
       const checked = await runMetricsCycle(loadTestConfig({ MAX_METRIC_TASKS_PER_CYCLE: "10" }), backendDb, {
         threads_ru: async () => ({
@@ -55,14 +55,10 @@ describe("metrics cycle", () => {
         ok: true,
         last_error: null,
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("stores collector errors and retries the same durable checkpoint", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("stores collector errors and retries the same durable checkpoint", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:2", "threads_ru");
       await runMetricsCycle(loadTestConfig({}), backendDb, {
         threads_ru: async () => {
@@ -76,28 +72,20 @@ describe("metrics cycle", () => {
       expect(
         backendDb.db.select({ checkCount: metricSchedule.checkCount, lastError: metricSchedule.lastError }).from(metricSchedule).get(),
       ).toEqual({ checkCount: 0, lastError: "upstream unavailable" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not schedule or run X metrics unless explicitly enabled", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not schedule or run X metrics unless explicitly enabled", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:3", "x");
       const config = loadTestConfig({ MAX_METRIC_TASKS_PER_CYCLE: "10" });
       const collectors = createMetricCollectors(config);
       expect(collectors.x).toBeUndefined();
       expect(await runMetricsCycle(config, backendDb, collectors)).toBe(0);
       expect(backendDb.db.select().from(metricSchedule).all()).toEqual([]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("freezes a terminal collector error instead of retrying it", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("freezes a terminal collector error instead of retrying it", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:4", "threads_ru");
       await runMetricsCycle(loadTestConfig({}), backendDb, {
         threads_ru: async () => {
@@ -107,14 +95,10 @@ describe("metrics cycle", () => {
       expect(
         backendDb.db.select({ frozenAt: metricSchedule.frozenAt, lastError: metricSchedule.lastError }).from(metricSchedule).get(),
       ).toEqual({ frozenAt: expect.any(String), lastError: "post expired" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("claims the oldest due metric checkpoint before newer posts", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("claims the oldest due metric checkpoint before newer posts", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:5", "threads_ru");
       seedPublishedPost(backendDb, "post:6", "threads_ru");
       const now = Date.now();
@@ -138,14 +122,10 @@ describe("metrics cycle", () => {
       expect(claimDueMetricTasks(backendDb, loadTestConfig({ MAX_METRIC_TASKS_PER_CYCLE: "1" }), ["threads_ru"])[0]?.publicationKey).toBe(
         "post:5",
       );
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not let schedules without collectors block supported targets", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not let schedules without collectors block supported targets", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:7", "site_en");
       seedPublishedPost(backendDb, "post:8", "threads_ru");
       const now = Date.now();
@@ -178,14 +158,10 @@ describe("metrics cycle", () => {
           .where(eq(metricSchedule.publicationKey, "post:7"))
           .get(),
       ).toEqual({ checkCount: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("retires schedules for targets the product no longer collects", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("retires schedules for targets the product no longer collects", () =>
+    withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:9", "bluesky");
       seedPublishedPost(backendDb, "post:10", "x");
       const overdue = new Date(Date.now() - 60_000).toISOString();
@@ -211,10 +187,7 @@ describe("metrics cycle", () => {
         // silently drop a live schedule the next time X metrics are turned on.
         { target: "x", frozenAt: null, nextCheckAt: overdue },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("keeps the static supported list in step with the collectors it guards", () => {
     expect([...(SUPPORTED_METRIC_TARGETS as readonly string[])].sort()).toEqual(

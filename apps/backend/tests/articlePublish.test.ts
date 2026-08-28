@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import type { OperationContext } from "../src/operations/registry.js";
 import { runOperation } from "../src/operations/registry.js";
 import { registerTestChannels } from "./helpers/channels.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -78,13 +79,9 @@ describe("article-publish", () => {
     }
   });
 
-  it("writes nothing when a target has no connected channel", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("writes nothing when a target has no connected channel", () =>
+    withDb(async (backendDb) => {
       await expect(publish(backendDb)).rejects.toThrow(/no connected channel/);
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM articles").get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

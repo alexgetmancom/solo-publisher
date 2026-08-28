@@ -5,14 +5,13 @@ import { runOperationCommand } from "../src/operations/commands.js";
 import { enqueuePublishJobTx } from "../src/publishing/queue.js";
 import { postService } from "../src/studio/services/posts.js";
 import { registerTestChannels } from "./helpers/channels.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("command center actions", () => {
-  it("rebuilds retried jobs from the source using the target locale", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("rebuilds retried jobs from the source using the target locale", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       const source = {};
       seedTextPost(backendDb, {
@@ -65,14 +64,10 @@ describe("command center actions", () => {
       expect(backendDb.db.select({ count: count() }).from(publishJobs).where(eq(publishJobs.publicationKey, "post:52")).get()?.count).toBe(
         2,
       );
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not edit unsupported English targets", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not edit unsupported English targets", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 8, ru: "RU", en: "EN", now });
       backendDb.db
@@ -96,14 +91,10 @@ describe("command center actions", () => {
       // Reported as an explicit skip, not silence: the caller must be able to
       // tell "there is no edit port for this platform" from "the edit landed".
       expect(result.external).toEqual([{ target: "threads_en", ok: false, skipped: true, error: "no_edit_port_for_target" }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("deletes a selected locale target and queues its replacement", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("deletes a selected locale target and queues its replacement", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       const source = { text_ru: "RU", text_en: "EN", media: [], media_en: [] };
       seedTextPost(backendDb, { postId: 9, ru: "RU", en: "EN", now });
@@ -133,14 +124,10 @@ describe("command center actions", () => {
       expect(backendDb.db.select().from(publicationTargets).where(eq(publicationTargets.target, "threads_en")).get()?.status).toBe(
         "queued",
       );
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not requeue a newer target when deletion loses its external-id fence", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not requeue a newer target when deletion loses its external-id fence", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       const source = { text_ru: "RU", text_en: "EN", media: [], media_en: [] };
       seedTextPost(backendDb, { postId: 19, ru: "RU", en: "EN", now });
@@ -186,14 +173,10 @@ describe("command center actions", () => {
         externalId: "new-post",
       });
       expect(backendDb.db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get()?.status).toBe("published");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("marks a deleted target's delivery job cancelled when it stays down", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("marks a deleted target's delivery job cancelled when it stays down", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       const source = { text_ru: "RU", text_en: "EN", media: [], media_en: [] };
       seedTextPost(backendDb, { postId: 21, ru: "RU", en: "EN", now });
@@ -220,14 +203,10 @@ describe("command center actions", () => {
       );
       expect(backendDb.db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get()?.status).toBe("cancelled");
       expect(backendDb.db.select().from(opsActions).all()).toHaveLength(1);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("rolls back a requeue when its audit record cannot be written", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("rolls back a requeue when its audit record cannot be written", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 20, ru: "RU", en: "EN", now });
       const jobId = enqueuePublishJobTx(backendDb.db, {
@@ -247,14 +226,10 @@ describe("command center actions", () => {
       });
       expect(backendDb.db.select().from(drafts).where(eq(drafts.postId, 20)).get()?.status).toBe("published");
       expect(backendDb.db.select().from(opsActions).all()).toEqual([]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports the scope and touches nothing until the caller applies it", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reports the scope and touches nothing until the caller applies it", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 9, ru: "RU", en: "EN", now });
       backendDb.db
@@ -290,30 +265,22 @@ describe("command center actions", () => {
       expect(backendDb.db.select().from(publicationTargets).where(eq(publicationTargets.target, "threads_en")).get()?.status).toBe(
         "published",
       );
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   /** A string is what an HTML form and a JSON body both send, and "false" read
    * as truthy would arm the gate the caller spelled out to keep shut. */
-  it("does not read the string false as an armed apply", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not read the string false as an armed apply", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 9, ru: "RU", now });
 
       const plan = await runOperationCommand(backendDb, { action: "retry", ref: "post:9", apply: "false" });
 
       expect(plan.applied).toBe(false);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("refreshes only the requested site locale without queuing social targets", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("refreshes only the requested site locale without queuing social targets", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 10, now });
       const result = await runOperationCommand(backendDb, { action: "refresh_site", ref: "post:10", locale: "en" });
@@ -326,14 +293,10 @@ describe("command center actions", () => {
       });
       expect(backendDb.db.select({ count: count() }).from(siteJobs).get()?.count).toBe(1);
       expect(backendDb.db.select().from(publishJobs).all()).toHaveLength(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reschedules a Studio post by locale through the operations command", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reschedules a Studio post by locale through the operations command", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
       const posts = postService(backendDb, config);
       registerTestChannels(backendDb, ["telegram", "threads_en"]);
@@ -351,13 +314,9 @@ describe("command center actions", () => {
       expect(result).toMatchObject({ ok: true, action: "reschedule", draft_id: draftId, post_id: postId, locale: "ru" });
       expect(result.ru_at).toBe(nextAt.toISOString());
       expect(result.en_at).toBe(initialAt.toISOString());
-    } finally {
-      backendDb.close();
-    }
-  });
-  it("refuses to requeue a target a worker is still publishing", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+    }));
+  it("refuses to requeue a target a worker is still publishing", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 61, ru: "RU", en: "EN", now });
       const jobId = enqueuePublishJobTx(backendDb.db, {
@@ -379,14 +338,10 @@ describe("command center actions", () => {
       // that already went out, and the next claim would send it again.
       const job = backendDb.db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
       expect(job).toMatchObject({ status: "publishing", lockedBy: "worker-1" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("clears the previous attempt's phase when it requeues a failed target", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("clears the previous attempt's phase when it requeues a failed target", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 62, ru: "RU", en: "EN", now });
       const jobId = enqueuePublishJobTx(backendDb.db, {
@@ -406,13 +361,9 @@ describe("command center actions", () => {
       // lock as "the provider may already have run" and demand manual verification.
       const job = backendDb.db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
       expect(job).toMatchObject({ status: "queued", currentPhase: null, lastError: null, lockedBy: null });
-    } finally {
-      backendDb.close();
-    }
-  });
-  it("requeues a site target through its render job, not as a publish job", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+    }));
+  it("requeues a site target through its render job, not as a publish job", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 90, ru: "RU", en: "EN", now });
       backendDb.db
@@ -440,14 +391,10 @@ describe("command center actions", () => {
       // No publisher serves "site_ru": a publish job for it would be failed as an
       // unsupported target while the site itself was never re-rendered.
       expect(backendDb.db.select().from(publishJobs).all()).toEqual([]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("routes site and social targets apart when republishing a whole locale", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("routes site and social targets apart when republishing a whole locale", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 91, ru: "RU", en: "EN", now });
       backendDb.db
@@ -478,13 +425,9 @@ describe("command center actions", () => {
           .map((job) => job.target),
       ).toEqual(["telegram"]);
       expect(backendDb.db.select().from(siteJobs).get()).toMatchObject({ status: "queued" });
-    } finally {
-      backendDb.close();
-    }
-  });
-  it("rejects an unknown target before it becomes a durable job", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+    }));
+  it("rejects an unknown target before it becomes a durable job", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 92, ru: "RU", en: "EN", now });
 
@@ -493,8 +436,5 @@ describe("command center actions", () => {
       );
       // Nothing durable was written on the way to the rejection.
       expect(backendDb.db.select().from(publishJobs).all()).toEqual([]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

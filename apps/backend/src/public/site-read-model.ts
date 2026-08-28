@@ -4,7 +4,6 @@ import * as z from "zod";
 import { publicationRef } from "../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { draftEntityLinks, drafts, knowledgeEntities, postLocales, postMetrics } from "../db/schema.js";
-import { recordDomainEvent } from "../domain/events.js";
 
 const siteMediaSchema = z
   .object({
@@ -207,7 +206,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, postId?: number): FeedItem[] 
     // A single malformed row (a legacy shape, an unexpected null) must never take
     // down the whole public feed; drop it and keep every other post serving.
     if (!parsed.success) {
-      recordDomainEvent(backendDb.events, {
+      backendDb.events.record({
         ref: publicationRef("post", row.postId),
         type: "site.feed.item_invalid",
         severity: "warn",

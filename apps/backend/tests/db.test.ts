@@ -8,6 +8,7 @@ import { createDraftFromMessage } from "../src/content/drafts.js";
 import { draftEntityLinks, knowledgeEntities } from "../src/db/schema.js";
 import { publishDraftToQueue } from "../src/publishing/publication-workflow.js";
 import { registerTestChannels } from "./helpers/channels.js";
+import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 
 function insertVideoAsset(backendDb: ReturnType<typeof openBackendDb>): void {
@@ -198,9 +199,8 @@ describe("openBackendDb", () => {
 
   /** Required persisted state is explicit: a destructive migration still
    * applies cleanly, so behavioural tests cannot detect an unrelated drop. */
-  it("keeps every required persisted table after applying Drizzle migrations", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps every required persisted table after applying Drizzle migrations", () =>
+    withDb(async (backendDb) => {
       const tables = new Set(
         backendDb.sqlite
           .prepare("SELECT name FROM sqlite_master WHERE type='table'")
@@ -244,14 +244,10 @@ describe("openBackendDb", () => {
       );
       for (const index of ["idx_knowledge_entities_parent", "idx_video_drafts_studio_media_asset", "idx_x_activity_imports_checksum"])
         expect(indexes, index).toContain(index);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("cascades video dependencies at the database level", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("cascades video dependencies at the database level", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       insertVideoAsset(backendDb);
       backendDb.sqlite
@@ -283,14 +279,10 @@ describe("openBackendDb", () => {
 
       for (const table of ["video_targets", "video_jobs", "video_metric_snapshots", "video_metric_schedule", "social_comments"])
         expect(backendDb.sqlite.prepare(`SELECT count(*) AS count FROM ${table}`).get()).toEqual({ count: 0 });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("enforces one video metric snapshot per checkpoint while allowing uncheckpointed rows", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("enforces one video metric snapshot per checkpoint while allowing uncheckpointed rows", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       insertVideoAsset(backendDb);
       backendDb.sqlite
@@ -311,14 +303,10 @@ describe("openBackendDb", () => {
       expect(() => insert.run(1, "youtube_shorts", "{}", 1, now)).toThrow();
       insert.run(1, "youtube_shorts", "{}", null, now);
       insert.run(1, "youtube_shorts", "{}", null, now);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("links a published model to its company without an editor confirmation", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("links a published model to its company without an editor confirmation", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["threads_en"]);
       const draftId = createDraftFromMessage(backendDb, 42, {
         text: "Claude received a new update",
@@ -338,14 +326,10 @@ describe("openBackendDb", () => {
         { slug: "anthropic", role: "mention" },
         { slug: "claude", role: "focus" },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps a comparison as a mention instead of making it a hub update", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps a comparison as a mention instead of making it a hub update", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["threads_en"]);
       const draftId = createDraftFromMessage(backendDb, 42, {
         text: "Qwen announced a new flagship\n\nIt competes with Claude Fable.",
@@ -362,14 +346,10 @@ describe("openBackendDb", () => {
         .all();
       expect(links).toContainEqual({ slug: "claude", role: "mention" });
       expect(links).toContainEqual({ slug: "fable-5", role: "mention" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("does not treat a competitor headline as a Claude hub update", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("does not treat a competitor headline as a Claude hub update", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["threads_en"]);
       const draftId = createDraftFromMessage(backendDb, 42, {
         text: "Grok 4.5 is a new competitor to GPT and Claude\n\nThe release is now available.",
@@ -385,14 +365,10 @@ describe("openBackendDb", () => {
         .where(and(eq(draftEntityLinks.draftId, draftId), eq(knowledgeEntities.slug, "claude")))
         .get();
       expect(link).toEqual({ role: "mention" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("recognizes Codex as the focus only when it is the subject or the tool used", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("recognizes Codex as the focus only when it is the subject or the tool used", () =>
+    withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["threads_en"]);
       const directDraft = createDraftFromMessage(backendDb, 42, {
         text: "GPT ported RollerCoaster Tycoon to iPad\n\nThe developer built it with Codex.",
@@ -423,8 +399,5 @@ describe("openBackendDb", () => {
         .where(and(eq(draftEntityLinks.draftId, asideDraft), eq(knowledgeEntities.slug, "codex")))
         .get();
       expect(aside).toEqual({ role: "mention" });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

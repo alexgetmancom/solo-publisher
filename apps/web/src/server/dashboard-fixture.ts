@@ -16,7 +16,7 @@ import {
   xActivityMetricSnapshots,
 } from "../../../backend/src/db/schema.js";
 import type { RawBackendDb } from "../../../backend/src/db/unsafe.js";
-import { daysAgo, fixtureDayWindow, fixtureSampleAt, fixtureSampleSlots, HOUR_MS, hoursAgo, iso } from "./fixture-utils.js";
+import { daysAgo, fixtureDayWindow, fixtureSampleAt, fixtureSampleSlots, hoursAgo, hoursSince, iso } from "./fixture-utils.js";
 import { fullFixtureDayCounts, PARITY_HISTORY_DAYS } from "./site-fixture.js";
 
 /**
@@ -226,6 +226,95 @@ function fixtureVideoAsset(rawDb: RawBackendDb, createdAt: string): number {
     .get().id;
 }
 
+/** How one dataset spaces its metric samples and what it records at each. Both
+ * seeders write the same draft/target/snapshot rows; only this differs, so it is
+ * the parameter rather than a second copy of the loop. */
+type VideoSeedShape = {
+  /** Clip length the target metadata reports, when the dataset states one. */
+  durationMs?: number;
+  slots: (plan: VideoFixturePlan) => number;
+  sampledAt: (plan: VideoFixturePlan, slot: number) => string;
+  /** Metrics recorded at every sample on top of views/likes/comments. */
+  extraMetrics?: Record<string, number>;
+};
+
+/** Publishes a set of video plans with their targets and a metric history each. */
+function seedVideoPlans(
+  rawDb: RawBackendDb,
+  videoAssetId: number,
+  nowIso: string,
+  plans: readonly VideoFixturePlan[],
+  shape: VideoSeedShape,
+): { targetRows: number; sampleRows: number } {
+  let targetRows = 0;
+  let sampleRows = 0;
+  for (const plan of plans) {
+    const publishedAt = plan.publishedAt;
+    const draft = rawDb.db
+      .insert(videoDrafts)
+      .values({
+        actorId: 1,
+        locale: plan.locale,
+        label: plan.label,
+        studioMediaAssetId: videoAssetId,
+        status: "published",
+        scheduledAt: publishedAt,
+        createdAt: publishedAt,
+        updatedAt: nowIso,
+      })
+      .returning({ id: videoDrafts.id })
+      .get();
+
+    for (const target of plan.targets) {
+      const inserted = rawDb.db
+        .insert(videoTargets)
+        .values({
+          videoDraftId: draft.id,
+          target: target.target,
+          metadataJson: {
+            title: plan.label,
+            description: "fixture",
+            tags: [],
+            ...(shape.durationMs === undefined ? {} : { videoDurationMs: shape.durationMs }),
+          },
+          status: "published",
+          scheduledAt: publishedAt,
+          publishedAt,
+          externalId: `${target.target}-${draft.id}`,
+          externalUrl: `https://example.com/${target.target}/${draft.id}`,
+          createdAt: publishedAt,
+          updatedAt: nowIso,
+        })
+        .returning({ id: videoTargets.id })
+        .get();
+      targetRows += 1;
+
+      // Same two-hourly cadence as the text samples, so both lines on the
+      // overview chart are drawn from observations on the same clock.
+      const slots = shape.slots(plan);
+      for (let slot = slots; slot >= 0; slot -= 1) {
+        const progress = (slots - slot) / slots;
+        rawDb.db
+          .insert(videoMetricSnapshots)
+          .values({
+            videoTargetId: inserted.id,
+            platform: target.target,
+            metricsJson: {
+              views: Math.round(target.views * progress),
+              likes: Math.round(target.likes * progress),
+              comments: Math.round(target.comments * progress),
+              ...shape.extraMetrics,
+            },
+            sampledAt: shape.sampledAt(plan, slot),
+          })
+          .run();
+        sampleRows += 1;
+      }
+    }
+  }
+  return { targetRows, sampleRows };
+}
+
 export function seedDashboardFixture(options: DashboardFixtureOptions): SeededDashboard {
   const backendDb = openBackendDb(options.dbPath);
   const rawDb = unsafeDb(backendDb);
@@ -410,68 +499,16 @@ export function seedDashboardFixture(options: DashboardFixtureOptions): SeededDa
           publishedAt: iso(hoursAgo(plan.hoursAgo)),
           targets: plan.targets.map((target) => ({ ...target })),
         }));
-    for (const plan of videoPlans) {
-      const publishedAt = plan.publishedAt;
-      const draft = rawDb.db
-        .insert(videoDrafts)
-        .values({
-          actorId: 1,
-          locale: plan.locale,
-          label: plan.label,
-          studioMediaAssetId: videoAssetId,
-          status: "published",
-          scheduledAt: publishedAt,
-          createdAt: publishedAt,
-          updatedAt: nowIso,
-        })
-        .returning({ id: videoDrafts.id })
-        .get();
-
-      for (const target of plan.targets) {
-        const inserted = rawDb.db
-          .insert(videoTargets)
-          .values({
-            videoDraftId: draft.id,
-            target: target.target,
-            metadataJson: { title: plan.label, description: "fixture", tags: [] },
-            status: "published",
-            scheduledAt: publishedAt,
-            publishedAt,
-            externalId: `${target.target}-${draft.id}`,
-            externalUrl: `https://example.com/${target.target}/${draft.id}`,
-            createdAt: publishedAt,
-            updatedAt: nowIso,
-          })
-          .returning({ id: videoTargets.id })
-          .get();
-        targetRows += 1;
-
-        // Same two-hourly cadence as the text samples, so both lines on the
-        // overview chart are drawn from observations on the same clock.
-        const slots = options.full
-          ? fixtureSampleSlots(publishedAt, now, options.full.days, HOURS_PER_SAMPLE)
-          : Math.max(1, Math.round((Date.now() - new Date(publishedAt).getTime()) / HOUR_MS / HOURS_PER_SAMPLE));
-        for (let slot = slots; slot >= 0; slot -= 1) {
-          const progress = (slots - slot) / slots;
-          rawDb.db
-            .insert(videoMetricSnapshots)
-            .values({
-              videoTargetId: inserted.id,
-              platform: target.target,
-              metricsJson: {
-                views: Math.round(target.views * progress),
-                likes: Math.round(target.likes * progress),
-                comments: Math.round(target.comments * progress),
-              },
-              sampledAt: options.full
-                ? fixtureSampleAt(publishedAt, now, slot, HOURS_PER_SAMPLE)
-                : iso(hoursAgo(slot * HOURS_PER_SAMPLE, now)),
-            })
-            .run();
-          sampleRows += 1;
-        }
-      }
-    }
+    const videoRows = seedVideoPlans(rawDb, videoAssetId, nowIso, videoPlans, {
+      slots: (plan) =>
+        options.full
+          ? fixtureSampleSlots(plan.publishedAt, now, options.full.days, HOURS_PER_SAMPLE)
+          : Math.max(1, Math.round(hoursSince(plan.publishedAt) / HOURS_PER_SAMPLE)),
+      sampledAt: (plan, slot) =>
+        options.full ? fixtureSampleAt(plan.publishedAt, now, slot, HOURS_PER_SAMPLE) : iso(hoursAgo(slot * HOURS_PER_SAMPLE, now)),
+    });
+    targetRows += videoRows.targetRows;
+    sampleRows += videoRows.sampleRows;
 
     // Follower counts for the video column of the platforms panel, keyed per
     // destination the way production has recorded them since the RU/EN channels
@@ -703,71 +740,31 @@ export function seedOverviewParityFixture(options: { dbPath: string; postIds: nu
       .values({ name: "metrics", stateJson: { lastRunAt: nowIso, status: "idle" }, updatedAt: nowIso })
       .run();
 
-    for (const plan of PARITY_VIDEO) {
-      const publishedAt = iso(hoursAgo(plan.hoursAgo));
-      const draft = rawDb.db
-        .insert(videoDrafts)
-        .values({
-          actorId: 1,
-          locale: plan.locale,
-          label: plan.label,
-          studioMediaAssetId: videoAssetId,
-          status: "published",
-          scheduledAt: publishedAt,
-          createdAt: publishedAt,
-          updatedAt: nowIso,
-        })
-        .returning({ id: videoDrafts.id })
-        .get();
-
-      for (const target of plan.targets) {
-        const inserted = rawDb.db
-          .insert(videoTargets)
-          .values({
-            videoDraftId: draft.id,
-            target: target.target,
-            metadataJson: { title: plan.label, description: "fixture", tags: [], videoDurationMs: 24_000 },
-            status: "published",
-            scheduledAt: publishedAt,
-            publishedAt,
-            externalId: `${target.target}-${draft.id}`,
-            externalUrl: `https://example.com/${target.target}/${draft.id}`,
-            createdAt: publishedAt,
-            updatedAt: nowIso,
-          })
-          .returning({ id: videoTargets.id })
-          .get();
-        targetRows += 1;
-
-        const slots = Math.max(1, Math.round(plan.hoursAgo / HOURS_PER_SAMPLE));
-        for (let slot = slots; slot >= 0; slot -= 1) {
-          const progress = (slots - slot) / slots;
-          const views = Math.round(target.views * progress);
-          rawDb.db
-            .insert(videoMetricSnapshots)
-            .values({
-              videoTargetId: inserted.id,
-              platform: target.target,
-              // averageWatchTimeMs directly, not totalWatchTimeMs: the summary
-              // derives completion rate from total watch time divided by views
-              // times duration, which is a percentage a handful of round input
-              // numbers cannot also land on a round output — it was rendering as
-              // a seven-digit float. The reference does not show a completion
-              // figure at all, so leaving it unset is the accurate match, not a
-              // shortcut.
-              metricsJson: {
-                views,
-                likes: Math.round(target.likes * progress),
-                comments: Math.round(target.comments * progress),
-                averageWatchTimeMs: PARITY_WATCH_TIME_MS,
-              },
-              sampledAt: iso(hoursAgo(slot * HOURS_PER_SAMPLE)),
-            })
-            .run();
-          sampleRows += 1;
-        }
-      }
-    }
+    const parityVideoRows = seedVideoPlans(
+      rawDb,
+      videoAssetId,
+      nowIso,
+      PARITY_VIDEO.map((plan) => ({
+        label: plan.label,
+        locale: plan.locale,
+        publishedAt: iso(hoursAgo(plan.hoursAgo)),
+        targets: plan.targets.map((target) => ({ ...target })),
+      })),
+      {
+        durationMs: 24_000,
+        slots: (plan) => Math.max(1, Math.round(hoursSince(plan.publishedAt) / HOURS_PER_SAMPLE)),
+        sampledAt: (_plan, slot) => iso(hoursAgo(slot * HOURS_PER_SAMPLE)),
+        // averageWatchTimeMs directly, not totalWatchTimeMs: the summary derives
+        // completion rate from total watch time divided by views times duration,
+        // which is a percentage a handful of round input numbers cannot also land
+        // on a round output — it was rendering as a seven-digit float. The
+        // reference does not show a completion figure at all, so leaving it unset
+        // is the accurate match, not a shortcut.
+        extraMetrics: { averageWatchTimeMs: PARITY_WATCH_TIME_MS },
+      },
+    );
+    targetRows += parityVideoRows.targetRows;
+    sampleRows += parityVideoRows.sampleRows;
 
     // One archived clip carries the whole video history: the overview reads a
     // day's reach as the growth between two snapshots, so a single target whose

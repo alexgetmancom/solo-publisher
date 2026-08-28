@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { createApiHandler } from "../src/api.js";
 import { registerChannel } from "../src/channels/registry.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 const COMMAND_TOKEN = "b".repeat(16);
@@ -21,9 +21,8 @@ function testConfig() {
 }
 
 describe("Command Center Studio tab", () => {
-  it("gates the studio tab behind the Command Center token and renders the shared read model", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("gates the studio tab behind the Command Center token and renders the shared read model", () =>
+    withDb(async (backendDb) => {
       const config = testConfig();
       const app = createApiHandler({ config, backendDb });
 
@@ -44,14 +43,10 @@ describe("Command Center Studio tab", () => {
       expect(dashboardText).toContain("Подключить Instagram EN");
       expect(dashboardText).toContain("<table bordered striped>");
       expect(dashboardText).not.toContain("| Площадка |");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("keeps channel setup available without MCP and leads a fresh install through its first draft", async () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("keeps channel setup available without MCP and leads a fresh install through its first draft", () =>
+    withDb(async (backendDb) => {
       const config = loadTestConfig({ COMMAND_CENTER_TOKEN: COMMAND_TOKEN });
       const app = createApiHandler({ config, backendDb });
       const studio = await app(new Request("http://localhost/command-center?tab=studio", { headers: { "X-Admin-Token": COMMAND_TOKEN } }));
@@ -70,8 +65,5 @@ describe("Command Center Studio tab", () => {
       const configuredText = await configured.text();
       expect(configuredText).toContain("Опубликуйте первый черновик");
       expect(configuredText).toContain("Подключено назначений: 1");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

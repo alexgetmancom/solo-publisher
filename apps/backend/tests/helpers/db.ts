@@ -10,8 +10,17 @@ import { openBackendDb } from "./open-db.js";
  *   it("...", async () => withDb(async (backendDb) => { ... }));
  */
 export function withDb<T>(fn: (backendDb: UnsafeBackendDb) => T | Promise<T>, channels: readonly TestChannelId[] = []): Promise<T> {
-  const backendDb = openBackendDb(":memory:");
-  registerTestChannels(backendDb, channels);
+  return withOpenDb(() => {
+    const backendDb = openBackendDb(":memory:");
+    registerTestChannels(backendDb, channels);
+    return backendDb;
+  }, fn);
+}
+
+/** withDb for a suite that opens its database its own way — a file on disk, a
+ * fixed set of channels. The close is the part worth sharing; the open is not. */
+export function withOpenDb<T>(open: () => UnsafeBackendDb, fn: (backendDb: UnsafeBackendDb) => T | Promise<T>): Promise<T> {
+  const backendDb = open();
   return (async () => fn(backendDb))().finally(() => backendDb.close());
 }
 

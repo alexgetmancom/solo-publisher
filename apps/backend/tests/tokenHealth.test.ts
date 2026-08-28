@@ -3,9 +3,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
+import type { UnsafeBackendDb } from "../src/db/client.js";
 import { credentialChecks, publicationEvents } from "../src/db/schema.js";
 import { checkTokenHealth } from "../src/observability/token-health.js";
 import { registerTestChannels } from "./helpers/channels.js";
+import { withOpenDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -21,14 +23,15 @@ function tempDb() {
   return openBackendDb(join(dir, "pipeline.db"), 5000);
 }
 
+const withTempDb = <T>(fn: (backendDb: UnsafeBackendDb) => T | Promise<T>): Promise<T> => withOpenDb(tempDb, fn);
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status });
 }
 
 describe("token health probes", () => {
-  it("warns when a Graph API token is close to expiring", async () => {
-    const backendDb = tempDb();
-    try {
+  it("warns when a Graph API token is close to expiring", () =>
+    withTempDb(async (backendDb) => {
       const soon = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const fetchMock = mock(async (url: string | URL | Request) => {
         const href = String(url);
@@ -50,14 +53,10 @@ describe("token health probes", () => {
         .get();
       expect(event).not.toBeUndefined();
       expect(event?.target).toBe("instagram_ru");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("checks the YouTube refresh token against the authenticated channel before publishing is due", async () => {
-    const backendDb = tempDb();
-    try {
+  it("checks the YouTube refresh token against the authenticated channel before publishing is due", () =>
+    withTempDb(async (backendDb) => {
       const calls: string[] = [];
       const fetchMock = mock(async (url: string | URL | Request) => {
         const href = String(url);
@@ -77,14 +76,10 @@ describe("token health probes", () => {
 
       expect(calls).toEqual(["https://oauth2.googleapis.com/token", "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true"]);
       expect(backendDb.db.select().from(credentialChecks).where(eq(credentialChecks.target, "youtube_ru")).get()).toBeDefined();
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("checks each enabled Instagram Story locale with its own account", async () => {
-    const backendDb = tempDb();
-    try {
+  it("checks each enabled Instagram Story locale with its own account", () =>
+    withTempDb(async (backendDb) => {
       const calls: string[] = [];
       const fetchMock = mock(async (url: string | URL | Request) => {
         calls.push(String(url));
@@ -103,8 +98,5 @@ describe("token health probes", () => {
       expect(backendDb.db.select().from(credentialChecks).where(eq(credentialChecks.target, "instagram_stories_ru")).get()).toBeDefined();
       expect(calls.some((url) => url.includes("/ru-user?fields=id"))).toBe(true);
       expect(calls.some((url) => url.includes("/en-user?fields=id"))).toBe(true);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

@@ -13,7 +13,7 @@ import { xActivityItems, xActivityMetricSnapshots } from "../src/db/schema.js";
 import { type CombinedSectionInput, renderCombinedSection } from "../src/interfaces/web/dashboard/combined-section.js";
 import { emptyVideoOverview } from "../src/interfaces/web/dashboard/video-overview.js";
 import { xActivityPost } from "../src/interfaces/web/dashboard/x-activity-posts.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 
 const HEADERS = [
@@ -78,37 +78,28 @@ describe("x analytics import guards", () => {
   /** A reading is keyed by the moment it was taken, so a wrong moment cannot be
    * corrected by importing again: it sorts above every window and disappears
    * from the charts while every report still lists it. */
-  it("refuses a sampled_at that is not a full instant", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("refuses a sampled_at that is not a full instant", () =>
+    withDb(async (backendDb) => {
       const file = writeExport([row]);
       // What a shell left of "2026-08-27T14:01:34Z" after cutting at the last colon.
       expect(() => importXAnalyticsCsv(backendDb, file, "34Z")).toThrow(/full ISO timestamp/);
       expect(() => importXAnalyticsCsv(backendDb, file, "2026-08-27")).toThrow(/full ISO timestamp/);
       expect(importXAnalyticsCsv(backendDb, file, "2026-08-27T14:01:34Z").rows).toBe(1);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   /** The export dates a post by calendar day; resolving that day against the
    * importing machine's timezone put one file on two different days. */
-  it("dates a post by the day the export names, wherever it is imported", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("dates a post by the day the export names, wherever it is imported", () =>
+    withDb(async (backendDb) => {
       importXAnalyticsCsv(backendDb, writeExport([row]), "2026-08-27T14:01:34Z");
       const item = backendDb.db.select().from(xActivityItems).all()[0];
       expect(item?.publishedAt).toBe("2026-08-20T00:00:00.000Z");
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });
 
 describe("X Activity", () => {
-  it("records a published X target idempotently and reads the newest metric snapshots", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("records a published X target idempotently and reads the newest metric snapshots", () =>
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, { postId: 1, ru: "Русский текст", en: "English text", now });
 
@@ -177,14 +168,10 @@ describe("X Activity", () => {
         { xPostId: "x-repost", kind: "repost", metrics: {} },
         { xPostId: "x-unknown", kind: "standalone", metrics: {} },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("imports linked posts and account-wide replies without adding editorial posts", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("imports linked posts and account-wide replies without adding editorial posts", () =>
+    withDb(async (backendDb) => {
       const now = "2026-07-29T11:49:00.000Z";
       seedTextPost(backendDb, { postId: 1, en: "A linked Studio post", now });
       backendDb.sqlite
@@ -219,14 +206,10 @@ describe("X Activity", () => {
       const repeated = importXAnalyticsCsv(backendDb, file, now);
       expect(repeated.activitySamples).toBe(0);
       expect(backendDb.db.select().from(xActivityItems).all()).toHaveLength(2);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("links imported activity to a post that only exists afterwards, and projects its metrics", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("links imported activity to a post that only exists afterwards, and projects its metrics", () =>
+    withDb(async (backendDb) => {
       const now = "2026-07-29T11:49:00.000Z";
       const text = "A Studio post written well after the export was imported";
       const directory = mkdtempSync(join(tmpdir(), "x-activity-relink-"));
@@ -253,14 +236,10 @@ describe("X Activity", () => {
         .prepare("SELECT metric_name AS metric, value FROM metric_samples WHERE publication_key='post:1' AND metric_name='views'")
         .all();
       expect(samples).toMatchObject([{ metric: "views", value: 50 }]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("links a tweet whose text is spelled differently or was edited on the same day", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("links a tweet whose text is spelled differently or was edited on the same day", () =>
+    withDb(async (backendDb) => {
       const now = "2026-07-29T11:49:00.000Z";
       const cases = [
         // The post reads `⚡️` and `>`; the export writes `⚡` and `&gt;`.
@@ -303,14 +282,10 @@ describe("X Activity", () => {
         { id: "201", post: "post:2" },
         { id: "300", post: null },
       ]);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("reports coverage and the near-miss links an import declined to make", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("reports coverage and the near-miss links an import declined to make", () =>
+    withDb(async (backendDb) => {
       const now = "2026-07-29T11:49:00.000Z";
       // Long enough for the linker to act on, and one that only clears the
       // report's lower bar: the second is the near miss the report exists for.
@@ -344,10 +319,7 @@ describe("X Activity", () => {
       expect(report.editorialCoverage).toMatchObject({ xTargets: 2, covered: 1, uncovered: [{ publicationKey: "post:9" }] });
       expect(report.linkCandidates).toMatchObject([{ xPostId: "101", publicationKey: "post:2" }]);
       expect(report.topUnlinked[0]).toMatchObject({ xPostId: "101", metrics: { views: 500, likes: 2, replies: 1 } });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
   it("adds only X activity that is not already represented in the editorial totals", () => {
     const editorial = {

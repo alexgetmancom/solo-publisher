@@ -2,12 +2,11 @@ import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { importManualAnalytics } from "../src/analytics/import-manual-analytics.js";
 import { creatorProfileSnapshots, creatorProfiles } from "../src/db/schema.js";
-import { openBackendDb } from "./helpers/open-db.js";
+import { withDb } from "./helpers/db.js";
 
 describe("manual analytics import", () => {
-  it("records both Threads accounts as one dated operator observation", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("records both Threads accounts as one dated operator observation", () =>
+    withDb(async (backendDb) => {
       const result = importManualAnalytics(backendDb, {
         sampledAt: "2026-07-29T18:00:00.000Z",
         threadsRuFollowers: 210,
@@ -24,21 +23,14 @@ describe("manual analytics import", () => {
         followersCount: 210,
         manual: true,
       });
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 
-  it("rejects an empty or invalid observation before writing anything", () => {
-    const backendDb = openBackendDb(":memory:");
-    try {
+  it("rejects an empty or invalid observation before writing anything", () =>
+    withDb(async (backendDb) => {
       expect(() => importManualAnalytics(backendDb, { sampledAt: "2026-07-29T18:00:00.000Z" })).toThrow("provide --x-file");
       expect(() => importManualAnalytics(backendDb, { sampledAt: "2026-07-29T18:00:00.000Z", threadsRuFollowers: -1 })).toThrow(
         "non-negative integer",
       );
       expect(backendDb.db.select().from(creatorProfileSnapshots).all()).toHaveLength(0);
-    } finally {
-      backendDb.close();
-    }
-  });
+    }));
 });

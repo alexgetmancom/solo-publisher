@@ -3,7 +3,6 @@ import { publicationRef } from "../../application/publication-ref.js";
 import { requireStudioMediaAssets } from "../../content/assets.js";
 import type { BackendDb } from "../../db/client.js";
 import { keepYouTubeUploadPrivate } from "../../delivery/video-publishers.js";
-import { recordDomainEvent } from "../../domain/events.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
 import { cancelScheduledNotifications, scheduleReminder } from "../../notifications/jobs.js";
@@ -143,7 +142,7 @@ export function videoService(backendDb: BackendDb, config: BackendConfig) {
           }
         }
         if (cancellation.manualRemoval.length || holdFailures.length) {
-          recordDomainEvent(backendDb.events, {
+          backendDb.events.record({
             ref: publicationRef("video", publicationId),
             type: "studio.notification.video_cancelled",
             severity: holdFailures.length ? "warn" : "info",

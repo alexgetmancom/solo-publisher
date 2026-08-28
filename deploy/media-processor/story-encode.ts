@@ -92,6 +92,51 @@ export function storyFfmpegArgs(input: string, output: string, kind: "video" | "
   ];
 }
 
+/** The VAAPI init the remote executor puts in front of every encode. */
+const VAAPI_DEVICE_ARGS = ["-init_hw_device", "vaapi=va:/dev/dri/renderD128", "-filter_hw_device", "va", "-y"];
+
+/** The site and Story standard renders share one ladder; Telegram gets its own
+ * ceiling and rides it flat, because the cap is the delivery limit rather than
+ * headroom for a peak. */
+const STANDARD_RATE = { kbps: 3150, maxKbps: 3300 };
+
+/**
+ * One encoded output off a filter-graph label. Every remote leg is this: the
+ * three copies that used to spell it out drifted apart a keyframe interval at a
+ * time, which is invisible until a platform rejects one of them.
+ */
+function vaapiOutputLeg(
+  label: string,
+  rate: { kbps: number; maxKbps: number },
+  gop: string | null,
+  duration: number | null,
+  output: string,
+): string[] {
+  return [
+    "-map",
+    label,
+    "-map",
+    "0:a?",
+    "-c:v",
+    "h264_vaapi",
+    "-b:v",
+    `${rate.kbps}k`,
+    "-maxrate",
+    `${rate.maxKbps}k`,
+    "-bufsize",
+    `${rate.maxKbps * 2}k`,
+    ...(gop ? ["-g", gop] : []),
+    "-c:a",
+    "copy",
+    "-tag:v",
+    "avc1",
+    "-movflags",
+    "+faststart",
+    ...(duration == null ? [] : ["-t", String(duration)]),
+    output,
+  ];
+}
+
 export function remoteStoryFfmpegArgs(
   input: string,
   standardOutput: string,
@@ -100,94 +145,24 @@ export function remoteStoryFfmpegArgs(
   blur: boolean,
 ): string[] {
   return [
-    "-init_hw_device",
-    "vaapi=va:/dev/dri/renderD128",
-    "-filter_hw_device",
-    "va",
-    "-y",
+    ...VAAPI_DEVICE_ARGS,
     "-i",
     input,
     "-filter_complex",
     verticalVideoFilter(STORY_MAX_DURATION_SECONDS, blur, 2),
-    "-map",
-    "[out0]",
-    "-map",
-    "0:a?",
-    "-c:v",
-    "h264_vaapi",
-    "-b:v",
-    "3150k",
-    "-maxrate",
-    "3300k",
-    "-bufsize",
-    "6600k",
-    "-g",
-    "50",
-    "-c:a",
-    "copy",
-    "-tag:v",
-    "avc1",
-    "-movflags",
-    "+faststart",
-    "-t",
-    String(STORY_MAX_DURATION_SECONDS),
-    standardOutput,
-    "-map",
-    "[out1]",
-    "-map",
-    "0:a?",
-    "-c:v",
-    "h264_vaapi",
-    "-b:v",
-    `${telegramVideoKbps}k`,
-    "-maxrate",
-    `${telegramVideoKbps}k`,
-    "-bufsize",
-    `${telegramVideoKbps * 2}k`,
-    "-g",
-    "50",
-    "-c:a",
-    "copy",
-    "-tag:v",
-    "avc1",
-    "-movflags",
-    "+faststart",
-    "-t",
-    String(STORY_MAX_DURATION_SECONDS),
-    telegramOutput,
+    ...vaapiOutputLeg("[out0]", STANDARD_RATE, "50", STORY_MAX_DURATION_SECONDS, standardOutput),
+    ...vaapiOutputLeg("[out1]", { kbps: telegramVideoKbps, maxKbps: telegramVideoKbps }, "50", STORY_MAX_DURATION_SECONDS, telegramOutput),
   ];
 }
 
 export function remoteSiteVideoFfmpegArgs(input: string, output: string, blur: boolean): string[] {
   return [
-    "-init_hw_device",
-    "vaapi=va:/dev/dri/renderD128",
-    "-filter_hw_device",
-    "va",
-    "-y",
+    ...VAAPI_DEVICE_ARGS,
     "-i",
     input,
     "-filter_complex",
     verticalVideoFilter(null, blur, 1),
-    "-map",
-    "[out0]",
-    "-map",
-    "0:a?",
-    "-c:v",
-    "h264_vaapi",
-    "-b:v",
-    "3150k",
-    "-maxrate",
-    "3300k",
-    "-bufsize",
-    "6600k",
-    "-c:a",
-    "copy",
-    "-tag:v",
-    "avc1",
-    "-movflags",
-    "+faststart",
-    output,
+    ...vaapiOutputLeg("[out0]", STANDARD_RATE, null, null, output),
   ];
 }
 

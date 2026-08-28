@@ -5,16 +5,13 @@ import { formatMetricValue } from "./format.js";
 
 type HeroMetric = { value: string; label: string };
 
-export type TextHeroMetrics = {
-  postCount: number;
+/** What both halves of the overview report the same way. `countLabel` is the
+ * rendered count, so the raw tally never has to travel alongside it. */
+type HeroCommon = {
   views: number;
   /** The part of `views` earned by what was published inside the period. */
   freshViews: number;
   medianViews: number | null;
-  reactions: number;
-  replies: number;
-  reposts: number;
-  engagementRate: number | null;
   countLabel: string;
   normLabel: string;
   contextLabel: string;
@@ -23,27 +20,25 @@ export type TextHeroMetrics = {
   progressPercent: number | null;
 };
 
-export type VideoHeroMetrics = {
-  videoCount: number;
-  views: number;
-  /** The part of `views` earned by what was published inside the period. */
-  freshViews: number;
-  medianViews: number | null;
-  completionRate: number | null;
-  averageWatchTimeMs: number | null;
-  subscribers: number | null;
-  countLabel: string;
-  normLabel: string;
-  contextLabel: string;
-  paceLabel: string | null;
-  projectionViews: number | null;
-  progressPercent: number | null;
-};
+/** The kind travels with the numbers, so no caller has to pass it a second time
+ * and no renderer has to cast to reach the half it was handed. */
+export type HeroMetrics =
+  | (HeroCommon & {
+      kind: "text";
+      reactions: number;
+      replies: number;
+      reposts: number;
+      engagementRate: number | null;
+    })
+  | (HeroCommon & {
+      kind: "video";
+      completionRate: number | null;
+      averageWatchTimeMs: number | null;
+      subscribers: number | null;
+    });
 
-export function renderHeroCard(kind: "text", metrics: TextHeroMetrics, locale: StudioLocale): string;
-export function renderHeroCard(kind: "video", metrics: VideoHeroMetrics, locale: StudioLocale): string;
-export function renderHeroCard(kind: "text" | "video", metrics: TextHeroMetrics | VideoHeroMetrics, locale: StudioLocale): string {
-  const isText = kind === "text";
+export function renderHeroCard(metrics: HeroMetrics, locale: StudioLocale): string {
+  const isText = metrics.kind === "text";
   const count = metrics.countLabel;
   const label = t(locale, isText ? "cc.hero.text" : "cc.hero.video");
   const color = isText ? "var(--series-text)" : "var(--series-video)";
@@ -53,7 +48,7 @@ export function renderHeroCard(kind: "text" | "video", metrics: TextHeroMetrics 
   // The rule under the heading is the goal gauge, and it turns green once the
   // norm is passed — the same signal the pace label spells out in words.
   const beatNorm = metrics.progressPercent !== null && metrics.progressPercent >= 100;
-  return `<article class="hero-card overview-hero-card hero-card--${kind}" style="--hero-progress:${progress.toFixed(3)}" aria-label="${ariaLabel}">
+  return `<article class="hero-card overview-hero-card hero-card--${metrics.kind}" style="--hero-progress:${progress.toFixed(3)}" aria-label="${ariaLabel}">
     <div class="hero-card__heading overview-hero-card__heading${beatNorm ? " overview-hero-card__heading--win" : ""}"><i style="background:${color}"></i><strong>${label}</strong><span>${escapeHtml(count)}</span></div>
     <div class="hero-card__primary overview-hero-card__primary">
       <div class="hero-card__views overview-hero-card__views"><strong>${formatMetricValue(metrics.views)}</strong>${delta ? `<em class="hero-card__delta ${deltaClass(metrics.views, metrics.medianViews)}">${delta}</em>` : ""}</div>
@@ -64,21 +59,19 @@ export function renderHeroCard(kind: "text" | "video", metrics: TextHeroMetrics 
   </article>`;
 }
 
-export function renderHeroMicroMetrics(kind: "text", metrics: TextHeroMetrics, locale: StudioLocale): string;
-export function renderHeroMicroMetrics(kind: "video", metrics: VideoHeroMetrics, locale: StudioLocale): string;
-export function renderHeroMicroMetrics(kind: "text" | "video", metrics: TextHeroMetrics | VideoHeroMetrics, locale: StudioLocale): string {
+export function renderHeroMicroMetrics(metrics: HeroMetrics, locale: StudioLocale): string {
   const values: HeroMetric[] =
-    kind === "text"
+    metrics.kind === "text"
       ? [
-          { value: formatMetricValue((metrics as TextHeroMetrics).reactions), label: t(locale, "cc.hero.reactions") },
-          { value: formatMetricValue((metrics as TextHeroMetrics).replies), label: t(locale, "cc.hero.replies") },
-          { value: formatMetricValue((metrics as TextHeroMetrics).reposts), label: t(locale, "cc.hero.reposts") },
-          { value: formatRate((metrics as TextHeroMetrics).engagementRate), label: t(locale, "cc.hero.engagement") },
+          { value: formatMetricValue(metrics.reactions), label: t(locale, "cc.hero.reactions") },
+          { value: formatMetricValue(metrics.replies), label: t(locale, "cc.hero.replies") },
+          { value: formatMetricValue(metrics.reposts), label: t(locale, "cc.hero.reposts") },
+          { value: formatRate(metrics.engagementRate), label: t(locale, "cc.hero.engagement") },
         ]
       : [
-          { value: formatCompletionRate((metrics as VideoHeroMetrics).completionRate), label: t(locale, "cc.hero.completions") },
-          { value: formatSeconds((metrics as VideoHeroMetrics).averageWatchTimeMs, locale), label: t(locale, "cc.hero.avg-time") },
-          { value: formatSigned((metrics as VideoHeroMetrics).subscribers), label: t(locale, "cc.hero.subscribers") },
+          { value: formatCompletionRate(metrics.completionRate), label: t(locale, "cc.hero.completions") },
+          { value: formatSeconds(metrics.averageWatchTimeMs, locale), label: t(locale, "cc.hero.avg-time") },
+          { value: formatSigned(metrics.subscribers), label: t(locale, "cc.hero.subscribers") },
         ];
   return `<div class="overview-micro">${values.map((item, index) => `${index ? '<span class="overview-micro__separator">·</span>' : ""}<span><b>${escapeHtml(item.value)}</b> ${escapeHtml(item.label)}</span>`).join("")}</div>`;
 }
