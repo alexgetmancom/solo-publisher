@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { repairOperations } from "../src/interfaces/web/dashboard/ops-sections.js";
 import { operationCatalog } from "../src/operations/registry.js";
 
 const root = join(import.meta.dir, "../../..");
@@ -110,6 +111,18 @@ describe("surface parity", () => {
     );
     expect(claimed.length).toBeGreaterThan(0);
     for (const name of claimed) expect(catalog).toContain(name);
+  });
+
+  /** The third surface. The Command Center's repair card used to post its own
+   * action names to its own dispatcher: `replace_media` lived on the card and
+   * nowhere else, and every repair done from a browser was missing from
+   * `ops timeline`, because the journal is written by the dispatch the card was
+   * not using. It posts operation names now, so the card can only offer what
+   * the catalog has -- and this is what says so. */
+  it("offers the dashboard nothing the command line and the agent cannot also run", () => {
+    const catalog = new Set(operationCatalog().map((entry) => entry.name));
+    expect(repairOperations().length).toBeGreaterThan(0);
+    for (const operation of repairOperations()) expect(catalog).toContain(operation);
   });
 
   it("has no category for a capability the command line cannot reach yet", () => {

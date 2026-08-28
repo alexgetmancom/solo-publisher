@@ -257,10 +257,10 @@ export function recoverStalePublishJobs(backendDb: BackendDb, maxLockAgeSeconds 
   return stale.length;
 }
 
-export function completePublishJob(backendDb: BackendDb, jobId: number, result: PublishResult, lockId?: string): void {
+export function completePublishJob(backendDb: BackendDb, jobId: number, result: PublishResult, lockId: string): void {
   const now = new Date().toISOString();
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
-  if (!job || (lockId != null && (job.status !== "publishing" || job.lockedBy !== lockId))) return;
+  if (job?.status !== "publishing" || job.lockedBy !== lockId) return;
   const publicationKey = job.publicationKey;
   // A publication that got part of the way out comes back to finish it, from the
   // ids the adapter names on its own key: which platform publishes in more than
@@ -292,12 +292,15 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
       tx,
       jobId,
       {
-        status: normalized.status,
-        currentPhase: null,
-        lockedBy: null,
-        lockedAt: null,
-        lastError: normalized.error,
-        updatedAt: now,
+        patch: {
+          status: normalized.status,
+          currentPhase: null,
+          lockedBy: null,
+          lockedAt: null,
+          lastError: normalized.error,
+          updatedAt: now,
+        },
+        fence: lockId,
       },
       publicationKey,
       job.target,
@@ -328,7 +331,6 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
           result,
         },
       },
-      lockId,
     );
     deleteSupersededJobs(tx, job, jobId, publicationKey);
   });
@@ -357,7 +359,7 @@ function settleForReconciliation(
   ids: string[],
   result: PublishResult,
   now: string,
-  lockId: string | undefined,
+  lockId: string,
 ): void {
   const error = String(result.error ?? "external publication requires reconciliation");
   const settled = withLease(backendDb, jobId, (tx) => {
@@ -366,13 +368,16 @@ function settleForReconciliation(
       tx,
       jobId,
       {
-        status: "verification_required",
-        currentPhase: null,
-        nextAttemptAt: null,
-        lockedBy: null,
-        lockedAt: null,
-        lastError: error,
-        updatedAt: now,
+        patch: {
+          status: "verification_required",
+          currentPhase: null,
+          nextAttemptAt: null,
+          lockedBy: null,
+          lockedAt: null,
+          lastError: error,
+          updatedAt: now,
+        },
+        fence: lockId,
       },
       publicationKey,
       job.target,
@@ -391,7 +396,6 @@ function settleForReconciliation(
         message: error,
         details: { job_id: jobId, ids, attempt: job.attemptCount, error_class: "ambiguous" },
       },
-      lockId,
     );
   });
   if (settled) refreshPublicationOwner(backendDb, publicationKey);
@@ -408,7 +412,7 @@ function settlePartialPublication(
   payloadKey: string,
   result: PublishResult,
   now: string,
-  lockId: string | undefined,
+  lockId: string,
 ): boolean {
   const transition = partialPublicationTransition(job.attemptCount, partialRetryPolicy());
   // The long budget a half-finished delivery gets is patience for a platform
@@ -434,15 +438,18 @@ function settlePartialPublication(
       tx,
       jobId,
       {
-        status,
-        currentPhase: null,
-        attemptCount: attempt,
-        nextAttemptAt,
-        lockedBy: null,
-        lockedAt: null,
-        payloadJson: payload,
-        lastError: error,
-        updatedAt: now,
+        patch: {
+          status,
+          currentPhase: null,
+          attemptCount: attempt,
+          nextAttemptAt,
+          lockedBy: null,
+          lockedAt: null,
+          payloadJson: payload,
+          lastError: error,
+          updatedAt: now,
+        },
+        fence: lockId,
       },
       publicationKey,
       job.target,
@@ -463,7 +470,6 @@ function settlePartialPublication(
           ...(providerAnsweredSince ? { stopped_early: providerAnsweredSince } : {}),
         },
       },
-      lockId,
     );
   });
   if (!settled) return false;
@@ -488,10 +494,10 @@ function publishedOnTargetSince(backendDb: BackendDb, target: string, since: str
   return row?.publishedAt ?? null;
 }
 
-export function failPublishJob(backendDb: BackendDb, jobId: number, error: unknown, lockId?: string): void {
+export function failPublishJob(backendDb: BackendDb, jobId: number, error: unknown, lockId: string): void {
   const now = new Date().toISOString();
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
-  if (!job || (lockId != null && (job.status !== "publishing" || job.lockedBy !== lockId))) return;
+  if (job?.status !== "publishing" || job.lockedBy !== lockId) return;
   const publicationKey = job.publicationKey;
   const { attempt, errorClass, status, nextAttemptAt: nextAttempt } = failedJobTransition(error, job.attemptCount, publishRetryPolicy());
   const shouldRetry = status === "queued";
@@ -505,14 +511,17 @@ export function failPublishJob(backendDb: BackendDb, jobId: number, error: unkno
       tx,
       jobId,
       {
-        status,
-        currentPhase: null,
-        attemptCount: attempt,
-        nextAttemptAt: nextAttempt,
-        lockedBy: null,
-        lockedAt: null,
-        lastError: errorText,
-        updatedAt: now,
+        patch: {
+          status,
+          currentPhase: null,
+          attemptCount: attempt,
+          nextAttemptAt: nextAttempt,
+          lockedBy: null,
+          lockedAt: null,
+          lastError: errorText,
+          updatedAt: now,
+        },
+        fence: lockId,
       },
       publicationKey,
       job.target,
@@ -536,7 +545,6 @@ export function failPublishJob(backendDb: BackendDb, jobId: number, error: unkno
           duration_ms: durationSince(job.lockedAt, now),
         },
       },
-      lockId,
     );
   });
   if (!settled) return;
@@ -544,10 +552,10 @@ export function failPublishJob(backendDb: BackendDb, jobId: number, error: unkno
   if (!shouldRetry) refreshPublicationOwner(backendDb, job.publicationKey);
 }
 
-export function requirePublishVerification(backendDb: BackendDb, jobId: number, error: unknown, lockId?: string): boolean {
+export function requirePublishVerification(backendDb: BackendDb, jobId: number, error: unknown, lockId: string): boolean {
   const now = new Date().toISOString();
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
-  if (!job || (lockId != null && (job.status !== "publishing" || job.lockedBy !== lockId))) return false;
+  if (job?.status !== "publishing" || job.lockedBy !== lockId) return false;
   const publicationKey = job.publicationKey;
   const errorText = error instanceof Error ? error.message : String(error);
   let updated = false;
@@ -557,14 +565,17 @@ export function requirePublishVerification(backendDb: BackendDb, jobId: number, 
       tx,
       jobId,
       {
-        status: "verification_required",
-        attemptCount: job.attemptCount + 1,
-        nextAttemptAt: null,
-        currentPhase: null,
-        lockedBy: null,
-        lockedAt: null,
-        lastError: errorText,
-        updatedAt: now,
+        patch: {
+          status: "verification_required",
+          attemptCount: job.attemptCount + 1,
+          nextAttemptAt: null,
+          currentPhase: null,
+          lockedBy: null,
+          lockedAt: null,
+          lastError: errorText,
+          updatedAt: now,
+        },
+        fence: lockId,
       },
       publicationKey,
       job.target,
@@ -580,7 +591,6 @@ export function requirePublishVerification(backendDb: BackendDb, jobId: number, 
           duration_ms: durationSince(job.lockedAt, now),
         },
       },
-      lockId,
     );
     updated = true;
   });
@@ -597,12 +607,12 @@ export function forcePublishJobVerification(
   backendDb: BackendDb,
   jobId: number,
   error: unknown,
-  lockId?: string,
+  lockId: string,
   result: PublishResult | null = null,
 ): boolean {
   const now = new Date().toISOString();
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
-  if (!job || (lockId != null && (job.status !== "publishing" || job.lockedBy !== lockId))) return false;
+  if (job?.status !== "publishing" || job.lockedBy !== lockId) return false;
   const publicationKey = job.publicationKey;
   const errorText = error instanceof Error ? error.message : String(error);
   const evidence = result ? normalizePublishResult(result) : null;
@@ -619,13 +629,7 @@ export function forcePublishJobVerification(
         lastError: errorText,
         updatedAt: now,
       })
-      .where(
-        and(
-          eq(publishJobs.jobId, jobId),
-          eq(publishJobs.status, "publishing"),
-          ...(lockId != null ? [eq(publishJobs.lockedBy, lockId)] : []),
-        ),
-      )
+      .where(and(eq(publishJobs.jobId, jobId), eq(publishJobs.status, "publishing"), eq(publishJobs.lockedBy, lockId)))
       .returning({ jobId: publishJobs.jobId })
       .get();
     if (!row) return false;

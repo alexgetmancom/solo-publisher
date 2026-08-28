@@ -1,4 +1,5 @@
 import { type BackendDb, unsafeDb } from "../db/client.js";
+import { recordObservedPublications } from "../delivery/observed-publication.js";
 import { editorialTexts, matchEditorialPost } from "./x-post-matching.js";
 
 /** Stamped on every row an X analytics export produced: the activity item, the
@@ -52,34 +53,27 @@ export function attachXActivityToPosts(backendDb: BackendDb, apply: boolean): XA
   }
   if (!apply) return { links, insertedSamples: 0, updatedMetrics: 0 };
 
-  // An import must not resurrect a target the operator took down: `deleted` is
-  // a decision about the remote object, and an export taken before it still
-  // lists the post. Every other state is analytics catching delivery up.
-  const linkTarget = sqlite.prepare(
-    `INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, skipped, updated_at, raw_json)
-     VALUES (?, 'x', 'published', ?, ?, ?, NULL, 0, ?, ?)
-     ON CONFLICT(publication_key, target) DO UPDATE SET
-       status='published', external_id=excluded.external_id, external_ids_json=excluded.external_ids_json,
-       url=excluded.url, error=NULL, skipped=0, updated_at=excluded.updated_at, raw_json=excluded.raw_json
-     WHERE publication_targets.status <> 'deleted'`,
-  );
   const linkItem = sqlite.prepare("UPDATE x_activity_items SET linked_publication_key=? WHERE x_post_id=?");
   return sqlite.transaction(() => {
     const now = new Date().toISOString();
-    for (const link of links) {
+    // The delivery row is Delivery's to write; what an export knows is that the
+    // account has this post, which is an observation and goes there as one.
+    const observations = links.map((link) => {
       const ids = idsByPost.get(link.publicationKey) ?? new Set<string>();
       ids.add(link.xPostId);
       idsByPost.set(link.publicationKey, ids);
-      linkTarget.run(
-        link.publicationKey,
-        link.xPostId,
-        JSON.stringify([...ids]),
-        `https://x.com/i/web/status/${link.xPostId}`,
-        now,
-        JSON.stringify({ source: X_ANALYTICS_SOURCE, x_post_id: link.xPostId, matched_by: link.matchedBy }),
-      );
-      linkItem.run(link.publicationKey, link.xPostId);
-    }
+      return {
+        publicationKey: link.publicationKey,
+        target: "x",
+        externalId: link.xPostId,
+        externalIds: [...ids],
+        url: `https://x.com/i/web/status/${link.xPostId}`,
+        observedAt: now,
+        evidence: { source: X_ANALYTICS_SOURCE, x_post_id: link.xPostId, matched_by: link.matchedBy },
+      };
+    });
+    recordObservedPublications(sqlite, observations);
+    for (const link of links) linkItem.run(link.publicationKey, link.xPostId);
     // Every snapshot of a linked item belongs in that post's immutable history,
     // and the newest one is what Command Center renders. A live sample that is
     // newer than the export wins: an import must not walk a metric backwards.

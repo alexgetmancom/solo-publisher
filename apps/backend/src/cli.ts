@@ -1,6 +1,7 @@
 import path from "node:path";
 import { type BackendDb, openBackendDb } from "./db/client.js";
 import type { BackendConfig } from "./foundation/config.js";
+import { redactExternalSecrets } from "./foundation/redact.js";
 import { operationInput, parseArguments } from "./operations/cli-args.js";
 import { type OperationContext, operationCatalog, operationDef, runOperation } from "./operations/registry.js";
 import { loadRuntimeConfig } from "./runtime/config.js";
@@ -40,7 +41,12 @@ async function main(): Promise<void> {
     const format = def.format;
     // A streaming operation has already written its bytes to stdout. Printing a
     // summary after them would append JSON to an archive.
-    if (!def.streams) console.log(format && !args.flags.has("json") ? format(result as never) : JSON.stringify(result, null, 2));
+    // Redacted on the way out, like every line the logger writes. An operation
+    // result carries `raw_json` straight from a platform, and a provider that
+    // echoes a token back in an error body puts it in a terminal, a scrollback
+    // and whatever the operator pastes it into.
+    if (!def.streams)
+      console.log(redactExternalSecrets(format && !args.flags.has("json") ? format(result as never) : JSON.stringify(result, null, 2)));
     if (args.command === "doctor" && result && typeof result === "object" && "ok" in result && result.ok === false) process.exitCode = 1;
   } finally {
     opened.db?.close();
@@ -48,6 +54,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  console.error(redactExternalSecrets(error instanceof Error ? error.message : String(error)));
   process.exit(1);
 });

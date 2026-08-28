@@ -48,14 +48,23 @@ function activeAudiencePlatforms(backendDb: BackendDb): AudiencePlatform[] {
   return AUDIENCE_PLATFORMS.filter((platform) => registeredTargets.has(platform.metricTarget));
 }
 
-const REPAIR_ACTIONS: [value: string, key: MessageKey][] = [
+/** The value is the operation name, because the form posts to the same
+ * dispatch the CLI and the MCP tools go through. The card used to speak its own
+ * dialect -- `replace_media`, `use_other_media` -- which is how one of these
+ * came to exist on the dashboard and nowhere else. */
+const REPAIR_ACTIONS: [operation: string, key: MessageKey][] = [
   ["retry", "cc.repair.retry"],
-  ["refresh_site", "cc.repair.refresh-site"],
+  ["refresh-site", "cc.repair.refresh-site"],
   ["edit", "cc.repair.edit"],
-  ["replace_media", "cc.repair.replace-media"],
-  ["use_other_media", "cc.repair.use-other-media"],
+  ["set-media", "cc.repair.replace-media"],
+  ["use-other-media", "cc.repair.use-other-media"],
   ["delete", "cc.repair.delete"],
 ];
+
+/** Named so the parity test can read them without re-deriving the markup. */
+export function repairOperations(): string[] {
+  return REPAIR_ACTIONS.map(([operation]) => operation);
+}
 
 /** The form authenticates through the HttpOnly `command_token` cookie; the
  * endpoint pairs that with a same-origin check, which is what actually stops a

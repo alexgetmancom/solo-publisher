@@ -25,6 +25,7 @@ const HOST_ONLY = [
   "import-manual-analytics",
   "format-record",
   "replace-media",
+  "set-media",
   "site-media-images",
   "site-media-deduplicate",
   "credential-set",

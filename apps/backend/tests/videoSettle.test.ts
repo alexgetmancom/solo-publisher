@@ -142,6 +142,30 @@ describe("answering a video publication that lost its worker", () => {
       ).rejects.toThrow("already has its platform publication");
       expect(calls).toEqual([]);
     }));
+
+  /** The check above runs before a provider round-trip, and the reconciliation
+   * sweep answers the same target from the same provider while it is in
+   * flight. Without the state in the write's own `WHERE`, this settlement --
+   * decided from a reading taken before that answer -- would overwrite it. */
+  it("discards its own answer when the target was settled while the provider was being asked", () =>
+    withDb(async (backendDb) => {
+      const draftId = stuckReel(backendDb);
+      const fetchImpl = (async (_input: string | URL, _init?: RequestInit) => {
+        backendDb.sqlite
+          .prepare("UPDATE video_targets SET status='published', external_id='ig-reconciled', external_url='https://instagram.com/reel/x'")
+          .run();
+        return Response.json({ _id: "zernio-post", platforms: [{ platform: "instagram", platformPostId: "ig-late" }] });
+      }) as unknown as typeof fetch;
+
+      await expect(
+        settleVideoTarget(config, backendDb, { videoDraftId: draftId, target: "instagram_reels", apply: true }, fetchImpl),
+      ).rejects.toThrow("settled by something else");
+
+      expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, draftId)).get()).toMatchObject({
+        status: "published",
+        externalId: "ig-reconciled",
+      });
+    }));
 });
 
 describe("a publication the provider never answers", () => {

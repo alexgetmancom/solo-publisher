@@ -4,6 +4,7 @@ import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { STUDIO_LOCALES } from "../foundation/locale.js";
 import { log } from "../foundation/logger.js";
+import { redactExternalSecrets } from "../foundation/redact.js";
 import {
   inputJsonSchema,
   type OperationDef,
@@ -722,7 +723,9 @@ function submitFeedback(backendDb: BackendDb, args: JsonObject, clientKey: strin
 }
 
 function success(id: unknown, value: unknown): Record<string, unknown> {
-  return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(value) }] } };
+  // The same pass the logger and the CLI make. An agent reading a tool result
+  // is one more place a provider's error body can carry a credential.
+  return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: redactExternalSecrets(JSON.stringify(value)) }] } };
 }
 
 function object(value: unknown): JsonObject {
@@ -730,7 +733,9 @@ function object(value: unknown): JsonObject {
 }
 
 function rpcError(id: unknown, code: number, message: string): Record<string, unknown> {
-  return { jsonrpc: "2.0", id, error: { code, message } };
+  // A failing operation reports what the provider said, which is where a
+  // credential travels if one does.
+  return { jsonrpc: "2.0", id, error: { code, message: redactExternalSecrets(message) } };
 }
 
 class McpToolError extends Error {

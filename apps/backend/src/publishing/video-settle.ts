@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
 import { videoPublicUrl } from "../content/video-assets.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
@@ -116,7 +116,12 @@ function record(
   const now = new Date().toISOString();
   const landed = Boolean(outcome.externalId || outcome.url);
   const status = landed ? "published" : outcome.failure ? "failed" : "verification_required";
-  unsafeDb(backendDb)
+  // Fenced on the state this settlement was decided from. The checks above ran
+  // before a provider round-trip that takes as long as it takes, and the
+  // reconciliation sweep settles the same target from the same provider under
+  // its own fence -- an unconditional write here overwrites whatever it
+  // recorded in between with an answer taken before it.
+  const settled = unsafeDb(backendDb)
     .db.update(videoTargets)
     .set({
       status,
@@ -129,8 +134,17 @@ function record(
       verifiedAt: landed ? now : null,
       updatedAt: now,
     })
-    .where(eq(videoTargets.id, row.id))
-    .run();
+    .where(
+      and(
+        eq(videoTargets.id, row.id),
+        eq(videoTargets.status, row.status),
+        isNull(videoTargets.externalId),
+        isNull(videoTargets.externalUrl),
+      ),
+    )
+    .returning({ id: videoTargets.id })
+    .get();
+  if (!settled) throw new Error(`${row.target} was settled by something else while the provider was being asked; read its state again`);
   refreshVideoDraftStatus(backendDb, videoDraftId, config.VIDEO_MEDIA_RETENTION_HOURS);
   return {
     applied: true,

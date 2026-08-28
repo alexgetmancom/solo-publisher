@@ -112,26 +112,32 @@ export class PublishLockLostError extends Error {
  * atomically. `fence` is the lease the caller checked before it called the
  * provider: that check is minutes old by the time a settlement lands, and
  * without carrying it into the write a timed-out worker overwrote the result
- * its replacement had already recorded. */
+ * its replacement had already recorded.
+ *
+ * The fence travels with the patch rather than beside it, so there is no way to
+ * ask for a job update without saying which lease earns it. It used to be a
+ * separate optional argument, which made an unfenced write one forgotten
+ * parameter away -- and the only caller that ever forgot it was a test.
+ * `null` is the stale-lock recovery path, which already won the job row on its
+ * own `lockedAt` fence and has only the target and the journal left to write. */
 export function settleJob(
   tx: UnsafeBackendDb["db"],
   jobId: number,
-  jobPatch: Partial<typeof publishJobs.$inferInsert> | null,
+  job: { patch: Partial<typeof publishJobs.$inferInsert>; fence: string } | null,
   publicationKey: string,
   target: string,
   targetPatch: Omit<typeof publicationTargets.$inferInsert, "publicationKey" | "target"> & { updatedAt: string },
   event: { type: string; severity: string; message: string; details: Record<string, unknown> },
-  fence?: string,
 ): void {
-  if (jobPatch && fence != null) {
+  if (job) {
     const updated = tx
       .update(publishJobs)
-      .set(jobPatch)
-      .where(and(eq(publishJobs.jobId, jobId), eq(publishJobs.lockedBy, fence)))
+      .set(job.patch)
+      .where(and(eq(publishJobs.jobId, jobId), eq(publishJobs.lockedBy, job.fence)))
       .returning({ jobId: publishJobs.jobId })
       .get();
     if (!updated) throw new PublishLockLostError(jobId);
-  } else if (jobPatch) tx.update(publishJobs).set(jobPatch).where(eq(publishJobs.jobId, jobId)).run();
+  }
   upsertPostTarget(tx, { publicationKey, target, ...targetPatch });
   insertEvent(tx, publicationKey, target, event.type, event.severity, event.message, event.details, targetPatch.updatedAt);
 }

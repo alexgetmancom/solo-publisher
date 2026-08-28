@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../../db/client.js";
-import { type JsonValue, publicationTargets } from "../../db/schema.js";
+import type { JsonValue } from "../../db/schema.js";
+import { recordObservedPublicationUrl } from "../../delivery/observed-publication.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
 import { recordWorkerState } from "../../foundation/runtime/worker-state.js";
@@ -62,10 +62,13 @@ export async function runMetricsCycle(
               tx as UnsafeBackendDb["db"],
             );
             if (result.url)
-              tx.update(publicationTargets)
-                .set({ url: result.url, updatedAt: new Date().toISOString() })
-                .where(and(eq(publicationTargets.publicationKey, task.publicationKey), eq(publicationTargets.target, task.target)))
-                .run();
+              recordObservedPublicationUrl(
+                tx as UnsafeBackendDb["db"],
+                task.publicationKey,
+                task.target,
+                result.url,
+                new Date().toISOString(),
+              );
             finishMetricTask(backendDb, task, null, false, tx as UnsafeBackendDb["db"]);
           });
           persistMs = Date.now() - persistStartedAt;

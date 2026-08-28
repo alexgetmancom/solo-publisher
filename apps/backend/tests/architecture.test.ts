@@ -117,6 +117,48 @@ describe("architecture fitness", () => {
     for (const file of writers) expect(source(file)).toMatch(/resumeState|hasResumeState|resumeKey/);
   });
 
+  /** `publication_targets` and `video_targets` are the rows that say what the
+   * audience has: a status, a platform id, a link. Delivery, Publishing and the
+   * operator commands that answer for a delivery write them; nothing else does.
+   *
+   * Analytics used to, in its own hand-written upsert -- an X export listing a
+   * post the queue never delivered, a collector handed a canonical permalink.
+   * Both were careful, and both were a second spelling of a write whose
+   * conditions live somewhere else. They go through
+   * delivery/observed-publication.ts now, which is what an area that *learns*
+   * something about a publication is allowed to do to one.
+   *
+   * Adding a file here is allowed and is how it says it belongs. Adding one
+   * under analytics/, bot/, interfaces/ or studio/ is not: those surfaces ask
+   * Delivery, they do not answer for it. */
+  it("keeps the writers of what the audience has to Delivery, Publishing and Operations", () => {
+    const writersOf = (orm: string, table: string): string[] => {
+      const write = new RegExp(`(?:insert|update|delete)\\(${orm}\\)|(?:UPDATE|INSERT INTO|DELETE FROM)\\s+${table}\\b`);
+      return sourceFiles("apps/backend/src")
+        .filter((file) => !file.includes("/db/schema/"))
+        .filter((file) => write.test(source(file)))
+        .sort();
+    };
+
+    expect(writersOf("publicationTargets", "publication_targets")).toEqual([
+      "apps/backend/src/delivery/external-removals.ts",
+      "apps/backend/src/delivery/observed-publication.ts",
+      "apps/backend/src/delivery/publication-reconciliation.ts",
+      "apps/backend/src/operations/maintenance.ts",
+      "apps/backend/src/operations/settle.ts",
+      "apps/backend/src/publishing/abandon.ts",
+      "apps/backend/src/publishing/queue-state.ts",
+      "apps/backend/src/publishing/requeue.ts",
+    ]);
+    expect(writersOf("videoTargets", "video_targets")).toEqual([
+      "apps/backend/src/delivery/publication-reconciliation.ts",
+      "apps/backend/src/delivery/video-worker.ts",
+      "apps/backend/src/operations/maintenance.ts",
+      "apps/backend/src/publishing/video-service.ts",
+      "apps/backend/src/publishing/video-settle.ts",
+    ]);
+  });
+
   /** Three surfaces report the same delivery -- the bot's card, `ops recent`,
    * `ops verify` -- and each one that spelled "half published" itself gave a
    * different answer. They ask one function now, and this is what keeps them

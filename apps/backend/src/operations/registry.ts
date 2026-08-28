@@ -500,6 +500,18 @@ const operationDefs = {
     note: "reports the targets in scope; `apply` rewrites them",
     handler: (context, input) => runRepair(context, "edit", input),
   }),
+  "set-media": operation({
+    summary: "Replace one locale's media from a JSON description, take the published targets down and publish them again.",
+    schema: repairSchema({
+      media_json: example(z.string().min(1), '[{"asset_id": 12}]').describe("media items, each naming file_id, local_path or asset_id"),
+    }),
+    mutates: true,
+    // A media item may name `local_path`, which is a path on this host and
+    // means nothing to a remote caller -- the same line `replace-media` sits on.
+    agent: false,
+    note: "reports the targets in scope; `apply` replaces and republishes them",
+    handler: (context, input) => runRepair(context, "replace_media", input),
+  }),
   "use-other-media": operation({
     summary: "Drop one locale's own media so it falls back to the other locale's, then publish it again.",
     schema: repairSchema({}),
@@ -695,7 +707,15 @@ const operationDefs = {
   }),
   "refresh-site": operation({
     summary: "Re-render one locale's public page without touching social targets.",
-    schema: z.object({ ref: refOption, locale: localeOption }),
+    // `apply` is accepted and always true: nothing public moves, so there is no
+    // plan worth reporting. It is in the schema because the Command Center's
+    // repair form posts one confirmation for whichever repair is chosen, and an
+    // operation that refused the field would be the one the card cannot run.
+    schema: z.object({
+      ref: refOption,
+      locale: localeOption,
+      apply: z.boolean().default(true).describe("accepted; this repair always acts"),
+    }),
     mutates: true,
     agent: true,
     handler: (context, input) => runRepair(context, "refresh_site", { ...input, apply: true }),
@@ -971,7 +991,11 @@ const operationDefs = {
     summary: "Sign this Studio's Stories account in and store its session.",
     note: "Telegram Stories are posted by a user, not a bot, so the credential is an MTProto session. Needs TELEGRAM_CHANNEL_STORIES_API_ID, _API_HASH and _SESSION set first; run it with a terminal attached (docker compose exec -it) because it asks for the phone number, the code Telegram sends, and the 2FA password if the account has one.",
     schema: z.object({}),
-    mutates: false,
+    // It writes a credential -- a session directory that can post as that
+    // person. That the credential is a file rather than a row does not make
+    // creating it a read, and every surface says "[MUTATION]" about it now, the
+    // way it already did for `credential-set`.
+    mutates: true,
     // Reads a phone number and a 2FA password from whoever runs it, and writes
     // a session that can post as that person.
     agent: false,

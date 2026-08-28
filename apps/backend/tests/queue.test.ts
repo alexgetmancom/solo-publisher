@@ -708,12 +708,17 @@ describe("publish queue", () => {
         payload: newDeliveryPayload({ text_en: "Queued" }),
       });
       claimDuePublishJobs(backendDb, 1, "test-worker");
-      completePublishJob(backendDb, id, {
-        ok: false,
-        id: "at://did/app.bsky.feed.post/root",
-        retryable: true,
-        error: "test_visibility_failed:not_in_author_feed",
-      });
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          ok: false,
+          id: "at://did/app.bsky.feed.post/root",
+          retryable: true,
+          error: "test_visibility_failed:not_in_author_feed",
+        },
+        "test-worker",
+      );
 
       const job = backendDb.db
         .select({ status: publishJobs.status, payloadJson: publishJobs.payloadJson })
@@ -779,7 +784,7 @@ describe("publish queue", () => {
         payload: newDeliveryPayload({ title: "Two" }),
       });
       claimDuePublishJobs(backendDb, 1, "test-worker");
-      completePublishJob(backendDb, first, { ok: true, id: "first" });
+      completePublishJob(backendDb, first, { ok: true, id: "first" }, "test-worker");
       expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, second)).get()).toEqual({
         status: "queued",
       });
@@ -797,12 +802,17 @@ describe("publish queue", () => {
         payload: newDeliveryPayload({ text_en: "Первая часть" }),
       });
       claimDuePublishJobs(backendDb, 1, "test-worker");
-      completePublishJob(backendDb, id, {
-        partial: true,
-        resumeKey: "_threadsPublishedIds",
-        ids: ["root-id"],
-        error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
-      });
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          partial: true,
+          resumeKey: "_threadsPublishedIds",
+          ids: ["root-id"],
+          error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+        },
+        "test-worker",
+      );
       expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.status).toBe(
         "queued",
       );
@@ -822,12 +832,17 @@ describe("publish queue", () => {
 
       backendDb.db.update(publishJobs).set({ nextAttemptAt: null }).where(eq(publishJobs.jobId, id)).run();
       claimDuePublishJobs(backendDb, 1, "test-worker");
-      completePublishJob(backendDb, id, {
-        partial: true,
-        resumeKey: "_threadsPublishedIds",
-        ids: ["root-id"],
-        error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
-      });
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          partial: true,
+          resumeKey: "_threadsPublishedIds",
+          ids: ["root-id"],
+          error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+        },
+        "test-worker",
+      );
 
       const job = backendDb.db
         .select({ status: publishJobs.status, lastError: publishJobs.lastError, payloadJson: publishJobs.payloadJson })
@@ -908,12 +923,17 @@ describe("publish queue", () => {
         payload: newDeliveryPayload({ text_en: "One\n\nTwo" }),
       });
       claimDuePublishJobs(backendDb, 1, "test-worker");
-      completePublishJob(backendDb, id, {
-        partial: true,
-        resumeKey: "_threadsPublishedIds",
-        ids: ["root-id"],
-        error: "reply container missing",
-      });
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          partial: true,
+          resumeKey: "_threadsPublishedIds",
+          ids: ["root-id"],
+          error: "reply container missing",
+        },
+        "test-worker",
+      );
       const job = backendDb.db
         .select({
           status: publishJobs.status,
@@ -949,12 +969,17 @@ describe("publish queue", () => {
           .where(eq(publishJobs.jobId, id))
           .run();
         claimDuePublishJobs(backendDb, 1, "test-worker");
-        completePublishJob(backendDb, id, {
-          partial: true,
-          resumeKey: "_threadsPublishedIds",
-          ids: ["root-id"],
-          error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
-        });
+        completePublishJob(
+          backendDb,
+          id,
+          {
+            partial: true,
+            resumeKey: "_threadsPublishedIds",
+            ids: ["root-id"],
+            error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+          },
+          "test-worker",
+        );
         return backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.status;
       };
 

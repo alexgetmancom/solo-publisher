@@ -316,6 +316,13 @@ describe("Astro endpoint controller", () => {
         entities_json: "[]",
       });
       expect((backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM ops_actions").get() as { count: number }).count).toBe(1);
+      // And the same mutation journal: a repair used to leave the timeline
+      // empty when it was done from the card and full when it was done from the
+      // command line, which made the history depend on where the operator was
+      // standing.
+      expect(
+        backendDb.sqlite.prepare("SELECT publication_key, target FROM publication_events WHERE event_type='operations.command'").all(),
+      ).toEqual([{ publication_key: `post:${postId}`, target: "command-center" }]);
       expect(
         (
           backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM site_jobs WHERE publication_key='post:'||?").get(postId) as {
@@ -330,7 +337,9 @@ describe("Astro endpoint controller", () => {
         body: JSON.stringify({ action: "unknown", ref: `post:${postId}`, token: "secret" }),
       });
       expect(failed.status).toBe(400);
-      expect(await failed.json()).toEqual({ detail: "Action failed" });
+      // The card runs the same dispatch the CLI and the MCP tools do, so it
+      // gets the registry's answer instead of a shrug.
+      expect(await failed.json()).toEqual({ detail: "unknown command: unknown" });
     }));
 
   it("renders the full command center through the framework-neutral controller", async () => {
