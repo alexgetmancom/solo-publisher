@@ -9,7 +9,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { instagramCredentialsForLocale } from "../foundation/external/instagram.js";
 import { withJobHeartbeat } from "../foundation/runtime/job-heartbeat.js";
 import { isTargetAuthBlocked, recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
-import { trackUsageAsync } from "../observability/usage.js";
+import { recordUsage } from "../observability/usage.js";
 import { classifyPublishError } from "../publishing/errors.js";
 import { failedJobTransition, videoStepMayHaveReachedAudience } from "../publishing/job-policy.js";
 import { PUBLISH_CLAIM_LIMIT } from "../publishing/queue.js";
@@ -63,29 +63,33 @@ export async function runVideoCycle(config: BackendConfig, backendDb: BackendDb)
       deferBlockedVideoJob(backendDb, job);
       continue;
     }
+    const startedAt = Date.now();
     try {
-      await trackUsageAsync(backendDb, "publishing.video.job", async () => {
-        const settled = await withJobHeartbeat(
-          VIDEO_HEARTBEAT_INTERVAL_SECONDS,
-          () => {
-            try {
-              unsafeDb(backendDb).db.update(videoJobs).set({ lockedAt: new Date().toISOString() }).where(activeVideoJob(job)).run();
-            } catch {
-              // The shared heartbeat wrapper treats one missed beat as recoverable.
-            }
-          },
-          () => executeVideoJob(config, backendDb, job),
-        );
-        if (settled || completeVideoJob(backendDb, job)) {
-          if (credentialTarget) recordAuthSuccess(backendDb, credentialTarget);
-          recordVideoProgressEvent(backendDb, job, "video.job.completed");
-          recordVideoCompletionIfFinal(backendDb, job.videoDraftId);
-        }
-      });
+      const settled = await withJobHeartbeat(
+        VIDEO_HEARTBEAT_INTERVAL_SECONDS,
+        () => {
+          try {
+            unsafeDb(backendDb).db.update(videoJobs).set({ lockedAt: new Date().toISOString() }).where(activeVideoJob(job)).run();
+          } catch {
+            // The shared heartbeat wrapper treats one missed beat as recoverable.
+          }
+        },
+        () => executeVideoJob(config, backendDb, job),
+      );
+      if (settled || completeVideoJob(backendDb, job)) {
+        if (credentialTarget) recordAuthSuccess(backendDb, credentialTarget);
+        recordVideoProgressEvent(backendDb, job, "video.job.completed");
+        recordVideoCompletionIfFinal(backendDb, job.videoDraftId);
+      }
+      recordUsage(backendDb, "publishing.video.job", true, Date.now() - startedAt);
     } catch (error) {
-      const settled = isAmbiguousPublicationError(error)
-        ? requireVideoVerification(backendDb, job, error, config)
-        : failVideoJob(backendDb, job, error, config);
+      const ambiguous = isAmbiguousPublicationError(error);
+      const settled = ambiguous ? requireVideoVerification(backendDb, job, error, config) : failVideoJob(backendDb, job, error, config);
+      // An upload the provider answered ambiguously and verification took over
+      // is the pipeline doing its job, not a failed one. Counted as a failure,
+      // it read as one video publish in four broken while every one of those
+      // targets reconciled a minute later.
+      recordUsage(backendDb, "publishing.video.job", ambiguous && settled, Date.now() - startedAt);
       if (settled) {
         if (credentialTarget && classifyPublishError(error) === "auth") recordAuthFailure(backendDb, credentialTarget);
         recordVideoProgressEvent(backendDb, job, "video.job.failed");
