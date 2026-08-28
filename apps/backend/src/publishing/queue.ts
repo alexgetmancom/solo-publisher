@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import os from "node:os";
 import process from "node:process";
-import { and, eq, isNull, lt, lte, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
 import { recordPublishedXActivity } from "../analytics/x-activity-store.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { type JsonObject, publicationTargets, publishJobs } from "../db/schema.js";
@@ -410,9 +410,20 @@ function settlePartialPublication(
   now: string,
   lockId: string | undefined,
 ): boolean {
-  const { attempt, status, nextAttemptAt } = partialPublicationTransition(job.attemptCount, partialRetryPolicy());
-  const retry = status === "queued";
-  const error = String(result.error ?? `${job.target} partial publication`);
+  const transition = partialPublicationTransition(job.attemptCount, partialRetryPolicy());
+  // The long budget a half-finished delivery gets is patience for a platform
+  // that is down. It is not patience for a platform that is up and refusing
+  // this one call: another publication landing on the same target since the
+  // last attempt says the outage theory is wrong, and repeating an identical
+  // refusal for hours only delays telling someone who can look at it.
+  const providerAnsweredSince = publishedOnTargetSince(backendDb, job.target, job.updatedAt);
+  const attempt = transition.attempt;
+  const retry = transition.status === "queued" && !providerAnsweredSince;
+  const status = retry ? "queued" : "failed";
+  const nextAttemptAt = retry ? transition.nextAttemptAt : null;
+  const error = providerAnsweredSince
+    ? `${String(result.error ?? `${job.target} partial publication`)} (stopped early: ${job.target} published something else at ${providerAnsweredSince}, so this is not the platform being down)`
+    : String(result.error ?? `${job.target} partial publication`);
   const payload = resumedDeliveryPayload(parsePayload(job.payloadJson), payloadKey, ids);
   const settled = withLease(backendDb, jobId, (tx) => {
     // A queued row is unique per (publication_key, target); clear any competing one
@@ -438,9 +449,19 @@ function settlePartialPublication(
       { status, externalId: ids[0] ?? null, externalIdsJson: ids, error, skipped: 0, updatedAt: now, rawJson: JSON.stringify(result) },
       {
         type: retry ? "publish.job.partial" : "publish.job.failed",
-        severity: retry ? "warn" : "error",
+        // The first one is news and the last one is the outcome; the ones in
+        // between are a delivery doing what it said it would do. Alerts are
+        // driven off severity, and a warning every backoff step for six hours
+        // is how an operator learns to read past them.
+        severity: retry ? (attempt <= 1 ? "warn" : "info") : "error",
         message: error,
-        details: { job_id: jobId, ids, attempt, next_attempt_at: nextAttemptAt },
+        details: {
+          job_id: jobId,
+          ids,
+          attempt,
+          next_attempt_at: nextAttemptAt,
+          ...(providerAnsweredSince ? { stopped_early: providerAnsweredSince } : {}),
+        },
       },
       lockId,
     );
@@ -448,6 +469,23 @@ function settlePartialPublication(
   if (!settled) return false;
   if (!retry && classifyPublishError(error) === "auth") recordAuthFailure(backendDb, job.target);
   return retry;
+}
+
+/** When this target last put something in front of an audience after the given
+ * moment. Evidence about the platform, not about this publication: it is how a
+ * delivery tells "the platform is down" from "the platform will not take this
+ * particular call". */
+function publishedOnTargetSince(backendDb: BackendDb, target: string, since: string | null): string | null {
+  if (!since) return null;
+  const row = unsafeDb(backendDb)
+    .db.select({ publishedAt: publicationTargets.publishedAt })
+    .from(publicationTargets)
+    .where(
+      and(eq(publicationTargets.target, target), eq(publicationTargets.status, "published"), gt(publicationTargets.publishedAt, since)),
+    )
+    .orderBy(desc(publicationTargets.publishedAt))
+    .get();
+  return row?.publishedAt ?? null;
 }
 
 export function failPublishJob(backendDb: BackendDb, jobId: number, error: unknown, lockId?: string): void {

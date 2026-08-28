@@ -785,6 +785,61 @@ describe("publish queue", () => {
       });
     }));
 
+  /** The long budget is patience for an outage. On the day it was written the
+   * platform came back after forty minutes and kept refusing one reply for
+   * seven hours, while other posts to the same account published normally --
+   * so the evidence that waiting will not help is the platform itself. */
+  it("stops retrying a partial publication once the same target has published something else", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, {
+        publicationId: 305,
+        target: "threads_en",
+        payload: newDeliveryPayload({ text_en: "Первая часть" }),
+      });
+      claimDuePublishJobs(backendDb, 1, "test-worker");
+      completePublishJob(backendDb, id, {
+        partial: true,
+        resumeKey: "_threadsPublishedIds",
+        ids: ["root-id"],
+        error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+      });
+      expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.status).toBe(
+        "queued",
+      );
+
+      // Another publication reaches the same platform in the meantime.
+      backendDb.db
+        .insert(publicationTargets)
+        .values({
+          publicationKey: "post:306",
+          target: "threads_en",
+          status: "published",
+          externalId: "another-post",
+          publishedAt: new Date(Date.now() + 1000).toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+
+      backendDb.db.update(publishJobs).set({ nextAttemptAt: null }).where(eq(publishJobs.jobId, id)).run();
+      claimDuePublishJobs(backendDb, 1, "test-worker");
+      completePublishJob(backendDb, id, {
+        partial: true,
+        resumeKey: "_threadsPublishedIds",
+        ids: ["root-id"],
+        error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+      });
+
+      const job = backendDb.db
+        .select({ status: publishJobs.status, lastError: publishJobs.lastError, payloadJson: publishJobs.payloadJson })
+        .from(publishJobs)
+        .where(eq(publishJobs.jobId, id))
+        .get();
+      expect(job?.status).toBe("failed");
+      expect(job?.lastError).toContain("stopped early");
+      // Still carrying what it published, so the press that follows finishes it.
+      expect(job?.payloadJson).toMatchObject({ _threadsPublishedIds: ["root-id"] });
+    }));
+
   /** The last gate before a delivery runs, and the only one no caller can go
    * around. Every duplicate this system has produced came through a different
    * door -- a retry, a replan -- so the guard belongs where all of them end up:
