@@ -15,7 +15,7 @@ import { assertFutureSchedule } from "./schedule.js";
 import { isAudienceMutationRetryable, isVideoTargetEditable, isVideoTargetMetadataEditable, isVideoTargetSchedulable } from "./state.js";
 import { getVideoDraft, insertVideoJob, listVideoTargets, refreshVideoDraftStatus } from "./video-data.js";
 import { assertVideoMetadata } from "./video-metadata-limits.js";
-import type { VideoLocale, VideoMetadata, VideoTarget } from "./video-types.js";
+import type { VideoLocale, VideoMetadata, VideoTarget, VideoTechnicalCheck } from "./video-types.js";
 import { VIDEO_TARGETS } from "./video-types.js";
 
 /** Telegram refuses larger uploads, and the mounted media volume is sized
@@ -341,17 +341,6 @@ export function retryVideoTarget(backendDb: BackendDb, videoDraftId: number, tar
       details: { external_id: target.externalId, url: target.externalUrl, provider_post_id: target.providerPostId },
     });
 }
-
-export type VideoTechnicalCheck = {
-  width: number;
-  height: number;
-  seconds: number;
-  videoCodec: string;
-  audioCodec: string | null;
-  fps: number;
-  sizeBytes: number;
-  aspectOk: boolean;
-};
 
 export async function validateVideoDraft(config: BackendConfig, backendDb: BackendDb, videoDraftId: number): Promise<VideoTechnicalCheck> {
   const draft = getVideoDraft(backendDb, videoDraftId);

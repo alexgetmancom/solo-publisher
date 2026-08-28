@@ -19,12 +19,16 @@ function serviceMethods(relativePath: string): string[] {
  * operator at the command line could only retry, so the way out of a
  * publication nothing could deliver was to keep sending it.
  *
- * A capability is answered by an operation, or it is deliberately bot-only, or
- * it is a gap nobody has closed yet -- and each of those is written down here.
- * The set below has to equal the methods the services actually expose, so a
- * capability added to the bot cannot reach `main` without someone saying, in
- * this file, which of the three it is. Reading it back is how the list of gaps
- * stays a list rather than a surprise. */
+ * A capability is answered by an operation, or it is deliberately bot-only with
+ * a reason, or it only answers a question. The set below has to equal the
+ * methods the services actually expose, so a capability added to the bot cannot
+ * reach `main` without someone saying here which of those it is.
+ *
+ * There was a fourth answer while the debt was being paid -- "a gap nobody has
+ * closed yet" -- and it is deliberately gone. A category for "later" is where
+ * later goes to live: with it removed, the only way to add a capability the
+ * command line cannot reach is to write down why it belongs on a card, which
+ * is a claim someone can disagree with. */
 const READ = "read: answers a question, changes nothing";
 
 const POSTS: Record<string, string> = {
@@ -39,23 +43,24 @@ const POSTS: Record<string, string> = {
   slotTime: READ,
   attachMediaAssets: "bot-only: media arrives as a Telegram upload; the CLI replaces media on a publication with replace-media",
   removeMedia: "bot-only: the other half of attachMediaAssets, on a draft the CLI never holds",
-  schedule: "gap: the CLI publishes immediately or reschedules an existing publication, and cannot schedule a draft",
-  manualSchedule: "gap: same as schedule, with a time typed by hand",
-  scheduleAt: "gap: same as schedule, with a time already resolved",
+  schedule: "draft-schedule",
+  manualSchedule: "draft-schedule",
+  scheduleAt: "draft-schedule",
   rescheduleIfNeeded: "internal: replanning after an edit, not a capability anyone asks for",
   scheduleReminder: "internal: the reminder the scheduler sets for itself",
-  cancel: "gap: a scheduled publication can only be called off from the bot; skip gives up on targets that already failed",
-  cancelJobs: "gap: the delivery half of cancel",
-  setStoryPublishMode: "gap: story mode is chosen on the draft card and nowhere else",
+  cancel: "draft-cancel",
+  cancelJobs: "draft-cancel",
+  setStoryPublishMode: "bot-only: how a story is composed, decided on the card while looking at it",
   replaceEntityCandidates: "bot-only: resolving link candidates is a conversation with the author",
   acceptEntityCandidates: "bot-only: the other half of replaceEntityCandidates",
-  approveThreadsChain: "gap: waiving the single-post rule is a decision only the bot can record",
-  publish: "gap: publishing a draft that already exists; the CLI publish creates a new publication from text",
+  approveThreadsChain: "bot-only: the author waiving a rule after seeing what it costs, which is a conversation and not an argument",
+  publish: "draft-publish",
+  publishArticle: "article-publish",
   retryTarget: "retry",
   skipTarget: "skip",
-  toggleTarget: "gap: the target set of an existing draft is edited only from the card",
-  removeTarget: "gap: the other half of toggleTarget",
-  cycleMode: "gap: publish mode is cycled on the card",
+  toggleTarget: "bot-only: choosing where a publication goes, on the card that shows where it goes",
+  removeTarget: "bot-only: the other half of toggleTarget",
+  cycleMode: "bot-only: the publish mode, cycled on the card that displays it",
   edit: "edit",
 };
 
@@ -72,18 +77,18 @@ const VIDEOS: Record<string, string> = {
   metadataEditableTargets: READ,
   settleTarget: "video-settle",
   retryTarget: "video-retry",
-  updateMetadata: "gap: video metadata is edited only from the card",
-  editMetadataField: "gap: one field of the same",
+  updateMetadata: "bot-only: writing a title and a description, which is authoring",
+  editMetadataField: "bot-only: one field of updateMetadata",
   completeWizardTarget: "bot-only: a step of the upload conversation",
-  rename: "gap: the card name of a video draft",
-  replaceTargets: "gap: the platform set of a video draft",
-  removeTarget: "gap: the other half of replaceTargets",
-  toggleTarget: "gap: the other half of replaceTargets",
-  manualSchedule: "gap: scheduling a video draft, as for posts",
+  rename: "bot-only: the name a card carries for its author",
+  replaceTargets: "bot-only: choosing where a video goes, on the card that shows where it goes",
+  removeTarget: "bot-only: the other half of replaceTargets",
+  toggleTarget: "bot-only: the other half of replaceTargets",
+  manualSchedule: "video-schedule",
   scheduleReminder: "internal: the reminder the scheduler sets for itself",
-  cancel: "gap: calling off a video, which also has to hold its YouTube upload private",
-  schedule: "gap: scheduling a video draft, as for posts",
-  publish: "gap: publishing a video draft that already exists",
+  cancel: "video-cancel",
+  schedule: "video-schedule",
+  publish: "video-publish",
   replaceSource: "bot-only: the replacement video arrives as a Telegram upload",
   technicalCheck: READ,
   validate: READ,
@@ -101,10 +106,13 @@ describe("surface parity", () => {
   it("names operations that exist for the capabilities that claim one", () => {
     const catalog = new Set(operationCatalog().map((entry) => entry.name));
     const claimed = [...Object.values(POSTS), ...Object.values(VIDEOS)].filter(
-      (answer) =>
-        !answer.startsWith("read:") && !answer.startsWith("bot-only:") && !answer.startsWith("gap:") && !answer.startsWith("internal:"),
+      (answer) => !answer.startsWith("read:") && !answer.startsWith("bot-only:") && !answer.startsWith("internal:"),
     );
     expect(claimed.length).toBeGreaterThan(0);
     for (const name of claimed) expect(catalog).toContain(name);
+  });
+
+  it("has no category for a capability the command line cannot reach yet", () => {
+    expect([...Object.values(POSTS), ...Object.values(VIDEOS)].filter((answer) => answer.startsWith("gap:"))).toEqual([]);
   });
 });

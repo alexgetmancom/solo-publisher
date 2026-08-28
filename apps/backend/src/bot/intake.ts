@@ -10,7 +10,7 @@ import type { MessageKey } from "../foundation/i18n/index.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
-import { publishArticle } from "../publishing/article-publish.js";
+import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { clearConversationState, getConversationState, saveConversationState } from "./conversation-state.js";
 import { cancelPromptKeyboard } from "./dialog-ui.js";
@@ -228,7 +228,7 @@ export function publishReviewedArticle(backendDb: BackendDb, config: BackendConf
   const carriers = targetsFor("article");
   const [first] = carriers;
   if (!first) throw new StudioError("intake.no-article-target");
-  const result = publishArticle(backendDb, config, {
+  const result = createStudioServices(backendDb, config).posts.publishArticle(actorId, {
     locale: first.locale,
     targets: carriers.filter(({ locale }) => locale === first.locale).map(({ id }) => String(id)),
     markdown: articleMarkdown(captured),

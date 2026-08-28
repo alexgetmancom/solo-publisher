@@ -40,3 +40,18 @@ export function videoDestination(
  * were personal footage the trim had missed. The platforms accept longer video,
  * so this is asked about and never refused. */
 export const VIDEO_LENGTH_WARNING_SECONDS = 90;
+
+/** What probing a video file answered: the shape a card shows and a schedule
+ * checks. It lives with the rest of the video vocabulary because every surface
+ * reads it and none of them should have to import the service that produces it
+ * to name it. */
+export type VideoTechnicalCheck = {
+  width: number;
+  height: number;
+  seconds: number;
+  videoCodec: string;
+  audioCodec: string | null;
+  fps: number;
+  sizeBytes: number;
+  aspectOk: boolean;
+};

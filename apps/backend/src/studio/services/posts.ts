@@ -16,6 +16,7 @@ import { truncateUnicode } from "../../foundation/text.js";
 import { cancelScheduledNotifications, scheduleReminder } from "../../notifications/jobs.js";
 import { trackUsageSync } from "../../observability/usage.js";
 import { abandonPublicationTargets } from "../../publishing/abandon.js";
+import { publishArticle } from "../../publishing/article-publish.js";
 import { cancelDraft, cancelPendingPostJobs } from "../../publishing/draft-lifecycle.js";
 import { mediaPolicyForTarget } from "../../publishing/media-policy.js";
 import { publicationPreflight } from "../../publishing/preflight.js";
@@ -26,7 +27,7 @@ import { assertFutureSchedule, assertValidScheduleDate, parseManualSchedule, pub
 import { AUDIENCE_MUTATION_RETRYABLE_STATUSES, isPostTargetRetryable } from "../../publishing/state.js";
 import { parseTargets } from "../../publishing/targets.js";
 
-import { accessibleStudioActorIds } from "../access.js";
+import { accessibleStudioActorIds, canAccessStudioOwner } from "../access.js";
 import { postDeliveryProjections } from "../projections.js";
 import { draftMedia, requireMutableDraft, requireOwnedDraft, requirePostEditAllowed } from "./post-access.js";
 import { postProgressState } from "./post-progress.js";
@@ -306,6 +307,17 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         severity: "info",
         message: `Draft #${draftId} waived the Threads single-post rule`,
         details: {},
+      });
+    },
+    /** The one article path. The bot used to call the publisher directly, which
+     * is how a capability comes to exist in one surface only: nothing named it,
+     * so nothing could notice it was missing from the others. */
+    publishArticle(actorId: number, input: { locale: "ru" | "en"; targets: string[]; markdown: string }) {
+      return trackUsageSync(backendDb, "studio.post.publish-article", () => {
+        // Same boundary every other command here checks: one installation, one
+        // roster of Studio actors.
+        if (!canAccessStudioOwner(config, actorId, actorId)) throw new StudioError("err.not-yours");
+        return publishArticle(backendDb, config, input);
       });
     },
     publish(actorId: number, draftId: number): number {

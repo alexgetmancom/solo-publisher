@@ -18,14 +18,8 @@ import {
 import { recoverVideoLocks, runVideoCycle } from "../src/delivery/video-worker.js";
 import { videoPreview } from "../src/interfaces/telegram/video-preview.js";
 import { listVideoTargets } from "../src/publishing/video-data.js";
-import {
-  cancelVideo,
-  replaceVideoTargets,
-  retryVideoTarget,
-  saveVideoMetadata,
-  scheduleVideo,
-  type VideoTechnicalCheck,
-} from "../src/publishing/video-service.js";
+import { cancelVideo, replaceVideoTargets, retryVideoTarget, saveVideoMetadata, scheduleVideo } from "../src/publishing/video-service.js";
+import type { VideoTechnicalCheck } from "../src/publishing/video-types.js";
 import { VIDEO_LENGTH_WARNING_SECONDS } from "../src/publishing/video-types.js";
 import { createStudioServices } from "../src/studio/services/index.js";
 import { videoService } from "../src/studio/services/videos.js";

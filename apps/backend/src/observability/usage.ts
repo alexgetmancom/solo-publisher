@@ -26,6 +26,7 @@ const TRACKED_FEATURES = [
   "studio.post.create",
   "studio.post.edit",
   "studio.post.publish",
+  "studio.post.publish-article",
   "studio.post.schedule",
   "studio.post.cancel",
   "studio.post.retry",

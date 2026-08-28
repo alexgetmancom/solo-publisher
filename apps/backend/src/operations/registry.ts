@@ -30,6 +30,14 @@ import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
 import { buildOperationsGuide, formatOperationsGuide, type OperationCatalogEntry } from "./guide.js";
 import {
+  cancelPostDraft,
+  cancelVideoDraft,
+  publishPostDraft,
+  publishVideoDraft,
+  schedulePostDraft,
+  scheduleVideoDraft,
+} from "./lifecycle.js";
+import {
   applyMetricsBackfill,
   auditOperations,
   backupDatabase,
@@ -115,6 +123,11 @@ function ask(question: string): string {
 const refSpelling = (value: string): string => (/^\d+$/.test(value) ? publicationRef("post", Number(value)) : value);
 const refOption = example(z.string().trim().min(1), "post:160").describe("publication ref").transform(refSpelling);
 const applyOption = z.boolean().default(false).describe("perform the change; omitted it reports the plan only");
+const draftOption = example(z.coerce.number().int().positive(), "232").describe("draft id");
+const scheduleAtOption = example(z.string().trim().min(1), '"06.08.2026 08:00"').describe(
+  "when to publish, in this Studio's time zone unless it carries an offset",
+);
+const scheduleLocaleOption = z.enum(["ru", "en", "both"]).optional().describe("which language to schedule; both by default");
 
 /** A full instant, not whatever `Date` will swallow.
  *
@@ -537,6 +550,60 @@ const operationDefs = {
         actorType: context.actorType,
       });
     },
+  }),
+  "draft-publish": operation({
+    summary: "Send a draft that is already written to every platform it has enabled, now.",
+    note: "The `publish` command writes a new publication from text; this one publishes a draft that exists. `apply` performs it.",
+    schema: z.object({ draft: draftOption, apply: applyOption }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => publishPostDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
+  }),
+  "draft-schedule": operation({
+    summary: "Put a draft in the queue for a time instead of publishing it now.",
+    note: "A bare wall clock is read in this Studio's time zone; an explicit offset is honoured as written. `reschedule` moves a publication that already has a plan. `apply` performs it.",
+    schema: z.object({ draft: draftOption, at: scheduleAtOption, locale: scheduleLocaleOption, apply: applyOption }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) =>
+      schedulePostDraft(context.db(), context.config(), {
+        draftId: input.draft,
+        at: input.at,
+        ...(input.locale === undefined ? {} : { locale: input.locale }),
+        apply: input.apply,
+      }),
+  }),
+  "draft-cancel": operation({
+    summary: "Call off a draft and everything of it still waiting in the queue.",
+    note: "Nothing already delivered is touched; use `delete` for that. `apply` performs it.",
+    schema: z.object({ draft: draftOption, apply: applyOption }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => cancelPostDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
+  }),
+  "video-publish": operation({
+    summary: "Send a video draft to every platform it has chosen, now.",
+    schema: z.object({ draft: draftOption, apply: applyOption }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => publishVideoDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
+  }),
+  "video-schedule": operation({
+    summary: "Put every platform of a video draft in the queue for one time.",
+    note: "One time for all of them, because a per-platform time is a picker on the card. `apply` performs it.",
+    schema: z.object({ draft: draftOption, at: scheduleAtOption, apply: applyOption }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) =>
+      scheduleVideoDraft(context.db(), context.config(), { draftId: input.draft, at: input.at, apply: input.apply }),
+  }),
+  "video-cancel": operation({
+    summary: "Call off a video: its queue, its reminders, and the YouTube upload it may already have made.",
+    note: "An upload YouTube already holds is kept private rather than deleted, and anything published needs removing by hand; the answer says which. `apply` performs it.",
+    schema: z.object({ draft: draftOption, apply: applyOption }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => cancelVideoDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
   }),
   skip: operation({
     summary: "Finish a publication without a target that did not land, instead of retrying it.",

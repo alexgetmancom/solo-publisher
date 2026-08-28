@@ -142,6 +142,16 @@
       "to": { "path": "^apps/backend/src/(db/schema|publishing/|delivery/|analytics/|bot/)" }
     },
     {
+      "name": "bot-goes-through-studio-services",
+      "comment": "The bot is an adapter over studio/services like every other surface. Reaching past it into publishing or delivery is how a capability comes to exist behind a button and nowhere else -- nothing names it, so nothing can notice the CLI and the MCP tools do not have it. The vocabulary the card needs to render (target ids, delivery state predicates, media policy) is shared on purpose; performing a publication is not. albums.ts is exempt for its own table -- a pending Telegram album is transport state, not a publication -- and settings/analytics.ts for the importers `ops import-x-analytics` runs too, where both surfaces already have the capability.",
+      "severity": "error",
+      "from": { "path": "^apps/backend/src/bot/", "pathNot": "^apps/backend/src/bot/(albums|settings/analytics)\\.ts$" },
+      "to": {
+        "path": "^apps/backend/src/(publishing/|delivery/|analytics/|db/schema)",
+        "pathNot": "^apps/backend/src/publishing/(video-types|state|targets|media-policy)\\.ts$"
+      }
+    },
+    {
       "name": "core-does-not-import-studio",
       "comment": "Studio is the command model interfaces drive. Delivery and Analytics run behind it and must not depend on it.",
       "severity": "error",

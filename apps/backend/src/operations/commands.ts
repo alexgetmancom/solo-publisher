@@ -233,7 +233,11 @@ function reschedulePost(
   };
 }
 
-function parseOperationSchedule(value: string, config: BackendConfig): Date {
+/** The one reading of a time an operator typed, shared by every command that
+ * takes one: an explicit offset is honoured as written, and a bare wall clock
+ * belongs to the Studio's time zone. Two readings of "06.08.2026 08:00" put a
+ * post on two days. */
+export function parseOperationSchedule(value: string, config: BackendConfig): Date {
   const trimmed = value.trim();
   if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(trimmed)) {
     const parsed = new Date(trimmed);

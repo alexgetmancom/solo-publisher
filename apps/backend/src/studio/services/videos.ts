@@ -20,12 +20,11 @@ import {
   saveVideoMetadata,
   scheduleVideo,
   updateVideoLabel,
-  type VideoTechnicalCheck,
   validateVideoDraft,
   validateVideoSource,
 } from "../../publishing/video-service.js";
 import { settleVideoTarget } from "../../publishing/video-settle.js";
-import type { VideoLocale, VideoMetadata, VideoTarget } from "../../publishing/video-types.js";
+import type { VideoLocale, VideoMetadata, VideoTarget, VideoTechnicalCheck } from "../../publishing/video-types.js";
 import { accessibleStudioActorIds } from "../access.js";
 import { videoDeliveryProjections } from "../projections.js";
 import type { VideoWizardStep } from "../video-fsm.js";
