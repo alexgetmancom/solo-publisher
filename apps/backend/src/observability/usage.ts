@@ -67,12 +67,30 @@ type UsageAggregate = {
   daysWithCalls: number;
 };
 
+/** The day of the window that failed most, and how much of the window's
+ * failures it holds. A month's failure rate is an average, and an average is
+ * exactly the wrong shape for the question it gets asked: metrics collection
+ * read as half broken for a month when in truth it broke for two days and had
+ * been clean since. */
+type UsageWorstDay = { day: string; calls: number; failures: number };
+
+/** The window says how much; this says whether it is still happening. */
+type UsageRecent = { days: number; calls: number; failures: number };
+
 type UsageReport = {
   generatedAt: string;
   windowDays: number;
   unusedDays: number;
   since: string;
-  features: Array<UsageAggregate & { averageDurationMs: number; unused: boolean; daysSinceLastSeen: number | null }>;
+  features: Array<
+    UsageAggregate & {
+      averageDurationMs: number;
+      unused: boolean;
+      daysSinceLastSeen: number | null;
+      recent: UsageRecent;
+      worstDay: UsageWorstDay | null;
+    }
+  >;
 };
 
 type BufferedUsage = {
@@ -90,6 +108,10 @@ type UsageBuffer = {
   pending: Map<string, BufferedUsage>;
   lastFlushedAt: number;
 };
+
+/** Short enough that an ongoing failure cannot hide behind a quiet month, long
+ * enough that one bad afternoon does not become the whole answer. */
+const RECENT_WINDOW_DAYS = 7;
 
 const USAGE_FLUSH_INTERVAL_MS = 60_000;
 const usageBuffers = new WeakMap<BackendDb, UsageBuffer>();
@@ -221,39 +243,76 @@ export function usageReport(backendDb: BackendDb, options: { days?: number; unus
   const now = options.now ?? new Date();
   const windowDays = positiveDays(options.days, 30);
   const unusedDays = positiveDays(options.unusedDays, 90);
+  const recentDays = Math.min(windowDays, RECENT_WINDOW_DAYS);
   const today = utcDayStart(now);
   const sinceDate = new Date(today.getTime() - (windowDays - 1) * millisecondsPerDay);
   const unusedSinceDate = new Date(today.getTime() - (unusedDays - 1) * millisecondsPerDay);
-  const rows = unsafeDb(backendDb)
+  const recentSince = dayString(new Date(today.getTime() - (recentDays - 1) * millisecondsPerDay));
+  // Lifetime bounds answer "has this ever run", which is a different question
+  // from the window and must not be trimmed to it.
+  const lifetimeRows = unsafeDb(backendDb)
     .sqlite.prepare(
-      `SELECT
-         feature_key AS featureKey,
-         COALESCE(SUM(CASE WHEN bucket_day >= ? THEN calls ELSE 0 END), 0) AS calls,
-         COALESCE(SUM(CASE WHEN bucket_day >= ? THEN successes ELSE 0 END), 0) AS successes,
-         COALESCE(SUM(CASE WHEN bucket_day >= ? THEN failures ELSE 0 END), 0) AS failures,
-         COALESCE(SUM(CASE WHEN bucket_day >= ? THEN total_duration_ms ELSE 0 END), 0) AS totalDurationMs,
-         MIN(first_seen_at) AS firstSeenAt,
-         MAX(last_seen_at) AS lastSeenAt,
-         COALESCE(SUM(CASE WHEN bucket_day >= ? THEN 1 ELSE 0 END), 0) AS daysWithCalls
+      `SELECT feature_key AS featureKey, MIN(first_seen_at) AS firstSeenAt, MAX(last_seen_at) AS lastSeenAt
        FROM runtime_usage
        GROUP BY feature_key`,
     )
-    .all(dayString(sinceDate), dayString(sinceDate), dayString(sinceDate), dayString(sinceDate), dayString(sinceDate)) as UsageAggregate[];
-  const byFeature = new Map(rows.map((row) => [row.featureKey, row]));
-  const featureKeys = new Set<string>([...TRACKED_FEATURES, ...byFeature.keys()]);
+    .all() as Array<{ featureKey: string; firstSeenAt: string | null; lastSeenAt: string | null }>;
+  // The window's own numbers are summed from its days rather than in SQL, so
+  // the totals, the last week and the worst day are all read off one set of
+  // rows and cannot disagree about what the window contained.
+  const dailyRows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      `SELECT feature_key AS featureKey, bucket_day AS bucketDay, calls, successes, failures, total_duration_ms AS totalDurationMs
+       FROM runtime_usage
+       WHERE bucket_day >= ?
+       ORDER BY bucket_day`,
+    )
+    .all(dayString(sinceDate)) as Array<{
+    featureKey: string;
+    bucketDay: string;
+    calls: number;
+    successes: number;
+    failures: number;
+    totalDurationMs: number;
+  }>;
+  const daysByFeature = new Map<string, typeof dailyRows>();
+  for (const row of dailyRows) {
+    const existing = daysByFeature.get(row.featureKey);
+    if (existing) existing.push(row);
+    else daysByFeature.set(row.featureKey, [row]);
+  }
+  const lifetimeByFeature = new Map(lifetimeRows.map((row) => [row.featureKey, row]));
+  const featureKeys = new Set<string>([...TRACKED_FEATURES, ...lifetimeByFeature.keys()]);
   const unusedSince = dayString(unusedSinceDate);
   const features = [...featureKeys].map((featureKey) => {
-    const row = byFeature.get(featureKey);
+    const days = daysByFeature.get(featureKey) ?? [];
+    const lifetime = lifetimeByFeature.get(featureKey);
     const aggregate: UsageAggregate = {
       featureKey,
-      calls: Number(row?.calls ?? 0),
-      successes: Number(row?.successes ?? 0),
-      failures: Number(row?.failures ?? 0),
-      totalDurationMs: Number(row?.totalDurationMs ?? 0),
-      firstSeenAt: row?.firstSeenAt ?? null,
-      lastSeenAt: row?.lastSeenAt ?? null,
-      daysWithCalls: Number(row?.daysWithCalls ?? 0),
+      calls: 0,
+      successes: 0,
+      failures: 0,
+      totalDurationMs: 0,
+      firstSeenAt: lifetime?.firstSeenAt ?? null,
+      lastSeenAt: lifetime?.lastSeenAt ?? null,
+      daysWithCalls: days.length,
     };
+    const recent: UsageRecent = { days: recentDays, calls: 0, failures: 0 };
+    let worstDay: UsageWorstDay | null = null;
+    for (const day of days) {
+      aggregate.calls += Number(day.calls);
+      aggregate.successes += Number(day.successes);
+      aggregate.failures += Number(day.failures);
+      aggregate.totalDurationMs += Number(day.totalDurationMs);
+      if (day.bucketDay >= recentSince) {
+        recent.calls += Number(day.calls);
+        recent.failures += Number(day.failures);
+      }
+      // Rows arrive oldest first, so `>=` keeps the most recent of equally bad
+      // days: the one an operator still has to do something about.
+      if (Number(day.failures) > 0 && (!worstDay || Number(day.failures) >= worstDay.failures))
+        worstDay = { day: day.bucketDay, calls: Number(day.calls), failures: Number(day.failures) };
+    }
     const lastSeenDay = aggregate.lastSeenAt?.slice(0, 10);
     const unused = !lastSeenDay || lastSeenDay < unusedSince;
     const daysSinceLastSeen = aggregate.lastSeenAt
@@ -264,6 +323,8 @@ export function usageReport(backendDb: BackendDb, options: { days?: number; unus
       averageDurationMs: aggregate.calls ? Math.round(aggregate.totalDurationMs / aggregate.calls) : 0,
       unused,
       daysSinceLastSeen,
+      recent,
+      worstDay,
     };
   });
   features.sort((left, right) => right.calls - left.calls || left.featureKey.localeCompare(right.featureKey));

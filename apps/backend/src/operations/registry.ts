@@ -414,6 +414,7 @@ const operationDefs = {
   }),
   usage: operation({
     summary: "Which features are exercised and which have gone unused.",
+    note: "Each feature carries the window's totals, `recent` for the last 7 days of it, and `worstDay`, the day that failed most. A failure rate averaged over the window cannot tell an outage that ended from one still running: read `recent` before acting on `failures`.",
     schema: z.object({
       days: z.coerce.number().int().min(1).max(365).optional().describe("window to report over"),
       unused_days: z.coerce.number().int().min(1).max(365).optional().describe("age past which a feature counts as unused"),

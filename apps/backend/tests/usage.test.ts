@@ -41,4 +41,33 @@ describe("runtime usage telemetry", () => {
       expect(never).toMatchObject({ calls: 0, unused: true, firstSeenAt: null, lastSeenAt: null });
       expect(milestoneHistory).toMatchObject({ calls: 0, unused: true, firstSeenAt: null, lastSeenAt: null });
     }));
+
+  it("separates an outage that ended from one that is still running", () =>
+    withDb(async (backendDb) => {
+      const now = new Date("2026-08-28T12:00:00.000Z");
+      const day = (date: string, calls: number, failures: number): void => {
+        for (let index = 0; index < calls; index += 1)
+          recordUsage(backendDb, "analytics.metrics.collect", index >= failures, 10, new Date(`${date}T10:00:00.000Z`));
+      };
+      // Two days of a provider outage a fortnight ago, quiet ever since.
+      day("2026-08-15", 8, 7);
+      day("2026-08-16", 6, 5);
+      day("2026-08-27", 5, 0);
+      day("2026-08-28", 4, 1);
+
+      const report = usageReport(backendDb, { days: 30, unusedDays: 30, now });
+      const metrics = report.features.find((feature) => feature.featureKey === "analytics.metrics.collect");
+      // The window alone reads as 13 failures in 23 calls, which is the shape
+      // that sends an operator after a fire that went out ten days ago.
+      expect(metrics).toMatchObject({ calls: 23, failures: 13, daysWithCalls: 4 });
+      expect(metrics?.recent).toEqual({ days: 7, calls: 9, failures: 1 });
+      expect(metrics?.worstDay).toEqual({ day: "2026-08-15", calls: 8, failures: 7 });
+
+      const clean = report.features.find((feature) => feature.featureKey === "studio.queue.read");
+      expect(clean?.worstDay).toBeNull();
+      expect(clean?.recent).toEqual({ days: 7, calls: 0, failures: 0 });
+
+      // A window shorter than the recent one cannot report more days than it has.
+      expect(usageReport(backendDb, { days: 2, unusedDays: 30, now }).features[0]?.recent.days).toBe(2);
+    }));
 });
