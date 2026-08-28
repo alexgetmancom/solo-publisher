@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import type { UnsafeBackendDb } from "../src/db/client.js";
-import { credentialChecks, type JsonObject } from "../src/db/schema.js";
+import { credentialChecks } from "../src/db/schema.js";
 import {
   isTargetAuthBlocked,
   recordAuthFailure,

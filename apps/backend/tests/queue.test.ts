@@ -1,7 +1,7 @@
 import { describe, expect, it, jest, setSystemTime } from "bun:test";
 import { eq } from "drizzle-orm";
 import type { UnsafeBackendDb } from "../src/db/client.js";
-import { type JsonObject, publicationEvents, publicationTargets, publishJobs } from "../src/db/schema.js";
+import { publicationEvents, publicationTargets, publishJobs } from "../src/db/schema.js";
 import { AmbiguousPublicationError } from "../src/delivery/ambiguous-publication.js";
 import type { DeliveryAdapter, DeliveryPorts, DeliveryPublisher } from "../src/delivery/ports.js";
 import { runDeliveryPublishCycle } from "../src/delivery/publish-workflow.js";

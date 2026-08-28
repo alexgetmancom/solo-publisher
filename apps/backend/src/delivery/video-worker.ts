@@ -22,7 +22,7 @@ import { verifyInstagramPublication } from "./social/instagram.js";
 
 const VIDEO_HEARTBEAT_INTERVAL_SECONDS = 30;
 
-import { PUBLISH_BACKOFF_BASE_SECONDS, PUBLISH_BACKOFF_MAX_SECONDS, PUBLISH_MAX_ATTEMPTS } from "../foundation/config.js";
+import { PUBLISH_MAX_ATTEMPTS } from "../foundation/config.js";
 import { ALERT_COOLDOWN_SECONDS } from "../observability/alerts.js";
 import { zernioPublishFence } from "../publishing/video-fence.js";
 import {
