@@ -7,11 +7,12 @@ import { escapeHtml } from "../../foundation/html.js";
 import { commandAllowed, sameOriginCommandLogin } from "../../foundation/http-auth.js";
 import { html, json, loginRedirect, queryTokenRedirect, text } from "../../foundation/http-response.js";
 import { parseStudioLocale } from "../../foundation/locale.js";
+import { redactExternalSecrets } from "../../foundation/redact.js";
 import { measureMemorySync } from "../../observability/memory.js";
 import { trackUsageAsync, trackUsageSync } from "../../observability/usage.js";
 import { commandCenterFingerprint } from "../../operations/command-center.js";
 import { dashboardCommandSchema } from "../../operations/commands.js";
-import { type OperationContext, OperationInputError, runOperation } from "../../operations/registry.js";
+import { type OperationContext, runOperation } from "../../operations/registry.js";
 import {
   invalidateDashboardRenderCache,
   renderCommandCenterLogin,
@@ -131,10 +132,12 @@ export const commandCenterRoutes: RouteModule = (app, { config, backendDb, studi
       invalidateDashboardRenderCache(backendDb);
       return json(result as Record<string, unknown>);
     } catch (error) {
-      // The registry names the field it rejected, and a form that cannot say
-      // what was wrong with it sends the operator back to guess.
-      if (error instanceof OperationInputError) return json({ detail: error.message }, 400);
-      return json({ detail: "Action failed" }, 400);
+      // The same answer the command line gets. The card used to report every
+      // failure as "Action failed" -- "no publish jobs found" and "unknown
+      // field target" arrived as the same sentence, and the operator's next
+      // move differs completely between them. Redacted like every other
+      // surface: a failure reports what the platform said.
+      return json({ detail: redactExternalSecrets(error instanceof Error ? error.message : String(error)) }, 400);
     }
   });
 

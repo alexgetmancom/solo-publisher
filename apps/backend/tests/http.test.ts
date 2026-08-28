@@ -338,8 +338,20 @@ describe("Astro endpoint controller", () => {
       });
       expect(failed.status).toBe(400);
       // The card runs the same dispatch the CLI and the MCP tools do, so it
-      // gets the registry's answer instead of a shrug.
+      // gets the same answer instead of a shrug. "Action failed" was every
+      // failure at once: a bad field, a publication with nothing to retry, and
+      // a platform refusing a delete all read identically.
       expect(await failed.json()).toEqual({ detail: "unknown command: unknown" });
+
+      // Not only the registry's input errors: a failure from inside the repair
+      // reaches the operator with the sentence the command line would print.
+      const missing = await app.request("/api/command-center/action", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "retry", ref: "post:999999", apply: true, token: "secret" }),
+      });
+      expect(missing.status).toBe(400);
+      expect(await missing.json()).toEqual({ detail: "publication not found: post:999999" });
     }));
 
   it("renders the full command center through the framework-neutral controller", async () => {

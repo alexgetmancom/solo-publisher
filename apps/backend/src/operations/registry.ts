@@ -707,13 +707,13 @@ const operationDefs = {
   }),
   "refresh-site": operation({
     summary: "Re-render one locale's public page without touching social targets.",
-    // `apply` is accepted and always true: nothing public moves, so there is no
-    // plan worth reporting. It is in the schema because the Command Center's
-    // repair form posts one confirmation for whichever repair is chosen, and an
-    // operation that refused the field would be the one the card cannot run.
-    schema: z.object({
-      ref: refOption,
-      locale: localeOption,
+    // The same shape as every other repair, because the Command Center's card
+    // posts one field set for whichever repair is chosen and an operation that
+    // refused a field would be the one the card cannot run. Two of them do
+    // nothing here and say so: a public page is per locale, not per delivery
+    // target, and there is no plan worth reporting when nothing public moves.
+    schema: repairSchema({}).extend({
+      target: targetOption.describe("accepted; a public page is not per target"),
       apply: z.boolean().default(true).describe("accepted; this repair always acts"),
     }),
     mutates: true,
