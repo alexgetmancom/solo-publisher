@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { failedJobTransition, reconciliationTransition } from "../src/publishing/job-policy.js";
+import { failedJobTransition, partialPublicationTransition } from "../src/publishing/job-policy.js";
 
 const policy = { maxAttempts: 4, backoffBaseSeconds: 60, backoffMaxSeconds: 3600 };
 
@@ -17,7 +17,7 @@ describe("publish job policy", () => {
   });
 
   it("uses the same budget for reconciliation", () => {
-    expect(reconciliationTransition(0, policy).status).toBe("queued");
-    expect(reconciliationTransition(3, policy)).toEqual({ attempt: 4, status: "failed", nextAttemptAt: null });
+    expect(partialPublicationTransition(0, policy).status).toBe("queued");
+    expect(partialPublicationTransition(3, policy)).toEqual({ attempt: 4, status: "failed", nextAttemptAt: null });
   });
 });

@@ -50,6 +50,16 @@ export const PUBLISH_HEARTBEAT_INTERVAL_SECONDS = 180;
 export const PUBLISH_MAX_ATTEMPTS = 4;
 export const PUBLISH_BACKOFF_BASE_SECONDS = 60;
 
+/** A publication that got part of the way out is a delivery in progress, not a
+ * failure, and it gets a budget to match: with the backoff curve above, twelve
+ * attempts reach roughly six hours instead of the seven minutes an ordinary
+ * failure is given. The short budget is right for a delivery that reached
+ * nobody -- the author can fix the draft and send it again. It is wrong for a
+ * half-published one: nothing can be fixed in the draft, the remedy is only to
+ * wait for the platform, and giving up early leaves a truncated post live and
+ * a person to press a button. */
+export const PUBLISH_PARTIAL_MAX_ATTEMPTS = 12;
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

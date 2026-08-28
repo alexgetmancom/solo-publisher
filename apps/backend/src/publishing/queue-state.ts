@@ -3,7 +3,12 @@ import * as z from "zod";
 import type { UnsafeBackendDb } from "../db/client.js";
 import type { JsonObject } from "../db/schema.js";
 import { publicationEvents, publicationTargets, publishJobs } from "../db/schema.js";
-import { PUBLISH_BACKOFF_BASE_SECONDS, PUBLISH_BACKOFF_MAX_SECONDS, PUBLISH_MAX_ATTEMPTS } from "../foundation/config.js";
+import {
+  PUBLISH_BACKOFF_BASE_SECONDS,
+  PUBLISH_BACKOFF_MAX_SECONDS,
+  PUBLISH_MAX_ATTEMPTS,
+  PUBLISH_PARTIAL_MAX_ATTEMPTS,
+} from "../foundation/config.js";
 import type { PublishResult } from "./errors.js";
 
 export function publicationConfirmationSource(result: PublishResult): string {
@@ -32,6 +37,13 @@ export function publishRetryPolicy() {
     backoffBaseSeconds: PUBLISH_BACKOFF_BASE_SECONDS,
     backoffMaxSeconds: PUBLISH_BACKOFF_MAX_SECONDS,
   };
+}
+
+/** The publish retry policy, widened to the partial budget: only how many
+ * attempts there are differs, because the curve and its ceiling are about being
+ * polite to the platform and that does not change with the reason. */
+export function partialRetryPolicy() {
+  return { ...publishRetryPolicy(), maxAttempts: PUBLISH_PARTIAL_MAX_ATTEMPTS };
 }
 
 export function deleteSupersededJobs(

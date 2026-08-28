@@ -26,7 +26,10 @@ export function failedJobTransition(error: unknown, currentAttempt: number, poli
   };
 }
 
-export function reconciliationTransition(
+/** The budget a half-finished publication comes back on. Same curve, far more
+ * of it: what it is waiting for is a platform coming back, which takes hours
+ * rather than minutes. */
+export function partialPublicationTransition(
   currentAttempt: number,
   policy: RetryPolicy,
 ): Pick<FailedJobTransition, "attempt" | "status" | "nextAttemptAt"> {

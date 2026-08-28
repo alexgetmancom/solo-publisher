@@ -5,6 +5,7 @@ import { type JsonObject, publicationEvents, publicationTargets, publishJobs } f
 import { AmbiguousPublicationError } from "../src/delivery/ambiguous-publication.js";
 import type { DeliveryAdapter, DeliveryPorts, DeliveryPublisher } from "../src/delivery/ports.js";
 import { runDeliveryPublishCycle } from "../src/delivery/publish-workflow.js";
+import { PUBLISH_MAX_ATTEMPTS, PUBLISH_PARTIAL_MAX_ATTEMPTS } from "../src/foundation/config.js";
 import { recordAuthFailure } from "../src/observability/auth-circuit.js";
 import { HttpPublishError } from "../src/publishing/errors.js";
 import {
@@ -784,5 +785,40 @@ describe("publish queue", () => {
       expect(job.attemptCount).toBe(1);
       expect(job.payloadJson).toMatchObject({ _threadsPublishedIds: ["root-id"] });
       expect(job.lastError).toContain("reply container missing");
+    }));
+
+  /** A truncated post is live while this is retrying, and the only remedy is the
+   * platform coming back -- which took forty minutes the day this was written.
+   * Spending the ordinary four-attempt budget in seven minutes and stopping put
+   * a person in the loop for something no person can do anything about. */
+  it("keeps finishing a partial publication long past the budget an ordinary failure gets", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, { publicationId: 302, target: "threads_en", payload: { text_en: "One\n\nTwo" } });
+      const attempt = () => {
+        backendDb.db
+          .update(publishJobs)
+          .set({ nextAttemptAt: null, publishAt: new Date(0).toISOString() })
+          .where(eq(publishJobs.jobId, id))
+          .run();
+        claimDuePublishJobs(backendDb, 1, "test-worker");
+        completePublishJob(backendDb, id, {
+          partial: true,
+          resumeKey: "_threadsPublishedIds",
+          ids: ["root-id"],
+          error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+        });
+        return backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.status;
+      };
+
+      // Where an ordinary failure would already have been given up on.
+      for (let i = 0; i < PUBLISH_MAX_ATTEMPTS; i += 1) expect(attempt()).toBe("queued");
+      for (let i = PUBLISH_MAX_ATTEMPTS; i < PUBLISH_PARTIAL_MAX_ATTEMPTS - 1; i += 1) expect(attempt()).toBe("queued");
+      // And it does end: a budget with no floor is a job nobody is ever told about.
+      expect(attempt()).toBe("failed");
+      // What it published stays on the job, so the press that follows finishes
+      // the chain instead of starting it again.
+      expect(
+        backendDb.db.select({ payloadJson: publishJobs.payloadJson }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.payloadJson,
+      ).toMatchObject({ _threadsPublishedIds: ["root-id"] });
     }));
 });

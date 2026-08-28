@@ -10,7 +10,7 @@ import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
 import { classifyPublishError, normalizePublishResult, type PublishResult } from "./errors.js";
-import { failedJobTransition, mayHaveReachedAudience, reconciliationTransition } from "./job-policy.js";
+import { failedJobTransition, mayHaveReachedAudience, partialPublicationTransition } from "./job-policy.js";
 import { refreshPublicationOwner } from "./publication-owner.js";
 import {
   deleteSupersededJobs,
@@ -19,6 +19,7 @@ import {
   insertEvent,
   PublishLockLostError,
   parsePayload,
+  partialRetryPolicy,
   publicationConfirmationSource,
   publishRetryPolicy,
   settleJob,
@@ -369,7 +370,7 @@ function settlePartialPublication(
   now: string,
   lockId: string | undefined,
 ): boolean {
-  const { attempt, status, nextAttemptAt } = reconciliationTransition(job.attemptCount, publishRetryPolicy());
+  const { attempt, status, nextAttemptAt } = partialPublicationTransition(job.attemptCount, partialRetryPolicy());
   const retry = status === "queued";
   const error = String(result.error ?? `${job.target} partial publication`);
   const payload = { ...parsePayload(job.payloadJson), [payloadKey]: ids };
