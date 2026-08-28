@@ -9,7 +9,11 @@ import { drafts, postLocales, publicationTargets } from "../db/schema.js";
  * that a target retired months ago stops being noted as absent. */
 const BASELINE_POSTS = 20;
 
-type DeliveredTarget = { target: string; status: string; url: string | null };
+/** `partial` is the state that has no status of its own: the target did not
+ * finish, and something of it is live all the same -- a chain whose first
+ * message went out. Reported as plainly as a failure, because reading it as
+ * "nothing was sent" is what sends it twice. */
+type DeliveredTarget = { target: string; status: string; url: string | null; partial: boolean };
 
 type PublicationRow = {
   ref: string;
@@ -91,6 +95,7 @@ function publicationRows(backendDb: BackendDb, limit: number): RawRow[] {
       target: publicationTargets.target,
       status: publicationTargets.status,
       url: publicationTargets.url,
+      externalId: publicationTargets.externalId,
     })
     .from(publicationTargets)
     .where(
@@ -104,7 +109,7 @@ function publicationRows(backendDb: BackendDb, limit: number): RawRow[] {
   const byPost = new Map<string, DeliveredTarget[]>();
   for (const row of delivered) {
     const list = byPost.get(row.publicationKey) ?? [];
-    list.push({ target: row.target, status: row.status, url: row.url });
+    list.push({ target: row.target, status: row.status, url: row.url, partial: row.status !== "published" && Boolean(row.externalId) });
     byPost.set(row.publicationKey, list);
   }
   return rows.map((row) => {
@@ -160,9 +165,9 @@ export function formatPublicationMatches(report: PublicationMatches): string {
 }
 
 function publicationLine(post: PublicationRow): string {
-  const failed = post.undelivered.map((target) => `${target.target}=${target.status}`);
+  const failed = post.undelivered.map((target) => `${target.target}=${target.status}${target.partial ? "+partial" : ""}`);
   const trailer = [
-    failed.length > 0 ? `FAILED ${failed.join(" ")}` : "ok",
+    failed.length > 0 ? `${post.undelivered.some((target) => target.partial) ? "PARTIAL" : "FAILED"} ${failed.join(" ")}` : "ok",
     post.absentTargets.length > 0 ? `not sent: ${post.absentTargets.join(",")}` : "",
   ]
     .filter(Boolean)

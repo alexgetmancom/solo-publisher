@@ -25,6 +25,9 @@ function requeuePublicationTx(
     // rows were never created — after a channel was connected late, or a
     // publication was planned without it.
     createMissing: Boolean(target),
+    // `ops retry` is the operator restoring a publication whatever state it
+    // reached, including one they removed from the platform on purpose.
+    audienceReached: "republish",
     source: () => source,
   });
   return {

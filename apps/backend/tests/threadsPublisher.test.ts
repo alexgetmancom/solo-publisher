@@ -211,6 +211,23 @@ describe("publishToThreads", () => {
     expect(result.ids).toEqual(["p1", "p2"]);
   });
 
+  it("resumes a chain from what it already published instead of posting the first message twice", async () => {
+    const { fetchImpl, creations } = transport({ publishIds: ["p2"], containerIds: ["c2"] });
+    const result = await publishToThreads(
+      { text: `${"a".repeat(500)} tail`, threadsChainApproved: true, _threadsPublishedIds: ["p1"] },
+      config,
+      fetchImpl,
+    );
+
+    // One creation, and it is the reply: the first message is live and asking
+    // for it again is a second copy in front of the audience, not a retry.
+    expect(creations()).toHaveLength(1);
+    expect(creations()[0]).toMatchObject({ media_type: "TEXT", reply_to_id: "p1" });
+    expect(result.ids).toEqual(["p1", "p2"]);
+    expect(result.ok).toBe(true);
+    expect(result.partial).toBe(false);
+  });
+
   it("publishes text that fits as a single post, keeping a typed url and one hidden link", async () => {
     const { fetchImpl, creations } = transport({ publishIds: ["p1"], containerIds: ["c1"] });
     const payload = {

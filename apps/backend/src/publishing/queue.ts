@@ -221,45 +221,24 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
   if (!job || (lockId != null && (job.status !== "publishing" || job.lockedBy !== lockId))) return;
   const publicationKey = job.publicationKey;
-  // A partial publication and generic reconciliation both resume from a set of
-  // external ids on the next attempt; they only differ in which payload key the
-  // publisher reads back and in the event type recorded. The adapter names its
-  // own key, because which platform publishes in more than one call is the
-  // adapter's business and never the queue's.
+  // A publication that got part of the way out comes back to finish it, from the
+  // ids the adapter names on its own key: which platform publishes in more than
+  // one call is the adapter's business and never the queue's.
   if (result.partial && typeof result.resumeKey === "string" && result.resumeKey.length > 0) {
     const ids = Array.isArray(result.ids) ? result.ids.map(String).filter(Boolean) : [];
-    const retry = settleRetryableIds(
-      backendDb,
-      job,
-      jobId,
-      publicationKey,
-      ids,
-      result.resumeKey,
-      "publish.job.partial",
-      `${job.target} partial publication`,
-      result,
-      now,
-      lockId,
-    );
+    const retry = settlePartialPublication(backendDb, job, jobId, publicationKey, ids, result.resumeKey, result, now, lockId);
     if (!retry) refreshPublicationOwner(backendDb, job.publicationKey);
     return;
   }
+  // A retryable failure that nevertheless produced an external id is not a
+  // delivery to run again: the id says something may already be live, and no
+  // adapter can be asked to continue from it -- only to repeat it. This used to
+  // be queued back under a `_reconcile_ids` key that nothing ever read, so the
+  // next attempt published the whole thing a second time. It belongs to the
+  // reconciliation sweep, which asks the provider instead of guessing.
   const reconciliationIds = externalIds(result);
   if (result.retryable && !result.ok && !result.skipped && reconciliationIds.length > 0) {
-    const retry = settleRetryableIds(
-      backendDb,
-      job,
-      jobId,
-      publicationKey,
-      reconciliationIds,
-      "_reconcile_ids",
-      "publish.job.reconcile",
-      "external publication requires reconciliation",
-      result,
-      now,
-      lockId,
-    );
-    if (!retry) refreshPublicationOwner(backendDb, job.publicationKey);
+    settleForReconciliation(backendDb, job, jobId, publicationKey, reconciliationIds, result, now, lockId);
     return;
   }
   const normalized = normalizePublishResult(result);
@@ -325,22 +304,74 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
   refreshPublicationOwner(backendDb, job.publicationKey);
 }
 
-function settleRetryableIds(
+/** Hands an ambiguous outcome to the reconciliation sweep: the ids go on the
+ * target so the sweep has something to ask the provider about, and the job
+ * stops being a delivery. Nothing here re-enters the publish queue -- that is
+ * the whole point. */
+function settleForReconciliation(
+  backendDb: BackendDb,
+  job: typeof publishJobs.$inferSelect,
+  jobId: number,
+  publicationKey: string,
+  ids: string[],
+  result: PublishResult,
+  now: string,
+  lockId: string | undefined,
+): void {
+  const error = String(result.error ?? "external publication requires reconciliation");
+  const settled = withLease(backendDb, jobId, (tx) => {
+    deleteSupersededJobs(tx, job, jobId, publicationKey);
+    settleJob(
+      tx,
+      jobId,
+      {
+        status: "verification_required",
+        currentPhase: null,
+        nextAttemptAt: null,
+        lockedBy: null,
+        lockedAt: null,
+        lastError: error,
+        updatedAt: now,
+      },
+      publicationKey,
+      job.target,
+      {
+        status: "verification_required",
+        externalId: ids[0] ?? null,
+        externalIdsJson: ids,
+        error,
+        skipped: 0,
+        updatedAt: now,
+        rawJson: JSON.stringify(result),
+      },
+      {
+        type: "publish.job.verification_required",
+        severity: "warn",
+        message: error,
+        details: { job_id: jobId, ids, attempt: job.attemptCount, error_class: "ambiguous" },
+      },
+      lockId,
+    );
+  });
+  if (settled) refreshPublicationOwner(backendDb, publicationKey);
+}
+
+/** Puts a half-finished publication back in the queue carrying what it already
+ * published, and reports whether it is going to run again. */
+function settlePartialPublication(
   backendDb: BackendDb,
   job: typeof publishJobs.$inferSelect,
   jobId: number,
   publicationKey: string,
   ids: string[],
   payloadKey: string,
-  retryEventType: string,
-  fallbackError: string,
   result: PublishResult,
   now: string,
   lockId: string | undefined,
 ): boolean {
   const { attempt, status, nextAttemptAt } = reconciliationTransition(job.attemptCount, publishRetryPolicy());
   const retry = status === "queued";
-  const error = String(result.error ?? fallbackError);
+  const error = String(result.error ?? `${job.target} partial publication`);
   const payload = { ...parsePayload(job.payloadJson), [payloadKey]: ids };
   const settled = withLease(backendDb, jobId, (tx) => {
     // A queued row is unique per (publication_key, target); clear any competing one
@@ -365,7 +396,7 @@ function settleRetryableIds(
       job.target,
       { status, externalId: ids[0] ?? null, externalIdsJson: ids, error, skipped: 0, updatedAt: now, rawJson: JSON.stringify(result) },
       {
-        type: retry ? retryEventType : "publish.job.failed",
+        type: retry ? "publish.job.partial" : "publish.job.failed",
         severity: retry ? "warn" : "error",
         message: error,
         details: { job_id: jobId, ids, attempt, next_attempt_at: nextAttemptAt },

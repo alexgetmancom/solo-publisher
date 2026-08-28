@@ -329,10 +329,20 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
           backendDb,
           { postId, publicationKey: publicationRef("post", postId), messageId: null },
           selected.map((item) => item.target),
-          { from: AUDIENCE_MUTATION_RETRYABLE_STATUSES, source: () => backendDb.studioPosts.publicationSource(postId) },
+          {
+            from: AUDIENCE_MUTATION_RETRYABLE_STATUSES,
+            audienceReached: "resume",
+            source: () => backendDb.studioPosts.publicationSource(postId),
+          },
         );
         const requeued = results.filter((item) => item.outcome === "requeued").length;
         const alreadyQueued = results.filter((item) => item.outcome === "already_queued").length;
+        // Held back because the target already put something in front of the
+        // audience and carries nothing to continue from. Saying "only failed
+        // targets can be retried" about a target that plainly failed is how an
+        // operator concludes the bot is lying to them.
+        if (requeued === 0 && alreadyQueued === 0 && results.some((item) => item.reason === "already_delivered"))
+          throw new StudioError("err.retry-already-delivered");
         if (requeued === 0 && alreadyQueued === 0) throw new StudioError("err.retry-only-failed");
         return { results, requeued, alreadyQueued };
       });

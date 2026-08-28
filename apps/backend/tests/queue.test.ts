@@ -686,7 +686,7 @@ describe("publish queue", () => {
       });
     }));
 
-  it("requeues a retryable result with an external ID as reconciliation, not a new publication", () =>
+  it("holds a retryable result with an external ID for reconciliation, never back in the publish queue", () =>
     withDb((backendDb) => {
       const id = enqueuePublishJob(backendDb, { publicationId: 106, target: "test_platform", payload: { text_en: "Queued" } });
       claimDuePublishJobs(backendDb, 1, "test-worker");
@@ -702,12 +702,15 @@ describe("publish queue", () => {
         .from(publishJobs)
         .where(eq(publishJobs.jobId, id))
         .get();
-      expect(job).toMatchObject({ status: "queued", payloadJson: { _reconcile_ids: ["at://did/app.bsky.feed.post/root"] } });
+      // Queued would mean "deliver this again", and no adapter can be asked to
+      // continue from a bare id -- only to repeat the whole publication.
+      expect(job?.status).toBe("verification_required");
+      expect(job?.payloadJson).not.toHaveProperty("_reconcile_ids");
       const target = backendDb.db
         .select({ status: publicationTargets.status, externalId: publicationTargets.externalId })
         .from(publicationTargets)
         .get();
-      expect(target).toEqual({ status: "queued", externalId: "at://did/app.bsky.feed.post/root" });
+      expect(target).toEqual({ status: "verification_required", externalId: "at://did/app.bsky.feed.post/root" });
     }));
 
   it("does not leave a job publishing when result finalization fails", () =>

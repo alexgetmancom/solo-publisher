@@ -22,6 +22,7 @@ export async function verifyPostTargets(backendDb: BackendDb, ref: string): Prom
       status: publicationTargets.status,
       url: publicationTargets.url,
       error: publicationTargets.error,
+      externalId: publicationTargets.externalId,
     })
     .from(publicationTargets)
     .where(eq(publicationTargets.publicationKey, publicationKey))
@@ -29,8 +30,17 @@ export async function verifyPostTargets(backendDb: BackendDb, ref: string): Prom
     .all();
   return Promise.all(
     targets.map(async (record) => {
-      if (record.status !== "published") return { ...record, ok: false, reason: record.error ?? "not_published" };
-      if (!record.url) return { ...record, ok: true, reason: "no_public_url_known" };
+      // An unfinished target holding an external id put something in front of
+      // the audience: it is still not ok, and it is not "nothing was sent"
+      // either. Naming the id is what makes the live remains reachable.
+      if (record.status !== "published")
+        return {
+          ...record,
+          ok: false,
+          partial: Boolean(record.externalId),
+          reason: record.externalId ? `published_in_part:${record.externalId}` : (record.error ?? "not_published"),
+        };
+      if (!record.url) return { ...record, ok: true, partial: false, reason: "no_public_url_known" };
       try {
         const response = await fetch(record.url, {
           headers: { "user-agent": "solo-publisher-verify/1.0" },
@@ -41,9 +51,9 @@ export async function verifyPostTargets(backendDb: BackendDb, ref: string): Prom
         // or 410 is a failure, not a pass: a deleted post used to verify as ok.
         // 5xx stays a failure too, but as a provider fault rather than a verdict
         // about the post.
-        return { ...record, ok: response.status < 400, reason: `http_${response.status}` };
+        return { ...record, ok: response.status < 400, partial: false, reason: `http_${response.status}` };
       } catch (error) {
-        return { ...record, ok: false, reason: error instanceof Error ? error.message : String(error) };
+        return { ...record, ok: false, partial: false, reason: error instanceof Error ? error.message : String(error) };
       }
     }),
   );

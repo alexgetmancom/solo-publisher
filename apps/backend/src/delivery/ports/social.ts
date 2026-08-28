@@ -4,6 +4,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
 import { selectMediaForTarget } from "../../publishing/media-policy.js";
 import type { ClaimedPublishJob } from "../../publishing/queue.js";
+import { hasResumeState } from "../../publishing/resume.js";
 import { prepareMediaItems } from "../media-prepare.js";
 import { createPlatformAdapters, type TargetRouting } from "../platform-adapters.js";
 import type { DeliveryPorts } from "../ports.js";
@@ -49,7 +50,10 @@ async function withPreparedMedia(
   enqueue: <T>(prepare: () => Promise<T>) => Promise<T>,
   renderStory: (job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>) => Promise<ReturnType<typeof payloadMedia>>,
 ): Promise<ClaimedPublishJob> {
-  if (Array.isArray(job.payload._reconcile_ids)) return job;
+  // A job carrying resume state is going back to finish a publication, not to
+  // build one: the media it would prepare has already been uploaded and the
+  // adapter will not look at it again.
+  if (hasResumeState(job.payload)) return job;
   const media = payloadMedia(job.payload);
   if (media.length === 0) return job;
   // A Story is one vertical visual. Select the locale's first item before any

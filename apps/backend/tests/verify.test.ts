@@ -60,7 +60,9 @@ describe("verifyPostTargets", () => {
           status: "published",
           url: "https://t.me/alexgetman/106",
           error: null,
+          externalId: null,
           ok: true,
+          partial: false,
           reason: "http_200",
         },
       ]);

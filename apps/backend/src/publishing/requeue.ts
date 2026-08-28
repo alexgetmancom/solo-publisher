@@ -5,7 +5,8 @@ import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js"
 import { drafts, publicationTargets, publishJobs, siteJobs } from "../db/schema.js";
 import { requeuedPostTarget, requeuedPublishJobColumns } from "./job-policy.js";
 import { localizeTargetPayload } from "./payload.js";
-import { insertEvent } from "./queue-state.js";
+import { insertEvent, parsePayload } from "./queue-state.js";
+import { hasResumeState, resumeState } from "./resume.js";
 
 /**
  * The one way a publication target goes back into the queue.
@@ -21,7 +22,7 @@ export type RequeueResult = {
   outcome: "requeued" | "already_queued" | "not_retryable";
   status: string | null;
   /** Why a target was left alone when the state alone does not say it. */
-  reason?: "empty" | "language";
+  reason?: "empty" | "language" | "already_delivered";
 };
 
 /** The queue is the last place a wrong-language publication can be stopped, and
@@ -56,6 +57,13 @@ type RequeueOptions = {
   /** Create a publish job for a target that never had one. Only an operator
    * naming a single target asks for this; Studio retries what exists. */
   createMissing?: boolean;
+  /** What may happen to a target that already put something in front of the
+   * audience. `resume` continues the delivery from the ids the job carries and
+   * refuses when there are none to continue from -- the only safe answer for a
+   * button, which cannot ask. `republish` sends the whole publication again,
+   * which is what an operator restoring a removed post is asking for and what
+   * nothing else may decide on their behalf. */
+  audienceReached: "resume" | "republish";
 };
 
 export function requeuePublicationTargets(
@@ -148,9 +156,23 @@ function requeueSocialTarget(
     return options.createMissing ? createPublishJob(tx, scope, target, source(), now) : { target, outcome: "not_retryable", status: null };
   if (row.status === "queued") return { target, outcome: "already_queued", status: row.status };
   if (!options.from.includes(row.status)) return { target, outcome: "not_retryable", status: row.status };
-  const payload = localizeTargetPayload(source(), target);
+  // The payload is rebuilt from the durable source, which knows the post and
+  // not the delivery: the ids of what already went out live on the job alone.
+  // Rebuilding without them is how a half-published Threads chain was retried
+  // into a second copy of its first message.
+  const resume = resumeState(parsePayload(row.payloadJson));
+  const payload = { ...localizeTargetPayload(source(), target), ...resume };
   const refused = unpublishable(payload, target);
   if (refused) return { target, outcome: "not_retryable", status: row.status, reason: refused };
+  // Asked in the same breath as the write it guards, off the row that is about
+  // to be overwritten: a target holding the id of something the audience can
+  // already see is republished only when the caller says that is the request.
+  if (
+    options.audienceReached === "resume" &&
+    reachedAudience(tx, row.publicationKey ?? scope.publicationKey, target) &&
+    !hasResumeState(payload)
+  )
+    return { target, outcome: "not_retryable", status: row.status, reason: "already_delivered" };
   // Fenced on the status this decision was made from: a worker claiming the job
   // between the read and the write keeps it, rather than having its lock
   // cleared mid-publish and its post delivered twice by the next claim.
@@ -161,7 +183,7 @@ function requeueSocialTarget(
     .returning({ jobId: publishJobs.jobId })
     .get();
   if (!requeued) return { target, outcome: "not_retryable", status: row.status };
-  mirrorRequeuedTarget(tx, row.publicationKey ?? scope.publicationKey, target, now);
+  mirrorRequeuedTarget(tx, row.publicationKey ?? scope.publicationKey, target, now, hasResumeState(payload));
   return { target, outcome: "requeued", status: row.status };
 }
 
@@ -192,13 +214,26 @@ function createPublishJob(tx: RequeueDb, scope: RequeueScope, target: string, so
   return { target, outcome: "requeued", status: null };
 }
 
-function mirrorRequeuedTarget(tx: RequeueDb, publicationKey: string, target: string, now: string): void {
+/** Whether this target already has a remote object to its name. Status alone
+ * does not answer it: a partially published chain settles as `failed` while its
+ * first message is live, and that id sits in the row a requeue is about to
+ * clear. */
+function reachedAudience(tx: RequeueDb, publicationKey: string, target: string): boolean {
+  const row = tx
+    .select({ externalId: publicationTargets.externalId })
+    .from(publicationTargets)
+    .where(and(eq(publicationTargets.publicationKey, publicationKey), eq(publicationTargets.target, target)))
+    .get();
+  return Boolean(row?.externalId);
+}
+
+function mirrorRequeuedTarget(tx: RequeueDb, publicationKey: string, target: string, now: string, resuming = false): void {
   const previous = tx
     .select({ status: publicationTargets.status, externalId: publicationTargets.externalId, url: publicationTargets.url })
     .from(publicationTargets)
     .where(and(eq(publicationTargets.publicationKey, publicationKey), eq(publicationTargets.target, target)))
     .get();
-  const mirrored = requeuedPostTarget(publicationKey, target, now);
+  const mirrored = requeuedPostTarget(publicationKey, target, now, resuming);
   tx.insert(publicationTargets)
     .values(mirrored.values)
     .onConflictDoUpdate({ target: [publicationTargets.publicationKey, publicationTargets.target], set: mirrored.patch })
@@ -208,14 +243,18 @@ function mirrorRequeuedTarget(tx: RequeueDb, publicationKey: string, target: str
   // record of it there was: `verify`, `delete` and `purge` all aim by that id,
   // and none of them could ever reach it again. The journal keeps it, in the
   // same transaction as the requeue that forgot it.
-  if (previous?.status !== "published" || !previous.externalId) return;
+  // Keyed on the id, not on the status that was reached: a `failed` row can
+  // name a live post -- a chain whose first message went out -- and reporting
+  // only the published ones is how that id was dropped in silence. A resumed
+  // delivery keeps its id, so there is nothing to report.
+  if (resuming || !previous?.externalId) return;
   insertEvent(
     tx,
     publicationKey,
     target,
     "publish.target.identity_dropped",
     "warn",
-    `${target} was requeued while still published; its previous post is no longer referenced`,
+    `${target} was requeued while it still named a live post; that post is no longer referenced`,
     { external_id: previous.externalId, url: previous.url },
     now,
   );

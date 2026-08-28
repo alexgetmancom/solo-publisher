@@ -5,7 +5,7 @@ import { publicationCallback } from "../../bot/publication-callback.js";
 import { appendUnlandedControls } from "../../bot/unlanded-controls.js";
 import { isSiteTarget, targetDefinition, targetLocale } from "../../botTargets.js";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
-import { drafts, publishJobs, siteJobs, videoDrafts, videoTargets } from "../../db/schema.js";
+import { drafts, publicationTargets, publishJobs, siteJobs, videoDrafts, videoTargets } from "../../db/schema.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import type { MessageKey } from "../../foundation/i18n/index.js";
 import { t } from "../../foundation/i18n/index.js";
@@ -165,7 +165,7 @@ export async function sendStudioCompletion(
         : t(locale, "notif.completion-ok", { label, done: published || total, total });
     const lines = results.map(
       (result) =>
-        `${statusIcon(result.status)} ${friendlyTarget(result.target)} — ${friendlyStatus(result.status, locale)}${
+        `${result.partial ? "⚠️" : statusIcon(result.status)} ${friendlyTarget(result.target)} — ${result.partial ? t(locale, "notif.delivery-partial") : friendlyStatus(result.status, locale)}${
           result.error && (result.status === "failed" || result.status === "verification_required") ? ` — ${shortError(result.error)}` : ""
         }`,
     );
@@ -180,8 +180,8 @@ function completionKeyboard(
   locale: StudioLocale,
   publicationKey: string | null,
   draftId: number | null,
-  retryableTargets: Array<{ target: string; status: string; error: string | null }>,
-  failedTargets: Array<{ target: string; status: string; error: string | null }>,
+  retryableTargets: CompletionTarget[],
+  failedTargets: CompletionTarget[],
   partial: boolean,
 ): InlineKeyboard | undefined {
   const publication = parsePublicationRef(publicationKey);
@@ -217,7 +217,17 @@ async function forEachAdmin(actorIds: number[], deliver: (actorId: number) => Pr
   }
 }
 
-function completionTargets(backendDb: BackendDb, ref: string | null): Array<{ target: string; status: string; error: string | null }> {
+type CompletionTarget = { target: string; status: string; error: string | null; partial: boolean };
+
+/** A target that did not finish while something of it is already live. The
+ * status alone cannot say it -- a half-published chain settles as `failed` --
+ * and a card that calls that "не опубликовано" is read as the bot lying about
+ * a post the author can see on the platform. */
+function isPartial(status: string, externalId: string | null): boolean {
+  return status !== "published" && Boolean(externalId);
+}
+
+function completionTargets(backendDb: BackendDb, ref: string | null): CompletionTarget[] {
   const publication = parsePublicationRef(ref);
   if (!publication || publication.kind === "draft") return [];
   if (publication.kind === "video")
@@ -225,15 +235,26 @@ function completionTargets(backendDb: BackendDb, ref: string | null): Array<{ ta
       .db.select({ target: videoTargets.target, status: videoTargets.status, error: videoTargets.lastError })
       .from(videoTargets)
       .where(eq(videoTargets.videoDraftId, publication.id))
-      .all();
+      .all()
+      .map((row) => ({ ...row, partial: false }));
   const jobs = unsafeDb(backendDb)
     .db.select({ target: publishJobs.target, status: publishJobs.status, error: publishJobs.lastError, jobId: publishJobs.jobId })
     .from(publishJobs)
     .where(eq(publishJobs.publicationKey, publicationRef("post", publication.id)))
     .orderBy(desc(publishJobs.jobId))
     .all();
-  const latest = new Map<string, (typeof jobs)[number]>();
-  for (const job of jobs) if (!latest.has(job.target)) latest.set(job.target, job);
+  const delivered = new Map(
+    unsafeDb(backendDb)
+      .db.select({ target: publicationTargets.target, externalId: publicationTargets.externalId, status: publicationTargets.status })
+      .from(publicationTargets)
+      .where(eq(publicationTargets.publicationKey, publicationRef("post", publication.id)))
+      .all()
+      .map((row) => [row.target, row] as const),
+  );
+  const latest = new Map<string, CompletionTarget & { jobId: number }>();
+  for (const job of jobs)
+    if (!latest.has(job.target))
+      latest.set(job.target, { ...job, partial: isPartial(job.status, delivered.get(job.target)?.externalId ?? null) });
   const site = unsafeDb(backendDb)
     .db.select({ reason: siteJobs.reason, status: siteJobs.status, error: siteJobs.lastError, jobId: siteJobs.jobId })
     .from(siteJobs)
@@ -242,7 +263,7 @@ function completionTargets(backendDb: BackendDb, ref: string | null): Array<{ ta
     .all();
   for (const job of site) {
     if (isSiteTarget(job.reason) && !latest.has(job.reason))
-      latest.set(job.reason, { target: job.reason, status: job.status, error: job.error, jobId: job.jobId });
+      latest.set(job.reason, { target: job.reason, status: job.status, error: job.error, jobId: job.jobId, partial: false });
   }
   return [...latest.values()];
 }

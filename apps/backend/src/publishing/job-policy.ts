@@ -88,23 +88,32 @@ export function requeuedPublishJobColumns(payload: JsonObject, now: string) {
  * Command Center and the bot read, so the three places that requeue -- ops for
  * social, ops for the site, Studio's retry -- have to agree on it exactly; they
  * each spelled it out instead, which is how the publish-job column set drifted. */
-export function requeuedPostTarget(publicationKey: string, target: string, now: string) {
+export function requeuedPostTarget(publicationKey: string, target: string, now: string, keepIdentity = false) {
   const patch = {
     status: "queued" as const,
     error: null,
     skipped: 0,
-    // The identity of the remote object this row used to name. A requeued row
-    // is about to describe a different one, and leaving the old id, url and
-    // timestamps behind is how `verify` reported a deleted post as live and
-    // `delete` aimed at something that was no longer there.
-    externalId: null,
-    externalIdsJson: null,
-    url: null,
-    publishedAt: null,
-    confirmationSource: null,
-    verifiedAt: null,
     updatedAt: now,
     rawJson: JSON.stringify({ requeued: true }),
+    // The identity of the remote object this row names. A requeued row usually
+    // goes on to describe a different one, and leaving the old id, url and
+    // timestamps behind is how `verify` reported a deleted post as live and
+    // `delete` aimed at something that was no longer there.
+    //
+    // `keepIdentity` is the delivery that is being *continued* rather than sent
+    // again: the job carries the ids it already published, the row still names
+    // the same live post, and clearing it would orphan a post that never went
+    // anywhere.
+    ...(keepIdentity
+      ? {}
+      : {
+          externalId: null,
+          externalIdsJson: null,
+          url: null,
+          publishedAt: null,
+          confirmationSource: null,
+          verifiedAt: null,
+        }),
   };
   return { values: { publicationKey, target, ...patch }, patch };
 }
