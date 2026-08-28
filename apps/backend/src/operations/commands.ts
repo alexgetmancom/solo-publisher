@@ -45,36 +45,8 @@ const commandActionSchema = z.strictObject({
   actor_type: z.string().optional(),
 });
 
-const dashboardFlag = z.preprocess(
-  (value) => (typeof value === "string" ? !["", "0", "false", "off", "no"].includes(value.toLowerCase()) : value),
-  z.boolean().optional(),
-);
-
 /** What a caller writes; defaults are filled in by the dispatcher's own parse. */
 type CommandAction = z.input<typeof commandActionSchema>;
-
-/** What the Command Center repair form posts: one operation name and the union
- * of the fields any repair takes. It is read here rather than in the route so
- * the accepted vocabulary stays next to the commands that implement it — the
- * route drops the blanks and hands the rest to `runOperation`, which is where
- * each operation's own schema decides what it actually accepts. */
-export const dashboardCommandSchema = z.strictObject({
-  action: z.string().min(1),
-  ref: z.string().optional(),
-  target: z.string().optional(),
-  locale: z.string().optional(),
-  text: z.string().optional(),
-  media_json: z.string().optional(),
-  at: z.string().optional(),
-  schedule_locale: z.string().optional(),
-  // A checkbox posts "1" or nothing and a JSON caller posts a boolean; the
-  // operations downstream take a boolean. Read once, here, rather than by each
-  // of them -- and never defaulted, because a gate this endpoint filled in is a
-  // gate the operator never armed.
-  republish: dashboardFlag,
-  apply: dashboardFlag,
-  token: z.string().optional(),
-});
 
 /** Actions whose effect is visible outside this system. */
 const AUDIENCE_ACTIONS = new Set(["retry", "edit", "replace_media", "use_other_media", "delete"]);

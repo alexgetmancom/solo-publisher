@@ -11,8 +11,8 @@ describe("dashboard render cache", () => {
   it("reuses an identical dashboard until its database revision changes", () =>
     withDb(async (backendDb) => {
       const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
-      const first = renderDashboard(config, backendDb, 0, "", undefined, undefined, "queue");
-      expect(renderDashboard(config, backendDb, 0, "", undefined, undefined, "queue")).toBe(first);
+      const first = renderDashboard(config, backendDb, 0, undefined, undefined, "queue");
+      expect(renderDashboard(config, backendDb, 0, undefined, undefined, "queue")).toBe(first);
       const now = new Date().toISOString();
       backendDb.db
         .insert(publishJobs)
@@ -26,7 +26,7 @@ describe("dashboard render cache", () => {
         })
         .run();
 
-      expect(renderDashboard(config, backendDb, 0, "", undefined, undefined, "queue")).not.toBe(first);
+      expect(renderDashboard(config, backendDb, 0, undefined, undefined, "queue")).not.toBe(first);
     }));
 
   it("keeps publications from the current local day in the combined history", () =>

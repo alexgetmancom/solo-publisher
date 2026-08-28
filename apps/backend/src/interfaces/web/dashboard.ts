@@ -18,7 +18,7 @@ import { hasStudioAuthoringInterface, primaryStudioActorId } from "../../studio/
 import { createStudioServices } from "../../studio/services/index.js";
 import { type PlatformMetric, renderCombinedSection } from "./dashboard/combined-section.js";
 import { localeQuery, renderLocaleSwitcher } from "./dashboard/locale-links.js";
-import { renderCredentialsSection, renderDiagnosticsSection, renderQueueSection, renderRepairSection } from "./dashboard/ops-sections.js";
+import { renderCredentialsSection, renderDiagnosticsSection, renderQueueSection } from "./dashboard/ops-sections.js";
 import { buildOverviewData, filterPipeline, loadDashboardReadModel, videoOverviewForPeriod } from "./dashboard/overview-data.js";
 import { renderPeriodControls } from "./dashboard/period-controls.js";
 import { renderDashboardShell } from "./dashboard/shell.js";
@@ -30,7 +30,7 @@ import { additionalXActivityPosts } from "./dashboard/x-activity-posts.js";
 import { renderStudioOnboarding, renderStudioSection } from "./studio.js";
 
 type DashboardTab = "posts" | "studio";
-type DashboardPanel = "overview" | "queue" | "health" | "repair";
+type DashboardPanel = "overview" | "queue" | "health";
 const MAX_DASHBOARD_CACHE_ENTRIES = 5;
 type DashboardCacheEntry = { html: string };
 const dashboardCaches = new WeakMap<BackendDb, Map<string, DashboardCacheEntry>>();
@@ -46,7 +46,6 @@ function dashboardCacheFor(backendDb: BackendDb): Map<string, DashboardCacheEntr
 function dashboardCacheKey(
   config: BackendConfig,
   weekOffset: number,
-  ref: string,
   requestedTab: string | undefined,
   requestedLocale: string | undefined,
   requestedPanel: string | undefined,
@@ -61,7 +60,6 @@ function dashboardCacheKey(
     studioActorId: config.MCP_STUDIO_ACTOR_ID ?? null,
     request: [
       weekOffset,
-      ref,
       requestedTab ?? null,
       requestedLocale ?? null,
       requestedPanel ?? null,
@@ -94,7 +92,6 @@ export function renderDashboard(
   config: BackendConfig,
   backendDb: BackendDb,
   weekOffset: number,
-  ref = "",
   requestedTab?: string,
   requestedLocale?: string,
   requestedPanel?: string,
@@ -111,7 +108,6 @@ export function renderDashboard(
   const cacheKey = dashboardCacheKey(
     config,
     weekOffset,
-    ref,
     requestedTab,
     requestedLocale,
     requestedPanel,
@@ -144,8 +140,7 @@ export function renderDashboard(
   const showStudio = tab === "studio";
   const activeTab = showStudio ? "studio" : "posts";
   const locale = parseStudioLocale(requestedLocale);
-  const panel: DashboardPanel =
-    requestedPanel === "queue" || requestedPanel === "health" || requestedPanel === "repair" ? requestedPanel : "overview";
+  const panel: DashboardPanel = requestedPanel === "queue" || requestedPanel === "health" ? requestedPanel : "overview";
   const attentionStartedAt = Date.now();
   const ops = panel === "queue" || panel === "health" ? commandCenterPayload(config, backendDb) : null;
   const hasAttention = ops ? opsNeedsAttention(ops) : commandCenterAttentionState(commandCenterAttention(config, backendDb));
@@ -183,8 +178,6 @@ export function renderDashboard(
         return renderQueueSection(ops ?? {}, locale);
       case "health":
         return `${renderCredentialsSection(ops ?? {}, locale)}${renderDiagnosticsSection(ops ?? {}, locale)}`;
-      case "repair":
-        return renderRepairSection(ref, locale);
       default:
         return renderOverview();
     }
@@ -201,13 +194,12 @@ export function renderDashboard(
   }
 
   // Everything except the overview lives behind the overflow menu: the operator
-  // opens Queue, Health, Repair and Video rarely, and spelled out they cost the
+  // opens Queue, Health and Video rarely, and spelled out they cost the
   // widest, tallest row on the screen. The one thing that must not be hidden is
   // a problem, so the menu carries a dot when Health has something to say.
   const secondaryTabs = [
     { label: t(locale, "cc.nav.queue"), href: panelLink("queue"), active: panel === "queue" },
     { label: t(locale, "cc.nav.health"), href: panelLink("health"), active: panel === "health", attention: hasAttention },
-    { label: t(locale, "cc.nav.repair"), href: panelLink("repair"), active: panel === "repair" },
     {
       label: t(locale, "cc.nav.studio"),
       href: `/command-center?tab=studio${localeParam}`,

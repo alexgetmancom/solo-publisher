@@ -88,7 +88,7 @@ describe("site middleware", () => {
       "/oauth/instagram/start",
       "/stats",
       "/stats/pageview",
-      "/api/command-center/action",
+      "/api/command-center/fingerprint",
     ]) {
       expect((await handle(path)).response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     }

@@ -1,18 +1,13 @@
 import { DIRECT_CONNECT_TARGET_IDS, type TargetId } from "../../botTargets.js";
 import type { ZernioConnectionKey } from "../../channels/zernio-connections.js";
-import type { BackendDb } from "../../db/client.js";
 import { allowPublicRequest } from "../../engagement/rate-limit.js";
-import type { BackendConfig } from "../../foundation/config.js";
 import { escapeHtml } from "../../foundation/html.js";
 import { commandAllowed, sameOriginCommandLogin } from "../../foundation/http-auth.js";
 import { html, json, loginRedirect, queryTokenRedirect, text } from "../../foundation/http-response.js";
 import { parseStudioLocale } from "../../foundation/locale.js";
-import { redactExternalSecrets } from "../../foundation/redact.js";
 import { measureMemorySync } from "../../observability/memory.js";
-import { trackUsageAsync, trackUsageSync } from "../../observability/usage.js";
+import { trackUsageSync } from "../../observability/usage.js";
 import { commandCenterFingerprint } from "../../operations/command-center.js";
-import { dashboardCommandSchema } from "../../operations/commands.js";
-import { type OperationContext, runOperation } from "../../operations/registry.js";
 import {
   invalidateDashboardRenderCache,
   renderCommandCenterLogin,
@@ -39,7 +34,6 @@ export const commandCenterRoutes: RouteModule = (app, { config, backendDb, studi
             config,
             backendDb,
             Number(url.searchParams.get("week_offset") ?? 0) || 0,
-            url.searchParams.get("ref") ?? "",
             url.searchParams.get("tab") ?? undefined,
             url.searchParams.get("locale") ?? undefined,
             url.searchParams.get("panel") ?? undefined,
@@ -114,31 +108,6 @@ export const commandCenterRoutes: RouteModule = (app, { config, backendDb, studi
           ),
       ),
     );
-  });
-
-  app.post("/api/command-center/action", async (c) => {
-    const body = await commandAction(c.req.raw);
-    if (!body) return json({ detail: "unreadable command" }, 400);
-    if (!commandAllowed(c.req.raw, config, body.token)) return json({ detail: "forbidden" }, 403);
-    // Cookie authority is ambient, so a cross-site form can ride it. A caller
-    // that presents the token explicitly is a script, not a drive-by browser form.
-    const explicitToken = Boolean(body.token?.trim() || c.req.header("X-Command-Token") || c.req.header("X-Admin-Token"));
-    if (!explicitToken && !sameOriginCommandLogin(c.req.raw, config)) return json({ detail: "forbidden" }, 403);
-    const { operation, input } = body;
-    try {
-      const result = await trackUsageAsync(backendDb, "command_center.action.execute", () =>
-        runOperation(operation, operationContext(config, backendDb), input),
-      );
-      invalidateDashboardRenderCache(backendDb);
-      return json(result as Record<string, unknown>);
-    } catch (error) {
-      // The same answer the command line gets. The card used to report every
-      // failure as "Action failed" -- "no publish jobs found" and "unknown
-      // field target" arrived as the same sentence, and the operator's next
-      // move differs completely between them. Redacted like every other
-      // surface: a failure reports what the platform said.
-      return json({ detail: redactExternalSecrets(error instanceof Error ? error.message : String(error)) }, 400);
-    }
   });
 
   app.post("/command-center/channels/connect", async (c) => {
@@ -237,35 +206,4 @@ function dashboardMemoryContext(url: URL): Record<string, string | null> {
     view: url.searchParams.get("view"),
     metric: url.searchParams.get("metric"),
   };
-}
-
-type DashboardCommand = { token?: string | undefined; operation: string; input: Record<string, unknown> };
-
-/** Reads the repair form into an operation and its arguments.
- *
- * The card posts one fixed set of fields whatever the operator picked, and the
- * registry refuses a field the chosen operation does not define -- deliberately,
- * because a misspelled `target` reaching a handler as no target at all is how a
- * scoped command widens to a whole publication. So the blanks are dropped here,
- * where "the operator left it empty" is still distinguishable from "the caller
- * named a field that does not exist". */
-async function commandAction(request: Request): Promise<DashboardCommand | null> {
-  const raw = request.headers.get("content-type")?.includes("application/json")
-    ? await request.json().catch(() => ({}))
-    : Object.fromEntries((await request.formData().catch(() => new FormData())).entries());
-  const parsed = dashboardCommandSchema.safeParse(raw);
-  // A body this endpoint cannot read used to become the empty command, so a
-  // misspelled field arrived as an unscoped action instead of as the error it
-  // is — and a typo in `target` is the difference between one delivery target
-  // and every one the publication has.
-  if (!parsed.success) return null;
-  const { action, token, ...rest } = parsed.data;
-  const input = Object.fromEntries(Object.entries(rest).filter(([, value]) => value !== "" && value !== undefined));
-  return { token, operation: action, input };
-}
-
-/** The Command Center authenticates the installation rather than a person, so
- * the operation runs as the surface it arrived on. */
-function operationContext(config: BackendConfig, backendDb: BackendDb): OperationContext {
-  return { dbPath: config.PIPELINE_DB, config: () => config, db: () => backendDb, fetchImpl: fetch, actorType: "command-center" };
 }

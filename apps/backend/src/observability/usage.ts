@@ -21,7 +21,6 @@ const TRACKED_FEATURES = [
   "command_center.dashboard.render",
   "command_center.publication_details.render",
   "command_center.fingerprint.poll",
-  "command_center.action.execute",
   "studio.queue.read",
   "studio.post.create",
   "studio.post.edit",

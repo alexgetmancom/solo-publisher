@@ -4,9 +4,8 @@ import { listChannels } from "../../../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../../../db/client.js";
 import { creatorProfiles } from "../../../db/schema.js";
 import { escapeHtml } from "../../../foundation/html.js";
-import { type MessageKey, t } from "../../../foundation/i18n/index.js";
+import { t } from "../../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../../foundation/locale.js";
-import { ORDERED_TARGETS } from "./assets.js";
 import { shortPipelineText } from "./format.js";
 import type { OpsPayload } from "./types.js";
 
@@ -46,51 +45,6 @@ function activeAudiencePlatforms(backendDb: BackendDb): AudiencePlatform[] {
       .filter(Boolean),
   );
   return AUDIENCE_PLATFORMS.filter((platform) => registeredTargets.has(platform.metricTarget));
-}
-
-/** The value is the operation name, because the form posts to the same
- * dispatch the CLI and the MCP tools go through. The card used to speak its own
- * dialect -- `replace_media`, `use_other_media` -- which is how one of these
- * came to exist on the dashboard and nowhere else. */
-const REPAIR_ACTIONS: [operation: string, key: MessageKey][] = [
-  ["retry", "cc.repair.retry"],
-  ["refresh-site", "cc.repair.refresh-site"],
-  ["edit", "cc.repair.edit"],
-  ["set-media", "cc.repair.replace-media"],
-  ["use-other-media", "cc.repair.use-other-media"],
-  ["delete", "cc.repair.delete"],
-];
-
-/** Named so the parity test can read them without re-deriving the markup. */
-export function repairOperations(): string[] {
-  return REPAIR_ACTIONS.map(([operation]) => operation);
-}
-
-/** The form authenticates through the HttpOnly `command_token` cookie; the
- * endpoint pairs that with a same-origin check, which is what actually stops a
- * cross-site POST from riding the session. */
-export function renderRepairSection(ref: string, locale: StudioLocale): string {
-  const options = ORDERED_TARGETS.map((target) => `<option value="${escapeHtml(target.id)}">${escapeHtml(target.label)}</option>`).join(
-    "\n",
-  );
-  const actions = REPAIR_ACTIONS.map(([value, key]) => `<option value="${value}">${escapeHtml(t(locale, key))}</option>`).join("");
-  return [
-    "<section>",
-    `<p class="note">${escapeHtml(t(locale, "cc.repair.note"))}</p>`,
-    '<form method="post" action="/api/command-center/action">',
-    `<select name="action">${actions}</select>`,
-    `<select name="locale"><option value="">${t(locale, "cc.repair.both-locales")}</option><option value="ru">RU</option><option value="en">EN</option></select>`,
-    `<input name="ref" placeholder="${t(locale, "cc.repair.ref-placeholder")}" value="${escapeHtml(ref)}">`,
-    `<select name="target"><option value="">${t(locale, "cc.repair.all-targets")}</option>${options}</select>`,
-    `<textarea name="text" placeholder="${t(locale, "cc.repair.text-placeholder")}"></textarea>`,
-    `<textarea name="media_json" placeholder='${t(locale, "cc.repair.media-placeholder")}'></textarea>`,
-    `<label><input type="checkbox" name="republish" value="1"> ${escapeHtml(t(locale, "cc.repair.republish-after-delete"))}</label>`,
-    // The form is the deliberate surface: choosing an action and pressing Apply
-    // is the confirmation the CLI and MCP spell as --apply.
-    '<input type="hidden" name="apply" value="1">',
-    `<button type="submit">${t(locale, "cc.repair.apply")}</button>`,
-    "</form></section>",
-  ].join("");
 }
 
 export function renderQueueSection(ops: OpsPayload, locale: StudioLocale): string {

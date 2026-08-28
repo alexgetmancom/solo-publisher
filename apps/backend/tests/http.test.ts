@@ -4,10 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApiHandler } from "../src/api.js";
 import { listChannels } from "../src/channels/registry.js";
-import { createDraftFromMessage } from "../src/content/drafts.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import type { BackendConfig } from "../src/foundation/config.js";
-import { publishDraftToQueue } from "../src/publishing/publication-workflow.js";
 import { channelService } from "../src/studio/services/channels.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
 import { withOpenDb } from "./helpers/db.js";
@@ -93,23 +91,6 @@ describe("Astro endpoint controller", () => {
       backendDb.close();
     }
   });
-
-  it("does not let a URL token authorize command-center mutations", () =>
-    withTempDb(async (backendDb) => {
-      const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
-      // A URL token is readable in proxy logs and Referer headers, so it
-      // authorizes reads only: a mutation has to carry a header, form field or
-      // the HttpOnly cookie.
-      expect(
-        (
-          await app.request("/api/command-center/action?token=secret", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ action: "retry", ref: "post:1" }),
-          })
-        ).status,
-      ).toBe(403);
-    }));
 
   it("connects a direct publication target from an authenticated Command Center form", async () => {
     const backendDb = openBackendDb(join(tempDir("alexgetman-channel-connect-"), "pipeline.db"), 5000);
@@ -285,75 +266,6 @@ describe("Astro endpoint controller", () => {
       expect(await limitedFeedback.json()).toMatchObject({ error: { code: -32000, message: "rate limit exceeded" } });
     }));
 
-  it("runs authenticated command-center repair actions", () =>
-    withTempDb(async (backendDb) => {
-      const draftId = createDraftFromMessage(backendDb, 42, { text: "Исходник", textEn: "Original", entities: [], media: [] });
-      const postId = publishDraftToQueue(backendDb, draftId);
-      const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
-      const response = await app.request("/api/command-center/action", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          action: "edit",
-          ref: `post:${postId}`,
-          locale: "en",
-          text: "Edited <English>",
-          apply: true,
-          token: "secret",
-        }),
-      });
-      expect(response.status).toBe(200);
-      expect(await response.json()).toMatchObject({ ok: true, post_id: postId, locale: "en", text: true });
-      expect(
-        backendDb.sqlite
-          .prepare(
-            "SELECT approved_text, html, entities_json FROM post_locales JOIN drafts ON drafts.id=post_locales.draft_id WHERE post_id=? AND locale='en'",
-          )
-          .get(postId),
-      ).toEqual({
-        approved_text: "Edited <English>",
-        html: "Edited &lt;English&gt;",
-        entities_json: "[]",
-      });
-      expect((backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM ops_actions").get() as { count: number }).count).toBe(1);
-      // And the same mutation journal: a repair used to leave the timeline
-      // empty when it was done from the card and full when it was done from the
-      // command line, which made the history depend on where the operator was
-      // standing.
-      expect(
-        backendDb.sqlite.prepare("SELECT publication_key, target FROM publication_events WHERE event_type='operations.command'").all(),
-      ).toEqual([{ publication_key: `post:${postId}`, target: "command-center" }]);
-      expect(
-        (
-          backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM site_jobs WHERE publication_key='post:'||?").get(postId) as {
-            count: number;
-          }
-        ).count,
-      ).toBe(3);
-
-      const failed = await app.request("/api/command-center/action", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "unknown", ref: `post:${postId}`, token: "secret" }),
-      });
-      expect(failed.status).toBe(400);
-      // The card runs the same dispatch the CLI and the MCP tools do, so it
-      // gets the same answer instead of a shrug. "Action failed" was every
-      // failure at once: a bad field, a publication with nothing to retry, and
-      // a platform refusing a delete all read identically.
-      expect(await failed.json()).toEqual({ detail: "unknown command: unknown" });
-
-      // Not only the registry's input errors: a failure from inside the repair
-      // reaches the operator with the sentence the command line would print.
-      const missing = await app.request("/api/command-center/action", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "retry", ref: "post:999999", apply: true, token: "secret" }),
-      });
-      expect(missing.status).toBe(400);
-      expect(await missing.json()).toEqual({ detail: "publication not found: post:999999" });
-    }));
-
   it("renders the full command center through the framework-neutral controller", async () => {
     const backendDb = tempDb();
     const dir = tempDir("alexgetman-markdown-");
@@ -395,7 +307,6 @@ describe("Astro endpoint controller", () => {
       expect(html).toContain("Обзор");
       expect(html).not.toContain("Аудитория и profile metrics");
       expect(html).toContain('href="/command-center?tab=posts&panel=health"');
-      expect(html).toContain("Исправление");
       const englishDashboard = await app.request("/command-center?locale=en", { headers: { cookie: cookie ?? "" } });
       const englishHtml = await englishDashboard.text();
       expect(englishHtml).toContain('<html lang="en">');
