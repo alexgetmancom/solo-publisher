@@ -50,6 +50,7 @@ import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
 import { backfillSiteImageMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
+import { skipPublicationTargets } from "./skip.js";
 import { compactOperationsStatus } from "./status.js";
 import { backfillTextStoryCards } from "./story-card-backfill.js";
 import { loginTelegramStories } from "./telegram-stories-login.js";
@@ -532,6 +533,28 @@ const operationDefs = {
         ref: resolved,
         target: input.target,
         externalId: input.external_id,
+        apply: input.apply,
+        actorType: context.actorType,
+      });
+    },
+  }),
+  skip: operation({
+    summary: "Finish a publication without a target that did not land, instead of retrying it.",
+    note: "The other answer to what `retry` asks, and the one the bot has always had next to it. Nothing is sent and nothing is removed from a platform: the jobs stop asking to be dealt with and the publication settles. Omit `target` to give up on every target that did not land; `apply` performs it.",
+    schema: z.object({
+      ref: refOption,
+      target: example(z.string().trim().min(1).optional(), "threads_ru").describe("one target to give up on, or every unlanded one"),
+      apply: applyOption,
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => {
+      const backendDb = context.db();
+      const resolved = resolvePublicationRef(backendDb, input.ref);
+      if (!resolved) throw new Error(`publication not found: ${input.ref}`);
+      return skipPublicationTargets(backendDb, {
+        ref: resolved,
+        ...(input.target === undefined ? {} : { target: input.target }),
         apply: input.apply,
         actorType: context.actorType,
       });
