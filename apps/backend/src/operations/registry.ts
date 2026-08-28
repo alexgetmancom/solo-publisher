@@ -16,7 +16,7 @@ import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
 import { capabilityReport } from "../observability/capabilities.js";
 import { repairStoredDates } from "../observability/date-repair.js";
-import { usageReport } from "../observability/usage.js";
+import { recordUsage, usageReport } from "../observability/usage.js";
 import { publishArticle } from "../publishing/article-publish.js";
 import { retryVideoTarget } from "../publishing/video-service.js";
 import { settleVideoTarget } from "../publishing/video-settle.js";
@@ -414,7 +414,7 @@ const operationDefs = {
   }),
   usage: operation({
     summary: "Which features are exercised and which have gone unused.",
-    note: "Each feature carries the window's totals, `recent` for the last 7 days of it, and `worstDay`, the day that failed most. A failure rate averaged over the window cannot tell an outage that ended from one still running: read `recent` before acting on `failures`.",
+    note: "Each feature carries the window's totals, `recent` for the last 7 days of it, and `worstDay`, the day that failed most. A failure rate averaged over the window cannot tell an outage that ended from one still running: read `recent` before acting on `failures`. An `operations.NAME` key counts one command, whichever surface ran it, and every command appears even at zero.",
     schema: z.object({
       days: z.coerce.number().int().min(1).max(365).optional().describe("window to report over"),
       unused_days: z.coerce.number().int().min(1).max(365).optional().describe("age past which a feature counts as unused"),
@@ -423,6 +423,7 @@ const operationDefs = {
     agent: true,
     handler: (context, input) =>
       usageReport(context.db(), {
+        knownFeatures: operationUsageKeys(),
         ...(input.days === undefined ? {} : { days: input.days }),
         ...(input.unused_days === undefined ? {} : { unusedDays: input.unused_days }),
       }),
@@ -1059,9 +1060,34 @@ export async function runOperation(name: string, context: OperationContext, args
     const path = issue?.path.join(".");
     throw new OperationInputError(`${name}: ${path ? `${path}: ` : ""}${issue?.message ?? "invalid arguments"}`);
   }
-  const result = await def.handler(context, parsed.data);
+  const startedAt = Date.now();
+  let result: unknown;
+  try {
+    result = await def.handler(context, parsed.data);
+  } catch (error) {
+    recordUsage(context.db(), operationUsageKey(name), false, Date.now() - startedAt);
+    throw error;
+  }
+  // Measured around the handler alone: a caller's typo is rejected above, and
+  // counting it would make an operator's misspelling look like a command that
+  // fails. Recorded here rather than at each surface, because this is the one
+  // place every surface passes through -- and the CLI, which is where most of
+  // these are actually run, left no trace at all before it.
+  recordUsage(context.db(), operationUsageKey(name), true, Date.now() - startedAt);
   if (def.mutates) journalMutation(context, name, def, parsed.data);
   return result;
+}
+
+/** The usage key of one operation. Named here, next to the catalog it is built
+ * from, so the report never carries a hand-written copy of these names. */
+function operationUsageKey(name: string): string {
+  return `operations.${name}`;
+}
+
+/** Every operation, including the ones nobody has run: a command that is never
+ * called is exactly what the report is asked for. */
+export function operationUsageKeys(): string[] {
+  return Object.keys(operationDefs).map(operationUsageKey);
 }
 
 /** Every mutation reaches the journal from here, so the record of what changed

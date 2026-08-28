@@ -29,7 +29,7 @@ describe("runtime usage telemetry", () => {
       recordUsage(backendDb, "publishing.plan.create", true, 20, new Date("2026-07-31T10:00:00.000Z"));
       recordUsage(backendDb, "old.operation", false, 80, new Date("2026-06-01T10:00:00.000Z"));
 
-      const report = usageReport(backendDb, { days: 2, unusedDays: 30, now });
+      const report = usageReport(backendDb, { days: 2, unusedDays: 30, now, knownFeatures: [] });
       const publishing = report.features.find((feature) => feature.featureKey === "publishing.plan.create");
       const old = report.features.find((feature) => feature.featureKey === "old.operation");
       const never = report.features.find((feature) => feature.featureKey === "publishing.video.job");
@@ -55,7 +55,7 @@ describe("runtime usage telemetry", () => {
       day("2026-08-27", 5, 0);
       day("2026-08-28", 4, 1);
 
-      const report = usageReport(backendDb, { days: 30, unusedDays: 30, now });
+      const report = usageReport(backendDb, { days: 30, unusedDays: 30, now, knownFeatures: [] });
       const metrics = report.features.find((feature) => feature.featureKey === "analytics.metrics.collect");
       // The window alone reads as 13 failures in 23 calls, which is the shape
       // that sends an operator after a fire that went out ten days ago.
@@ -68,6 +68,6 @@ describe("runtime usage telemetry", () => {
       expect(clean?.recent).toEqual({ days: 7, calls: 0, failures: 0 });
 
       // A window shorter than the recent one cannot report more days than it has.
-      expect(usageReport(backendDb, { days: 2, unusedDays: 30, now }).features[0]?.recent.days).toBe(2);
+      expect(usageReport(backendDb, { days: 2, unusedDays: 30, now, knownFeatures: [] }).features[0]?.recent.days).toBe(2);
     }));
 });

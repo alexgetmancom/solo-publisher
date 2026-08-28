@@ -2,7 +2,15 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { listChannels } from "../src/channels/registry.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { mcpResponse } from "../src/interfaces/mcp.js";
-import { type OperationContext, operationCatalog, operationDef, operationUsage, runOperation } from "../src/operations/registry.js";
+import { flushUsage, usageReport } from "../src/observability/usage.js";
+import {
+  type OperationContext,
+  operationCatalog,
+  operationDef,
+  operationUsage,
+  operationUsageKeys,
+  runOperation,
+} from "../src/operations/registry.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -93,6 +101,25 @@ describe("operations registry", () => {
     await expect(runOperation("retry", context(backendDb), { ref: "post:1", target: "" })).rejects.toThrow("retry: target");
     await expect(runOperation("metrics-backfill", context(backendDb), { refs: "" })).rejects.toThrow("metrics-backfill: refs");
     await expect(runOperation("toString", context(backendDb), {})).rejects.toThrow("unknown command: toString");
+  });
+
+  it("counts every operation run, whichever surface ran it, and none that only failed to parse", async () => {
+    backendDb = openBackendDb(":memory:");
+
+    await runOperation("recent", context(backendDb), {});
+    await runOperation("recent", context(backendDb), {});
+    await expect(runOperation("timeline", context(backendDb), { ref: "nonsense" })).rejects.toThrow("--ref must look like");
+    // Rejected before the handler: an operator's typo is not a command that fails.
+    await expect(runOperation("recent", context(backendDb), { limit: 999 })).rejects.toThrow("recent: limit");
+    flushUsage(backendDb);
+
+    const report = usageReport(backendDb, { days: 1, unusedDays: 1, knownFeatures: operationUsageKeys() });
+    const feature = (name: string) => report.features.find((entry) => entry.featureKey === `operations.${name}`);
+    expect(feature("recent")).toMatchObject({ calls: 2, successes: 2, failures: 0 });
+    expect(feature("timeline")).toMatchObject({ calls: 1, successes: 0, failures: 1 });
+    // A command nobody has run is the answer the report exists to give, so it
+    // has to appear with a zero rather than be absent.
+    expect(feature("audit")).toMatchObject({ calls: 0, unused: true, lastSeenAt: null });
   });
 
   /** A usage line reading `--ref VALUE` is what produced `--ref 160` and the

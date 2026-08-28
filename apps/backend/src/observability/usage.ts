@@ -237,8 +237,16 @@ function positiveDays(value: number | undefined, fallback: number): number {
   return value;
 }
 
-/** Returns a windowed report and includes known operations with zero calls. */
-export function usageReport(backendDb: BackendDb, options: { days?: number; unusedDays?: number; now?: Date } = {}): UsageReport {
+/** Returns a windowed report and includes known operations with zero calls.
+ *
+ * `knownFeatures` is how a feature that has never run once still appears with a
+ * zero: the keys above are the runtime's own, and the operation catalog is
+ * handed in by the surface that owns it rather than copied here, where a second
+ * list of the same names would drift the first time a command is added. */
+export function usageReport(
+  backendDb: BackendDb,
+  options: { days?: number; unusedDays?: number; now?: Date; knownFeatures: readonly string[] },
+): UsageReport {
   flushUsage(backendDb);
   const now = options.now ?? new Date();
   const windowDays = positiveDays(options.days, 30);
@@ -282,7 +290,7 @@ export function usageReport(backendDb: BackendDb, options: { days?: number; unus
     else daysByFeature.set(row.featureKey, [row]);
   }
   const lifetimeByFeature = new Map(lifetimeRows.map((row) => [row.featureKey, row]));
-  const featureKeys = new Set<string>([...TRACKED_FEATURES, ...lifetimeByFeature.keys()]);
+  const featureKeys = new Set<string>([...TRACKED_FEATURES, ...options.knownFeatures, ...lifetimeByFeature.keys()]);
   const unusedSince = dayString(unusedSinceDate);
   const features = [...featureKeys].map((featureKey) => {
     const days = daysByFeature.get(featureKey) ?? [];
