@@ -65,15 +65,18 @@ describe("creator analytics collection", () => {
     });
   });
 
-  it("does not count empty scheduler ticks as video metric collections", async () => {
+  // Counted per tick, like every other usage key. Skipping the empty ones read
+  // as a collector that had died: a Studio with no video channels went silent
+  // in the usage report while its cycle was running every five minutes.
+  it("counts a scheduler tick that collected nothing", async () => {
     await withDb(async (backendDb) => {
       const config = loadTestConfig({});
 
       expect(await runAnalyticsCycle(config, backendDb)).toBe(0);
       flushUsage(backendDb);
-      expect(
-        backendDb.sqlite.query("SELECT calls FROM runtime_usage WHERE feature_key = 'analytics.video_metrics.collect'").get(),
-      ).toBeNull();
+      expect(backendDb.sqlite.query("SELECT calls FROM runtime_usage WHERE feature_key = 'analytics.video_metrics.collect'").get()).toEqual(
+        { calls: 1 },
+      );
     });
   });
 

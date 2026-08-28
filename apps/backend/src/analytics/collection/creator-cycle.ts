@@ -19,10 +19,14 @@ async function step(backendDb: BackendDb, name: string, featureKey: UsageFeature
   try {
     const result = await run();
     const completed = typeof result === "number" ? result : 1;
-    if (completed > 0) {
-      recordUsage(backendDb, featureKey, true, Date.now() - startedAt);
+    // One record per invocation, the unit every other usage key counts.
+    // Counting items instead, and skipping a pass that found none, made a
+    // Studio with no video channels read as a collector that had stopped.
+    recordUsage(backendDb, featureKey, true, Date.now() - startedAt);
+    // The timing line stays about work performed: an idle pass has nothing
+    // to time and would bury the passes that do.
+    if (completed > 0)
       log("info", "operation timing", { operation: featureKey, step: name, success: true, totalMs: Date.now() - startedAt });
-    }
     return completed;
   } catch (error) {
     recordUsage(backendDb, featureKey, false, Date.now() - startedAt);
