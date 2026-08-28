@@ -46,6 +46,7 @@ import { purgePublication } from "./publication-purge.js";
 import { resolvePublicationRef } from "./publication-ref.js";
 import { publishText } from "./publish.js";
 import { findPublication, formatPublicationMatches, formatRecentPublications, recentPublications } from "./recent.js";
+import { resumeTargetFrom } from "./resume-from.js";
 import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
 import { backfillSiteImageMedia } from "./site-media-backfill.js";
@@ -512,6 +513,30 @@ const operationDefs = {
     // against it would put the first row of a fresh history back.
     journalRef: () => null,
     handler: (context, input) => purgePublication(context.db(), context.config(), input, context.fetchImpl),
+  }),
+  "resume-from": operation({
+    summary: "Point a half-published target at the post it should finish onto, then let the retry write the rest.",
+    note: "For a publication that goes out in more than one call and now names the wrong post, typically after a duplicate was removed by hand. The ordinary retry continues from whatever the job carries; this is how that is corrected. `apply` performs it.",
+    schema: z.object({
+      ref: refOption,
+      target: example(z.string().trim().min(1), "threads_ru").describe("the unfinished delivery target"),
+      external_id: example(z.string().trim().min(1), "18049...").describe("the post the remainder should be attached to"),
+      apply: applyOption,
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => {
+      const backendDb = context.db();
+      const resolved = resolvePublicationRef(backendDb, input.ref);
+      if (!resolved) throw new Error(`publication not found: ${input.ref}`);
+      return resumeTargetFrom(backendDb, {
+        ref: resolved,
+        target: input.target,
+        externalId: input.external_id,
+        apply: input.apply,
+        actorType: context.actorType,
+      });
+    },
   }),
   settle: operation({
     summary: "Answer a target stuck in verification_required with what the platform actually shows.",
