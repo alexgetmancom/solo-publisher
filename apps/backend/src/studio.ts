@@ -25,6 +25,12 @@ export const DEFAULT_STUDIO_PROFILE = {
     .map(({ id }) => String(id)),
 } as const satisfies Omit<StudioProfileRecord, "id" | "updatedAt">;
 
+/** The follower counts a Studio announces by default. An operator narrows or
+ * extends the ladder in settings; this is what a fresh install starts from. */
+export const DEFAULT_MILESTONE_THRESHOLDS = [
+  100, 250, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10_000,
+] as const satisfies readonly number[];
+
 export type StudioConfig = {
   timezone: string;
   timezoneLabel: string;

@@ -1,12 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
-import { evaluateAudienceMilestones } from "../src/analytics/audience-milestones.js";
+import { evaluateAudienceMilestones, milestoneState } from "../src/analytics/audience-milestones.js";
 import { audienceGrowthByPlatform, youtubeChannelViewDeltaSince } from "../src/analytics/metric-deltas.js";
 import { creatorDashboard } from "../src/analytics/reports/dashboard.js";
 import { studioAnalyticsDashboard } from "../src/analytics/reports/studio-dashboard.js";
 import { recordProfileSnapshot } from "../src/analytics/snapshots/creator-store.js";
 import { registerChannel } from "../src/channels/registry.js";
 import { creatorProfileSnapshots, creatorProfiles, metricSamples, publicationEvents, videoMetricSnapshots } from "../src/db/schema.js";
+import { settingsService } from "../src/studio/services/settings.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { registerTestChannels } from "./helpers/channels.js";
 import { withDb } from "./helpers/db.js";
@@ -291,6 +292,66 @@ describe("creator analytics deltas", () => {
         source: "test",
         metrics: { followersCount: 600 },
       });
+      expect(evaluateAudienceMilestones(backendDb)).toBe(0);
+    });
+  });
+
+  // The defect this state shape exists for: Instagram Stories was registered as
+  // a second audience for one account, the RU scopes counted it twice for five
+  // days, and 1000 was marked as passed while nothing was announced. When the
+  // duplicate went away the real 1000, weeks later, had to still arrive.
+  it("withdraws the thresholds an account counted twice was holding up", async () => {
+    await withDb(async (backendDb) => {
+      registerChannel(backendDb, { platform: "youtube", locale: "ru", provider: "native", label: "YouTube RU" });
+      recordProfileSnapshot(backendDb, { platform: "youtube_ru", account: "channel", source: "test", metrics: { subscriberCount: 400 } });
+      expect(evaluateAudienceMilestones(backendDb)).toBe(0);
+
+      const duplicate = registerChannel(backendDb, { platform: "instagram", locale: "ru", provider: "native", label: "Instagram RU" });
+      recordProfileSnapshot(backendDb, {
+        platform: "instagram_ru",
+        account: "channel",
+        source: "test",
+        metrics: { followersCount: 700 },
+      });
+      // 1100 across the language, and not one of it announced: a new member is
+      // a new baseline, never growth.
+      expect(evaluateAudienceMilestones(backendDb)).toBe(0);
+
+      backendDb.channels.disable(duplicate.id, new Date().toISOString());
+      // The scope shrank back to one account, and is credited only with what
+      // that account actually holds.
+      expect(evaluateAudienceMilestones(backendDb)).toBe(0);
+      expect(milestoneState(backendDb, "locale:ru")?.reachedThrough).toBe(400);
+
+      recordProfileSnapshot(backendDb, { platform: "youtube_ru", account: "channel", source: "test", metrics: { subscriberCount: 1003 } });
+      const messages = () =>
+        backendDb.db
+          .select({ message: publicationEvents.message })
+          .from(publicationEvents)
+          .where(eq(publicationEvents.eventType, "analytics.milestone.reached"))
+          .all()
+          .map((row) => row.message);
+      expect(evaluateAudienceMilestones(backendDb)).toBeGreaterThan(0);
+      expect(messages()).toContain("🏆 🇷🇺 Все RU-каналы: 1000 подписчиков!");
+      // One line per scope, naming the highest count passed, not a burst of
+      // every threshold between the old audience and the new one.
+      expect(messages().filter((message) => message.startsWith("🎉 YouTube RU"))).toEqual(["🎉 YouTube RU: 1000 подписчиков!"]);
+    });
+  });
+
+  it("announces nothing for a scope the Studio switched off, and credits it anyway", async () => {
+    await withDb(async (backendDb) => {
+      settingsService(backendDb).setMilestones({ channelEnabled: false, thresholds: [1000] });
+      registerChannel(backendDb, { platform: "youtube", locale: "ru", provider: "native", label: "YouTube RU" });
+      recordProfileSnapshot(backendDb, { platform: "youtube_ru", account: "channel", source: "test", metrics: { subscriberCount: 900 } });
+      expect(evaluateAudienceMilestones(backendDb)).toBe(0);
+
+      recordProfileSnapshot(backendDb, { platform: "youtube_ru", account: "channel", source: "test", metrics: { subscriberCount: 1001 } });
+      // Only the language, group and project scopes speak; the channel scope is off.
+      expect(evaluateAudienceMilestones(backendDb)).toBe(3);
+      expect(milestoneState(backendDb, "channel:youtube_ru")?.reachedThrough).toBe(1000);
+
+      settingsService(backendDb).setMilestones({ channelEnabled: true });
       expect(evaluateAudienceMilestones(backendDb)).toBe(0);
     });
   });

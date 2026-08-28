@@ -1,7 +1,9 @@
 import * as z from "zod";
+import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
 import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
 import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
+import { audienceMilestoneReport } from "../analytics/reports/milestone-report.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
 import { deleteXImport } from "../analytics/x-import-delete.js";
@@ -333,6 +335,30 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => auditOperations(context.db()),
+  }),
+  milestones: operation({
+    summary: "Audience achievements: what each scope holds, what it has been credited with, and what it announces next.",
+    note: "`reachedThrough` is the count a scope is done announcing. It follows the audience: connecting or removing an account re-credits the scope at its new size, so a scope can be credited with a number it never announced.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => audienceMilestoneReport(context.db()),
+  }),
+  "milestone-announce": operation({
+    summary: "Announce one achievement a scope is owed, and credit it with that count.",
+    note: "For a threshold that was passed while nothing was watching. `milestones` lists the scope ids. It reaches the Studio's administrators as a normal achievement and cannot be taken back.",
+    schema: z.object({
+      scope: example(z.string().min(1), "group_locale:video:ru").describe("milestone scope id"),
+      threshold: z.coerce.number().int().min(1).describe("follower count to announce"),
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => {
+      const backendDb = context.db();
+      if (!announceAudienceMilestone(backendDb, input.scope, input.threshold))
+        throw new Error(`Unknown milestone scope: ${input.scope}. Run \`milestones\` for the scopes this Studio has.`);
+      return { announced: { scope: input.scope, threshold: input.threshold } };
+    },
   }),
   recent: operation({
     summary: "Recent posts with their delivery targets and the targets each one is missing.",

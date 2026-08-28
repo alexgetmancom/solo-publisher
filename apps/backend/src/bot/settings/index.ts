@@ -8,7 +8,7 @@ import { clearConversationState, getConversationState } from "../conversation-st
 import { mainMenuText } from "../menu-render.js";
 import { collectThreadsFollowers, collectXAnalyticsCsv } from "./analytics.js";
 
-import { buildNotificationsMenu, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
+import { buildNotificationsMenu, collectMilestoneThreshold, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
 import { buildPublishingMenu, collectYoutubeSignature } from "./publishing.js";
 import { isNavigationMessage, NOTIFICATIONS_MENU_ID, PUBLISHING_MENU_ID, SETTINGS_MENU_ID, SYSTEM_MENU_ID } from "./shared.js";
 import { buildSystemMenu, collectTimezone } from "./system.js";
@@ -38,6 +38,7 @@ export async function handleSettingsMessage(
   if (state.step === "timezone") return collectTimezone(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step === "news_digest_time") return collectNewsDigestTime(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step === "news_digest_prompt") return collectNewsDigestPrompt(ctx, backendDb, config, actorId, text, settingsMenu);
+  if (state.step === "milestone_threshold") return collectMilestoneThreshold(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step !== "youtube_signature") return false;
   return collectYoutubeSignature(ctx, backendDb, config, actorId, text, settingsMenu);
 }

@@ -9,6 +9,7 @@ describe("application persistence ports", () => {
     let newsDigest: Parameters<ApplicationPorts["studioSettings"]["saveNewsDigest"]>[0] | undefined;
     let notifications: Parameters<ApplicationPorts["studioSettings"]["saveNotifications"]>[0] | undefined;
     let timezone: Parameters<ApplicationPorts["studioSettings"]["saveTimezone"]>[0] | undefined;
+    let milestones: Parameters<ApplicationPorts["studioSettings"]["saveMilestones"]>[0] | undefined;
     let currentTimezone: string | null = null;
     const ports: Pick<ApplicationPorts, "clock" | "studioSettings"> = {
       clock: { now: () => new Date("2026-01-02T03:04:05.000Z") },
@@ -25,6 +26,10 @@ describe("application persistence ports", () => {
           weeklyDigest = input;
         },
         newsDigest: () => null,
+        milestones: () => null,
+        saveMilestones: (input) => {
+          milestones = input;
+        },
         saveNewsDigest: (input) => {
           newsDigest = input;
         },
@@ -78,6 +83,21 @@ describe("application persistence ports", () => {
       postRemindersEnabled: 1,
       reminderMinutes: 15,
       completionEnabled: 1,
+      updatedAt: "2026-01-02T03:04:05.000Z",
+    });
+    expect(settings.setMilestones({ projectEnabled: false, thresholds: [500, 100, 500] })).toEqual({
+      channelEnabled: true,
+      groupLocaleEnabled: true,
+      localeEnabled: true,
+      projectEnabled: false,
+      thresholds: [100, 500],
+    });
+    expect(milestones).toEqual({
+      channelEnabled: 1,
+      groupLocaleEnabled: 1,
+      localeEnabled: 1,
+      projectEnabled: 0,
+      thresholdsJson: [100, 500],
       updatedAt: "2026-01-02T03:04:05.000Z",
     });
   });

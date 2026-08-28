@@ -1,6 +1,6 @@
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { LocalizedProfiles, LocalizedText } from "../../application/ports.js";
-import { DEFAULT_STUDIO_PROFILE } from "../../studio.js";
+import { DEFAULT_MILESTONE_THRESHOLDS, DEFAULT_STUDIO_PROFILE } from "../../studio.js";
 import { autoId, type JsonObject, type JsonValue, json, timestamps } from "./_shared.js";
 
 /** What this Studio is and how its deployment behaves: the identity it publishes
@@ -42,6 +42,24 @@ export const studioWeeklyDigestSettings = sqliteTable("studio_weekly_digest_sett
   id: integer().primaryKey().default(1),
   enabled: integer().notNull().default(1),
   weekday: integer().notNull().default(0),
+  updatedAt: text().notNull(),
+});
+
+/** Which audience achievements this Studio announces, and at which follower
+ * counts. One row per Studio instance: the milestone is a fact about the
+ * audience, not about the administrator who happens to read it.
+ * Every scope on and the full ladder by default — a fresh install announces
+ * what it always announced. */
+export const studioMilestoneSettings = sqliteTable("studio_milestone_settings", {
+  id: integer().primaryKey().default(1),
+  channelEnabled: integer().notNull().default(1),
+  groupLocaleEnabled: integer().notNull().default(1),
+  localeEnabled: integer().notNull().default(1),
+  projectEnabled: integer().notNull().default(1),
+  /** Follower counts worth announcing, ascending. */
+  thresholdsJson: json<number[]>()
+    .notNull()
+    .default([...DEFAULT_MILESTONE_THRESHOLDS]),
   updatedAt: text().notNull(),
 });
 

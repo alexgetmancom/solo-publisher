@@ -1,3 +1,4 @@
+import { milestonePolicy, normalizeMilestoneThresholds } from "../../analytics/milestone-policy.js";
 import type { ApplicationPorts, LocalizedProfiles, LocalizedText } from "../../application/ports.js";
 import { isKnownTarget, targetsRecord } from "../../botTargets.js";
 import { fixUrlSlashes } from "../../content/message.js";
@@ -159,6 +160,34 @@ export function settingsService(backendDb: SettingsDependencies) {
     },
     backup() {
       return readBackup(backendDb);
+    },
+    milestones() {
+      return milestonePolicy(backendDb);
+    },
+    setMilestones(
+      input: Partial<{ channelEnabled: boolean; groupLocaleEnabled: boolean; localeEnabled: boolean; projectEnabled: boolean }> & {
+        thresholds?: number[];
+      },
+    ) {
+      if (input.thresholds?.some((value) => !Number.isSafeInteger(value) || value < 1 || value > 100_000_000))
+        throw new StudioError("err.milestone-threshold-range");
+      const current = milestonePolicy(backendDb);
+      const next = {
+        channelEnabled: input.channelEnabled ?? current.channelEnabled,
+        groupLocaleEnabled: input.groupLocaleEnabled ?? current.groupLocaleEnabled,
+        localeEnabled: input.localeEnabled ?? current.localeEnabled,
+        projectEnabled: input.projectEnabled ?? current.projectEnabled,
+        thresholds: input.thresholds == null ? current.thresholds : normalizeMilestoneThresholds(input.thresholds),
+      };
+      backendDb.studioSettings.saveMilestones({
+        channelEnabled: Number(next.channelEnabled),
+        groupLocaleEnabled: Number(next.groupLocaleEnabled),
+        localeEnabled: Number(next.localeEnabled),
+        projectEnabled: Number(next.projectEnabled),
+        thresholdsJson: next.thresholds,
+        updatedAt: backendDb.clock.now().toISOString(),
+      });
+      return next;
     },
     setBackup(input: { enabled: boolean }) {
       backendDb.studioSettings.saveBackup({ enabled: Number(input.enabled), updatedAt: backendDb.clock.now().toISOString() });

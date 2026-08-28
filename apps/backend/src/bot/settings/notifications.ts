@@ -2,11 +2,13 @@ import { Menu } from "@grammyjs/menu";
 import type { Bot, Context } from "grammy";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
+import { StudioError } from "../../foundation/errors.js";
 import { describeError, t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { sendDailyNewsDigest } from "../../interfaces/telegram/news-digest.js";
 import { createStudioServices } from "../../studio/services/index.js";
 import { NEWS_DIGEST_EFFORTS, settingsService } from "../../studio/services/settings.js";
+import { DEFAULT_MILESTONE_THRESHOLDS } from "../../studio.js";
 import { clearConversationState } from "../conversation-state.js";
 import {
   BACKUP_MENU_ID,
@@ -14,6 +16,7 @@ import {
   beginSettingsInput,
   choiceLabel,
   formatTime,
+  MILESTONES_MENU_ID,
   NEWS_DIGEST_MENU_ID,
   NEWS_DIGEST_TIME_MENU_ID,
   NOTIFICATION_SETTINGS_MENU_ID,
@@ -189,6 +192,69 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       );
   });
 
+  const milestones = new Menu<Context>(MILESTONES_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+    const actorId = Number(ctx.from?.id);
+    const locale = settingsService(backendDb).locale(actorId);
+    const settings = createStudioServices(backendDb, config).settings.milestones();
+    const body = () => milestonesText(backendDb, config, locale);
+    const setMilestones = (input: Parameters<ReturnType<typeof settingsService>["setMilestones"]>[0]) =>
+      createStudioServices(backendDb, config).settings.setMilestones(input);
+    range
+      .text(
+        switchLabel(settings.channelEnabled, t(locale, "settings.milestones-channel")),
+        settingsUpdate({ apply: () => setMilestones({ channelEnabled: !settings.channelEnabled }), body }),
+      )
+      .row()
+      .text(
+        switchLabel(settings.groupLocaleEnabled, t(locale, "settings.milestones-group-locale")),
+        settingsUpdate({ apply: () => setMilestones({ groupLocaleEnabled: !settings.groupLocaleEnabled }), body }),
+      )
+      .row()
+      .text(
+        switchLabel(settings.localeEnabled, t(locale, "settings.milestones-locale")),
+        settingsUpdate({ apply: () => setMilestones({ localeEnabled: !settings.localeEnabled }), body }),
+      )
+      .row()
+      .text(
+        switchLabel(settings.projectEnabled, t(locale, "settings.milestones-project")),
+        settingsUpdate({ apply: () => setMilestones({ projectEnabled: !settings.projectEnabled }), body }),
+      )
+      .row();
+    // The ladder plus whatever this Studio added itself: one list, so a custom
+    // count is switched off exactly where a default one is.
+    for (const [index, threshold] of thresholdCatalogue(settings.thresholds).entries()) {
+      const on = settings.thresholds.includes(threshold);
+      range.text(
+        switchLabel(on, formatThreshold(threshold)),
+        settingsUpdate({
+          apply: () => setMilestones({ thresholds: toggleThreshold(settings.thresholds, threshold) }),
+          body,
+          toast: t(locale, "settings.milestones-threshold-toast", {
+            threshold: formatThreshold(threshold),
+            status: on ? t(locale, "settings.off") : t(locale, "settings.on"),
+          }),
+        }),
+      );
+      if (index % 3 === 2) range.row();
+    }
+    range
+      .row()
+      .text(t(locale, "settings.milestones-custom"), async (ctx) => {
+        beginSettingsInput(backendDb, actorId, "milestone_threshold");
+        await ctx.answerCallbackQuery();
+        await ctx.reply(t(locale, "settings.milestones-custom-input"));
+      })
+      .row()
+      .back(
+        t(locale, "settings.back-to-notifications"),
+        settingsUpdate({
+          apply: () => clearConversationState(backendDb, actorId, "settings"),
+          body: () => t(locale, "settings.category-notifications-body"),
+          plainText: true,
+        }),
+      );
+  });
+
   const notifications = new Menu<Context>(NOTIFICATIONS_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
@@ -209,12 +275,18 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         NEWS_DIGEST_MENU_ID,
         settingsScreen(() => newsDigestText(backendDb, config, locale)),
       )
+      .submenu(
+        t(locale, "settings.milestones"),
+        MILESTONES_MENU_ID,
+        settingsScreen(() => milestonesText(backendDb, config, locale)),
+      )
       .row()
       .back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
   });
   notifications.register(notificationSettings);
   notifications.register(weeklyDigest);
   notifications.register(newsDigest);
+  notifications.register(milestones);
   newsDigest.register(newsDigestTime);
   return notifications;
 }
@@ -285,6 +357,60 @@ export async function collectNewsDigestTime(
   await ctx.reply(newsDigestTimeText(backendDb, config, actorId, locale), {
     parse_mode: "Markdown",
     reply_markup: settingsMenu.at(NEWS_DIGEST_TIME_MENU_ID),
+  });
+  return true;
+}
+
+/** The default ladder plus every count this Studio added, ascending. A count
+ * switched off has to stay on the screen, or there is no way to switch it on. */
+function thresholdCatalogue(selected: readonly number[]): number[] {
+  return [...new Set([...DEFAULT_MILESTONE_THRESHOLDS, ...selected])].sort((left, right) => left - right);
+}
+
+function toggleThreshold(selected: readonly number[], threshold: number): number[] {
+  return selected.includes(threshold) ? selected.filter((value) => value !== threshold) : [...selected, threshold];
+}
+
+function formatThreshold(threshold: number): string {
+  return threshold >= 1000 && threshold % 1000 === 0 ? `${threshold / 1000}k` : String(threshold);
+}
+
+function milestonesText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
+  const settings = createStudioServices(backendDb, config).settings.milestones();
+  const on = (value: boolean) => (value ? t(locale, "settings.on") : t(locale, "settings.off"));
+  return t(locale, "settings.milestones-body", {
+    channel: on(settings.channelEnabled),
+    groupLocale: on(settings.groupLocaleEnabled),
+    locale: on(settings.localeEnabled),
+    project: on(settings.projectEnabled),
+    thresholds: settings.thresholds.length ? settings.thresholds.map(formatThreshold).join(" · ") : t(locale, "settings.milestones-none"),
+  });
+}
+
+/** One count, added or removed: the same message does both, because a list the
+ * operator edits by hand needs no second command to undo a typo. */
+export async function collectMilestoneThreshold(
+  ctx: Context,
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  text: string,
+  settingsMenu: Menu<Context>,
+): Promise<boolean> {
+  const locale = settingsService(backendDb).locale(actorId);
+  const threshold = Number(text.replace(/[\s_,]/gu, ""));
+  const services = createStudioServices(backendDb, config);
+  const current = services.settings.milestones().thresholds;
+  if (!Number.isSafeInteger(threshold) || threshold < 1) {
+    await ctx.reply(describeError(locale, new StudioError("err.milestone-threshold-range")));
+    return true;
+  }
+  const removing = current.includes(threshold);
+  services.settings.setMilestones({ thresholds: toggleThreshold(current, threshold) });
+  await ctx.reply(t(locale, removing ? "settings.milestones-custom-removed" : "settings.milestones-custom-added", { threshold }));
+  await ctx.reply(milestonesText(backendDb, config, locale), {
+    parse_mode: "Markdown",
+    reply_markup: settingsMenu.at(MILESTONES_MENU_ID),
   });
   return true;
 }
