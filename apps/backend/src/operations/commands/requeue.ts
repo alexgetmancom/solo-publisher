@@ -26,7 +26,9 @@ function requeuePublicationTx(
     // publication was planned without it.
     createMissing: Boolean(target),
     // `ops retry` is the operator restoring a publication whatever state it
-    // reached, including one they removed from the platform on purpose.
+    // reached, including one they removed from the platform on purpose: it
+    // sends the whole thing again. Finishing a publication that got part of
+    // the way out is `ops resume-from`, which says which post it continues.
     audienceReached: "republish",
     source: () => source,
   });

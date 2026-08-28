@@ -160,7 +160,12 @@ function requeueSocialTarget(
   // not the delivery: the ids of what already went out live on the job alone.
   // Rebuilding without them is how a half-published Threads chain was retried
   // into a second copy of its first message.
-  const resume = resumeState(parsePayload(row.payloadJson));
+  //
+  // A caller that is republishing carries none of it forward. Its posts are
+  // gone -- an operator removed them, or the edit path took them down to
+  // replace them -- and continuing a chain onto a deleted message is the same
+  // error pointing the other way.
+  const resume = options.audienceReached === "resume" ? resumeState(parsePayload(row.payloadJson)) : {};
   const payload = { ...localizeTargetPayload(source(), target), ...resume };
   const refused = unpublishable(payload, target);
   if (refused) return { target, outcome: "not_retryable", status: row.status, reason: refused };

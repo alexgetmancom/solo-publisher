@@ -1,10 +1,12 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { isSiteTarget, targetLocale } from "../botTargets.js";
 import type { UnsafeBackendDb } from "../db/client.js";
 import { drafts, postLocales, publishJobs, siteJobs } from "../db/schema.js";
 import { localizeTargetPayload } from "./payload.js";
 import type { PublicationPlan } from "./publication-plan.js";
 import { enqueuePublishJobTx } from "./queue.js";
+import { parsePayload } from "./queue-state.js";
+import { hasResumeState } from "./resume.js";
 
 export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: PublicationPlan): void {
   for (const locale of plan.locales) {
@@ -24,8 +26,32 @@ export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: Public
       .where(and(eq(postLocales.draftId, plan.draftId), eq(postLocales.locale, locale.locale)))
       .run();
   }
-  tx.delete(publishJobs)
+  // A job that carries what it has already published is a delivery in progress,
+  // whatever its status says: the rest of a Threads chain waits in exactly the
+  // `queued` and `failed` rows this deletes. Replacing one with a fresh job
+  // republishes the part that is already live, which is the same duplicate an
+  // ordinary retry used to produce -- reached by editing the post instead.
+  const unfinished = tx
+    .select({ jobId: publishJobs.jobId, target: publishJobs.target, payloadJson: publishJobs.payloadJson })
+    .from(publishJobs)
     .where(and(eq(publishJobs.publicationKey, plan.publicationKey), inArray(publishJobs.status, ["queued", "failed"])))
+    .all()
+    .filter((row) => hasResumeState(parsePayload(row.payloadJson)));
+  tx.delete(publishJobs)
+    .where(
+      and(
+        eq(publishJobs.publicationKey, plan.publicationKey),
+        inArray(publishJobs.status, ["queued", "failed"]),
+        ...(unfinished.length
+          ? [
+              notInArray(
+                publishJobs.jobId,
+                unfinished.map((row) => row.jobId),
+              ),
+            ]
+          : []),
+      ),
+    )
     .run();
   tx.delete(siteJobs)
     .where(and(eq(siteJobs.publicationKey, plan.publicationKey), inArray(siteJobs.status, ["queued", "failed"])))
@@ -33,10 +59,13 @@ export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: Public
   // Targets whose delivery is settled or actively in flight are not replanned.
   // "publishing" counts as final on purpose: a worker already holds that job
   // and may have hit the platform, so rewriting its payload risks a duplicate
-  // post. Re-planning a publication mid-delivery therefore leaves those
-  // targets on the previous plan — visible to the user, and intended.
-  const finalTargets = new Set(
-    tx
+  // post. A half-published target counts for the same reason and is read off
+  // the job rather than off a status, since it is sitting in `queued` or
+  // `failed` while the rest of it waits. Re-planning a publication mid-delivery
+  // therefore leaves those targets on the previous plan — visible to the user,
+  // and intended.
+  const finalTargets = new Set([
+    ...tx
       .select({ target: publishJobs.target })
       .from(publishJobs)
       .where(
@@ -47,7 +76,8 @@ export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: Public
       )
       .all()
       .map((row) => row.target),
-  );
+    ...unfinished.map((row) => row.target),
+  ]);
   const finalSiteLocales = new Set(
     tx
       .select({ reason: siteJobs.reason })

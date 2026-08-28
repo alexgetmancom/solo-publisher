@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { eq } from "drizzle-orm";
 import { drafts, publicationEvents, publicationTargets, publishJobs, siteJobs } from "../src/db/schema.js";
 import { RETRY_UNLESS_HELD, requeuePublicationTargets } from "../src/publishing/requeue.js";
 import { createStudioServices } from "../src/studio/services/index.js";
@@ -189,6 +190,49 @@ describe("post publication retry", () => {
       const posts = createStudioServices(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" })).posts;
       expect(() => posts.retryTarget(42, 10, "threads_ru")).toThrow("err.retry-already-delivered");
       expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).all()).toEqual([{ status: "failed" }]);
+    }));
+
+  /** The mirror image of the same mistake: an operator whose posts are gone is
+   * republishing, and continuing a chain onto a message that was deleted writes
+   * the remainder onto nothing. */
+  it("carries nothing forward when the caller is republishing", () =>
+    withDb((backendDb) => {
+      const now = new Date().toISOString();
+      seedTextPost(backendDb, {
+        draftId: 13,
+        postId: 1300,
+        actorId: 42,
+        status: "failed",
+        targets: { threads_ru: true },
+        ru: "Снесённая цепочка",
+        now,
+      });
+      backendDb.db
+        .insert(publishJobs)
+        .values({
+          publicationKey: "post:1300",
+          target: "threads_ru",
+          status: "failed",
+          payloadJson: { text: "Снесённая цепочка", _threadsPublishedIds: ["18027986108896341"] },
+          attemptCount: 4,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .run();
+
+      requeuePublicationTargets(backendDb, { postId: 1300, publicationKey: "post:1300", messageId: null }, ["threads_ru"], {
+        from: RETRY_UNLESS_HELD,
+        audienceReached: "republish",
+        source: () => backendDb.studioPosts.publicationSource(1300),
+      });
+
+      const payload = backendDb.db
+        .select({ payloadJson: publishJobs.payloadJson })
+        .from(publishJobs)
+        .where(eq(publishJobs.publicationKey, "post:1300"))
+        .get()?.payloadJson;
+      expect(payload).toMatchObject({ text: "Снесённая цепочка" });
+      expect(payload).not.toHaveProperty("_threadsPublishedIds");
     }));
 
   it("journals the live post it stops referencing, whatever status the target reached", () =>

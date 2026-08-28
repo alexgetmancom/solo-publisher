@@ -88,6 +88,37 @@ describe("architecture fitness", () => {
     for (const file of producerFiles) expect(source(file)).not.toMatch(/recordDomainEvent\(backendDb,/);
   });
 
+  /** The publish job's payload is where a delivery keeps what it has already
+   * put in front of the audience -- the ids of a chain's published messages,
+   * under the key the adapter named. Every incident of a post reaching the
+   * audience twice has been a write to this column that rebuilt it from the
+   * publication source and dropped that state: a retry did it, and so did
+   * replanning a post after an edit.
+   *
+   * So the column has a short list of writers, and they are the files where the
+   * question "what has this delivery already published?" is asked out loud. A
+   * new one is not forbidden -- it is required to answer that question, and
+   * adding itself here is how it says it did. */
+  it("keeps the writers of a publish job's payload to the ones that reason about what it already published", () => {
+    const writers = sourceFiles("apps/backend/src")
+      .filter((file) => !file.includes("/db/schema/"))
+      .filter((file) => {
+        const text = source(file);
+        return text.includes("payloadJson") && text.includes("publishJobs");
+      })
+      .sort();
+    expect(writers).toEqual([
+      "apps/backend/src/operations/resume-from.ts",
+      "apps/backend/src/publishing/publication-writer.ts",
+      "apps/backend/src/publishing/queue.ts",
+      "apps/backend/src/publishing/requeue.ts",
+    ]);
+    // And each of them names the resume state rather than assuming there is
+    // none. `job-policy.ts` is the column set they all write through and takes
+    // the finished payload as an argument, so it never sees the question.
+    for (const file of writers) expect(source(file)).toMatch(/resumeState|hasResumeState|resumeKey/);
+  });
+
   it("keeps infrastructure adapters behind the composition root", () => {
     const client = source("apps/backend/src/db/client.ts");
     expect(client).toContain("createDraftStore(db, clock)");
