@@ -1,7 +1,6 @@
 import * as z from "zod";
 import { publicationRef } from "../application/publication-ref.js";
 import type { BackendDb } from "../db/client.js";
-import { unsafeDb } from "../db/unsafe.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { STUDIO_LOCALES } from "../foundation/locale.js";
 import { log } from "../foundation/logger.js";
@@ -556,6 +555,14 @@ const studioToolDefs = {
 const publicTools = [
   { name: "submit_feedback", description: feedbackToolDef.description, inputSchema: inputJsonSchema(feedbackToolDef.schema) },
 ];
+/** What each Studio tool is called and whether it declares itself a mutation.
+ * Published so the read-only half can be swept the way the operations catalog
+ * is: a tool that says it only reads is checked against a database. */
+export const studioToolCatalog = Object.entries(studioToolDefs).map(([name, def]) => ({
+  name,
+  mutates: Boolean((def as ToolDef).mutates),
+}));
+
 const studioTools = Object.entries(studioToolDefs).map(([name, def]) => ({
   name,
   description: def.description,
@@ -659,12 +666,6 @@ export async function mcpResponse(
   }
 }
 
-/** Writes this connection has performed, as SQLite itself counts them. */
-function writeCount(backendDb: BackendDb): number {
-  const row = unsafeDb(backendDb).sqlite.query("SELECT total_changes() AS n").get() as { n?: number } | null;
-  return Number(row?.n ?? 0);
-}
-
 async function runStudioTool(
   backendDb: BackendDb,
   config: BackendConfig,
@@ -677,17 +678,11 @@ async function runStudioTool(
   if (!def) throw new McpToolError(-32601, `Unknown Studio tool: ${name}`);
   const resolvedStudio: StudioServices = studio ?? createStudioServices(backendDb, config);
   const input = parseArgs(def.schema, args);
-  const writesBefore = writeCount(backendDb);
   const result = await def.handler(resolvedStudio, actorId, input);
-  // Journalled for what it wrote, the way the operations registry does it: a
-  // tool added without its `mutates` would otherwise mutate this Studio and
-  // leave nothing behind to say it ever ran.
-  const wrote = writeCount(backendDb) > writesBefore;
-  if (wrote && !def.mutates) log("error", "Studio MCP tool wrote to the database without declaring it", { actorId, tool: name });
   // The mutation already happened. Reporting a journal failure as a tool
   // failure would invite the caller to retry it and publish twice, so the audit
   // trail is best-effort and the caller still sees the success it earned.
-  if (def.mutates || wrote)
+  if (def.mutates)
     try {
       backendDb.events.record({
         ref: def.ref ? def.ref(input, result) : null,

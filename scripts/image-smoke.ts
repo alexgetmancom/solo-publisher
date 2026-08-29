@@ -228,7 +228,15 @@ try {
     "-c",
     "bun /app/ops/cli.js backup-stream --what media | wc -c",
   ]);
-  const exportedBytes = Number(exported.out.trim());
+  // `wc -c` prints the count and nothing else, but the container's stderr is
+  // folded into this capture: one warning logged during the pull would turn the
+  // measurement into NaN and fail a backup that in fact streamed fine.
+  const exportedBytes = Number(
+    exported.out
+      .trim()
+      .split(/\s+/)
+      .find((value) => /^\d+$/.test(value)),
+  );
   check(exported.code === 0 && exportedBytes > 0, "ops backup-stream --what media", `exit ${exported.code}, ${exported.out.trim()} bytes`);
 
   const opsCommands = ["doctor", "status", "audit", "format-support"];

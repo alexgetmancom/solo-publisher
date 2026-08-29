@@ -40,11 +40,11 @@ async function draftReadyToPublish(db: UnsafeBackendDb, draftId: number): Promis
 }
 
 describe("draft lifecycle operations", () => {
-  /** The journal follows what an operation did, not what it declared. A command
-   * added without its `mutates` used to write to the Studio and leave no trace
-   * at all, and the only thing that would have noticed was a person reading
-   * both the flag and the handler. */
-  it("journals a command by the writes it made, not by the flag it carries", async () => {
+  /** The mutation journal is what says a command ran at all, and it is written
+   * from the same `mutates` every surface repeats back to its caller. The flag
+   * itself is held honest by the read-only sweep next door; this is the wiring
+   * from the flag to the journal. */
+  it("journals a mutating command and stays out of the way of a read-only one", async () => {
     backendDb = openBackendDb(":memory:");
     await draftReadyToPublish(backendDb, 31);
     const before = commandJournal(backendDb).length;

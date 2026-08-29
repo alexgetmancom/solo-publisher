@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { createApiHandler } from "../src/api.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { publicationTargets, publishJobs } from "../src/db/schema.js";
+import { studioToolCatalog } from "../src/interfaces/mcp.js";
 import { type OperationContext, operationCatalog, operationDef, runOperation } from "../src/operations/registry.js";
 import { withDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
@@ -127,3 +129,71 @@ describe("operations that call themselves read-only", () => {
       }));
   }
 });
+
+/** The same question of the other catalog. Studio MCP tools are declared by
+ * hand beside the registry's projections, so `mutates` there is a second place
+ * the same promise is made -- and the one place nothing was checking. */
+const STUDIO_ARGUMENTS: Record<string, Record<string, unknown>> = {
+  studio_post_get: { draft_id: 106 },
+  studio_post_validate: { draft_id: 106 },
+  studio_post_status: { draft_id: 106 },
+  studio_post_history: { draft_id: 106 },
+  studio_post_preview: { draft_id: 106 },
+  studio_video_get: { video_draft_id: 1 },
+  studio_video_preview: { video_draft_id: 1 },
+  studio_video_status: { video_draft_id: 1 },
+  studio_video_history: { video_draft_id: 1 },
+  studio_video_preflight: { video_draft_id: 1 },
+  studio_analytics_post_metrics: { post_id: 106 },
+  studio_analytics_video_metrics: { video_draft_id: 1 },
+};
+
+describe("Studio MCP tools that call themselves read-only", () => {
+  const readOnly = studioToolCatalog.filter((entry) => !entry.mutates).map((entry) => entry.name);
+
+  it("covers the whole read-only half of the Studio catalog, and really runs it", () =>
+    withDb(async (backendDb) => {
+      expect(readOnly.length).toBeGreaterThan(20);
+      seed(backendDb);
+      const app = createApiHandler({ config: mcpConfig(), backendDb });
+
+      // A sweep that is being turned away at the door would prove nothing about
+      // what the tools write, and would pass forever.
+      const answered = await (await request(app, "studio_queue", {})).json();
+
+      expect(answered).toMatchObject({ result: { content: [{ type: "text" }] } });
+    }));
+
+  for (const name of readOnly) {
+    it(`leaves the database alone: ${name}`, () =>
+      withDb(async (backendDb) => {
+        seed(backendDb);
+        const app = createApiHandler({ config: mcpConfig(), backendDb });
+        const before = snapshot(backendDb);
+
+        await request(app, name, STUDIO_ARGUMENTS[name] ?? {});
+
+        const after = snapshot(backendDb);
+        const changed = Object.keys(before).filter((table) => before[table] !== after[table]);
+        expect({ tool: name, changed }).toEqual({ tool: name, changed: [] });
+      }));
+  }
+});
+
+function mcpConfig() {
+  return loadTestConfig({ CONTROLLER_ADMIN_IDS: "42", MCP_STUDIO_TOKEN: MCP_TOKEN, MCP_STUDIO_ACTOR_ID: "42" });
+}
+
+/** One tools/call, answered or refused: a tool that turns down its arguments
+ * has still not written anything, which is what this asks about. */
+function request(app: ReturnType<typeof createApiHandler>, name: string, args: Record<string, unknown>) {
+  return app(
+    new Request("http://localhost/api/mcp", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${MCP_TOKEN}` },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
+    }),
+  );
+}
+
+const MCP_TOKEN = "a".repeat(16);
