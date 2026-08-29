@@ -1,3 +1,4 @@
+import type { Menu } from "@grammyjs/menu";
 import type { Context } from "grammy";
 import type { BackendDb } from "../../db/client.js";
 import { t } from "../../foundation/i18n/index.js";
@@ -42,6 +43,25 @@ export function beginSettingsInput(
   data: Record<string, unknown> = {},
 ): void {
   saveConversationState(backendDb, actorId, { kind: "settings", draftId: null, step, data, controlMessageId: null });
+}
+
+/** Asks for one typed settings value on the screen the question was tapped on,
+ * keeping that screen's own menu under it.
+ *
+ * Every settings question used to arrive as a new message, leaving the screen
+ * that asked it above -- the same split the publication flows had. */
+export async function askSettingsInput(
+  ctx: Context,
+  backendDb: BackendDb,
+  actorId: number,
+  step: SettingsInputStep,
+  menu: Menu<Context>,
+  text: string,
+  data: Record<string, unknown> = {},
+): Promise<void> {
+  beginSettingsInput(backendDb, actorId, step, data);
+  await ctx.answerCallbackQuery();
+  await ctx.editMessageText(text, { reply_markup: menu });
 }
 
 /** Every category returns to the same root screen, and a `.back()` that leaves

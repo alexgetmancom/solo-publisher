@@ -110,9 +110,9 @@ async function showScheduledVideo(
   const text = `${videoCheckSummary(technical, locale)}${warning}\n\n✅ ${t(locale, "common.scheduled")}. ${t(locale, "video.reminder", { minutes: reminderMinutes })}\n\n${preview.text}`;
   clearVideoState(backendDb, actorId);
   return [
-    { type: "screen", mode: "edit", text: `✅ ${t(locale, "video.confirmed-card")}` },
+    { type: "screen", text: `✅ ${t(locale, "video.confirmed-card")}` },
     {
-      type: "prompt",
+      type: "screen",
       text,
       options: { parse_mode: "Markdown", reply_markup: preview.keyboard },
       card: { kind: "video", draftId: session.draftId },

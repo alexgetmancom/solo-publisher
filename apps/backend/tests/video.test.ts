@@ -724,7 +724,7 @@ describe("video publication queue", () => {
       services,
     );
 
-    const confirmation = effects.find((effect) => effect.type === "prompt");
+    const confirmation = effects.find((effect) => effect.type === "screen");
     expect(buttonLabels(confirmation)).toEqual([t("en", "video.show-source"), t("en", "common.confirm"), t("en", "common.back")]);
     expect(JSON.stringify(confirmation)).toContain(`delivery_preview_video:${draftId}`);
   });

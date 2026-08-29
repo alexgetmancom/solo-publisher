@@ -21,7 +21,6 @@ import type {
 import { publicationCallback } from "./publication-callback.js";
 import { openPublicationFlow } from "./publication-flow.js";
 import { publicationCardEffect } from "./publication-renderers.js";
-import { callbackMessageId } from "./telegram-context.js";
 
 type PostActionArgs = PublicationDraftActionContext;
 /** What `validate` answers with, taken from the service rather than from
@@ -105,7 +104,6 @@ async function handleCancelConfirm(args: PostActionArgs): Promise<PublicationAct
     { type: "toast", text: t(args.locale, "action.cancelled") },
     {
       type: "screen",
-      mode: "edit",
       text: t(args.locale, wasScheduled ? "action.publication-cancelled" : "action.draft-cancelled", { id: args.draftId }),
       options: { reply_markup: resultNavigationKeyboard(args.locale) },
     },
@@ -116,12 +114,12 @@ async function handleCancelDialog(args: PostActionArgs): Promise<PublicationActi
   return [
     { type: "session", operation: "clear", kind: args.callback.kind, actorId: args.actorId },
     ...(args.mainMenu
-      ? [{ type: "main-menu", menu: args.mainMenu, text: mainMenuText(args.backendDb, args.config, args.actorId), edit: true } as const]
+      ? [{ type: "main-menu", menu: args.mainMenu, text: mainMenuText(args.backendDb, args.config, args.actorId) } as const]
       : []),
   ];
 }
 
-async function handleEdit({ ctx, backendDb, actorId, locale, action, draftId }: PostActionArgs): Promise<PublicationActionResult> {
+async function handleEdit({ backendDb, actorId, locale, action, draftId }: PostActionArgs): Promise<PublicationActionResult> {
   const step = POST_INPUT_STEPS[action];
   if (!step) throw new StudioError("action.session-stale");
   openPublicationFlow(backendDb, actorId, {
@@ -129,7 +127,7 @@ async function handleEdit({ ctx, backendDb, actorId, locale, action, draftId }: 
     draftId,
     step: step.type,
     data: postStepData(step),
-    controlMessageId: callbackMessageId(ctx),
+    controlMessageId: null,
   });
   return [
     { type: "toast", text: t(locale, "action.send-replacement") },
@@ -212,7 +210,7 @@ async function handleManualScheduleConfirm(args: PostActionArgs): Promise<Public
 }
 
 async function handleManualSchedule(args: PostActionArgs): Promise<PublicationActionResult> {
-  const { ctx, backendDb, actorId, locale, draftId, config, services } = args;
+  const { backendDb, actorId, locale, draftId, config, services } = args;
   const axis = args.args.axis;
   if (!axis) return [{ type: "toast", text: t(locale, "action.unknown") }];
   const pickLocale = requireScheduleLocale(axis);
@@ -223,7 +221,7 @@ async function handleManualSchedule(args: PostActionArgs): Promise<PublicationAc
     draftId,
     step: "schedule_manual",
     data: { locale: pickLocale },
-    controlMessageId: callbackMessageId(ctx),
+    controlMessageId: null,
   });
   return [
     { type: "toast", text: t(locale, "action.send-time") },
@@ -246,9 +244,9 @@ async function queuePostNow(args: PostActionArgs): Promise<PublicationActionResu
   const progress = renderPostProgress(posts.progress(actorId, draftId), locale);
   return [
     { type: "toast", text: t(locale, "action.queued") },
-    { type: "screen", mode: "edit", text: t(locale, "action.post-queued", { id: draftId }) },
+    { type: "screen", text: t(locale, "action.post-queued", { id: draftId }) },
     {
-      type: "prompt",
+      type: "screen",
       text: progress.text,
       options: { parse_mode: "Markdown", reply_markup: progress.keyboard },
       card: { kind: "post-progress", draftId },
@@ -302,10 +300,7 @@ function sendPublishConfirmation(args: PostActionArgs): PublicationEffect[] {
     locale: uiLocale,
     view: "confirm_publish",
   });
-  return [
-    { type: "delivery-previews", projections: delivery.projections, locale: uiLocale },
-    ...publicationCardEffect(card, { type: "prompt" }),
-  ];
+  return [{ type: "delivery-previews", projections: delivery.projections, locale: uiLocale }, ...publicationCardEffect(card)];
 }
 
 async function showPublicationPreflight(args: PostActionArgs): Promise<PublicationEffect[] | null> {
@@ -326,7 +321,7 @@ async function showPublicationPreflight(args: PostActionArgs): Promise<Publicati
     const revision = getConversationState(backendDb, actorId, "post")?.revision;
     return [
       {
-        type: "prompt",
+        type: "screen",
         text: t(locale, "action.preflight-chain", { label: issue.label, actual: issue.actual ?? 0, limit: issue.limit ?? 0, parts: label }),
         options: {
           reply_markup: new InlineKeyboard().text(

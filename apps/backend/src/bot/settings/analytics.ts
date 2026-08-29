@@ -10,7 +10,7 @@ import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
-import { beginSettingsInput, settingsUpdate, THREADS_FOLLOWERS_MENU_ID, X_IMPORT_MENU_ID } from "./shared.js";
+import { askSettingsInput, settingsUpdate, THREADS_FOLLOWERS_MENU_ID, X_IMPORT_MENU_ID } from "./shared.js";
 
 /** The two analytics screens. They used to hang off a category of their own,
  * which held nothing but them: a screen whose only job was to be passed through. */
@@ -19,11 +19,17 @@ export function buildAnalyticsMenus(backendDb: BackendDb, systemBody: (locale: S
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
     for (const account of ["ru", "en"] as const)
-      range.text(t(locale, "settings.threads-edit", { account: account.toUpperCase() }), async (ctx) => {
-        beginSettingsInput(backendDb, actorId, "threads_followers", { account });
-        await ctx.answerCallbackQuery();
-        await ctx.reply(t(locale, "settings.threads-ask", { account: account.toUpperCase() }));
-      });
+      range.text(t(locale, "settings.threads-edit", { account: account.toUpperCase() }), (ctx) =>
+        askSettingsInput(
+          ctx,
+          backendDb,
+          actorId,
+          "threads_followers",
+          threadsFollowers,
+          t(locale, "settings.threads-ask", { account: account.toUpperCase() }),
+          { account },
+        ),
+      );
     range.row().back(
       t(locale, "settings.back-to-system"),
       settingsUpdate({
@@ -38,11 +44,9 @@ export function buildAnalyticsMenus(backendDb: BackendDb, systemBody: (locale: S
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
     range
-      .text(t(locale, "settings.x-import-start"), async (ctx) => {
-        beginSettingsInput(backendDb, actorId, "x_import");
-        await ctx.answerCallbackQuery();
-        await ctx.reply(t(locale, "settings.x-import-ask"));
-      })
+      .text(t(locale, "settings.x-import-start"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "x_import", xImport, t(locale, "settings.x-import-ask")),
+      )
       .row()
       .back(
         t(locale, "settings.back-to-system"),

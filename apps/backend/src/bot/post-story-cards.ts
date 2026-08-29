@@ -82,7 +82,7 @@ async function waitForStoryCards(
   const locale = settingsService(backendDb).locale(actorId);
   await executePublicationEffects(ctx, backendDb, [
     {
-      type: "prompt",
+      type: "message",
       text: t(locale, "post.story-cards-timeout"),
       options: {
         reply_markup: new InlineKeyboard().text(t(locale, "common.back"), publicationCallback("post", "view", [draftId, "overview"])),
@@ -121,7 +121,7 @@ function sendStoryCardChoice(
   }
   keyboard.row().text(t(locale, "common.back"), publicationCallback("post", "view", [draftId, "overview"]));
   effects.push({
-    type: "prompt",
+    type: "message",
     text: t(locale, "post.story-cards-question"),
     options: { parse_mode: "Markdown", reply_markup: keyboard },
     card: { kind: "post", draftId },

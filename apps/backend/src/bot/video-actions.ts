@@ -20,7 +20,6 @@ import type {
 import { publicationCallback } from "./publication-callback.js";
 import { advancePublicationFlow } from "./publication-flow.js";
 import { publicationCardEffect, publicationRenderers, videoPreviewCard } from "./publication-renderers.js";
-import { callbackMessageId } from "./telegram-context.js";
 import { startVideoDraft } from "./video-conversation.js";
 import { applyVideoScheduleDate, finishVideoNow, finishVideoSchedule } from "./video-scheduling.js";
 import {
@@ -149,7 +148,7 @@ async function handleCancelDialog({ backendDb, config, actorId, mainMenu }: Vide
   if (!mainMenu) throw new StudioError("err.video-restart");
   // Cancelling is pure navigation, not a content change: turn this same
   // message into the control panel instead of deleting and sending a new one.
-  return [{ type: "screen", mode: "edit", text: mainMenuText(backendDb, config, actorId), options: { reply_markup: mainMenu } }];
+  return [{ type: "screen", text: mainMenuText(backendDb, config, actorId), options: { reply_markup: mainMenu } }];
 }
 
 /** "Upload it anyway" on the length question: the file the question was asked
@@ -176,7 +175,7 @@ async function handleGameSkip({ backendDb, config, actorId, locale }: VideoActio
     { ...session.data, selectedTargets: session.selected },
     "err.video-reopen-create",
   );
-  return [{ type: "screen", mode: "edit", text: t(locale, "video.game-skipped") }, ...videoStepEffects(backendDb, config, actorId, next)];
+  return [{ type: "screen", text: t(locale, "video.game-skipped") }, ...videoStepEffects(backendDb, config, actorId, next)];
 }
 
 async function handleMetaBack({ backendDb, config, actorId }: VideoActionArgs): Promise<VideoActionResult> {
@@ -194,30 +193,14 @@ async function handleScheduleConfirm({ backendDb, config, actorId, draftId, serv
   return finishVideoSchedule(backendDb, config, actorId, session, videoSchedule(values), services);
 }
 
-async function handleScheduleStart({
-  ctx,
-  backendDb,
-  config,
-  actorId,
-  locale,
-  draftId,
-  services,
-}: VideoActionArgs): Promise<VideoActionResult> {
+async function handleScheduleStart({ backendDb, config, actorId, locale, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
   const targets = getVideoTargets(services, actorId, draftId);
   if (!targets.length) throw new StudioError("err.video-no-platforms");
-  const session = saveVideoState(backendDb, actorId, {
-    draftId,
-    step: "schedule_choice",
-    selected: targets,
-    data: {},
-    controlMessageId: callbackMessageId(ctx),
-  });
+  const session = saveVideoState(backendDb, actorId, { draftId, step: "schedule_choice", selected: targets, data: {} });
   const keyboard = scheduleChoiceKeyboard(session, locale);
   const timeConfig = services.settings.timeConfig(actorId, config);
   const text = t(locale, "video.schedule-time-msk", { timezone: timeConfig.TIMEZONE_LABEL });
-  const options = { parse_mode: "Markdown" as const, reply_markup: keyboard };
-  if (!session.controlMessageId) return [{ type: "prompt", text, options }];
-  return [{ type: "edit-message", messageId: session.controlMessageId, text, options }];
+  return [{ type: "screen", text, options: { parse_mode: "Markdown", reply_markup: keyboard } }];
 }
 
 async function handleScheduleMode({ backendDb, config, actorId, action, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
@@ -245,13 +228,12 @@ async function handleScheduleMode({ backendDb, config, actorId, action, draftId,
 }
 
 async function handleNowAsk(actionArgs: VideoActionArgs): Promise<VideoActionResult> {
-  const { ctx, backendDb, actorId, draftId } = actionArgs;
+  const { backendDb, actorId, draftId } = actionArgs;
   const session = saveVideoState(backendDb, actorId, {
     draftId,
     step: "schedule_confirm",
     selected: [],
     data: {},
-    controlMessageId: callbackMessageId(ctx),
   });
   return videoConfirmationEffect(actionArgs, draftId, "confirm_now", session.revision);
 }
@@ -283,14 +265,13 @@ async function handleCancel({ backendDb, config, actorId, locale, draftId, servi
   return [
     {
       type: "screen",
-      mode: "edit",
       text: `${t(locale, "video.cancelled-local", { hours: config.VIDEO_MEDIA_RETENTION_HOURS })}${heldPrivate}${attention}${manualRemoval ? `\n\n${t(locale, "video.already-published")}\n${manualRemoval}` : ""}`,
       options: { reply_markup: resultNavigationKeyboard(locale) },
     },
   ];
 }
 
-async function handleTime({ ctx, backendDb, config, actorId, args, draftId }: VideoActionArgs): Promise<VideoActionResult> {
+async function handleTime({ backendDb, config, actorId, args, draftId }: VideoActionArgs): Promise<VideoActionResult> {
   const targetText = args.axis;
   const target = requireVideoTarget(targetText ?? "");
   const currentSession = getVideoState(backendDb, actorId);
@@ -299,7 +280,6 @@ async function handleTime({ ctx, backendDb, config, actorId, args, draftId }: Vi
     step: "schedule_target",
     selected: [target],
     data: { target },
-    controlMessageId: callbackMessageId(ctx),
     ...(currentSession ? { revision: currentSession.revision } : {}),
   };
   const saved = saveVideoState(backendDb, actorId, session);
@@ -354,7 +334,6 @@ async function handleRemove({ backendDb, config, actorId, locale, args, draftId,
     return [
       {
         type: "screen",
-        mode: "edit",
         text: t(locale, "video.all-removed"),
         options: { reply_markup: resultNavigationKeyboard(locale) },
       },
@@ -391,7 +370,6 @@ async function handleEditMenu({ actorId, locale, draftId, services }: VideoActio
   return [
     {
       type: "screen",
-      mode: "edit",
       text: t(locale, "video.what-to-edit"),
       options: { parse_mode: "Markdown", reply_markup: keyboard },
       card: { kind: "video", draftId },
@@ -399,7 +377,7 @@ async function handleEditMenu({ actorId, locale, draftId, services }: VideoActio
   ];
 }
 
-async function handleEditField({ ctx, backendDb, actorId, locale, args, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
+async function handleEditField({ backendDb, actorId, locale, args, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
   const field = args.field ?? "";
   const definition = EDIT_FIELDS[field as EditableVideoField];
   if (!definition) throw new StudioError("err.video-reopen-edit");
@@ -411,7 +389,6 @@ async function handleEditField({ ctx, backendDb, actorId, locale, args, draftId,
     step,
     selected: targets.map((target) => requireVideoTarget(target.target)),
     data: { is_single_edit: true },
-    controlMessageId: callbackMessageId(ctx),
   };
   saveVideoState(backendDb, actorId, session);
   return [promptEffect(backendDb, actorId, "video", t(locale, definition.prompt))];
@@ -419,7 +396,7 @@ async function handleEditField({ ctx, backendDb, actorId, locale, args, draftId,
 
 /** Asks for a replacement upload. The answer is a file rather than text, so the
  * session waits on the same `asset` step the wizard uses. */
-async function handleEditMedia({ ctx, backendDb, actorId, locale, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
+async function handleEditMedia({ backendDb, actorId, locale, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
   if (!services.videos.sourceReplaceable(actorId, draftId)) throw new StudioError("err.video-source-locked");
   const targets = services.videos.get(actorId, draftId).targets;
   const session: VideoConversationInput = {
@@ -427,7 +404,6 @@ async function handleEditMedia({ ctx, backendDb, actorId, locale, draftId, servi
     step: "asset",
     selected: targets.map((target) => requireVideoTarget(target.target)),
     data: { is_single_edit: true },
-    controlMessageId: callbackMessageId(ctx),
   };
   saveVideoState(backendDb, actorId, session);
   return [promptEffect(backendDb, actorId, "video", t(locale, "video.edit-media-prompt"))];

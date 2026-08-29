@@ -42,7 +42,7 @@ export function promptEffect(
   const locale = settingsService(backendDb).locale(actorId);
   const revision = getConversationState(backendDb, actorId, kind)?.revision;
   return {
-    type: "prompt",
+    type: "screen",
     text,
     options: {
       ...(options.plainText ? {} : { parse_mode: "Markdown" }),

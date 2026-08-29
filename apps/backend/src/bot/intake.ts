@@ -65,14 +65,13 @@ type Captured = { message: DraftMessage; markdown: string | null; video: Capture
  * why the video entry is a prompt for a file and not a language: a button
  * handler has no message to fetch a file from, so asking anything before the
  * file is what drops the upload. */
-export async function openIntake(ctx: Context, backendDb: BackendDb, entry: IntakeEntry, mode: "reply" | "edit" = "reply"): Promise<void> {
+export async function openIntake(ctx: Context, backendDb: BackendDb, entry: IntakeEntry): Promise<void> {
   const actorId = Number(ctx.from?.id);
   const locale = settingsService(backendDb).locale(actorId);
   saveConversationState(backendDb, actorId, { kind: "intake", draftId: null, step: "awaiting", data: { entry }, controlMessageId: null });
   await executePublicationEffects(ctx, backendDb, [
     {
       type: "screen",
-      mode,
       text: t(locale, INTAKE_ENTRIES[entry].prompt),
       options: { reply_markup: cancelPromptKeyboard(locale, screenCallback("intake_cancel")) },
     },
@@ -100,13 +99,13 @@ export async function handleIntakeMessage(ctx: Context, backendDb: BackendDb, co
   // and capturing it anyway created an empty draft with an empty card. The
   // intake stays open, so the next message is still the first one.
   if (markdown === null && !message.text.trim() && message.media.length === 0)
-    return { handled: true, effects: [{ type: "screen", mode: "reply", text: t(locale, "intake.unsupported") }] };
+    return { handled: true, effects: [{ type: "screen", text: t(locale, "intake.unsupported") }] };
   const captured: Captured = { message: markdown === null ? message : { ...message, text: markdown }, markdown, video, entry };
   // Material this entry does not take. The intake stays open rather than
   // guessing: a video sent to the text button is a video, and the operator
   // wanted the other button, not a post with a video stuck to it.
   if (!offeredKinds(captured).length)
-    return { handled: true, effects: [{ type: "screen", mode: "reply", text: t(locale, INTAKE_ENTRIES[entry].rejected) }] };
+    return { handled: true, effects: [{ type: "screen", text: t(locale, INTAKE_ENTRIES[entry].rejected) }] };
   saveConversationState(backendDb, actorId, {
     kind: "intake",
     draftId: null,
@@ -115,7 +114,7 @@ export async function handleIntakeMessage(ctx: Context, backendDb: BackendDb, co
     controlMessageId: null,
   });
   const decided = decideKind(captured);
-  if (decided) return { handled: true, effects: await applyIntakeKind(ctx, backendDb, config, decided, "reply") };
+  if (decided) return { handled: true, effects: await applyIntakeKind(ctx, backendDb, config, decided) };
   return { handled: true, effects: [chooseKindScreen(locale, captured)] };
 }
 
@@ -141,12 +140,13 @@ export async function applyIntakeKind(
   backendDb: BackendDb,
   config: BackendConfig,
   kind: MaterialKind,
-  mode: "reply" | "edit" = "edit",
 ): Promise<PublicationEffect[]> {
   const actorId = Number(ctx.from?.id);
   const locale = settingsService(backendDb).locale(actorId);
   const captured = capturedFrom(backendDb, actorId);
-  const asked = mode === "edit";
+  // Whether the operator picked this kind from the screen that offered it, or
+  // the material picked it for them: only the first has a reading to undo.
+  const asked = ctx.callbackQuery !== undefined;
 
   if (kind === "post") {
     clearConversationState(backendDb, actorId, "intake");
@@ -170,7 +170,6 @@ export async function applyIntakeKind(
     return [
       {
         type: "screen",
-        mode,
         text: t(locale, "intake.article-review", { title, characters: String(characters) }),
         options: { reply_markup: keyboard },
       },
@@ -186,7 +185,7 @@ export async function applyIntakeKind(
     data: { ...(captured as unknown as Record<string, unknown>), targets },
     controlMessageId: null,
   });
-  return [videoDestinationScreen(backendDb, locale, targets, mode)];
+  return [videoDestinationScreen(backendDb, locale, targets)];
 }
 
 /** Where this video goes: the platforms it is sent to and the audience it is
@@ -194,12 +193,7 @@ export async function applyIntakeKind(
  * the usual answer; the audience is the button that commits, so the usual
  * answer stays a single tap. Nothing is asked at all when one platform is
  * connected -- there is no choice to make. */
-function videoDestinationScreen(
-  backendDb: BackendDb,
-  locale: StudioLocale,
-  selected: VideoTarget[],
-  mode: "reply" | "edit",
-): PublicationEffect {
+function videoDestinationScreen(backendDb: BackendDb, locale: StudioLocale, selected: VideoTarget[]): PublicationEffect {
   const connected = connectedVideoTargets(backendDb);
   const keyboard = new InlineKeyboard();
   if (connected.length > 1) {
@@ -212,7 +206,7 @@ function videoDestinationScreen(
     .text(t(locale, "video.language-en"), screenCallback("intake_locale", ["en"]))
     .row()
     .text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
-  return { type: "screen", mode, text: t(locale, "video.choose-language"), options: { reply_markup: keyboard } };
+  return { type: "screen", text: t(locale, "video.choose-language"), options: { reply_markup: keyboard } };
 }
 
 /** Turns one platform on or off on the destination screen. The last selected
@@ -234,7 +228,7 @@ export function toggleIntakeVideoTarget(backendDb: BackendDb, actorId: number, t
     data: { ...state.data, targets: next },
     controlMessageId: null,
   });
-  return [videoDestinationScreen(backendDb, locale, next, "edit")];
+  return [videoDestinationScreen(backendDb, locale, next)];
 }
 
 /** The platforms the destination screen currently has selected. */
@@ -308,7 +302,6 @@ function chooseKindScreen(locale: StudioLocale, captured: Captured): Publication
   keyboard.row().text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
   return {
     type: "screen",
-    mode: "reply",
     text: t(locale, "intake.choose-kind", {
       characters: String(captured.message.text.length),
       media: String(captured.message.media.length),

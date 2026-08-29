@@ -160,7 +160,7 @@ function videoLengthWarningEffects(
   keyboard.row();
   appendCancelButton(keyboard, locale, publicationCallback("video", "cancel_dialog"), saved.revision);
   const text = t(locale, "video.length-warning", { dur: videoDurationLabel(seconds), limit: VIDEO_LENGTH_WARNING_SECONDS });
-  return [{ type: "prompt", text, options: { parse_mode: "Markdown", reply_markup: keyboard } }];
+  return [{ type: "screen", text, options: { parse_mode: "Markdown", reply_markup: keyboard } }];
 }
 
 /** The upload the operator has settled on, behind a fresh draft. */
@@ -298,5 +298,5 @@ function videoCardEffects(
   services: StudioServices,
 ): PublicationEffect[] {
   clearVideoState(backendDb, actorId);
-  return publicationCardEffect(videoPreviewCard(backendDb, config, actorId, draftId, services), { mode: "reply" });
+  return publicationCardEffect(videoPreviewCard(backendDb, config, actorId, draftId, services));
 }

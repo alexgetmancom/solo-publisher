@@ -171,7 +171,7 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
   },
   stream_home: async ({ ctx, backendDb, config }) => {
     await ctx.answerCallbackQuery();
-    await showStreamScreen(ctx, backendDb, config, "edit");
+    await showStreamScreen(ctx, backendDb, config);
     return true;
   },
   stream_field: (screen) =>
@@ -188,7 +188,6 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
         return [
           {
             type: "screen",
-            mode: "reply",
             text: t(locale, "intake.article-published", { title }),
             options: { reply_markup: resultNavigationKeyboard(locale) },
           },

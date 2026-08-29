@@ -59,13 +59,19 @@ export function publicationRenderers(
   };
 }
 
-export function publicationCardEffect(
-  card: PublicationCard,
-  effect: { type: "prompt" } | { type?: "screen"; mode?: "edit" | "reply" } = {},
-): PublicationEffect[] {
-  const options = { parse_mode: "Markdown", reply_markup: card.keyboard };
-  if (effect.type === "prompt") return [{ type: "prompt", text: card.text, options, card: cardRef(card) }];
-  return [{ type: "screen", mode: effect.mode ?? "edit", text: card.text, options, card: cardRef(card) }];
+/** The card as one screen: over the tapped message when it is the answer to a
+ * tap, below whatever this update has already sent otherwise. Callers used to
+ * choose, and chose differently for the same card. */
+export function publicationCardEffect(card: PublicationCard): PublicationEffect[] {
+  return [{ type: "screen", text: card.text, options: { parse_mode: "Markdown", reply_markup: card.keyboard }, card: cardRef(card) }];
+}
+
+/** The same card, brought back to the bottom of the chat as a new message. For
+ * the one case that is not an answer to the tapped screen: the tap landed on a
+ * card the publication has since moved on from, and the live one is somewhere
+ * above in the history. */
+export function publicationCardMessage(card: PublicationCard): PublicationEffect[] {
+  return [{ type: "message", text: card.text, options: { parse_mode: "Markdown", reply_markup: card.keyboard }, card: cardRef(card) }];
 }
 
 function cardRef(card: PublicationCard): { kind: "post" | "video"; draftId: number } {

@@ -21,20 +21,15 @@ const ASK: Record<StreamField, MessageKey> = {
 
 /** The stream screen: what every connected surface is showing right now, and
  * the things about it that can be changed from here. */
-export async function showStreamScreen(
-  ctx: Context,
-  backendDb: BackendDb,
-  config: BackendConfig,
-  mode: "reply" | "edit" = "reply",
-): Promise<void> {
+export async function showStreamScreen(ctx: Context, backendDb: BackendDb, config: BackendConfig): Promise<void> {
   const actorId = Number(ctx.from?.id);
   clearConversationState(backendDb, actorId, "stream");
   const locale = settingsService(backendDb).locale(actorId);
   const found = await createStudioServices(backendDb, config).streams.current();
-  await executePublicationEffects(ctx, backendDb, [streamScreen(locale, found, mode)]);
+  await executePublicationEffects(ctx, backendDb, [streamScreen(locale, found)]);
 }
 
-function streamScreen(locale: StudioLocale, found: StudioStream, mode: "reply" | "edit"): PublicationEffect {
+function streamScreen(locale: StudioLocale, found: StudioStream): PublicationEffect {
   const keyboard = new InlineKeyboard();
   // A button appears when at least one surface could act on it. Twitch takes a
   // title with nothing on the air; YouTube takes a description; only a live
@@ -46,7 +41,7 @@ function streamScreen(locale: StudioLocale, found: StudioStream, mode: "reply" |
   if (editable) keyboard.row();
   if (found.places.some((place) => place.live)) keyboard.text(t(locale, "stream.say"), screenCallback("stream_field", ["chat"])).row();
   keyboard.text(t(locale, "stream.refresh"), screenCallback("stream_home")).text(t(locale, "common.menu"), screenCallback("menu_home"));
-  return { type: "screen", mode, text: streamText(locale, found), options: { reply_markup: keyboard } };
+  return { type: "screen", text: streamText(locale, found), options: { reply_markup: keyboard } };
 }
 
 function streamText(locale: StudioLocale, found: StudioStream): string {
@@ -82,12 +77,11 @@ export async function promptStreamField(
   // Redrawing it alone would answer a tap on "Title" with a card that quietly
   // says something else, so the tap is answered in words as well.
   if (!found.places.some((place) => place.editable))
-    return [{ type: "toast", text: t(locale, "stream.gone") }, streamScreen(locale, found, "edit")];
+    return [{ type: "toast", text: t(locale, "stream.gone") }, streamScreen(locale, found)];
   saveConversationState(backendDb, actorId, { kind: "stream", draftId: null, step: field, data: {}, controlMessageId: null });
   return [
     {
       type: "screen",
-      mode: "edit",
       text: t(locale, ASK[field], { current: currentValue(locale, found, field), limit: String(FIELD_LIMIT[field]) }),
       options: { reply_markup: cancelPromptKeyboard(locale, screenCallback("stream_home")) },
     },
@@ -125,14 +119,13 @@ export async function handleStreamMessage(ctx: Context, backendDb: BackendDb, co
   const field: StreamField = state.step === "description" ? "description" : state.step === "chat" ? "chat" : "title";
   const locale = settingsService(backendDb).locale(actorId);
   const text = ctx.message && "text" in ctx.message ? (ctx.message.text ?? "") : "";
-  if (!text.trim()) return { handled: true, effects: [{ type: "screen", mode: "reply", text: t(locale, "stream.need-text") }] };
+  if (!text.trim()) return { handled: true, effects: [{ type: "screen", text: t(locale, "stream.need-text") }] };
   if (text.trim().length > FIELD_LIMIT[field])
     return {
       handled: true,
       effects: [
         {
           type: "screen",
-          mode: "reply",
           text: t(locale, "stream.too-long", { limit: String(FIELD_LIMIT[field]), length: String(text.trim().length) }),
         },
       ],
@@ -144,7 +137,7 @@ export async function handleStreamMessage(ctx: Context, backendDb: BackendDb, co
   const outcomes = await createStudioServices(backendDb, config).streams.apply(field, text.trim());
   return {
     handled: true,
-    effects: [{ type: "screen", mode: "reply", text: report(locale, field, text.trim(), outcomes), options: { reply_markup: keyboard } }],
+    effects: [{ type: "screen", text: report(locale, field, text.trim(), outcomes), options: { reply_markup: keyboard } }],
   };
 }
 

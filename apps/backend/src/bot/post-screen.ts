@@ -46,7 +46,7 @@ export async function handlePostMessage(ctx: Context, backendDb: BackendDb, conf
       draftId: editing?.draftId ?? null,
       stateRevision: editing?.revision ?? null,
     });
-    return { handled: true, effects: isNew ? [{ type: "screen", mode: "reply", text: t(locale, "post.album-received") }] : [] };
+    return { handled: true, effects: isNew ? [{ type: "screen", text: t(locale, "post.album-received") }] : [] };
   }
   if (stateStep && flowStepInput(POST_FLOW, stateStep.type) && state?.draftId) {
     try {
@@ -61,7 +61,7 @@ export async function handlePostMessage(ctx: Context, backendDb: BackendDb, conf
       );
       return {
         handled: true,
-        effects: [{ type: "screen", mode: "reply", text: scheduleInput ? errorText : t(locale, "post.value-error", { error: errorText }) }],
+        effects: [{ type: "screen", text: scheduleInput ? errorText : t(locale, "post.value-error", { error: errorText }) }],
       };
     }
   }
@@ -69,9 +69,7 @@ export async function handlePostMessage(ctx: Context, backendDb: BackendDb, conf
   // guessing what an unannounced message is meant to be is its job, not ours.
   return {
     handled: true,
-    effects: [
-      { type: "screen", mode: "reply", text: t(locale, "post.need-new-post"), options: { reply_markup: persistentKeyboard(locale) } },
-    ],
+    effects: [{ type: "screen", text: t(locale, "post.need-new-post"), options: { reply_markup: persistentKeyboard(locale) } }],
   };
 }
 
@@ -97,14 +95,12 @@ export async function createPostFromMessage(
       ? [
           {
             type: "screen" as const,
-            mode: "reply" as const,
             text: t(locale, "post.media-large", { megabytes: advice.megabytes, recommended: advice.recommendedMegabytes }),
           },
         ]
       : []),
     {
       type: "screen",
-      mode: "reply",
       text: preview.text,
       options: { parse_mode: "Markdown", reply_markup: preview.keyboard },
       card: { kind: "post", draftId },

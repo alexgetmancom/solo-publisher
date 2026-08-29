@@ -129,7 +129,7 @@ export function videoErrorEffects(
   const rerenders = !session.data.is_single_edit && (isVideoWizardStep(session.step) || SCHEDULE_INPUT_STEPS.includes(session.step));
   if (!rerenders) return [promptEffect(backendDb, actorId, "video", message, { plainText: true })];
   const [first, ...rest] = videoStepEffects(backendDb, config, actorId, session);
-  if (first?.type !== "prompt") throw new StudioError("err.video-restart");
+  if (first?.type !== "screen") throw new StudioError("err.video-restart");
   return [{ ...first, text: `${message}\n\n${first.text}` }, ...rest];
 }
 
@@ -142,7 +142,7 @@ function metadataPromptEffects(locale: StudioLocale, step: VideoWizardStep, sess
   if (backFlow(VIDEO_FLOW, step, { selectedTargets: session.selected }))
     keyboard.text(t(locale, "common.back"), publicationCallback("video", "meta_back", [], revision));
   appendCancelButton(keyboard, locale, publicationCallback("video", "cancel_dialog"), revision);
-  return [{ type: "prompt", text: videoPrompt(locale, step), options: { reply_markup: keyboard } }];
+  return [{ type: "screen", text: videoPrompt(locale, step), options: { reply_markup: keyboard } }];
 }
 
 const VIDEO_METADATA_PROMPTS: Record<VideoWizardStep, MessageKey> = {
@@ -159,7 +159,7 @@ function videoPrompt(locale: StudioLocale, prompt: VideoWizardStep): string {
 
 export function videoControlEffects(session: VideoConversationState, text: string, keyboard: InlineKeyboard): PublicationEffect[] {
   const card = session.draftId == null ? undefined : { kind: "video" as const, draftId: session.draftId };
-  return [{ type: "prompt", text, options: { parse_mode: "Markdown", reply_markup: keyboard }, ...(card ? { card } : {}) }];
+  return [{ type: "screen", text, options: { parse_mode: "Markdown", reply_markup: keyboard }, ...(card ? { card } : {}) }];
 }
 
 function videoTimeEffects(session: VideoConversationState, locale: StudioLocale, text: string): PublicationEffect[] {

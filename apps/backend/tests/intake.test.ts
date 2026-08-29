@@ -199,7 +199,7 @@ describe("bot intake", () => {
       // A voice note has no text and no media the bot can publish; capturing it
       // used to produce an empty draft with an empty card.
       const result = await capture(backendDb, { voice: { file_id: "voice-1", duration: 3 } });
-      expect(result.effects).toEqual([{ type: "screen", mode: "reply", text: t("en", "intake.unsupported") }]);
+      expect(result.effects).toEqual([{ type: "screen", text: t("en", "intake.unsupported") }]);
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
       expect(backendDb.sqlite.query("SELECT count(*) AS count FROM drafts").get()).toEqual({ count: 0 });
     }));

@@ -4,6 +4,7 @@ import { handlePublicationCallback } from "../src/bot/callback-router.js";
 import { publicationCallback, versionedCallback } from "../src/bot/publication-callback.js";
 import { clearVideoState, getVideoState, saveVideoState } from "../src/bot/video-ui.js";
 import { type BackendDb, unsafeDb } from "../src/db/client.js";
+import { t } from "../src/foundation/i18n/index.js";
 import { setTelegramVideoCard } from "../src/interfaces/telegram/control-cards.js";
 import { videoPreview } from "../src/interfaces/telegram/video-preview.js";
 import { replaceVideoTargets, scheduleVideo } from "../src/publishing/video-service.js";
@@ -113,6 +114,69 @@ describe("video callback dispatch", () => {
     expect(handled).toBe(true);
     expect(answers).toHaveLength(1);
     expect(answers[0]?.text).toBeTruthy();
+  });
+
+  /** Navigation writes over the screen it was tapped on. Going back used to
+   * arrive as a new message below the question it came from, so "← Back" moved
+   * the operator forward in the chat. */
+  it("re-asks the previous wizard step on the message the Back button sits on", async () => {
+    backendDb = openVideoDb();
+    const draftId = createTestVideoDraft(backendDb, 42, "clip.mp4", 24);
+    replaceVideoTargets(backendDb, draftId, ["youtube_shorts"]);
+    const session = saveVideoState(backendDb, 42, {
+      draftId,
+      step: "youtube_description",
+      selected: ["youtube_shorts"],
+      data: {},
+    });
+    const edits: string[] = [];
+    const replies: string[] = [];
+    const ctx = {
+      from: { id: 42 },
+      chat: { id: 100 },
+      callbackQuery: { data: versionedCallback(publicationCallback("video", "meta_back"), session.revision), message: { message_id: 10 } },
+      answerCallbackQuery: async () => true,
+      editMessageText: async (text: string) => void edits.push(text),
+      reply: async (text: string) => {
+        replies.push(text);
+        return { message_id: 11 };
+      },
+    } as unknown as Context;
+
+    await handlePublicationCallback(ctx, backendDb, config);
+
+    expect(getVideoState(backendDb, 42)?.step).toBe("youtube_title");
+    expect(edits).toHaveLength(1);
+    expect(replies).toEqual([]);
+    clearVideoState(backendDb, 42);
+  });
+
+  /** The tap landed on a card the publication has moved past. Saying so and
+   * nothing else left the live card up in the history to scroll for. */
+  it("sends the live card back down when a superseded card is tapped", async () => {
+    backendDb = openVideoDb();
+    const draftId = createTestVideoDraft(backendDb, 42, "clip.mp4", 24);
+    replaceVideoTargets(backendDb, draftId, ["youtube_shorts"]);
+    setTelegramVideoCard(backendDb, draftId, 100, 30);
+    const answers: Array<{ text?: string } | undefined> = [];
+    const replies: string[] = [];
+    const ctx = {
+      from: { id: 42 },
+      chat: { id: 100 },
+      callbackQuery: { data: publicationCallback("video", "edit_menu", [draftId]), message: { message_id: 10 } },
+      answerCallbackQuery: async (options?: { text?: string }) => void answers.push(options),
+      editMessageText: async () => undefined,
+      reply: async (text: string) => {
+        replies.push(text);
+        return { message_id: 31 };
+      },
+    } as unknown as Context;
+
+    await handlePublicationCallback(ctx, backendDb, config);
+
+    expect(answers[0]?.text).toBe(t("en", "action.card-stale"));
+    expect(replies).toHaveLength(1);
+    expect(replies[0]).toContain("YouTube Shorts");
   });
 
   it("routes namespaced callbacks to the video handler", async () => {

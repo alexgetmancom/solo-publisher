@@ -92,7 +92,7 @@ export function scheduleConfirmationEffects<T extends string>(options: {
   return [
     ...(options.effects ?? []),
     {
-      type: "prompt",
+      type: "screen",
       text,
       options: { parse_mode: "Markdown", reply_markup: keyboard },
       card: { kind: options.kind, draftId: options.publicationId },

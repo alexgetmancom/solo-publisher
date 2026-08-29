@@ -25,7 +25,7 @@ import {
   parseSessionCallback,
   requireSessionRevision,
 } from "./publication-callback.js";
-import { publicationRenderers } from "./publication-renderers.js";
+import { publicationCardMessage, publicationRenderers } from "./publication-renderers.js";
 import { screenCallback } from "./screen-callback.js";
 import { handleVideoConversationMessage } from "./video-conversation.js";
 
@@ -104,9 +104,19 @@ export async function handlePublicationCallback(
       const session = getConversationState(backendDb, actorId, callback.kind);
       if (action.sessionRevision && parsed.revision == null) return staleEffects(locale, false);
       if (parsed.revision != null) requireSessionRevision(session?.revision, parsed.revision);
-      if (action.freshCard && isStaleCardCallback(ctx, backendDb, callback)) return staleEffects(locale, false);
-      // Rejects a callback pointing at a draft this actor cannot open, before the handler runs.
+      // Rejects a callback pointing at a draft this actor cannot open, before
+      // the handler runs -- and before the card below is rendered from it.
       if (draftId != null) pipeline.get(actorId, draftId);
+      if (action.freshCard && isStaleCardCallback(ctx, backendDb, callback)) {
+        // The tap came from a card the publication has moved past. Saying so
+        // and leaving the live card somewhere up in the history is what made
+        // this a scroll: send it again, at the bottom, where the tap was.
+        if (draftId == null) return staleEffects(locale, false);
+        return [
+          { type: "answer-callback", text: t(locale, "action.card-stale") },
+          ...publicationCardMessage(renderer.card({ actorId, publicationId: draftId, locale })),
+        ];
+      }
 
       const actionContext = {
         ...common,
@@ -163,5 +173,5 @@ function staleEffects(locale: StudioLocale, includeQueue: boolean): PublicationE
   const text = t(locale, "action.card-stale");
   const answer = { type: "answer-callback" as const, text };
   if (!includeQueue) return [answer];
-  return [answer, { type: "screen", mode: "reply", text, options: { reply_markup: UNKNOWN_KEYBOARD(locale) } }];
+  return [answer, { type: "message", text, options: { reply_markup: UNKNOWN_KEYBOARD(locale) } }];
 }

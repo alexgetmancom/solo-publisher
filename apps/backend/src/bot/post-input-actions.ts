@@ -32,7 +32,7 @@ export async function applyAdminState(
   const saved = await advancePublicationFlow(backendDb, actorId, POST_FLOW, session, input, session.data, "action.session-stale");
   if (saved.step === "schedule_confirm") return renderPostScheduleConfirmation(backendDb, config, actorId, draftId, saved);
   const preview = postPreviewCard(backendDb, config, actorId, draftId);
-  return [{ type: "session", operation: "clear", kind: "post", actorId }, ...publicationCardEffect(preview, { type: "prompt" })];
+  return [{ type: "session", operation: "clear", kind: "post", actorId }, ...publicationCardEffect(preview)];
 }
 
 function renderPostScheduleConfirmation(

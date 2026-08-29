@@ -110,7 +110,6 @@ describe("Telegram card freshness", () => {
       await executePublicationEffects(ctx, backendDb, [
         {
           type: "screen",
-          mode: "edit",
           text: preview.text,
           options: { parse_mode: "Markdown", reply_markup: preview.keyboard },
           card: { kind: "post", draftId },
@@ -132,7 +131,7 @@ describe("Telegram card freshness", () => {
       const preview = draftPreview(backendDb, draftId, loadTestConfig({}), "en");
       await executePublicationEffects(ctx, backendDb, [
         {
-          type: "prompt",
+          type: "message",
           text: preview.text,
           options: { parse_mode: "Markdown", reply_markup: preview.keyboard },
           card: { kind: "post", draftId },
@@ -252,20 +251,24 @@ describe("Telegram card freshness", () => {
       await handlePublicationCallback(context(versionedCallback(videoAction("common", [draftId]), choice.revision), 10), backendDb, config);
       const timePrompt = getVideoState(backendDb, 42);
       if (!timePrompt) throw new Error("video time session missing");
-      expect(telegramVideoCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 21 });
+      // Picking the schedule mode is navigation: it rewrites the card it was
+      // tapped on rather than stacking another message under it.
+      expect(telegramVideoCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 10 });
 
       await handlePublicationCallback(
-        context(versionedCallback(videoAction("sched_pick", [draftId, "youtube_shorts", "0800"]), timePrompt.revision), 21),
+        context(versionedCallback(videoAction("sched_pick", [draftId, "youtube_shorts", "0800"]), timePrompt.revision), 10),
         backendDb,
         config,
       );
 
       expect(getVideoState(backendDb, 42)?.step).toBe("schedule_confirm");
+      // The confirmation follows the delivery previews, so it can only be a new
+      // message -- and that message becomes the card.
       const latestCard = telegramVideoCard(backendDb, draftId);
       expect(latestCard).toEqual({ chatId: 100, messageId: expect.any(Number) });
-      expect(latestCard?.messageId).toBeGreaterThan(21);
+      expect(latestCard?.messageId).toBeGreaterThan(10);
       expect(
-        isStaleCardCallback(context(videoAction("sched_confirm", [draftId]), 21), backendDb, videoPublication("sched_confirm", [draftId])),
+        isStaleCardCallback(context(videoAction("sched_confirm", [draftId]), 10), backendDb, videoPublication("sched_confirm", [draftId])),
       ).toBe(true);
       expect(
         isStaleCardCallback(

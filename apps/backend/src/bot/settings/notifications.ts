@@ -11,9 +11,9 @@ import { NEWS_DIGEST_EFFORTS, settingsService } from "../../studio/services/sett
 import { DEFAULT_MILESTONE_THRESHOLDS } from "../../studio.js";
 import { clearConversationState } from "../conversation-state.js";
 import {
+  askSettingsInput,
   BACKUP_MENU_ID,
   backToSettings,
-  beginSettingsInput,
   choiceLabel,
   formatTime,
   MILESTONES_MENU_ID,
@@ -119,11 +119,9 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       if (hour % 4 === 3) range.row();
     }
     range
-      .text(t(locale, "settings.news-digest-time-custom"), async (ctx) => {
-        beginSettingsInput(backendDb, actorId, "news_digest_time");
-        await ctx.answerCallbackQuery();
-        await ctx.reply(t(locale, "settings.news-digest-time-input-prompt"));
-      })
+      .text(t(locale, "settings.news-digest-time-custom"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "news_digest_time", newsDigestTime, t(locale, "settings.news-digest-time-input-prompt")),
+      )
       .row()
       .back(
         t(locale, "settings.back-to-news-digest"),
@@ -164,11 +162,9 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       );
     range
       .row()
-      .text(t(locale, "settings.news-digest-prompt-edit"), async (ctx) => {
-        beginSettingsInput(backendDb, actorId, "news_digest_prompt");
-        await ctx.answerCallbackQuery();
-        await ctx.reply(t(locale, "settings.news-digest-prompt-input"));
-      })
+      .text(t(locale, "settings.news-digest-prompt-edit"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "news_digest_prompt", newsDigest, t(locale, "settings.news-digest-prompt-input")),
+      )
       .row()
       .text(t(locale, "settings.news-digest-send-now"), async (ctx) => {
         if (!bot) {
@@ -239,11 +235,9 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
     }
     range
       .row()
-      .text(t(locale, "settings.milestones-custom"), async (ctx) => {
-        beginSettingsInput(backendDb, actorId, "milestone_threshold");
-        await ctx.answerCallbackQuery();
-        await ctx.reply(t(locale, "settings.milestones-custom-input"));
-      })
+      .text(t(locale, "settings.milestones-custom"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "milestone_threshold", milestones, t(locale, "settings.milestones-custom-input")),
+      )
       .row()
       .back(
         t(locale, "settings.back-to-notifications"),
