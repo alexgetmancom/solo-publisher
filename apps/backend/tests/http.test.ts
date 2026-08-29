@@ -113,6 +113,30 @@ describe("Astro endpoint controller", () => {
     }
   });
 
+  it("refuses an oversized pageview beacon without buffering it", async () => {
+    const backendDb = openBackendDb(join(tempDir("alexgetman-pageview-body-"), "pipeline.db"), 5000);
+    try {
+      const app = createApiApp(loadTestConfig({}), backendDb);
+      // Caddy allows a gigabyte and this container has 384 MB; the route is
+      // anonymous, so the ceiling has to hold here.
+      const oversized = await app.request("/stats/pageview", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ path: `/${"x".repeat(8192)}` }),
+      });
+      expect(oversized.status).toBe(413);
+
+      const accepted = await app.request("/stats/pageview", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ path: "/ok/" }),
+      });
+      expect(accepted.status).toBe(204);
+    } finally {
+      backendDb.close();
+    }
+  });
+
   it("refuses a malformed command cookie instead of failing the request", async () => {
     const backendDb = openBackendDb(join(tempDir("alexgetman-command-cookie-"), "pipeline.db"), 5000);
     try {

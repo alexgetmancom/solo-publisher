@@ -170,6 +170,10 @@ describe("Drizzle site feed", () => {
     expect(loadPublicSiteItem(backendDb, 10)).toEqual(
       expect.objectContaining({ text: "", text_ru: "", html: "", slug_ru: null, media: [] }),
     );
+    // The date of a published post is the date it was published. Taking RU
+    // first regardless dated this one a week into the future, which sorted it
+    // to the top of the feed and went out as a future RSS pubDate.
+    expect(loadPublicSiteItem(backendDb, 10)?.date).toBe(now);
   });
 
   it("reads the persisted site media manifest", () => {

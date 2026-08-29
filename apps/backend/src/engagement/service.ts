@@ -13,9 +13,13 @@ export function engagementService(backendDb: BackendDb, config: BackendConfig) {
   const clientKey = (request: Request) => clientIpHash(request, config);
   return {
     clientKey,
-    recordPageview(request: Request, path: string): boolean {
-      const allowed = allowPublicRequest(`pageview:${clientKey(request)}`, PAGEVIEW_RATE_LIMIT, PAGEVIEW_RATE_WINDOW_SECONDS);
-      if (!allowed.allowed) return false;
+    /** Asked before the request body is read: the route is anonymous, and
+     * buffering a body for a caller that has already used up its budget is the
+     * work the budget exists to refuse. */
+    allowPageview(request: Request): boolean {
+      return allowPublicRequest(`pageview:${clientKey(request)}`, PAGEVIEW_RATE_LIMIT, PAGEVIEW_RATE_WINDOW_SECONDS).allowed;
+    },
+    recordPageview(path: string): boolean {
       return trackUsageSync(backendDb, "engagement.pageview.record", () => {
         recordPageview(backendDb, path, config.TIMEZONE);
         return true;

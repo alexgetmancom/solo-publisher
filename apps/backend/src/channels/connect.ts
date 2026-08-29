@@ -3,7 +3,7 @@ import { type BackendDb, unsafeDb } from "../db/client.js";
 import { deviceAuthorizations } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { youtubeCredentials } from "../foundation/external/youtube.js";
-import { formBody, requestJson } from "../foundation/http.js";
+import { formBody, isInconclusiveExternalFailure, requestJson } from "../foundation/http.js";
 import { log } from "../foundation/logger.js";
 import { encryptionKey, open, seal } from "../foundation/secret-box.js";
 import type { VideoLocale } from "../publishing/video-types.js";
@@ -311,15 +311,26 @@ async function redeemYouTube(
 ): Promise<RedeemOutcome> {
   const locale: VideoLocale = target.endsWith("_en") ? "en" : "ru";
   const { clientId, clientSecret } = youtubeCredentials(config, locale);
-  const answer = await requestJson<{ refresh_token?: string; error?: string }>(fetchImpl, YOUTUBE_TOKEN_URL, {
-    method: "POST",
-    body: formBody({
-      client_id: clientId ?? "",
-      client_secret: clientSecret ?? "",
-      device_code: deviceCode,
-      grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-    }),
-  }).catch((error: unknown) => ({ error: String(error) }) as { refresh_token?: string; error?: string });
+  let answer: { refresh_token?: string; error?: string };
+  try {
+    answer = await requestJson<{ refresh_token?: string; error?: string }>(fetchImpl, YOUTUBE_TOKEN_URL, {
+      method: "POST",
+      body: formBody({
+        client_id: clientId ?? "",
+        client_secret: clientSecret ?? "",
+        device_code: deviceCode,
+        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+      }),
+    });
+  } catch (error) {
+    // A timeout, a reset or a fault on Google's side is not Google refusing the
+    // grant, and the caller answers "refused" by deleting the authorization.
+    // One blip during the minutes the operator spends typing the code used to
+    // kill the code they were typing. Staying pending asks again next poll, and
+    // `expiresAt` still bounds how long that can go on.
+    if (isInconclusiveExternalFailure(error)) return { status: "pending" };
+    answer = { error: String(error) };
+  }
   // Still waiting for the operator to approve, which is the ordinary answer.
   if (answer.error && (answer.error.includes("authorization_pending") || answer.error.includes("slow_down"))) return { status: "pending" };
   if (!answer.refresh_token) return { status: "refused", reason: answer.error ?? "no refresh token" };

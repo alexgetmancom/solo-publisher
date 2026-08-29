@@ -108,7 +108,8 @@ function buildPublicSiteFeed(backendDb: BackendDb, postId?: number): FeedItem[] 
       draftId: drafts.id,
       postId: drafts.postId,
       messageId: drafts.channelMessageId,
-      date: sql<string>`coalesce(${ruLocale.publishedAt}, ${enLocale.publishedAt}, ${drafts.scheduledAt}, ${drafts.scheduledEnAt}, ${drafts.createdAt})`,
+      scheduledAt: drafts.scheduledAt,
+      scheduledEnAt: drafts.scheduledEnAt,
       createdAt: drafts.createdAt,
       ruSlug: ruLocale.slug,
       ruText: sql<string>`coalesce(${ruLocale.approvedText}, ${ruLocale.sourceText}, '')`,
@@ -186,7 +187,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, postId?: number): FeedItem[] 
       id: publicationKey,
       post_id: row.postId,
       message_id: row.messageId ?? row.postId,
-      date: row.date ?? row.createdAt,
+      date: publicationDate(ru, en) ?? row.scheduledAt ?? row.scheduledEnAt ?? row.createdAt,
       text: ru.text,
       text_ru: ru.text,
       text_en: en.text,
@@ -232,6 +233,18 @@ function isEntityKind(value: string): value is FeedEntity["kind"] {
   return value === "company" || value === "model" || value === "person" || value === "product" || value === "topic";
 }
 
+/** The post's date is the date it was published, and only a published locale
+ * has one. Coalescing over both in SQL put the RU locale first unconditionally:
+ * an EN post whose RU translation was scheduled for next week carried next
+ * week's date, which sorted it to the top of the English feed, printed "in 7
+ * days" under a readable post, and went out as a future `pubDate` in RSS.
+ * RU still wins when both are published, which is the order the SQL had. */
+function publicationDate(ru: LocaleView, en: LocaleView): string | null {
+  return (ru.enabled ? ru.publishedAt : null) ?? (en.enabled ? en.publishedAt : null);
+}
+
+type LocaleView = ReturnType<typeof locale>;
+
 function locale(
   siteEnabled: number | null,
   publishedAt: string | null,
@@ -247,8 +260,8 @@ function locale(
   // on `has_ru`/`has_en` before reading the text, and `/feed.json` serialised
   // the whole item instead — handing out the other language's unpublished draft.
   // Withholding it here is the only place that cannot be forgotten.
-  if (!enabled) return { enabled, text: "", slug: null, html: "", media: [] };
-  return { enabled, text: text ?? "", slug, html: html ?? text ?? "", media: media ?? [] };
+  if (!enabled) return { enabled, publishedAt, text: "", slug: null, html: "", media: [] as SiteMedia[] };
+  return { enabled, publishedAt, text: text ?? "", slug, html: html ?? text ?? "", media: media ?? [] };
 }
 
 function firstImage(media: SiteMedia[]): string | null {

@@ -99,6 +99,35 @@ describe("connecting an account", () => {
       expect(backendDb.db.select().from(deviceAuthorizations).all()).toEqual([]);
     }));
 
+  it("keeps a pending authorization when the network drops or Google faults", () =>
+    withDb(async (backendDb) => {
+      const started = transport({
+        device_code: "device-secret",
+        user_code: "ABCD-EFGH",
+        verification_url: "https://www.google.com/device",
+        expires_in: 1800,
+      });
+      await startConnect(config, backendDb, "youtube", "ru", started.fetchImpl, now);
+
+      // The operator is standing at the Google screen typing the code. A reset
+      // or a 503 in that window is not Google refusing the grant, and used to
+      // delete the code out from under them.
+      const dropped = (async () => {
+        throw new TypeError("fetch failed");
+      }) as unknown as typeof fetch;
+      expect(await redeemDeviceAuthorizations(config, backendDb, dropped, now)).toBe(0);
+      expect(backendDb.db.select().from(deviceAuthorizations).all()).toHaveLength(1);
+
+      const faulting = (async () => new Response("upstream unavailable", { status: 503 })) as unknown as typeof fetch;
+      expect(await redeemDeviceAuthorizations(config, backendDb, faulting, now)).toBe(0);
+      expect(backendDb.db.select().from(deviceAuthorizations).all()).toHaveLength(1);
+
+      // An authoritative refusal still ends it.
+      const refused = transport({ error: "access_denied" });
+      expect(await redeemDeviceAuthorizations(config, backendDb, refused.fetchImpl, now)).toBe(0);
+      expect(backendDb.db.select().from(deviceAuthorizations).all()).toEqual([]);
+    }));
+
   it("forgets an authorization nobody approved in time", () =>
     withDb(async (backendDb) => {
       const started = transport({ device_code: "d", user_code: "c", verification_url: "https://www.google.com/device", expires_in: 60 });

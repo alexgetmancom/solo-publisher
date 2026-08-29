@@ -155,6 +155,13 @@ export async function materializeSitePosts(
 ): Promise<Map<string, string>> {
   const sources = sourceItems(backendDb, publicationKeys);
   const failures = new Map<string, string>();
+  // Rendering is the slow part, and the manifest written at the end of it was
+  // decided before it started. Capture what the locales looked like going in so
+  // the write can refuse to land on a source somebody has changed since.
+  const sourceVersions = localeVersions(
+    backendDb,
+    sources.map((source) => source.draftId),
+  );
   const prepared = await Promise.all(
     sources.map(async (source) => {
       try {
@@ -165,10 +172,15 @@ export async function materializeSitePosts(
       }
     }),
   );
-  persistMaterializedSiteMedia(
+  const stale = persistMaterializedSiteMedia(
     backendDb,
     prepared.filter((item): item is PreparedSiteMedia => item != null),
+    sourceVersions,
   );
+  // A skipped write is not a rendered publication. Report it so the job retries
+  // against the source that displaced it rather than reporting success over a
+  // manifest that was never stored.
+  for (const postId of stale) failures.set(publicationRef("post", postId), "site source changed while it was rendering");
   return failures;
 }
 type PreparedSiteMedia = {
@@ -177,19 +189,49 @@ type PreparedSiteMedia = {
   locales: Record<"ru" | "en", { enabled: boolean; media: Record<string, unknown>[] }>;
 };
 
-function persistMaterializedSiteMedia(backendDb: BackendDb, items: PreparedSiteMedia[]): void {
+/** Reads the version of every locale about to be rendered, so the write that
+ * follows the render can be fenced on it. */
+function localeVersions(backendDb: BackendDb, draftIds: number[]): Map<string, string> {
+  if (draftIds.length === 0) return new Map();
+  const rows = unsafeDb(backendDb)
+    .db.select({ draftId: postLocales.draftId, locale: postLocales.locale, updatedAt: postLocales.updatedAt })
+    .from(postLocales)
+    .where(inArray(postLocales.draftId, draftIds))
+    .all();
+  return new Map(rows.map((row) => [`${row.draftId}:${row.locale}`, row.updatedAt]));
+}
+
+/** Stores the rendered manifests and returns the posts whose source moved while
+ * they were rendering. */
+function persistMaterializedSiteMedia(backendDb: BackendDb, items: PreparedSiteMedia[], versions: Map<string, string>): number[] {
   const now = new Date().toISOString();
-  unsafeDb(backendDb).db.transaction((tx) => {
+  return unsafeDb(backendDb).db.transaction((tx) => {
+    const stale: number[] = [];
     for (const item of items) {
       for (const locale of ["ru", "en"] as const) {
         const value = item.locales[locale];
         if (!value.enabled) continue;
-        tx.update(postLocales)
+        // Fenced on the version read before the render: an edit landing in that
+        // window would otherwise be overwritten by the manifest of the media it
+        // replaced, and the site would serve the old attachments until some
+        // unrelated render happened to fix them.
+        const version = versions.get(`${item.draftId}:${locale}`);
+        const written = tx
+          .update(postLocales)
           .set({ siteMediaJson: value.media, updatedAt: now })
-          .where(and(eq(postLocales.draftId, item.draftId), eq(postLocales.locale, locale)))
-          .run();
+          .where(
+            and(
+              eq(postLocales.draftId, item.draftId),
+              eq(postLocales.locale, locale),
+              version == null ? isNull(postLocales.updatedAt) : eq(postLocales.updatedAt, version),
+            ),
+          )
+          .returning({ draftId: postLocales.draftId })
+          .get();
+        if (!written) stale.push(item.postId);
       }
     }
+    return stale;
   });
 }
 

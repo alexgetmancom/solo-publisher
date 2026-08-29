@@ -32,6 +32,15 @@ export function retryAfterSecondsFromHeaders(headers: Headers): number | null {
   return null;
 }
 
+/** No authoritative answer came back from the provider: the request was lost in
+ * transport, or the provider reported a fault of its own rather than a verdict.
+ * A caller deciding whether to discard durable state on a failure must not treat
+ * these as the provider having said no. */
+export function isInconclusiveExternalFailure(error: unknown): boolean {
+  if (error instanceof ExternalTransportError) return true;
+  return error instanceof ExternalHttpError && (error.status >= 500 || error.status === 429);
+}
+
 export async function requestJson<T = Record<string, unknown>>(fetchImpl: typeof fetch, url: string, init: RequestInit = {}): Promise<T> {
   const response = await externalFetch(fetchImpl, url, init);
   const body = await successfulResponseText(response, url, init.method);

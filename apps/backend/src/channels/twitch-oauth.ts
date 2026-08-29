@@ -1,6 +1,6 @@
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
-import { formBody, requestJson } from "../foundation/http.js";
+import { formBody, isInconclusiveExternalFailure, requestJson } from "../foundation/http.js";
 import { encryptionKey, open, seal } from "../foundation/secret-box.js";
 import { platformToken, storePlatformToken } from "./platform-token-store.js";
 
@@ -67,15 +67,24 @@ export async function redeemTwitchDevice(
   now = new Date(),
 ): Promise<{ status: "pending" } | { status: "refused"; reason: string } | { status: "connected"; id: string; login: string }> {
   const clientId = required(config);
-  const answer = await requestJson<TokenResponse>(fetchImpl, TOKEN_URL, {
-    method: "POST",
-    body: formBody({
-      client_id: clientId,
-      scopes: TWITCH_SCOPES,
-      device_code: deviceCode,
-      grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-    }),
-  }).catch((error: unknown) => ({ message: String(error) }) as TokenResponse);
+  let answer: TokenResponse;
+  try {
+    answer = await requestJson<TokenResponse>(fetchImpl, TOKEN_URL, {
+      method: "POST",
+      body: formBody({
+        client_id: clientId,
+        scopes: TWITCH_SCOPES,
+        device_code: deviceCode,
+        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+      }),
+    });
+  } catch (error) {
+    // Transport loss and Twitch's own faults are not a refusal, and the caller
+    // answers a refusal by deleting the device authorization the operator is
+    // in the middle of approving.
+    if (isInconclusiveExternalFailure(error)) return { status: "pending" };
+    answer = { message: String(error) } as TokenResponse;
+  }
   // The ordinary answer while the operator is still typing the code in.
   if (answer.message?.includes("authorization_pending")) return { status: "pending" };
   if (!answer.access_token || !answer.refresh_token) return { status: "refused", reason: answer.message ?? "Twitch returned no tokens" };

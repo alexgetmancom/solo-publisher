@@ -378,13 +378,19 @@ async function deploy(deploymentTarget: DeploymentTarget, image: string, release
     if (deploymentTarget.allowInitialSeed && !previousState.current) previousImage = await runningContainerImage(deploymentTarget);
     if (!previousImage && !deploymentTarget.allowInitialSeed)
       throw new HttpError(409, "Current release is not an immutable GHCR digest; seed the target's imageEnvFile before deploying.");
-    const previous: Release | undefined = previousImage
+    const displaced: Release | undefined = previousImage
       ? (previousState.current ?? {
           image: previousImage,
           revision: previousImage.slice(-12),
           deployedAt: new Date().toISOString(),
         })
       : undefined;
+    // Redeploying the release that is already current must not record it as its
+    // own predecessor: the rollback would re-activate the image it is rolling
+    // back from and report success, while the release actually worth returning
+    // to is gone from the state. A same-release deploy keeps the predecessor it
+    // already had.
+    const previous = previousState.current?.revision === release ? previousState.previous : displaced;
     try {
       await activate(deploymentTarget, image, release, true);
       const next = {
