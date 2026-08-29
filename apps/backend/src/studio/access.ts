@@ -2,9 +2,17 @@ import type { BackendConfig } from "../foundation/config.js";
 
 /** One self-hosted Studio installation is one trusted editorial boundary.
  * Every configured Studio actor can operate work created by another actor in
- * that same installation; actor IDs remain on rows for attribution and audit. */
+ * that same installation; actor IDs remain on rows for attribution and audit.
+ *
+ * The MCP actor is on the roster by construction rather than by being listed
+ * twice: the token already authorizes it, so requiring it in STUDIO_ACTOR_IDS
+ * granted nothing and only made an agent-operated Studio — no Telegram bot, no
+ * roster — refuse to boot on its first `docker compose up`. */
 function studioActorIds(config: BackendConfig): number[] {
-  return config.STUDIO_ACTOR_IDS.length > 0 ? config.STUDIO_ACTOR_IDS : config.CONTROLLER_ADMIN_IDS;
+  const roster = config.STUDIO_ACTOR_IDS.length > 0 ? config.STUDIO_ACTOR_IDS : config.CONTROLLER_ADMIN_IDS;
+  const mcpActor = config.MCP_STUDIO_ACTOR_ID;
+  if (!mcpActor || roster.includes(mcpActor)) return roster;
+  return [mcpActor, ...roster];
 }
 
 /** The owner used by surfaces that authenticate the installation rather than

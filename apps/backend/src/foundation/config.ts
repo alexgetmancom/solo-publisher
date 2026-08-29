@@ -167,7 +167,11 @@ const envSchema = z
     // Override only when a platform-facing media URL lives elsewhere. Otherwise
     // it follows this Studio's own public base URL below.
     PUBLIC_MEDIA_BASE_URL: z.string().optional(),
-    PUBLIC_BASE_URL: z.string().default("https://alexgetman.com"),
+    // Production refuses to start without an explicit value (below). The default
+    // is only what a local run builds its links against, and it is this machine:
+    // a real domain here silently pointed every dev OAuth callback, media URL and
+    // canonical link at whoever owns it.
+    PUBLIC_BASE_URL: z.string().default("http://localhost:8788"),
     /** Seals the platform tokens this Studio renews for itself before they are
      * stored. Absent means it does not renew them: the credentials stay exactly
      * what .env says, which is how every install worked before this existed. */
@@ -216,17 +220,6 @@ const envSchema = z
         code: "custom",
         path: ["PUBLISH_JOB_TIMEOUT_SECONDS"],
         message: `PUBLISH_JOB_TIMEOUT_SECONDS (${env.PUBLISH_JOB_TIMEOUT_SECONDS}s) must be shorter than the ${PUBLISH_LOCK_TIMEOUT_SECONDS}s publish lock window`,
-      });
-    }
-    // The MCP token authorizes an actor, so that actor has to be on the roster.
-    // It is not required to be a Telegram admin: a deployment that lists
-    // STUDIO_ACTOR_IDS can run the Studio with the bot switched off entirely.
-    const roster = env.STUDIO_ACTOR_IDS.length > 0 ? env.STUDIO_ACTOR_IDS : env.CONTROLLER_ADMIN_IDS;
-    if (env.MCP_STUDIO_ACTOR_ID && !roster.includes(env.MCP_STUDIO_ACTOR_ID)) {
-      context.addIssue({
-        code: "custom",
-        path: ["MCP_STUDIO_ACTOR_ID"],
-        message: "MCP_STUDIO_ACTOR_ID must belong to STUDIO_ACTOR_IDS (or CONTROLLER_ADMIN_IDS when that is the roster)",
       });
     }
   });
@@ -294,9 +287,25 @@ export function withStudioProfile(env: EnvConfig, ports: Pick<ApplicationPorts, 
   });
 }
 
+/** A first boot that stops has to say which variable to set. The raw ZodError
+ * prints a stack trace and a nested issue array into `docker compose logs`,
+ * which reads as a crash in the software rather than as a line missing from
+ * `.env` — and the container then restarts into the same trace forever. */
+function envConfigError(error: unknown): Error {
+  if (!(error instanceof z.ZodError)) return error instanceof Error ? error : new Error(String(error));
+  const lines = error.issues.map((issue) => `  ${issue.path.join(".") || "(env)"}: ${issue.message}`);
+  return new Error(`Invalid environment configuration in .env:\n${lines.join("\n")}`);
+}
+
 export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): EnvConfig {
   const env = blankAsUnset(rawEnv);
-  const parsed = envSchema.parse(env);
+  const parsed = ((): z.output<typeof envSchema> => {
+    try {
+      return envSchema.parse(env);
+    } catch (error) {
+      throw envConfigError(error);
+    }
+  })();
   if (parsed.NODE_ENV === "production" && parsed.DEPLOYMENT_ENV !== "production")
     throw new Error("DEPLOYMENT_ENV=production is required when NODE_ENV=production");
   if (parsed.DEPLOYMENT_ENV === "production" && parsed.NODE_ENV !== "production")

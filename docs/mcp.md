@@ -8,22 +8,22 @@ access, no SSH and no checkout of this repository on that machine.
 
 ## Turn it on
 
-Three settings in `.env`. The token is what the agent presents; the actor id is
-who it acts as, and it has to be on the roster or nothing will accept it.
+`install.sh` generates both of these, so a Studio installed with it already
+answers here — read them from the `.env` it wrote. Setting them by hand:
 
 ```dotenv
 # openssl rand -hex 32
 MCP_STUDIO_TOKEN=
-# Your numeric Telegram user id, or any id you also list below
+# Who the agent's work belongs to. Your numeric Telegram user id if you also
+# author from the bot, so both interfaces own the same drafts; otherwise any
+# positive integer — it means nothing outside this Studio's own database.
 MCP_STUDIO_ACTOR_ID=1
-# Who may own Studio work. Setting this lets an agent operate the Studio
-# without anyone being granted Telegram access at all.
-STUDIO_ACTOR_IDS=1
 ```
 
-`MCP_STUDIO_ACTOR_ID` must appear in `STUDIO_ACTOR_IDS`, or in
-`CONTROLLER_ADMIN_IDS` when you have not set a separate roster. The Studio
-refuses to start otherwise rather than accepting a token that acts as nobody.
+The two are configured together or not at all: a token that acts as nobody is
+refused at startup. The actor needs no roster entry, because the token is what
+authorizes it. `STUDIO_ACTOR_IDS` exists for the other case — a second person
+who owns work here — and an installation with one agent leaves it empty.
 
 ```bash
 docker compose up -d

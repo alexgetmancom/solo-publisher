@@ -21,6 +21,7 @@ const inputSchema = z.object({
   backgroundPath: z.string().min(1),
   assetsDir: z.string().min(1),
   outputPath: z.string().min(1),
+  wordmark: z.string(),
   copy: z.object({
     headline: z.string(),
     emoji: z.string().nullable(),
@@ -35,7 +36,7 @@ await mkdir(path.dirname(input.outputPath), { recursive: true });
 const { default: sharp } = await import("sharp");
 sharp.cache(false);
 sharp.concurrency(1);
-const composites: OverlayOptions[] = [{ input: Buffer.from(storyCardOverlaySvg(input.copy)) }];
+const composites: OverlayOptions[] = [{ input: Buffer.from(storyCardOverlaySvg(input.copy, input.wordmark)) }];
 const emojiFile = emojiAssetFile(input.copy.emoji);
 const emojiPath = emojiFile ? path.join(input.assetsDir, "emoji", emojiFile) : null;
 if (emojiPath && existsSync(emojiPath)) {

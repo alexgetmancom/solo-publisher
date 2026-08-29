@@ -1,3 +1,4 @@
+import { targetRouting } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { creatorProfiles } from "../db/schema.js";
 import { importXAnalyticsCsv, type XCsvImportResult } from "./import-x-csv.js";
@@ -12,7 +13,10 @@ type ManualAnalyticsInput = {
 
 type ManualProfileResult = {
   platform: "threads_ru" | "threads_en";
-  account: "alexgetmanru" | "alexgetmanco";
+  /** The connected account the snapshot belongs to. It is read from the channel
+   * registry rather than named here: a snapshot filed under a handle this
+   * installation does not own is analytics for somebody else's audience. */
+  account: string;
   followersCount: number;
 };
 
@@ -27,9 +31,10 @@ type ManualAnalyticsImportResult = {
 export function importManualAnalytics(backendDb: BackendDb, input: ManualAnalyticsInput): ManualAnalyticsImportResult {
   const sampledAt = new Date(input.sampledAt);
   if (Number.isNaN(sampledAt.getTime())) throw new Error("--sampled-at must be an ISO timestamp");
+  const routing = targetRouting(backendDb);
   const profiles = [
-    profileInput("threads_ru", "alexgetmanru", input.threadsRuFollowers),
-    profileInput("threads_en", "alexgetmanco", input.threadsEnFollowers),
+    profileInput("threads_ru", routing.threads_ru?.accountId, input.threadsRuFollowers),
+    profileInput("threads_en", routing.threads_en?.accountId, input.threadsEnFollowers),
   ].filter((profile): profile is ManualProfileResult => profile != null);
   if (!input.xFile && profiles.length === 0) throw new Error("provide --x-file, --threads-ru-followers, or --threads-en-followers");
 
@@ -47,12 +52,13 @@ export function importManualAnalytics(backendDb: BackendDb, input: ManualAnalyti
 
 function profileInput(
   platform: ManualProfileResult["platform"],
-  account: ManualProfileResult["account"],
+  account: string | null | undefined,
   value: number | undefined,
 ): ManualProfileResult | null {
   if (value == null) return null;
   if (!Number.isSafeInteger(value) || value < 0)
     throw new Error(`--${platform.replaceAll("_", "-")}-followers must be a non-negative integer`);
+  if (!account) throw new Error(`connect the ${platform.replace("_", " ")} channel before importing its follower count`);
   return { platform, account, followersCount: value };
 }
 

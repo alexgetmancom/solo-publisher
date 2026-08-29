@@ -37,7 +37,7 @@ are connected by naming their platform and language.
 | Telegram channel | Channels or `--target telegram` | `CONTROLLER_BOT_TOKEN` |
 | Discord | Channels or `--target discord` | `DISCORD_CHANNEL_ID`, then CLI `credential-set --target discord` |
 | Threads | Channels or `connect-link --platform threads` | native app credentials or a stored Zernio key |
-| X | Channels or `connect-link --platform x` | `X_CLIENT_ID`, `X_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` |
+| X | Channels or `connect-link --platform x` | `X_CLIENT_ID`, `X_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` — the **OAuth 2.0** Client ID and Client Secret, under the app's "User authentication settings" in the X developer portal. Not the API Key and API Secret on the same page: those are OAuth 1.0a and this connects over OAuth 2.0 with PKCE. Register `https://your-domain/oauth/x` there as the callback URL. |
 | Instagram Stories | Enable the Story in Channels after native Instagram login, or select its Zernio route | native Instagram credentials or a stored Zernio key |
 | Telegram Stories | Channels or `--target telegram_stories` | CLI `telegram-stories-login` with `TELEGRAM_CHANNEL_STORIES_API_ID`, `_API_HASH`, `_SESSION` |
 | YouTube | Channels or `connect-link --platform youtube --locale ru` | `YOUTUBE_*_CLIENT_ID`, `_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` |

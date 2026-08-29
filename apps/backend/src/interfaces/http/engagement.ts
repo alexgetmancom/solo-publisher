@@ -12,7 +12,7 @@ export const engagementRoutes: RouteModule = (app, { engagement }) => {
   app.get("/stats", () => {
     const summary = engagement.metrics();
     return html(
-      `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Alex Getman metrics</title></head><body><main><h1>Site metrics</h1><p>Total: ${escapeHtml(summary.total)}</p><p>Today: ${escapeHtml(summary.today)}</p><p>Last 7 days: ${escapeHtml(summary.last7)}</p><p>Updated: ${escapeHtml(summary.updated_at ?? "-")}</p></main></body></html>`,
+      `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Site metrics</title></head><body><main><h1>Site metrics</h1><p>Total: ${escapeHtml(summary.total)}</p><p>Today: ${escapeHtml(summary.today)}</p><p>Last 7 days: ${escapeHtml(summary.last7)}</p><p>Updated: ${escapeHtml(summary.updated_at ?? "-")}</p></main></body></html>`,
     );
   });
 };

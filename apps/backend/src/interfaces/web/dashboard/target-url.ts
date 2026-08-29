@@ -4,9 +4,12 @@ function targetPublicUrl(target: string, externalId: string | null = null, url: 
   if (url) return url.replace("threads.net", "threads.com");
   if (!externalId) return null;
   if (externalId.startsWith("http://") || externalId.startsWith("https://")) return externalId;
-  if (target === "x") return `https://x.com/alexgetmancom/status/${externalId}`;
-  if (target === "threads_ru") return `https://www.threads.com/@alexgetmanru/post/${externalId}`;
-  if (target === "threads_en") return `https://www.threads.com/@alexgetmanco/post/${externalId}`;
+  // Handle-free forms only. Threads and Instagram hand back a permalink at
+  // publish time and it arrives above as `url`; X does not, so this rebuilds
+  // the same `/i/web/status/` link its adapter stores. A link built from a
+  // hardcoded handle carries this installation's post id under some other
+  // installation's account, and lands the operator on a stranger's post.
+  if (target === "x") return `https://x.com/i/web/status/${externalId}`;
   return null;
 }
 

@@ -25,14 +25,28 @@ give it a credential, install the plugin here, and prove the connection works.
   credential I have not given you.
 - Recreating the container interrupts the site and bot for a few seconds. Tell me before you do it.
 
+## Step 0 — if there is no deployment yet
+
+If I do not have a Studio running at all, install one first and then continue from Step 4. Ask me
+for the server (SSH alias, or "it runs on this machine") and the hostname it should answer on, then
+run the installer there:
+
+    curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/install.sh | sh -s -- <domain>
+
+Add `--behind-proxy` if ports 80 and 443 already belong to another web server; the installer then
+starts the application on `127.0.0.1:8788` and prints the server block to add. If I have no domain,
+a wildcard-DNS hostname works: `publisher.<the-server-ip-with-dashes>.sslip.io`.
+
+The installer generates `MCP_STUDIO_TOKEN` and `MCP_STUDIO_ACTOR_ID` itself, so Steps 1 and 3 are
+already done when it finishes — read the token from the `.env` it wrote rather than making a new
+one. Do not print it.
+
 ## Step 1 — find out what I have
 
 Ask me, in one message, only for what you cannot discover:
 
 - How do you reach the server? (SSH host alias, or "it runs on this machine")
 - The deployment's public domain.
-- My Telegram user id — the account whose work in the Studio you should own. It has to already be
-  in that deployment's `CONTROLLER_ADMIN_IDS` or `STUDIO_ACTOR_IDS`.
 - Where the runtime directory is, if it is not `/home/deploy/<name>/`. It holds `secrets.env`,
   `deploy-image.env` and the compose file.
 
@@ -60,16 +74,15 @@ In the deployment's `secrets.env`, both of these must be set together — the ap
 start with only one:
 
     MCP_STUDIO_TOKEN=<32 random bytes as hex>
-    MCP_STUDIO_ACTOR_ID=<my Telegram user id>
+    MCP_STUDIO_ACTOR_ID=<the actor id, see below>
 
 Generate the token on the server with `openssl rand -hex 32` and write it without it passing
 through your reply. If `MCP_STUDIO_TOKEN` is already set, stop and ask me before touching it —
 replacing it breaks whatever is already using it.
 
-The actor id must be in that deployment's roster (`STUDIO_ACTOR_IDS`, or `CONTROLLER_ADMIN_IDS`
-when that is the roster). Anyone in the roster sees the whole roster's work, so this choice does
-not restrict what you can see — it decides who *owns* what you create. Read the roster and confirm
-my id is in it; if it is not, tell me rather than adding it yourself.
+The actor id is who *owns* the work you create here, and the token authorizes it: it needs no
+separate roster entry. Use my Telegram user id if I also author from the bot, so both interfaces
+own the same work; otherwise any positive integer will do — `1` is what the installer picks.
 
 ## Step 4 — restart and verify the deployment side
 

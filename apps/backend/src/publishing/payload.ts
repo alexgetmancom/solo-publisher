@@ -17,7 +17,7 @@ export function localizeTargetPayload(value: PublicationSource | unknown, target
   const selectedMedia = selectMediaForTarget(target, rawMedia).map(deliveryMedia);
   const localized = {
     locale,
-    title: firstLine(source.text),
+    title: firstLine(source.text, "Post"),
     text: source.text,
     media: selectedMedia,
     entities: source.entities,

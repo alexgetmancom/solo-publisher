@@ -103,7 +103,11 @@ describe("host proxy topology", () => {
     // The domain has no default at all: Caddy would request a certificate for
     // whatever it is told, and the application would publish it in its feeds.
     expect(compose).toContain("${DOMAIN:?");
-    // Only the proxy is reachable from outside.
-    expect(compose).not.toMatch(/ports:[\s\S]*?8788:8788/);
+    // Only the proxy is reachable from outside. The application's one published
+    // port is bound to loopback so an install that already runs its own web
+    // server has an address to forward to without editing this file; a bind on
+    // any other interface would put the app itself on the internet.
+    expect(compose).toContain('"127.0.0.1:8788:8788"');
+    expect(compose).not.toMatch(/ports:[\s\S]*?(?<!127\.0\.0\.1:)8788:8788/);
   });
 });

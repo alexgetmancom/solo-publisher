@@ -38,11 +38,15 @@ export function publishContentIndex(config: BackendConfig, backendDb: BackendDb)
     updated_at: row.updatedAt,
   }));
   const updatedAt = new Date().toISOString();
+  // This file is what LLM crawlers read, so the brand on it is whatever this
+  // Studio says it is. A Studio that has not named itself is named by its own
+  // host rather than by a constant, which would be somebody else's name.
+  const brand = config.studio.site("en").name || new URL(base).hostname;
   atomicWriteText(
     path.join(config.SITE_PUBLIC_DIR, "content-index.json"),
-    `${JSON.stringify({ updated_at: updatedAt, brand: "alexgetmancom", site: base, items }, null, 2)}\n`,
+    `${JSON.stringify({ updated_at: updatedAt, brand, site: base, items }, null, 2)}\n`,
   );
-  const lines = ["# AlexGetman Content Memory", "", `Updated: ${updatedAt}`, ""];
+  const lines = [`# ${brand} Content Memory`, "", `Updated: ${updatedAt}`, ""];
   for (const item of items.slice(0, 80)) {
     lines.push(`## ${item.post_id} - ${item.title}`);
     if (item.url_ru) lines.push(`RU: ${item.url_ru}`);

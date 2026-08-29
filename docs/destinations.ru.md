@@ -37,7 +37,7 @@ Command Center и Telegram показывают рядом с каждым ка�
 | Telegram-канал | Каналы или `--target telegram` | `CONTROLLER_BOT_TOKEN` |
 | Discord | Каналы или `--target discord` | `DISCORD_CHANNEL_ID`, затем CLI `credential-set --target discord` |
 | Threads | Каналы или `connect-link --platform threads` | native app credentials либо сохранённый ключ Zernio |
-| X | Каналы или `connect-link --platform x` | `X_CLIENT_ID`, `X_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` |
+| X | Каналы или `connect-link --platform x` | `X_CLIENT_ID`, `X_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` — это **OAuth 2.0** Client ID и Client Secret из раздела «User authentication settings» приложения в X developer portal. Не API Key и API Secret с той же страницы: те относятся к OAuth 1.0a, а подключение идёт по OAuth 2.0 с PKCE. Там же пропишите callback URL `https://ваш-домен/oauth/x`. |
 | Instagram Stories | Включить Story в Каналах после native-входа Instagram либо выбрать её маршрут Zernio | native credentials Instagram либо сохранённый ключ Zernio |
 | Telegram Stories | Каналы или `--target telegram_stories` | CLI `telegram-stories-login` с `TELEGRAM_CHANNEL_STORIES_API_ID`, `_API_HASH`, `_SESSION` |
 | YouTube | Каналы или `connect-link --platform youtube --locale ru` | `YOUTUBE_*_CLIENT_ID`, `_CLIENT_SECRET`, `TOKEN_ENCRYPTION_KEY` |

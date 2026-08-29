@@ -59,8 +59,10 @@ export function createPublicationPlan(
     storyCards != null,
     draft.story_publish_mode,
   );
-  const slugRu = slugify(firstLine(textRu), postId);
-  const slugEn = slugify(firstLine(textEn), postId);
+  // An empty first line leaves the slug to `slugify`, which names the post by
+  // its own id rather than by anybody.
+  const slugRu = slugify(firstLine(textRu, ""), postId);
+  const slugEn = slugify(firstLine(textEn, ""), postId);
   const locale = (
     text: string,
     entities: Record<string, unknown>[],

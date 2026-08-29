@@ -9,7 +9,7 @@ describe("loadConfig", () => {
     expect(config.LOG_LEVEL).toBe("info");
     expect(config.STUDIO_MEDIA_DIR).toBe("/data/video-media");
     expect(config.REMOTE_MEDIA_PATH).toBe("/data/media");
-    expect(config.PUBLIC_MEDIA_BASE_URL).toBe("https://alexgetman.com/media/staging");
+    expect(config.PUBLIC_MEDIA_BASE_URL).toBe("http://localhost:8788/media/staging");
   });
 
   it("requires an explicit matching production environment", () => {
@@ -95,18 +95,26 @@ describe("loadConfig", () => {
   it("requires Studio MCP token and owner to be configured together", () => {
     expect(() => loadTestConfig({ MCP_STUDIO_TOKEN: "a".repeat(16) })).toThrow("MCP_STUDIO_TOKEN and MCP_STUDIO_ACTOR_ID");
     expect(() => loadTestConfig({ MCP_STUDIO_ACTOR_ID: "42" })).toThrow("MCP_STUDIO_TOKEN and MCP_STUDIO_ACTOR_ID");
-    expect(() => loadTestConfig({ MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "42" })).toThrow(
-      "MCP_STUDIO_ACTOR_ID must belong to STUDIO_ACTOR_IDS",
-    );
     expect(
       loadTestConfig({ CONTROLLER_ADMIN_IDS: "42", MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "42" }).MCP_STUDIO_ACTOR_ID,
     ).toBe(42);
   });
 
-  it("rejects the removed ADMIN_IDS name when an MCP owner needs the roster", () => {
-    expect(() => loadTestConfig({ ADMIN_IDS: "42", MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "42" })).toThrow(
-      "MCP_STUDIO_ACTOR_ID must belong to STUDIO_ACTOR_IDS",
-    );
+  it("boots an agent-operated Studio with no roster and no Telegram bot", () => {
+    // The shape a self-hosted install starts in: an MCP token, the actor it acts
+    // as, nothing else. Requiring that actor to also appear in STUDIO_ACTOR_IDS
+    // granted it nothing the token had not already granted, and crash-looped the
+    // container on its first `docker compose up`.
+    const config = loadTestConfig({ MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "42" });
+    expect(config.MCP_STUDIO_ACTOR_ID).toBe(42);
+    expect(config.CONTROLLER_ADMIN_IDS).toEqual([]);
+    expect(config.STUDIO_ACTOR_IDS).toEqual([]);
+  });
+
+  it("names the variable to fix instead of raising a ZodError", () => {
+    // A first boot that stops has to be readable in `docker compose logs`.
+    expect(() => loadTestConfig({ MCP_STUDIO_TOKEN: "short" })).toThrow("Invalid environment configuration in .env");
+    expect(() => loadTestConfig({ MCP_STUDIO_TOKEN: "short" })).toThrow("MCP_STUDIO_TOKEN");
   });
 
   it("accepts a Studio actor that is not a Telegram admin", () => {
@@ -115,8 +123,5 @@ describe("loadConfig", () => {
     const config = loadTestConfig({ STUDIO_ACTOR_IDS: "7", MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "7" });
     expect(config.MCP_STUDIO_ACTOR_ID).toBe(7);
     expect(config.CONTROLLER_ADMIN_IDS).toEqual([]);
-    expect(() => loadTestConfig({ STUDIO_ACTOR_IDS: "7", MCP_STUDIO_TOKEN: "a".repeat(16), MCP_STUDIO_ACTOR_ID: "8" })).toThrow(
-      "MCP_STUDIO_ACTOR_ID must belong to STUDIO_ACTOR_IDS",
-    );
   });
 });

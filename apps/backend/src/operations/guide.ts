@@ -124,7 +124,7 @@ export function formatOperationsGuide(guide: OperationsGuide): string {
     return [`  [${safety}] ${command.usage}`, `             ${command.summary}${note}`];
   });
   return [
-    "alexgetman operations guide",
+    "operations guide",
     "",
     `Local database: ${guide.local.state.toUpperCase()}`,
     `Path: ${guide.local.path}`,

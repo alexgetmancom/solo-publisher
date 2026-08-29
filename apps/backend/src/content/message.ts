@@ -15,7 +15,9 @@ export function parseArrayValue(value: unknown): Record<string, unknown>[] {
   return jsonRecordArray(value);
 }
 
-export function firstLine(text: string | null | undefined, fallback = "Alex Getman update"): string {
+/** The fallback is explicit at every call site: there is no generic name for a
+ * post that would not be one installation's name on another's permanent URL. */
+export function firstLine(text: string | null | undefined, fallback: string): string {
   return text?.split(/\r?\n/, 1)[0]?.trim() || fallback;
 }
 

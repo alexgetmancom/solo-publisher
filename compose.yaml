@@ -74,9 +74,12 @@ services:
       # disk. Point this at off-host storage; `backup-media` writes here and
       # `doctor` fails until it has, because the database backup Telegram sends
       # every day does not carry media.
-    # No published ports: the application is reachable only through Caddy.
-    expose:
-      - "8788"
+    # Published on loopback only. Caddy reaches this container over the compose
+    # network and does not need it; an install that already runs nginx or Traefik
+    # on :80/:443 has nowhere else to point, and had to edit this file. Loopback
+    # is not reachable from off the machine, so the two installs share one shape.
+    ports:
+      - "127.0.0.1:8788:8788"
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:8788/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 30s

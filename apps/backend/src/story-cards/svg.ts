@@ -35,7 +35,10 @@ export function emojiAssetFile(emoji: string | null): string | null {
   return `${codePoints.map((point) => point.toString(16)).join("-")}.svg`;
 }
 
-export function storyCardOverlaySvg(copy: StoryCardCopy): string {
+/** The wordmark is this Studio's own name, empty on an installation that has
+ * not claimed one — every card a Studio posts carries it into its audience's
+ * Stories, so it can never come from a constant here. */
+export function storyCardOverlaySvg(copy: StoryCardCopy, wordmark: string): string {
   const firstBaseline = storyCardFirstBaseline(copy);
   const text = copy.lines
     .map(
@@ -58,8 +61,12 @@ export function storyCardOverlaySvg(copy: StoryCardCopy): string {
       .copy { font-size: ${FONT_SIZE}px; letter-spacing: -1.15px; }
     </style>
   </defs>
-  <text x="540" y="150" text-anchor="middle" font-size="29" font-weight="430"
-        letter-spacing="10" fill-opacity=".8" filter="url(#glow)">alex getman</text>
+  ${
+    wordmark
+      ? `<text x="540" y="150" text-anchor="middle" font-size="29" font-weight="430"
+        letter-spacing="10" fill-opacity=".8" filter="url(#glow)">${escapeXml(wordmark)}</text>`
+      : ""
+  }
   <g filter="url(#glow)">${text}</g>
 </svg>`;
 }

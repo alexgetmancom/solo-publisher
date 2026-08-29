@@ -12,23 +12,46 @@ curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/i
 
 The installer refuses before it touches anything if Docker is missing or the
 domain does not resolve to this machine — the two reasons an install fails after
-it looks like it worked. It then writes `.env` with the three secrets generated,
+it looks like it worked. It then writes `.env` with the four secrets generated,
 starts the stack, waits for `/readyz` through Caddy, and prints the Command
-Center URL with its token. Run it again to update: an existing `.env` is kept as
-it is.
+Center URL and the MCP endpoint with their tokens. Run it again to update: an
+existing `.env` is kept as it is.
+
+A Studio comes up operable by an agent, not only by a person: one of the four
+generated secrets is `MCP_STUDIO_TOKEN`, so `https://your-domain/api/mcp` answers
+as soon as the stack is healthy. The installer prints the two lines that install
+the [`studio` plugin](../plugin/README.md) against it. Connect Telegram later, or
+never — a Studio with no bot publishes and reports exactly the same.
 
 Caddy obtains and renews the TLS certificate itself, so there is no certbot and
 no renewal timer to set up. The Command Center link the installer prints signs
 you in with the `COMMAND_CENTER_TOKEN` it wrote to `.env`; an empty Studio opens
 with the three steps to its first draft instead of an empty analytics screen.
 
-Only Caddy publishes ports; the application is reachable through it alone.
+The application publishes one port, on loopback: `127.0.0.1:8788`, which nothing
+off this machine can reach. Caddy is what serves it to the internet.
 Nothing else in `.env` is required to start — a Studio with no platform
 credentials serves its Command Center and publishes nowhere. Add Telegram or MCP
 as the authoring interface, then connect destinations from Command Center →
 Studio; `docker compose exec app bun /app/ops/cli.js doctor` lists what each
 enabled destination still needs. See
 [Connecting a destination](destinations.md).
+
+## Ports 80 and 443 already taken
+
+On a machine that already runs nginx, Traefik or another Caddy, pass
+`--behind-proxy`. The application starts alone on `127.0.0.1:8788`, the bundled
+Caddy is never started, and the installer prints the single server block to add:
+the existing proxy terminates TLS and forwards, with `X-Real-IP` — which is what
+the bundled Caddy does and the only thing the application needs from it.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/install.sh | sh -s -- publisher.example.com --behind-proxy
+```
+
+Without a domain of your own, a wildcard-DNS hostname is enough for a first run:
+`publisher.203-0-113-7.sslip.io` resolves to `203.0.113.7` with no DNS to set up,
+and both install modes accept it.
 
 ## The public website
 

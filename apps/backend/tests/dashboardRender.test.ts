@@ -234,14 +234,12 @@ describe("dashboard target URLs", () => {
     expect(getTargetUrl(post({ telegram_url: "https://t.me/alexgetman/106" }), "telegram")).toBe("https://t.me/alexgetman/106");
   });
 
-  it("builds x and threads permalinks from an external id", () => {
-    expect(getTargetUrl(post({ targets: { x: { external_id: "1234" } } }), "x")).toBe("https://x.com/alexgetmancom/status/1234");
-    expect(getTargetUrl(post({ targets: { threads_ru: { external_id: "abc" } } }), "threads_ru")).toBe(
-      "https://www.threads.com/@alexgetmanru/post/abc",
-    );
-    expect(getTargetUrl(post({ targets: { threads_en: { external_id: "abc" } } }), "threads_en")).toBe(
-      "https://www.threads.com/@alexgetmanco/post/abc",
-    );
+  it("builds an X permalink from an external id, and never guesses a handle", () => {
+    expect(getTargetUrl(post({ targets: { x: { external_id: "1234" } } }), "x")).toBe("https://x.com/i/web/status/1234");
+    // Threads hands back a permalink at publish time. Rebuilding one from a
+    // handle put this installation's post id under another account's name.
+    expect(getTargetUrl(post({ targets: { threads_ru: { external_id: "abc" } } }), "threads_ru")).toBeNull();
+    expect(getTargetUrl(post({ targets: { threads_en: { external_id: "abc" } } }), "threads_en")).toBeNull();
   });
 
   it("rewrites a stored threads.net URL to threads.com", () => {
@@ -319,7 +317,7 @@ describe("dashboard metrics", () => {
     const linked = String(
       targetCell(post({ ...published("x", { views: 7 }), targets: { x: { status: "published", external_id: "42" } } }), "x"),
     );
-    expect(linked).toContain('<a class="metric-link" href="https://x.com/alexgetmancom/status/42"');
+    expect(linked).toContain('<a class="metric-link" href="https://x.com/i/web/status/42"');
     expect(linked).toContain('rel="noopener noreferrer"');
     expect(linked.match(/<a /g)?.length).toBe(1);
   });

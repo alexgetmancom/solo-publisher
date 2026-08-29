@@ -168,6 +168,7 @@ async function renderStoryCard(config: BackendConfig, card: ClaimedCard, output:
         backgroundPath: path.join(config.STORY_CARD_ASSETS_DIR, "strata-master-background.png"),
         assetsDir: config.STORY_CARD_ASSETS_DIR,
         outputPath: output,
+        wordmark: config.studio.site(card.locale === "ru" ? "ru" : "en").name,
         copy,
       }),
     );

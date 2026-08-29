@@ -83,7 +83,7 @@ function describeIssue(issue: z.core.$ZodIssue | undefined): string {
 // --- Tool catalog: one zod schema per tool is both its validator and its client-facing schema ---
 
 const feedbackToolDef = {
-  description: "Send feedback or a bug report to Alex Getman.",
+  description: "Record feedback or a bug report in this Studio's own journal, where its operator will see it. It is not sent anywhere.",
   schema: z.object({ name: trimmed(0, 120).optional(), message: trimmed(1, 2_000) }),
 };
 
@@ -234,7 +234,8 @@ const studioToolDefs = {
     handler: (studio, actorId, input) => studio.posts.mediaAssets(actorId, input.limit ?? 50),
   }),
   studio_post_create: tool({
-    description: "Create a text-post draft with its exact publication targets.",
+    description:
+      "Create a text-post draft with its exact publication targets. Every target publishes one language and takes that language's text: `text` is Russian, `text_en` is English. A target connected on the EN locale — which is what a single X or Threads account connects as — publishes `text_en`, and refuses a draft that has only `text`. `studio_capabilities` lists each connected target with its locale.",
     schema: z.object({
       text: trimmed(1, 20_000),
       text_en: trimmed(0, 20_000).optional(),
