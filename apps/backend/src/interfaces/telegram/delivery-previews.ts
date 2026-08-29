@@ -120,6 +120,24 @@ export async function sendThreadsPreviews(
   for (const rendering of renderings) await ctx.reply(rendering);
 }
 
+/** The video behind a publication, sent only when asked for. The previews show
+ * what each platform receives as text; the clip itself is the same file for all
+ * of them, so it is one button beside the confirmation rather than an upload
+ * repeated per platform. */
+export async function sendVideoSourcePreview(
+  ctx: Context,
+  backendDb: BackendDb,
+  config: BackendConfig,
+  publicationId: number,
+): Promise<void> {
+  const actorId = Number(ctx.from?.id);
+  const locale = settingsService(backendDb).locale(actorId);
+  const source = createStudioServices(backendDb, config).videos.preview(actorId, publicationId).delivery.source;
+  const media = source ? mediaSource(source) : null;
+  await ctx.answerCallbackQuery(media ? undefined : { text: t(locale, "video.source-gone") });
+  if (media) await ctx.replyWithVideo(media);
+}
+
 function deliveryHeader(projection: DeliveryProjection, locale: StudioLocale): [string, { parse_mode: "Markdown" }] {
   const targets = projection.targets.join(" · ") || t(locale, "preview.no-compatible-target");
   return [`👁 *${escapeMarkdown(projection.label)}*\n${escapeMarkdown(targets)}`, { parse_mode: "Markdown" }];

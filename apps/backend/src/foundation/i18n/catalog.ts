@@ -223,6 +223,9 @@ const en = {
   "post.need-new-post": "Choose 📥 New material from the menu before sending anything.",
   // Video conversation + scheduling
   "video.choose-language": "Which audience is this video for?",
+  "video.need-one-platform": "At least one platform has to stay selected.",
+  "video.show-source": "🎬 Show the video",
+  "video.source-gone": "The video file is no longer available.",
   "video.language-ru": "🇷🇺 RU video",
   "video.language-en": "🇬🇧 EN video",
   "vpreview.language": "Language",
@@ -988,6 +991,9 @@ const ru = {
   "post.need-new-post": "Сначала выберите «📥 Новый материал» в меню.",
   // Video conversation + scheduling
   "video.choose-language": "Для какой аудитории это видео?",
+  "video.need-one-platform": "Хотя бы одна платформа должна остаться выбранной.",
+  "video.show-source": "🎬 Показать видео",
+  "video.source-gone": "Файл видео больше недоступен.",
   "video.language-ru": "🇷🇺 RU-видео",
   "video.language-en": "🇬🇧 EN-видео",
   "vpreview.language": "Язык",

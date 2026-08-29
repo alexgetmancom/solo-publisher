@@ -94,16 +94,20 @@ export function videoDeliveryProjections(backendDb: BackendDb, publicationId: nu
   const media = asset
     ? [{ type: "video", asset_id: asset.id, local_path: asset.localPath, filename: asset.filename, mime_type: asset.mimeType }]
     : [];
+  // The projections carry no media. Every platform of a video publication
+  // shows the same one file, and a preview per platform meant the same clip
+  // uploaded to the chat twice, above the metadata that is the only thing
+  // actually differing. The source is offered once, beside them.
   const projections: DeliveryProjection[] = backendDb.studioVideos.targets(publicationId).map((target) => ({
     id: `video:${publicationId}:${target.target}`,
     label: target.target === "youtube_shorts" ? "Preview · YouTube Shorts" : "Preview · Instagram Reels",
     targets: [target.target],
     text: "",
     entities: [],
-    media,
+    media: [],
     unavailableTargets: [],
     metadata: (target.metadataJson ?? {}) as Record<string, unknown>,
     notes: [],
   }));
-  return { kind: "video" as const, publicationId, projections, sourceAvailable: media.length === 1 };
+  return { kind: "video" as const, publicationId, projections, source: media[0] ?? null, sourceAvailable: media.length === 1 };
 }

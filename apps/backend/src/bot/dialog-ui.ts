@@ -10,13 +10,6 @@ import { screenCallback } from "./screen-callback.js";
 
 type DialogButton = { label: string; callback: string };
 
-/** Renders a compact row of dialog actions with an optional session revision. */
-function dialogKeyboard(buttons: readonly DialogButton[], revision?: number | null): InlineKeyboard {
-  const keyboard = new InlineKeyboard();
-  for (const button of buttons) keyboard.text(button.label, versionedCallback(button.callback, revision));
-  return keyboard;
-}
-
 /** Adds the standard cancel action to a prompt keyboard. */
 export function appendCancelButton(
   keyboard: InlineKeyboard,
@@ -60,7 +53,18 @@ export function promptEffect(
 
 /** Builds the repeated two-button confirmation footer used by content flows. */
 export function confirmationKeyboard(confirm: DialogButton, back: DialogButton, revision?: number | null): InlineKeyboard {
-  return dialogKeyboard([confirm, back], revision);
+  return appendConfirmationRow(new InlineKeyboard(), confirm, back, revision);
+}
+
+/** Appends that same footer under controls a screen already carries. */
+export function appendConfirmationRow(
+  keyboard: InlineKeyboard,
+  confirm: DialogButton,
+  back: DialogButton,
+  revision?: number | null,
+): InlineKeyboard {
+  for (const button of [confirm, back]) keyboard.text(button.label, versionedCallback(button.callback, revision));
+  return keyboard;
 }
 
 /** Builds the final navigation footer after a draft operation. */

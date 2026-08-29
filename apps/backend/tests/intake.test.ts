@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { handlePublicationMessage } from "../src/bot/callback-router.js";
 import { getConversationState } from "../src/bot/conversation-state.js";
-import { applyIntakeKind, handleIntakeMessage, openIntake, publishReviewedArticle } from "../src/bot/intake.js";
+import { applyIntakeKind, handleIntakeMessage, openIntake, publishReviewedArticle, toggleIntakeVideoTarget } from "../src/bot/intake.js";
 import { pendingAlbums } from "../src/db/schema.js";
 import { unsafeDb } from "../src/db/unsafe.js";
 import { t } from "../src/foundation/i18n/index.js";
-import { registerTestChannels } from "./helpers/channels.js";
+import { registerTestChannels, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -83,6 +83,39 @@ describe("bot intake", () => {
       // The intake stays open, so the next message is still the first one.
       expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
     }));
+
+  /** The destination screen answers both questions at once: which platforms
+   * get the clip, and which audience it is for. Every connected platform is on
+   * to begin with, so the usual answer is still the single language tap. */
+  it("offers every connected platform as a toggle beside the audience buttons", () =>
+    withDb(async (backendDb) => {
+      const opened = await capture(backendDb, { document: { file_id: "v9", file_name: "clip.mp4", mime_type: "video/mp4" } }, "video");
+      expect(buttonRows(opened.effects[0] as never)).toEqual([
+        "✅ YouTube Shorts",
+        "✅ Instagram Reels",
+        "🇷🇺 RU video",
+        "🇬🇧 EN video",
+        "← Cancel",
+      ]);
+
+      const toggled = toggleIntakeVideoTarget(backendDb, 42, "youtube_shorts");
+
+      expect(buttonRows(toggled[0] as never)).toContain("⬜ YouTube Shorts");
+      expect(getConversationState(backendDb, 42, "intake")?.data.targets).toEqual(["instagram_reels"]);
+    }, VIDEO_TEST_CHANNELS));
+
+  /** A publication with no platform can never be published, so the last one on
+   * is not a choice the screen offers to undo. */
+  it("refuses to turn off the last selected platform", () =>
+    withDb(async (backendDb) => {
+      await capture(backendDb, { document: { file_id: "v10", file_name: "clip.mp4", mime_type: "video/mp4" } }, "video");
+      toggleIntakeVideoTarget(backendDb, 42, "youtube_shorts");
+
+      const refused = toggleIntakeVideoTarget(backendDb, 42, "instagram_reels");
+
+      expect(refused[0]).toMatchObject({ type: "answer-callback" });
+      expect(getConversationState(backendDb, 42, "intake")?.data.targets).toEqual(["instagram_reels"]);
+    }, VIDEO_TEST_CHANNELS));
 
   it("does not download a bare video until the language is answered", () =>
     withDb(async (backendDb) => {

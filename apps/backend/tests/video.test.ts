@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { attachVideoAsset, handleVideoConversationMessage, startVideoDraft } from "../src/bot/video-conversation.js";
-import { getVideoState, saveVideoState } from "../src/bot/video-ui.js";
+import { getVideoState, saveVideoState, videoScheduleConfirmationEffects } from "../src/bot/video-ui.js";
 import { registerChannel } from "../src/channels/registry.js";
 import {
   socialComments,
@@ -16,6 +16,7 @@ import {
   videoTargets,
 } from "../src/db/schema.js";
 import { recoverVideoLocks, runVideoCycle } from "../src/delivery/video-worker.js";
+import { t } from "../src/foundation/i18n/index.js";
 import { videoPreview } from "../src/interfaces/telegram/video-preview.js";
 import { listVideoTargets } from "../src/publishing/video-data.js";
 import { cancelVideo, replaceVideoTargets, retryVideoTarget, saveVideoMetadata, scheduleVideo } from "../src/publishing/video-service.js";
@@ -28,6 +29,11 @@ import { useBackendDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoAsset, createTestVideoDraft } from "./helpers/video.js";
+
+function buttonLabels(effect: unknown): string[] {
+  const markup = (effect as { options?: { reply_markup?: { inline_keyboard?: Array<Array<{ text: string }>> } } }).options?.reply_markup;
+  return (markup?.inline_keyboard ?? []).flat().map((button) => button.text);
+}
 
 const TECHNICAL_CHECK: VideoTechnicalCheck = {
   width: 1080,
@@ -605,7 +611,12 @@ describe("video publication queue", () => {
       ...services,
       videos: { ...services.videos, assetTechnicalCheck: async () => ({ ...TECHNICAL_CHECK, seconds }) },
     });
-    const session = saveVideoState(backendDb, 42, { draftId: null, step: "asset", selected: [], data: { videoLocale: "ru" } });
+    const session = saveVideoState(backendDb, 42, {
+      draftId: null,
+      step: "asset",
+      selected: ["youtube_shorts", "instagram_reels"],
+      data: { videoLocale: "ru" },
+    });
 
     const asked = await attachVideoAsset(backendDb, config, 42, session, assetId, probed(VIDEO_LENGTH_WARNING_SECONDS + 1));
 
@@ -622,12 +633,113 @@ describe("video publication queue", () => {
     expect(getVideoState(backendDb, 42)?.step).not.toBe("asset");
   });
 
+  /** The destination screen's answer is what the draft is made of: a video
+   * meant for Instagram alone gets Instagram's targets and Instagram's
+   * question, and is never asked for a YouTube title it will not use. */
+  it("creates only the platforms the operator chose and asks only their questions", async () => {
+    const backendDb = testDb.open();
+    const config = videoConfig();
+    const assetId = createTestVideoAsset(backendDb, 42, "/tmp/ig-only.mp4");
+    const session = saveVideoState(backendDb, 42, {
+      draftId: null,
+      step: "asset",
+      selected: ["instagram_reels"],
+      data: { videoLocale: "ru" },
+    });
+
+    const effects = await startVideoDraft(backendDb, config, 42, session, assetId);
+
+    expect(effects[0]).toMatchObject({ text: expect.stringContaining("Instagram Reels") });
+    expect(getVideoState(backendDb, 42)?.step).toBe("instagram_caption");
+    expect(
+      backendDb.db
+        .select()
+        .from(videoTargets)
+        .all()
+        .map((row) => row.target),
+    ).toEqual(["instagram_reels"]);
+  });
+
+  /** A value a platform would refuse is answered by the question itself, with
+   * the controls that question carries. The bare error under a lone cancel left
+   * an over-long title with no way back into the wizard. */
+  it("re-asks the step, with its own controls, when a typed value is refused", async () => {
+    const backendDb = testDb.open();
+    const config = videoConfig();
+    const assetId = createTestVideoAsset(backendDb, 42, "/tmp/too-long.mp4");
+    const session = saveVideoState(backendDb, 42, {
+      draftId: null,
+      step: "asset",
+      selected: ["youtube_shorts"],
+      data: { videoLocale: "ru" },
+    });
+    await startVideoDraft(backendDb, config, 42, session, assetId);
+    await handleVideoConversationMessage(videoContext({ text: "A usable title" }).context, backendDb, config);
+    expect(getVideoState(backendDb, 42)?.step).toBe("youtube_description");
+
+    const refused = await handleVideoConversationMessage(videoContext({ text: "x".repeat(5_000) }).context, backendDb, config);
+
+    expect((refused.effects[0] as { text: string }).text).toContain(t("en", "video.prompt-yt-description"));
+    expect(buttonLabels(refused.effects[0])).toContain(t("en", "common.back"));
+    // The step did not move on: the question is still the one being answered.
+    expect(getVideoState(backendDb, 42)?.step).toBe("youtube_description");
+  });
+
+  /** Every platform of a video publication shows the same file, so the previews
+   * carry only the metadata that differs and the clip is offered once, by the
+   * button on the confirmation. Sent per platform, it was the same 35 MB twice,
+   * pushing the metadata off the screen. */
+  it("keeps the clip out of the per-platform previews and offers it once as the source", () => {
+    const backendDb = testDb.open();
+    const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
+    replaceVideoTargets(backendDb, draftId, ["youtube_shorts", "instagram_reels"]);
+    saveVideoMetadata(backendDb, draftId, "youtube_shorts", { title: "Title", description: "", tags: [] });
+
+    const delivery = createStudioServices(backendDb, videoConfig()).videos.preview(42, draftId).delivery;
+
+    expect(delivery.projections).toHaveLength(2);
+    expect(delivery.projections.every((projection) => projection.media.length === 0)).toBe(true);
+    expect(delivery.source).toMatchObject({ type: "video" });
+  });
+
+  it("puts the one clip behind a button on the schedule confirmation", () => {
+    const backendDb = testDb.open();
+    const config = videoConfig();
+    const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
+    replaceVideoTargets(backendDb, draftId, ["youtube_shorts"]);
+    const session = saveVideoState(backendDb, 42, {
+      draftId,
+      step: "schedule_confirm",
+      selected: ["youtube_shorts"],
+      data: {},
+    });
+    const services = createStudioServices(backendDb, config);
+
+    const effects = videoScheduleConfirmationEffects(
+      backendDb,
+      config,
+      42,
+      session,
+      { youtube_shorts: new Date("2026-09-04T08:00:00.000Z") },
+      services,
+    );
+
+    const confirmation = effects.find((effect) => effect.type === "prompt");
+    expect(buttonLabels(confirmation)).toEqual([t("en", "video.show-source"), t("en", "common.confirm"), t("en", "common.back")]);
+    expect(JSON.stringify(confirmation)).toContain(`delivery_preview_video:${draftId}`);
+  });
+
   it("attaches a clip within the length threshold without asking", async () => {
     const backendDb = testDb.open();
     const config = videoConfig();
     const assetId = createTestVideoAsset(backendDb, 42, "/tmp/short-video.mp4");
     const services = createStudioServices(backendDb, config);
-    const session = saveVideoState(backendDb, 42, { draftId: null, step: "asset", selected: [], data: { videoLocale: "ru" } });
+    const session = saveVideoState(backendDb, 42, {
+      draftId: null,
+      step: "asset",
+      selected: ["youtube_shorts", "instagram_reels"],
+      data: { videoLocale: "ru" },
+    });
 
     const effects = await attachVideoAsset(backendDb, config, 42, session, assetId, {
       ...services,

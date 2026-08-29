@@ -10,6 +10,7 @@ import type { MessageKey } from "../foundation/i18n/index.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
+import { type VideoTarget, videoTargetLabel } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { clearConversationState, getConversationState, saveConversationState } from "./conversation-state.js";
@@ -19,7 +20,7 @@ import { extractMessage } from "./message.js";
 import { createPostFromMessage } from "./post-screen.js";
 import { screenCallback } from "./screen-callback.js";
 import { attachVideoAsset } from "./video-conversation.js";
-import { saveVideoState } from "./video-ui.js";
+import { connectedVideoTargets, saveVideoState } from "./video-ui.js";
 
 const MARKDOWN_EXTENSIONS = [".md", ".markdown", ".mdx"];
 
@@ -177,19 +178,72 @@ export async function applyIntakeKind(
   }
 
   if (!captured.video) throw new StudioError("intake.expired");
+  const targets = connectedVideoTargets(backendDb);
   saveConversationState(backendDb, actorId, {
     kind: "intake",
     draftId: null,
     step: "video_locale",
-    data: captured as unknown as Record<string, unknown>,
+    data: { ...(captured as unknown as Record<string, unknown>), targets },
     controlMessageId: null,
   });
-  const keyboard = new InlineKeyboard()
+  return [videoDestinationScreen(backendDb, locale, targets, mode)];
+}
+
+/** Where this video goes: the platforms it is sent to and the audience it is
+ * for, on one screen. The platforms are toggles because every connected one is
+ * the usual answer; the audience is the button that commits, so the usual
+ * answer stays a single tap. Nothing is asked at all when one platform is
+ * connected -- there is no choice to make. */
+function videoDestinationScreen(
+  backendDb: BackendDb,
+  locale: StudioLocale,
+  selected: VideoTarget[],
+  mode: "reply" | "edit",
+): PublicationEffect {
+  const connected = connectedVideoTargets(backendDb);
+  const keyboard = new InlineKeyboard();
+  if (connected.length > 1) {
+    for (const target of connected)
+      keyboard.text(`${selected.includes(target) ? "✅" : "⬜"} ${videoTargetLabel(target)}`, screenCallback("intake_target", [target]));
+    keyboard.row();
+  }
+  keyboard
     .text(t(locale, "video.language-ru"), screenCallback("intake_locale", ["ru"]))
     .text(t(locale, "video.language-en"), screenCallback("intake_locale", ["en"]))
     .row()
     .text(t(locale, "common.cancel"), screenCallback("intake_cancel"));
-  return [{ type: "screen", mode, text: t(locale, "video.choose-language"), options: { reply_markup: keyboard } }];
+  return { type: "screen", mode, text: t(locale, "video.choose-language"), options: { reply_markup: keyboard } };
+}
+
+/** Turns one platform on or off on the destination screen. The last selected
+ * one cannot be turned off: a publication with no platform is not a choice the
+ * operator is making, it is a draft that can never be published. */
+export function toggleIntakeVideoTarget(backendDb: BackendDb, actorId: number, target: VideoTarget): PublicationEffect[] {
+  const state = getConversationState(backendDb, actorId, "intake");
+  if (state?.step !== "video_locale") throw new StudioError("intake.expired");
+  const locale = settingsService(backendDb).locale(actorId);
+  const current = intakeVideoTargets(backendDb, actorId);
+  const next = current.includes(target)
+    ? current.filter((item) => item !== target)
+    : connectedVideoTargets(backendDb).filter((item) => current.includes(item) || item === target);
+  if (!next.length) return [{ type: "answer-callback", text: t(locale, "video.need-one-platform") }];
+  saveConversationState(backendDb, actorId, {
+    kind: "intake",
+    draftId: null,
+    step: "video_locale",
+    data: { ...state.data, targets: next },
+    controlMessageId: null,
+  });
+  return [videoDestinationScreen(backendDb, locale, next, "edit")];
+}
+
+/** The platforms the destination screen currently has selected. */
+function intakeVideoTargets(backendDb: BackendDb, actorId: number): VideoTarget[] {
+  const stored = getConversationState(backendDb, actorId, "intake")?.data.targets;
+  const connected = connectedVideoTargets(backendDb);
+  if (!Array.isArray(stored)) return connected;
+  const selected = connected.filter((target) => stored.includes(target));
+  return selected.length ? selected : connected;
 }
 
 /** Stores the video and hands it to the wizard in the chosen language. The file
@@ -206,12 +260,13 @@ export async function applyIntakeVideoLocale(
   if (state?.step !== "video_locale") throw new StudioError("intake.expired");
   const captured = capturedFrom(backendDb, actorId);
   if (!captured.video) throw new StudioError("intake.expired");
+  const selected = intakeVideoTargets(backendDb, actorId);
   const { assetId } = await storeTelegramVideo(ctx, backendDb, config, actorId, captured.video);
   clearConversationState(backendDb, actorId, "intake");
   const session = saveVideoState(backendDb, actorId, {
     draftId: null,
     step: "asset",
-    selected: [],
+    selected,
     data: { videoLocale },
     controlMessageId: null,
   });

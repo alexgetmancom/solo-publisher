@@ -4,7 +4,8 @@ import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { describeError, t } from "../foundation/i18n/index.js";
 import { clearTelegramAnalyticsDashboard } from "../interfaces/telegram/control-cards.js";
-import { sendThreadsPreviews } from "../interfaces/telegram/delivery-previews.js";
+import { sendThreadsPreviews, sendVideoSourcePreview } from "../interfaces/telegram/delivery-previews.js";
+import { VIDEO_TARGETS, type VideoTarget } from "../publishing/video-types.js";
 import { settingsService } from "../studio/services/settings.js";
 import {
   analyticsPeriod,
@@ -21,7 +22,7 @@ import {
 import { runCallbackAction } from "./callback-effects.js";
 import { resultNavigationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
-import { applyIntakeKind, applyIntakeVideoLocale, cancelIntake, publishReviewedArticle } from "./intake.js";
+import { applyIntakeKind, applyIntakeVideoLocale, cancelIntake, publishReviewedArticle, toggleIntakeVideoTarget } from "./intake.js";
 import { mainMenuText, showMainMenu } from "./menu-render.js";
 import { handleOperationsCallback } from "./operations-screen.js";
 import { showPostProgress } from "./progress-screen.js";
@@ -162,6 +163,12 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
     return true;
   },
   delivery_preview_threads: (screen) => threadsPreview(screen),
+  delivery_preview_video: async ({ ctx, backendDb, config, args }) => {
+    const id = screenNumber(args.id, { min: 1 });
+    if (id == null) return false;
+    await sendVideoSourcePreview(ctx, backendDb, config, id);
+    return true;
+  },
   stream_home: async ({ ctx, backendDb, config }) => {
     await ctx.answerCallbackQuery();
     await showStreamScreen(ctx, backendDb, config, "edit");
@@ -195,6 +202,12 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
       const choice = screen.args.locale;
       if (choice !== "ru" && choice !== "en") return [];
       return applyIntakeVideoLocale(screen.ctx, screen.backendDb, screen.config, actorId, choice);
+    }),
+  intake_target: (screen) =>
+    intakeAction(screen, async (actorId) => {
+      const target = screen.args.target;
+      if (!VIDEO_TARGETS.includes(target as VideoTarget)) return [];
+      return toggleIntakeVideoTarget(screen.backendDb, actorId, target as VideoTarget);
     }),
   intake_cancel: (screen) =>
     intakeAction(screen, async (actorId) => {

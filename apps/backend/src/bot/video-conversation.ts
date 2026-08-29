@@ -25,6 +25,7 @@ import {
   saveVideoState,
   type VideoConversationState,
   videoDurationLabel,
+  videoErrorEffects,
   videoStepEffects,
 } from "./video-ui.js";
 
@@ -82,11 +83,13 @@ export async function handleVideoConversationMessage(
     });
     return {
       handled: true,
-      effects: [
-        promptEffect(backendDb, actorId, "video", `🔴 ${t(locale, "video.value-error")}: ${describeError(locale, error)}`, {
-          plainText: true,
-        }),
-      ],
+      effects: videoErrorEffects(
+        backendDb,
+        config,
+        actorId,
+        session,
+        `🔴 ${t(locale, "video.value-error")}: ${describeError(locale, error)}`,
+      ),
     };
   }
 }
@@ -147,7 +150,7 @@ function videoLengthWarningEffects(
     ...session,
     draftId: null,
     step: "asset",
-    selected: [],
+    selected: session.selected,
     data: { ...session.data, assetId },
   });
   const keyboard = new InlineKeyboard().text(
@@ -169,7 +172,10 @@ export async function startVideoDraft(
   assetId: number,
   services: StudioServices = createStudioServices(backendDb, config),
 ): Promise<PublicationEffect[]> {
-  const selected = connectedVideoTargets(backendDb);
+  // The platforms the operator chose on the destination screen, which the
+  // session has carried since. Recomputing them from what is connected here is
+  // what made that choice unpublishable.
+  const selected = session.selected;
   if (!selected.length) throw new StudioError("err.no-video-platforms-connected");
   const videos = services.videos;
   const draftId = videos.create(actorId, assetId, session.data.videoLocale === "en" ? "en" : "ru");
@@ -250,7 +256,7 @@ async function acceptVideoScheduleDate({
   } catch (error) {
     const locale = settingsService(backendDb).locale(actorId);
     const message = describePublicationError(locale, error, services.settings.timeConfig(actorId, config));
-    return [promptEffect(backendDb, actorId, "video", message, { plainText: true })];
+    return videoErrorEffects(backendDb, config, actorId, session, message);
   }
   return applyVideoScheduleDate(backendDb, config, actorId, session, date, services);
 }

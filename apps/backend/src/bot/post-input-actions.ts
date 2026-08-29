@@ -7,6 +7,7 @@ import { formatZonedDateTime } from "../foundation/time.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { requireConversationState } from "./conversation-state.js";
+import { confirmationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
 import { extractMessage } from "./message.js";
 import { POST_FLOW, type PostFlowInput, type PostWizardStep, postStateStep } from "./post-flow.js";
@@ -62,18 +63,20 @@ function renderPostScheduleConfirmation(
   return scheduleConfirmationEffects({
     kind: "post",
     publicationId: draftId,
-    revision: state.revision,
     intro: card.text,
     title: t(locale, "common.confirm-schedule"),
     titlePrefix: "📅",
     entries: [{ key: step.locale, value: step.value }],
     label: (key) => key.toUpperCase(),
     formatValue: (value) => formatZonedDateTime(value, timeConfig.TIMEZONE, timeConfig.TIMEZONE_LABEL),
-    confirm: { label: t(locale, "post.confirm-schedule-btn"), callback: engine.confirmCallback() },
-    back: {
-      label: t(locale, "common.back"),
-      callback: publicationCallback("post", "view", [draftId, step.locale === "ru" ? "schedule_ru" : "schedule_en"]),
-    },
+    keyboard: confirmationKeyboard(
+      { label: t(locale, "post.confirm-schedule-btn"), callback: engine.confirmCallback() },
+      {
+        label: t(locale, "common.back"),
+        callback: publicationCallback("post", "view", [draftId, step.locale === "ru" ? "schedule_ru" : "schedule_en"]),
+      },
+      state.revision,
+    ),
     effects: [{ type: "delivery-previews", projections: posts.preview(actorId, draftId).delivery.projections, locale }],
   });
 }

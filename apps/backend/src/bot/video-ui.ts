@@ -12,10 +12,11 @@ import { createStudioServices, type StudioServices } from "../studio/services/in
 import { settingsService } from "../studio/services/settings.js";
 import { isVideoWizardStep, VIDEO_FLOW, type VideoConversationStep, type VideoWizardStep } from "../studio/video-fsm.js";
 import { type ConversationState, clearConversationState, getConversationState, saveConversationState } from "./conversation-state.js";
-import { appendCancelButton } from "./dialog-ui.js";
+import { appendCancelButton, appendConfirmationRow, promptEffect } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
 import { publicationCallback } from "./publication-callback.js";
 import { createPublicationScheduleEngine, SCHEDULE_SLOT_PRESETS, scheduleConfirmationEffects, scheduleTimeKeyboard } from "./scheduling.js";
+import { screenCallback } from "./screen-callback.js";
 
 export type { VideoConversationStep } from "../studio/video-fsm.js";
 export type VideoConversationState = ConversationState & {
@@ -109,6 +110,30 @@ export function videoStepEffects(
   }
   throw new StudioError("err.video-restart");
 }
+
+/** What an unusable value is answered with: the same question, carrying the
+ * same controls -- the flow's Back among them.
+ *
+ * A rejected value used to arrive as a bare error under a lone Cancel, so a
+ * title two characters too long left the wizard with no way back to the
+ * question it had just asked. Steps that are not a question of the flow's own
+ * (the upload, the rename from the card, a field edited on its own) keep the
+ * plain prompt: their way back is the cancel that returns to the card. */
+export function videoErrorEffects(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  session: VideoConversationState,
+  message: string,
+): PublicationEffect[] {
+  const rerenders = !session.data.is_single_edit && (isVideoWizardStep(session.step) || SCHEDULE_INPUT_STEPS.includes(session.step));
+  if (!rerenders) return [promptEffect(backendDb, actorId, "video", message, { plainText: true })];
+  const [first, ...rest] = videoStepEffects(backendDb, config, actorId, session);
+  if (first?.type !== "prompt") throw new StudioError("err.video-restart");
+  return [{ ...first, text: `${message}\n\n${first.text}` }, ...rest];
+}
+
+const SCHEDULE_INPUT_STEPS: readonly VideoConversationStep[] = ["schedule_common", "schedule_target"];
 
 function metadataPromptEffects(locale: StudioLocale, step: VideoWizardStep, session: VideoConversationState): PublicationEffect[] {
   const { revision } = session;
@@ -211,18 +236,25 @@ export function videoScheduleConfirmationEffects(
     axisLabel: videoTargetLabel,
     slotValues: [],
   });
+  // The clip itself is not in the previews above -- it is the same file for
+  // every platform -- so the one button that shows it sits here, next to the
+  // confirmation the operator is about to give.
+  const keyboard = new InlineKeyboard().text(t(locale, "video.show-source"), screenCallback("delivery_preview_video", [draftId])).row();
   return scheduleConfirmationEffects({
     kind: "video",
     publicationId: draftId,
-    revision: session.revision,
     title: t(locale, "common.confirm-schedule"),
     titlePrefix: "🎬",
     entries,
     label: videoTargetLabel,
     formatValue: (value) =>
       `${value.toLocaleString(locale === "ru" ? "ru-RU" : "en-GB", { timeZone: timeConfig.TIMEZONE })} ${timeConfig.TIMEZONE_LABEL}`,
-    confirm: { label: t(locale, "common.confirm"), callback: engine.confirmCallback() },
-    back: { label: t(locale, "common.back"), callback: publicationCallback("video", "schedule", [draftId]) },
+    keyboard: appendConfirmationRow(
+      keyboard,
+      { label: t(locale, "common.confirm"), callback: engine.confirmCallback() },
+      { label: t(locale, "common.back"), callback: publicationCallback("video", "schedule", [draftId]) },
+      session.revision,
+    ),
     effects: [{ type: "delivery-previews", projections: videos.preview(actorId, draftId).delivery.projections, locale }],
   });
 }

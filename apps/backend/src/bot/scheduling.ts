@@ -1,7 +1,6 @@
 import { InlineKeyboard } from "grammy";
 import type { PublicationKind } from "../application/conversation-flow.js";
 import type { PublicationScheduleAxis } from "../application/publication-pipeline.js";
-import { confirmationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
 import { publicationCallback, versionedCallback } from "./publication-callback.js";
 
@@ -77,21 +76,19 @@ export const SCHEDULE_SLOT_PRESETS = ["08:00", "11:00", "13:00", "18:00", "20:00
 export function scheduleConfirmationEffects<T extends string>(options: {
   kind: PublicationKind;
   publicationId: number;
-  revision: number;
   intro?: string;
   title: string;
   titlePrefix: string;
   entries: readonly { key: T; value: Date }[];
   label: (key: T) => string;
   formatValue: (value: Date) => string;
-  confirm: { label: string; callback: string };
-  back: { label: string; callback: string };
+  keyboard: InlineKeyboard;
   effects?: readonly PublicationEffect[];
 }): PublicationEffect[] {
   const lines = options.entries.map(({ key, value }) => `${options.label(key)}: ${options.formatValue(value)}`);
   const summary = [`${options.titlePrefix} *${options.title}*`, ...lines].join("\n");
   const text = options.intro ? `${options.intro}\n\n${summary}` : summary;
-  const keyboard = confirmationKeyboard(options.confirm, options.back, options.revision);
+  const keyboard = options.keyboard;
   return [
     ...(options.effects ?? []),
     {
