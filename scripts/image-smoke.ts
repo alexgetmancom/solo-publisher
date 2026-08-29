@@ -287,6 +287,9 @@ try {
         backgroundPath: "/app/apps/backend/assets/story-card/strata-master-background.png",
         assetsDir: "/app/apps/backend/assets/story-card",
         outputPath: "/tmp/text-story-card.jpg",
+        // What the worker passes from studio_profile. A named Studio here, so
+        // the smoke test also renders the wordmark's glyphs and not only the copy.
+        wordmark: "smoke studio",
         copy: {
           headline: "ChatGPT reached one billion weekly active users.",
           emoji: "⚡",
