@@ -12,6 +12,7 @@ import {
 import { sendTelegramArchiveMedia } from "../interfaces/telegram/delivery-previews.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
+import { showScreen } from "./effects.js";
 import { screenCallback } from "./screen-callback.js";
 import { choiceLabel } from "./settings/shared.js";
 import { ignoringUnchangedEdit, isUnchangedMessageEdit } from "./telegram-errors.js";
@@ -33,7 +34,7 @@ export async function showArchiveHome(ctx: Context, backendDb: BackendDb, config
   );
   keyboard.row().text(t(locale, "analytics.videos-btn", { count: summary.videos }), screenCallback("analytics_archive", [0]));
   keyboard.row().text(t(locale, "common.menu"), screenCallback("menu_home"));
-  await editScreen(ctx, summary.text, { parse_mode: "Markdown", reply_markup: keyboard });
+  await showScreen(ctx, summary.text, { parse_mode: "Markdown", reply_markup: keyboard });
 }
 
 export async function showMilestones(ctx: Context, backendDb: BackendDb, config: BackendConfig, offset: number): Promise<void> {
@@ -47,7 +48,7 @@ export async function showMilestones(ctx: Context, backendDb: BackendDb, config:
     .row()
     .text(t(locale, "common.menu"), screenCallback("menu_home"));
   clearTelegramAnalyticsDashboard(backendDb, actorId);
-  await editScreen(ctx, history.text, { reply_markup: keyboard });
+  await showScreen(ctx, history.text, { reply_markup: keyboard });
 }
 
 export async function showVideoArchive(ctx: Context, backendDb: BackendDb, config: BackendConfig, offset: number): Promise<void> {
@@ -60,7 +61,7 @@ export async function showVideoArchive(ctx: Context, backendDb: BackendDb, confi
     .text(t(locale, "analytics.back-archive"), screenCallback("archive_home"))
     .row()
     .text(t(locale, "common.menu"), screenCallback("menu_home"));
-  await editScreen(ctx, archive.text, { reply_markup: keyboard });
+  await showScreen(ctx, archive.text, { reply_markup: keyboard });
 }
 
 export async function showPostArchive(ctx: Context, backendDb: BackendDb, config: BackendConfig, offset: number): Promise<void> {
@@ -73,12 +74,12 @@ export async function showPostArchive(ctx: Context, backendDb: BackendDb, config
     .text(t(locale, "analytics.back-archive"), screenCallback("archive_home"))
     .row()
     .text(t(locale, "common.menu"), screenCallback("menu_home"));
-  await editScreen(ctx, archive.text, { reply_markup: keyboard });
+  await showScreen(ctx, archive.text, { reply_markup: keyboard });
 }
 
 export async function showVideoMetrics(ctx: Context, backendDb: BackendDb, config: BackendConfig, id: number): Promise<void> {
   const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-  await editScreen(ctx, createStudioServices(backendDb, config).analytics.videoMetrics(id, locale), {
+  await showScreen(ctx, createStudioServices(backendDb, config).analytics.videoMetrics(id, locale), {
     parse_mode: "Markdown",
     reply_markup: new InlineKeyboard()
       .text(t(locale, "analytics.back-archive"), screenCallback("analytics_archive", [0]))
@@ -97,7 +98,7 @@ export async function showPostMetrics(ctx: Context, backendDb: BackendDb, config
     .text(t(locale, "analytics.back-archive"), screenCallback("analytics_post_archive", [0]))
     .row()
     .text(t(locale, "common.menu"), screenCallback("menu_home"));
-  await editScreen(ctx, analytics.postMetrics(id, locale), { parse_mode: "Markdown", reply_markup: keyboard });
+  await showScreen(ctx, analytics.postMetrics(id, locale), { parse_mode: "Markdown", reply_markup: keyboard });
 }
 
 export async function sendPostArchiveMedia(ctx: Context, backendDb: BackendDb, config: BackendConfig, id: number): Promise<void> {
@@ -105,7 +106,11 @@ export async function sendPostArchiveMedia(ctx: Context, backendDb: BackendDb, c
   await sendTelegramArchiveMedia(ctx, createStudioServices(backendDb, config).analytics.postMedia(id, locale));
 }
 
-async function editScreen(ctx: Context, ...args: Parameters<Context["editMessageText"]>): Promise<void> {
+/** The analytics dashboard is a rich message, which Telegram can only edit --
+ * `reply` takes plain text and nothing else. So this one screen writes over the
+ * tap directly instead of going through the anchor, and it is the only screen
+ * in the bot that does. */
+async function editRichScreen(ctx: Context, ...args: Parameters<Context["editMessageText"]>): Promise<void> {
   await ignoringUnchangedEdit(() => ctx.editMessageText(...args));
 }
 
@@ -131,7 +136,7 @@ export async function showAnalyticsDashboard(
   const locale = settingsService(backendDb).locale(actorId);
   const dashboard = createStudioServices(backendDb, config).analytics.dashboard(section, days, locale);
   const keyboard = analyticsKeyboard(locale, section, days);
-  await editScreen(ctx, { html: dashboard.richHtml }, { reply_markup: keyboard });
+  await editRichScreen(ctx, { html: dashboard.richHtml }, { reply_markup: keyboard });
   const messageId = ctx.callbackQuery?.message?.message_id;
   if (Number.isSafeInteger(actorId) && messageId && ctx.chat?.id)
     setTelegramAnalyticsDashboard(backendDb, actorId, Number(ctx.chat.id), messageId, section, days);

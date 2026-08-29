@@ -5,9 +5,9 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { t } from "../../foundation/i18n/index.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState, getConversationState } from "../conversation-state.js";
+import { showScreen } from "../effects.js";
 import { mainMenuText } from "../menu-render.js";
 import { collectThreadsFollowers, collectXAnalyticsCsv } from "./analytics.js";
-
 import { buildNotificationsMenu, collectMilestoneThreshold, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
 import { buildPublishingMenu, collectYoutubeSignature } from "./publishing.js";
 import { isNavigationMessage, NOTIFICATIONS_MENU_ID, PUBLISHING_MENU_ID, SETTINGS_MENU_ID, SYSTEM_MENU_ID } from "./shared.js";
@@ -54,21 +54,21 @@ export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb, b
     range
       .submenu(t(locale, "settings.category-publishing"), PUBLISHING_MENU_ID, async (ctx) => {
         await ctx.answerCallbackQuery();
-        await ctx.editMessageText(t(locale, "settings.category-publishing-body"));
+        await showScreen(ctx, t(locale, "settings.category-publishing-body"));
       })
       .submenu(t(locale, "settings.category-notifications"), NOTIFICATIONS_MENU_ID, async (ctx) => {
         await ctx.answerCallbackQuery();
-        await ctx.editMessageText(t(locale, "settings.category-notifications-body"));
+        await showScreen(ctx, t(locale, "settings.category-notifications-body"));
       })
       .row()
       .submenu(t(locale, "settings.category-system"), SYSTEM_MENU_ID, async (ctx) => {
         await ctx.answerCallbackQuery();
-        await ctx.editMessageText(t(locale, "settings.category-system-body"));
+        await showScreen(ctx, t(locale, "settings.category-system-body"));
       })
       .row()
       .back(t(locale, "common.menu"), async (ctx) => {
         await ctx.answerCallbackQuery();
-        await ctx.editMessageText(mainMenuText(backendDb, config, Number(ctx.from?.id)));
+        await showScreen(ctx, mainMenuText(backendDb, config, Number(ctx.from?.id)));
       });
   });
   settings.register(publishing);
@@ -81,6 +81,6 @@ export async function showSettings(ctx: Context, backendDb: BackendDb, settingsM
   const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
   const text = t(locale, "settings.title");
   const options = { reply_markup: settingsMenu };
-  if (edit) await ctx.editMessageText(text, options);
-  else await ctx.reply(text, options);
+  if (edit) await showScreen(ctx, text, options);
+  else await showScreen(ctx, text, options);
 }

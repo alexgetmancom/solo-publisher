@@ -6,6 +6,7 @@ import { isDeploymentRevision, isDeploymentTarget, requestDeploymentPromote, req
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { settingsService } from "../studio/services/settings.js";
+import { showScreen } from "./effects.js";
 import { type ScreenCallback, screenCallback } from "./screen-callback.js";
 
 /** Operations callbacks are deliberately outside content/post screens.
@@ -32,7 +33,7 @@ export async function handleOperationsCallback(
   if (callback.id === "deploy_menu") {
     if (!isDeploymentRevision(revision)) return false;
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(deploymentMenuText(locale, revision), { reply_markup: deploymentMenuKeyboard(locale, revision) });
+    await showScreen(ctx, deploymentMenuText(locale, revision), { reply_markup: deploymentMenuKeyboard(locale, revision) });
     return true;
   }
 
@@ -66,7 +67,7 @@ async function askConfirmation(
   const confirmData =
     action === "rollback" ? screenCallback("deploy_rollback", [target, revision]) : screenCallback("deploy_promote", [target, revision]);
   const original = ctx.callbackQuery?.message && "text" in ctx.callbackQuery.message ? ctx.callbackQuery.message.text : undefined;
-  await ctx.editMessageText(`${original ? `${original}\n\n` : ""}⚠️ ${question}`, {
+  await showScreen(ctx, `${original ? `${original}\n\n` : ""}⚠️ ${question}`, {
     reply_markup: new InlineKeyboard()
       .text(t(locale, "common.confirm"), confirmData)
       .text(t(locale, "common.back"), screenCallback("deploy_menu", [revision])),
@@ -83,7 +84,7 @@ async function runDeployAction(
   action: () => Promise<{ ok: true; release: string; currentRevision: string } | { ok: false; message: string }>,
 ): Promise<void> {
   await ctx.answerCallbackQuery();
-  await ctx.editMessageText(progressText, { reply_markup: new InlineKeyboard() });
+  await showScreen(ctx, progressText, { reply_markup: new InlineKeyboard() });
   // Deliberately not awaited: the bot polls updates one at a time, and this
   // request alone can take up to ~150s (agent healthcheck plus image pull).
   // Awaiting it here would freeze every chat's buttons and messages until it
@@ -108,12 +109,7 @@ async function finishDeployAction(
     : t(locale, "ops.failed", { message: result.message });
   const revision = result.ok ? result.currentRevision : fallbackRevision;
   const body = `${finalText}\n\n${deploymentMenuText(locale, revision)}`;
-  const reply_markup = deploymentMenuKeyboard(locale, revision);
-  try {
-    await ctx.editMessageText(body, { reply_markup });
-  } catch {
-    await ctx.reply(body, { reply_markup });
-  }
+  await showScreen(ctx, body, { reply_markup: deploymentMenuKeyboard(locale, revision) });
 }
 
 function deploymentMenuKeyboard(locale: StudioLocale, revision: string): InlineKeyboard {

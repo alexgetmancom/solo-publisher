@@ -6,6 +6,7 @@ import { t } from "../foundation/i18n/index.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { showAnalyticsDashboard } from "./analytics-screen.js";
+import { showScreen } from "./effects.js";
 import { openIntake } from "./intake.js";
 import { showQueue } from "./queue.js";
 import { SETTINGS_MENU_ID } from "./settings/index.js";
@@ -51,7 +52,7 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
     (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"),
     SETTINGS_MENU_ID,
     async (ctx) => {
-      await ctx.editMessageText(t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"));
+      await showScreen(ctx, t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"));
     },
   );
   menu.register(settingsMenu);

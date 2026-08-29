@@ -90,6 +90,20 @@ export async function executePublicationEffects(ctx: Context, backendDb: Backend
   }
 }
 
+/** One screen and nothing else, which is what a whole screen handler is: the
+ * queue, an analytics page, a progress card, a settings category. It goes
+ * through the same anchor as every other screen, so no surface keeps its own
+ * answer to "edit or send". */
+export async function showScreen(ctx: Context, text: string, options?: Record<string, unknown>): Promise<void> {
+  await new ScreenAnchor(ctx).render(true, text, options);
+}
+
+/** A notice that must not swallow the screen it was asked from: the result of a
+ * send-now, a card the operator has scrolled past. */
+export async function showMessage(ctx: Context, text: string, options?: Record<string, unknown>): Promise<void> {
+  await new ScreenAnchor(ctx).render(false, text, options);
+}
+
 /** Where one update writes: over the tapped message while it is still the last
  * thing in the chat, and below it once anything else has been sent.
  *

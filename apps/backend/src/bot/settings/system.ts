@@ -7,6 +7,7 @@ import { STUDIO_LOCALE_NAMES, STUDIO_LOCALES, type StudioLocale } from "../../fo
 import { createStudioServices } from "../../studio/services/index.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
+import { showScreen } from "../effects.js";
 import { persistentKeyboard } from "../menu-render.js";
 import { buildAnalyticsMenus, threadsFollowersText } from "./analytics.js";
 import { backupText, buildBackupMenu } from "./notifications.js";
@@ -136,8 +137,8 @@ export function buildSystemMenu(config: BackendConfig, backendDb: BackendDb): Me
     createStudioServices(backendDb, config).settings.setLocale(actorId, locale);
     await ctx.answerCallbackQuery({ text: t(locale, "settings.language-set") });
     ctx.menu.nav(SETTINGS_MENU_ID);
-    await ctx.editMessageText(t(locale, "settings.title"));
-    await ctx.reply(t(locale, "settings.keyboard-updated"), { reply_markup: persistentKeyboard(locale) });
+    await showScreen(ctx, t(locale, "settings.title"));
+    await showScreen(ctx, t(locale, "settings.keyboard-updated"), { reply_markup: persistentKeyboard(locale) });
   }
 }
 
@@ -152,13 +153,13 @@ export async function collectTimezone(
   const locale = settingsService(backendDb).locale(actorId);
   try {
     createStudioServices(backendDb, config).settings.setTimezone(actorId, text);
-    await ctx.reply(t(locale, "settings.timezone-set", { timezone: text }));
-    await ctx.reply(timezoneText(backendDb, config, actorId, locale), {
+    await showScreen(ctx, t(locale, "settings.timezone-set", { timezone: text }));
+    await showScreen(ctx, timezoneText(backendDb, config, actorId, locale), {
       parse_mode: "Markdown",
       reply_markup: settingsMenu.at(TIMEZONE_MENU_ID),
     });
   } catch {
-    await ctx.reply(t(locale, "err.timezone-invalid"));
+    await showScreen(ctx, t(locale, "err.timezone-invalid"));
   }
   return true;
 }

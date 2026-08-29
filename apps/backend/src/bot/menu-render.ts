@@ -8,6 +8,7 @@ import { truncateUnicode } from "../foundation/text.js";
 import { formatZonedClock, zonedDayDistance } from "../foundation/time.js";
 import { queueService, type StudioQueueActivity } from "../studio/services/queue.js";
 import { settingsService } from "../studio/services/settings.js";
+import { executePublicationEffects } from "./effects.js";
 import { formatQueueTime } from "./queue-time.js";
 
 /** Rendering the main menu, separated from building it.
@@ -23,17 +24,10 @@ export function persistentKeyboard(locale: StudioLocale = "en"): Keyboard {
   return new Keyboard().text(t(locale, "menu.button")).resized().persistent();
 }
 
-export async function showMainMenu(
-  ctx: Context,
-  backendDb: BackendDb,
-  config: BackendConfig,
-  mainMenu: Menu<Context>,
-  edit = false,
-): Promise<void> {
-  const options = { reply_markup: mainMenu };
-  const text = mainMenuText(backendDb, config, Number(ctx.from?.id));
-  if (edit) await ctx.editMessageText(text, options);
-  else await ctx.reply(text, options);
+export async function showMainMenu(ctx: Context, backendDb: BackendDb, config: BackendConfig, mainMenu: Menu<Context>): Promise<void> {
+  await executePublicationEffects(ctx, backendDb, [
+    { type: "main-menu", menu: mainMenu, text: mainMenuText(backendDb, config, Number(ctx.from?.id)) },
+  ]);
 }
 
 export function mainMenuText(backendDb: BackendDb, config: BackendConfig, actorId: number): string {

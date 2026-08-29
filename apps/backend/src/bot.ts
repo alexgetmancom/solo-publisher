@@ -2,7 +2,7 @@ import { autoRetry } from "@grammyjs/auto-retry";
 import { Bot, type Context } from "grammy";
 import { runCallbackBoundary } from "./bot/callback-boundary.js";
 import { handlePublicationCallback, handlePublicationMessage } from "./bot/callback-router.js";
-import { executePublicationEffects } from "./bot/effects.js";
+import { executePublicationEffects, showMessage } from "./bot/effects.js";
 import { handleIntakeMessage, openIntake } from "./bot/intake.js";
 import { persistentKeyboard, showMainMenu } from "./bot/menu-render.js";
 import { buildMainMenu } from "./bot/navigation.js";
@@ -82,9 +82,7 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
 
   const showBotMenu = async (ctx: Context) => {
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-    await ctx.reply(t(locale, "start.menu-hint"), {
-      reply_markup: persistentKeyboard(locale),
-    });
+    await showMessage(ctx, t(locale, "start.menu-hint"), { reply_markup: persistentKeyboard(locale) });
     await showMainMenu(ctx, backendDb, config, mainMenu);
   };
   bot.command("start", showBotMenu);

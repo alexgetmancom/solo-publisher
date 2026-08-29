@@ -331,10 +331,8 @@ describe("Telegram work queue", () => {
         from: { id: 7 },
         chat: { id: 100 },
         callbackQuery: { message: { message_id: 9 } },
-        api: {
-          editMessageText: async (_chatId: number, _messageId: number, _text: string, nextOptions: typeof options) => {
-            options = nextOptions;
-          },
+        editMessageText: async (_text: string, nextOptions: typeof options) => {
+          options = nextOptions;
         },
       } as unknown as Context;
 

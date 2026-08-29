@@ -5,6 +5,7 @@ import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState, saveConversationState } from "../conversation-state.js";
+import { showScreen } from "../effects.js";
 
 export const SETTINGS_MENU_ID = "settings-menu";
 export const PUBLISHING_MENU_ID = "settings-publishing";
@@ -56,7 +57,7 @@ export async function askSettingsInput(
 ): Promise<void> {
   beginSettingsInput(backendDb, actorId, step, data);
   await ctx.answerCallbackQuery();
-  await ctx.editMessageText(text, { reply_markup: menu });
+  await showScreen(ctx, text, { reply_markup: menu });
 }
 
 /** Every category returns to the same root screen, and a `.back()` that leaves
@@ -65,7 +66,7 @@ export function backToSettings(backendDb: BackendDb) {
   return async (ctx: Context): Promise<void> => {
     clearConversationState(backendDb, Number(ctx.from?.id), "settings");
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"));
+    await showScreen(ctx, t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"));
   };
 }
 
@@ -96,7 +97,7 @@ export function settingsUpdate(options: {
   return async (ctx: Context): Promise<void> => {
     options.apply();
     await ctx.answerCallbackQuery(options.toast ? { text: options.toast } : undefined);
-    await ctx.editMessageText(options.body(), options.plainText ? undefined : { parse_mode: "Markdown" });
+    await showScreen(ctx, options.body(), options.plainText ? undefined : { parse_mode: "Markdown" });
   };
 }
 

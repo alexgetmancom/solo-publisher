@@ -10,6 +10,7 @@ import { createStudioServices } from "../../studio/services/index.js";
 import { NEWS_DIGEST_EFFORTS, settingsService } from "../../studio/services/settings.js";
 import { DEFAULT_MILESTONE_THRESHOLDS } from "../../studio.js";
 import { clearConversationState } from "../conversation-state.js";
+import { showMessage, showScreen } from "../effects.js";
 import {
   askSettingsInput,
   BACKUP_MENU_ID,
@@ -173,9 +174,9 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
         }
         await ctx.answerCallbackQuery({ text: t(locale, "settings.news-digest-send-started") });
         const result = await sendDailyNewsDigest(config, backendDb, bot, new Date(), { force: true });
-        if (result.status === "failed") await ctx.reply(t(locale, "settings.news-digest-send-failed", { error: result.error }));
-        else if (result.status === "missing_prompt") await ctx.reply(t(locale, "settings.news-digest-prompt-missing"));
-        else if (result.status === "already_sent") await ctx.reply(t(locale, "settings.news-digest-already-sent"));
+        if (result.status === "failed") await showMessage(ctx, t(locale, "settings.news-digest-send-failed", { error: result.error }));
+        else if (result.status === "missing_prompt") await showMessage(ctx, t(locale, "settings.news-digest-prompt-missing"));
+        else if (result.status === "already_sent") await showMessage(ctx, t(locale, "settings.news-digest-already-sent"));
       })
       .row()
       .back(
@@ -319,13 +320,13 @@ export async function collectNewsDigestPrompt(
   const locale = settingsService(backendDb).locale(actorId);
   try {
     createStudioServices(backendDb, config).settings.setNewsDigest({ prompt: text === "-" ? "" : text });
-    await ctx.reply(t(locale, "settings.news-digest-prompt-saved"));
-    await ctx.reply(newsDigestText(backendDb, config, locale), {
+    await showScreen(ctx, t(locale, "settings.news-digest-prompt-saved"));
+    await showScreen(ctx, newsDigestText(backendDb, config, locale), {
       parse_mode: "Markdown",
       reply_markup: settingsMenu.at(NEWS_DIGEST_MENU_ID),
     });
   } catch (error) {
-    await ctx.reply(describeError(locale, error));
+    await showScreen(ctx, describeError(locale, error));
   }
   return true;
 }
@@ -343,12 +344,12 @@ export async function collectNewsDigestTime(
   const hour = match ? Number(match[1]) : NaN;
   const minute = match ? Number(match[2]) : NaN;
   if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-    await ctx.reply(t(locale, "err.news-digest-time-invalid"));
+    await showScreen(ctx, t(locale, "err.news-digest-time-invalid"));
     return true;
   }
   createStudioServices(backendDb, config).settings.setNewsDigest({ hour, minute });
-  await ctx.reply(t(locale, "settings.news-digest-time-set", { time: formatTime(hour, minute) }));
-  await ctx.reply(newsDigestTimeText(backendDb, config, actorId, locale), {
+  await showScreen(ctx, t(locale, "settings.news-digest-time-set", { time: formatTime(hour, minute) }));
+  await showScreen(ctx, newsDigestTimeText(backendDb, config, actorId, locale), {
     parse_mode: "Markdown",
     reply_markup: settingsMenu.at(NEWS_DIGEST_TIME_MENU_ID),
   });
@@ -396,13 +397,13 @@ export async function collectMilestoneThreshold(
   const services = createStudioServices(backendDb, config);
   const current = services.settings.milestones().thresholds;
   if (!Number.isSafeInteger(threshold) || threshold < 1) {
-    await ctx.reply(describeError(locale, new StudioError("err.milestone-threshold-range")));
+    await showScreen(ctx, describeError(locale, new StudioError("err.milestone-threshold-range")));
     return true;
   }
   const removing = current.includes(threshold);
   services.settings.setMilestones({ thresholds: toggleThreshold(current, threshold) });
-  await ctx.reply(t(locale, removing ? "settings.milestones-custom-removed" : "settings.milestones-custom-added", { threshold }));
-  await ctx.reply(milestonesText(backendDb, config, locale), {
+  await showScreen(ctx, t(locale, removing ? "settings.milestones-custom-removed" : "settings.milestones-custom-added", { threshold }));
+  await showScreen(ctx, milestonesText(backendDb, config, locale), {
     parse_mode: "Markdown",
     reply_markup: settingsMenu.at(MILESTONES_MENU_ID),
   });

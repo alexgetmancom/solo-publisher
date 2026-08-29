@@ -1,4 +1,5 @@
 import type { BackendConfig } from "../../foundation/config.js";
+import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { formatZonedDateTime } from "../../foundation/time.js";
 
@@ -11,9 +12,5 @@ export function formatVideoTime(
   locale: StudioLocale,
   config: Pick<BackendConfig, "TIMEZONE" | "TIMEZONE_LABEL">,
 ): string {
-  return value
-    ? formatZonedDateTime(value, config.TIMEZONE, config.TIMEZONE_LABEL)
-    : locale === "ru"
-      ? "время не задано"
-      : "time is not set";
+  return value ? formatZonedDateTime(value, config.TIMEZONE, config.TIMEZONE_LABEL) : t(locale, "video.time-unset");
 }

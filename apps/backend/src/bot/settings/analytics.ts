@@ -10,6 +10,7 @@ import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
+import { showScreen } from "../effects.js";
 import { askSettingsInput, settingsUpdate, THREADS_FOLLOWERS_MENU_ID, X_IMPORT_MENU_ID } from "./shared.js";
 
 /** The two analytics screens. They used to hang off a category of their own,
@@ -79,15 +80,15 @@ export async function collectThreadsFollowers(
   const locale = settingsService(backendDb).locale(actorId);
   const count = Number(text.replace(/[\s,]/gu, ""));
   if (!Number.isSafeInteger(count) || count < 0) {
-    await ctx.reply(t(locale, "err.threads-followers-invalid"));
+    await showScreen(ctx, t(locale, "err.threads-followers-invalid"));
     return true;
   }
   importManualAnalytics(backendDb, {
     sampledAt: messageSampledAt(ctx),
     ...(account === "ru" ? { threadsRuFollowers: count } : { threadsEnFollowers: count }),
   });
-  await ctx.reply(t(locale, "settings.threads-saved", { account: account.toUpperCase(), count }));
-  await ctx.reply(threadsFollowersText(backendDb, locale), {
+  await showScreen(ctx, t(locale, "settings.threads-saved", { account: account.toUpperCase(), count }));
+  await showScreen(ctx, threadsFollowersText(backendDb, locale), {
     parse_mode: "Markdown",
     reply_markup: settingsMenu.at(THREADS_FOLLOWERS_MENU_ID),
   });
@@ -104,11 +105,11 @@ export async function collectXAnalyticsCsv(
   const locale = settingsService(backendDb).locale(actorId);
   const document = ctx.message && "document" in ctx.message ? ctx.message.document : undefined;
   if (!document) {
-    await ctx.reply(t(locale, "settings.x-import-expects-file"));
+    await showScreen(ctx, t(locale, "settings.x-import-expects-file"));
     return true;
   }
   if (!/\.csv$/iu.test(document.file_name ?? "")) {
-    await ctx.reply(t(locale, "settings.x-import-expects-file"));
+    await showScreen(ctx, t(locale, "settings.x-import-expects-file"));
     return true;
   }
   // Only once the file is the one being asked for: anything else leaves the
@@ -116,13 +117,14 @@ export async function collectXAnalyticsCsv(
   clearConversationState(backendDb, actorId, "settings");
   const apiFile = await ctx.api.getFile(document.file_id);
   if (!apiFile.file_path) {
-    await ctx.reply(t(locale, "settings.x-import-failed", { error: "no file path" }));
+    await showScreen(ctx, t(locale, "settings.x-import-failed", { error: "no file path" }));
     return true;
   }
   const downloaded = await materializeTelegramFile(config, { filePath: apiFile.file_path }, { extension: ".csv" });
   try {
     const result = importXAnalyticsCsv(backendDb, downloaded.path, messageSampledAt(ctx), document.file_name ?? undefined);
-    await ctx.reply(
+    await showScreen(
+      ctx,
       result.duplicateImport
         ? t(locale, "settings.x-import-duplicate")
         : t(locale, "settings.x-import-done", {
@@ -134,7 +136,7 @@ export async function collectXAnalyticsCsv(
       { parse_mode: "Markdown", reply_markup: settingsMenu.at(X_IMPORT_MENU_ID) },
     );
   } catch (error) {
-    await ctx.reply(t(locale, "settings.x-import-failed", { error: error instanceof Error ? error.message : String(error) }));
+    await showScreen(ctx, t(locale, "settings.x-import-failed", { error: error instanceof Error ? error.message : String(error) }));
   } finally {
     if (downloaded.temporary) await fs.promises.rm(downloaded.path, { force: true });
   }

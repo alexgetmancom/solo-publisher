@@ -12,6 +12,7 @@ import { escapeMarkdown } from "../../foundation/markdown.js";
 import { createStudioServices } from "../../studio/services/index.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
+import { showScreen } from "../effects.js";
 import {
   askSettingsInput,
   backToSettings,
@@ -103,7 +104,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
         if (channelId) createStudioServices(backendDb, config).channels.disable(channelId);
         openChannel.delete(actorId);
         await ctx.answerCallbackQuery({ text: t(locale, "settings.channel-disabled") });
-        await ctx.editMessageText(channelsText(backendDb, config, locale));
+        await showScreen(ctx, channelsText(backendDb, config, locale));
         ctx.menu.nav(CHANNELS_MENU_ID);
       })
       .row()
@@ -125,7 +126,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
             await studioChannels.connectZernio(option.accountId, discovered.locale, option.key);
             discoveredAccounts.delete(actorId);
             await ctx.answerCallbackQuery({ text: t(locale, "settings.channel-connected") });
-            await ctx.editMessageText(connectText(locale));
+            await showScreen(ctx, connectText(locale));
           })
           .row();
       }
@@ -145,7 +146,8 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
           const started = await studioChannels.startConnect("youtube", channelLocale);
           if (started.kind !== "device") throw new Error("YouTube is expected to answer with a code");
           await ctx.answerCallbackQuery();
-          await ctx.editMessageText(
+          await showScreen(
+            ctx,
             t(locale, "settings.device-code", {
               url: started.verificationUrl,
               code: started.userCode,
@@ -272,7 +274,7 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
       discoveredAccounts.set(actorId, { locale: channelLocale, options });
       const supportedAccounts = new Set(options.map(({ accountId }) => accountId));
       await ctx.answerCallbackQuery({ text: t(locale, "settings.channels-found", { count: options.length }) });
-      await ctx.editMessageText(connectText(locale, options.length, accounts.length - supportedAccounts.size));
+      await showScreen(ctx, connectText(locale, options.length, accounts.length - supportedAccounts.size));
       await ctx.menu.update();
     } catch {
       await ctx.answerCallbackQuery({ text: t(locale, "settings.channels-error"), show_alert: true });
@@ -290,8 +292,8 @@ export async function collectYoutubeSignature(
 ): Promise<boolean> {
   createStudioServices(backendDb, config).settings.setYoutubeSignature(text);
   const locale = settingsService(backendDb).locale(actorId);
-  await ctx.reply(t(locale, "settings.youtube-saved"));
-  await ctx.reply(youtubeSignatureText(backendDb, config, locale), {
+  await showScreen(ctx, t(locale, "settings.youtube-saved"));
+  await showScreen(ctx, youtubeSignatureText(backendDb, config, locale), {
     parse_mode: "Markdown",
     reply_markup: settingsMenu.at(YOUTUBE_SIGNATURE_MENU_ID),
   });

@@ -2,9 +2,9 @@ import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
-import { setTelegramPostProgressCard } from "../interfaces/telegram/control-cards.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
+import { executePublicationEffects } from "./effects.js";
 import { renderPostProgress } from "./progress.js";
 
 /** Renders and updates one durable publication-progress card in place. The
@@ -25,7 +25,12 @@ export async function showPostProgress(
     await ctx.answerCallbackQuery({ text: t(locale, "progress.remaining-cancelled") });
   } else await ctx.answerCallbackQuery();
   const progress = renderPostProgress(posts.progress(actorId, draftId), locale, view.details);
-  await ctx.editMessageText(progress.text, { parse_mode: "Markdown", reply_markup: progress.keyboard });
-  const messageId = ctx.callbackQuery?.message && "message_id" in ctx.callbackQuery.message ? ctx.callbackQuery.message.message_id : null;
-  if (messageId && ctx.chat?.id) setTelegramPostProgressCard(backendDb, draftId, Number(ctx.chat.id), messageId, view.details);
+  await executePublicationEffects(ctx, backendDb, [
+    {
+      type: "screen",
+      text: progress.text,
+      options: { parse_mode: "Markdown", reply_markup: progress.keyboard },
+      card: { kind: "post-progress", draftId, details: view.details },
+    },
+  ]);
 }

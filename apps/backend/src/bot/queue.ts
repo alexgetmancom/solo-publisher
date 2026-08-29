@@ -9,10 +9,10 @@ import { zonedCalendarDay } from "../foundation/time.js";
 import { createStudioServices } from "../studio/services/index.js";
 import type { StudioQueueAttentionItem, StudioQueueItem, StudioQueueSnapshot } from "../studio/services/queue.js";
 import { settingsService } from "../studio/services/settings.js";
+import { showScreen } from "./effects.js";
 import { publicationCallback } from "./publication-callback.js";
 import { formatQueueTime } from "./queue-time.js";
 import { screenCallback } from "./screen-callback.js";
-import { ignoringUnchangedEdit } from "./telegram-errors.js";
 
 const QUEUE_PAGE_SIZE = 10;
 const ATTENTION_PAGE_SIZE = 10;
@@ -168,8 +168,5 @@ function itemCallback(item: Pick<StudioQueueItem | StudioQueueAttentionItem, "id
 }
 
 async function replaceQueueMessage(ctx: Context, text: string, keyboard: InlineKeyboard): Promise<void> {
-  const messageId = ctx.callbackQuery?.message?.message_id;
-  const options = { parse_mode: "Markdown" as const, reply_markup: keyboard };
-  if (messageId && ctx.chat?.id) await ignoringUnchangedEdit(() => ctx.api.editMessageText(Number(ctx.chat?.id), messageId, text, options));
-  else await ctx.reply(text, options);
+  await showScreen(ctx, text, { parse_mode: "Markdown", reply_markup: keyboard });
 }

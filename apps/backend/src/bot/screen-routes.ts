@@ -60,7 +60,7 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
   menu_home: async ({ ctx, backendDb, config, mainMenu }) => {
     clearTelegramAnalyticsDashboard(backendDb, Number(ctx.from?.id));
     await ctx.answerCallbackQuery();
-    await showMainMenu(ctx, backendDb, config, mainMenu, true);
+    await showMainMenu(ctx, backendDb, config, mainMenu);
     return true;
   },
   queue_home: async ({ ctx, backendDb, config }) => {
