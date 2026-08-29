@@ -53,15 +53,17 @@ function renderOverview(
   const posts = [...(input.data?.posts ?? []), ...(input.previousData?.posts ?? [])].map((post) =>
     post.publication_key && covered.has(post.publication_key) ? { ...post, targets: { ...post.targets, x: undefined } } : post,
   );
-  return renderCombinedSection(
-    {
-      textLocales: ["ru", "en"],
-      videoLocales: ["ru", "en"],
-      ...input,
-      videoReach: input.video.dailyByDay,
-      textReach: textOverviewOf([...posts, ...items.map(xActivityPost)], [], days, "UTC"),
-    },
-    "ru",
+  return String(
+    renderCombinedSection(
+      {
+        textLocales: ["ru", "en"],
+        videoLocales: ["ru", "en"],
+        ...input,
+        videoReach: input.video.dailyByDay,
+        textReach: textOverviewOf([...posts, ...items.map(xActivityPost)], [], days, "UTC"),
+      },
+      "ru",
+    ),
   );
 }
 

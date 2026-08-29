@@ -32,7 +32,7 @@ describe("channel connection surfaces", () => {
       YOUTUBE_EN_CLIENT_SECRET: "youtube-en-secret",
     });
     config.ZERNIO_API_KEY = "z".repeat(16);
-    const html = renderStudioSection(config, backendDb, 1, "en");
+    const html = String(renderStudioSection(config, backendDb, 1, "en"));
 
     for (const { id } of directConnectTargets()) expect(html).toContain(`name="target" value="${id}"`);
     expect(html).toContain('name="platform" value="youtube"');
@@ -49,7 +49,7 @@ describe("channel connection surfaces", () => {
     const config = loadTestConfig({});
     registerTargetChannel(backendDb, "telegram_stories", { provider: "native" });
 
-    const html = renderStudioSection(config, backendDb, 1, "en");
+    const html = String(renderStudioSection(config, backendDb, 1, "en"));
     expect(html).toContain("missing credentials: 3");
     expect(html).toContain('action="/command-center/channels/disable"');
     expect(html).toContain('name="channel" value="telegram_stories"');

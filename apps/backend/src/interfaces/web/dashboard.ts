@@ -3,7 +3,7 @@ import { AUDIENCE_VIEWS, type AudienceView } from "../../botTargets.js";
 import { postLocales } from "../../channels/locales.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
-import { escapeHtml } from "../../foundation/html.js";
+import { type Html, html, raw } from "../../foundation/html.js";
 import { t } from "../../foundation/i18n/index.js";
 import { DEFAULT_STUDIO_LOCALE, parseStudioLocale, type StudioLocale } from "../../foundation/locale.js";
 import { log } from "../../foundation/logger.js";
@@ -172,25 +172,25 @@ export function renderDashboard(
   const content = renderPanel();
   const contentMs = Date.now() - contentStartedAt;
 
-  function renderPanel(): string {
+  function renderPanel(): Html {
     switch (panel) {
       case "queue":
         return renderQueueSection(ops ?? {}, locale);
       case "health":
-        return `${renderCredentialsSection(ops ?? {}, locale)}${renderDiagnosticsSection(ops ?? {}, locale)}`;
+        return html`${renderCredentialsSection(ops ?? {}, locale)}${renderDiagnosticsSection(ops ?? {}, locale)}`;
       default:
         return renderOverview();
     }
   }
 
-  function renderOverview(): string {
+  function renderOverview(): Html {
     if (showPosts) {
       if (needsOnboarding) return renderStudioOnboarding(config, connectedChannelCount, locale);
       const readModel = loadDashboardReadModel(config, backendDb, videoCache, weekOffset, periodDays, videoView);
       return renderCombinedSection(buildOverviewData(readModel, activeView, platformMetric), locale);
     }
     if (showStudio) return renderStudioSection(config, backendDb, studioActorId, locale);
-    return "";
+    return html``;
   }
 
   // Everything except the overview lives behind the overflow menu: the operator
@@ -208,29 +208,27 @@ export function renderDashboard(
   ];
   const activeSecondary = secondaryTabs.find((tab) => tab.active);
   const menuAttention = secondaryTabs.some((tab) => tab.attention);
-  const overviewTab = `<a class="${panel === "overview" && activeTab === "posts" ? "active" : ""}" href="${panelLink("overview")}">${t(locale, "cc.nav.overview")}</a>`;
+  const overviewTab = html`<a class="${panel === "overview" && activeTab === "posts" ? "active" : ""}" href="${panelLink("overview")}">${t(locale, "cc.nav.overview")}</a>`;
   // Not open on arrival even when one of its entries is the current section:
   // the panel would drop over the content the operator just navigated to. The
   // control names the section instead.
-  const menu = `<details class="nav-more">
-    <summary class="nav-more__toggle${activeSecondary ? " active" : ""}${menuAttention ? " nav-more__toggle--attention" : ""}" aria-label="${t(locale, "cc.nav.more-sections")}">${activeSecondary ? escapeHtml(activeSecondary.label) : "···"}</summary>
-    <div class="nav-more__menu">${secondaryTabs
-      .map(
-        (tab) =>
-          `<a class="${tab.active ? "active" : ""}" href="${tab.href}">${escapeHtml(tab.label)}${tab.attention ? '<i class="nav-dot"></i>' : ""}</a>`,
-      )
-      .join("")}</div>
+  const menu = html`<details class="nav-more">
+    <summary class="nav-more__toggle${activeSecondary ? " active" : ""}${menuAttention ? " nav-more__toggle--attention" : ""}" aria-label="${t(locale, "cc.nav.more-sections")}">${activeSecondary ? activeSecondary.label : "···"}</summary>
+    <div class="nav-more__menu">${secondaryTabs.map(
+      (tab) =>
+        html`<a class="${tab.active ? "active" : ""}" href="${tab.href}">${tab.label}${tab.attention ? raw('<i class="nav-dot"></i>') : ""}</a>`,
+    )}</div>
   </details>`;
   const localeSwitcher = renderLocaleSwitcher(locale, localeLink);
   // The overview is one complete Studio surface: text and video stay side by
   // side, with only the period, platform and metric filters remaining.
-  const body = `
+  const body = html`
     <nav class="dashboard-tabs"><span class="dashboard-tabs__start">${overviewTab}${menu}</span><span class="dashboard-tabs__end">${overviewControls}${localeSwitcher}${dashboardThemeToggleHtml(t(locale, "cc.theme.toggle"))}</span></nav>
     <section id="overview" class="overview">${content}</section>`;
   const shellStartedAt = Date.now();
-  const html = renderDashboardShell(body, locale);
+  const page = renderDashboardShell(body, locale);
   const shellMs = Date.now() - shellStartedAt;
-  rememberDashboard(cache, cacheKey, html);
+  rememberDashboard(cache, cacheKey, page);
   log("info", "dashboard render timing", {
     cacheHit: false,
     fingerprintMs,
@@ -238,9 +236,9 @@ export function renderDashboard(
     contentMs,
     shellMs,
     totalMs: Date.now() - renderStartedAt,
-    htmlBytes: Buffer.byteLength(html),
+    htmlBytes: Buffer.byteLength(page),
   });
-  return html;
+  return page;
 }
 
 /** Builds only the bounded read-only fragment requested by the dashboard list. */
@@ -303,7 +301,7 @@ function dashboardTargetIds(requestedView: string | undefined): string[] | undef
 
 export function renderCommandCenterLogin(locale: StudioLocale, error = false): string {
   return renderDashboardShell(
-    `<section class="command-login"><h1>Command Center</h1><p class="note">${t(locale, "cc.login.prompt")}</p>${error ? `<p class="login-error">${t(locale, "cc.login.invalid-token")}</p>` : ""}<form method="post" action="/command-center"><input type="hidden" name="locale" value="${locale}"><input type="password" name="token" autocomplete="current-password" aria-label="${t(locale, "cc.login.token-label")}" placeholder="${t(locale, "cc.login.token-label")}" required><button type="submit">${t(locale, "cc.login.open")}</button></form></section>`,
+    html`<section class="command-login"><h1>Command Center</h1><p class="note">${t(locale, "cc.login.prompt")}</p>${error ? html`<p class="login-error">${t(locale, "cc.login.invalid-token")}</p>` : ""}<form method="post" action="/command-center"><input type="hidden" name="locale" value="${locale}"><input type="password" name="token" autocomplete="current-password" aria-label="${t(locale, "cc.login.token-label")}" placeholder="${t(locale, "cc.login.token-label")}" required><button type="submit">${t(locale, "cc.login.open")}</button></form></section>`,
     locale,
   );
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { PipelinePost } from "../src/analytics/pipeline-payload.js";
+import { html as htmlFragment } from "../src/foundation/html.js";
 import { renderOverviewSparkline } from "../src/interfaces/web/dashboard/chart.js";
 import { formatMetricValue, getMskDateString, shortPipelineText } from "../src/interfaces/web/dashboard/format.js";
 import { renderHeroCard, renderHeroMicroMetrics } from "../src/interfaces/web/dashboard/hero-section.js";
@@ -40,7 +41,7 @@ describe("dashboard formatting", () => {
       progressPercent: 0,
     };
 
-    const html = renderHeroCard(metrics, "ru");
+    const html = String(renderHeroCard(metrics, "ru"));
 
     expect(html).toContain("<strong>0</strong>");
     expect(html).not.toContain("−100%");
@@ -49,23 +50,25 @@ describe("dashboard formatting", () => {
   });
 
   it("formats video completion as a percentage with one decimal place", () => {
-    const html = renderHeroMicroMetrics(
-      {
-        kind: "video",
-        views: 100,
-        freshViews: 40,
-        medianViews: null,
-        completionRate: 24.91925664721141,
-        averageWatchTimeMs: 11_500,
-        subscribers: 15,
-        countLabel: "1 ролик",
-        normLabel: "норма дня",
-        contextLabel: "ОХВАТ",
-        paceLabel: null,
-        projectionViews: null,
-        progressPercent: null,
-      },
-      "ru",
+    const html = String(
+      renderHeroMicroMetrics(
+        {
+          kind: "video",
+          views: 100,
+          freshViews: 40,
+          medianViews: null,
+          completionRate: 24.91925664721141,
+          averageWatchTimeMs: 11_500,
+          subscribers: 15,
+          countLabel: "1 ролик",
+          normLabel: "норма дня",
+          contextLabel: "ОХВАТ",
+          paceLabel: null,
+          projectionViews: null,
+          progressPercent: null,
+        },
+        "ru",
+      ),
     );
 
     expect(html).toContain("<b>24.9%</b> досмотры");
@@ -102,7 +105,7 @@ describe("dashboard formatting", () => {
 
 describe("dashboard shell", () => {
   it("keeps a hidden overview tooltip hidden after the pointer leaves a chart", () => {
-    const html = renderDashboardShell("", "ru");
+    const html = renderDashboardShell(htmlFragment``, "ru");
     expect(html).toContain(".overview-chart-tooltip[hidden] { display:none; }");
     expect(html).toContain(".overview-platforms__column + .overview-platforms__column { margin-left:-14px;");
     // The destination block sizes to the rows drawn instead of reserving a fixed
@@ -117,22 +120,24 @@ describe("dashboard shell", () => {
     // The fragment cache stores main.innerHTML. A marker written as an attribute
     // is serialized into it and comes back on listener-less elements, which left
     // "show more" and the chart tooltips inert on every cached navigation.
-    const html = renderDashboardShell("", "ru");
+    const html = renderDashboardShell(htmlFragment``, "ru");
     expect(html).toContain("const bound = new WeakSet()");
     expect(html).not.toContain("dataset.bound");
   });
 
   it("puts the overview ceiling on the busiest day itself, so its bar fills the band", () => {
-    const html = renderOverviewSparkline(
-      [
-        { label: "normal", value: 30_000 },
-        { label: "best", value: 55_000 },
-      ],
-      "var(--series-views)",
-      "Просмотры",
-      "30 дней назад",
-      "сегодня",
-      "ru",
+    const html = String(
+      renderOverviewSparkline(
+        [
+          { label: "normal", value: 30_000 },
+          { label: "best", value: 55_000 },
+        ],
+        "var(--series-views)",
+        "Просмотры",
+        "30 дней назад",
+        "сегодня",
+        "ru",
+      ),
     );
 
     // The peak names the cap, so it reaches the line instead of being drawn
@@ -148,13 +153,15 @@ describe("dashboard shell", () => {
     // post that reached 55k. Scaled to the peak, the other 29 days are a 1px
     // line — the strip stops saying anything about the month it covers.
     const days = [...Array(29)].map((_, index) => ({ label: `day${index}`, value: 400 + (index % 5) * 120 }));
-    const html = renderOverviewSparkline(
-      [...days, { label: "viral", value: 55_000 }],
-      "var(--series-views)",
-      "Просмотры",
-      "30 дней назад",
-      "сегодня",
-      "ru",
+    const html = String(
+      renderOverviewSparkline(
+        [...days, { label: "viral", value: 55_000 }],
+        "var(--series-views)",
+        "Просмотры",
+        "30 дней назад",
+        "сегодня",
+        "ru",
+      ),
     );
 
     // The ceiling sits just over the ninetieth percentile of the ordinary days,
@@ -169,16 +176,18 @@ describe("dashboard shell", () => {
   });
 
   it("stops following the peak at the hard cap, and says which day was clipped", () => {
-    const html = renderOverviewSparkline(
-      [
-        { label: "normal", value: 10_000 },
-        { label: "viral", value: 75_000 },
-      ],
-      "var(--series-views)",
-      "Просмотры",
-      "30 дней назад",
-      "сегодня",
-      "ru",
+    const html = String(
+      renderOverviewSparkline(
+        [
+          { label: "normal", value: 10_000 },
+          { label: "viral", value: 75_000 },
+        ],
+        "var(--series-views)",
+        "Просмотры",
+        "30 дней назад",
+        "сегодня",
+        "ru",
+      ),
     );
 
     expect(html).toContain("50k");
@@ -189,16 +198,18 @@ describe("dashboard shell", () => {
   });
 
   it("scales the ceiling down to a young studio's numbers so its bars are readable", () => {
-    const html = renderOverviewSparkline(
-      [
-        { label: "quiet", value: 300 },
-        { label: "best", value: 1_400 },
-      ],
-      "var(--series-views)",
-      "Просмотры",
-      "30 дней назад",
-      "сегодня",
-      "ru",
+    const html = String(
+      renderOverviewSparkline(
+        [
+          { label: "quiet", value: 300 },
+          { label: "best", value: 1_400 },
+        ],
+        "var(--series-views)",
+        "Просмотры",
+        "30 дней назад",
+        "сегодня",
+        "ru",
+      ),
     );
 
     expect(html).toContain("1.4k");
@@ -283,29 +294,31 @@ describe("dashboard metrics", () => {
   });
 
   it("folds bot_views into the visible site views cell", () => {
-    const cell = targetCell(post({ ...published("site_ru", { views: 10, bot_views: 4 }), slug_ru: "s" }), "site_ru");
+    const cell = String(targetCell(post({ ...published("site_ru", { views: 10, bot_views: 4 }), slug_ru: "s" }), "site_ru"));
     expect(cell).toContain(">14<");
   });
 
   it("renders tildes while a target is still in flight and dashes when it never published", () => {
-    expect(targetCell(post({ targets: { x: { status: "queued" } } }), "x")).toBe(
+    expect(String(targetCell(post({ targets: { x: { status: "queued" } } }), "x"))).toBe(
       '<span class="mv">~</span><span class="ml">~</span><span class="mr">~</span><span class="mp">~</span>',
     );
-    expect(targetCell(post({ targets: { x: { status: "publishing" } } }), "x")).toContain("~");
-    expect(targetCell(post({ targets: { x: { status: "failed" } } }), "x")).toBe(
+    expect(String(targetCell(post({ targets: { x: { status: "publishing" } } }), "x"))).toContain("~");
+    expect(String(targetCell(post({ targets: { x: { status: "failed" } } }), "x"))).toBe(
       '<span class="mv">—</span><span class="ml">—</span><span class="mr">—</span><span class="mp">—</span>',
     );
   });
 
   it("distinguishes a collected zero from a metric that was never collected", () => {
-    const cell = targetCell(post(published("x", { views: 0 })), "x");
+    const cell = String(targetCell(post(published("x", { views: 0 })), "x"));
     expect(cell).toContain('<span class="mv">0</span>');
     // likes were never sampled, so the cell must not claim zero likes.
     expect(cell).toContain('<span class="ml">—</span>');
   });
 
   it("links the views cell when the target has a public URL and leaves the rest plain", () => {
-    const linked = targetCell(post({ ...published("x", { views: 7 }), targets: { x: { status: "published", external_id: "42" } } }), "x");
+    const linked = String(
+      targetCell(post({ ...published("x", { views: 7 }), targets: { x: { status: "published", external_id: "42" } } }), "x"),
+    );
     expect(linked).toContain('<a class="metric-link" href="https://x.com/alexgetmancom/status/42"');
     expect(linked).toContain('rel="noopener noreferrer"');
     expect(linked.match(/<a /g)?.length).toBe(1);
@@ -375,7 +388,7 @@ describe("a Studio that publishes one language", () => {
   it("heads its publications with what it actually published, and shows that copy alone", () => {
     // The row used to be titled by a machine translation the Studio never sent
     // anywhere, over an ENGLISH / RU ORIGINAL pair that claimed it published both.
-    const html = renderOverviewPublicationList("ru", ["ru"], [bilingual], ["telegram"]);
+    const html = String(renderOverviewPublicationList("ru", ["ru"], [bilingual], ["telegram"]));
 
     expect(html).toContain("Скидка 91% стала рекордной");
     expect(html).not.toContain("The 91% discount is the biggest");
@@ -384,7 +397,7 @@ describe("a Studio that publishes one language", () => {
   });
 
   it("keeps both languages for a Studio that publishes both", () => {
-    const html = renderOverviewPublicationList("ru", ["ru", "en"], [bilingual], ["telegram"]);
+    const html = String(renderOverviewPublicationList("ru", ["ru", "en"], [bilingual], ["telegram"]));
 
     expect(html).toContain("The 91% discount is the biggest");
     expect(html).toContain("ENGLISH");
@@ -394,24 +407,26 @@ describe("a Studio that publishes one language", () => {
 
 describe("renderOverviewPublicationList", () => {
   it("uses thin expandable rows and keeps the lower detail contract", () => {
-    const html = renderOverviewPublicationList(
-      "ru",
-      ["ru", "en"],
-      [
-        {
-          post_id: 1,
-          date: "2026-08-01T12:00:00.000Z",
-          text_en: "English copy",
-          full_text_en: "Full English copy",
-          text_ru: "Русский текст",
-          targets: { x: { status: "published", external_id: "123" } },
-          metrics: { x: { views: { value: 42 }, likes: { value: 4 }, replies: { value: 2 } } },
-          media_en_json: [{ url: "/media/post.jpg" }],
-        },
-      ],
-      ["x"],
-      [],
-      { limit: 4, moreUrl: "/api/publication-details" },
+    const html = String(
+      renderOverviewPublicationList(
+        "ru",
+        ["ru", "en"],
+        [
+          {
+            post_id: 1,
+            date: "2026-08-01T12:00:00.000Z",
+            text_en: "English copy",
+            full_text_en: "Full English copy",
+            text_ru: "Русский текст",
+            targets: { x: { status: "published", external_id: "123" } },
+            metrics: { x: { views: { value: 42 }, likes: { value: 4 }, replies: { value: 2 } } },
+            media_en_json: [{ url: "/media/post.jpg" }],
+          },
+        ],
+        ["x"],
+        [],
+        { limit: 4, moreUrl: "/api/publication-details" },
+      ),
     );
 
     expect(html).toContain('<div class="overview-publications__list">');
@@ -442,7 +457,7 @@ describe("renderOverviewPublicationList", () => {
         x: { views: { value: 18 }, likes: { value: 2 }, replies: { value: 1 } },
       },
     };
-    const html = renderOverviewPublicationList("ru", ["ru", "en"], [textPost], ["telegram", "x"]);
+    const html = String(renderOverviewPublicationList("ru", ["ru", "en"], [textPost], ["telegram", "x"]));
 
     expect(html).toContain("One two three four five six seven...");
     expect(html).toContain('class="post-detail__platform-summary post-detail__platform-summary--count"');
@@ -474,7 +489,7 @@ describe("renderOverviewPublicationList", () => {
       full_text_en: "Published everywhere",
       targets: Object.fromEntries(targetIds.map((target) => [target, { status: "published" }])),
     };
-    const html = renderOverviewPublicationList("ru", ["ru", "en"], [post], targetIds);
+    const html = String(renderOverviewPublicationList("ru", ["ru", "en"], [post], targetIds));
 
     expect(html).toContain('<b class="post-detail__platform-count">8</b>');
     expect(html).toContain("<b>EN</b>");
@@ -486,37 +501,39 @@ describe("renderOverviewPublicationList", () => {
   });
 
   it("renders a video row as icon plus locale without a source label", () => {
-    const html = renderOverviewPublicationList(
-      "ru",
-      ["ru", "en"],
-      [],
-      [],
-      [
-        {
-          key: "video:2",
-          destinations: [
-            {
-              target: "instagram_reels",
-              label: "Instagram RU",
-              locale: "RU",
-              providerAccountId: null,
-              url: "https://www.instagram.com/reel/CODE123/",
-              views: 100,
-              reactions: 8,
-              replies: 1,
-            },
-          ],
-          title: "First second third fourth fifth sixth seventh eighth",
-          url: "https://www.instagram.com/reel/CODE123/",
-          publishedAt: "2026-08-02T12:00:00.000Z",
-          views: 100,
-          reactions: 8,
-          replies: 1,
-          afterPeriodViews: 0,
-          lifetimeViews: 100,
-          subscribers: null,
-        },
-      ],
+    const html = String(
+      renderOverviewPublicationList(
+        "ru",
+        ["ru", "en"],
+        [],
+        [],
+        [
+          {
+            key: "video:2",
+            destinations: [
+              {
+                target: "instagram_reels",
+                label: "Instagram RU",
+                locale: "RU",
+                providerAccountId: null,
+                url: "https://www.instagram.com/reel/CODE123/",
+                views: 100,
+                reactions: 8,
+                replies: 1,
+              },
+            ],
+            title: "First second third fourth fifth sixth seventh eighth",
+            url: "https://www.instagram.com/reel/CODE123/",
+            publishedAt: "2026-08-02T12:00:00.000Z",
+            views: 100,
+            reactions: 8,
+            replies: 1,
+            afterPeriodViews: 0,
+            lifetimeViews: 100,
+            subscribers: null,
+          },
+        ],
+      ),
     );
 
     expect(html).toContain("First second third fourth fifth sixth seventh...");

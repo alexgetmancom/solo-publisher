@@ -1,3 +1,4 @@
+import { type Html, html } from "../../../foundation/html.js";
 /**
  * DASHBOARD DESIGN TOKENS
  *
@@ -149,6 +150,6 @@ html[data-theme="light"] {
 `;
 
 /** Markup for the switch. Sits in the tab bar, next to the period controls. */
-export function dashboardThemeToggleHtml(label: string): string {
-  return `<button type="button" class="theme-toggle" data-theme-toggle aria-label="${label}"></button>`;
+export function dashboardThemeToggleHtml(label: string): Html {
+  return html`<button type="button" class="theme-toggle" data-theme-toggle aria-label="${label}"></button>`;
 }

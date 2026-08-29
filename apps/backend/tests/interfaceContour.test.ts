@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Context } from "grammy";
+import * as ts from "../../../tools/layer-checker/node_modules/typescript/lib/typescript.js";
 import { runCallbackBoundary } from "../src/bot/callback-boundary.js";
 import type { BackendDb } from "../src/db/client.js";
 import { withDb } from "./helpers/db.js";
@@ -135,8 +136,59 @@ describe("telegram interface contour", () => {
   });
 });
 
+describe("web interface contour", () => {
+  const webSources = sourceFiles("apps/backend/src/interfaces/web");
+
+  /** A template literal carrying markup that is not tagged `html` is a hole
+   * where escaping is somebody's job to remember. It was remembered forty-five
+   * times and that was the whole guarantee: one post title with a quote in it
+   * renders a broken row, and nothing anywhere says so.
+   *
+   * Read from the syntax tree rather than by pattern: a nested fragment inside
+   * an already-tagged template is not a second untagged one, and no regular
+   * expression can tell those apart.
+   *
+   * Static assets -- the icons, the stylesheet, the client script -- are markup
+   * by definition and are marked once, with `raw`, where they are declared. */
+  const RAW_ASSET_FILES = new Set([
+    "apps/backend/src/interfaces/web/dashboard/assets.ts",
+    "apps/backend/src/interfaces/web/dashboard/shell-styles.ts",
+    "apps/backend/src/interfaces/web/dashboard/shell-script.ts",
+  ]);
+
+  it("builds every fragment of markup through the escaping tag", () => {
+    const offenders = webSources.filter((file) => !RAW_ASSET_FILES.has(file) && untaggedMarkup(source(file)).length > 0);
+    expect(offenders).toEqual([]);
+  });
+
+  /** The escaper is the tag's own business now. A call to it out here is either
+   * a fragment built the old way, or an escape applied twice. */
+  it("leaves escaping to the tag", () => {
+    const offenders = webSources.filter((file) => /\bescapeHtml\(/.test(source(file)));
+    expect(offenders).toEqual([]);
+  });
+});
+
 /** String literals carrying Russian, with comments removed first: an English
  * comment quoting what a screen said is not copy. */
+/** Template literals holding markup that no `html` or `raw` tag guards. */
+function untaggedMarkup(text: string): string[] {
+  const file = ts.createSourceFile("fragment.ts", text, ts.ScriptTarget.Latest, true);
+  const found: string[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isTemplateExpression(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+      const tagged = ts.isTaggedTemplateExpression(node.parent) && ts.isIdentifier(node.parent.tag) ? node.parent.tag.text : null;
+      if (tagged !== "html" && tagged !== "raw" && MARKUP.test(node.getText())) found.push(node.getText().slice(0, 80));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return found;
+}
+
+const MARKUP =
+  /<(?:div|span|a |section|article|button|details|summary|li|ul|tr|td|th|table|p |p>|h1|h2|h3|form|input|nav|b>|i |i>|em |strong|svg|rect|line|text |g>)/;
+
 function russianLiterals(text: string): string[] {
   const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
   return [...code.matchAll(/(["'`])((?:\\.|(?!\1)[^\\])*)\1/g)].map((match) => match[2] ?? "").filter((value) => /[А-Яа-яЁё]/.test(value));

@@ -306,7 +306,16 @@ describe("Astro endpoint controller", () => {
       expect(dashboard.status).toBe(200);
       expect(html).toContain("Обзор");
       expect(html).not.toContain("Аудитория и profile metrics");
-      expect(html).toContain('href="/command-center?tab=posts&panel=health"');
+      // `&` inside an attribute is written as the entity, which is what the tagged
+      // template does for every value it interpolates.
+      expect(html).toContain('href="/command-center?tab=posts&amp;panel=health"');
+      // A fragment that reached the page as text instead of markup is what a
+      // missing `html` tag looks like: the page still renders, with its own tags
+      // printed on it. Nothing in the Command Center writes a tag as content.
+      expect(html).not.toContain("&lt;div");
+      expect(html).not.toContain("&lt;span");
+      expect(html).not.toContain("&lt;section");
+      expect(html).not.toContain("&lt;svg");
       const englishDashboard = await app.request("/command-center?locale=en", { headers: { cookie: cookie ?? "" } });
       const englishHtml = await englishDashboard.text();
       expect(englishHtml).toContain('<html lang="en">');

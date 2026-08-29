@@ -204,15 +204,17 @@ function renderOverview(
   const posts = [...(input.data?.posts ?? []), ...(input.previousData?.posts ?? [])].map((post) =>
     post.publication_key && covered.has(post.publication_key) ? { ...post, targets: { ...post.targets, x: undefined } } : post,
   );
-  return renderCombinedSection(
-    {
-      textLocales: ["ru", "en"],
-      videoLocales: ["ru", "en"],
-      ...input,
-      videoReach: input.video.dailyByDay,
-      textReach: textOverviewOf([...posts, ...items.map(xActivityPost)], [], days, "UTC"),
-    },
-    "ru",
+  return String(
+    renderCombinedSection(
+      {
+        textLocales: ["ru", "en"],
+        videoLocales: ["ru", "en"],
+        ...input,
+        videoReach: input.video.dailyByDay,
+        textReach: textOverviewOf([...posts, ...items.map(xActivityPost)], [], days, "UTC"),
+      },
+      "ru",
+    ),
   );
 }
 
@@ -733,13 +735,13 @@ describe("unified overview rendering", () => {
       platformMetric: "followers",
     });
 
-    expect(reachHtml).toContain('href="/command-center?period=1&week_offset=0&metric=followers"');
+    expect(reachHtml).toContain('href="/command-center?period=1&amp;week_offset=0&amp;metric=followers"');
     expect(reachHtml).toContain('class="platform-metric-btn platform-metric-btn--active"');
     expect(followerHtml).toContain(">135</strong>");
     // The metric is named by the active switch itself; the panel carries no
     // separate heading repeating it.
     expect(followerHtml).toContain('aria-pressed="true">Подписчики</a>');
-    expect(followerHtml).toContain('href="/command-center?period=1&week_offset=0&video_view=instagram_reels%3Aru"');
+    expect(followerHtml).toContain('href="/command-center?period=1&amp;week_offset=0&amp;video_view=instagram_reels%3Aru"');
   });
 
   it("scopes the new overview to the selected text platform", () => {
@@ -795,8 +797,8 @@ describe("unified overview rendering", () => {
       projectionViews: 9_300,
       progressPercent: 114,
     };
-    const won = renderHeroCard(metrics, "ru");
-    const behind = renderHeroCard({ ...metrics, views: 1_200, paceLabel: "до нормы 2.4k", progressPercent: 33 }, "ru");
+    const won = String(renderHeroCard(metrics, "ru"));
+    const behind = String(renderHeroCard({ ...metrics, views: 1_200, paceLabel: "до нормы 2.4k", progressPercent: 33 }, "ru"));
 
     expect(won).toContain("overview-hero-card__heading--win");
     // The norm is an aside on the number's line, not a stacked second KPI.

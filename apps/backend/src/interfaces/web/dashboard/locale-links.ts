@@ -1,4 +1,4 @@
-import { escapeHtml } from "../../../foundation/html.js";
+import { type Html, html } from "../../../foundation/html.js";
 import { t } from "../../../foundation/i18n/index.js";
 import { DEFAULT_STUDIO_LOCALE, STUDIO_LOCALE_NAMES, STUDIO_LOCALES, type StudioLocale } from "../../../foundation/locale.js";
 
@@ -12,10 +12,10 @@ export function localeQuery(locale: StudioLocale): string {
  * from its caller because each surface knows which of its own parameters must
  * survive the switch — the markup, the order and the active state do not
  * differ between them, and a second copy would drift. */
-export function renderLocaleSwitcher(locale: StudioLocale, href: (target: StudioLocale) => string): string {
+export function renderLocaleSwitcher(locale: StudioLocale, href: (target: StudioLocale) => string): Html {
   const links = STUDIO_LOCALES.map(
     (target) =>
-      `<a href="${escapeHtml(href(target))}" hreflang="${target}" title="${escapeHtml(STUDIO_LOCALE_NAMES[target])}" class="${target === locale ? "active" : ""}">${target.toUpperCase()}</a>`,
-  ).join("");
-  return `<span class="dashboard-locale" aria-label="${escapeHtml(t(locale, "cc.language"))}">${links}</span>`;
+      html`<a href="${href(target)}" hreflang="${target}" title="${STUDIO_LOCALE_NAMES[target]}" class="${target === locale ? "active" : ""}">${target.toUpperCase()}</a>`,
+  );
+  return html`<span class="dashboard-locale" aria-label="${t(locale, "cc.language")}">${links}</span>`;
 }

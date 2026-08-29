@@ -1,5 +1,5 @@
 import type { DashboardMetricName, PipelinePost } from "../../../analytics/pipeline-payload.js";
-import { escapeHtml } from "../../../foundation/html.js";
+import { type Html, html } from "../../../foundation/html.js";
 import { jsonArray } from "../../../json.js";
 import { formatMetricValue } from "./format.js";
 import { getTargetUrl } from "./target-url.js";
@@ -53,13 +53,13 @@ export function postMetricTotals(post: PipelinePost, targetIds: string[]): Recor
   return totals;
 }
 
-export function targetCell(post: PipelinePost, target: string): string {
+export function targetCell(post: PipelinePost, target: string): Html {
   const status = getTargetStatus(post, target);
   if (status === "publishing" || status === "queued") {
-    return '<span class="mv">~</span><span class="ml">~</span><span class="mr">~</span><span class="mp">~</span>';
+    return html`<span class="mv">~</span><span class="ml">~</span><span class="mr">~</span><span class="mp">~</span>`;
   }
   if (status !== "published") {
-    return '<span class="mv">—</span><span class="ml">—</span><span class="mr">—</span><span class="mp">—</span>';
+    return html`<span class="mv">—</span><span class="ml">—</span><span class="mr">—</span><span class="mp">—</span>`;
   }
 
   const views = getTargetMetric(post, target, "views") + (isSiteTarget(target) ? getTargetMetric(post, target, "bot_views") : 0);
@@ -74,17 +74,16 @@ export function targetCell(post: PipelinePost, target: string): string {
     const hasMetric = hasTargetMetric(post, target, name);
     const text = !hasMetric ? "—" : value > 0 ? formatMetricValue(value) : "0";
     if (url && label === "mv") {
-      return `<a class="metric-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><span class="${label}">${escapeHtml(text)}</span></a>`;
+      return html`<a class="metric-link" href="${url}" target="_blank" rel="noopener noreferrer"><span class="${label}">${text}</span></a>`;
     }
-    return `<span class="${label}">${escapeHtml(text)}</span>`;
+    return html`<span class="${label}">${text}</span>`;
   };
 
-  return (
-    renderSubCell(values.views, "mv", "views") +
-    renderSubCell(values.likes, "ml", "likes") +
-    renderSubCell(values.replies, "mr", "replies") +
-    renderSubCell(values.reposts, "mp", "reposts")
-  );
+  return html`${renderSubCell(values.views, "mv", "views")}${renderSubCell(values.likes, "ml", "likes")}${renderSubCell(
+    values.replies,
+    "mr",
+    "replies",
+  )}${renderSubCell(values.reposts, "mp", "reposts")}`;
 }
 
 export function formatMedia(post: PipelinePost): string {

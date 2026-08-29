@@ -3,7 +3,7 @@ import { type DailyReach, emptyReachCounters, type ReachCounters } from "../../.
 import { type TextOverview, textDailyReach } from "../../../analytics/reach/text-overview.js";
 import type { XActivityDashboardItem } from "../../../analytics/x-activity-dashboard.js";
 import { targetLocale } from "../../../botTargets.js";
-import { escapeHtml } from "../../../foundation/html.js";
+import { type Html, html } from "../../../foundation/html.js";
 import { t } from "../../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../../foundation/locale.js";
 import { isCurrentCalendarDay } from "../../../foundation/time.js";
@@ -97,7 +97,7 @@ function localeColumns(trackLocales: readonly string[], rows: OverviewPlatformRo
 const TEXT_COLOR = "var(--series-text)";
 const VIDEO_COLOR = "var(--series-video)";
 
-export function renderCombinedSection(input: CombinedSectionInput, locale: StudioLocale): string {
+export function renderCombinedSection(input: CombinedSectionInput, locale: StudioLocale): Html {
   const { periodDays } = input;
   const posts = input.data?.posts ?? [];
   const extraX = additionalXActivityPosts(posts, input.xItems);
@@ -155,7 +155,7 @@ export function renderCombinedSection(input: CombinedSectionInput, locale: Studi
       ),
     ),
   );
-  return `<section class="pipeline-overview" style="--platform-rows:${Math.min(PLATFORM_SLOTS, platformRowCount)}">
+  return html`<section class="pipeline-overview" style="--platform-rows:${Math.min(PLATFORM_SLOTS, platformRowCount)}">
     <div class="overview-split">
       ${textColumn}
       ${videoColumn}
@@ -169,7 +169,7 @@ type OverviewPlatformRow = {
   key: string;
   label: string;
   locale: string | null;
-  icon: string;
+  icon: Html;
   views: number;
   followers: number | null;
   delta: number | null;
@@ -192,7 +192,7 @@ type OverviewTrack = {
   publications: { posts: PipelinePost[]; targetIds: string[]; videos: VideoContentItem[] };
 };
 
-function renderOverviewColumn(track: OverviewTrack, input: CombinedSectionInput, locale: StudioLocale): string {
+function renderOverviewColumn(track: OverviewTrack, input: CombinedSectionInput, locale: StudioLocale): Html {
   const kind = track.hero.kind;
   const history = overviewHistory(input, kind);
   const platformRows = overviewPlatformRows(input, kind, locale);
@@ -208,11 +208,11 @@ function renderOverviewColumn(track: OverviewTrack, input: CombinedSectionInput,
   // The filter has to say it is on and how to get out; without that the only way
   // back was editing the URL.
   const filterChip = activeRow?.href
-    ? `<a class="overview-track__filter" href="${escapeHtml(activeRow.href)}" title="${t(locale, "cc.overview.remove-filter")}">${escapeHtml(activeRow.label)}<i>×</i></a>`
+    ? html`<a class="overview-track__filter" href="${activeRow.href}" title="${t(locale, "cc.overview.remove-filter")}">${activeRow.label}<i>×</i></a>`
     : "";
   const historyLabel = t(locale, input.periodDays === 1 ? "cc.overview.history-30" : "cc.overview.period-start");
   const historyRightLabel = t(locale, input.periodDays === 1 ? "cc.overview.today" : "cc.overview.period-end");
-  return `<section class="overview-track overview-track--${kind}">
+  return html`<section class="overview-track overview-track--${kind}">
     ${filterChip}
     ${renderHeroCard(track.hero, locale)}
     ${renderOverviewSparkline(history, track.color, t(locale, "cc.overview.views-over-time", { track: title }), historyLabel, historyRightLabel, locale)}
@@ -230,7 +230,7 @@ function renderOverviewPlatforms(
   track: OverviewTrack,
   rows: OverviewPlatformRow[],
   locale: StudioLocale,
-): string {
+): Html {
   const { color, showMetricFilter, trackLocales } = track;
   const metricValue = (row: OverviewPlatformRow): number | null => (input.platformMetric === "reach" ? row.views : row.followers);
   const total = rows.reduce((sum, row) => sum + (metricValue(row) ?? 0), 0);
@@ -239,17 +239,15 @@ function renderOverviewPlatforms(
   const localeShare = (value: number) => (total > 0 ? Math.round((value / total) * 100) : 0);
   const segments =
     total > 0
-      ? rows
-          .map((row, index) => {
-            const value = metricValue(row) ?? 0;
-            if (value <= 0) return "";
-            const opacity = Math.max(0.2, 1 - index * 0.2);
-            const share = (value / total) * 100;
-            const tooltip = `${row.label}${row.locale ? ` ${row.locale.toUpperCase()}` : ""} · ${formatMetricValue(value)} · ${share.toFixed(1)}%${row.delta === null ? "" : ` · ${formatPlatformDelta(row.delta)}`}`;
-            return `<i data-tooltip="${escapeHtml(tooltip)}" style="width:${share.toFixed(3)}%;background:${color};opacity:${opacity.toFixed(2)}"></i>`;
-          })
-          .join("")
-      : `<i class="overview-platforms__empty-segment" style="width:100%;background:${color}"></i>`;
+      ? rows.map((row, index) => {
+          const value = metricValue(row) ?? 0;
+          if (value <= 0) return "";
+          const opacity = Math.max(0.2, 1 - index * 0.2);
+          const share = (value / total) * 100;
+          const tooltip = `${row.label}${row.locale ? ` ${row.locale.toUpperCase()}` : ""} · ${formatMetricValue(value)} · ${share.toFixed(1)}%${row.delta === null ? "" : ` · ${formatPlatformDelta(row.delta)}`}`;
+          return html`<i data-tooltip="${tooltip}" style="width:${share.toFixed(3)}%;background:${color};opacity:${opacity.toFixed(2)}"></i>`;
+        })
+      : html`<i class="overview-platforms__empty-segment" style="width:100%;background:${color}"></i>`;
   // The bar already splits the period RU from EN, so the legend under it is read
   // the same way: each side lists its own destinations, largest first. The
   // locale badge that used to sit on every row is gone with it — the column it
@@ -257,16 +255,16 @@ function renderOverviewPlatforms(
   // naming every destination in its hover text.
   const columns = localeColumns(trackLocales, rows);
   const ranked = input.platformMetric === "reach" ? rows : rows.filter((row) => !row.secondary);
-  const renderRow = (row: OverviewPlatformRow): string => {
+  const renderRow = (row: OverviewPlatformRow): Html => {
     const value = metricValue(row);
     const formatted = value === null ? "—" : formatMetricValue(value);
     const delta = input.platformMetric === "reach" ? formatPlatformDelta(row.delta) : "";
-    const body = `<span class="overview-platform__icon" style="color:${color}">${row.icon}</span><strong>${formatted}</strong><span class="overview-platform__delta ${row.delta !== null && row.delta >= 0 ? "overview-platform__delta--up" : "overview-platform__delta--down"}">${delta || "\u00a0"}</span>`;
+    const body = html`<span class="overview-platform__icon" style="color:${color}">${row.icon}</span><strong>${formatted}</strong><span class="overview-platform__delta ${row.delta !== null && row.delta >= 0 ? "overview-platform__delta--up" : "overview-platform__delta--down"}">${delta || "\u00a0"}</span>`;
     const className = `overview-platform${row.active ? " overview-platform--active" : ""}`;
     const title = row.active ? `${row.label} · ${t(locale, "cc.overview.remove-filter")}` : row.label;
     return row.href
-      ? `<a class="${className}" href="${escapeHtml(row.href)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" aria-pressed="${row.active === true}">${body}</a>`
-      : `<div class="${className}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">${body}</div>`;
+      ? html`<a class="${className}" href="${row.href}" title="${title}" aria-label="${title}" aria-pressed="${row.active === true}">${body}</a>`
+      : html`<div class="${className}" title="${title}" aria-label="${title}">${body}</div>`;
   };
   // The columns rank destinations that have something to report; the ones with
   // neither reach nor an audience wait behind the expander rather than pushing a
@@ -274,21 +272,17 @@ function renderOverviewPlatforms(
   const ofLocale = (locale: string) => ranked.filter((row) => row.locale?.toLowerCase() === locale);
   const live = (row: OverviewPlatformRow) => row.views > 0 || row.followers !== null;
   const shown = (locale: string) => ofLocale(locale).filter(live).slice(0, PLATFORM_SLOTS);
-  const platformRows = columns
-    .map((locale) => `<div class="overview-platforms__column">${shown(locale).map(renderRow).join("")}</div>`)
-    .join("");
+  const platformRows = columns.map((locale) => html`<div class="overview-platforms__column">${shown(locale).map(renderRow)}</div>`);
   // Everything the two columns had no room for, on demand. Without it the
   // smaller destinations would be reachable only through the bar's hover text.
   const hidden = (locale: string) => {
     const visible = new Set(shown(locale).map((row) => row.key));
     return ofLocale(locale).filter((row) => !visible.has(row.key));
   };
-  const restRows = columns
-    .map((locale) => `<div class="overview-platforms__column">${hidden(locale).map(renderRow).join("")}</div>`)
-    .join("");
+  const restRows = columns.map((locale) => html`<div class="overview-platforms__column">${hidden(locale).map(renderRow)}</div>`);
   const rest = columns.reduce((sum, locale) => sum + hidden(locale).length, 0);
   const expand = rest
-    ? `<details class="overview-platforms__all"><summary aria-label="${t(locale, "cc.overview.all-platforms")}" title="${t(locale, "cc.overview.all-platforms")}">+<span>${rest}</span></summary><div class="overview-platforms__all-list">${restRows}</div></details>`
+    ? html`<details class="overview-platforms__all"><summary aria-label="${t(locale, "cc.overview.all-platforms")}" title="${t(locale, "cc.overview.all-platforms")}">+<span>${rest}</span></summary><div class="overview-platforms__all-list">${restRows}</div></details>`
     : "";
   const filter = showMetricFilter
     ? renderPlatformMetricFilter(input.platformMetric, input.periodDays, input.weekOffset, locale, input.textView, input.videoView)
@@ -303,12 +297,12 @@ function renderOverviewPlatforms(
   const legend = columns.map((key, index) => {
     const value = localeTotal(key);
     const share = `${localeShare(value)}%`;
-    const amount = `<b>${formatMetricValue(value)}</b>`;
-    return `<span>${index === 0 ? `${amount} · ${share}` : `${share} · ${amount}`}</span>`;
+    const amount = html`<b>${formatMetricValue(value)}</b>`;
+    return index === 0 ? html`<span>${amount} · ${share}</span>` : html`<span>${share} · ${amount}</span>`;
   });
-  const legendBody = legend.length > 1 ? `${legend[0]}${filter}${legend[1]}` : `${legend[0] ?? ""}${filter}`;
-  const labels = columns.map((key) => `<span>${key.toUpperCase()}</span>`).join("");
-  return `<div class="overview-platforms" style="--locale-columns:${Math.max(1, columns.length)}">
+  const legendBody = legend.length > 1 ? html`${legend[0]}${filter}${legend[1]}` : html`${legend[0] ?? ""}${filter}`;
+  const labels = columns.map((key) => html`<span>${key.toUpperCase()}</span>`);
+  return html`<div class="overview-platforms" style="--locale-columns:${Math.max(1, columns.length)}">
     <div class="overview-platforms__legend">${legendBody}</div>
     <div class="overview-platforms__bar">${segments}</div>
     <div class="overview-platforms__bar-labels">${labels}${expand}</div>
@@ -344,7 +338,7 @@ function overviewPlatformRows(input: CombinedSectionInput, kind: OverviewKind, l
           key: `${platform.target}:${platform.locales.join(",")}`,
           label: platform.label,
           locale: platform.locales[0] ?? null,
-          icon: PLATFORM_ICONS[VIDEO_PLATFORM_ICON_KEYS[platform.target] ?? ""] ?? "",
+          icon: PLATFORM_ICONS[VIDEO_PLATFORM_ICON_KEYS[platform.target] ?? ""] ?? html``,
           views: platform.views,
           followers: platform.followers,
           delta: previousRow ? percentDelta(platform.views, previousRow.views) : null,
@@ -384,7 +378,7 @@ function overviewPlatformRows(input: CombinedSectionInput, kind: OverviewKind, l
         key,
         label: followers?.label ?? known?.label ?? key,
         locale: targetLocale(key) ?? known?.locale ?? null,
-        icon: PLATFORM_ICONS[key.startsWith("threads") ? "threads" : platformKey(key)] ?? "",
+        icon: PLATFORM_ICONS[key.startsWith("threads") ? "threads" : platformKey(key)] ?? html``,
         views: reachOf(key, currentKeys),
         followers: followers?.followers ?? null,
         delta: percentDelta(reachOf(key, currentKeys), reachOf(key, previousKeys)),
@@ -532,7 +526,7 @@ function renderPlatformMetricFilter(
   locale: StudioLocale,
   view?: string,
   videoView?: string,
-): string {
+): Html {
   const viewParam = view ? `&view=${encodeURIComponent(view)}` : "";
   const videoViewParam = videoView ? `&video_view=${encodeURIComponent(videoView)}` : "";
   const base = `/command-center?period=${periodDays}&week_offset=${weekOffset}${viewParam}${videoViewParam}${localeQuery(locale)}`;
@@ -540,12 +534,10 @@ function renderPlatformMetricFilter(
     ["reach", t(locale, "cc.overview.reach")],
     ["followers", t(locale, "cc.overview.followers")],
   ];
-  return `<div class="platform-metric-filter" role="group" aria-label="${t(locale, "cc.overview.metric")}">${options
-    .map(
-      ([value, label]) =>
-        `<a class="platform-metric-btn${value === platformMetric ? " platform-metric-btn--active" : ""}" href="${base}${value === "followers" ? "&metric=followers" : ""}" aria-pressed="${value === platformMetric}">${label}</a>`,
-    )
-    .join("")}</div>`;
+  return html`<div class="platform-metric-filter" role="group" aria-label="${t(locale, "cc.overview.metric")}">${options.map(
+    ([value, label]) =>
+      html`<a class="platform-metric-btn${value === platformMetric ? " platform-metric-btn--active" : ""}" href="${base}${value === "followers" ? "&metric=followers" : ""}" aria-pressed="${value === platformMetric}">${label}</a>`,
+  )}</div>`;
 }
 
 function medianDailyVideoTotals(video: VideoOverview, days: number): Totals {

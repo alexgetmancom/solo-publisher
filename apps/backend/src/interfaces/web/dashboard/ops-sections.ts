@@ -3,7 +3,7 @@ import { AUDIENCE_VIEWS, targetDefinition } from "../../../botTargets.js";
 import { listChannels } from "../../../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../../../db/client.js";
 import { creatorProfiles } from "../../../db/schema.js";
-import { escapeHtml } from "../../../foundation/html.js";
+import { type Html, html } from "../../../foundation/html.js";
 import { t } from "../../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../../foundation/locale.js";
 import { shortPipelineText } from "./format.js";
@@ -47,44 +47,38 @@ function activeAudiencePlatforms(backendDb: BackendDb): AudiencePlatform[] {
   return AUDIENCE_PLATFORMS.filter((platform) => registeredTargets.has(platform.metricTarget));
 }
 
-export function renderQueueSection(ops: OpsPayload, locale: StudioLocale): string {
-  const drafts =
-    (ops.drafts ?? [])
-      .map(
-        (row) =>
-          `<tr><td>${Number(row.id)}</td><td>${escapeHtml(row.status)}</td><td class="wide">${escapeHtml(shortPipelineText(row.textRu, 20))}</td><td>${escapeHtml(row.scheduledAt)}</td><td>${escapeHtml(row.scheduledEnAt)}</td><td>${escapeHtml(row.channelMessageId)}</td><td>${escapeHtml(row.updatedAt)}</td></tr>`,
-      )
-      .join("\n") || `<tr><td colspan='7'>${t(locale, "cc.queue.empty")}</td></tr>`;
-  const jobs =
-    (ops.jobs ?? [])
-      .map(
-        (row) =>
-          `<tr><td>${escapeHtml(row.jobId)}</td><td>${escapeHtml(row.publicationKey)}</td><td>${escapeHtml(row.target)}</td><td>${escapeHtml(row.status)}</td><td>${Number(row.attemptCount ?? 0)}</td><td>${escapeHtml(row.publishAt)}</td><td>${escapeHtml(row.nextAttemptAt)}</td><td class="wide">${escapeHtml(row.lastError)}</td><td>${escapeHtml(row.updatedAt)}</td></tr>`,
-      )
-      .join("\n") || `<tr><td colspan='9'>${t(locale, "cc.queue.empty")}</td></tr>`;
-  return `<section><h2>${t(locale, "cc.queue.drafts")}</h2><table><thead><tr><th>${t(locale, "cc.queue.id")}</th><th>${t(locale, "cc.queue.status")}</th><th>RU</th><th>${t(locale, "cc.queue.ru-slot")}</th><th>${t(locale, "cc.queue.en-slot")}</th><th>${t(locale, "cc.queue.message")}</th><th>${t(locale, "cc.queue.updated")}</th></tr></thead><tbody>${drafts}</tbody></table></section><section><h2>${t(locale, "cc.queue.queue")}</h2><table><thead><tr><th>${t(locale, "cc.queue.job")}</th><th>${t(locale, "cc.queue.post")}</th><th>${t(locale, "cc.queue.target")}</th><th>${t(locale, "cc.queue.status")}</th><th>${t(locale, "cc.queue.attempts")}</th><th>${t(locale, "cc.queue.publish-at")}</th><th>${t(locale, "cc.queue.retry-at")}</th><th>${t(locale, "cc.queue.error")}</th><th>${t(locale, "cc.queue.updated")}</th></tr></thead><tbody>${jobs}</tbody></table></section>`;
+export function renderQueueSection(ops: OpsPayload, locale: StudioLocale): Html {
+  const drafts = (ops.drafts ?? []).map(
+    (row) =>
+      html`<tr><td>${Number(row.id)}</td><td>${row.status}</td><td class="wide">${shortPipelineText(row.textRu, 20)}</td><td>${row.scheduledAt}</td><td>${row.scheduledEnAt}</td><td>${row.channelMessageId}</td><td>${row.updatedAt}</td></tr>`,
+  );
+  const jobs = (ops.jobs ?? []).map(
+    (row) =>
+      html`<tr><td>${row.jobId}</td><td>${row.publicationKey}</td><td>${row.target}</td><td>${row.status}</td><td>${Number(row.attemptCount ?? 0)}</td><td>${row.publishAt}</td><td>${row.nextAttemptAt}</td><td class="wide">${row.lastError}</td><td>${row.updatedAt}</td></tr>`,
+  );
+  return html`<section><h2>${t(locale, "cc.queue.drafts")}</h2><table><thead><tr><th>${t(locale, "cc.queue.id")}</th><th>${t(locale, "cc.queue.status")}</th><th>RU</th><th>${t(locale, "cc.queue.ru-slot")}</th><th>${t(locale, "cc.queue.en-slot")}</th><th>${t(locale, "cc.queue.message")}</th><th>${t(locale, "cc.queue.updated")}</th></tr></thead><tbody>${orEmpty(drafts, 7, locale)}</tbody></table></section><section><h2>${t(locale, "cc.queue.queue")}</h2><table><thead><tr><th>${t(locale, "cc.queue.job")}</th><th>${t(locale, "cc.queue.post")}</th><th>${t(locale, "cc.queue.target")}</th><th>${t(locale, "cc.queue.status")}</th><th>${t(locale, "cc.queue.attempts")}</th><th>${t(locale, "cc.queue.publish-at")}</th><th>${t(locale, "cc.queue.retry-at")}</th><th>${t(locale, "cc.queue.error")}</th><th>${t(locale, "cc.queue.updated")}</th></tr></thead><tbody>${orEmpty(jobs, 9, locale)}</tbody></table></section>`;
 }
 
-export function renderCredentialsSection(ops: OpsPayload, locale: StudioLocale): string {
-  const rows =
-    (ops.credentials ?? [])
-      .map(
-        (row) =>
-          `<tr><td>${escapeHtml(row.target)}</td><td>${escapeHtml(row.status)}</td><td>${escapeHtml(row.missingEnvJson || row.lastError)}</td><td>${escapeHtml(row.lastCheckedAt)}</td></tr>`,
-      )
-      .join("\n") || `<tr><td colspan='4'>${t(locale, "cc.queue.empty")}</td></tr>`;
-  return `<section><h2>${t(locale, "cc.health.credentials")}</h2><table><thead><tr><th>${t(locale, "cc.queue.target")}</th><th>${t(locale, "cc.queue.status")}</th><th>${t(locale, "cc.health.missing")}</th><th>${t(locale, "cc.health.checked")}</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+export function renderCredentialsSection(ops: OpsPayload, locale: StudioLocale): Html {
+  const rows = (ops.credentials ?? []).map(
+    (row) =>
+      html`<tr><td>${row.target}</td><td>${row.status}</td><td>${row.missingEnvJson || row.lastError}</td><td>${row.lastCheckedAt}</td></tr>`,
+  );
+  return html`<section><h2>${t(locale, "cc.health.credentials")}</h2><table><thead><tr><th>${t(locale, "cc.queue.target")}</th><th>${t(locale, "cc.queue.status")}</th><th>${t(locale, "cc.health.missing")}</th><th>${t(locale, "cc.health.checked")}</th></tr></thead><tbody>${orEmpty(rows, 4, locale)}</tbody></table></section>`;
 }
 
-export function renderDiagnosticsSection(ops: OpsPayload, locale: StudioLocale): string {
-  const errors =
-    (ops.pipeline?.metrics?.recent ?? [])
-      .filter((row) => row.error || row.status === "failed" || row.status === "verification_required")
-      .slice(0, 30)
-      .map(
-        (row) =>
-          `<tr><td>${escapeHtml(row.messageId)}</td><td>${escapeHtml(row.target)}</td><td>${escapeHtml(row.status ?? "failed")}</td><td class="wide">${escapeHtml(row.error)}</td></tr>`,
-      )
-      .join("\n") || `<tr><td colspan='4'>${t(locale, "cc.queue.empty")}</td></tr>`;
-  return `<section><h2>${t(locale, "cc.health.errors")}</h2><table><thead><tr><th>${t(locale, "cc.queue.message")}</th><th>${t(locale, "cc.queue.target")}</th><th>${t(locale, "cc.queue.status")}</th><th>${t(locale, "cc.queue.error")}</th></tr></thead><tbody>${errors}</tbody></table></section>`;
+export function renderDiagnosticsSection(ops: OpsPayload, locale: StudioLocale): Html {
+  const errors = (ops.pipeline?.metrics?.recent ?? [])
+    .filter((row) => row.error || row.status === "failed" || row.status === "verification_required")
+    .slice(0, 30)
+    .map(
+      (row) =>
+        html`<tr><td>${row.messageId}</td><td>${row.target}</td><td>${row.status ?? "failed"}</td><td class="wide">${row.error}</td></tr>`,
+    );
+  return html`<section><h2>${t(locale, "cc.health.errors")}</h2><table><thead><tr><th>${t(locale, "cc.queue.message")}</th><th>${t(locale, "cc.queue.target")}</th><th>${t(locale, "cc.queue.status")}</th><th>${t(locale, "cc.queue.error")}</th></tr></thead><tbody>${orEmpty(errors, 4, locale)}</tbody></table></section>`;
+}
+
+/** A table with nothing in it says so, across its own width. */
+function orEmpty(rows: readonly Html[], columns: number, locale: StudioLocale): Html {
+  return rows.length ? html`${rows}` : html`<tr><td colspan="${columns}">${t(locale, "cc.queue.empty")}</td></tr>`;
 }

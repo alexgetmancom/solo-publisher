@@ -1,3 +1,4 @@
+import { type Html, html } from "../../../foundation/html.js";
 import { t } from "../../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../../foundation/locale.js";
 import { monthShortName, zonedDateParts } from "../../../foundation/time.js";
@@ -21,33 +22,29 @@ export function renderPeriodControls(
   view?: string,
   videoView?: string,
   extraQuery = "",
-): string {
+): Html {
   const [start, end] = rollingPeriodDates(weekOffset, periodDays, timeZone);
   const viewParam = view ? `&view=${encodeURIComponent(view)}` : "";
   const videoViewParam = videoView ? `&video_view=${encodeURIComponent(videoView)}` : "";
   const filterParam = `${viewParam}${videoViewParam}${extraQuery}${localeQuery(locale)}`;
   const periodLabel = (days: number) => (days === 365 ? t(locale, "cc.period.year") : t(locale, "cc.period.days", { days }));
-  const quickOptions = PERIODS.filter((days) => days <= 30)
-    .map(
-      (days) =>
-        `<a class="period-quick-link${days === periodDays ? " active" : ""}" href="/command-center?period=${days}&week_offset=${weekOffset}${filterParam}">${periodLabel(days)}</a>`,
-    )
-    .join("");
-  const longOptions = PERIODS.filter((days) => days > 30)
-    .map(
-      (days) =>
-        `<a class="${days === periodDays ? "active" : ""}" href="/command-center?period=${days}&week_offset=${weekOffset}${filterParam}">${periodLabel(days)}</a>`,
-    )
-    .join("");
-  const previous = `<a class="period-nav" href="/command-center?period=${periodDays}&week_offset=${weekOffset + 1}${filterParam}" aria-label="${t(locale, "cc.period.previous")}">‹</a>`;
+  const quickOptions = PERIODS.filter((days) => days <= 30).map(
+    (days) =>
+      html`<a class="period-quick-link${days === periodDays ? " active" : ""}" href="/command-center?period=${days}&week_offset=${weekOffset}${filterParam}">${periodLabel(days)}</a>`,
+  );
+  const longOptions = PERIODS.filter((days) => days > 30).map(
+    (days) =>
+      html`<a class="${days === periodDays ? "active" : ""}" href="/command-center?period=${days}&week_offset=${weekOffset}${filterParam}">${periodLabel(days)}</a>`,
+  );
+  const previous = html`<a class="period-nav" href="/command-center?period=${periodDays}&week_offset=${weekOffset + 1}${filterParam}" aria-label="${t(locale, "cc.period.previous")}">‹</a>`;
   const next =
     weekOffset > 0
-      ? `<a class="period-nav" href="/command-center?period=${periodDays}&week_offset=${weekOffset - 1}${filterParam}" aria-label="${t(locale, "cc.period.next")}">›</a>`
-      : '<span class="period-nav muted">›</span>';
-  const longMenu = longOptions
-    ? `<details class="period-menu"><summary class="period-menu__toggle" aria-label="${t(locale, "cc.period.more")}">${periodDays > 30 ? periodLabel(periodDays) : t(locale, "cc.period.more")}<i class="caret">▾</i></summary><div class="period-menu__list">${longOptions}</div></details>`
+      ? html`<a class="period-nav" href="/command-center?period=${periodDays}&week_offset=${weekOffset - 1}${filterParam}" aria-label="${t(locale, "cc.period.next")}">›</a>`
+      : html`<span class="period-nav muted">›</span>`;
+  const longMenu = longOptions.length
+    ? html`<details class="period-menu"><summary class="period-menu__toggle" aria-label="${t(locale, "cc.period.more")}">${periodDays > 30 ? periodLabel(periodDays) : t(locale, "cc.period.more")}<i class="caret">▾</i></summary><div class="period-menu__list">${longOptions}</div></details>`
     : "";
-  return `<div class="dashboard-nav__controls"><div class="period-quick" role="group" aria-label="${t(locale, "cc.period.group")}">${quickOptions}</div>${longMenu}<div class="period-range">${previous}<span>${shortDateRange(start, end, locale)}</span>${next}</div></div>`;
+  return html`<div class="dashboard-nav__controls"><div class="period-quick" role="group" aria-label="${t(locale, "cc.period.group")}">${quickOptions}</div>${longMenu}<div class="period-range">${previous}<span>${shortDateRange(start, end, locale)}</span>${next}</div></div>`;
 }
 
 /** Returns UTC-midnight dates whose calendar fields carry the configured zone. */
