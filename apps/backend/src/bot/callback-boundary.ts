@@ -20,12 +20,31 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
     await answerCallbackSafely(ctx);
     return;
   }
+  const answered = recordAnswers(ctx);
   try {
     await next();
+    // Telegram spins that button until something answers it, and every handler
+    // answering for itself is a rule nobody can hold: the one that forgets
+    // leaves a control turning for ten seconds and no trace anywhere. A handler
+    // still answers when it has something to say -- a toast, an alert -- and
+    // this is what covers the ones that have nothing.
+    if (!answered.value) await answerCallbackSafely(ctx);
   } catch (error) {
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
     await answerCallbackSafely(ctx, { text: callbackToast(describeError(locale, error)) });
   }
+}
+
+/** Watches this update's own acknowledgement, so the boundary can tell a tap
+ * that was answered from one that was dropped. */
+function recordAnswers(ctx: Context): { value: boolean } {
+  const answered = { value: false };
+  const answer = ctx.answerCallbackQuery.bind(ctx);
+  ctx.answerCallbackQuery = async (...args: Parameters<Context["answerCallbackQuery"]>) => {
+    answered.value = true;
+    return answer(...args);
+  };
+  return answered;
 }
 
 function claimCallbackQuery(callbackId: string): boolean {

@@ -53,21 +53,17 @@ export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb, b
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
     range
       .submenu(t(locale, "settings.category-publishing"), PUBLISHING_MENU_ID, async (ctx) => {
-        await ctx.answerCallbackQuery();
         await showScreen(ctx, t(locale, "settings.category-publishing-body"));
       })
       .submenu(t(locale, "settings.category-notifications"), NOTIFICATIONS_MENU_ID, async (ctx) => {
-        await ctx.answerCallbackQuery();
         await showScreen(ctx, t(locale, "settings.category-notifications-body"));
       })
       .row()
       .submenu(t(locale, "settings.category-system"), SYSTEM_MENU_ID, async (ctx) => {
-        await ctx.answerCallbackQuery();
         await showScreen(ctx, t(locale, "settings.category-system-body"));
       })
       .row()
       .back(t(locale, "common.menu"), async (ctx) => {
-        await ctx.answerCallbackQuery();
         await showScreen(ctx, mainMenuText(backendDb, config, Number(ctx.from?.id)));
       });
   });

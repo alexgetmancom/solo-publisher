@@ -56,7 +56,6 @@ export async function askSettingsInput(
   data: Record<string, unknown> = {},
 ): Promise<void> {
   beginSettingsInput(backendDb, actorId, step, data);
-  await ctx.answerCallbackQuery();
   await showScreen(ctx, text, { reply_markup: menu });
 }
 
@@ -65,7 +64,6 @@ export async function askSettingsInput(
 export function backToSettings(backendDb: BackendDb) {
   return async (ctx: Context): Promise<void> => {
     clearConversationState(backendDb, Number(ctx.from?.id), "settings");
-    await ctx.answerCallbackQuery();
     await showScreen(ctx, t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"));
   };
 }
@@ -73,7 +71,8 @@ export function backToSettings(backendDb: BackendDb) {
 /** One tapped settings control: apply the change, acknowledge the tap, and
  * re-render the screen it lives on. Every toggle, preset and picker in settings
  * does exactly this, and spelling it out per button is how one of them ends up
- * without its answerCallbackQuery -- these menus do not auto-answer. */
+ * doing two of the three. The acknowledgement itself is no longer anyone's to
+ * forget: the callback boundary answers a tap that nothing else answered. */
 /** One vocabulary for the state of a control, because the screens had three.
  * A switch was ✅/◻️ here and ✓/□ there, a chosen option carried a leading ●
  * on one screen and nothing at all on another -- the reminder row printed bare

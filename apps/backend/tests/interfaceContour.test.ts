@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Context } from "grammy";
+import { runCallbackBoundary } from "../src/bot/callback-boundary.js";
+import type { BackendDb } from "../src/db/client.js";
+import { withDb } from "./helpers/db.js";
 
 const root = join(import.meta.dir, "../../..");
 
@@ -95,6 +99,39 @@ describe("telegram interface contour", () => {
   it("keeps no exception that has nothing left to excuse", () => {
     const stale = [...RUSSIAN_LITERALS_ALLOWED].filter((file) => russianLiterals(source(file)).length === 0);
     expect(stale).toEqual([]);
+  });
+
+  /** A tap Telegram never hears back about spins its button for ten seconds and
+   * leaves nothing behind. Every handler answering for itself was a rule with
+   * twenty-seven copies; this is the one that cannot be forgotten. */
+  it("answers a tap that its handler did not answer", async () => {
+    const answers: Array<{ text?: string } | undefined> = [];
+    const ctx = {
+      from: { id: 42 },
+      callbackQuery: { id: "cb-1", data: "noop" },
+      answerCallbackQuery: async (options?: { text?: string }) => void answers.push(options),
+    } as unknown as Context;
+
+    await withDb(async (backendDb: BackendDb) => runCallbackBoundary(ctx, backendDb, async () => undefined));
+
+    expect(answers).toEqual([undefined]);
+  });
+
+  it("leaves a handler's own answer alone", async () => {
+    const answers: Array<{ text?: string } | undefined> = [];
+    const ctx = {
+      from: { id: 42 },
+      callbackQuery: { id: "cb-2", data: "noop" },
+      answerCallbackQuery: async (options?: { text?: string }) => void answers.push(options),
+    } as unknown as Context;
+
+    await withDb(async (backendDb: BackendDb) =>
+      runCallbackBoundary(ctx, backendDb, async () => {
+        await ctx.answerCallbackQuery({ text: "Cancelled" });
+      }),
+    );
+
+    expect(answers).toEqual([{ text: "Cancelled" }]);
   });
 });
 

@@ -32,7 +32,6 @@ export async function handleOperationsCallback(
 
   if (callback.id === "deploy_menu") {
     if (!isDeploymentRevision(revision)) return false;
-    await ctx.answerCallbackQuery();
     await showScreen(ctx, deploymentMenuText(locale, revision), { reply_markup: deploymentMenuKeyboard(locale, revision) });
     return true;
   }
@@ -59,7 +58,6 @@ async function askConfirmation(
   target: string,
   revision: string,
 ): Promise<boolean> {
-  await ctx.answerCallbackQuery();
   const question =
     action === "rollback"
       ? t(locale, "ops.rollback-q", { target })
@@ -83,7 +81,6 @@ async function runDeployAction(
   progressText: string,
   action: () => Promise<{ ok: true; release: string; currentRevision: string } | { ok: false; message: string }>,
 ): Promise<void> {
-  await ctx.answerCallbackQuery();
   await showScreen(ctx, progressText, { reply_markup: new InlineKeyboard() });
   // Deliberately not awaited: the bot polls updates one at a time, and this
   // request alone can take up to ~150s (agent healthcheck plus image pull).

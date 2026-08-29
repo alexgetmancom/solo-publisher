@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "bun:test";
+import { eq } from "drizzle-orm";
 import type { UnsafeBackendDb } from "../src/db/client.js";
-import { drafts, publishJobs } from "../src/db/schema.js";
+import { drafts, publicationEvents, publishJobs } from "../src/db/schema.js";
 import { type OperationContext, runOperation } from "../src/operations/registry.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
@@ -19,6 +20,16 @@ const config = loadTestConfig(
   MSK_STUDIO_PROFILE,
 );
 
+/** Whether the schedule the journalled command claimed to make is really there. */
+function scheduleWrote(db: UnsafeBackendDb): boolean {
+  return db.db.select({ jobId: publishJobs.jobId }).from(publishJobs).all().length > 0;
+}
+
+/** Every command the operations journal has recorded in this database. */
+function commandJournal(db: UnsafeBackendDb) {
+  return db.db.select().from(publicationEvents).where(eq(publicationEvents.eventType, "operations.command")).all();
+}
+
 function context(db: UnsafeBackendDb): OperationContext {
   return { dbPath: ":memory:", config: () => config, db: () => db, fetchImpl: fetch, actorType: "test" };
 }
@@ -29,6 +40,26 @@ async function draftReadyToPublish(db: UnsafeBackendDb, draftId: number): Promis
 }
 
 describe("draft lifecycle operations", () => {
+  /** The journal follows what an operation did, not what it declared. A command
+   * added without its `mutates` used to write to the Studio and leave no trace
+   * at all, and the only thing that would have noticed was a person reading
+   * both the flag and the handler. */
+  it("journals a command by the writes it made, not by the flag it carries", async () => {
+    backendDb = openBackendDb(":memory:");
+    await draftReadyToPublish(backendDb, 31);
+    const before = commandJournal(backendDb).length;
+
+    // A read-only command writes nothing and is journalled by neither route.
+    await runOperation("guide", context(backendDb), {});
+    expect(commandJournal(backendDb)).toHaveLength(before);
+
+    await runOperation("draft-schedule", context(backendDb), { draft: 31, at: "05.09.2026 08:00", apply: true });
+    const journalled = commandJournal(backendDb).at(-1);
+
+    expect(journalled?.message).toBe("Operations draft-schedule executed");
+    expect(scheduleWrote(backendDb)).toBe(true);
+  });
+
   it("schedules a draft for a wall clock read in the Studio's time zone, then calls it off", async () => {
     backendDb = openBackendDb(":memory:");
     await draftReadyToPublish(backendDb, 21);

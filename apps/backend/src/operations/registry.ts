@@ -13,6 +13,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
+import { unsafeDb } from "../db/unsafe.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
@@ -1088,19 +1089,27 @@ export async function runOperation(name: string, context: OperationContext, args
   }
   const startedAt = Date.now();
   let result: unknown;
+  const writesBefore = writeCount(context);
   try {
     result = await def.handler(context, parsed.data);
   } catch (error) {
     recordUsage(context.db(), operationUsageKey(name), false, Date.now() - startedAt);
     throw error;
   }
+  const wrote = writeCount(context) > writesBefore;
   // Measured around the handler alone: a caller's typo is rejected above, and
   // counting it would make an operator's misspelling look like a command that
   // fails. Recorded here rather than at each surface, because this is the one
   // place every surface passes through -- and the CLI, which is where most of
   // these are actually run, left no trace at all before it.
   recordUsage(context.db(), operationUsageKey(name), true, Date.now() - startedAt);
-  if (def.mutates) journalMutation(context, name, def, parsed.data);
+  // Journalled for what it did, not for what it said it does. `mutates` is a
+  // declaration, and a declaration is what an operation added in a hurry gets
+  // wrong: the write lands, the audit trail does not, and nothing anywhere
+  // notices. The database counts its own writes, so this cannot drift.
+  if (def.mutates || wrote) journalMutation(context, name, def, parsed.data);
+  if (wrote && !def.mutates)
+    log("error", "operation wrote to the database without declaring it", { operation: name, surface: context.actorType });
   return result;
 }
 
@@ -1121,6 +1130,12 @@ export function operationUsageKeys(): string[] {
  * the ref it carries is the normalized one the handler actually ran against.
  * Best-effort: the mutation already happened, and reporting a failed journal
  * write as a failed operation invites a retry that publishes twice. */
+/** Writes this connection has performed, as SQLite itself counts them. */
+function writeCount(context: OperationContext): number {
+  const row = unsafeDb(context.db()).sqlite.query("SELECT total_changes() AS n").get() as { n?: number } | null;
+  return Number(row?.n ?? 0);
+}
+
 function journalMutation(context: OperationContext, name: string, def: OperationDef, input: unknown): void {
   try {
     context.db().events.record({

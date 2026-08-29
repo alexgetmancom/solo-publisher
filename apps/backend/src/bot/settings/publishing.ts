@@ -145,7 +145,6 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
         try {
           const started = await studioChannels.startConnect("youtube", channelLocale);
           if (started.kind !== "device") throw new Error("YouTube is expected to answer with a code");
-          await ctx.answerCallbackQuery();
           await showScreen(
             ctx,
             t(locale, "settings.device-code", {

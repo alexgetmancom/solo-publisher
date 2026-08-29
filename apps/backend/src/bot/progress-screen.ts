@@ -23,7 +23,7 @@ export async function showPostProgress(
   if (view.cancelRemaining) {
     posts.cancelJobs(actorId, draftId);
     await ctx.answerCallbackQuery({ text: t(locale, "progress.remaining-cancelled") });
-  } else await ctx.answerCallbackQuery();
+  }
   const progress = renderPostProgress(posts.progress(actorId, draftId), locale, view.details);
   await executePublicationEffects(ctx, backendDb, [
     {

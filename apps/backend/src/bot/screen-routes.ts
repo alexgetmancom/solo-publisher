@@ -53,94 +53,78 @@ type ScreenHandler = (screen: ScreenContext) => Promise<boolean>;
  * forgetting to route it does not compile, and routing one that is not declared
  * does not compile either. */
 export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
-  noop: async ({ ctx }) => {
-    await ctx.answerCallbackQuery();
-    return true;
-  },
+  // A label, not a control. The boundary answers the tap; there is nothing else to do.
+  noop: async () => true,
   menu_home: async ({ ctx, backendDb, config, mainMenu }) => {
     clearTelegramAnalyticsDashboard(backendDb, Number(ctx.from?.id));
-    await ctx.answerCallbackQuery();
     await showMainMenu(ctx, backendDb, config, mainMenu);
     return true;
   },
   queue_home: async ({ ctx, backendDb, config }) => {
-    await ctx.answerCallbackQuery();
     await showQueue(ctx, backendDb, config);
     return true;
   },
   queue_page: async ({ ctx, backendDb, config, args }) => {
     const page = screenNumber(args.page);
     if (page == null) return false;
-    await ctx.answerCallbackQuery();
     await showQueue(ctx, backendDb, config, page);
     return true;
   },
   queue_attention: async ({ ctx, backendDb, config }) => {
-    await ctx.answerCallbackQuery();
     await showQueueAttention(ctx, backendDb, config);
     return true;
   },
   queue_attention_page: async ({ ctx, backendDb, config, args }) => {
     const page = screenNumber(args.page);
     if (page == null) return false;
-    await ctx.answerCallbackQuery();
     await showQueueAttention(ctx, backendDb, config, page);
     return true;
   },
   analytics_home: async ({ ctx, backendDb, config }) => {
-    await ctx.answerCallbackQuery();
     await showAnalyticsDashboard(ctx, backendDb, config, "overview", 7);
     return true;
   },
   analytics_section: async ({ ctx, backendDb, config, args }) => {
-    await ctx.answerCallbackQuery();
     await showAnalyticsDashboard(ctx, backendDb, config, analyticsSection(args.section), analyticsPeriod(args.days));
     return true;
   },
   analytics_milestones: async ({ ctx, backendDb, config, args }) => {
     const offset = screenNumber(args.offset);
     if (offset == null) return false;
-    await ctx.answerCallbackQuery();
     await showMilestones(ctx, backendDb, config, offset);
     return true;
   },
   archive_home: async ({ ctx, backendDb, config }) => {
-    await ctx.answerCallbackQuery();
     await showArchiveHome(ctx, backendDb, config);
     return true;
   },
   analytics_archive: async ({ ctx, backendDb, config, args }) => {
     const offset = screenNumber(args.offset);
     if (offset == null) return false;
-    await ctx.answerCallbackQuery();
     await showVideoArchive(ctx, backendDb, config, offset);
     return true;
   },
   analytics_post_archive: async ({ ctx, backendDb, config, args }) => {
     const offset = screenNumber(args.offset);
     if (offset == null) return false;
-    await ctx.answerCallbackQuery();
     await showPostArchive(ctx, backendDb, config, offset);
     return true;
   },
   analytics_video: async ({ ctx, backendDb, config, args }) => {
     const id = screenNumber(args.id, { min: 1 });
     if (id == null) return false;
-    await ctx.answerCallbackQuery();
     await showVideoMetrics(ctx, backendDb, config, id);
     return true;
   },
   analytics_post: async ({ ctx, backendDb, config, args }) => {
     const id = screenNumber(args.id, { min: 1 });
     if (id == null) return false;
-    await ctx.answerCallbackQuery();
     await showPostMetrics(ctx, backendDb, config, id);
     return true;
   },
   analytics_post_media: async ({ ctx, backendDb, config, args }) => {
     const id = screenNumber(args.id, { min: 1 });
     if (id == null) return false;
-    await ctx.answerCallbackQuery();
     await sendPostArchiveMedia(ctx, backendDb, config, id);
     return true;
   },
@@ -170,7 +154,6 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
     return true;
   },
   stream_home: async ({ ctx, backendDb, config }) => {
-    await ctx.answerCallbackQuery();
     await showStreamScreen(ctx, backendDb, config);
     return true;
   },
