@@ -204,20 +204,17 @@ async function timedDeliveryPhase<T>(
         : phase === "validate"
           ? "validateMs"
           : "prepareMs";
+  // The lease check and the phase write are one statement, and its result is
+  // what authorises the provider call below. Read separately, the ownership a
+  // worker verified could be taken by its successor before the write landed,
+  // and this worker would still go on to publish — the same post, twice.
   const owned = unsafeDb(backendDb)
-    .db.select({ jobId: publishJobs.jobId })
-    .from(publishJobs)
-    .where(and(eq(publishJobs.jobId, job.jobId), eq(publishJobs.status, "publishing"), eq(publishJobs.lockedBy, job.lockId)))
-    .get();
-  if (!owned) throw new Error(`delivery_job_no_longer_owned:${job.jobId}`);
-  unsafeDb(backendDb)
     .db.update(publishJobs)
-    // Fenced by the same lease the check above reads. Without it an expired
-    // worker wrote its phase onto the job its successor now holds, and recovery
-    // read that phase as "the new worker already called the provider".
     .set({ currentPhase: phase, updatedAt: new Date().toISOString() })
     .where(and(eq(publishJobs.jobId, job.jobId), eq(publishJobs.status, "publishing"), eq(publishJobs.lockedBy, job.lockId)))
-    .run();
+    .returning({ jobId: publishJobs.jobId })
+    .get();
+  if (!owned) throw new Error(`delivery_job_no_longer_owned:${job.jobId}`);
   try {
     const result = await work();
     const durationMs = Date.now() - startedAt;

@@ -242,7 +242,13 @@ function locale(
   now: number,
 ) {
   const published = publishedAt ? new Date(publishedAt).getTime() <= now : true;
-  return { enabled: siteEnabled === 1 && published, text: text ?? "", slug, html: html ?? text ?? "", media: media ?? [] };
+  const enabled = siteEnabled === 1 && published;
+  // A locale that is not published carries nothing. Every caller used to gate
+  // on `has_ru`/`has_en` before reading the text, and `/feed.json` serialised
+  // the whole item instead — handing out the other language's unpublished draft.
+  // Withholding it here is the only place that cannot be forgotten.
+  if (!enabled) return { enabled, text: "", slug: null, html: "", media: [] };
+  return { enabled, text: text ?? "", slug, html: html ?? text ?? "", media: media ?? [] };
 }
 
 function firstImage(media: SiteMedia[]): string | null {

@@ -16,7 +16,16 @@ function parseRange(value: string | null, size: number): RangeSpec | null | "inv
   if (!value) return null;
   const match = /^bytes=(\d*)-(\d*)$/.exec(value.trim());
   if (!match) return "invalid";
-  const start = match[1] ? Number(match[1]) : 0;
+  // `bytes=-500` is a suffix range: the last 500 bytes, not the first 500.
+  // Read as a normal range it answered from the head of the file, and a player
+  // asking for the trailing moov atom got the opening bytes with a 206 saying
+  // they were the closing ones.
+  if (!match[1]) {
+    const suffixLength = Number(match[2]);
+    if (!match[2] || !Number.isInteger(suffixLength) || suffixLength <= 0) return "invalid";
+    return { start: Math.max(0, size - suffixLength), end: size - 1 };
+  }
+  const start = Number(match[1]);
   const end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
   if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start > end || start >= size) return "invalid";
   return { start, end };

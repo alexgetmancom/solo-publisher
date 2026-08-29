@@ -48,8 +48,13 @@ export function pruneExpiredVideos(config: BackendConfig, backendDb: BackendDb):
     )
     .all();
   for (const row of rows) {
-    pruneStudioAssetSource(config, backendDb, row.studioMediaAssetId, now);
-    unsafeDb(backendDb)
+    // Claim the draft before touching the file. The decision above is a
+    // snapshot, and a retry or a reschedule arriving in that window puts the
+    // draft back to work — deleting its source afterwards would leave a job
+    // pointing at bytes that are gone. The claim carries the status and the
+    // deadline it was decided on, so a draft that moved is simply skipped and
+    // the next sweep re-decides it.
+    const claimed = unsafeDb(backendDb)
       .db.update(videoDrafts)
       .set({
         status: row.status === "editing" ? "cancelled" : row.status,
@@ -57,8 +62,18 @@ export function pruneExpiredVideos(config: BackendConfig, backendDb: BackendDb):
         sourcePrunedAt: now,
         updatedAt: now,
       })
-      .where(eq(videoDrafts.id, row.id))
-      .run();
+      .where(
+        and(
+          eq(videoDrafts.id, row.id),
+          isNull(videoDrafts.sourcePrunedAt),
+          eq(videoDrafts.status, row.status),
+          row.retentionUntil == null ? isNull(videoDrafts.retentionUntil) : eq(videoDrafts.retentionUntil, row.retentionUntil),
+        ),
+      )
+      .returning({ id: videoDrafts.id })
+      .get();
+    if (!claimed) continue;
+    pruneStudioAssetSource(config, backendDb, row.studioMediaAssetId, now);
   }
 }
 

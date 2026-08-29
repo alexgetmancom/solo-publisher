@@ -164,6 +164,12 @@ describe("Drizzle site feed", () => {
     expect(loadPublicSiteItem(backendDb, 10)).toEqual(
       expect.objectContaining({ text_en: "EN now", has_en: true, has_ru: false, slug_en: "en-now" }),
     );
+    // Nothing of the scheduled RU locale travels in the item. `/feed.json`
+    // serialises the whole object, so text withheld anywhere but here reaches
+    // the public feed before the post is published.
+    expect(loadPublicSiteItem(backendDb, 10)).toEqual(
+      expect.objectContaining({ text: "", text_ru: "", html: "", slug_ru: null, media: [] }),
+    );
   });
 
   it("reads the persisted site media manifest", () => {

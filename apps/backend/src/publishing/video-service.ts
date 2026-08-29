@@ -148,14 +148,19 @@ export function saveVideoMetadata(backendDb: BackendDb, videoDraftId: number, ta
     .where(and(eq(videoJobs.videoTargetId, existing.id), eq(videoJobs.status, "running")))
     .get();
   if (runningJob) throw new StudioError("err.video-job-running");
-  unsafeDb(backendDb)
+  // Fenced on the status the editability and running-job checks above read: a
+  // prepare job can claim this target in that window, and the platform would
+  // then receive the old title while Studio shows the new one.
+  const updated = unsafeDb(backendDb)
     .db.update(videoTargets)
     .set({
       metadataJson: metadata as Record<string, unknown>,
       updatedAt: new Date().toISOString(),
     })
-    .where(and(eq(videoTargets.videoDraftId, videoDraftId), eq(videoTargets.target, target)))
-    .run();
+    .where(and(eq(videoTargets.id, existing.id), eq(videoTargets.status, existing.status)))
+    .returning({ id: videoTargets.id })
+    .get();
+  if (!updated) throw new StudioError("err.video-metadata-locked");
 }
 
 /** The source file may still be swapped while every platform is only holding

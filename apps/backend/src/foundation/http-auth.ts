@@ -29,9 +29,20 @@ function cookieValue(cookieHeader: string | undefined, name: string): string {
   if (!cookieHeader) return "";
   for (const chunk of cookieHeader.split(";")) {
     const [key, ...value] = chunk.trim().split("=");
-    if (key === name) return decodeURIComponent(value.join("="));
+    if (key === name) return decodedCookie(value.join("="));
   }
   return "";
+}
+
+/** A cookie the browser never wrote — a truncated or hand-edited `command_token`
+ * — must fail authorization, not the request: `decodeURIComponent` throws on a
+ * stray `%`, and that reached the client as a 500. */
+function decodedCookie(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 /** Cookie authority is ambient: a cross-site form can ride it. Routes that act

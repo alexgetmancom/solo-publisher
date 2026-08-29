@@ -113,6 +113,28 @@ describe("Astro endpoint controller", () => {
     }
   });
 
+  it("refuses a malformed command cookie instead of failing the request", async () => {
+    const backendDb = openBackendDb(join(tempDir("alexgetman-command-cookie-"), "pipeline.db"), 5000);
+    try {
+      const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
+      const app = createApiApp(config, backendDb);
+      const body = new FormData();
+      body.set("target", "telegram");
+      // A truncated percent escape is not a decodable cookie value. Decoding it
+      // threw, and a broken cookie answered 500 rather than "not authorized".
+      const response = await app.request("/command-center/channels/connect", {
+        method: "POST",
+        body,
+        headers: { cookie: "command_token=%", origin: new URL(config.COMMAND_CENTER_URL).origin },
+      });
+
+      expect(response.status).toBe(403);
+      expect(listChannels(backendDb)).toEqual([]);
+    } finally {
+      backendDb.close();
+    }
+  });
+
   it("rejects a cross-origin channel connection form", async () => {
     const backendDb = openBackendDb(join(tempDir("alexgetman-channel-csrf-"), "pipeline.db"), 5000);
     try {
