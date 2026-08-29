@@ -36,12 +36,7 @@ export type SettingsInputStep =
   | "x_import"
   | "youtube_signature";
 
-export function beginSettingsInput(
-  backendDb: BackendDb,
-  actorId: number,
-  step: SettingsInputStep,
-  data: Record<string, unknown> = {},
-): void {
+function beginSettingsInput(backendDb: BackendDb, actorId: number, step: SettingsInputStep, data: Record<string, unknown> = {}): void {
   saveConversationState(backendDb, actorId, { kind: "settings", draftId: null, step, data, controlMessageId: null });
 }
 

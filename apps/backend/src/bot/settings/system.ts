@@ -11,9 +11,9 @@ import { persistentKeyboard } from "../menu-render.js";
 import { buildAnalyticsMenus, threadsFollowersText } from "./analytics.js";
 import { backupText, buildBackupMenu } from "./notifications.js";
 import {
+  askSettingsInput,
   BACKUP_MENU_ID,
   backToSettings,
-  beginSettingsInput,
   choiceLabel,
   LANGUAGE_MENU_ID,
   SETTINGS_MENU_ID,
@@ -75,11 +75,11 @@ export function buildSystemMenu(config: BackendConfig, backendDb: BackendDb): Me
         );
       if (index + 2 < options.length) range.row();
     }
-    range.row().text(t(locale, "settings.timezone-custom"), async (ctx) => {
-      beginSettingsInput(backendDb, actorId, "timezone");
-      await ctx.answerCallbackQuery();
-      await ctx.reply(t(locale, "settings.timezone-input-prompt"));
-    });
+    range
+      .row()
+      .text(t(locale, "settings.timezone-custom"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "timezone", timezone, t(locale, "settings.timezone-input-prompt")),
+      );
     range.row().back(
       t(locale, "settings.back-to-system"),
       settingsUpdate({

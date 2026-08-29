@@ -13,8 +13,8 @@ import { createStudioServices } from "../../studio/services/index.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
 import {
+  askSettingsInput,
   backToSettings,
-  beginSettingsInput,
   CHANNEL_CONNECT_MENU_ID,
   CHANNEL_DISABLE_MENU_ID,
   CHANNEL_MENU_ID,
@@ -209,11 +209,9 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
     range
-      .text(t(locale, "settings.edit"), async (ctx) => {
-        beginSettingsInput(backendDb, actorId, "youtube_signature");
-        await ctx.answerCallbackQuery();
-        await ctx.reply(t(locale, "settings.youtube-edit-prompt"));
-      })
+      .text(t(locale, "settings.edit"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "youtube_signature", youtubeSignature, t(locale, "settings.youtube-edit-prompt")),
+      )
       .text(
         t(locale, "settings.clear"),
         settingsUpdate({
