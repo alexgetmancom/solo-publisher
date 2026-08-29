@@ -161,4 +161,37 @@ describe("verifyPostTargets", () => {
       expect((await verifyPostTargets(backendDb, "post:6")).map((record) => record.target)).toEqual(["instagram", "telegram", "x"]);
     });
   });
+
+  it("does not let a redirect answer for the post", async () => {
+    await withDb(async (backendDb) => {
+      insertPost(backendDb, { postId: 121, messageId: 121 });
+      insertTarget(backendDb, { publicationKey: "post:121", target: "telegram", status: "published", url: "https://t.me/alexgetman/121" });
+      // A deleted post answered by a redirect to a profile page: the 200 at the
+      // end of that chain is not the post, and it used to verify as ok.
+      const { urls } = stubFetch((url) =>
+        url.endsWith("/121")
+          ? new Response(null, { status: 301, headers: { location: "https://t.me/alexgetman" } })
+          : new Response("profile", { status: 200 }),
+      );
+
+      const [result] = await verifyPostTargets(backendDb, "post:121");
+      expect(result).toMatchObject({ ok: false, reason: "http_301:https://t.me/alexgetman" });
+      // The profile page is never asked: it is not the post.
+      expect(urls).toEqual(["https://t.me/alexgetman/121"]);
+    });
+  });
+
+  it("refuses a stored URL that does not name a public host", async () => {
+    await withDb(async (backendDb) => {
+      insertPost(backendDb, { postId: 122, messageId: 122 });
+      // The URL is whatever the platform API reported at publish time, so the
+      // container must not be talked into fetching its own network.
+      insertTarget(backendDb, { publicationKey: "post:122", target: "telegram", status: "published", url: "http://127.0.0.1:8080/admin" });
+      const { urls } = stubFetch(() => new Response("should not be asked", { status: 200 }));
+
+      const [result] = await verifyPostTargets(backendDb, "post:122");
+      expect(result).toMatchObject({ ok: false, reason: "unverifiable_url" });
+      expect(urls).toEqual([]);
+    });
+  });
 });

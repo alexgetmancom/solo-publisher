@@ -77,18 +77,37 @@ export function insertVideoJob(
       .run();
 }
 
+/** Recomputes the draft's status from its targets.
+ *
+ * The value written is derived from every target row, not from the draft row,
+ * so there is no snapshot to carry in a `WHERE`: the fence has to be the
+ * transaction. `immediate` is what makes it one — a deferred transaction reads
+ * on a snapshot and only takes the write lock at the `UPDATE`, so two targets
+ * of the same draft finishing together both read "all final" and the loser
+ * wrote a status its own read no longer supported. That mattered most for
+ * `retentionUntil`: a draft whose last target had just been requeued got a
+ * deletion deadline for its source file, and the retention sweep is entitled
+ * to act on a deadline it finds. */
 export function refreshVideoDraftStatus(backendDb: BackendDb, videoDraftId: number, retentionHours: number): void {
-  const targets = listVideoTargets(backendDb, videoDraftId);
-  if (targets.length === 0) return;
-  const final = targets.every((target) => isVideoTargetFinal(target.status));
-  const status = videoDraftStatus(targets.map((target) => target.status));
-  unsafeDb(backendDb)
-    .db.update(videoDrafts)
-    .set({
-      status,
-      retentionUntil: final ? new Date(Date.now() + retentionHours * 60 * 60_000).toISOString() : null,
-      updatedAt: new Date().toISOString(),
-    })
-    .where(eq(videoDrafts.id, videoDraftId))
-    .run();
+  unsafeDb(backendDb).db.transaction(
+    (tx) => {
+      const targets = tx
+        .select({ status: videoTargets.status })
+        .from(videoTargets)
+        .where(eq(videoTargets.videoDraftId, videoDraftId))
+        .all();
+      if (targets.length === 0) return;
+      const final = targets.every((target) => isVideoTargetFinal(target.status));
+      const status = videoDraftStatus(targets.map((target) => target.status));
+      tx.update(videoDrafts)
+        .set({
+          status,
+          retentionUntil: final ? new Date(Date.now() + retentionHours * 60 * 60_000).toISOString() : null,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(videoDrafts.id, videoDraftId))
+        .run();
+    },
+    { behavior: "immediate" },
+  );
 }
