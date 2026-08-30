@@ -45,15 +45,15 @@
     "ops:prod": "bun scripts/ops-prod.ts"
   },
   "dependencies": {
-    "@astrojs/node": "^11.1.4",
     "@astrojs/rss": "^4.0.19",
-    "@astrojs/svelte": "^9.0.1",
     "@mtcute/bun": "^0.31.0",
-    "astro": "^7.2.4",
     "svelte": "^5.56.10"
   },
   "devDependencies": {
+    "@astrojs/node": "^11.1.4",
+    "@astrojs/svelte": "^9.0.1",
     "@biomejs/biome": "^2.5.10",
+    "astro": "^7.2.4",
     "happy-dom": "20.11.6",
     "lefthook": "^2.1.10",
     "sharp": "^0.35.3",

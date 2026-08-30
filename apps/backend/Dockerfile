@@ -61,8 +61,8 @@ COPY apps/backend/assets /app/apps/backend/assets
 # --- ДИНАМИЧЕСКИЙ ВЫБОР СТАДИИ СБОРКИ НА ОСНОВЕ ПЕРЕМЕННОЙ ---
 FROM build-${BUILD_SOURCE} AS build
 
-# --- СТАДИЯ ПРОД-ЗАВИСИМОСТЕЙ ---
-# Keep dependency installation and runtime on the same glibc base. Bun's musl
+# --- PRODUCTION DEPENDENCIES ---
+# Keep dependency installation and runtime on glibc-based images. Bun's musl
 # runtime does not currently expose every N-API symbol Sharp needs, so an
 # Alpine image can contain the correct native package and still fail on import.
 FROM oven/bun:1.3.14-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS prod-deps
@@ -75,30 +75,18 @@ COPY --chown=bun:bun tools/layer-checker/package.json ./tools/layer-checker/pack
 
 RUN chown bun:bun /app
 USER bun
-# Прод-зависимости здесь ставятся от КОРНЯ, а корневой package.json держит
-# `astro` в dependencies, поэтому вместе с ним приезжает весь его build-тулчейн.
-# Рантайму он не нужен: сайт уже собран в dist, а SSR-чанки Astro тянут из
-# node_modules только drizzle-orm, svelte, hono, @astrojs/rss, @mtcute/bun, yaml
-# и мелочь вокруг них. Всё остальное ниже — build-time.
-#
-# Удалять надо именно из `node_modules/.bun/`: там лежат сами пакеты, а
-# `node_modules/<name>` — лишь симлинки на них. Прежний
-# `rm -rf node_modules/esbuild ...` не удалял ничего, таких путей не существует.
-#
-# This list keeps the `Image smoke test` in .github/workflows/check.yml honest: it
-# поднимает собранный образ и ходит по SSR-роутам. Если новый импорт в
-# apps/web попадёт в один из удалённых пакетов, смоук упадёт до деплоя.
+# Build-only web packages live in root devDependencies, so the production
+# install contains runtime packages without a manual build-tool blacklist.
+# Bun installs optional native packages for both libc variants; the image is
+# glibc-only, so discard the unusable musl copies in the same layer.
 RUN --mount=type=cache,target=/home/bun/.bun,uid=1000,gid=1000 bun install --production --frozen-lockfile --ignore-scripts --linker hoisted \
   && rm -rf \
-    node_modules/.bun/@typescript+typescript-* \
-    node_modules/.bun/@rolldown+binding-* \
-    node_modules/.bun/@esbuild+* \
-    node_modules/.bun/lightningcss-linux-* \
-    node_modules/.bun/@astrojs+compiler-binding-* \
-    node_modules/.bun/@shikijs+langs@*
+    node_modules/@img/sharp-libvips-linuxmusl-* \
+    node_modules/@img/sharp-linuxmusl-* \
+    node_modules/@bruits/satteri-linux-*-musl
 
-# --- ФИНАЛЬНЫЙ МИНИМАЛЬНЫЙ ОБРАЗ ---
-FROM oven/bun:1.3.14-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS app
+# --- MINIMAL FINAL IMAGE ---
+FROM oven/bun:1.3.14-slim@sha256:d56a2534ffd262e92c12fd3249d3924d296d97086da773f821d7d0477435ea04 AS app
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates tini \
