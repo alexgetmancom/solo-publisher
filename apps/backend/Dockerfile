@@ -8,13 +8,13 @@ ARG BUILD_SOURCE=in-docker
 # launch. The video pipeline launches them dozens of times per publication, and
 # `--best --lzma` is worse at about 1230 ms. Disk maintenance is kept outside
 # the deployment critical path.
-FROM oven/bun:1.3.14-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS ffmpeg-bin
+FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS ffmpeg-bin
 USER root
 COPY --from=mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132 /ffmpeg /tmp/ffmpeg
 COPY --from=mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132 /ffprobe /tmp/ffprobe
 
 # --- СТАДИЯ СБОРКИ ВНУТРИ ДОКЕРА (для локальной сборки на Mac) ---
-FROM oven/bun:1.3.14-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS build-in-docker
+FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS build-in-docker
 WORKDIR /app
 # Сначала копируем только конфигурации и файлы package.json для кэширования
 COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json astro.config.ts svelte.config.ts biome.json knip.json ./
@@ -65,7 +65,7 @@ FROM build-${BUILD_SOURCE} AS build
 # Keep dependency installation and runtime on glibc-based images. Bun's musl
 # runtime does not currently expose every N-API symbol Sharp needs, so an
 # Alpine image can contain the correct native package and still fail on import.
-FROM oven/bun:1.3.14-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS prod-deps
+FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS prod-deps
 WORKDIR /app
 COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json astro.config.ts svelte.config.ts biome.json knip.json ./
 COPY --chown=bun:bun apps/backend/package.json ./apps/backend/package.json
@@ -86,7 +86,7 @@ RUN --mount=type=cache,target=/home/bun/.bun,uid=1000,gid=1000 bun install --pro
     node_modules/@bruits/satteri-linux-*-musl
 
 # --- MINIMAL FINAL IMAGE ---
-FROM oven/bun:1.3.14-slim@sha256:d56a2534ffd262e92c12fd3249d3924d296d97086da773f821d7d0477435ea04 AS app
+FROM oven/bun:1.4.0-slim@sha256:e0ee68d16ccb9927bf02aa7dd8fd4bf3369ee6d46da04faa72b05ce8bfd135f6 AS app
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates tini \
