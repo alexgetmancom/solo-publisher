@@ -100,15 +100,19 @@ export function scheduleConfirmationEffects<T extends string>(options: {
   ];
 }
 
-/** Builds the common video-style time picker: slot presets, manual entry and
- * a versioned cancel action. Domain-specific confirmation remains outside. */
+/** Builds the common video-style time picker: an optional "send now" row, slot
+ * presets, manual entry and a versioned cancel action. Domain-specific confirmation remains outside. */
 export function scheduleTimeKeyboard<T extends string>(options: {
   axis: ScheduleAxis<T>;
   revision?: number | null;
+  /** Sends this step's schedule immediately instead of picking a time. Only
+   * pipelines that can publish on the spot offer it. */
+  now?: { label: string; callback: string };
   manual: { label: string; callback: string };
   cancel: { label: string; callback: string };
 }): InlineKeyboard {
   const keyboard = new InlineKeyboard();
+  if (options.now) keyboard.text(options.now.label, versionedCallback(options.now.callback, options.revision)).row();
   appendScheduleAxisButtons(keyboard, options.axis, options.revision);
   keyboard.row();
   keyboard.text(options.manual.label, versionedCallback(options.manual.callback, options.revision)).row();

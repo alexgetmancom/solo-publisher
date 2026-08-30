@@ -72,6 +72,8 @@ const VIDEOS: Record<string, string> = {
   status: READ,
   history: READ,
   slotTime: READ,
+  immediateTime: READ,
+  isImmediate: READ,
   assetTechnicalCheck: READ,
   sourceReplaceable: READ,
   metadataEditableTargets: READ,

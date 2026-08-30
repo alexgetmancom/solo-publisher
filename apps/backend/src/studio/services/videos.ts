@@ -7,7 +7,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
 import { cancelScheduledNotifications, scheduleReminder } from "../../notifications/jobs.js";
 import { trackUsageAsync, trackUsageSync } from "../../observability/usage.js";
-import { parseManualSchedule, publicationSlotTime } from "../../publishing/schedule.js";
+import { immediateScheduleTime, isImmediateSchedule, parseManualSchedule, publicationSlotTime } from "../../publishing/schedule.js";
 import { isVideoTargetMetadataEditable } from "../../publishing/state.js";
 import {
   cancelVideo,
@@ -104,9 +104,9 @@ export function videoService(backendDb: BackendDb, config: BackendConfig) {
         requireOwnedVideo(backendDb, config, actorId, publicationId);
         const targets = backendDb.studioVideos.targets(publicationId).map((row) => row.target as VideoTarget);
         if (!targets.length) throw new StudioError("err.video-choose-platforms");
-        const schedule = Object.fromEntries(
-          targets.map((target) => [target, new Date(backendDb.clock.now().getTime() + 60_000)]),
-        ) as Partial<Record<VideoTarget, Date>>;
+        const schedule = Object.fromEntries(targets.map((target) => [target, immediateScheduleTime(backendDb.clock.now())])) as Partial<
+          Record<VideoTarget, Date>
+        >;
         return scheduleOwnedVideo(backendDb, config, actorId, publicationId, schedule);
       });
     },
@@ -249,6 +249,15 @@ export function videoService(backendDb: BackendDb, config: BackendConfig) {
       requireOwnedVideo(backendDb, config, actorId, publicationId);
       const timeConfig = settingsService(backendDb).timeConfig(actorId, config);
       return parseManualSchedule(value, timeConfig.TIMEZONE, backendDb.clock.now());
+    },
+    /** The time "send now" means, and reading one back as immediate. Delivery
+     * runs off the schedule, so this is a timestamp like any other and the
+     * transport never invents its own. */
+    immediateTime(): Date {
+      return immediateScheduleTime(backendDb.clock.now());
+    },
+    isImmediate(value: Date): boolean {
+      return isImmediateSchedule(value, backendDb.clock.now());
     },
     /** Resolves a slot-button clock (`HH:MM` in the configured Studio zone) to its next occurrence. */
     slotTime(actorId: number, clock: string): Date {

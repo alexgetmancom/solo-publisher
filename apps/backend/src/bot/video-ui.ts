@@ -176,6 +176,9 @@ function videoTimeEffects(session: VideoConversationState, locale: StudioLocale,
   const keyboard = scheduleTimeKeyboard({
     axis: engine.axis,
     revision,
+    // Emitted here rather than from the shared engine: sending on the spot is
+    // something the video pipeline can do and the post pipeline cannot.
+    now: { label: t(locale, "video.send-now-btn"), callback: publicationCallback("video", "sched_now", [draftId]) },
     manual: { label: t(locale, "video.enter-time-btn"), callback: engine.manualCallback() },
     cancel: { label: t(locale, "common.cancel"), callback: publicationCallback("video", "cancel_dialog") },
   });
@@ -247,8 +250,12 @@ export function videoScheduleConfirmationEffects(
     titlePrefix: "🎬",
     entries,
     label: videoTargetLabel,
+    // A time the operator asked for immediately reads as a stamp a minute out,
+    // which says nothing about what they chose. Name it instead.
     formatValue: (value) =>
-      `${value.toLocaleString(locale === "ru" ? "ru-RU" : "en-GB", { timeZone: timeConfig.TIMEZONE })} ${timeConfig.TIMEZONE_LABEL}`,
+      videos.isImmediate(value)
+        ? t(locale, "video.now-label")
+        : `${value.toLocaleString(locale === "ru" ? "ru-RU" : "en-GB", { timeZone: timeConfig.TIMEZONE })} ${timeConfig.TIMEZONE_LABEL}`,
     keyboard: appendConfirmationRow(
       keyboard,
       { label: t(locale, "common.confirm"), callback: engine.confirmCallback() },

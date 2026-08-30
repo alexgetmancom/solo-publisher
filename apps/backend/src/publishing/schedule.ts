@@ -43,6 +43,21 @@ export function parseManualSchedule(value: string, timeZone: string, now = new D
   return candidate;
 }
 
+/** The soonest a publication can be given. Delivery runs off the schedule, so
+ * "now" is a timestamp a minute out rather than a second path to publication:
+ * the card's "publish now" and the schedule screen's "send now" both resolve
+ * here, and the confirmation reads a schedule back as immediate through
+ * `isImmediateSchedule`. */
+const IMMEDIATE_SCHEDULE_LEAD_MS = 60_000;
+
+export function immediateScheduleTime(now: Date): Date {
+  return new Date(now.getTime() + IMMEDIATE_SCHEDULE_LEAD_MS);
+}
+
+export function isImmediateSchedule(value: Date, now: Date): boolean {
+  return value.getTime() - now.getTime() <= IMMEDIATE_SCHEDULE_LEAD_MS;
+}
+
 /** Enforces the application-level contract shared by post and video scheduling. */
 export function assertFutureSchedule(value: Date, now = new Date()): void {
   if (Number.isNaN(value.getTime()) || value.getTime() <= now.getTime()) throw new StudioError("err.schedule-time-past");

@@ -31,7 +31,7 @@ const STRANGER = 7;
 /** Methods that take no publication: they answer about the caller, or create
  * something the caller then owns. */
 const POST_ACTOR_SCOPED = ["create", "list", "mediaAssets", "slotTime", "publishArticle"];
-const VIDEO_ACTOR_SCOPED = ["create", "list", "slotTime", "assetTechnicalCheck"];
+const VIDEO_ACTOR_SCOPED = ["create", "list", "slotTime", "immediateTime", "isImmediate", "assetTechnicalCheck"];
 
 /** The few methods that normalize an argument before they ask who is calling.
  * Ownership is still the first thing they check about the *publication*; the

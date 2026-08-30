@@ -73,6 +73,7 @@ export function defineVideoActionHandlers(define: typeof action): Record<string,
     time: define(handleTime, { entity: "draft", freshCard: true, args: ["axis"] }),
     sched_pick: define(handleSchedulePick, { entity: "draft", freshCard: true, sessionRevision: true, args: ["axis", "clock"] }),
     sched_manual: define(handleScheduleManual, { entity: "draft", freshCard: true, sessionRevision: true, args: [] }),
+    sched_now: define(handleScheduleNow, { entity: "draft", freshCard: true, sessionRevision: true, args: [] }),
     sched_confirm: define(handleScheduleConfirm, { entity: "draft", freshCard: true, sessionRevision: true, args: [] }),
     remove_ask: define(handleRemoveAsk, { entity: "draft", freshCard: true, args: ["target"] }),
     remove: define(handleRemove, { entity: "draft", freshCard: true, args: ["target"] }),
@@ -323,6 +324,15 @@ async function handleScheduleManual({
       }),
     ),
   ];
+}
+
+/** "Send now" on a scheduling step. It answers the step the operator is on,
+ * not the whole draft: in per-platform mode only the platform being scheduled
+ * goes out immediately and the rest keep asking for their times, so a mixed
+ * schedule needs no second path — it is one more time in the same map. */
+async function handleScheduleNow({ backendDb, config, actorId, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
+  const session = requireVideoSession(backendDb, actorId, draftId, SCHEDULE_SESSION_STEPS, "action.schedule-expired");
+  return applyVideoScheduleDate(backendDb, config, actorId, session, services.videos.immediateTime(), services);
 }
 
 async function handleRemove({ backendDb, config, actorId, locale, args, draftId, services }: VideoActionArgs): Promise<VideoActionResult> {
