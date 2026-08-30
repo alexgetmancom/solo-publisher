@@ -10,6 +10,22 @@ import { trackUsageAsync, trackUsageSync } from "../../observability/usage.js";
 
 type AnalyticsSection = "overview" | "audience" | "posts" | "video";
 type AnalyticsPeriod = 1 | 7 | 30;
+type AnalyticsDashboard = ReturnType<typeof studioAnalyticsDashboard>;
+
+const DASHBOARD_CACHE_TTL_MS = 15_000;
+const dashboardCaches = new WeakMap<BackendDb, Map<string, { expiresAt: number; value: AnalyticsDashboard }>>();
+
+function cachedDashboard(backendDb: BackendDb, section: AnalyticsSection, days: AnalyticsPeriod, locale: StudioLocale): AnalyticsDashboard {
+  const now = Date.now();
+  const key = `${section}:${days}:${locale}`;
+  const cache = dashboardCaches.get(backendDb) ?? new Map<string, { expiresAt: number; value: AnalyticsDashboard }>();
+  dashboardCaches.set(backendDb, cache);
+  const cached = cache.get(key);
+  if (cached && cached.expiresAt > now) return cached.value;
+  const value = studioAnalyticsDashboard(backendDb, section, days, locale);
+  cache.set(key, { expiresAt: now + DASHBOARD_CACHE_TTL_MS, value });
+  return value;
+}
 
 /**
  * Application boundary for creator analytics. Telegram, Web Studio and MCP use
@@ -18,7 +34,7 @@ type AnalyticsPeriod = 1 | 7 | 30;
 export function analyticsService(backendDb: BackendDb, config: BackendConfig) {
   return {
     dashboard(section: AnalyticsSection, days: AnalyticsPeriod, locale: StudioLocale) {
-      return trackUsageSync(backendDb, "studio.analytics.dashboard.read", () => studioAnalyticsDashboard(backendDb, section, days, locale));
+      return trackUsageSync(backendDb, "studio.analytics.dashboard.read", () => cachedDashboard(backendDb, section, days, locale));
     },
     postArchive(offset: number, locale: StudioLocale) {
       return trackUsageSync(backendDb, "studio.analytics.post.read", () => creatorPostArchive(backendDb, offset, locale));

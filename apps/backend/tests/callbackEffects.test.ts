@@ -45,8 +45,6 @@ describe("tapped controls", () => {
           throw new StudioError("intake.expired");
         },
       );
-      // Answering before the work is done spends the only acknowledgement
-      // Telegram allows, and the operator is left looking at nothing.
       expect(answers).toEqual([{ text: t("en", "intake.expired") }]);
     }));
 

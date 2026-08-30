@@ -9,6 +9,17 @@ import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("Studio service boundaries", () => {
+  it("builds one service graph per runtime and reuses a fresh analytics dashboard", () =>
+    withDb(async (backendDb) => {
+      const config = loadTestConfig({});
+      const first = createStudioServices(backendDb, config);
+      const second = createStudioServices(backendDb, config);
+
+      expect(second).toBe(first);
+      expect(second.analytics.dashboard("overview", 7, "en")).toBe(first.analytics.dashboard("overview", 7, "en"));
+      expect(createStudioServices(backendDb, loadTestConfig({}))).not.toBe(first);
+    }));
+
   it("imports byte and file media through one facade with content deduplication", async () => {
     const backendDb = openBackendDb(":memory:");
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "studio-service-media-"));

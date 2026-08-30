@@ -22,15 +22,19 @@ export type StudioServices = {
   streams: ReturnType<typeof streamService>;
 };
 
+const serviceCaches = new WeakMap<BackendDb, WeakMap<BackendConfig, StudioServices>>();
+
 /**
  * Single application entry point for every Studio interface.
  * Telegram, the future Web Studio and MCP receive the same capability set;
  * only rendering and transport live outside this boundary.
  */
 export function createStudioServices(backendDb: BackendDb, config: BackendConfig): StudioServices {
+  const cached = serviceCaches.get(backendDb)?.get(config);
+  if (cached) return cached;
   const posts = postService(backendDb, config);
   const videos = videoService(backendDb, config);
-  return {
+  const services = {
     posts,
     media: mediaService(backendDb, config),
     channels: channelService(backendDb, config),
@@ -41,4 +45,8 @@ export function createStudioServices(backendDb: BackendDb, config: BackendConfig
     settings: settingsService(backendDb),
     streams: streamService(backendDb, config),
   };
+  const byConfig = serviceCaches.get(backendDb) ?? new WeakMap<BackendConfig, StudioServices>();
+  byConfig.set(config, services);
+  serviceCaches.set(backendDb, byConfig);
+  return services;
 }

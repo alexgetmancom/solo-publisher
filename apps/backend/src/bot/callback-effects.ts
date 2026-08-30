@@ -20,10 +20,10 @@ type CallbackAction = {
 /** Runs one tapped control and delivers whatever it produced.
  *
  * Every callback in the bot ends here, so the three rules that make a tap
- * legible hold in one place: it is answered exactly once, a duplicate tap is
- * refused rather than run twice, and a failure reaches the operator as a toast
- * instead of a log line. Answering first and working after would spend the one
- * acknowledgement Telegram allows before knowing what to say with it. */
+ * legible hold in one place: a duplicate tap is refused rather than run twice,
+ * and a failure reaches the operator instead of stopping at a log line. The
+ * callback boundary has already acknowledged the tap; its context redirects
+ * actionable callback text into a chat message. */
 export async function runCallbackAction(
   ctx: Context,
   backendDb: BackendDb,

@@ -118,12 +118,17 @@ describe("telegram interface contour", () => {
     expect(answers).toEqual([undefined]);
   });
 
-  it("leaves a handler's own answer alone", async () => {
+  it("acknowledges before the handler and redirects its later text", async () => {
     const answers: Array<{ text?: string } | undefined> = [];
+    const replies: string[] = [];
     const ctx = {
       from: { id: 42 },
       callbackQuery: { id: "cb-2", data: "noop" },
       answerCallbackQuery: async (options?: { text?: string }) => void answers.push(options),
+      reply: async (text: string) => {
+        replies.push(text);
+        return { message_id: 1 };
+      },
     } as unknown as Context;
 
     await withDb(async (backendDb: BackendDb) =>
@@ -132,7 +137,8 @@ describe("telegram interface contour", () => {
       }),
     );
 
-    expect(answers).toEqual([{ text: "Cancelled" }]);
+    expect(answers).toEqual([undefined]);
+    expect(replies).toEqual(["Cancelled"]);
   });
 });
 

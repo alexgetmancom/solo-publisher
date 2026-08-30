@@ -4,6 +4,7 @@ import { describeError } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { settingsService } from "../studio/services/settings.js";
 import { callbackToast } from "./callback-effects.js";
+import { showMessage } from "./effects.js";
 
 const CALLBACK_DEDUPLICATION_TTL_MS = 15 * 60_000;
 const CALLBACK_DEDUPLICATION_LIMIT = 10_000;
@@ -15,36 +16,52 @@ const seenCallbackQueries = new Map<string, number>();
 
 /** Runs every callback downstream of the bot's authorization middleware. */
 export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, next: () => Promise<void>): Promise<void> {
+  const startedAt = performance.now();
   const callbackId = ctx.callbackQuery?.id;
   if (callbackId && !claimCallbackQuery(callbackId)) {
     await answerCallbackSafely(ctx);
     return;
   }
-  const answered = recordAnswers(ctx);
+  const answer = ctx.answerCallbackQuery.bind(ctx);
+  try {
+    await answer();
+  } catch (error) {
+    log("warn", "Failed to acknowledge Telegram callback query", { error: String(error) });
+  }
+  const acknowledgedAt = performance.now();
+  redirectLaterAnswers(ctx);
   try {
     await next();
-    // Telegram spins that button until something answers it, and every handler
-    // answering for itself is a rule nobody can hold: the one that forgets
-    // leaves a control turning for ten seconds and no trace anywhere. A handler
-    // still answers when it has something to say -- a toast, an alert -- and
-    // this is what covers the ones that have nothing.
-    if (!answered.value) await answerCallbackSafely(ctx);
   } catch (error) {
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-    await answerCallbackSafely(ctx, { text: callbackToast(describeError(locale, error)) });
+    await replySafely(ctx, callbackToast(describeError(locale, error)));
+  } finally {
+    log("info", "Telegram callback timing", {
+      callback: callbackRoute(ctx.callbackQuery?.data),
+      acknowledgeMs: Math.round(acknowledgedAt - startedAt),
+      handlerMs: Math.round(performance.now() - acknowledgedAt),
+      totalMs: Math.round(performance.now() - startedAt),
+    });
   }
 }
 
-/** Watches this update's own acknowledgement, so the boundary can tell a tap
- * that was answered from one that was dropped. */
-function recordAnswers(ctx: Context): { value: boolean } {
-  const answered = { value: false };
-  const answer = ctx.answerCallbackQuery.bind(ctx);
-  ctx.answerCallbackQuery = async (...args: Parameters<Context["answerCallbackQuery"]>) => {
-    answered.value = true;
-    return answer(...args);
+function callbackRoute(data: string | undefined): string {
+  if (!data) return "unknown";
+  return data
+    .split(":")
+    .slice(0, 2)
+    .map((part) => (/^\d+$/.test(part) ? "#" : part))
+    .join(":");
+}
+
+/** Telegram accepts one callback answer. Spend it immediately so the button
+ * stops spinning; later empty acknowledgements are no-ops and actionable
+ * toasts become visible chat messages. */
+function redirectLaterAnswers(ctx: Context): void {
+  ctx.answerCallbackQuery = async (options?: Parameters<Context["answerCallbackQuery"]>[0]) => {
+    if (options && typeof options === "object" && "text" in options && options.text) await replySafely(ctx, options.text);
+    return true;
   };
-  return answered;
 }
 
 function claimCallbackQuery(callbackId: string): boolean {
@@ -70,5 +87,13 @@ async function answerCallbackSafely(ctx: Context, options?: { text?: string }): 
     // ten-second Telegram window may have closed. Never turn error reporting
     // into a second unhandled callback failure.
     log("warn", "Failed to answer Telegram callback query", { error: String(error) });
+  }
+}
+
+async function replySafely(ctx: Context, text: string): Promise<void> {
+  try {
+    await showMessage(ctx, text);
+  } catch (error) {
+    log("warn", "Failed to send Telegram callback result", { error: String(error) });
   }
 }
