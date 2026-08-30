@@ -60,7 +60,11 @@ describe("post recovery scenario", () => {
         ({
           callbackQuery: { id, data: publicationCallback("post", "retry", [7, "all", "notice"]) },
           from: { id: 42 },
-          answerCallbackQuery: async (options?: { text?: string }) => void callbackAnswers.push(options),
+          answerCallbackQuery: async () => true,
+          reply: async (text: string) => {
+            callbackAnswers.push({ text });
+            return true;
+          },
         }) as unknown as Context;
       const firstRetry = retryContext("post-recovery-retry", answers);
       await runCallbackBoundary(firstRetry, backendDb, async () => {
