@@ -52,15 +52,15 @@ function readBackup(backendDb: SettingsDependencies) {
 
 /** How hard Grok thinks. The CLI's own scale, narrowed to what this Studio has
  * a reason to pick between. */
-export const NEWS_DIGEST_EFFORTS = ["low", "medium", "high", "xhigh"] as const;
-export type NewsDigestEffort = (typeof NEWS_DIGEST_EFFORTS)[number];
+export const RADAR_EFFORTS = ["low", "medium", "high", "xhigh"] as const;
+export type RadarEffort = (typeof RADAR_EFFORTS)[number];
 
-function parseEffort(value: string | undefined): NewsDigestEffort {
-  return NEWS_DIGEST_EFFORTS.includes(value as NewsDigestEffort) ? (value as NewsDigestEffort) : "xhigh";
+function parseEffort(value: string | undefined): RadarEffort {
+  return RADAR_EFFORTS.includes(value as RadarEffort) ? (value as RadarEffort) : "xhigh";
 }
 
-function readNewsDigest(backendDb: SettingsDependencies) {
-  const row = backendDb.studioSettings.newsDigest();
+function readRadar(backendDb: SettingsDependencies) {
+  const row = backendDb.studioSettings.radar();
   return {
     enabled: row?.enabled === 1,
     hour: row?.hour ?? 10,
@@ -155,8 +155,8 @@ export function settingsService(backendDb: SettingsDependencies) {
     weeklyDigest() {
       return readWeeklyDigest(backendDb);
     },
-    newsDigest() {
-      return readNewsDigest(backendDb);
+    radar() {
+      return readRadar(backendDb);
     },
     backup() {
       return readBackup(backendDb);
@@ -205,14 +205,14 @@ export function settingsService(backendDb: SettingsDependencies) {
       });
       return next;
     },
-    setNewsDigest(input: Partial<{ enabled: boolean; hour: number; minute: number; prompt: string; effort: NewsDigestEffort }>) {
+    setRadar(input: Partial<{ enabled: boolean; hour: number; minute: number; prompt: string; effort: RadarEffort }>) {
       if (input.hour != null && (!Number.isInteger(input.hour) || input.hour < 0 || input.hour > 23))
-        throw new StudioError("err.news-digest-hour-range");
+        throw new StudioError("err.radar-hour-range");
       if (input.minute != null && (!Number.isInteger(input.minute) || input.minute < 0 || input.minute > 59))
-        throw new StudioError("err.news-digest-minute-range");
-      if (input.prompt != null && input.prompt.trim().length > 10_000) throw new StudioError("err.news-digest-prompt-length");
-      if (input.effort != null && !NEWS_DIGEST_EFFORTS.includes(input.effort)) throw new StudioError("err.news-digest-effort-invalid");
-      const current = readNewsDigest(backendDb);
+        throw new StudioError("err.radar-minute-range");
+      if (input.prompt != null && input.prompt.trim().length > 10_000) throw new StudioError("err.radar-prompt-length");
+      if (input.effort != null && !RADAR_EFFORTS.includes(input.effort)) throw new StudioError("err.radar-effort-invalid");
+      const current = readRadar(backendDb);
       const next = {
         enabled: input.enabled ?? current.enabled,
         hour: input.hour ?? current.hour,
@@ -220,7 +220,7 @@ export function settingsService(backendDb: SettingsDependencies) {
         prompt: input.prompt == null ? current.prompt : input.prompt.trim(),
         effort: input.effort ?? current.effort,
       };
-      backendDb.studioSettings.saveNewsDigest({
+      backendDb.studioSettings.saveRadar({
         enabled: Number(next.enabled),
         hour: next.hour,
         minute: next.minute,

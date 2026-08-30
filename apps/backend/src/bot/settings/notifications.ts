@@ -1,16 +1,15 @@
 import { Menu } from "@grammyjs/menu";
-import type { Bot, Context } from "grammy";
+import type { Context } from "grammy";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
 import { describeError, t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
-import { sendDailyNewsDigest } from "../../interfaces/telegram/news-digest.js";
 import { createStudioServices } from "../../studio/services/index.js";
-import { NEWS_DIGEST_EFFORTS, settingsService } from "../../studio/services/settings.js";
+import { RADAR_EFFORTS, settingsService } from "../../studio/services/settings.js";
 import { DEFAULT_MILESTONE_THRESHOLDS } from "../../studio.js";
 import { clearConversationState } from "../conversation-state.js";
-import { showMessage, showScreen } from "../effects.js";
+import { showScreen } from "../effects.js";
 import {
   askSettingsInput,
   BACKUP_MENU_ID,
@@ -18,10 +17,10 @@ import {
   choiceLabel,
   formatTime,
   MILESTONES_MENU_ID,
-  NEWS_DIGEST_MENU_ID,
-  NEWS_DIGEST_TIME_MENU_ID,
   NOTIFICATION_SETTINGS_MENU_ID,
   NOTIFICATIONS_MENU_ID,
+  RADAR_MENU_ID,
+  RADAR_TIME_MENU_ID,
   settingsScreen,
   settingsUpdate,
   switchLabel,
@@ -29,7 +28,7 @@ import {
   weekdayLabel,
 } from "./shared.js";
 
-export function buildNotificationsMenu(config: BackendConfig, backendDb: BackendDb, bot: Bot | null): Menu<Context> {
+export function buildNotificationsMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
   const notificationSettings = new Menu<Context>(NOTIFICATION_SETTINGS_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const settings = createStudioServices(backendDb, config).settings.notifications(actorId);
@@ -104,80 +103,68 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
     );
   });
 
-  const newsDigestTime = new Menu<Context>(NEWS_DIGEST_TIME_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+  const radarTime = new Menu<Context>(RADAR_TIME_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
-    const settings = createStudioServices(backendDb, config).settings.newsDigest();
+    const settings = createStudioServices(backendDb, config).settings.radar();
     for (let hour = 0; hour < 24; hour += 1) {
       range.text(
         choiceLabel(settings.hour === hour && settings.minute === 0, formatTime(hour, 0)),
         settingsUpdate({
-          apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ hour, minute: 0 }),
-          body: () => newsDigestTimeText(backendDb, config, actorId, locale),
-          toast: t(locale, "settings.news-digest-time-set", { time: formatTime(hour, 0) }),
+          apply: () => createStudioServices(backendDb, config).settings.setRadar({ hour, minute: 0 }),
+          body: () => radarTimeText(backendDb, config, actorId, locale),
+          toast: t(locale, "settings.radar-time-set", { time: formatTime(hour, 0) }),
         }),
       );
       if (hour % 4 === 3) range.row();
     }
     range
-      .text(t(locale, "settings.news-digest-time-custom"), (ctx) =>
-        askSettingsInput(ctx, backendDb, actorId, "news_digest_time", newsDigestTime, t(locale, "settings.news-digest-time-input-prompt")),
+      .text(t(locale, "settings.radar-time-custom"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "radar_time", radarTime, t(locale, "settings.radar-time-input-prompt")),
       )
       .row()
       .back(
-        t(locale, "settings.back-to-news-digest"),
+        t(locale, "settings.back-to-radar"),
         settingsUpdate({
           apply: () => clearConversationState(backendDb, actorId, "settings"),
-          body: () => newsDigestText(backendDb, config, locale),
+          body: () => radarText(backendDb, config, locale),
         }),
       );
   });
 
-  const newsDigest = new Menu<Context>(NEWS_DIGEST_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
+  const radar = new Menu<Context>(RADAR_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
-    const settings = createStudioServices(backendDb, config).settings.newsDigest();
+    const settings = createStudioServices(backendDb, config).settings.radar();
     range
       .text(
-        switchLabel(settings.enabled, t(locale, "settings.news-digest-enabled")),
+        switchLabel(settings.enabled, t(locale, "settings.radar-enabled")),
         settingsUpdate({
-          apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ enabled: !settings.enabled }),
-          body: () => newsDigestText(backendDb, config, locale),
+          apply: () => createStudioServices(backendDb, config).settings.setRadar({ enabled: !settings.enabled }),
+          body: () => radarText(backendDb, config, locale),
         }),
       )
       .row()
       .submenu(
-        `${t(locale, "settings.news-digest-time")}: ${formatTime(settings.hour, settings.minute)}`,
-        NEWS_DIGEST_TIME_MENU_ID,
-        settingsScreen(() => newsDigestTimeText(backendDb, config, actorId, locale)),
+        `${t(locale, "settings.radar-time")}: ${formatTime(settings.hour, settings.minute)}`,
+        RADAR_TIME_MENU_ID,
+        settingsScreen(() => radarTimeText(backendDb, config, actorId, locale)),
       )
       .row();
-    for (const effort of NEWS_DIGEST_EFFORTS)
+    for (const effort of RADAR_EFFORTS)
       range.text(
         choiceLabel(settings.effort === effort, effort),
         settingsUpdate({
-          apply: () => createStudioServices(backendDb, config).settings.setNewsDigest({ effort }),
-          body: () => newsDigestText(backendDb, config, locale),
-          toast: t(locale, "settings.news-digest-effort-set", { effort }),
+          apply: () => createStudioServices(backendDb, config).settings.setRadar({ effort }),
+          body: () => radarText(backendDb, config, locale),
+          toast: t(locale, "settings.radar-effort-set", { effort }),
         }),
       );
     range
       .row()
-      .text(t(locale, "settings.news-digest-prompt-edit"), (ctx) =>
-        askSettingsInput(ctx, backendDb, actorId, "news_digest_prompt", newsDigest, t(locale, "settings.news-digest-prompt-input")),
+      .text(t(locale, "settings.radar-prompt-edit"), (ctx) =>
+        askSettingsInput(ctx, backendDb, actorId, "radar_prompt", radar, t(locale, "settings.radar-prompt-input")),
       )
-      .row()
-      .text(t(locale, "settings.news-digest-send-now"), async (ctx) => {
-        if (!bot) {
-          await ctx.answerCallbackQuery({ text: t(locale, "settings.news-digest-unavailable"), show_alert: true });
-          return;
-        }
-        await ctx.answerCallbackQuery({ text: t(locale, "settings.news-digest-send-started") });
-        const result = await sendDailyNewsDigest(config, backendDb, bot, new Date(), { force: true });
-        if (result.status === "failed") await showMessage(ctx, t(locale, "settings.news-digest-send-failed", { error: result.error }));
-        else if (result.status === "missing_prompt") await showMessage(ctx, t(locale, "settings.news-digest-prompt-missing"));
-        else if (result.status === "already_sent") await showMessage(ctx, t(locale, "settings.news-digest-already-sent"));
-      })
       .row()
       .back(
         t(locale, "settings.back-to-notifications"),
@@ -266,9 +253,9 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
       )
       .row()
       .submenu(
-        t(locale, "settings.news-digest"),
-        NEWS_DIGEST_MENU_ID,
-        settingsScreen(() => newsDigestText(backendDb, config, locale)),
+        t(locale, "settings.radar"),
+        RADAR_MENU_ID,
+        settingsScreen(() => radarText(backendDb, config, locale)),
       )
       .submenu(
         t(locale, "settings.milestones"),
@@ -280,9 +267,9 @@ export function buildNotificationsMenu(config: BackendConfig, backendDb: Backend
   });
   notifications.register(notificationSettings);
   notifications.register(weeklyDigest);
-  notifications.register(newsDigest);
+  notifications.register(radar);
   notifications.register(milestones);
-  newsDigest.register(newsDigestTime);
+  radar.register(radarTime);
   return notifications;
 }
 
@@ -309,7 +296,7 @@ export function buildBackupMenu(config: BackendConfig, backendDb: BackendDb): Me
   });
 }
 
-export async function collectNewsDigestPrompt(
+export async function collectRadarPrompt(
   ctx: Context,
   backendDb: BackendDb,
   config: BackendConfig,
@@ -319,11 +306,11 @@ export async function collectNewsDigestPrompt(
 ): Promise<boolean> {
   const locale = settingsService(backendDb).locale(actorId);
   try {
-    createStudioServices(backendDb, config).settings.setNewsDigest({ prompt: text === "-" ? "" : text });
-    await showScreen(ctx, t(locale, "settings.news-digest-prompt-saved"));
-    await showScreen(ctx, newsDigestText(backendDb, config, locale), {
+    createStudioServices(backendDb, config).settings.setRadar({ prompt: text === "-" ? "" : text });
+    await showScreen(ctx, t(locale, "settings.radar-prompt-saved"));
+    await showScreen(ctx, radarText(backendDb, config, locale), {
       parse_mode: "Markdown",
-      reply_markup: settingsMenu.at(NEWS_DIGEST_MENU_ID),
+      reply_markup: settingsMenu.at(RADAR_MENU_ID),
     });
   } catch (error) {
     await showScreen(ctx, describeError(locale, error));
@@ -331,7 +318,7 @@ export async function collectNewsDigestPrompt(
   return true;
 }
 
-export async function collectNewsDigestTime(
+export async function collectRadarTime(
   ctx: Context,
   backendDb: BackendDb,
   config: BackendConfig,
@@ -344,14 +331,14 @@ export async function collectNewsDigestTime(
   const hour = match ? Number(match[1]) : NaN;
   const minute = match ? Number(match[2]) : NaN;
   if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-    await showScreen(ctx, t(locale, "err.news-digest-time-invalid"));
+    await showScreen(ctx, t(locale, "err.radar-time-invalid"));
     return true;
   }
-  createStudioServices(backendDb, config).settings.setNewsDigest({ hour, minute });
-  await showScreen(ctx, t(locale, "settings.news-digest-time-set", { time: formatTime(hour, minute) }));
-  await showScreen(ctx, newsDigestTimeText(backendDb, config, actorId, locale), {
+  createStudioServices(backendDb, config).settings.setRadar({ hour, minute });
+  await showScreen(ctx, t(locale, "settings.radar-time-set", { time: formatTime(hour, minute) }));
+  await showScreen(ctx, radarTimeText(backendDb, config, actorId, locale), {
     parse_mode: "Markdown",
-    reply_markup: settingsMenu.at(NEWS_DIGEST_TIME_MENU_ID),
+    reply_markup: settingsMenu.at(RADAR_TIME_MENU_ID),
   });
   return true;
 }
@@ -435,10 +422,10 @@ export function backupText(backendDb: BackendDb, config: BackendConfig, locale: 
   });
 }
 
-function newsDigestText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
+function radarText(backendDb: BackendDb, config: BackendConfig, locale: StudioLocale): string {
   const services = createStudioServices(backendDb, config);
-  const settings = services.settings.newsDigest();
-  return t(locale, "settings.news-digest-body", {
+  const settings = services.settings.radar();
+  return t(locale, "settings.radar-body", {
     status: settings.enabled ? t(locale, "settings.on") : t(locale, "settings.off"),
     time: formatTime(settings.hour, settings.minute),
     // The Studio's zone, because that is the one the digest fires in. Printing
@@ -446,14 +433,14 @@ function newsDigestText(backendDb: BackendDb, config: BackendConfig, locale: Stu
     // than the schedule keeps.
     timezone: config.TIMEZONE_LABEL,
     effort: settings.effort,
-    prompt: settings.prompt ? t(locale, "settings.news-digest-prompt-set") : t(locale, "settings.news-digest-prompt-missing"),
+    prompt: settings.prompt ? t(locale, "settings.radar-prompt-set") : t(locale, "settings.radar-prompt-missing"),
   });
 }
 
-function newsDigestTimeText(backendDb: BackendDb, config: BackendConfig, actorId: number, locale: StudioLocale): string {
+function radarTimeText(backendDb: BackendDb, config: BackendConfig, actorId: number, locale: StudioLocale): string {
   const services = createStudioServices(backendDb, config);
-  const settings = services.settings.newsDigest();
-  return t(locale, "settings.news-digest-time-body", {
+  const settings = services.settings.radar();
+  return t(locale, "settings.radar-time-body", {
     time: formatTime(settings.hour, settings.minute),
     timezone: services.settings.timeConfig(actorId, config).TIMEZONE_LABEL,
   });

@@ -72,11 +72,13 @@ export const studioBackupSettings = sqliteTable("studio_backup_settings", {
 });
 
 /** One daily Grok news digest policy per Studio instance, shared by every administrator. */
-export const studioNewsDigestSettings = sqliteTable("studio_news_digest_settings", {
+export const studioRadarSettings = sqliteTable("studio_radar_settings", {
   id: integer().primaryKey().default(1),
   enabled: integer().notNull().default(0),
   hour: integer().notNull().default(10),
   minute: integer().notNull().default(0),
+  /** What Grok is sent looking for. The archive producer needs no prompt: it
+   * reads this Studio's own published posts and entity clusters. */
   prompt: text().notNull().default(""),
   /** How hard Grok thinks on every attempt. One value, not a ladder: a report
    * that arrives at one effort and a stub at another is not a retry policy,

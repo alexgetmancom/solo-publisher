@@ -1,5 +1,5 @@
 import { Menu } from "@grammyjs/menu";
-import type { Bot, Context } from "grammy";
+import type { Context } from "grammy";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { t } from "../../foundation/i18n/index.js";
@@ -8,7 +8,7 @@ import { clearConversationState, getConversationState } from "../conversation-st
 import { showScreen } from "../effects.js";
 import { mainMenuText } from "../menu-render.js";
 import { collectThreadsFollowers, collectXAnalyticsCsv } from "./analytics.js";
-import { buildNotificationsMenu, collectMilestoneThreshold, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
+import { buildNotificationsMenu, collectMilestoneThreshold, collectRadarPrompt, collectRadarTime } from "./notifications.js";
 import { buildPublishingMenu, collectYoutubeSignature } from "./publishing.js";
 import { isNavigationMessage, NOTIFICATIONS_MENU_ID, PUBLISHING_MENU_ID, SETTINGS_MENU_ID, SYSTEM_MENU_ID } from "./shared.js";
 import { buildSystemMenu, collectTimezone } from "./system.js";
@@ -36,16 +36,16 @@ export async function handleSettingsMessage(
   if (state.step === "threads_followers")
     return collectThreadsFollowers(ctx, backendDb, actorId, text, settingsMenu, state.data.account === "en" ? "en" : "ru");
   if (state.step === "timezone") return collectTimezone(ctx, backendDb, config, actorId, text, settingsMenu);
-  if (state.step === "news_digest_time") return collectNewsDigestTime(ctx, backendDb, config, actorId, text, settingsMenu);
-  if (state.step === "news_digest_prompt") return collectNewsDigestPrompt(ctx, backendDb, config, actorId, text, settingsMenu);
+  if (state.step === "radar_time") return collectRadarTime(ctx, backendDb, config, actorId, text, settingsMenu);
+  if (state.step === "radar_prompt") return collectRadarPrompt(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step === "milestone_threshold") return collectMilestoneThreshold(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step !== "youtube_signature") return false;
   return collectYoutubeSignature(ctx, backendDb, config, actorId, text, settingsMenu);
 }
 
-export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb, bot: Bot | null = null): Menu<Context> {
+export function buildSettingsMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
   const publishing = buildPublishingMenu(config, backendDb);
-  const notifications = buildNotificationsMenu(config, backendDb, bot);
+  const notifications = buildNotificationsMenu(config, backendDb);
   const system = buildSystemMenu(config, backendDb);
 
   const settings = new Menu<Context>(SETTINGS_MENU_ID, { autoAnswer: false });

@@ -4,10 +4,10 @@ import {
   botUiSettings,
   studioBackupSettings,
   studioMilestoneSettings,
-  studioNewsDigestSettings,
   studioNotificationJobs,
   studioNotificationSettings,
   studioProfile,
+  studioRadarSettings,
   studioWeeklyDigestSettings,
   studioYoutubeSettings,
 } from "../schema.js";
@@ -51,8 +51,8 @@ export function createStudioSettingsStore(db: BackendDatabase): StudioSettingsSt
       return db.select().from(studioBackupSettings).where(eq(studioBackupSettings.id, 1)).get() ?? null;
     },
 
-    newsDigest() {
-      return db.select().from(studioNewsDigestSettings).where(eq(studioNewsDigestSettings.id, 1)).get() ?? null;
+    radar() {
+      return db.select().from(studioRadarSettings).where(eq(studioRadarSettings.id, 1)).get() ?? null;
     },
 
     milestones() {
@@ -83,8 +83,8 @@ export function createStudioSettingsStore(db: BackendDatabase): StudioSettingsSt
         .run();
     },
 
-    saveNewsDigest(input) {
-      db.insert(studioNewsDigestSettings)
+    saveRadar(input) {
+      db.insert(studioRadarSettings)
         .values({
           id: 1,
           enabled: input.enabled,
@@ -95,7 +95,7 @@ export function createStudioSettingsStore(db: BackendDatabase): StudioSettingsSt
           updatedAt: input.updatedAt,
         })
         .onConflictDoUpdate({
-          target: studioNewsDigestSettings.id,
+          target: studioRadarSettings.id,
           set: {
             enabled: input.enabled,
             hour: input.hour,

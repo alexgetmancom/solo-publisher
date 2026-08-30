@@ -4,6 +4,7 @@ export * from "./schema/analytics.js";
 export * from "./schema/articles.js";
 export * from "./schema/bot.js";
 export * from "./schema/content.js";
+export * from "./schema/editorial.js";
 export * from "./schema/knowledge.js";
 export * from "./schema/ops.js";
 export * from "./schema/publishing.js";

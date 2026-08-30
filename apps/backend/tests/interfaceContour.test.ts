@@ -79,6 +79,9 @@ describe("telegram interface contour", () => {
     "apps/backend/src/bot/post-flow.ts",
     "apps/backend/src/content/text.ts",
     "apps/backend/src/analytics/import-x-csv.ts",
+    // Russian stopwords, which are data about the language the posts and the
+    // headlines are in, not copy shown to anyone.
+    "apps/backend/src/editorial/cluster.ts",
     "apps/backend/src/operations/registry.ts",
     // Copy that still bypasses the catalogue. Each one renders Russian to an
     // English operator, and each one is a key waiting to be written.
