@@ -15,6 +15,10 @@ export function radarReport(backendDb: BackendDb) {
       producer: run.producer,
       status: run.status,
       startedAt: run.startedAt,
+      // How long it took, because that is the first question asked of a run
+      // that is still going: a search is a Grok subprocess with a quarter-hour
+      // budget, and "slow" and "stuck" are minutes apart.
+      seconds: Math.round(((run.finishedAt ? Date.parse(run.finishedAt) : Date.now()) - Date.parse(run.startedAt)) / 1000),
       candidates: run.candidateCount,
       duplicates: run.duplicateCount,
       ...(run.error ? { error: run.error.slice(0, 300) } : {}),
