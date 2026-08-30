@@ -218,7 +218,7 @@ export type StudioSettingsStore = {
   saveWeeklyDigest(input: { enabled: number; weekday: number; updatedAt: string }): void;
   backup(): StudioBackupSettingsRecord | null;
   saveBackup(input: { enabled: number; updatedAt: string }): void;
-  radar(): StudioRadarSettingsRecord | null;
+  newsDigest(): StudioNewsDigestSettingsRecord | null;
   milestones(): StudioMilestoneSettingsRecord | null;
   saveMilestones(input: {
     channelEnabled: number;
@@ -228,7 +228,7 @@ export type StudioSettingsStore = {
     thresholdsJson: number[];
     updatedAt: string;
   }): void;
-  saveRadar(input: { enabled: number; hour: number; minute: number; prompt: string; effort: string; updatedAt: string }): void;
+  saveNewsDigest(input: { enabled: number; hour: number; minute: number; prompt: string; effort: string; updatedAt: string }): void;
   saveNotifications(input: {
     actorId: number;
     videoRemindersEnabled: number;
@@ -296,7 +296,7 @@ type StudioMilestoneSettingsRecord = {
   updatedAt: string;
 };
 
-type StudioRadarSettingsRecord = {
+type StudioNewsDigestSettingsRecord = {
   id: number;
   enabled: number;
   hour: number;

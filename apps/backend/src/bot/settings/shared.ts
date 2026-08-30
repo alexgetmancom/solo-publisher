@@ -15,8 +15,8 @@ export const NOTIFICATION_SETTINGS_MENU_ID = "settings-notifications";
 export const WEEKLY_DIGEST_MENU_ID = "settings-weekly-digest";
 export const BACKUP_MENU_ID = "settings-backup";
 export const MILESTONES_MENU_ID = "settings-milestones";
-export const RADAR_MENU_ID = "settings-radar";
-export const RADAR_TIME_MENU_ID = "settings-radar-time";
+export const NEWS_DIGEST_MENU_ID = "settings-news-digest";
+export const NEWS_DIGEST_TIME_MENU_ID = "settings-news-digest-time";
 export const DEFAULT_TARGETS_MENU_ID = "settings-default-targets";
 export const YOUTUBE_SIGNATURE_MENU_ID = "settings-youtube";
 export const LANGUAGE_MENU_ID = "settings-language";
@@ -30,8 +30,8 @@ export const X_IMPORT_MENU_ID = "settings-x-import";
 
 export type SettingsInputStep =
   | "timezone"
-  | "radar_prompt"
-  | "radar_time"
+  | "news_digest_prompt"
+  | "news_digest_time"
   | "milestone_threshold"
   | "threads_followers"
   | "x_import"

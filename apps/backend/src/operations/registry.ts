@@ -13,7 +13,6 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { runRadar } from "../editorial/radar.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
@@ -55,7 +54,6 @@ import { formatPostText, postText } from "./post-text.js";
 import { purgePublication } from "./publication-purge.js";
 import { resolvePublicationRef } from "./publication-ref.js";
 import { publishText } from "./publish.js";
-import { radarReport } from "./radar-report.js";
 import { findPublication, formatPublicationMatches, formatRecentPublications, recentPublications } from "./recent.js";
 import { resumeTargetFrom } from "./resume-from.js";
 import { settingsReport } from "./settings-report.js";
@@ -215,29 +213,6 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => settingsReport(context.db(), context.config()),
-  }),
-  radar: operation({
-    summary: "What the editorial radar has found, what is waiting for a decision, and what its last runs did.",
-    note: "A failed run records its error and is not due again for a day, so `runs` is where a silent radar is explained.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => radarReport(context.db()),
-  }),
-  "radar-run": operation({
-    summary: "Run the editorial radar now: search the outside world, read this Studio's archive, store what is new.",
-    note: "The search is a Grok subprocess and can take a quarter of an hour. Findings are answered in the bot, not here.",
-    schema: z.object({
-      producer: z.enum(["news", "ideas", "both"]).default("both").describe("which producer to run"),
-    }),
-    mutates: true,
-    agent: true,
-    handler: async (context, input) => {
-      const producers = input.producer === "both" ? (["news", "ideas"] as const) : ([input.producer] as const);
-      const runs = [];
-      for (const producer of producers) runs.push(await runRadar(context.config(), context.db(), producer, { force: true }));
-      return { runs };
-    },
   }),
   "studio-profile": operation({
     summary: "What this Studio publishes as, its time zone, whether it serves a public site, and video timing.",

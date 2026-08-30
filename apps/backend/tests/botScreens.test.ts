@@ -9,7 +9,6 @@ import { buildMainMenu } from "../src/bot/navigation.js";
 import { draftPreview } from "../src/bot/preview.js";
 import { postProgress } from "../src/bot/progress.js";
 import { attentionView, queueView } from "../src/bot/queue.js";
-import { candidateView, radarHomeView } from "../src/bot/radar-screen.js";
 import { buildSettingsMenu } from "../src/bot/settings/index.js";
 import {
   BACKUP_MENU_ID,
@@ -19,10 +18,10 @@ import {
   CHANNELS_MENU_ID,
   DEFAULT_TARGETS_MENU_ID,
   MILESTONES_MENU_ID,
+  NEWS_DIGEST_MENU_ID,
   NOTIFICATION_SETTINGS_MENU_ID,
   NOTIFICATIONS_MENU_ID,
   PUBLISHING_MENU_ID,
-  RADAR_MENU_ID,
   SYSTEM_MENU_ID,
 } from "../src/bot/settings/shared.js";
 import { showStreamScreen } from "../src/bot/stream-screen.js";
@@ -94,7 +93,7 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     ["Settings · Publishing · Default targets", DEFAULT_TARGETS_MENU_ID],
     ["Settings · Notifications", NOTIFICATIONS_MENU_ID],
     ["Settings · Notifications · Publication notices", NOTIFICATION_SETTINGS_MENU_ID],
-    ["Settings · Notifications · Radar", RADAR_MENU_ID],
+    ["Settings · Notifications · News digest", NEWS_DIGEST_MENU_ID],
     ["Settings · Notifications · Achievements", MILESTONES_MENU_ID],
     ["Settings · System", SYSTEM_MENU_ID],
     ["Settings · System · Backup", BACKUP_MENU_ID],
@@ -124,31 +123,6 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
 
   for (const view of ["overview", "posts", "video"] as const)
     parts.push(section(`Analytics · ${view}`, keyboardRows(analyticsKeyboard("en", view, 7))));
-  parts.push(section("Radar", keyboardRows(radarHomeView(backendDb, config, 42).keyboard)));
-  parts.push(
-    section(
-      "Radar · one finding",
-      keyboardRows(
-        candidateView(
-          {
-            id: 7,
-            producer: "news",
-            title: "A finding",
-            summary: "What happened.",
-            reason: "Why this Studio should cover it.",
-            url: "https://example.com/a",
-            sourceHost: "example.com",
-            relatedPostIds: [],
-            entitySlugs: [],
-            score: 60,
-            status: "new",
-            createdAt: "2026-03-05T08:00:00.000Z",
-          },
-          "en",
-        ).keyboard,
-      ),
-    ),
-  );
   parts.push(section("Work queue", keyboardRows(queueView(backendDb, config, 42).keyboard)));
   parts.push(section("Work queue · needs attention", keyboardRows(attentionView(backendDb, config, 42).keyboard)));
 

@@ -173,28 +173,29 @@ describe("buildSettingsMenu", () => {
     expect(labels).toEqual(["📡 Publishing", "🔔 Notifications", "⚙️ System", "← Menu"]);
   });
 
-  it("keeps the radar settings under notifications", async () => {
+  it("keeps the news digest under notifications", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
 
     const labels = await settingsMenuLabels(config, backendDb, "settings-notifications-category");
     expect(labels).not.toContain("📥 Inbox");
-    expect(labels).toContain("📡 Radar");
+    expect(labels).toContain("📰 News digest");
   });
 
-  it("renders the radar settings with a back button", async () => {
+  it("renders the news digest controls with a back button", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
 
-    const labels = await settingsMenuLabels(config, backendDb, "settings-radar");
+    const labels = await settingsMenuLabels(config, backendDb, "settings-news-digest");
     expect(labels).toEqual([
-      "⬜ Radar",
-      "🕒 Daily time: 10:00",
+      "⬜ News digest",
+      "🕒 Delivery time: 10:00",
       "○ low",
       "○ medium",
       "○ high",
       "● xhigh",
       "✏️ Change prompt",
+      "▶️ Send now",
       "← Notifications",
     ]);
   });

@@ -1,7 +1,6 @@
 import { Menu } from "@grammyjs/menu";
 import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
-import { candidateCounts } from "../editorial/store.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
 import { createStudioServices } from "../studio/services/index.js";
@@ -10,7 +9,6 @@ import { showAnalyticsDashboard } from "./analytics-screen.js";
 import { showScreen } from "./effects.js";
 import { openIntake } from "./intake.js";
 import { showQueue } from "./queue.js";
-import { showRadarHome } from "./radar-screen.js";
 import { SETTINGS_MENU_ID } from "./settings/index.js";
 import { showStreamScreen } from "./stream-screen.js";
 
@@ -38,18 +36,6 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
       range.text(t(locale, "menu.streams"), (ctx) => showStreamScreen(ctx, backendDb, config));
   });
   menu.row();
-  // The second row is what arrived on its own and is waiting for an answer.
-  // Both entries carry a count, which is why they are a row of two: with the
-  // analytics and settings buttons beside them a phone truncated exactly the
-  // labels whose numbers were the reason to look.
-  menu.text(
-    (ctx) => {
-      const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
-      const { waiting } = candidateCounts(backendDb);
-      return waiting ? t(locale, "menu.radar-count", { count: waiting }) : t(locale, "menu.radar");
-    },
-    (ctx) => showRadarHome(ctx, backendDb, config),
-  );
   menu.text(
     (ctx) => {
       const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
@@ -58,7 +44,6 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
     },
     (ctx) => showQueue(ctx, backendDb, config),
   );
-  menu.row();
   menu.text(
     (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.analytics"),
     (ctx) => showAnalyticsDashboard(ctx, backendDb, config, "overview", 1),

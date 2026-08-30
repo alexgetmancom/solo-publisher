@@ -1,7 +1,6 @@
 import type { Menu } from "@grammyjs/menu";
 import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
-import { SKIP_REASONS } from "../editorial/store.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { describeError, t } from "../foundation/i18n/index.js";
 import { clearTelegramAnalyticsDashboard } from "../interfaces/telegram/control-cards.js";
@@ -28,15 +27,6 @@ import { mainMenuText, showMainMenu } from "./menu-render.js";
 import { handleOperationsCallback } from "./operations-screen.js";
 import { showPostProgress } from "./progress-screen.js";
 import { showQueue, showQueueAttention } from "./queue.js";
-import {
-  acceptAndOpenDraft,
-  askSkipReason,
-  deferCandidate,
-  recordSkipReason,
-  runRadarNow,
-  showNextCandidate,
-  showRadarHome,
-} from "./radar-screen.js";
 import { type ScreenCallback, type ScreenId, screenNumber } from "./screen-callback.js";
 import { promptStreamField, showStreamScreen } from "./stream-screen.js";
 
@@ -68,45 +58,6 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
   menu_home: async ({ ctx, backendDb, config, mainMenu }) => {
     clearTelegramAnalyticsDashboard(backendDb, Number(ctx.from?.id));
     await showMainMenu(ctx, backendDb, config, mainMenu);
-    return true;
-  },
-  radar_home: async ({ ctx, backendDb, config }) => {
-    await showRadarHome(ctx, backendDb, config);
-    return true;
-  },
-  radar_next: async ({ ctx, backendDb, config }) => {
-    await showNextCandidate(ctx, backendDb, config);
-    return true;
-  },
-  radar_deferred: async ({ ctx, backendDb, config }) => {
-    await showNextCandidate(ctx, backendDb, config, "later");
-    return true;
-  },
-  radar_run: async ({ ctx, backendDb, config }) => {
-    await runRadarNow(ctx, backendDb, config);
-    return true;
-  },
-  radar_accept: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    if (id == null) return false;
-    return acceptAndOpenDraft(ctx, backendDb, config, id);
-  },
-  radar_skip: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    if (id == null) return false;
-    return askSkipReason(ctx, backendDb, config, id);
-  },
-  radar_skip_why: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    const reason = SKIP_REASONS.find((value) => value === args.reason);
-    if (id == null || !reason) return false;
-    await recordSkipReason(ctx, backendDb, config, id, reason);
-    return true;
-  },
-  radar_later: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    if (id == null) return false;
-    await deferCandidate(ctx, backendDb, config, id);
     return true;
   },
   queue_home: async ({ ctx, backendDb, config }) => {

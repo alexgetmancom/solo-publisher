@@ -6,7 +6,7 @@ import { DEFAULT_STUDIO_PROFILE } from "../src/studio.js";
 describe("application persistence ports", () => {
   it("runs the settings service without SQLite", () => {
     let weeklyDigest: Parameters<ApplicationPorts["studioSettings"]["saveWeeklyDigest"]>[0] | undefined;
-    let radar: Parameters<ApplicationPorts["studioSettings"]["saveRadar"]>[0] | undefined;
+    let newsDigest: Parameters<ApplicationPorts["studioSettings"]["saveNewsDigest"]>[0] | undefined;
     let notifications: Parameters<ApplicationPorts["studioSettings"]["saveNotifications"]>[0] | undefined;
     let timezone: Parameters<ApplicationPorts["studioSettings"]["saveTimezone"]>[0] | undefined;
     let milestones: Parameters<ApplicationPorts["studioSettings"]["saveMilestones"]>[0] | undefined;
@@ -25,13 +25,13 @@ describe("application persistence ports", () => {
         saveWeeklyDigest: (input) => {
           weeklyDigest = input;
         },
-        radar: () => null,
+        newsDigest: () => null,
         milestones: () => null,
         saveMilestones: (input) => {
           milestones = input;
         },
-        saveRadar: (input) => {
-          radar = input;
+        saveNewsDigest: (input) => {
+          newsDigest = input;
         },
         saveNotifications: (input) => {
           notifications = input;
@@ -56,14 +56,14 @@ describe("application persistence ports", () => {
     expect(settings.timezone(42, "Europe/Moscow")).toBe("America/New_York");
     expect(settings.setWeeklyDigest({ enabled: true, weekday: 2 })).toEqual({ enabled: true, weekday: 2 });
     expect(weeklyDigest).toEqual({ enabled: 1, weekday: 2, updatedAt: "2026-01-02T03:04:05.000Z" });
-    expect(settings.setRadar({ enabled: true, hour: 8, minute: 30, prompt: "news", effort: "high" })).toEqual({
+    expect(settings.setNewsDigest({ enabled: true, hour: 8, minute: 30, prompt: "news", effort: "high" })).toEqual({
       enabled: true,
       hour: 8,
       minute: 30,
       prompt: "news",
       effort: "high",
     });
-    expect(radar).toEqual({
+    expect(newsDigest).toEqual({
       enabled: 1,
       hour: 8,
       minute: 30,

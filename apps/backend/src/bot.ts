@@ -42,7 +42,7 @@ export function createBot(config: BackendConfig, backendDb: BackendDb): Bot | nu
 }
 
 function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb): void {
-  const settingsMenu = buildSettingsMenu(config, backendDb);
+  const settingsMenu = buildSettingsMenu(config, backendDb, bot);
   const mainMenu = buildMainMenu(config, backendDb, settingsMenu);
   bot.use(async (ctx, next) => {
     const startedAt = Date.now();

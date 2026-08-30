@@ -9,18 +9,18 @@ import { createStudioServices } from "../studio/services/index.js";
  * with it. */
 export function settingsReport(backendDb: BackendDb, config: BackendConfig) {
   const settings = createStudioServices(backendDb, config).settings;
-  const radar = settings.radar();
+  const newsDigest = settings.newsDigest();
   const profile = settings.studioProfile();
   return {
     // The Studio's zone: the one the daily schedules below actually fire in.
     timezone: profile.timezone,
     youtubeSignature: settings.youtubeSignature(),
-    radar: {
-      enabled: radar.enabled,
-      at: `${String(radar.hour).padStart(2, "0")}:${String(radar.minute).padStart(2, "0")}`,
-      promptCharacters: radar.prompt.length,
-      effort: radar.effort,
-      runs: syncStateFor(backendDb, "radar:"),
+    newsDigest: {
+      enabled: newsDigest.enabled,
+      at: `${String(newsDigest.hour).padStart(2, "0")}:${String(newsDigest.minute).padStart(2, "0")}`,
+      promptCharacters: newsDigest.prompt.length,
+      effort: newsDigest.effort,
+      runs: syncStateFor(backendDb, "news_digest:"),
     },
     weeklyDigest: settings.weeklyDigest(),
     backup: settings.backup(),

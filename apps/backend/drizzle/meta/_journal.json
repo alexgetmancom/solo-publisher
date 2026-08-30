@@ -64,6 +64,13 @@
       "when": 1788150000000,
       "tag": "0008_editorial_radar",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788200000000,
+      "tag": "0009_revert_editorial_radar",
+      "breakpoints": true
     }
   ]
 }
