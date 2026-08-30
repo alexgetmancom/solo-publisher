@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { asc, count, eq } from "drizzle-orm";
-import { drafts, opsActions, publicationTargets, publishJobs, siteJobs } from "../src/db/schema.js";
+import { drafts, publicationEvents, publicationTargets, publishJobs, siteJobs } from "../src/db/schema.js";
 import { runOperationCommand } from "../src/operations/commands.js";
 import { newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { enqueuePublishJobTx } from "../src/publishing/queue.js";
@@ -203,7 +203,9 @@ describe("command center actions", () => {
         "deleted",
       );
       expect(backendDb.db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get()?.status).toBe("cancelled");
-      expect(backendDb.db.select().from(opsActions).all()).toHaveLength(1);
+      expect(backendDb.db.select().from(publicationEvents).where(eq(publicationEvents.eventType, "operations.command")).all()).toHaveLength(
+        1,
+      );
     }));
 
   it("rolls back a requeue when its audit record cannot be written", () =>
@@ -216,7 +218,9 @@ describe("command center actions", () => {
         payload: newDeliveryPayload({ text: "RU", text_en: "EN" }),
       });
       backendDb.db.update(publishJobs).set({ status: "failed", lastError: "boom" }).where(eq(publishJobs.jobId, jobId)).run();
-      backendDb.sqlite.exec("CREATE TRIGGER reject_ops_audit BEFORE INSERT ON ops_actions BEGIN SELECT RAISE(ABORT, 'audit failed'); END");
+      backendDb.sqlite.exec(
+        "CREATE TRIGGER reject_ops_audit BEFORE INSERT ON publication_events WHEN NEW.event_type = 'operations.command' BEGIN SELECT RAISE(ABORT, 'audit failed'); END",
+      );
 
       expect(runOperationCommand(backendDb, { action: "retry", ref: "post:20", target: "threads_en", apply: true })).rejects.toThrow(
         "audit failed",
@@ -226,7 +230,7 @@ describe("command center actions", () => {
         lastError: "boom",
       });
       expect(backendDb.db.select().from(drafts).where(eq(drafts.postId, 20)).get()?.status).toBe("published");
-      expect(backendDb.db.select().from(opsActions).all()).toEqual([]);
+      expect(backendDb.db.select().from(publicationEvents).where(eq(publicationEvents.eventType, "operations.command")).all()).toEqual([]);
     }));
 
   it("reports the scope and touches nothing until the caller applies it", () =>

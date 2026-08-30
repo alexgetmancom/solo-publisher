@@ -27,24 +27,14 @@ const KEY_SEP = String.fromCharCode(0);
 
 type MetricSeries = { target: string; metric: string; firstAt: string; latest: number; baseline: number | null };
 
-/** Closed set of target filters metric_samples queries can scope to — a plain
- * string parameter here would otherwise invite building a `where` fragment
- * from anything other than these two fixed, reviewed predicates. */
-type MetricScope = "text" | "site";
-const SCOPE_WHERE: Record<MetricScope, string> = {
-  text: "target NOT LIKE 'site_%'",
-  site: "target LIKE 'site_%'",
-};
-
 /** One row per (post, target, metric) with its latest value and the last value
  * at or before `since`. This is the primitive every metric_samples projection
  * is built on, so the scan and baseline rule exist in exactly one place. */
-function metricSeriesSince(backendDb: BackendDb, since: string, scope?: MetricScope): MetricSeries[] {
-  const where = scope ? SCOPE_WHERE[scope] : "1=1";
+function metricSeriesSince(backendDb: BackendDb, since: string): MetricSeries[] {
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
       `WITH matched AS (
-         SELECT publication_key, target, metric_name, value, sampled_at, id FROM metric_samples WHERE ${where}
+         SELECT publication_key, target, metric_name, value, sampled_at, id FROM metric_samples WHERE target NOT LIKE 'site_%'
        ),
        ranked_latest AS (
          SELECT publication_key, target, metric_name, value,
@@ -76,21 +66,11 @@ function metricSeriesSince(backendDb: BackendDb, since: string, scope?: MetricSc
   }));
 }
 
-/** metric_samples delta summed per metric name, filtered by target scope. */
-function metricDeltasSince(backendDb: BackendDb, since: string, scope: MetricScope): Record<string, number> {
-  const totals: Record<string, number> = {};
-  for (const entry of metricSeriesSince(backendDb, since, scope)) {
-    if (entry.baseline == null && entry.firstAt < since) continue;
-    totals[entry.metric] = (totals[entry.metric] ?? 0) + Math.max(0, entry.latest - (entry.baseline ?? 0));
-  }
-  return totals;
-}
-
 /** Text-post metric deltas grouped by delivery target. `reposts` is the
  * platform's share/forward action and is rendered as “пересылки” in UI. */
 export function textContentMetricsByPlatform(backendDb: BackendDb, since: string): Map<string, ContentMetrics> {
   const totals = new Map<string, ContentMetrics>();
-  for (const entry of metricSeriesSince(backendDb, since, "text")) {
+  for (const entry of metricSeriesSince(backendDb, since)) {
     if (entry.baseline == null && entry.firstAt < since) continue;
     const value = totals.get(entry.target) ?? { views: 0, likes: 0, comments: 0, shares: 0, saves: 0 };
     const delta = Math.max(0, entry.latest - (entry.baseline ?? 0));
@@ -148,21 +128,6 @@ export function latestTextPostMetrics(backendDb: BackendDb, since: string): Text
     grouped.set(key, value);
   }
   return [...grouped.values()];
-}
-
-export function textTotals(backendDb: BackendDb, since: string): { views: number; interactions: number } {
-  const totals = metricDeltasSince(backendDb, since, "text");
-  return {
-    views: totals.views ?? 0,
-    // `replies`/`comments` and `reposts`/`shares` are the same action under two
-    // provider names, and each provider emits only one of the pair — summing is
-    // what aggregates them across platforms.
-    interactions: (totals.likes ?? 0) + (totals.replies ?? 0) + (totals.reposts ?? 0) + (totals.shares ?? 0) + (totals.comments ?? 0),
-  };
-}
-
-export function siteTotal(backendDb: BackendDb, since: string): number {
-  return metricDeltasSince(backendDb, since, "site").views ?? 0;
 }
 
 export function latestVideoMetrics(backendDb: BackendDb, since: string): VideoMetricRow[] {
@@ -230,11 +195,6 @@ export function youtubeChannelViewDeltaSince(backendDb: BackendDb, since: string
   if (rows?.latest == null || rows.baseline == null || !rows.baseline_sampled_at || rows.baseline_sampled_at < oldestUsableBaseline)
     return null;
   return Math.max(0, rows.latest - rows.baseline);
-}
-
-/** Sums one metric field across a set of video rows (e.g. views across every published video). */
-export function sum(rows: VideoMetricRow[], field: string): number {
-  return rows.reduce((total, row) => total + metricNumber(row.metrics[field]), 0);
 }
 
 /** The current account's latest projection minus its own last observation at

@@ -10,4 +10,4 @@ pre-commit:
 pre-push:
   commands:
     quality:
-      run: bun scripts/check-prepush.ts
+      run: bun run check:prepush

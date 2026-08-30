@@ -4,7 +4,7 @@ import { plural, t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { manualScheduleExample } from "../foundation/time.js";
 import { settingsService } from "../studio/services/settings.js";
-import { clearConversationState, getConversationState } from "./conversation-state.js";
+import { clearConversationState, getConversationState, saveConversationState } from "./conversation-state.js";
 import { promptEffect, resultNavigationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
 import { mainMenuText } from "./menu-render.js";
@@ -19,7 +19,6 @@ import type {
   PublicationDraftActionContext,
 } from "./publication-action-contract.js";
 import { publicationCallback } from "./publication-callback.js";
-import { openPublicationFlow } from "./publication-flow.js";
 import { publicationCardEffect } from "./publication-renderers.js";
 
 type PostActionArgs = PublicationDraftActionContext;
@@ -122,7 +121,7 @@ async function handleCancelDialog(args: PostActionArgs): Promise<PublicationActi
 async function handleEdit({ backendDb, actorId, locale, action, draftId }: PostActionArgs): Promise<PublicationActionResult> {
   const step = POST_INPUT_STEPS[action];
   if (!step) throw new StudioError("action.session-stale");
-  openPublicationFlow(backendDb, actorId, {
+  saveConversationState(backendDb, actorId, {
     kind: "post",
     draftId,
     step: step.type,
@@ -216,7 +215,7 @@ async function handleManualSchedule(args: PostActionArgs): Promise<PublicationAc
   const pickLocale = requireScheduleLocale(axis);
   clearConversationState(backendDb, actorId, "post");
   const timeConfig = services.settings.timeConfig(actorId, config);
-  openPublicationFlow(backendDb, actorId, {
+  saveConversationState(backendDb, actorId, {
     kind: "post",
     draftId,
     step: "schedule_manual",

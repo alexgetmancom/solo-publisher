@@ -18,10 +18,6 @@ export function capabilityReport(config: BackendConfig, backendDb?: BackendDb): 
   });
 }
 
-export function channelReadiness(config: BackendConfig, backendDb: BackendDb): Map<string, CapabilityReportEntry> {
-  return new Map(capabilityReport(config, backendDb).map((entry) => [entry.target, entry]));
-}
-
 function capabilityRequirements(config: BackendConfig): Map<string, readonly string[]> {
   const requirements = new Map<string, readonly string[]>();
   if (config.controllerBotToken || config.CONTROLLER_ADMIN_IDS.length) requirements.set("controller_bot", controllerRequirements);

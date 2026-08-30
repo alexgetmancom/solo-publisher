@@ -56,17 +56,6 @@ const TOKENS: MetaToken[] = [
   },
 ];
 
-type StoredToken = { sealedToken: string; seedFingerprint: string | null; accountId: string | null; refreshedAt: string };
-
-function stored(backendDb: BackendDb, target: string): StoredToken | null {
-  return platformToken(backendDb, target);
-}
-
-function store(backendDb: BackendDb, target: string, row: StoredToken): void {
-  const now = new Date().toISOString();
-  storePlatformToken(backendDb, target, { ...row, updatedAt: now });
-}
-
 /**
  * Replaces each configured Meta token with the renewal this Studio last made.
  *
@@ -80,7 +69,7 @@ export function applyStoredMetaTokens(config: BackendConfig, backendDb: BackendD
   const mutable = config as unknown as Record<string, unknown>;
   for (const { target, setting } of TOKENS) {
     const seed = config.metaTokenSeeds[setting];
-    const row = stored(backendDb, target);
+    const row = platformToken(backendDb, target);
     if (!row) continue;
     // A different value in .env is the operator replacing a token by hand,
     // which is newer than anything renewed before it.
@@ -117,7 +106,7 @@ export async function renewMetaTokens(
     const token = config[setting];
     if (typeof token !== "string" || !token) continue;
     const envSeed = config.metaTokenSeeds[setting];
-    const row = stored(backendDb, target);
+    const row = platformToken(backendDb, target);
     // The stored renewal only counts as this token's history while .env still
     // holds the value it grew from.
     const seed = row && (row.seedFingerprint === null || (envSeed && row.seedFingerprint === fingerprint(envSeed))) ? row : null;
@@ -129,13 +118,14 @@ export async function renewMetaTokens(
     try {
       const renewed = await requestJson<{ access_token?: string }>(fetchImpl, refreshUrl(token));
       if (!renewed.access_token) throw new Error("no access_token in the response");
-      store(backendDb, target, {
+      storePlatformToken(backendDb, target, {
         sealedToken: seal(renewed.access_token, key),
         // The seed stays the .env value: it is what tells a later run whether
         // the operator has since replaced it.
         seedFingerprint: seed?.seedFingerprint ?? (envSeed ? fingerprint(envSeed) : null),
         accountId: seed?.accountId ?? instagramAccountId(config, target),
         refreshedAt: now.toISOString(),
+        updatedAt: now.toISOString(),
       });
       (config as unknown as Record<string, unknown>)[setting] = renewed.access_token;
       outcomes.push({ target, status: "renewed" });
@@ -163,11 +153,12 @@ export function installMetaToken(
   if (!key) throw new Error("TOKEN_ENCRYPTION_KEY is required for browser OAuth");
   const definition = TOKENS.find((candidate) => candidate.target === target);
   if (!definition) throw new Error(`Unknown Meta token target: ${target}`);
-  store(backendDb, target, {
+  storePlatformToken(backendDb, target, {
     sealedToken: seal(accessToken, key),
     seedFingerprint: null,
     accountId,
     refreshedAt: now.toISOString(),
+    updatedAt: now.toISOString(),
   });
   const mutable = config as unknown as Record<string, unknown>;
   mutable[definition.setting] = accessToken;

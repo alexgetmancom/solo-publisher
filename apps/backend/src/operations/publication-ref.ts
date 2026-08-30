@@ -2,7 +2,6 @@ import { eq, or } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts } from "../db/schema.js";
-import { publicationSourceFromDb } from "../publishing/source-store.js";
 
 export type ResolvedPublicationRef = { input: string; postId: number | null; publicationKey: string; messageId: number };
 
@@ -33,9 +32,4 @@ export function resolvePublicationRef(backendDb: BackendDb, ref: string): Resolv
     };
   }
   return null;
-}
-
-export function sourcePayload(backendDb: BackendDb, ref: ResolvedPublicationRef): Record<string, unknown> {
-  if (ref.postId == null) throw new Error("publication has no post id");
-  return publicationSourceFromDb(unsafeDb(backendDb).db, ref.postId);
 }

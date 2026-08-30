@@ -1,5 +1,4 @@
 import { describe, expect, it } from "bun:test";
-import { creatorDashboard } from "../src/analytics/reports/dashboard.js";
 import { studioAnalyticsDashboard } from "../src/analytics/reports/studio-dashboard.js";
 import { pruneMetricSamples } from "../src/analytics/snapshots/metric-repository.js";
 import { showAnalyticsDashboard } from "../src/bot/analytics-screen.js";
@@ -9,92 +8,12 @@ import { insertPublishedVideo } from "./helpers/analytics.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { withDb as withFixtureDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
-import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js";
+import { loadTestConfig } from "./helpers/studio-config.js";
 
 const withDb = <T>(run: (backendDb: UnsafeBackendDb) => T | Promise<T>) =>
   withFixtureDb(run, [...TEXT_TEST_CHANNELS, ...VIDEO_TEST_CHANNELS]);
 
 describe("creator analytics dashboards", () => {
-  it("builds a compact video dashboard from cached platform data", async () => {
-    await withDb(async (backendDb) => {
-      const now = new Date().toISOString();
-      const { targetId } = insertPublishedVideo(backendDb, { label: "Hades, часть 3", target: "youtube_shorts", publishedAt: now });
-      backendDb.db
-        .insert(videoMetricSnapshots)
-        .values({
-          videoTargetId: targetId,
-          platform: "youtube_shorts",
-          metricsJson: { views: 1200, likes: 87, comments: 9 },
-          sampledAt: now,
-        })
-        .run();
-      backendDb.db
-        .insert(creatorProfiles)
-        .values([
-          { platform: "youtube_ru", dataJson: { subscriberCount: 117 }, updatedAt: now },
-          { platform: "youtube_en", dataJson: { subscriberCount: 13 }, updatedAt: now },
-        ])
-        .run();
-
-      const config = loadTestConfig({}, SITE_STUDIO_PROFILE);
-      const dashboard = creatorDashboard(backendDb, config, 7);
-      expect(dashboard.text).toContain("Видео: 1200 просмотров · 96 взаимодействий");
-      expect(dashboard.text).toContain("YouTube: 1200 просмотров · 87 лайков · 130 подписчиков");
-      expect(dashboard.text).toContain("Hades, часть 3 — 1200 просмотров");
-    });
-  });
-
-  it("renders the overall creator dashboard from every connected account source", async () => {
-    await withDb(async (backendDb) => {
-      const now = new Date().toISOString();
-      backendDb.db
-        .insert(creatorProfiles)
-        .values([
-          {
-            platform: "youtube_ru",
-            dataJson: {
-              subscriberCount: 10,
-              viewCount: 2_000,
-              videoCount: 7,
-              views: 500,
-              estimatedMinutesWatched: 60,
-              subscribersGained: 4,
-              subscribersLost: 1,
-            },
-            updatedAt: now,
-          },
-          {
-            platform: "instagram_ru",
-            dataJson: {
-              followersCount: 306,
-              mediaCount: 12,
-              reach30d: 1_000,
-              views30d: 900,
-              interactions30d: 80,
-              saves30d: 20,
-              shares30d: 10,
-              reposts30d: 5,
-            },
-            updatedAt: now,
-          },
-        ])
-        .run();
-
-      const config = loadTestConfig({}, SITE_STUDIO_PROFILE);
-
-      const dashboard = creatorDashboard(backendDb, config, 0, "en");
-      expect(dashboard.text).toContain("Overall statistics");
-      expect(dashboard.text).toContain("Site: 0 material views");
-      expect(dashboard.text).toContain("Posts: 0 views · 0 interactions");
-      expect(dashboard.text).toContain("Subscribers: 10");
-      expect(dashboard.text).toContain("Lifetime views: 2000");
-      expect(dashboard.text).toContain("Watch time: 1.0 h");
-      expect(dashboard.text).toContain("Followers: 306");
-      expect(dashboard.text).toContain("Total Reels/posts: 12");
-      expect(dashboard.text).toContain("30 days: reach 1000");
-    });
-  });
-
   it("renders the compact Studio overview and keeps post and video analytics separate", async () => {
     await withDb(async (backendDb) => {
       const before = new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString();

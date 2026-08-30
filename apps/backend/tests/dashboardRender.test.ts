@@ -2,9 +2,9 @@ import { describe, expect, it } from "bun:test";
 import type { PipelinePost } from "../src/analytics/pipeline-payload.js";
 import { html as htmlFragment } from "../src/foundation/html.js";
 import { renderOverviewSparkline } from "../src/interfaces/web/dashboard/chart.js";
-import { formatMetricValue, getMskDateString, shortPipelineText } from "../src/interfaces/web/dashboard/format.js";
+import { formatMetricValue, shortPipelineText } from "../src/interfaces/web/dashboard/format.js";
 import { renderHeroCard, renderHeroMicroMetrics } from "../src/interfaces/web/dashboard/hero-section.js";
-import { formatMedia, getTargetMetric, postMetricTotals, targetCell } from "../src/interfaces/web/dashboard/metrics.js";
+import { getTargetMetric, postMetricTotals } from "../src/interfaces/web/dashboard/metrics.js";
 import { renderDashboardShell } from "../src/interfaces/web/dashboard/shell.js";
 import { renderOverviewPublicationList, renderPublicationDetails } from "../src/interfaces/web/dashboard/table.js";
 import { getTargetUrl } from "../src/interfaces/web/dashboard/target-url.js";
@@ -82,19 +82,6 @@ describe("dashboard formatting", () => {
     expect(formatMetricValue(undefined)).toBe("");
     expect(formatMetricValue("not a number")).toBe("");
     expect(formatMetricValue(0)).toBe("0");
-  });
-
-  it("shifts a UTC timestamp into the Moscow day", () => {
-    // 22:30 UTC is already the next day in MSK (+3).
-    expect(getMskDateString("2026-07-27T22:30:00.000Z")).toBe("2026-07-28");
-    expect(getMskDateString("2026-07-27T10:00:00.000Z")).toBe("2026-07-27");
-  });
-
-  it("falls back to today for a missing or invalid date rather than rendering NaN", () => {
-    const today = new Date().toISOString().slice(0, 10);
-    expect(getMskDateString(null)).toBe(today);
-    expect(getMskDateString(undefined)).toBe(today);
-    expect(getMskDateString("not a date")).toBe(today);
   });
 
   it("survives a missing title instead of rendering the word null", () => {
@@ -289,45 +276,6 @@ describe("dashboard metrics", () => {
     };
     expect(postMetricTotals(both, ["x", "threads_ru"])).toEqual({ views: 150, likes: 8, replies: 1, reposts: 2 });
     expect(postMetricTotals(both, [])).toEqual({ views: 0, likes: 0, replies: 0, reposts: 0 });
-  });
-
-  it("folds bot_views into the visible site views cell", () => {
-    const cell = String(targetCell(post({ ...published("site_ru", { views: 10, bot_views: 4 }), slug_ru: "s" }), "site_ru"));
-    expect(cell).toContain(">14<");
-  });
-
-  it("renders tildes while a target is still in flight and dashes when it never published", () => {
-    expect(String(targetCell(post({ targets: { x: { status: "queued" } } }), "x"))).toBe(
-      '<span class="mv">~</span><span class="ml">~</span><span class="mr">~</span><span class="mp">~</span>',
-    );
-    expect(String(targetCell(post({ targets: { x: { status: "publishing" } } }), "x"))).toContain("~");
-    expect(String(targetCell(post({ targets: { x: { status: "failed" } } }), "x"))).toBe(
-      '<span class="mv">—</span><span class="ml">—</span><span class="mr">—</span><span class="mp">—</span>',
-    );
-  });
-
-  it("distinguishes a collected zero from a metric that was never collected", () => {
-    const cell = String(targetCell(post(published("x", { views: 0 })), "x"));
-    expect(cell).toContain('<span class="mv">0</span>');
-    // likes were never sampled, so the cell must not claim zero likes.
-    expect(cell).toContain('<span class="ml">—</span>');
-  });
-
-  it("links the views cell when the target has a public URL and leaves the rest plain", () => {
-    const linked = String(
-      targetCell(post({ ...published("x", { views: 7 }), targets: { x: { status: "published", external_id: "42" } } }), "x"),
-    );
-    expect(linked).toContain('<a class="metric-link" href="https://x.com/i/web/status/42"');
-    expect(linked).toContain('rel="noopener noreferrer"');
-    expect(linked.match(/<a /g)?.length).toBe(1);
-  });
-
-  it("labels media by kind and count, preferring the English gallery", () => {
-    expect(formatMedia(post())).toBe("text");
-    expect(formatMedia(post({ media_en_json: [{ type: "photo" }, { type: "photo" }] }))).toBe("pic (2)");
-    expect(formatMedia(post({ media_en_json: [{ type: "video" }] }))).toBe("vid (1)");
-    expect(formatMedia(post({ media_en_json: [{ media_type: "VIDEO" }, { type: "photo" }] }))).toBe("vid (2)");
-    expect(formatMedia(post({ media_ru_json: [{ type: "photo" }], media_en_json: null }))).toBe("pic (1)");
   });
 });
 

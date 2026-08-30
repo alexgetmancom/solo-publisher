@@ -100,6 +100,9 @@ export type OperationDef<S extends z.ZodType = z.ZodType> = {
    * own normalized `--ref`; an operation whose subject no longer exists when it
    * returns says so by naming no ref. */
   journalRef?: (input: z.infer<S>) => string | null;
+  /** The handler commits its journal event in the same transaction as the
+   * audience mutation, so the registry must not add a second best-effort row. */
+  journalsInHandler?: true;
 };
 
 function operation<S extends z.ZodType>(def: OperationDef<S>): OperationDef<S> {
@@ -516,6 +519,7 @@ const operationDefs = {
     summary: "Queue a publication again for a target that never went out or failed.",
     schema: repairSchema({}),
     mutates: true,
+    journalsInHandler: true,
     agent: true,
     note: "reports the targets in scope; `apply` queues them",
     handler: (context, input) => runRepair(context, "retry", input),
@@ -524,6 +528,7 @@ const operationDefs = {
     summary: "Rewrite one locale's text, push it to the targets that can be edited and replace those that cannot.",
     schema: repairSchema({ text: example(z.string().min(1), '"new text"').describe("the replacement text") }),
     mutates: true,
+    journalsInHandler: true,
     agent: true,
     note: "reports the targets in scope; `apply` rewrites them",
     handler: (context, input) => runRepair(context, "edit", input),
@@ -534,6 +539,7 @@ const operationDefs = {
       media_json: example(z.string().min(1), '[{"asset_id": 12}]').describe("media items, each naming file_id, local_path or asset_id"),
     }),
     mutates: true,
+    journalsInHandler: true,
     // A media item may name `local_path`, which is a path on this host and
     // means nothing to a remote caller -- the same line `replace-media` sits on.
     agent: false,
@@ -544,6 +550,7 @@ const operationDefs = {
     summary: "Drop one locale's own media so it falls back to the other locale's, then publish it again.",
     schema: repairSchema({}),
     mutates: true,
+    journalsInHandler: true,
     agent: true,
     note: "reports the targets in scope; `apply` republishes them",
     handler: (context, input) => runRepair(context, "use_other_media", input),
@@ -552,6 +559,7 @@ const operationDefs = {
     summary: "Take a publication down from the targets that support remote deletion.",
     schema: repairSchema({ republish: z.boolean().default(false).describe("publish it again after taking it down") }),
     mutates: true,
+    journalsInHandler: true,
     agent: true,
     note: "reports the targets in scope; `apply` deletes them",
     handler: (context, input) => runRepair(context, "delete", input),
@@ -745,6 +753,7 @@ const operationDefs = {
       apply: z.boolean().default(true).describe("accepted; this repair always acts"),
     }),
     mutates: true,
+    journalsInHandler: true,
     agent: true,
     handler: (context, input) => runRepair(context, "refresh_site", { ...input, apply: true }),
   }),
@@ -758,6 +767,7 @@ const operationDefs = {
       apply: applyOption,
     }),
     mutates: true,
+    journalsInHandler: true,
     agent: false,
     note: "reports the target in scope; `apply` replaces it",
     handler: (context, input) => replacePublishedMedia(context.db(), context.config(), input, context.fetchImpl, context.actorType),
@@ -770,6 +780,7 @@ const operationDefs = {
       at: example(z.string().min(1), '"06.08.2026 08:00"').describe("in the configured timezone, or an ISO instant"),
     }),
     mutates: true,
+    journalsInHandler: true,
     agent: true,
     handler: (context, input) =>
       runOperationCommand(
@@ -1100,7 +1111,7 @@ export async function runOperation(name: string, context: OperationContext, args
   // place every surface passes through -- and the CLI, which is where most of
   // these are actually run, left no trace at all before it.
   recordUsage(context.db(), operationUsageKey(name), true, Date.now() - startedAt);
-  if (def.mutates) journalMutation(context, name, def, parsed.data);
+  if (def.mutates && !def.journalsInHandler) journalMutation(context, name, def, parsed.data);
   return result;
 }
 
@@ -1127,13 +1138,18 @@ function journalMutation(context: OperationContext, name: string, def: Operation
       ref: def.journalRef ? def.journalRef(input as never) : refOf(input),
       type: "operations.command",
       severity: "info",
-      target: context.actorType,
+      target: targetOf(input),
       message: `Operations ${name} executed`,
-      details: { operation: name, surface: context.actorType },
+      details: { operation: name, surface: context.actorType, status: "ok" },
     });
   } catch (error) {
     log("error", "operations audit event failed", { operation: name, surface: context.actorType, error });
   }
+}
+
+function targetOf(input: unknown): string | null {
+  const target = (input as { target?: unknown } | null)?.target;
+  return typeof target === "string" ? target : null;
 }
 
 function refOf(input: unknown): string | null {

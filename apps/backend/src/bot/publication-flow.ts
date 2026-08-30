@@ -1,7 +1,7 @@
 import { acceptFlow, type Flow } from "../application/conversation-flow.js";
 import type { BackendDb } from "../db/client.js";
 import { StudioError } from "../foundation/errors.js";
-import { type ConversationState, type ConversationStateInput, saveConversationState } from "./conversation-state.js";
+import { type ConversationState, saveConversationState } from "./conversation-state.js";
 
 /** Advances either publication flow and consumes exactly one session revision. */
 export async function advancePublicationFlow<
@@ -32,8 +32,4 @@ export async function advancePublicationFlow<
     revision: session.revision,
   });
   return { ...session, ...saved, step: nextStep, data: nextData };
-}
-
-export function openPublicationFlow(backendDb: BackendDb, actorId: number, state: ConversationStateInput): ConversationState {
-  return saveConversationState(backendDb, actorId, state);
 }

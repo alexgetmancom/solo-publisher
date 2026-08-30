@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { and, eq, inArray, isNull, lte, or } from "drizzle-orm";
-import { parseArrayValue } from "../content/message.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { postLocales, studioMediaAssets, videoDrafts } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { jsonRecordArray } from "../json.js";
 
 /** Reclaims video source files whose drafts are final and past their
  * retention window. Runs at the tail of every video cycle; deliberately
@@ -111,7 +111,7 @@ export function postDraftReferencesAsset(backendDb: BackendDb, assetId: number):
     .db.select({ mediaJson: postLocales.mediaJson })
     .from(postLocales)
     .all()
-    .some((locale) => parseArrayValue(locale.mediaJson).some((item) => Number(item.asset_id) === assetId));
+    .some((locale) => jsonRecordArray(locale.mediaJson).some((item) => Number(item.asset_id) === assetId));
 }
 
 function isManagedVideoSource(config: BackendConfig, source: string): boolean {

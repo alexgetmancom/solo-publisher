@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import { credentialChecks, drafts, opsActions, postLocales, publicationEvents, publicationTargets, publishJobs } from "../db/schema.js";
+import { credentialChecks, drafts, postLocales, publicationEvents, publicationTargets, publishJobs } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { capabilityReport } from "../observability/capabilities.js";
 import { recentPostMetrics } from "./read-model.js";
@@ -84,21 +84,6 @@ export function commandCenterPayload(config: BackendConfig, backendDb: BackendDb
     .all()
     .filter((credential) => activeCapabilityTargets.has(credential.target))
     .slice(0, 100);
-  const actions = unsafeDb(backendDb)
-    .db.select({
-      actionId: opsActions.actionId,
-      actorType: opsActions.actorType,
-      action: opsActions.action,
-      messageId: opsActions.messageId,
-      target: opsActions.target,
-      status: opsActions.status,
-      createdAt: opsActions.createdAt,
-      completedAt: opsActions.completedAt,
-    })
-    .from(opsActions)
-    .orderBy(desc(opsActions.createdAt), desc(opsActions.actionId))
-    .limit(100)
-    .all();
   const recentMetrics = recentPostMetrics(backendDb);
   const fingerprint = commandCenterFingerprint(backendDb);
   return {
@@ -112,7 +97,6 @@ export function commandCenterPayload(config: BackendConfig, backendDb: BackendDb
     jobs,
     drafts: draftRows,
     credentials,
-    actions,
     events: events.map((event) => ({
       id: event.id,
       publicationKey: event.publicationKey,

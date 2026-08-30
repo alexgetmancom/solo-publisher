@@ -29,7 +29,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter @solo-publisher/backend typecheck && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json",
     "test": "bun test apps/backend/tests apps/web/src deploy",
     "test:coverage": "bun test --coverage apps/backend/tests apps/web/src deploy",
-    "check:audit": "bun scripts/check-audit.ts",
+    "check:audit": "bun audit --audit-level=high",
     "check:docker": "bun scripts/check-docker-workspaces.ts",
     "lint": "biome lint .",
     "format": "biome format --write .",
@@ -40,8 +40,8 @@
     "check:web": "bun run build",
     "check:backend": "bun run --filter @solo-publisher/backend check",
     "check:language": "bun scripts/enforce-typescript.ts",
-    "check:all": "bun scripts/check-all.ts",
-    "check:prepush": "bun scripts/check-prepush.ts",
+    "check:all": "bun scripts/check.ts",
+    "check:prepush": "bun scripts/check.ts --parallel",
     "ops:prod": "bun scripts/ops-prod.ts"
   },
   "dependencies": {

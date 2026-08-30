@@ -3,7 +3,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { formBody, requestJson } from "../foundation/http.js";
 import { encryptionKey } from "../foundation/secret-box.js";
 import type { VideoLocale } from "../publishing/video-types.js";
-import { type MetaOauthPlatform, type MetaProvider, metaProvider } from "./meta-providers.js";
+import { META_PROVIDERS, type MetaOauthPlatform, type MetaProvider } from "./meta-providers.js";
 
 export type { MetaOauthPlatform } from "./meta-providers.js";
 export type MetaOauthState = { platform: MetaOauthPlatform; locale: VideoLocale };
@@ -36,7 +36,7 @@ export function metaOauthAuthorizeUrl(config: BackendConfig, state: string, now 
 /** The consent screen itself. The terminal fallback opens it without a state,
  * because nothing is coming back to a route that would verify one. */
 export function metaAuthorizeUrl(config: BackendConfig, platform: MetaOauthPlatform, state?: string): string {
-  const provider = metaProvider(platform);
+  const provider = META_PROVIDERS[platform];
   const query = new URLSearchParams({
     client_id: required(provider.appId(config), provider.appIdName),
     redirect_uri: metaOauthRedirectUri(config, platform),
@@ -82,7 +82,7 @@ export async function exchangeMetaCode(
   code: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<{ accessToken: string; userId: string; username: string }> {
-  const provider = metaProvider(platform);
+  const provider = META_PROVIDERS[platform];
   const appId = required(provider.appId(config), provider.appIdName);
   const appSecret = required(provider.appSecret(config), provider.appSecretName);
   const shortLived = await requestJson<{ access_token?: string; user_id?: number | string }>(fetchImpl, provider.tokenUrl, {
@@ -122,7 +122,7 @@ function stateSignature(config: BackendConfig, encoded: string): string {
 }
 
 function assertConfigured(config: BackendConfig, platform: MetaOauthPlatform): void {
-  const provider: MetaProvider = metaProvider(platform);
+  const provider: MetaProvider = META_PROVIDERS[platform];
   required(config.TOKEN_ENCRYPTION_KEY, "TOKEN_ENCRYPTION_KEY");
   required(provider.appId(config), provider.appIdName);
   required(provider.appSecret(config), provider.appSecretName);

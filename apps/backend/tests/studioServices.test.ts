@@ -9,12 +9,6 @@ import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("Studio service boundaries", () => {
-  it("reuses the service bundle for one database and configuration", () =>
-    withDb(async (backendDb) => {
-      const config = loadTestConfig({});
-      expect(createStudioServices(backendDb, config)).toBe(createStudioServices(backendDb, config));
-    }));
-
   it("imports byte and file media through one facade with content deduplication", async () => {
     const backendDb = openBackendDb(":memory:");
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "studio-service-media-"));

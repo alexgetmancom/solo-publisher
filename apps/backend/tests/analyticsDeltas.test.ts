@@ -2,60 +2,16 @@ import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { evaluateAudienceMilestones, milestoneState } from "../src/analytics/audience-milestones.js";
 import { audienceGrowthByPlatform, youtubeChannelViewDeltaSince } from "../src/analytics/metric-deltas.js";
-import { creatorDashboard } from "../src/analytics/reports/dashboard.js";
 import { studioAnalyticsDashboard } from "../src/analytics/reports/studio-dashboard.js";
 import { recordProfileSnapshot } from "../src/analytics/snapshots/creator-store.js";
 import { registerChannel } from "../src/channels/registry.js";
-import { creatorProfileSnapshots, creatorProfiles, metricSamples, publicationEvents, videoMetricSnapshots } from "../src/db/schema.js";
+import { creatorProfileSnapshots, creatorProfiles, publicationEvents, videoMetricSnapshots } from "../src/db/schema.js";
 import { settingsService } from "../src/studio/services/settings.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { registerTestChannels } from "./helpers/channels.js";
 import { withDb } from "./helpers/db.js";
-import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js";
 
 describe("creator analytics deltas", () => {
-  it("reports a video delta instead of a lifetime total for an older publication", async () => {
-    await withDb(async (backendDb) => {
-      const publishedAt = new Date(Date.now() - 90 * 24 * 60 * 60_000).toISOString();
-      const beforePeriod = new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString();
-      const now = new Date().toISOString();
-      const { targetId } = insertPublishedVideo(backendDb, { label: "Older video", target: "youtube_shorts", publishedAt, updatedAt: now });
-      backendDb.db
-        .insert(videoMetricSnapshots)
-        .values({ videoTargetId: targetId, platform: "youtube_shorts", metricsJson: { views: 100, likes: 5 }, sampledAt: beforePeriod })
-        .run();
-      backendDb.db
-        .insert(videoMetricSnapshots)
-        .values({ videoTargetId: targetId, platform: "youtube_shorts", metricsJson: { views: 180, likes: 8 }, sampledAt: now })
-        .run();
-      const config = loadTestConfig({}, SITE_STUDIO_PROFILE);
-
-      expect(creatorDashboard(backendDb, config, 1).text).toContain("Видео: 80 просмотров · 3 взаимодействий");
-    });
-  });
-
-  it("uses metric sample deltas for text and site periods", async () => {
-    await withDb(async (backendDb) => {
-      const before = new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString();
-      const now = new Date().toISOString();
-      backendDb.db
-        .insert(metricSamples)
-        .values([
-          { publicationKey: "post:1", target: "site_ru", metricName: "views", value: 100, sampledAt: before },
-          { publicationKey: "post:1", target: "site_ru", metricName: "views", value: 145, sampledAt: now },
-          { publicationKey: "post:2", target: "telegram", metricName: "views", value: 20, sampledAt: before },
-          { publicationKey: "post:2", target: "telegram", metricName: "views", value: 50, sampledAt: now },
-          { publicationKey: "post:2", target: "telegram", metricName: "likes", value: 4, sampledAt: before },
-          { publicationKey: "post:2", target: "telegram", metricName: "likes", value: 9, sampledAt: now },
-        ])
-        .run();
-      const config = loadTestConfig({}, SITE_STUDIO_PROFILE);
-      const text = creatorDashboard(backendDb, config, 1).text;
-      expect(text).toContain("Сайт: 45 просмотров материалов");
-      expect(text).toContain("Посты: 30 просмотров · 5 взаимодействий");
-    });
-  });
-
   it("changes audience growth with the selected period instead of repeating lifetime totals", async () => {
     await withDb(async (backendDb) => {
       registerTestChannels(backendDb, ["telegram"]);

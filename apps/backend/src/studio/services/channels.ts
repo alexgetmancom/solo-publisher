@@ -8,7 +8,7 @@ import { type ZernioConnectionKey, type ZernioConnectionOption, zernioConnection
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { listZernioAccounts, type ZernioAccount, zernioAccount } from "../../foundation/external/zernio.js";
-import { channelReadiness } from "../../observability/capabilities.js";
+import { capabilityReport } from "../../observability/capabilities.js";
 import { trackUsageAsync, trackUsageSync } from "../../observability/usage.js";
 
 export type StudioZernioAccount = ZernioAccount;
@@ -44,7 +44,7 @@ export function channelService(backendDb: BackendDb, config: BackendConfig, fetc
      * see what a channel is missing without the report printing what it has. */
     report(enabledOnly = true): ChannelReport[] {
       return trackUsageSync(backendDb, "studio.channel.list", () => {
-        const readiness = channelReadiness(config, backendDb);
+        const readiness = new Map(capabilityReport(config, backendDb).map((entry) => [entry.target, entry]));
         return listChannels(backendDb, enabledOnly).map((channel) => {
           const state = readiness.get(channel.targetId ?? channel.id);
           return {

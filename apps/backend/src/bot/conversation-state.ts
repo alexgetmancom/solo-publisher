@@ -1,13 +1,8 @@
 import type { PublicationKind } from "../application/conversation-flow.js";
 import type { ConversationSessionKind, ConversationSessionRecord } from "../application/ports.js";
 import type { BackendDb } from "../db/client.js";
-import {
-  activeConversationSession,
-  CONVERSATION_SESSION_TTL_MS,
-  clearConversationSessionIfCurrent,
-  retireConversationSession,
-  saveConversationSession,
-} from "./conversation-session.js";
+
+const CONVERSATION_SESSION_TTL_MS = 30 * 60_000;
 
 /** The single durable state shape used by every Telegram conversation. */
 export type ConversationState = {
@@ -22,10 +17,16 @@ export type ConversationState = {
 export type ConversationStateInput = Omit<ConversationState, "revision"> & { revision?: number | null };
 
 export function getConversationState(backendDb: BackendDb, actorId: number, kind: ConversationSessionKind): ConversationState | null {
-  const row = activeConversationSession(backendDb, actorId, kind, CONVERSATION_SESSION_TTL_MS);
-  if (!row || row.active === 0) return null;
+  const row = backendDb.conversationSessions.get(actorId, kind);
+  if (!row) return null;
+  const expiresAt = row.expiresAt ? Date.parse(row.expiresAt) : Date.parse(row.updatedAt) + CONVERSATION_SESSION_TTL_MS;
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    backendDb.conversationSessions.retire(actorId, kind, new Date().toISOString());
+    return null;
+  }
+  if (row.active === 0) return null;
   if (!row.step) {
-    retireConversationSession(backendDb, actorId, kind);
+    backendDb.conversationSessions.retire(actorId, kind, new Date().toISOString());
     return null;
   }
   return stateFromRow(row);
@@ -47,8 +48,8 @@ export function saveConversationState(backendDb: BackendDb, actorId: number, inp
   // A person can have one active conversation. Starting another workflow
   // retires every other kind before the new state is written.
   for (const kind of ["intake", "post", "video", "settings", "stream"] as const)
-    if (kind !== input.kind) retireConversationSession(backendDb, actorId, kind);
-  const revision = saveConversationSession(backendDb, {
+    if (kind !== input.kind) backendDb.conversationSessions.retire(actorId, kind, now);
+  const revision = backendDb.conversationSessions.save({
     actorId,
     kind: input.kind,
     draftId: input.draftId,
@@ -65,7 +66,7 @@ export function saveConversationState(backendDb: BackendDb, actorId: number, inp
 }
 
 export function clearConversationState(backendDb: BackendDb, actorId: number, kind: ConversationSessionKind): void {
-  retireConversationSession(backendDb, actorId, kind);
+  backendDb.conversationSessions.retire(actorId, kind, new Date().toISOString());
 }
 
 export function clearConversationStateIfCurrent(
@@ -74,7 +75,7 @@ export function clearConversationStateIfCurrent(
   actorId: number,
   expectedRevision?: number | null,
 ): boolean {
-  return clearConversationSessionIfCurrent(backendDb, {
+  return backendDb.conversationSessions.clearIfCurrent({
     actorId,
     kind: state.kind,
     step: state.step,

@@ -99,7 +99,3 @@ export const META_PROVIDERS: Record<MetaOauthPlatform, MetaProvider> = {
     }),
   },
 };
-
-export function metaProvider(platform: MetaOauthPlatform): MetaProvider {
-  return META_PROVIDERS[platform];
-}

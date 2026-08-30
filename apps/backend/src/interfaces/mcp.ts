@@ -275,7 +275,7 @@ const studioToolDefs = {
   studio_post_status: tool({
     description: "Read queue and target status for one owned post draft.",
     schema: z.object({ draft_id: positiveInt }),
-    handler: (studio, actorId, input) => studio.posts.status(actorId, input.draft_id),
+    handler: (studio, actorId, input) => studio.posts.progress(actorId, input.draft_id),
   }),
   studio_post_history: tool({
     description: "Read durable event history for one owned post draft.",

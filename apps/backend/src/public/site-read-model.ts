@@ -100,7 +100,7 @@ export function invalidatePublicSiteFeed(backendDb: BackendDb): void {
   feedCache.delete(backendDb);
 }
 
-function buildPublicSiteFeed(backendDb: BackendDb, postId?: number): FeedItem[] {
+function buildPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
   const ruLocale = alias(postLocales, "site_locale_ru");
   const enLocale = alias(postLocales, "site_locale_en");
   const rows = unsafeDb(backendDb)
@@ -136,11 +136,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, postId?: number): FeedItem[] 
         eq(postMetrics.metricName, "views"),
       ),
     )
-    .where(
-      postId === undefined
-        ? inArray(drafts.status, ["published", "failed", "scheduled"])
-        : and(inArray(drafts.status, ["published", "failed", "scheduled"]), eq(drafts.postId, postId)),
-    )
+    .where(inArray(drafts.status, ["published", "failed", "scheduled"]))
     .orderBy(desc(drafts.updatedAt), desc(drafts.postId))
     .all();
 

@@ -154,7 +154,7 @@ describe("operations registry", () => {
     await runOperation("recent", context(backendDb), {});
 
     expect(backendDb.sqlite.prepare("SELECT publication_key, event_type, target FROM publication_events").all()).toEqual([
-      { publication_key: "post:160", event_type: "operations.command", target: "test" },
+      { publication_key: "post:160", event_type: "operations.command", target: null },
     ]);
   });
 

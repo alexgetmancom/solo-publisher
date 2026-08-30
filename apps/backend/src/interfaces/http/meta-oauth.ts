@@ -1,5 +1,5 @@
 import { exchangeMetaCode, metaOauthAuthorizeUrl, metaOauthConnectUrl, verifyMetaOauthState } from "../../channels/meta-oauth.js";
-import { META_PROVIDERS, type MetaOauthPlatform, metaProvider } from "../../channels/meta-providers.js";
+import { META_PROVIDERS, type MetaOauthPlatform } from "../../channels/meta-providers.js";
 import { installMetaToken } from "../../channels/meta-tokens.js";
 import { escapeHtml } from "../../foundation/html.js";
 import { commandAllowed } from "../../foundation/http-auth.js";
@@ -33,10 +33,10 @@ export const metaOauthRoutes: RouteModule = (app, { config, backendDb, studio })
         const parsed = verifyMetaOauthState(config, state);
         if (parsed.platform !== platform) throw new Error("OAuth callback reached the wrong platform route");
         const refused = c.req.query("error_description") ?? c.req.query("error");
-        if (refused) throw new Error(`${metaProvider(platform).label} refused the authorization: ${refused}`);
+        if (refused) throw new Error(`${META_PROVIDERS[platform].label} refused the authorization: ${refused}`);
         const code = c.req.query("code");
         if (!code) throw new Error("OAuth callback has no code");
-        const provider = metaProvider(platform);
+        const provider = META_PROVIDERS[platform];
         const identity = await exchangeMetaCode(config, platform, code);
         installMetaToken(config, backendDb, provider.tokenTarget(parsed.locale), identity.accessToken, identity.userId);
         studio.channels.connect(
@@ -48,7 +48,7 @@ export const metaOauthRoutes: RouteModule = (app, { config, backendDb, studio })
           200,
         );
       } catch (error) {
-        return oauthPage(`${metaProvider(platform).label} connection failed`, String(error), 400);
+        return oauthPage(`${META_PROVIDERS[platform].label} connection failed`, String(error), 400);
       }
     });
   }

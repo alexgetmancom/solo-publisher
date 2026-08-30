@@ -1,6 +1,5 @@
 import { and, asc, eq, lte } from "drizzle-orm";
 import type { Bot } from "grammy";
-import { parseArrayValue } from "../content/message.js";
 import { translateDraftText } from "../content/translation.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { pendingAlbums } from "../db/schema.js";
@@ -9,6 +8,7 @@ import { t } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { setTelegramPostCard } from "../interfaces/telegram/control-cards.js";
 import { importTelegramAlbumMedia } from "../interfaces/telegram/media-ingress.js";
+import { jsonRecordArray } from "../json.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { clearConversationStateIfCurrent, getConversationState } from "./conversation-state.js";
@@ -59,7 +59,7 @@ export function appendPendingAlbum(backendDb: BackendDb, input: PendingAlbumInpu
       .from(pendingAlbums)
       .where(eq(pendingAlbums.id, id))
       .get();
-    const media = row ? parseArrayValue(row.mediaJson) : [];
+    const media = row ? jsonRecordArray(row.mediaJson) : [];
     media.push(input.media);
     const now = new Date().toISOString();
     const values = {
@@ -72,7 +72,7 @@ export function appendPendingAlbum(backendDb: BackendDb, input: PendingAlbumInpu
       draftId: input.draftId,
       stateRevision: input.stateRevision,
       textRu: input.text || row?.textRu || "",
-      textEntitiesJson: JSON.stringify(input.entities.length ? input.entities : parseArrayValue(row?.textEntitiesJson)),
+      textEntitiesJson: JSON.stringify(input.entities.length ? input.entities : jsonRecordArray(row?.textEntitiesJson)),
       mediaJson: JSON.stringify(media),
       notified: ALBUM_SETTLED,
       updatedAt: now,
@@ -157,7 +157,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
         log("warn", "stale album discarded", { album: row.id, actorId: row.actorId, stateRevision: row.stateRevision });
         continue;
       }
-      const media = await importTelegramAlbumMedia(bot, backendDb, config, row.actorId, parseArrayValue(row.mediaJson));
+      const media = await importTelegramAlbumMedia(bot, backendDb, config, row.actorId, jsonRecordArray(row.mediaJson));
       const draftId = row.draftId;
       const step = row.step as PostSessionStep | null;
       const locale = resolveLocale(row.stepDataJson.locale) ?? resolveLocale(state?.data.locale);
@@ -168,7 +168,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
         createStudioServices(backendDb, config).posts.edit(row.actorId, draftId, {
           locale,
           text: row.textRu,
-          entities: parseArrayValue(row.textEntitiesJson),
+          entities: jsonRecordArray(row.textEntitiesJson),
           media,
         });
         clearConversationStateIfCurrent(backendDb, { kind: "post", step, draftId }, row.actorId, row.stateRevision);
@@ -180,7 +180,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
           text,
           textEn,
           media,
-          entities: parseArrayValue(row.textEntitiesJson),
+          entities: jsonRecordArray(row.textEntitiesJson),
         });
         if (step) clearConversationStateIfCurrent(backendDb, { kind: "post", step, draftId: row.draftId }, row.actorId, row.stateRevision);
       }

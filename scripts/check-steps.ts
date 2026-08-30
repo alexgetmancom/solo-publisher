@@ -1,10 +1,7 @@
 /** The one list of checks the repo runs before code leaves the machine.
  *
- * check-all.ts and check-prepush.ts used to each hold their own copy, and they
- * had drifted: pre-push also ran svelte-check, so a green `check:all` could still
- * be rejected on push. They now differ only in scheduling — check-all runs the
- * list serially for readable output, pre-push runs the independent groups in
- * parallel for speed.
+ * check.ts runs this list serially for readable output or group-parallel for a
+ * fast pre-push gate.
  *
  * Layer boundaries are the `layers` step (dependency-cruiser); there is no
  * separate architecture test to schedule ahead of it. */

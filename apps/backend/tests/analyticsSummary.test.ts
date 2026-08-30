@@ -10,20 +10,22 @@ describe("weekly analytics summary", () => {
     withDb(async (backendDb) => {
       const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42,7" }, MSK_STUDIO_PROFILE);
       settingsService(backendDb).setWeeklyDigest({ enabled: true, weekday: 1 });
-      const sent: number[] = [];
+      const sent: Array<{ actorId: number; text: string }> = [];
       const bot = {
         api: {
-          sendMessage: async (actorId: number) => {
-            sent.push(actorId);
+          sendMessage: async (actorId: number, text: string) => {
+            sent.push({ actorId, text });
           },
         },
       } as unknown as Bot;
       const mondayAfterNine = new Date("2026-07-27T18:05:00.000Z");
 
       expect(await sendWeeklyAnalyticsSummary(config, backendDb, bot, mondayAfterNine)).toBe(true);
-      expect(sent).toEqual([42, 7]);
+      expect(sent.map(({ actorId }) => actorId)).toEqual([42, 7]);
+      expect(sent[0]?.text).toContain("Weekly digest");
+      expect(sent[0]?.text).toContain("| Platform | 👥 | 📈 | 👁 | ♥ | 💬 | ↗ | 🔖 |");
       expect(await sendWeeklyAnalyticsSummary(config, backendDb, bot, mondayAfterNine)).toBe(false);
-      expect(sent).toEqual([42, 7]);
+      expect(sent).toHaveLength(2);
     }));
 
   it("waits until 21:00 in the Studio timezone", () =>

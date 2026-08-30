@@ -45,7 +45,6 @@ export function restoreDatabase(source: string, destination: string, force: bool
 
 type OperationalRetentionResult = {
   publicationEvents: number;
-  opsActions: number;
   sitePageviews: number;
   runtimeUsage: number;
   total: number;
@@ -55,7 +54,6 @@ const RETENTION_BATCH_SIZE = 2_000;
 /** How far back `audit` counts journal events. */
 const AUDIT_EVENT_WINDOW_DAYS = 30;
 const POST_EVENTS_RETENTION_DAYS = 365;
-const OPS_ACTIONS_RETENTION_DAYS = 365;
 const SITE_PAGEVIEWS_RETENTION_DAYS = 730;
 const RUNTIME_USAGE_RETENTION_DAYS = 365;
 
@@ -81,15 +79,13 @@ export function pruneOperationalHistory(backendDb: BackendDb, now = new Date()):
        AND NOT (severity IN ('warn', 'error') AND acked_at IS NULL)`,
     cutoff(POST_EVENTS_RETENTION_DAYS),
   );
-  const opsActionsDeleted = deleteBatched("DELETE FROM ops_actions WHERE created_at < ?", cutoff(OPS_ACTIONS_RETENTION_DAYS));
   const sitePageviewsDeleted = deleteBatched("DELETE FROM site_pageviews WHERE day < ?", cutoffDay(SITE_PAGEVIEWS_RETENTION_DAYS));
   const runtimeUsageDeleted = deleteBatched("DELETE FROM runtime_usage WHERE bucket_day < ?", cutoffDay(RUNTIME_USAGE_RETENTION_DAYS));
   return {
     publicationEvents: postEventsDeleted,
-    opsActions: opsActionsDeleted,
     sitePageviews: sitePageviewsDeleted,
     runtimeUsage: runtimeUsageDeleted,
-    total: postEventsDeleted + opsActionsDeleted + sitePageviewsDeleted + runtimeUsageDeleted,
+    total: postEventsDeleted + sitePageviewsDeleted + runtimeUsageDeleted,
   };
 }
 

@@ -1,7 +1,6 @@
 ---
 import { THEME_BOOT_SCRIPT, THEME_TOGGLE_SCRIPT } from "../../../../shared/theme-script.js";
 import { stripLeadingEmojis } from "../../../backend/src/content/text.js";
-import { BRAND_ASSET_VERSION } from "../utils/brand";
 import { siteUrlFromContext } from "../utils/site";
 import "../styles/layout.css";
 
@@ -54,7 +53,7 @@ const socialImage = socialImageProp
   ? socialImageProp.startsWith("http")
     ? socialImageProp
     : `${publicBaseUrl}${socialImageProp.startsWith("/") ? socialImageProp : `/${socialImageProp}`}`
-  : `${publicBaseUrl}/brand-social-20260629.jpg`;
+  : `${publicBaseUrl}/social-image.jpg`;
 const twitterCard = socialImageWidth >= 1000 ? "summary_large_image" : "summary";
 const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
 ---
@@ -80,10 +79,10 @@ const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").rep
     </script>
     <script defer src={analyticsSdkUrl} data-website-id={analyticsWebsiteId}></script>
     </>)}
-    <link rel="icon" type="image/png" href="/brand-favicon-20260629.png" />
-    <link rel="apple-touch-icon" href="/brand-favicon-20260629.png" />
-    <link rel="icon" type="image/svg+xml" href={`/favicon.svg?v=${BRAND_ASSET_VERSION}`} />
-    <link rel="alternate icon" type="image/x-icon" href={`/favicon.ico?v=${BRAND_ASSET_VERSION}`} />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="alternate" type="application/rss+xml" title={title} href={rssHref} />
@@ -154,7 +153,9 @@ const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").rep
     </button>
     <main class="container" id="main-content" tabindex="-1"><slot /></main>
     <script>
-      import "../scripts/site-interactions.ts";
+      import { sendPageview } from "../scripts/pageview";
+
+      sendPageview({ path: window.location.pathname || "/" });
     </script>
     <script is:inline set:html={THEME_TOGGLE_SCRIPT}></script>
   </body>

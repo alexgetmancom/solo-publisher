@@ -216,7 +216,6 @@ describe("openBackendDb", () => {
         "media_test_cases",
         "metric_samples",
         "metric_schedule",
-        "ops_actions",
         "pending_albums",
         "format_support",
         "publication_events",

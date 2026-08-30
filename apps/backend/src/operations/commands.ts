@@ -3,18 +3,19 @@ import { z } from "zod";
 import { isKnownTarget } from "../botTargets.js";
 import type { BackendDb } from "../db/client.js";
 import { unsafeDb } from "../db/client.js";
+import { recordEvent } from "../db/repositories/events.js";
 import { drafts } from "../db/schema.js";
 import { editPublishedTargets } from "../delivery/external-edits.js";
 import { attemptPublishedTargetRemovals, settlePublishedTargetRemovals } from "../delivery/external-removals.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { parsePublicationSource } from "../publishing/publication-source.js";
 import { parseManualSchedule } from "../publishing/schedule.js";
+import { publicationSourceFromDb } from "../publishing/source-store.js";
 import { createStudioServices } from "../studio/services/index.js";
-import { recordOperationAction } from "./action-audit.js";
 import { editLocaleContentTx, parseLocaleMedia, refreshLocaleSiteTx, replaceLocaleMediaTx } from "./commands/content-repair.js";
 import { attemptTextFallbackRemovals, requeueAfterRemovalTx, requeuePublicationScopeTx } from "./commands/requeue.js";
 import { publicationScope, scopePlan } from "./commands/scope-plan.js";
-import { resolvePublicationRef, sourcePayload } from "./publication-ref.js";
+import { type ResolvedPublicationRef, resolvePublicationRef } from "./publication-ref.js";
 
 /** A boolean an HTML form, a JSON body or a CLI flag can all express. Not
  * `z.coerce.boolean()`: that reads the string "false" as true, which on `apply`
@@ -183,6 +184,11 @@ export async function runOperationCommand(
   throw new Error(`unknown action: ${input.action}`);
 }
 
+function sourcePayload(backendDb: BackendDb, ref: ResolvedPublicationRef): Record<string, unknown> {
+  if (ref.postId == null) throw new Error("publication has no post id");
+  return publicationSourceFromDb(unsafeDb(backendDb).db, ref.postId);
+}
+
 type OperationTransaction = Parameters<Parameters<ReturnType<typeof unsafeDb>["db"]["transaction"]>[0]>[0];
 
 function commitOperation(
@@ -194,7 +200,20 @@ function commitOperation(
   return unsafeDb(backendDb).db.transaction((tx) => {
     const result = mutate(tx);
     result.applied = true;
-    recordOperationAction(tx, input.action, ref, input.target ?? null, result, input.actor_type ?? "operations");
+    recordEvent(tx, backendDb.clock, {
+      ref: ref.publicationKey,
+      type: "operations.command",
+      severity: "info",
+      target: input.target ?? null,
+      message: `Operations ${input.action} executed`,
+      details: {
+        operation: input.action,
+        surface: input.actor_type ?? "operations",
+        message_id: ref.messageId,
+        status: "ok",
+        result,
+      },
+    });
     return result;
   });
 }

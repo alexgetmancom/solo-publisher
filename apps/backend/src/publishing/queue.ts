@@ -2,10 +2,10 @@ import crypto from "node:crypto";
 import os from "node:os";
 import process from "node:process";
 import { and, desc, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
 import { recordPublishedXActivity } from "../analytics/x-activity-store.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { type JsonObject, publicationTargets, publishJobs } from "../db/schema.js";
-import { insertPublishJobSchema } from "../db/validation.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
@@ -27,6 +27,8 @@ import {
   upsertPostTarget,
   verificationStatus,
 } from "./queue-state.js";
+
+const insertPublishJobSchema = createInsertSchema(publishJobs);
 
 export const PUBLISH_CLAIM_LIMIT = 20;
 

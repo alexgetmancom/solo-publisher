@@ -1,10 +1,8 @@
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
-import type { StudioLocale } from "../../foundation/locale.js";
 import { analyticsService } from "./analytics.js";
 import { studioCapabilityService } from "./capabilities.js";
 import { channelService } from "./channels.js";
-import { studioDashboard } from "./dashboard.js";
 import { mediaService } from "./media.js";
 import { postService } from "./posts.js";
 import { queueService } from "./queue.js";
@@ -22,10 +20,7 @@ export type StudioServices = {
   capabilities: ReturnType<typeof studioCapabilityService>;
   settings: ReturnType<typeof settingsService>;
   streams: ReturnType<typeof streamService>;
-  dashboard: (actorId: number, locale: StudioLocale) => ReturnType<typeof studioDashboard>;
 };
-
-const studioInstances = new WeakMap<BackendDb, { config: BackendConfig; services: StudioServices }>();
 
 /**
  * Single application entry point for every Studio interface.
@@ -33,11 +28,9 @@ const studioInstances = new WeakMap<BackendDb, { config: BackendConfig; services
  * only rendering and transport live outside this boundary.
  */
 export function createStudioServices(backendDb: BackendDb, config: BackendConfig): StudioServices {
-  const cached = studioInstances.get(backendDb);
-  if (cached?.config === config) return cached.services;
   const posts = postService(backendDb, config);
   const videos = videoService(backendDb, config);
-  const services = {
+  return {
     posts,
     media: mediaService(backendDb, config),
     channels: channelService(backendDb, config),
@@ -47,8 +40,5 @@ export function createStudioServices(backendDb: BackendDb, config: BackendConfig
     capabilities: studioCapabilityService(config, backendDb),
     settings: settingsService(backendDb),
     streams: streamService(backendDb, config),
-    dashboard: (actorId: number, locale: StudioLocale) => studioDashboard(backendDb, config, actorId, locale),
   };
-  studioInstances.set(backendDb, { config, services });
-  return services;
 }

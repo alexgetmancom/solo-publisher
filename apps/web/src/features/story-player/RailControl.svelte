@@ -29,7 +29,7 @@ let {
 <div class="rail-control" aria-label={ui.feedMode}>
   <div class="rail-avatar-menu">
     <button class="rail-avatar-menu__button" type="button" aria-label={ui.menu}>
-      <img src="/brand-avatar-small-20260629.webp" alt="" width="34" height="34" />
+      <img src="/avatar-small.webp" alt="" width="34" height="34" />
     </button>
     <div class="rail-avatar-menu__panel">
       <a href={locale === "ru" ? "/ru/" : "/"}>Alex Getman</a>

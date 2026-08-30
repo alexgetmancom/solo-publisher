@@ -195,7 +195,6 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       };
     },
     progress,
-    status: progress,
     history(actorId: number, draftId: number, limit = 50) {
       const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
       return backendDb.studioPosts.history(draft.id, draft.post_id, limit);

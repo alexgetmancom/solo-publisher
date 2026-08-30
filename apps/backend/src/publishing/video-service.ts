@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
+import { channelForVideo } from "../channels/registry.js";
 import { videoSourcePath } from "../content/video-assets.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { videoDrafts, videoJobs, videoTargets } from "../db/schema.js";
@@ -10,7 +11,6 @@ import { StudioError } from "../foundation/errors.js";
 import { instagramCredentialsForLocale } from "../foundation/external/instagram.js";
 import { youtubeCredentials } from "../foundation/external/youtube.js";
 import { probeMediaMetadata } from "../foundation/runtime/ffmpeg.js";
-import { isZernioRouteReady, registeredVideoDeliveryRoute } from "./delivery-provider.js";
 import { assertFutureSchedule } from "./schedule.js";
 import { isAudienceMutationRetryable, isVideoTargetEditable, isVideoTargetMetadataEditable, isVideoTargetSchedulable } from "./state.js";
 import { getVideoDraft, insertVideoJob, listVideoTargets, refreshVideoDraftStatus } from "./video-data.js";
@@ -250,7 +250,7 @@ export function scheduleVideo(
       const publishAt = targetSchedule.toISOString();
       const preparedAt = new Date(targetSchedule.getTime() - timing.prepareLeadMinutes * 60_000);
       const draft = getVideoDraft(backendDb, videoDraftId);
-      const route = registeredVideoDeliveryRoute(backendDb, target.target as VideoTarget, draft.locale === "en" ? "en" : "ru");
+      const route = videoDeliveryRoute(backendDb, target.target as VideoTarget, draft.locale === "en" ? "en" : "ru");
       const metadata = target.metadataJson as Record<string, unknown>;
       const metadataJson =
         durationSeconds != null && durationSeconds > 0 && metadata.videoDurationMs == null
@@ -359,14 +359,24 @@ export async function validateVideoDraft(config: BackendConfig, backendDb: Backe
         throw new StudioError("err.youtube-not-configured");
     }
     if (target.target === "instagram_reels") {
-      const route = registeredVideoDeliveryRoute(backendDb, "instagram_reels", locale);
-      if (!isZernioRouteReady(config, route) && route.provider === "zernio") throw new StudioError("err.instagram-not-configured");
+      const route = videoDeliveryRoute(backendDb, "instagram_reels", locale);
+      if (route.provider === "zernio" && (!config.ZERNIO_API_KEY || !route.accountId))
+        throw new StudioError("err.instagram-not-configured");
       const instagramCredentials = instagramCredentialsForLocale(config, locale);
       if (route.provider === "native" && (!instagramCredentials.accessToken || !instagramCredentials.userId))
         throw new StudioError("err.instagram-not-configured");
     }
   }
   return validateVideoSource(source);
+}
+
+function videoDeliveryRoute(backendDb: BackendDb, target: VideoTarget, locale: VideoLocale) {
+  const connection = channelForVideo(backendDb, target, locale);
+  if (!connection) throw new Error(`Video channel is not connected: ${target}/${locale}`);
+  return {
+    provider: connection.provider === "zernio" ? ("zernio" as const) : ("native" as const),
+    ...(connection.providerAccountId ? { accountId: connection.providerAccountId } : {}),
+  };
 }
 
 /** Everything the technical check can say about a file on its own, without a

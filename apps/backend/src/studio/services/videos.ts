@@ -25,10 +25,9 @@ import {
 } from "../../publishing/video-service.js";
 import { settleVideoTarget } from "../../publishing/video-settle.js";
 import type { VideoLocale, VideoMetadata, VideoTarget, VideoTechnicalCheck } from "../../publishing/video-types.js";
-import { accessibleStudioActorIds } from "../access.js";
+import { accessibleStudioActorIds, canAccessStudioOwner } from "../access.js";
 import { videoDeliveryProjections } from "../projections.js";
 import type { VideoWizardStep } from "../video-fsm.js";
-import { requireOwnedPublication } from "./publication-access.js";
 import { settingsService } from "./settings.js";
 
 /** Video publication command boundary for Telegram Studio, Web Studio and MCP. */
@@ -344,13 +343,10 @@ function scheduleVideoReminders(backendDb: BackendDb, ownerId: number, publicati
 }
 
 function requireOwnedVideo(backendDb: BackendDb, config: BackendConfig, actorId: number, publicationId: number) {
-  return requireOwnedPublication(
-    backendDb.studioVideos.get(publicationId),
-    config,
-    actorId,
-    "Video publication was not found.",
-    "err.video-not-yours",
-  );
+  const video = backendDb.studioVideos.get(publicationId);
+  if (!video) throw new Error("Video publication was not found.");
+  if (!canAccessStudioOwner(config, actorId, video.actorId)) throw new StudioError("err.video-not-yours");
+  return video;
 }
 
 /** The stored file behind an accessible video asset. Every path that reads the

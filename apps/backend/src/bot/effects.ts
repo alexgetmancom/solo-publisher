@@ -8,7 +8,6 @@ import { sendTelegramDeliveryPreviews } from "../interfaces/telegram/delivery-pr
 import type { DeliveryProjection } from "../studio/projections.js";
 import type { ConversationStateInput } from "./conversation-state.js";
 import { clearConversationState, saveConversationState } from "./conversation-state.js";
-import { callbackMessageId } from "./telegram-context.js";
 import { isUnchangedMessageEdit } from "./telegram-errors.js";
 
 type PublicationCard =
@@ -115,7 +114,8 @@ class ScreenAnchor {
   private messageId: number | null;
 
   constructor(private readonly ctx: Context) {
-    this.messageId = callbackMessageId(ctx);
+    const message = ctx.callbackQuery?.message;
+    this.messageId = message && "message_id" in message ? message.message_id : null;
   }
 
   /** Marks the anchor as no longer the last message in the chat. */

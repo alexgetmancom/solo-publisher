@@ -1,5 +1,5 @@
 import type { Bot } from "grammy";
-import { creatorDashboard } from "../../analytics/reports/dashboard.js";
+import { studioAnalyticsDashboard } from "../../analytics/reports/studio-dashboard.js";
 import { claimSync, markSynced } from "../../analytics/snapshots/creator-store.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -48,8 +48,7 @@ export async function sendWeeklyAnalyticsSummary(
       const locale = settingsService(backendDb).locale(actorId);
       let report = reports.get(locale);
       if (!report) {
-        const weekTitle = `📊 *${t(locale, "report.stats-for", { period: t(locale, "report.period-days", { days: 7 }) })}*`;
-        report = creatorDashboard(backendDb, config, 7, locale).text.replace(weekTitle, `📊 *${t(locale, "weekly.digest")}*`);
+        report = `📊 *${t(locale, "weekly.digest")}*\n${studioAnalyticsDashboard(backendDb, "overview", 7, locale).text}`;
         reports.set(locale, report);
       }
       await bot.api.sendMessage(actorId, report, { parse_mode: "Markdown" });

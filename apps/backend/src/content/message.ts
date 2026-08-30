@@ -1,5 +1,3 @@
-import { jsonRecordArray } from "../json.js";
-
 /** Transport-neutral content captured from any interface before it becomes a draft. */
 export type DraftMessage = {
   text: string;
@@ -10,10 +8,6 @@ export type DraftMessage = {
   media: Record<string, unknown>[];
   entities: unknown[];
 };
-
-export function parseArrayValue(value: unknown): Record<string, unknown>[] {
-  return jsonRecordArray(value);
-}
 
 /** The fallback is explicit at every call site: there is no generic name for a
  * post that would not be one installation's name on another's permanent URL. */
