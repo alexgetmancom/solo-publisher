@@ -21,7 +21,7 @@ import {
   videoDestination,
   videoTargetLabel,
 } from "../../../publishing/video-types.js";
-import { type VideoSnapshot, videoReachSeries } from "./video-overview-calendar.js";
+import { periodSubscriberDelta, type VideoSnapshot, videoReachSeries } from "./video-overview-calendar.js";
 
 /**
  * Read model behind the video half of the unified overview.
@@ -116,11 +116,6 @@ export type VideoOverviewCache = {
   audienceGrowth: Map<string, Map<string, number>>;
   audienceGrowthByDay: Map<string, Map<string, Map<string, number>>>;
   profileSummaries: Map<string, ProfileSummaryMetrics>;
-  /** The history every comparison window is cut from: one day-by-day reach per
-   * clip, over the whole range the bundle was loaded for. */
-  historyDays: PeriodDay[] | null;
-  historyDayKeys: Set<string>;
-  dailyReachByRow: Map<number, Record<string, DailyReach>>;
 };
 
 export function createVideoOverviewCache(sampleBucketSeconds = 60 * 60): VideoOverviewCache {
@@ -133,9 +128,6 @@ export function createVideoOverviewCache(sampleBucketSeconds = 60 * 60): VideoOv
     audienceGrowth: new Map(),
     audienceGrowthByDay: new Map(),
     profileSummaries: new Map(),
-    historyDays: null,
-    historyDayKeys: new Set(),
-    dailyReachByRow: new Map(),
   };
 }
 
@@ -151,9 +143,6 @@ export function setVideoOverviewCacheRange(cache: VideoOverviewCache, start: Dat
     cache.audienceGrowth.clear();
     cache.audienceGrowthByDay.clear();
     cache.profileSummaries.clear();
-    cache.historyDays = null;
-    cache.historyDayKeys = new Set();
-    cache.dailyReachByRow.clear();
   }
   cache.rangeStart = start;
   cache.rangeEnd = end;
@@ -186,10 +175,23 @@ type VideoAnalyticsBundle = {
   snapshots: Map<number, VideoSnapshot[]>;
   historicalDestinations: Set<string>;
   followers: Map<string, number>;
+  /** The window the snapshots were loaded over; everything derived is cut from it. */
+  range: { start: Date; end: Date };
+  /** Everything derived from the snapshots above, filled on first use and
+   * carried with them: a day's reach and a day's subscriber delta are functions
+   * of this bundle and the time zone, so a second render over the same range
+   * must not pay for them again. */
+  derived: {
+    timeZone: string;
+    days: PeriodDay[];
+    dayKeys: Set<string>;
+    dailyReachByRow: Map<number, Record<string, DailyReach>>;
+    subscriberDeltaByRow: Map<number, Map<string, number | null>>;
+  } | null;
 };
 
 const VIDEO_BUNDLE_TTL_MS = 3_000;
-const MAX_SHARED_VIDEO_BUNDLES = 1;
+const MAX_SHARED_VIDEO_BUNDLES = 6;
 type SharedVideoBundle = { expiresAt: number; bundle: VideoAnalyticsBundle };
 const sharedVideoBundles = new WeakMap<BackendDb, Map<string, SharedVideoBundle>>();
 
@@ -236,6 +238,8 @@ export function videoAnalyticsBundle(backendDb: BackendDb, start: Date, end: Dat
     snapshots,
     historicalDestinations: publishedDestinationKeys(backendDb, catalogue),
     followers: followerCounts(backendDb),
+    range: { start: rangeStart, end: rangeEnd },
+    derived: null,
   };
 
   const entries = shared ?? new Map<string, SharedVideoBundle>();
@@ -257,36 +261,36 @@ export function videoAnalyticsBundle(backendDb: BackendDb, start: Date, end: Dat
  * What each clip earned in one window, cut from history rather than recomputed.
  *
  * A render asks five windows of the same clips -- the period, the history
- * behind it, the previous period, yesterday and the 30-day median -- and every
- * one of them used to rebuild each clip's series and re-run the daily spread
- * over it. The spread is what costs: production spent 60-85% of the video read
- * model inside it, on a database small enough to query in 200 ms.
+ * behind it, the previous period, yesterday and the 30-day median. Measured in
+ * production, the whole window breaks down into thirds: loading the bundle,
+ * this pass, and the per-clip totals. Each was being paid per window; each is a
+ * function of the bundle and the time zone alone, so each is paid once and
+ * sliced. This is the shape the text half already uses, where `pipelineForDates`
+ * slices one preloaded history the same way.
  *
- * A day's reach does not depend on which other days were asked for. Each
- * interval between two readings is normalised by its own span and only then
- * distributed, so one pass over the whole history produces a day-by-day answer
- * every window can sum. This is the shape the text half already uses, where
- * `pipelineForDates` slices one preloaded history the same way.
+ * A day's figures do not depend on which other days were asked for: every
+ * interval between two readings is normalised by its own span before being
+ * spread, and a subscriber delta is bounded by the day it falls in.
  */
 export function periodReachByRow(
-  cache: VideoOverviewCache,
+  bundle: VideoAnalyticsBundle,
   rows: readonly TargetRow[],
   snapshots: ReadonlyMap<number, VideoSnapshot[]>,
   days: readonly PeriodDay[],
   timeZone: string,
 ): Map<number, DailyReach> {
-  const history = historyDailyReach(cache, rows, snapshots, timeZone);
+  const derived = derivedHistory(bundle, rows, snapshots, timeZone);
   const totals = new Map<number, DailyReach>();
   // Every window a render asks for is cut from the same union the bundle was
   // loaded over, so this holds. It is checked rather than assumed because the
   // failure is silent: an uncovered day reads as a day that earned nothing.
-  const covered = days.every((day) => cache.historyDayKeys.has(day.key));
+  const covered = days.every((day) => derived.dayKeys.has(day.key));
   for (const row of rows) {
     if (!covered) {
       totals.set(row.id, periodReach(videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? []), days, timeZone));
       continue;
     }
-    const daily = history.get(row.id);
+    const daily = derived.dailyReachByRow.get(row.id);
     const total = emptyDailyReach();
     for (const day of days) {
       const bucket = daily?.[day.key];
@@ -303,24 +307,53 @@ export function periodReachByRow(
 }
 
 /**
- * The chart's bars for one window, summed from the same history the per-clip
- * totals are cut from.
+ * What each clip's audience did in one window, cut from the same history.
  *
- * This was the second of two identical spreads. Removing only the other one
- * changed nothing in production -- Maru's video read model stayed at 466-2299 ms
- * -- because this pass runs over every clip at once and is the larger of the
- * two. Both now read the same day figures, which also means the chart and the
- * totals can no longer disagree by a rounding step.
+ * This was the last per-window recompute and the largest one left: production
+ * spent 503 ms of a 624 ms window here at two years, walking every clip against
+ * every day of the window. A day's delta is bounded by that day, so the days
+ * sum.
  */
+export function periodSubscribersByRow(
+  bundle: VideoAnalyticsBundle,
+  rows: readonly TargetRow[],
+  snapshots: ReadonlyMap<number, VideoSnapshot[]>,
+  days: readonly PeriodDay[],
+  timeZone: string,
+): Map<number, number | null> {
+  const derived = derivedHistory(bundle, rows, snapshots, timeZone);
+  const covered = days.every((day) => derived.dayKeys.has(day.key));
+  const totals = new Map<number, number | null>();
+  for (const row of rows) {
+    if (!covered) {
+      totals.set(row.id, periodSubscriberDelta(snapshots.get(row.id) ?? [], [...days]));
+      continue;
+    }
+    const byDay = derived.subscriberDeltaByRow.get(row.id);
+    let total = 0;
+    let observed = false;
+    for (const day of days) {
+      const delta = byDay?.get(day.key);
+      if (delta === undefined || delta === null) continue;
+      observed = true;
+      total += delta;
+    }
+    totals.set(row.id, observed ? total : null);
+  }
+  return totals;
+}
+
+/** The chart's bars for one window, summed from the same history the per-clip
+ * totals are cut from, so the two can no longer disagree by a rounding step. */
 function dailyReachForWindow(
-  cache: VideoOverviewCache,
+  bundle: VideoAnalyticsBundle,
   rows: readonly TargetRow[],
   snapshots: ReadonlyMap<number, VideoSnapshot[]>,
   days: readonly PeriodDay[],
   timeZone: string,
 ): Record<string, DailyReach> {
-  const history = historyDailyReach(cache, rows, snapshots, timeZone);
-  const covered = days.every((day) => cache.historyDayKeys.has(day.key));
+  const derived = derivedHistory(bundle, rows, snapshots, timeZone);
+  const covered = days.every((day) => derived.dayKeys.has(day.key));
   if (!covered)
     return dailyReach(
       rows.map((row) => videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? [])),
@@ -330,7 +363,7 @@ function dailyReachForWindow(
   const result: Record<string, DailyReach> = {};
   for (const day of days) result[day.key] = emptyDailyReach();
   for (const row of rows) {
-    const daily = history.get(row.id);
+    const daily = derived.dailyReachByRow.get(row.id);
     if (!daily) continue;
     for (const day of days) {
       const bucket = daily[day.key];
@@ -346,27 +379,51 @@ function dailyReachForWindow(
   return result;
 }
 
-/** One day-by-day pass per clip over the bundle's whole range, kept for the
- * render that asked for it. */
-function historyDailyReach(
-  cache: VideoOverviewCache,
+/** One day-by-day pass per clip over the bundle's whole range, carried on the
+ * bundle so a second render over the same range does not repeat it. */
+function derivedHistory(
+  bundle: VideoAnalyticsBundle,
   rows: readonly TargetRow[],
   snapshots: ReadonlyMap<number, VideoSnapshot[]>,
   timeZone: string,
-): Map<number, Record<string, DailyReach>> {
-  if (!cache.historyDays) {
-    cache.historyDays = cache.rangeStart && cache.rangeEnd ? calendarDays(cache.rangeStart, cache.rangeEnd, timeZone) : [];
-    cache.historyDayKeys = new Set(cache.historyDays.map((day) => day.key));
-    cache.dailyReachByRow.clear();
+): NonNullable<VideoAnalyticsBundle["derived"]> {
+  if (!bundle.derived || bundle.derived.timeZone !== timeZone) {
+    const days = calendarDays(bundle.range.start, bundle.range.end, timeZone);
+    bundle.derived = {
+      timeZone,
+      days,
+      dayKeys: new Set(days.map((day) => day.key)),
+      dailyReachByRow: new Map(),
+      subscriberDeltaByRow: new Map(),
+    };
   }
+  const derived = bundle.derived;
   for (const row of rows) {
-    if (cache.dailyReachByRow.has(row.id)) continue;
-    cache.dailyReachByRow.set(
-      row.id,
-      dailyReach([videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? [])], cache.historyDays, timeZone),
-    );
+    if (derived.dailyReachByRow.has(row.id)) continue;
+    const history = snapshots.get(row.id) ?? [];
+    derived.dailyReachByRow.set(row.id, dailyReach([videoReachSeries(row.publishedAt, row.target, history)], derived.days, timeZone));
+    derived.subscriberDeltaByRow.set(row.id, subscriberDeltaByDay(history, derived.days));
   }
-  return cache.dailyReachByRow;
+  return derived;
+}
+
+/** A day's subscriber movement, kept per day so any window can sum its own. */
+function subscriberDeltaByDay(history: readonly VideoSnapshot[], days: readonly PeriodDay[]): Map<string, number | null> {
+  const byDay = new Map<string, number | null>();
+  for (const day of days) {
+    const before = latestAtOrBefore(history, day.start)?.metrics;
+    const atEnd = latestAtOrBefore(history, day.end)?.metrics ?? before;
+    if (!before && !atEnd) {
+      byDay.set(day.key, null);
+      continue;
+    }
+    if ((before?.follows ?? null) === null && (atEnd?.follows ?? null) === null) {
+      byDay.set(day.key, null);
+      continue;
+    }
+    byDay.set(day.key, (atEnd?.follows ?? before?.follows ?? 0) - (before?.follows ?? 0));
+  }
+  return byDay;
 }
 
 function publishedTargets(backendDb: BackendDb, startIso: string, endIso: string): TargetRow[] {
@@ -573,13 +630,14 @@ export function viewEvents(rows: TargetRow[], snapshots: Map<number, VideoSnapsh
 
 export function aggregateDailyMetrics(
   backendDb: BackendDb,
+  bundle: VideoAnalyticsBundle,
   rows: TargetRow[],
   snapshots: Map<number, VideoSnapshot[]>,
   days: PeriodDay[],
   timeZone: string,
   cache: VideoOverviewCache,
 ): Record<string, DailyVideoMetrics> {
-  const daily = dailyReachForWindow(cache, rows, snapshots, days, timeZone);
+  const daily = dailyReachForWindow(bundle, rows, snapshots, days, timeZone);
   const result: Record<string, DailyVideoMetrics> = {};
   for (const day of days) result[day.key] = { ...(daily[day.key] ?? emptyDailyReach()), subscribers: null };
   const profileKeys = new Set(rows.map(profileKeyForRow).filter((key): key is string => key !== null));

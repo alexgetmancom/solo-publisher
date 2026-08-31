@@ -223,14 +223,19 @@ describe("architecture fitness", () => {
     // Each window function reaches the history through a slicer, never through
     // the spread itself.
     const slicesVia: Record<string, string> = {
-      periodReachByRow: "historyDailyReach(",
-      dailyReachForWindow: "historyDailyReach(",
+      periodReachByRow: "derivedHistory(",
+      periodSubscribersByRow: "derivedHistory(",
+      dailyReachForWindow: "derivedHistory(",
       aggregateDailyMetrics: "dailyReachForWindow(",
     };
     for (const [windowFunction, required] of Object.entries(slicesVia)) {
       expect(functionBody(ownerText, windowFunction)).toContain(required);
     }
-    expect(functionBody(ownerText, "historyDailyReach")).toMatch(/\bdailyReach\(/);
+    // The single pass itself, and the fact that it is carried on the bundle so
+    // a second render over the same range does not repeat it.
+    const single = functionBody(ownerText, "derivedHistory");
+    expect(single).toMatch(/\bdailyReach\(/);
+    expect(single).toContain("bundle.derived");
   });
 
   it("keeps infrastructure adapters behind the composition root", () => {

@@ -2,12 +2,13 @@ import { calendarDays, emptyDailyReach, latestAtOrBefore } from "../../../analyt
 import { publicationRef } from "../../../application/publication-ref.js";
 import type { BackendDb } from "../../../db/client.js";
 import { log } from "../../../foundation/logger.js";
-import { emptyMetrics, periodSubscriberDelta } from "./video-overview-calendar.js";
+import { emptyMetrics } from "./video-overview-calendar.js";
 import {
   aggregateDailyMetrics,
   destinationFor,
   destinationKey,
   periodReachByRow,
+  periodSubscribersByRow,
   type TargetRow,
   type VideoOverview,
   type VideoOverviewCache,
@@ -67,12 +68,13 @@ export function videoOverview(
   // Five of these run per render. Two rounds of production measurement have now
   // been spent guessing which part of one costs the most, so it says so itself.
   const reachStartedAt = Date.now();
-  const reachViews = periodReachByRow(cache, reachRows, snapshots, periodDays, timeZone);
+  const reachViews = periodReachByRow(bundle, reachRows, snapshots, periodDays, timeZone);
   const reachMs = Date.now() - reachStartedAt;
   const summaryStartedAt = Date.now();
   const summary = videoSummaryMetrics(backendDb, reachRows, snapshots, reachViews, periodDays, end, timeZone, cache);
   const summaryMs = Date.now() - summaryStartedAt;
   const itemsStartedAt = Date.now();
+  const subscribersByRow = periodSubscribersByRow(bundle, reachRows, snapshots, periodDays, timeZone);
   // One row per clip, not per destination: the same clip on Shorts and on Reels
   // is one publication that went to two places, which is how the text side has
   // always read a post that went to Telegram and to Threads.
@@ -102,7 +104,7 @@ export function videoOverview(
           const period = reachViews.get(row.id) ?? emptyDailyReach();
           const periodEnd = latestAtOrBefore(history, end)?.metrics ?? emptyMetrics();
           const lifetime = history.at(-1)?.metrics ?? emptyMetrics();
-          const subscribers = periodSubscriberDelta(history, periodDays);
+          const subscribers = subscribersByRow.get(row.id) ?? null;
           all.views += period.views;
           all.reactions += period.reactions;
           all.replies += period.replies;
@@ -165,7 +167,7 @@ export function videoOverview(
 
   const platformsMs = Date.now() - platformsStartedAt;
   const dailyStartedAt = Date.now();
-  const daily = aggregateDailyMetrics(backendDb, reachRows, snapshots, periodDays, timeZone, cache);
+  const daily = aggregateDailyMetrics(backendDb, bundle, reachRows, snapshots, periodDays, timeZone, cache);
   const dailyMs = Date.now() - dailyStartedAt;
   const eventsStartedAt = Date.now();
   const events = viewEvents(reachRows, snapshots, start, end);
