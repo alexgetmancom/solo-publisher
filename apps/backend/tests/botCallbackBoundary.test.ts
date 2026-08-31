@@ -72,3 +72,58 @@ describe("callback route grouping", () => {
     expect(callbackRoute(undefined)).toBe("unknown");
   });
 });
+
+describe("acknowledgement running alongside the handler", () => {
+  // The acknowledgement is no longer awaited before the handler starts, so a
+  // handler that answers for itself can now reach ctx.answerCallbackQuery while
+  // the real answer is still in flight. Telegram accepts one answer per
+  // callback: the second must arrive as a chat message, not as a lost toast or
+  // a duplicate answer.
+  it("turns a handler's own answer into a message even while the acknowledgement is in flight", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const answers: Array<{ text?: string } | undefined> = [];
+      const replies: string[] = [];
+      let releaseAcknowledgement = (): void => {};
+      const held = new Promise<void>((resolve) => {
+        releaseAcknowledgement = resolve;
+      });
+      const ctx = {
+        callbackQuery: { id: "concurrent-answer", data: "preview:7" },
+        from: { id: 42 },
+        answerCallbackQuery: async (options?: { text?: string }) => {
+          answers.push(options);
+          if (answers.length === 1) await held;
+        },
+        reply: async (text: string) => void replies.push(text),
+      } as unknown as Context;
+
+      const boundary = runCallbackBoundary(ctx, backendDb, async () => {
+        await ctx.answerCallbackQuery({ text: "done" });
+        releaseAcknowledgement();
+      });
+      await boundary;
+
+      // One real answer -- the acknowledgement -- and the handler's toast as a message.
+      expect(answers).toEqual([undefined]);
+      expect(replies).toEqual(["done"]);
+    }));
+
+  it("still waits for the acknowledgement before the tap is finished", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const answers: Array<{ text?: string } | undefined> = [];
+      let acknowledged = false;
+      const ctx = {
+        callbackQuery: { id: "awaited-ack", data: "preview:7" },
+        from: { id: 42 },
+        answerCallbackQuery: async (options?: { text?: string }) => {
+          answers.push(options);
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          acknowledged = true;
+        },
+        reply: async () => {},
+      } as unknown as Context;
+
+      await runCallbackBoundary(ctx, backendDb, async () => {});
+      expect(acknowledged).toBe(true);
+    }));
+});
