@@ -1,5 +1,6 @@
 import { and, eq, gte, isNull } from "drizzle-orm";
 import type { Clock, DomainEventInput, EventStore } from "../../application/ports.js";
+import { ringWorker } from "../../foundation/worker-signal.js";
 import { publicationEvents } from "../schema.js";
 import type { BackendDatabase } from "../types.js";
 
@@ -12,6 +13,9 @@ export function createEventStore(db: BackendDatabase, clock: Clock): EventStore 
 
 /** Same event implementation against either the root database or a transaction handle. */
 export function recordEvent(db: Pick<BackendDatabase, "select" | "insert">, clock: Clock, input: DomainEventInput): boolean {
+  // Every domain event reaches an operator through the Telegram consumer, which
+  // polls. One funnel, so no producer can forget to ring.
+  ringWorker("telegram-events");
   const now = clock.now().toISOString();
   const ref = input.ref ?? null;
   const target = input.target ?? null;

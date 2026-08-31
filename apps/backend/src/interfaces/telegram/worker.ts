@@ -6,6 +6,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
 import { heartbeatLoop } from "../../foundation/runtime/worker-state.js";
 import { type ScheduledLoop, startLoop } from "../../foundation/scheduler.js";
+import { setWorkerWake } from "../../foundation/worker-signal.js";
 import { deliverPendingAlerts } from "../../observability/alerts.js";
 import { sendWeeklyAnalyticsSummary } from "./analytics-summary.js";
 import { sendDailyBackup } from "./backup.js";
@@ -21,15 +22,19 @@ export function startTelegramWorkers(config: BackendConfig, backendDb: BackendDb
   const interfacePollMs = config.IDLE_POLL_INTERVAL_SECONDS * 1000;
   const dailyPollMs = DAILY_INTERFACE_POLL_INTERVAL_SECONDS * 1000;
   const startInterfaceLoop = heartbeatLoop(backendDb, startLoop);
+  // The card an operator is watching changes when this runs, so it is rung the
+  // moment a domain event is written rather than waiting out the poll.
+  const telegramEventLoop = startInterfaceLoop("telegram-events", interfacePollMs, async () => {
+    const events = await consumeTelegramEvents(backendDb, bot, config);
+    if (events) log("debug", "telegram event loop tick", { events });
+  });
+  setWorkerWake("telegram-events", telegramEventLoop.wake);
   return [
     startInterfaceLoop("telegram-albums", 1000, async () => {
       const completed = await finalizePendingAlbums(bot, backendDb, config);
       if (completed) log("info", "album drafts finalized", { completed });
     }),
-    startInterfaceLoop("telegram-events", interfacePollMs, async () => {
-      const events = await consumeTelegramEvents(backendDb, bot, config);
-      if (events) log("debug", "telegram event loop tick", { events });
-    }),
+    telegramEventLoop,
     startInterfaceLoop("telegram-alerts", interfacePollMs, async () => {
       const actorId = config.CONTROLLER_ADMIN_IDS[0];
       const alerts = await deliverPendingAlerts(backendDb, {

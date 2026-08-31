@@ -23,7 +23,6 @@ export type { VideoContentItem, VideoOverview, VideoOverviewCache } from "./vide
 export {
   createVideoOverviewCache,
   emptyVideoOverview,
-  invalidateVideoOverviewCache,
   setVideoOverviewCacheRange,
 } from "./video-overview-data.js";
 

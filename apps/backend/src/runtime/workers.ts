@@ -14,9 +14,9 @@ import { recoverStaleSiteJobs, runSiteJobCycle, SITE_JOB_RESTART_LOCK_GRACE_SECO
 import { runVideoCycle } from "../delivery/video-worker.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
-import { setPublishQueueWake } from "../foundation/publish-queue-signal.js";
 import { heartbeatLoop } from "../foundation/runtime/worker-state.js";
 import { type ScheduledLoop, startLoop } from "../foundation/scheduler.js";
+import { setWorkerWake } from "../foundation/worker-signal.js";
 import { runNotificationCycle } from "../notifications/jobs.js";
 import { runObservabilityCycle } from "../observability/cycle.js";
 import { flushUsage } from "../observability/usage.js";
@@ -64,7 +64,7 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
       runDeliveryPublishCycle(config, backendDb, createPlatformPorts(config, fetch, targetRouting(backendDb))),
     );
   });
-  setPublishQueueWake(publishQueueLoop.wake);
+  setWorkerWake("publish", publishQueueLoop.wake);
   return [
     // Meta renews its long-lived tokens by issuing new ones, and a lapsed token
     // cannot be renewed at all — so this runs far from the edge, daily, and

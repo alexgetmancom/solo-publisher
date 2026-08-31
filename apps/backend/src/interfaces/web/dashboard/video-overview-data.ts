@@ -21,6 +21,7 @@ import {
   videoDestination,
   videoTargetLabel,
 } from "../../../publishing/video-types.js";
+import { dashboardDataVersion } from "./data-version.js";
 import { periodSubscriberDelta, type VideoSnapshot, videoReachSeries } from "./video-overview-calendar.js";
 
 /**
@@ -193,39 +194,6 @@ type VideoAnalyticsBundle = {
 const MAX_SHARED_VIDEO_BUNDLES = 6;
 const sharedVideoBundles = new WeakMap<BackendDb, Map<string, VideoAnalyticsBundle>>();
 
-/**
- * What the bundle was built from, cheaply enough to ask on every render.
- *
- * The bundle used to expire after three seconds, which is the wrong question
- * asked twice: an operator tapping through periods is slower than that, so every
- * tap reloaded everything, while any tap inside the window could still be served
- * data that had just changed. Time says nothing about whether the answer is
- * still right. This does, in 0.03 ms measured on production -- so the bundle now
- * survives for as long as nothing it was built from has moved, and dies the
- * moment something has.
- *
- * Counts as well as maxima: a deletion moves neither maximum.
- */
-function videoDataVersion(backendDb: BackendDb): string {
-  const row = unsafeDb(backendDb)
-    .sqlite.prepare(
-      `SELECT (SELECT COUNT(*) FROM video_metric_snapshots) AS snapshots,
-              (SELECT MAX(id) FROM video_metric_snapshots) AS lastSnapshot,
-              (SELECT COUNT(*) FROM video_targets) AS targets,
-              (SELECT MAX(id) FROM video_targets) AS lastTarget,
-              (SELECT MAX(updated_at) FROM video_targets) AS targetTouched,
-              (SELECT COUNT(*) FROM creator_profiles) AS profiles,
-              (SELECT MAX(updated_at) FROM creator_profiles) AS lastProfile`,
-    )
-    .get() as Record<string, number | string | null>;
-  return Object.values(row).join("|");
-}
-
-/** Drops the short-lived cross-request bundle after a dashboard mutation. */
-export function invalidateVideoOverviewCache(backendDb: BackendDb): void {
-  sharedVideoBundles.delete(backendDb);
-}
-
 export function emptyVideoOverview(): VideoOverview {
   return {
     items: [],
@@ -240,7 +208,7 @@ export function videoAnalyticsBundle(backendDb: BackendDb, start: Date, end: Dat
   const rangeStart = cache?.rangeStart ?? start;
   const rangeEnd = cache?.rangeEnd ?? end;
   const bucketSeconds = cache?.sampleBucketSeconds ?? (end.getTime() - start.getTime() > 7 * 86_400_000 ? 86_400 : 3_600);
-  const key = `${rangeStart.toISOString()}|${rangeEnd.toISOString()}|${bucketSeconds}|${videoDataVersion(backendDb)}`;
+  const key = `${rangeStart.toISOString()}|${rangeEnd.toISOString()}|${bucketSeconds}|${dashboardDataVersion(backendDb)}`;
   if (cache?.bundleKey === key && cache.bundle) return cache.bundle;
 
   const shared = sharedVideoBundles.get(backendDb);
@@ -640,17 +608,62 @@ function publishedDestinationKeys(backendDb: BackendDb, catalogue: readonly Vide
 }
 
 /** Samples for the clips of this period, converted to cumulative period deltas. */
+/**
+ * The chart's raw points for one window.
+ *
+ * Five windows per render allocated one object per snapshot in range and sorted
+ * the result each time -- the same shape as every other per-window pass that has
+ * come out of this file. The snapshots of one clip are already sorted, so a
+ * window is a slice of them found by binary search, and the per-clip slices are
+ * merged rather than concatenated and re-sorted.
+ */
 export function viewEvents(rows: TargetRow[], snapshots: Map<number, VideoSnapshot[]>, start: Date, end: Date): MetricEvent[] {
   if (!rows.length) return [];
-  return rows
-    .flatMap((row) => {
-      const history = snapshots.get(row.id) ?? [];
-      const baseline = latestAtOrBefore(history, start)?.metrics.views ?? 0;
-      return history
-        .filter((sample) => sample.at >= start && sample.at <= end)
-        .map((sample) => ({ at: sample.at, key: publicationRef("video", row.id), value: Math.max(0, sample.metrics.views - baseline) }));
-    })
-    .sort((left, right) => left.at.getTime() - right.at.getTime());
+  const perRow: MetricEvent[][] = [];
+  for (const row of rows) {
+    const history = snapshots.get(row.id) ?? [];
+    if (!history.length) continue;
+    const baseline = latestAtOrBefore(history, start)?.metrics.views ?? 0;
+    // latestAtOrBefore lands on the last sample at or before `start`; the window
+    // opens at the one after it.
+    const before = latestAtOrBefore(history, new Date(start.getTime() - 1));
+    let index = before ? history.indexOf(before) + 1 : 0;
+    const events: MetricEvent[] = [];
+    for (; index < history.length; index += 1) {
+      const sample = history[index];
+      if (!sample || sample.at > end) break;
+      events.push({ at: sample.at, key: publicationRef("video", row.id), value: Math.max(0, sample.metrics.views - baseline) });
+    }
+    if (events.length) perRow.push(events);
+  }
+  return mergeByTime(perRow);
+}
+
+/** Merges lists that are each already in time order. */
+function mergeByTime(lists: MetricEvent[][]): MetricEvent[] {
+  if (lists.length <= 1) return lists[0] ?? [];
+  const cursors = lists.map(() => 0);
+  const merged: MetricEvent[] = [];
+  for (;;) {
+    let pick = -1;
+    let pickAt = Number.POSITIVE_INFINITY;
+    for (let list = 0; list < lists.length; list += 1) {
+      const event = lists[list]?.[cursors[list] ?? 0];
+      if (!event) continue;
+      const at = event.at.getTime();
+      if (at < pickAt) {
+        pickAt = at;
+        pick = list;
+      }
+    }
+    if (pick < 0) return merged;
+    const list = lists[pick];
+    const cursor = cursors[pick] ?? 0;
+    const event = list?.[cursor];
+    if (!event) return merged;
+    merged.push(event);
+    cursors[pick] = cursor + 1;
+  }
 }
 
 export function aggregateDailyMetrics(

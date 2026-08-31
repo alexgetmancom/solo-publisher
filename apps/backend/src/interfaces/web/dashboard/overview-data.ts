@@ -12,6 +12,7 @@ import { log } from "../../../foundation/logger.js";
 import { zonedRollingPeriodBounds, zonedSlot } from "../../../foundation/time.js";
 import { dashboardPipelineHistoryPayload } from "../../../operations/read-model.js";
 import type { CombinedSectionInput, PlatformMetric } from "./combined-section.js";
+import { cachedHistory, dashboardDataVersion } from "./data-version.js";
 import { audiencePlatformFollowers } from "./ops-sections.js";
 import { rollingPeriodDates } from "./period-controls.js";
 import { createVideoOverviewCache, setVideoOverviewCacheRange, type VideoOverview, videoOverview } from "./video-overview.js";
@@ -79,7 +80,12 @@ export function loadDashboardReadModel(
   const historyEnd = new Date(Math.max(end.getTime(), previousEnd.getTime(), medianEnd.getTime(), yesterdayEnd.getTime()));
   const historyDays = Math.max(1, Math.round((historyEnd.getTime() - historyStart.getTime() + 1) / 86_400_000));
   const offsetDays = weekOffset * periodDays;
-  const pipelineHistory = timed("pipelineMs", () => dashboardPipelineHistoryPayload(config, backendDb, historyDays, offsetDays));
+  const dataVersion = dashboardDataVersion(backendDb);
+  const pipelineHistory = timed("pipelineMs", () =>
+    cachedHistory(backendDb, `pipeline|${historyDays}|${offsetDays}`, dataVersion, () =>
+      dashboardPipelineHistoryPayload(config, backendDb, historyDays, offsetDays),
+    ),
+  );
   const pipeline = {
     current: pipelineForDates(pipelineHistory, start, end, config.TIMEZONE),
     comparison: pipelineForDates(pipelineHistory, previousStart, previousEnd, config.TIMEZONE),
@@ -88,7 +94,9 @@ export function loadDashboardReadModel(
   };
   const [historyStartBound, historyEndBound] = periodBounds(historyStart, historyEnd, config.TIMEZONE);
   const xHistory = timed("xActivityMs", () =>
-    xActivityDashboardRange(backendDb, historyStartBound.toISOString(), historyEndBound.toISOString()),
+    cachedHistory(backendDb, `x|${historyStartBound.toISOString()}|${historyEndBound.toISOString()}`, dataVersion, () =>
+      xActivityDashboardRange(backendDb, historyStartBound.toISOString(), historyEndBound.toISOString()),
+    ),
   );
   const xActivity = {
     current: xActivityForDates(xHistory.items, start, end, config.TIMEZONE),

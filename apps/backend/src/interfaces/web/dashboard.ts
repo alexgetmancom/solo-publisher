@@ -25,7 +25,7 @@ import { renderDashboardShell } from "./dashboard/shell.js";
 import { type PublicationDetailsResult, renderPublicationDetails } from "./dashboard/table.js";
 import { dashboardThemeToggleHtml } from "./dashboard/theme.js";
 import type { OpsPayload } from "./dashboard/types.js";
-import { createVideoOverviewCache, invalidateVideoOverviewCache } from "./dashboard/video-overview.js";
+import { createVideoOverviewCache } from "./dashboard/video-overview.js";
 import { additionalXActivityPosts } from "./dashboard/x-activity-posts.js";
 import { renderStudioOnboarding, renderStudioSection } from "./studio.js";
 
@@ -85,7 +85,6 @@ function rememberDashboard(cache: Map<string, DashboardCacheEntry>, key: string,
 /** Clears the short-lived HTML cache after an authenticated dashboard mutation. */
 export function invalidateDashboardRenderCache(backendDb: BackendDb): void {
   dashboardCaches.delete(backendDb);
-  invalidateVideoOverviewCache(backendDb);
 }
 
 export function renderDashboard(
