@@ -10,6 +10,7 @@ const EXPECTED_WORKERS = [
   "platform-tokens",
   "credentials",
   "x-token",
+  "story-derivatives",
   "story-cards",
   "queue",
   "publish-watchdog",

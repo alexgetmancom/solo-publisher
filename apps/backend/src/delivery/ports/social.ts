@@ -9,6 +9,7 @@ import { prepareMediaItems } from "../media-prepare.js";
 import { createPlatformAdapters, type TargetRouting } from "../platform-adapters.js";
 import type { DeliveryPorts } from "../ports.js";
 import { payloadMedia } from "../social/payload.js";
+import { preparedStoryMedia } from "../story-derivatives.js";
 import { generateStoryMedia } from "../story-media.js";
 
 type PreparedMedia = Awaited<ReturnType<typeof prepareMediaItems>>;
@@ -91,6 +92,12 @@ async function createStoryMedia(job: ClaimedPublishJob, media: ReturnType<typeof
   // is both idempotent and essential for recovery: retrying must not depend on
   // re-downloading or re-transcoding an unchanged source video.
   if (source.storyLocalPath) return [source];
+  // The variant is a pure function of the source file, so it was made when the
+  // file was imported and nobody was waiting. Rendering it here still happens --
+  // for a file imported before this existed, or one whose artefact is gone --
+  // but it is now the miss, not the norm.
+  const prepared = preparedStoryMedia(config, source);
+  if (prepared) return [prepared];
   const locale = job.payload.locale === "ru" ? "ru" : "en";
   const draftId = Number(job.payload.draftId ?? job.jobId);
   return generateStoryMedia([source], Number.isSafeInteger(draftId) ? draftId : job.jobId, locale, config);

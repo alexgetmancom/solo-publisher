@@ -12,6 +12,36 @@ import { withTimeout } from "../foundation/runtime/timeout.js";
 import { processVerticalMediaRemotely } from "./remote-media-processor.js";
 import type { PublishMediaItem } from "./social/payload.js";
 
+/** Where Story artefacts live, for both the prepared ones and the recovered ones. */
+export function storyDirectory(config: BackendConfig): string {
+  return path.join(config.DATA_DIR, "story-media");
+}
+
+/**
+ * One source file into the Story shapes, wherever the caller wants them.
+ *
+ * The preparation worker and the publish-time recovery path both go through
+ * here: the same recipe, the same timeout, the same permissions. Two
+ * implementations of "make the Story version" is how they would disagree.
+ */
+export async function renderStoryVariants(
+  source: string,
+  output: string,
+  telegramOutput: string | undefined,
+  video: boolean,
+  config: BackendConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  if (config.MEDIA_PROCESSOR_PROVIDER === "remote_http") await transformRemotely(source, output, telegramOutput, video, config, fetchImpl);
+  else
+    await withTimeout(
+      runFfmpeg(storyFfmpegArgs(source, output, video ? "video" : "image")),
+      storyTransformTimeout(config),
+      "story_transform_timeout",
+    );
+  await withTimeout(fs.promises.chmod(output, 0o664), 30_000, "story_output_finalize_timeout");
+}
+
 export async function generateStoryMedia(
   raw: unknown,
   draftId: number,
@@ -49,20 +79,16 @@ export async function generateStoryMedia(
     const stamp = Date.now();
     const output = path.join(directory, `draft-${draftId}-${locale}-story-standard-${stamp}.${video ? "mp4" : "jpg"}`);
     const telegramOutput = video ? path.join(directory, `draft-${draftId}-${locale}-story-telegram-${stamp}.mp4`) : undefined;
-    const args = storyFfmpegArgs(source, output, video ? "video" : "image");
 
     const transformStartedAt = Date.now();
     try {
-      if (config.MEDIA_PROCESSOR_PROVIDER === "remote_http")
-        await transformRemotely(source, output, telegramOutput, video, config, fetchImpl);
-      else await withTimeout(runFfmpeg(args), storyTransformTimeout(config), "story_transform_timeout");
+      await renderStoryVariants(source, output, telegramOutput, video, config, fetchImpl);
     } finally {
       transformMs = Date.now() - transformStartedAt;
     }
 
     const finalizeStartedAt = Date.now();
     try {
-      await withTimeout(fs.promises.chmod(output, 0o664), 30_000, "story_output_finalize_timeout");
       outputBytes = (await fs.promises.stat(output)).size;
     } finally {
       finalizeMs = Date.now() - finalizeStartedAt;

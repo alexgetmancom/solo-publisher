@@ -11,6 +11,7 @@ import { createPlatformPorts } from "../delivery/ports/social.js";
 import { runPublicationReconciliation } from "../delivery/publication-reconciliation.js";
 import { runDeliveryPublishCycle } from "../delivery/publish-workflow.js";
 import { recoverStaleSiteJobs, runSiteJobCycle, SITE_JOB_RESTART_LOCK_GRACE_SECONDS } from "../delivery/site-jobs.js";
+import { runStoryDerivativeCycle } from "../delivery/story-derivatives.js";
 import { runVideoCycle } from "../delivery/video-worker.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -85,6 +86,13 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     startWorkerLoop("x-token", 10 * 60 * 1000, async () => {
       const outcome = await refreshXToken(config, backendDb);
       if (outcome === "refreshed") log("info", "X access token refreshed");
+    }),
+    // Story shapes of imported files, made where nobody is waiting. Two per
+    // cycle: the transform is the heaviest thing this process does, and a
+    // backlog must not starve the publishing it exists to speed up.
+    startWorkerLoop("story-derivatives", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
+      const prepared = await runStoryDerivativeCycle(config, backendDb);
+      if (prepared) log("info", "story variants prepared", { prepared });
     }),
     startWorkerLoop("story-cards", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
       await runTimedCycle("content.story_card.cycle", "claimed", () => runStoryCardCycle(config, backendDb));

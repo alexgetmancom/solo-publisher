@@ -47,6 +47,7 @@ function recordWorkerHeartbeat(
  * started either way and idle on the flag inside the tick, so leaving them off
  * hid two running, healthy workers from `status` and from the health report. */
 export const CORE_WORKER_NAMES = [
+  "story-derivatives",
   "story-cards",
   "queue",
   "publish-watchdog",
