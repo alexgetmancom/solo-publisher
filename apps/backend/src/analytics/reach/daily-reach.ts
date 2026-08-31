@@ -123,6 +123,34 @@ function erf(x: number): number {
 const HOUR = 3_600_000;
 
 /**
+ * The first day that can overlap `from`, found rather than scanned to.
+ *
+ * Days are consecutive and sorted, so the days an interval touches are one
+ * contiguous stretch of them. Walking the whole list per interval made the
+ * spread quadratic in the window: a clip with ninety readings over two years
+ * spans about eight days per interval and was tested against seven hundred and
+ * thirty, so over ninety-nine percent of the work produced nothing. Measured on
+ * one Studio's real shape -- 312 clips, 90 readings each, a 730-day window --
+ * that was 20.5 million iterations and 764 ms.
+ */
+function firstOverlappingDay(days: readonly PeriodDay[], from: Date): number {
+  const fromMs = from.getTime();
+  let low = 0;
+  let high = days.length - 1;
+  let found = days.length;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    const day = days[middle];
+    if (!day) break;
+    if (day.end.getTime() + 1 > fromMs) {
+      found = middle;
+      high = middle - 1;
+    } else low = middle + 1;
+  }
+  return found;
+}
+
+/**
  * How one interval between two readings divides between the days it spans.
  *
  * Everything gained between two readings is real and measured; when inside the
@@ -142,14 +170,18 @@ function intervalWeights(days: readonly PeriodDay[], from: Date, to: Date, publi
   // lifetime figure with no sampling history — spans no time to spread over, so
   // it belongs whole to the day it was read.
   if (span <= 0) {
-    const day = days.find((candidate) => candidate.start <= to && to <= candidate.end);
-    if (day) weights.set(day.key, 1);
+    const index = firstOverlappingDay(days, to);
+    const day = days[index];
+    if (day && day.start <= to && to <= day.end) weights.set(day.key, 1);
     return weights;
   }
   const ageHours = (at: Date): number => (published ? (at.getTime() - published.getTime()) / HOUR : 0);
   const curved = published !== null;
   const total = curved ? lifetimeShareByAge(ageHours(to)) - lifetimeShareByAge(ageHours(from)) : span;
-  for (const day of days) {
+  const firstDay = firstOverlappingDay(days, from);
+  for (let index = firstDay; index < days.length; index += 1) {
+    const day = days[index];
+    if (!day || day.start.getTime() >= to.getTime()) break;
     const overlapStart = Math.max(day.start.getTime(), from.getTime());
     const overlapEnd = Math.min(day.end.getTime() + 1, to.getTime());
     if (overlapEnd <= overlapStart) continue;
@@ -158,12 +190,21 @@ function intervalWeights(days: readonly PeriodDay[], from: Date, to: Date, publi
       : overlapEnd - overlapStart;
     if (share > 0) weights.set(day.key, share);
   }
-  // Every reachable day sits on a stretch of curve too flat to measure — the
+  // The whole interval sits on a stretch of curve too flat to measure — the
   // publication is old enough that the model says "nothing more arrives" while
   // the counter says otherwise. Believe the counter and spread it evenly.
-  if (total <= 0 || [...weights.values()].every((share) => share === 0)) {
+  //
+  // This decision belongs to the interval and to nothing else. It used to also
+  // fire when every *requested* day happened to be flat, which made a day's
+  // figure depend on the days asked beside it: the same day read one value on
+  // its own and another next to the publication's hump, so two periods of one
+  // dashboard disagreed about it. Growth that falls outside the requested days
+  // is not lost by this — it belongs to days the caller did not ask for.
+  if (total <= 0) {
     weights.clear();
-    for (const day of days) {
+    for (let index = firstDay; index < days.length; index += 1) {
+      const day = days[index];
+      if (!day || day.start.getTime() >= to.getTime()) break;
       const overlapStart = Math.max(day.start.getTime(), from.getTime());
       const overlapEnd = Math.min(day.end.getTime() + 1, to.getTime());
       if (overlapEnd > overlapStart) weights.set(day.key, (overlapEnd - overlapStart) / span);
