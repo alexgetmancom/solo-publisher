@@ -3,6 +3,7 @@ import type { BackendDb } from "../db/client.js";
 import { describeError } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { settingsService } from "../studio/services/settings.js";
+import { beginTapMeasurement, endTapMeasurement } from "./api-timing.js";
 import { callbackToast } from "./callback-effects.js";
 import { showMessage } from "./effects.js";
 
@@ -17,6 +18,7 @@ const seenCallbackQueries = new Map<string, number>();
 /** Runs every callback downstream of the bot's authorization middleware. */
 export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, next: () => Promise<void>): Promise<void> {
   const startedAt = performance.now();
+  beginTapMeasurement();
   const callbackId = ctx.callbackQuery?.id;
   if (callbackId && !claimCallbackQuery(callbackId)) {
     await answerCallbackSafely(ctx);
@@ -49,11 +51,19 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   } finally {
     handlerFinishedAt = performance.now();
     await acknowledgement;
+    const { apiMs, apiCalls } = endTapMeasurement();
+    const totalMs = performance.now() - startedAt;
     log("info", "Telegram callback timing", {
       callback: callbackRoute(ctx.callbackQuery?.data),
       acknowledgeMs: Math.round(acknowledgedAt - startedAt),
       handlerMs: Math.round(handlerFinishedAt - handlerStartedAt),
-      totalMs: Math.round(performance.now() - startedAt),
+      // What Telegram cost, and what was ours. The first is the floor; only the
+      // second is worth optimising, and a screen making three calls where one
+      // would do shows up as a high apiCalls rather than as slow code.
+      apiMs: Math.round(apiMs),
+      apiCalls,
+      localMs: Math.round(totalMs - apiMs),
+      totalMs: Math.round(totalMs),
     });
   }
 }

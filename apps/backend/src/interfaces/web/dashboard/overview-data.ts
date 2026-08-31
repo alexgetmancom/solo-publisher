@@ -1,3 +1,4 @@
+import { analyticsDataVersion, cachedHistory } from "../../../analytics/data-version.js";
 import type { PipelineData, PipelinePost } from "../../../analytics/pipeline-payload.js";
 import { calendarDays } from "../../../analytics/reach/daily-reach.js";
 import { type TextOverview, textOverviewOf } from "../../../analytics/reach/text-overview.js";
@@ -12,7 +13,6 @@ import { log } from "../../../foundation/logger.js";
 import { zonedRollingPeriodBounds, zonedSlot } from "../../../foundation/time.js";
 import { dashboardPipelineHistoryPayload } from "../../../operations/read-model.js";
 import type { CombinedSectionInput, PlatformMetric } from "./combined-section.js";
-import { cachedHistory, dashboardDataVersion } from "./data-version.js";
 import { audiencePlatformFollowers } from "./ops-sections.js";
 import { rollingPeriodDates } from "./period-controls.js";
 import { createVideoOverviewCache, setVideoOverviewCacheRange, type VideoOverview, videoOverview } from "./video-overview.js";
@@ -80,7 +80,7 @@ export function loadDashboardReadModel(
   const historyEnd = new Date(Math.max(end.getTime(), previousEnd.getTime(), medianEnd.getTime(), yesterdayEnd.getTime()));
   const historyDays = Math.max(1, Math.round((historyEnd.getTime() - historyStart.getTime() + 1) / 86_400_000));
   const offsetDays = weekOffset * periodDays;
-  const dataVersion = dashboardDataVersion(backendDb);
+  const dataVersion = analyticsDataVersion(backendDb);
   const pipelineHistory = timed("pipelineMs", () =>
     cachedHistory(backendDb, `pipeline|${historyDays}|${offsetDays}`, dataVersion, () =>
       dashboardPipelineHistoryPayload(config, backendDb, historyDays, offsetDays),

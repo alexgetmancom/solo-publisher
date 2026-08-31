@@ -1,3 +1,4 @@
+import { analyticsDataVersion } from "../../analytics/data-version.js";
 import { audienceAnalysis } from "../../analytics/reports/audience.js";
 import { creatorMilestoneHistory } from "../../analytics/reports/milestone-history.js";
 import { creatorArchiveSummary, creatorPostArchive, creatorPostMedia, creatorPostMetrics } from "../../analytics/reports/post-archive.js";
@@ -12,18 +13,36 @@ type AnalyticsSection = "overview" | "audience" | "posts" | "video";
 type AnalyticsPeriod = 1 | 7 | 30;
 type AnalyticsDashboard = ReturnType<typeof studioAnalyticsDashboard>;
 
-const DASHBOARD_CACHE_TTL_MS = 15_000;
-const dashboardCaches = new WeakMap<BackendDb, Map<string, { expiresAt: number; value: AnalyticsDashboard }>>();
+const MAX_CACHED_DASHBOARDS = 8;
+const dashboardCaches = new WeakMap<BackendDb, Map<string, { version: string; value: AnalyticsDashboard }>>();
 
+/**
+ * The finished screen, kept until the numbers on it change.
+ *
+ * Fifteen seconds was the wrong question asked twice: an operator stepping
+ * between sections is slower than that, so each step rebuilt everything, while
+ * a step inside the window could still show figures that had just moved. The
+ * version costs 0.03 ms and answers what the cache actually needs to know.
+ *
+ * This stays an ordinary computed cache, not a projection: the value is
+ * discarded and recomputed the moment its inputs move, so there is no second
+ * copy of the truth to keep in step with the first.
+ */
 function cachedDashboard(backendDb: BackendDb, section: AnalyticsSection, days: AnalyticsPeriod, locale: StudioLocale): AnalyticsDashboard {
-  const now = Date.now();
   const key = `${section}:${days}:${locale}`;
-  const cache = dashboardCaches.get(backendDb) ?? new Map<string, { expiresAt: number; value: AnalyticsDashboard }>();
+  const version = analyticsDataVersion(backendDb);
+  const cache = dashboardCaches.get(backendDb) ?? new Map<string, { version: string; value: AnalyticsDashboard }>();
   dashboardCaches.set(backendDb, cache);
   const cached = cache.get(key);
-  if (cached && cached.expiresAt > now) return cached.value;
+  if (cached && cached.version === version) return cached.value;
   const value = studioAnalyticsDashboard(backendDb, section, days, locale);
-  cache.set(key, { expiresAt: now + DASHBOARD_CACHE_TTL_MS, value });
+  cache.delete(key);
+  cache.set(key, { version, value });
+  while (cache.size > MAX_CACHED_DASHBOARDS) {
+    const oldest = cache.keys().next().value;
+    if (typeof oldest !== "string") break;
+    cache.delete(oldest);
+  }
   return value;
 }
 

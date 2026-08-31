@@ -1,5 +1,6 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { Bot, type Context } from "grammy";
+import { beginTapMeasurement, endTapMeasurement, installApiTiming } from "./bot/api-timing.js";
 import { runCallbackBoundary } from "./bot/callback-boundary.js";
 import { handlePublicationCallback, handlePublicationMessage } from "./bot/callback-router.js";
 import { executePublicationEffects, showMessage } from "./bot/effects.js";
@@ -31,6 +32,7 @@ export function createBot(config: BackendConfig, backendDb: BackendDb): Bot | nu
   // rejected call lands in `bot.catch` below and the admin's action is simply
   // lost. Internal server errors are left alone: retrying a 500 blindly can
   // send the same message twice.
+  installApiTiming(bot);
   bot.api.config.use(autoRetry({ maxRetryAttempts: 3, maxDelaySeconds: 30, rethrowInternalServerErrors: true }));
   bindBotHandlers(bot, config, backendDb);
   void bot.api
@@ -49,6 +51,10 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
     const updateType = Object.keys(ctx.update).find((key) => key !== "update_id") ?? "unknown";
     let success = false;
     let failure: unknown;
+    // A callback runs its own measurement inside this one; a typed message has
+    // no such boundary, so this is where its split comes from.
+    const owned = updateType !== "callback_query";
+    if (owned) beginTapMeasurement();
     try {
       await trackUsageAsync(backendDb, "telegram.update.handle", next);
       success = true;
@@ -56,12 +62,15 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
       failure = error;
       throw error;
     } finally {
+      const totalMs = Date.now() - startedAt;
+      const { apiMs, apiCalls } = owned ? endTapMeasurement() : { apiMs: 0, apiCalls: 0 };
       log(success ? "info" : "warn", "operation timing", {
         operation: "telegram.update.handle",
         updateId: ctx.update.update_id,
         updateType,
         success,
-        totalMs: Date.now() - startedAt,
+        ...(owned ? { apiMs: Math.round(apiMs), apiCalls, localMs: Math.round(totalMs - apiMs) } : {}),
+        totalMs,
         ...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
       });
     }

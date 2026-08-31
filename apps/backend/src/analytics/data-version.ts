@@ -1,7 +1,7 @@
-import { type BackendDb, unsafeDb } from "../../../db/client.js";
+import { type BackendDb, unsafeDb } from "../db/client.js";
 
 /**
- * What the overview was built from, cheap enough to ask on every render.
+ * What every analytics answer was built from, cheap enough to ask each time.
  *
  * The halves of the dashboard each load a history once and cut every comparison
  * window from it, but until now each render loaded its own. A clock is the wrong
@@ -24,7 +24,7 @@ import { type BackendDb, unsafeDb } from "../../../db/client.js";
  * the catalogue from the connected channels, so a background collection or a
  * channel connected from another surface has to invalidate this too.
  */
-export function dashboardDataVersion(backendDb: BackendDb): string {
+export function analyticsDataVersion(backendDb: BackendDb): string {
   const row = unsafeDb(backendDb)
     .sqlite.prepare(
       `SELECT (SELECT COUNT(*) FROM metric_samples) AS samples,

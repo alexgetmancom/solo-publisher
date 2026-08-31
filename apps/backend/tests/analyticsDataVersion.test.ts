@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
+import { analyticsDataVersion } from "../src/analytics/data-version.js";
 import { openBackendDb } from "../src/db/client.js";
 import { unsafeDb } from "../src/db/unsafe.js";
-import { dashboardDataVersion } from "../src/interfaces/web/dashboard/data-version.js";
 
 /**
  * The version is what keeps every loaded history alive, so a change it cannot
@@ -19,7 +19,7 @@ function withDb(run: (backendDb: ReturnType<typeof openBackendDb>) => void): voi
   }
 }
 
-describe("dashboard data version", () => {
+describe("analytics data version", () => {
   it("moves when an existing video snapshot is updated in place", () =>
     withDb((backendDb) => {
       const sqlite = unsafeDb(backendDb).sqlite;
@@ -41,36 +41,36 @@ describe("dashboard data version", () => {
         `INSERT INTO video_metric_snapshots (video_target_id, platform, metrics_json, sampled_at) VALUES (1, 'youtube', '{"views":10}', ?)`,
         [at],
       );
-      const before = dashboardDataVersion(backendDb);
+      const before = analyticsDataVersion(backendDb);
       // Neither the count nor the maximum id moves here.
       sqlite.run(`UPDATE video_metric_snapshots SET metrics_json = '{"views":99}', sampled_at = '2026-08-02T00:00:00.000Z'`);
-      expect(dashboardDataVersion(backendDb)).not.toBe(before);
+      expect(analyticsDataVersion(backendDb)).not.toBe(before);
     }));
 
   it("moves when a follower snapshot is collected", () =>
     withDb((backendDb) => {
       const sqlite = unsafeDb(backendDb).sqlite;
-      const before = dashboardDataVersion(backendDb);
+      const before = analyticsDataVersion(backendDb);
       sqlite.run(
         `INSERT INTO creator_profile_snapshots (platform, account, sampled_on, metrics_json, source, sampled_at)
          VALUES ('youtube', 'main', '2026-08-01', '{"subscriberCount":100}', 'test', '2026-08-01T00:00:00.000Z')`,
       );
-      expect(dashboardDataVersion(backendDb)).not.toBe(before);
+      expect(analyticsDataVersion(backendDb)).not.toBe(before);
     }));
 
   it("moves when a channel is connected", () =>
     withDb((backendDb) => {
       const sqlite = unsafeDb(backendDb).sqlite;
-      const before = dashboardDataVersion(backendDb);
+      const before = analyticsDataVersion(backendDb);
       sqlite.run(
         `INSERT INTO channel_connections (id, platform, locale, provider, label, enabled, source, created_at, updated_at)
          VALUES ('youtube_ru', 'youtube', 'ru', 'native', 'YouTube RU', 1, 'test', '2026-08-01T00:00:00.000Z', '2026-08-01T00:00:00.000Z')`,
       );
-      expect(dashboardDataVersion(backendDb)).not.toBe(before);
+      expect(analyticsDataVersion(backendDb)).not.toBe(before);
     }));
 
   it("stands still when nothing has changed", () =>
     withDb((backendDb) => {
-      expect(dashboardDataVersion(backendDb)).toBe(dashboardDataVersion(backendDb));
+      expect(analyticsDataVersion(backendDb)).toBe(analyticsDataVersion(backendDb));
     }));
 });

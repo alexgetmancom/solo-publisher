@@ -1,3 +1,4 @@
+import { analyticsDataVersion } from "../../../analytics/data-version.js";
 import { audienceGrowthByPlatform } from "../../../analytics/metric-deltas.js";
 import {
   calendarDays,
@@ -21,7 +22,6 @@ import {
   videoDestination,
   videoTargetLabel,
 } from "../../../publishing/video-types.js";
-import { dashboardDataVersion } from "./data-version.js";
 import { periodSubscriberDelta, type VideoSnapshot, videoReachSeries } from "./video-overview-calendar.js";
 
 /**
@@ -208,7 +208,7 @@ export function videoAnalyticsBundle(backendDb: BackendDb, start: Date, end: Dat
   const rangeStart = cache?.rangeStart ?? start;
   const rangeEnd = cache?.rangeEnd ?? end;
   const bucketSeconds = cache?.sampleBucketSeconds ?? (end.getTime() - start.getTime() > 7 * 86_400_000 ? 86_400 : 3_600);
-  const key = `${rangeStart.toISOString()}|${rangeEnd.toISOString()}|${bucketSeconds}|${dashboardDataVersion(backendDb)}`;
+  const key = `${rangeStart.toISOString()}|${rangeEnd.toISOString()}|${bucketSeconds}|${analyticsDataVersion(backendDb)}`;
   if (cache?.bundleKey === key && cache.bundle) return cache.bundle;
 
   const shared = sharedVideoBundles.get(backendDb);
