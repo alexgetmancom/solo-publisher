@@ -107,7 +107,7 @@ export function loadDashboardReadModel(
   const videoHistoryEnd = new Date(
     Math.max(end.getTime(), previousEnd.getTime(), medianEnd.getTime(), yesterdayEnd.getTime()) + 86_400_000 - 1,
   );
-  setVideoOverviewCacheRange(videoCache, videoHistoryStart, videoHistoryEnd, periodDays <= 7 ? 60 * 60 : 24 * 60 * 60);
+  setVideoOverviewCacheRange(videoCache, videoHistoryStart, videoHistoryEnd, periodDays <= 7 ? 60 * 60 : 24 * 60 * 60, dataVersion);
   const video = timed("videoMs", () => ({
     current: videoForDates(backendDb, config.TIMEZONE, videoCache, start, end, true, videoView),
     history: videoForDates(backendDb, config.TIMEZONE, videoCache, videoHistoryStart, end, true, videoView),

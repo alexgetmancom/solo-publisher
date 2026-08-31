@@ -1067,3 +1067,29 @@ describe("video bundle reuse", () => {
       expect(load()).not.toBe(first);
     }));
 });
+
+describe("one render, one version", () => {
+  // Five windows share a bundle, and each used to ask the database whether the
+  // data had moved -- counting rows across seven tables to do it. In production
+  // 36 of 38 windows then reloaded the bundle they existed to share. The render
+  // states the version once, which also means the five windows of one screen
+  // cannot disagree about what they are drawing.
+  it("keeps every window of one render on the bundle the render started with", () =>
+    withOverviewDb(async (backendDb) => {
+      seedHistoricalVideo(backendDb);
+      const [start, end] = [new Date("2026-07-29T21:00:00.000Z"), new Date("2026-08-01T20:59:59.999Z")];
+      const cache = createVideoOverviewCache(24 * 60 * 60);
+      setVideoOverviewCacheRange(cache, start, end, 24 * 60 * 60, "version-of-this-render");
+      const first = videoAnalyticsBundle(backendDb, start, end, cache);
+
+      // A collection lands mid-render. The screen still draws one consistent
+      // moment rather than half of one and half of another.
+      seedCrosspostedVideo(backendDb);
+      expect(videoAnalyticsBundle(backendDb, start, end, cache)).toBe(first);
+
+      // The next render says a new version and gets the new data.
+      const next = createVideoOverviewCache(24 * 60 * 60);
+      setVideoOverviewCacheRange(next, start, end, 24 * 60 * 60, "version-of-the-next-render");
+      expect(videoAnalyticsBundle(backendDb, start, end, next)).not.toBe(first);
+    }));
+});

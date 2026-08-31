@@ -113,6 +113,10 @@ export type VideoOverviewCache = {
   rangeEnd: Date | null;
   sampleBucketSeconds: number;
   bundleKey: string | null;
+  /** Computed once for the render, not once per window: asking for it counts
+   * rows across seven tables, and five windows asking separately made 36 of 38
+   * windows in production reload the bundle they were meant to share. */
+  dataVersion: string | null;
   bundle: VideoAnalyticsBundle | null;
   audienceGrowth: Map<string, Map<string, number>>;
   audienceGrowthByDay: Map<string, Map<string, Map<string, number>>>;
@@ -125,6 +129,7 @@ export function createVideoOverviewCache(sampleBucketSeconds = 60 * 60): VideoOv
     rangeEnd: null,
     sampleBucketSeconds,
     bundleKey: null,
+    dataVersion: null,
     bundle: null,
     audienceGrowth: new Map(),
     audienceGrowthByDay: new Map(),
@@ -133,7 +138,13 @@ export function createVideoOverviewCache(sampleBucketSeconds = 60 * 60): VideoOv
 }
 
 /** Sets the one bounded history window shared by all period comparisons in a render. */
-export function setVideoOverviewCacheRange(cache: VideoOverviewCache, start: Date, end: Date, sampleBucketSeconds?: number): void {
+export function setVideoOverviewCacheRange(
+  cache: VideoOverviewCache,
+  start: Date,
+  end: Date,
+  sampleBucketSeconds?: number,
+  dataVersion?: string,
+): void {
   if (
     cache.rangeStart?.getTime() !== start.getTime() ||
     cache.rangeEnd?.getTime() !== end.getTime() ||
@@ -147,6 +158,7 @@ export function setVideoOverviewCacheRange(cache: VideoOverviewCache, start: Dat
   }
   cache.rangeStart = start;
   cache.rangeEnd = end;
+  if (dataVersion !== undefined) cache.dataVersion = dataVersion;
   if (sampleBucketSeconds !== undefined) cache.sampleBucketSeconds = sampleBucketSeconds;
 }
 
@@ -208,7 +220,10 @@ export function videoAnalyticsBundle(backendDb: BackendDb, start: Date, end: Dat
   const rangeStart = cache?.rangeStart ?? start;
   const rangeEnd = cache?.rangeEnd ?? end;
   const bucketSeconds = cache?.sampleBucketSeconds ?? (end.getTime() - start.getTime() > 7 * 86_400_000 ? 86_400 : 3_600);
-  const key = `${rangeStart.toISOString()}|${rangeEnd.toISOString()}|${bucketSeconds}|${analyticsDataVersion(backendDb)}`;
+  // The render states which version it is drawing; a caller that never declared
+  // a window has to ask for itself.
+  const version = cache?.dataVersion ?? analyticsDataVersion(backendDb);
+  const key = `${rangeStart.toISOString()}|${rangeEnd.toISOString()}|${bucketSeconds}|${version}`;
   if (cache?.bundleKey === key && cache.bundle) return cache.bundle;
 
   const shared = sharedVideoBundles.get(backendDb);
