@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
-    "@mtcute/bun": "^0.31.0",
+    "@mtcute/bun": "^0.32.0",
     "svelte": "^5.56.10"
   },
   "devDependencies": {
