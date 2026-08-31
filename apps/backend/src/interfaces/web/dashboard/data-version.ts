@@ -16,13 +16,20 @@ import { type BackendDb, unsafeDb } from "../../../db/client.js";
  * they are read together, on one render, and a second name for "has the
  * dashboard's data changed" would be a second answer to drift from the first.
  *
- * Counts as well as maxima, because a deletion moves no maximum.
+ * Three kinds of change, all of which have to be caught. An insert moves a
+ * count and a maximum id. A deletion moves the count but neither maximum. An
+ * update to a row already there moves neither, which is why every table also
+ * contributes its newest timestamp. And the answer depends on more than the
+ * measurements themselves: the follower figures come from profile snapshots and
+ * the catalogue from the connected channels, so a background collection or a
+ * channel connected from another surface has to invalidate this too.
  */
 export function dashboardDataVersion(backendDb: BackendDb): string {
   const row = unsafeDb(backendDb)
     .sqlite.prepare(
       `SELECT (SELECT COUNT(*) FROM metric_samples) AS samples,
               (SELECT MAX(id) FROM metric_samples) AS lastSample,
+              (SELECT MAX(sampled_at) FROM metric_samples) AS sampleTouched,
               (SELECT COUNT(*) FROM drafts) AS drafts,
               (SELECT MAX(updated_at) FROM drafts) AS draftTouched,
               (SELECT COUNT(*) FROM publication_targets) AS publicationTargets,
@@ -31,6 +38,7 @@ export function dashboardDataVersion(backendDb: BackendDb): string {
               (SELECT MAX(sampled_at) FROM post_metrics) AS lastPostMetric,
               (SELECT COUNT(*) FROM video_metric_snapshots) AS snapshots,
               (SELECT MAX(id) FROM video_metric_snapshots) AS lastSnapshot,
+              (SELECT MAX(sampled_at) FROM video_metric_snapshots) AS snapshotTouched,
               (SELECT COUNT(*) FROM video_targets) AS targets,
               (SELECT MAX(updated_at) FROM video_targets) AS targetTouched,
               (SELECT COUNT(*) FROM x_activity_items) AS xItems,
@@ -38,7 +46,11 @@ export function dashboardDataVersion(backendDb: BackendDb): string {
               (SELECT COUNT(*) FROM x_activity_metric_snapshots) AS xSnapshots,
               (SELECT MAX(id) FROM x_activity_metric_snapshots) AS lastXSnapshot,
               (SELECT COUNT(*) FROM creator_profiles) AS profiles,
-              (SELECT MAX(updated_at) FROM creator_profiles) AS lastProfile`,
+              (SELECT MAX(updated_at) FROM creator_profiles) AS lastProfile,
+              (SELECT COUNT(*) FROM creator_profile_snapshots) AS profileSnapshots,
+              (SELECT MAX(id) FROM creator_profile_snapshots) AS lastProfileSnapshot,
+              (SELECT COUNT(*) FROM channel_connections) AS channels,
+              (SELECT MAX(updated_at) FROM channel_connections) AS channelTouched`,
     )
     .get() as Record<string, number | string | null>;
   return Object.values(row).join("|");
