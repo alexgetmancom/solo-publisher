@@ -33,28 +33,33 @@ type MetricSeries = { target: string; metric: string; firstAt: string; latest: n
 function metricSeriesSince(backendDb: BackendDb, since: string): MetricSeries[] {
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
-      `WITH matched AS (
-         SELECT publication_key, target, metric_name, value, sampled_at, id FROM metric_samples WHERE target NOT LIKE 'site_%'
-       ),
-       ranked_latest AS (
-         SELECT publication_key, target, metric_name, value,
-                ROW_NUMBER() OVER (PARTITION BY publication_key, target, metric_name ORDER BY sampled_at DESC, id DESC) AS rn
-         FROM matched
-       ),
-       ranked_baseline AS (
-         SELECT publication_key, target, metric_name, value,
-                ROW_NUMBER() OVER (PARTITION BY publication_key, target, metric_name ORDER BY sampled_at DESC, id DESC) AS rn
-         FROM matched WHERE sampled_at <= ?
-       ),
-       first_seen AS (
-         SELECT publication_key, target, metric_name, MIN(sampled_at) AS first_at FROM matched GROUP BY publication_key, target, metric_name
+      // One grouping pass to find the keys, then two indexed point lookups per
+      // key. It used to rank the whole table twice and group it once -- three
+      // full passes over 27k rows for a figure the dashboard asks for on every
+      // cold render. idx_metric_samples_lookup is
+      // (publication_key, target, metric_name, sampled_at), which is exactly
+      // the shape both lookups want.
+      `WITH keys AS (
+         SELECT publication_key, target, metric_name, MIN(sampled_at) AS first_at
+           FROM metric_samples
+          WHERE target NOT LIKE 'site_%'
+          GROUP BY publication_key, target, metric_name
        )
-       SELECT f.target AS target, f.metric_name AS metric_name, f.first_at AS first_at,
-              CAST(COALESCE(l.value, 0) AS INTEGER) AS latest,
-              CASE WHEN b.publication_key IS NOT NULL THEN CAST(COALESCE(b.value, 0) AS INTEGER) ELSE NULL END AS baseline
-       FROM first_seen f
-       JOIN ranked_latest l ON l.publication_key = f.publication_key AND l.target = f.target AND l.metric_name = f.metric_name AND l.rn = 1
-       LEFT JOIN ranked_baseline b ON b.publication_key = f.publication_key AND b.target = f.target AND b.metric_name = f.metric_name AND b.rn = 1`,
+       SELECT k.target AS target, k.metric_name AS metric_name, k.first_at AS first_at,
+              CAST(COALESCE((
+                SELECT latest.value FROM metric_samples AS latest
+                 WHERE latest.publication_key = k.publication_key AND latest.target = k.target AND latest.metric_name = k.metric_name
+                 ORDER BY latest.sampled_at DESC, latest.id DESC
+                 LIMIT 1
+              ), 0) AS INTEGER) AS latest,
+              (
+                SELECT CAST(COALESCE(baseline.value, 0) AS INTEGER) FROM metric_samples AS baseline
+                 WHERE baseline.publication_key = k.publication_key AND baseline.target = k.target
+                   AND baseline.metric_name = k.metric_name AND baseline.sampled_at <= ?
+                 ORDER BY baseline.sampled_at DESC, baseline.id DESC
+                 LIMIT 1
+              ) AS baseline
+         FROM keys k`,
     )
     .all(since) as Array<{ target: string; metric_name: string; first_at: string; latest: number; baseline: number | null }>;
   return rows.map((row) => ({

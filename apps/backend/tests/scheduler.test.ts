@@ -132,3 +132,42 @@ describe("startLoop", () => {
     expect(heartbeats).toBe(afterStop);
   });
 });
+
+describe("waking a loop", () => {
+  it("runs the task on demand instead of at the next interval", async () => {
+    let runs = 0;
+    const loop = startLoop("wake", 60_000, () => {
+      runs += 1;
+    });
+    await until(() => runs === 1);
+    loop.wake();
+    await until(() => runs === 2);
+    expect(runs).toBe(2);
+    await loop.stop();
+  });
+
+  // The publish cycle reads the table and then works. A wake that arrives while
+  // it is working refers to a row it may already have passed, so it has to be
+  // answered by another cycle rather than dropped.
+  it("does not drop a wake that arrives mid-cycle", async () => {
+    let runs = 0;
+    let release = (): void => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const loop = startLoop("wake-busy", 60_000, async () => {
+      runs += 1;
+      if (runs === 1) await held;
+    });
+    await until(() => runs === 1);
+    loop.wake();
+    loop.wake();
+    expect(runs).toBe(1);
+    release();
+    await until(() => runs === 2);
+    // Two wakes during one cycle are one follow-up, not two.
+    await tick(10);
+    expect(runs).toBe(2);
+    await loop.stop();
+  });
+});

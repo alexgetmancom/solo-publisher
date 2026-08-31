@@ -2,6 +2,10 @@ import { log } from "./logger.js";
 
 export type ScheduledLoop = {
   name: string;
+  /** Runs the task now instead of at the next tick. A wake arriving mid-cycle
+   * is not dropped: the cycle that is running may already have read the table,
+   * so another one follows it. */
+  wake: () => void;
   stop: () => Promise<void>;
 };
 
@@ -24,8 +28,13 @@ export function startLoop(name: string, intervalMs: number, task: () => void | P
       log("warn", `${name} lifecycle hook failed`, { error: String(error) });
     }
   };
+  let again = false;
   const run = () => {
-    if (stopped || running) return;
+    if (stopped) return;
+    if (running) {
+      again = true;
+      return;
+    }
     running = true;
     notify(hooks.onStart);
     completion = (async () => {
@@ -39,6 +48,10 @@ export function startLoop(name: string, intervalMs: number, task: () => void | P
         notify(() => hooks.onFinish?.(failure));
         running = false;
       }
+      if (again) {
+        again = false;
+        run();
+      }
     })();
   };
   const timer = setInterval(run, intervalMs);
@@ -47,6 +60,7 @@ export function startLoop(name: string, intervalMs: number, task: () => void | P
   run();
   return {
     name,
+    wake: run,
     stop: async () => {
       stopped = true;
       clearInterval(timer);

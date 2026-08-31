@@ -14,6 +14,7 @@ import { recoverStaleSiteJobs, runSiteJobCycle, SITE_JOB_RESTART_LOCK_GRACE_SECO
 import { runVideoCycle } from "../delivery/video-worker.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
+import { setPublishQueueWake } from "../foundation/publish-queue-signal.js";
 import { heartbeatLoop } from "../foundation/runtime/worker-state.js";
 import { type ScheduledLoop, startLoop } from "../foundation/scheduler.js";
 import { runNotificationCycle } from "../notifications/jobs.js";
@@ -56,6 +57,14 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
   if (recoveredStoryCardsAtStartup)
     log("warn", "recovered interrupted Story card locks on worker startup", { recovered: recoveredStoryCardsAtStartup });
   const startWorkerLoop = heartbeatLoop(backendDb, startLoop, () => flushUsage(backendDb));
+  // The one loop a person waits on. Everything else here runs on its interval;
+  // this one is also rung the moment a publication puts work in the table.
+  const publishQueueLoop = startWorkerLoop("queue", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
+    await runTimedCycle("publishing.social.cycle", "claimed", () =>
+      runDeliveryPublishCycle(config, backendDb, createPlatformPorts(config, fetch, targetRouting(backendDb))),
+    );
+  });
+  setPublishQueueWake(publishQueueLoop.wake);
   return [
     // Meta renews its long-lived tokens by issuing new ones, and a lapsed token
     // cannot be renewed at all — so this runs far from the edge, daily, and
@@ -80,11 +89,7 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     startWorkerLoop("story-cards", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
       await runTimedCycle("content.story_card.cycle", "claimed", () => runStoryCardCycle(config, backendDb));
     }),
-    startWorkerLoop("queue", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
-      await runTimedCycle("publishing.social.cycle", "claimed", () =>
-        runDeliveryPublishCycle(config, backendDb, createPlatformPorts(config, fetch, targetRouting(backendDb))),
-      );
-    }),
+    publishQueueLoop,
     startWorkerLoop("publish-watchdog", WATCHDOG_INTERVAL_SECONDS * 1000, async () => {
       // Independent from delivery: a hung provider promise must not prevent
       // stale publishing locks from returning to the bounded retry policy.

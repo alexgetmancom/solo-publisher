@@ -8,6 +8,7 @@ import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js"
 import { type JsonObject, publicationTargets, publishJobs } from "../db/schema.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
+import { ringPublishQueue } from "../foundation/publish-queue-signal.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
 import { type DeliveryPayload, hasResumeState, resumedDeliveryPayload } from "./delivery-payload.js";
 import { classifyPublishError, normalizePublishResult, type PublishResult } from "./errors.js";
@@ -682,6 +683,9 @@ export function enqueuePublishJobTx(db: UnsafeBackendDb["db"], input: EnqueuePub
     .returning({ jobId: publishJobs.jobId })
     .get();
   if (!inserted) throw new Error("publish job insert did not return an id");
+  // One funnel, so no enqueue path can forget to ring; the ring itself waits for
+  // this transaction to commit.
+  ringPublishQueue();
   return inserted.jobId;
 }
 
