@@ -14,6 +14,7 @@ import {
   setVideoOverviewCacheRange,
   videoOverview,
 } from "../src/interfaces/web/dashboard/video-overview.js";
+import { videoAnalyticsBundle } from "../src/interfaces/web/dashboard/video-overview-data.js";
 import { xActivityPost } from "../src/interfaces/web/dashboard/x-activity-posts.js";
 import { registerTestChannels, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { withOpenDb } from "./helpers/db.js";
@@ -1040,5 +1041,29 @@ describe("unified overview rendering", () => {
       const html = renderOverview({ ...baseInput, video });
       expect(html).toContain("YouTube RU");
       expect(html).toContain("Telegram");
+    }));
+});
+
+describe("video bundle reuse", () => {
+  // The bundle used to expire on a clock, so an operator tapping through
+  // periods -- slower than three seconds -- reloaded every snapshot on every
+  // tap, while a tap inside the window could still be served data that had just
+  // changed. It is keyed on what it was built from instead.
+  it("reuses one load across renders until the data moves", () =>
+    withOverviewDb(async (backendDb) => {
+      seedHistoricalVideo(backendDb);
+      const window = [new Date("2026-07-29T21:00:00.000Z"), new Date("2026-08-01T20:59:59.999Z")] as const;
+      const load = () => {
+        const cache = createVideoOverviewCache(24 * 60 * 60);
+        setVideoOverviewCacheRange(cache, window[0], window[1]);
+        return videoAnalyticsBundle(backendDb, window[0], window[1], cache);
+      };
+      const first = load();
+      // A second render, with its own request-scoped cache, must land on the
+      // very same object rather than reading the tables again.
+      expect(load()).toBe(first);
+
+      seedCrosspostedVideo(backendDb);
+      expect(load()).not.toBe(first);
     }));
 });
