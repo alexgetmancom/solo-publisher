@@ -57,22 +57,21 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
         await trackUsageAsync(backendDb, "telegram.update.handle", next);
       });
       success = true;
-      logUpdate(measurement.apiMs, measurement.apiCalls);
+      logUpdate(measurement.apiSumMs, measurement.apiCalls);
     } catch (error) {
       failure = error;
       logUpdate(0, 0);
       throw error;
     }
-    function logUpdate(apiMs: number, apiCalls: number): void {
+    function logUpdate(apiSumMs: number, apiCalls: number): void {
       const totalMs = Date.now() - startedAt;
       log(success ? "info" : "warn", "operation timing", {
         operation: "telegram.update.handle",
         updateId: ctx.update.update_id,
         updateType,
         success,
-        apiMs: Math.round(apiMs),
+        apiSumMs: Math.round(apiSumMs),
         apiCalls,
-        localMs: Math.round(totalMs - apiMs),
         totalMs,
         ...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
       });

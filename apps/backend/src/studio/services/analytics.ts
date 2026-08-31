@@ -22,7 +22,8 @@ const dashboardCaches = new WeakMap<BackendDb, Map<string, { version: string; va
  * Fifteen seconds was the wrong question asked twice: an operator stepping
  * between sections is slower than that, so each step rebuilt everything, while
  * a step inside the window could still show figures that had just moved. The
- * version costs 0.03 ms and answers what the cache actually needs to know.
+ * version costs 2.7 ms warm and 94 ms cold on the larger production Studio, so
+ * this screen asks once per request and answers what the cache needs to know.
  *
  * This stays an ordinary computed cache, not a projection: the value is
  * discarded and recomputed the moment its inputs move, so there is no second

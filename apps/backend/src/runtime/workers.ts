@@ -91,7 +91,7 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     // cycle: the transform is the heaviest thing this process does, and a
     // backlog must not starve the publishing it exists to speed up.
     startWorkerLoop("story-derivatives", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
-      const prepared = await runStoryDerivativeCycle(config, backendDb);
+      const { prepared } = await runStoryDerivativeCycle(config, backendDb);
       if (prepared) log("info", "story variants prepared", { prepared });
     }),
     startWorkerLoop("story-cards", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {

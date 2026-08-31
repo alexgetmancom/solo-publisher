@@ -57,11 +57,16 @@ export function preparedStoryMedia(config: BackendConfig, item: PublishMediaItem
  * simply an asset whose variant is not on disk, which is exactly what this
  * claims. No separate migration step, and no state that is half moved.
  */
-export async function runStoryDerivativeCycle(config: BackendConfig, backendDb: BackendDb, limit = 2): Promise<number> {
+export async function runStoryDerivativeCycle(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  limit = 2,
+): Promise<{ attempted: number; prepared: number }> {
   const assets = unsafeDb(backendDb).db.select().from(studioMediaAssets).orderBy(studioMediaAssets.id).all();
+  let attempted = 0;
   let prepared = 0;
   for (const asset of assets) {
-    if (prepared >= limit) break;
+    if (attempted >= limit) break;
     const video = asset.kind === "video";
     const paths = storyVariantPaths(config, asset.localPath, video);
     if (fs.existsSync(paths.standard)) continue;
@@ -69,6 +74,7 @@ export async function runStoryDerivativeCycle(config: BackendConfig, backendDb: 
       // Nothing to make it from; the source was pruned after its retention.
       continue;
     }
+    attempted += 1;
     await fs.promises.mkdir(storyDirectory(config), { recursive: true });
     const startedAt = Date.now();
     try {
@@ -95,5 +101,5 @@ export async function runStoryDerivativeCycle(config: BackendConfig, backendDb: 
       });
     }
   }
-  return prepared;
+  return { attempted, prepared };
 }

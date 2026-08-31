@@ -2,9 +2,12 @@ import { describe, expect, it } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { unsafeDb } from "../src/db/client.js";
+import { studioMediaAssets } from "../src/db/schema.js";
 import type { PublishMediaItem } from "../src/delivery/social/payload.js";
-import { preparedStoryMedia, storyVariantPaths } from "../src/delivery/story-derivatives.js";
+import { preparedStoryMedia, runStoryDerivativeCycle, storyVariantPaths } from "../src/delivery/story-derivatives.js";
 import type { BackendConfig } from "../src/foundation/config.js";
+import { withDb } from "./helpers/db.js";
 
 function tempConfig(): BackendConfig {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "story-derivatives-"));
@@ -57,4 +60,29 @@ describe("story derivatives", () => {
     const config = tempConfig();
     expect(preparedStoryMedia(config, { type: "IMAGE", fileId: "telegram-file" })).toBeNull();
   });
+
+  it("limits failed preparations by attempts rather than successes", () =>
+    withDb(async (backendDb) => {
+      const config = { ...tempConfig(), MEDIA_PROCESSOR_PROVIDER: "remote_http" } as BackendConfig;
+      const assets = await Promise.all(
+        [1, 2, 3].map(async (index) => {
+          const localPath = path.join(config.DATA_DIR, `${index.toString().repeat(24)}.jpg`);
+          await fs.promises.writeFile(localPath, "source");
+          return {
+            actorId: 1,
+            kind: "image",
+            mimeType: "image/jpeg",
+            filename: `source-${index}.jpg`,
+            localPath,
+            byteSize: 6,
+            sha256: index.toString().repeat(64),
+            source: "test",
+            createdAt: `2026-01-01T00:00:0${index}.000Z`,
+          };
+        }),
+      );
+      unsafeDb(backendDb).db.insert(studioMediaAssets).values(assets).run();
+
+      expect(await runStoryDerivativeCycle(config, backendDb, 2)).toEqual({ attempted: 2, prepared: 0 });
+    }));
 });

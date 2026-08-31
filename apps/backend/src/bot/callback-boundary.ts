@@ -71,7 +71,7 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   } finally {
     handlerFinishedAt = performance.now();
     await tap.acknowledgement;
-    const { apiMs, apiCalls } = currentTapMeasurement();
+    const { apiSumMs, apiCalls } = currentTapMeasurement();
     const totalMs = performance.now() - tap.receivedAt;
     log("info", "Telegram callback timing", {
       callback: callbackRoute(ctx.callbackQuery?.data),
@@ -81,12 +81,11 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
       acknowledgeMs: Math.round(acknowledgedAt - tap.receivedAt),
       queuedMs: Math.round(startedAt - tap.receivedAt),
       handlerMs: Math.round(handlerFinishedAt - handlerStartedAt),
-      // What Telegram cost, and what was ours. The first is the floor; only the
-      // second is worth optimising, and a screen making three calls where one
-      // would do shows up as a high apiCalls rather than as slow code.
-      apiMs: Math.round(apiMs),
+      // Aggregate request cost, not a wall-time partition: acknowledgement and
+      // handler calls can overlap. Redundant calls still show up here and in
+      // apiCalls without inventing a negative "local" duration.
+      apiSumMs: Math.round(apiSumMs),
       apiCalls,
-      localMs: Math.round(totalMs - apiMs),
       totalMs: Math.round(totalMs),
     });
   }

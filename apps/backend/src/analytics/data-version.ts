@@ -11,8 +11,9 @@ import { type BackendDb, unsafeDb } from "../db/client.js";
  * trades one fault for the other.
  *
  * This asks the question a cache actually has: has anything the answer depends
- * on moved? Measured at 0.03 ms on production, against 200-950 ms for the loads
- * it saves. One version for the whole read model rather than one per half --
+ * on moved? On the larger production Studio this costs 2.7 ms warm and 94 ms
+ * cold, against 200-950 ms for the loads it saves. Callers compute it once per
+ * screen request. One version for the whole read model rather than one per half --
  * they are read together, on one render, and a second name for "has the
  * dashboard's data changed" would be a second answer to drift from the first.
  *
