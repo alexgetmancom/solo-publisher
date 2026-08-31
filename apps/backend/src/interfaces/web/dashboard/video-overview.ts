@@ -42,6 +42,8 @@ export function videoOverview(
 ): VideoOverview {
   const startedAt = Date.now();
   const bundle = videoAnalyticsBundle(backendDb, start, end, cache);
+  const bundleMs = Date.now() - startedAt;
+  const prepStartedAt = Date.now();
   const startIso = start.toISOString();
   const endIso = end.toISOString();
   // Two populations, deliberately not one. Reach is a property of the calendar
@@ -61,6 +63,7 @@ export function videoOverview(
   const rows = reachRows.filter((row) => Boolean(row.publishedAt && row.publishedAt >= startIso && row.publishedAt <= endIso));
   const snapshots = new Map(reachRows.map((row) => [row.id, bundle.snapshots.get(row.id) ?? []]));
   const periodDays = calendarDays(start, end, timeZone);
+  const prepMs = Date.now() - prepStartedAt;
   // Five of these run per render. Two rounds of production measurement have now
   // been spent guessing which part of one costs the most, so it says so itself.
   const reachStartedAt = Date.now();
@@ -69,6 +72,7 @@ export function videoOverview(
   const summaryStartedAt = Date.now();
   const summary = videoSummaryMetrics(backendDb, reachRows, snapshots, reachViews, periodDays, end, timeZone, cache);
   const summaryMs = Date.now() - summaryStartedAt;
+  const itemsStartedAt = Date.now();
   // One row per clip, not per destination: the same clip on Shorts and on Reels
   // is one publication that went to two places, which is how the text side has
   // always read a post that went to Telegram and to Threads.
@@ -121,6 +125,8 @@ export function videoOverview(
     })
     .sort((left, right) => (right.publishedAt ?? "").localeCompare(left.publishedAt ?? ""));
 
+  const itemsMs = Date.now() - itemsStartedAt;
+  const platformsStartedAt = Date.now();
   const totals = reachRows.reduce(
     (all, row) => {
       const period = reachViews.get(row.id);
@@ -157,15 +163,24 @@ export function videoOverview(
     .filter((row) => row.active)
     .map(({ active: _active, ...row }) => row);
 
+  const platformsMs = Date.now() - platformsStartedAt;
   const dailyStartedAt = Date.now();
   const daily = aggregateDailyMetrics(backendDb, reachRows, snapshots, periodDays, timeZone, cache);
   const dailyMs = Date.now() - dailyStartedAt;
+  const eventsStartedAt = Date.now();
+  const events = viewEvents(reachRows, snapshots, start, end);
+  const eventsMs = Date.now() - eventsStartedAt;
   log("info", "video overview timing", {
     days: periodDays.length,
     rows: reachRows.length,
+    bundleMs,
+    prepMs,
     reachMs,
     summaryMs,
+    itemsMs,
+    platformsMs,
     dailyMs,
+    eventsMs,
     totalMs: Date.now() - startedAt,
   });
 
@@ -175,6 +190,6 @@ export function videoOverview(
     summary,
     platforms,
     dailyByDay: daily,
-    viewEvents: viewEvents(reachRows, snapshots, start, end),
+    viewEvents: events,
   };
 }
