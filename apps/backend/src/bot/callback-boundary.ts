@@ -45,8 +45,15 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   }
 }
 
-function callbackRoute(data: string | undefined): string {
+/** The grouping key one tap is counted under.
+ *
+ * `@grammyjs/menu` encodes its buttons as `id/row/col/payload/hash`, and the
+ * hash is raw bytes: logging the whole string made every tap on the same button
+ * its own unique, unreadable route, which is no grouping at all. The position
+ * is what identifies the button, so the payload and the hash are dropped. */
+export function callbackRoute(data: string | undefined): string {
   if (!data) return "unknown";
+  if (data.includes("/")) return data.split("/").slice(0, 3).join("/");
   return data
     .split(":")
     .slice(0, 2)

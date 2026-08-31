@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { Context } from "grammy";
-import { runCallbackBoundary } from "../src/bot/callback-boundary.js";
+import { callbackRoute, runCallbackBoundary } from "../src/bot/callback-boundary.js";
 import type { BackendDb } from "../src/db/client.js";
 import { StudioError } from "../src/foundation/errors.js";
 import { withDb } from "./helpers/db.js";
@@ -54,4 +54,21 @@ describe("Telegram callback boundary", () => {
       expect(answers).toEqual([undefined]);
       expect(replies).toEqual(["Finished"]);
     }));
+});
+
+describe("callback route grouping", () => {
+  it("groups a menu button by its position, not by its payload hash", () => {
+    // What production logged: the menu hash is raw bytes, so every tap on the
+    // same button arrived as its own unique, unreadable route.
+    expect(callbackRoute("main-menu/1/1//h\u00EFm\u00BF")).toBe("main-menu/1/1");
+    expect(callbackRoute("main-menu/1/1//h\u0005\u2020q")).toBe("main-menu/1/1");
+    expect(callbackRoute("settings-menu/2/0//h\u039D\u0398")).toBe("settings-menu/2/0");
+  });
+
+  it("keeps namespaced callbacks and collapses their identifiers", () => {
+    expect(callbackRoute("p:post")).toBe("p:post");
+    expect(callbackRoute("analytics_section:overview")).toBe("analytics_section:overview");
+    expect(callbackRoute("preview:7")).toBe("preview:#");
+    expect(callbackRoute(undefined)).toBe("unknown");
+  });
 });

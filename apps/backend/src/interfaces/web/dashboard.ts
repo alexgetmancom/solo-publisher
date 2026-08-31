@@ -169,6 +169,12 @@ export function renderDashboard(
       ? renderPeriodControls(locale, weekOffset, periodDays, config.TIMEZONE, activeView, videoView, overviewFilterQuery)
       : "";
   const contentStartedAt = Date.now();
+  // The overview is the only panel that reads the whole Studio, and it is the
+  // one a cache miss is paid on. Split into the two halves that can be acted on
+  // separately -- the database read and the HTML built from it -- because
+  // "content took 1.4s" names neither.
+  let readModelMs = 0;
+  let htmlMs = 0;
   const content = renderPanel();
   const contentMs = Date.now() - contentStartedAt;
 
@@ -186,8 +192,13 @@ export function renderDashboard(
   function renderOverview(): Html {
     if (showPosts) {
       if (needsOnboarding) return renderStudioOnboarding(config, connectedChannelCount, locale);
+      const readModelStartedAt = Date.now();
       const readModel = loadDashboardReadModel(config, backendDb, videoCache, weekOffset, periodDays, videoView);
-      return renderCombinedSection(buildOverviewData(readModel, activeView, platformMetric), locale);
+      readModelMs = Date.now() - readModelStartedAt;
+      const htmlStartedAt = Date.now();
+      const section = renderCombinedSection(buildOverviewData(readModel, activeView, platformMetric), locale);
+      htmlMs = Date.now() - htmlStartedAt;
+      return section;
     }
     if (showStudio) return renderStudioSection(config, backendDb, studioActorId, locale);
     return html``;
@@ -234,6 +245,8 @@ export function renderDashboard(
     fingerprintMs,
     attentionMs,
     contentMs,
+    readModelMs,
+    htmlMs,
     shellMs,
     totalMs: Date.now() - renderStartedAt,
     htmlBytes: Buffer.byteLength(page),

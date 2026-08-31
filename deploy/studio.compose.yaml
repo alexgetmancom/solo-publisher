@@ -64,6 +64,16 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+    # The default 10 MB x 3 held under a day of this Studio's logs, and the
+    # timing lines they carry are the only record of how long a publish, a
+    # dashboard render or a bot tap actually took -- a question that is always
+    # asked after the fact. 50 MB x 5 is a couple of weeks and costs disk the
+    # host has.
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "5"
     networks:
       - agent_default
     mem_limit: 384m
