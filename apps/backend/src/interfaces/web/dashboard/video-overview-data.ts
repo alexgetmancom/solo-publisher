@@ -1,5 +1,13 @@
 import { audienceGrowthByPlatform } from "../../../analytics/metric-deltas.js";
-import { type DailyReach, dailyReach, emptyDailyReach, latestAtOrBefore, type PeriodDay } from "../../../analytics/reach/daily-reach.js";
+import {
+  calendarDays,
+  type DailyReach,
+  dailyReach,
+  emptyDailyReach,
+  latestAtOrBefore,
+  type PeriodDay,
+  periodReach,
+} from "../../../analytics/reach/daily-reach.js";
 import { metricNumber } from "../../../analytics/snapshots/creator-store.js";
 import { publicationRef } from "../../../application/publication-ref.js";
 import { videoDestinations } from "../../../channels/destinations.js";
@@ -108,6 +116,11 @@ export type VideoOverviewCache = {
   audienceGrowth: Map<string, Map<string, number>>;
   audienceGrowthByDay: Map<string, Map<string, Map<string, number>>>;
   profileSummaries: Map<string, ProfileSummaryMetrics>;
+  /** The history every comparison window is cut from: one day-by-day reach per
+   * clip, over the whole range the bundle was loaded for. */
+  historyDays: PeriodDay[] | null;
+  historyDayKeys: Set<string>;
+  dailyReachByRow: Map<number, Record<string, DailyReach>>;
 };
 
 export function createVideoOverviewCache(sampleBucketSeconds = 60 * 60): VideoOverviewCache {
@@ -120,6 +133,9 @@ export function createVideoOverviewCache(sampleBucketSeconds = 60 * 60): VideoOv
     audienceGrowth: new Map(),
     audienceGrowthByDay: new Map(),
     profileSummaries: new Map(),
+    historyDays: null,
+    historyDayKeys: new Set(),
+    dailyReachByRow: new Map(),
   };
 }
 
@@ -135,6 +151,9 @@ export function setVideoOverviewCacheRange(cache: VideoOverviewCache, start: Dat
     cache.audienceGrowth.clear();
     cache.audienceGrowthByDay.clear();
     cache.profileSummaries.clear();
+    cache.historyDays = null;
+    cache.historyDayKeys = new Set();
+    cache.dailyReachByRow.clear();
   }
   cache.rangeStart = start;
   cache.rangeEnd = end;
@@ -232,6 +251,78 @@ export function videoAnalyticsBundle(backendDb: BackendDb, start: Date, end: Dat
     cache.bundle = bundle;
   }
   return bundle;
+}
+
+/**
+ * What each clip earned in one window, cut from history rather than recomputed.
+ *
+ * A render asks five windows of the same clips -- the period, the history
+ * behind it, the previous period, yesterday and the 30-day median -- and every
+ * one of them used to rebuild each clip's series and re-run the daily spread
+ * over it. The spread is what costs: production spent 60-85% of the video read
+ * model inside it, on a database small enough to query in 200 ms.
+ *
+ * A day's reach does not depend on which other days were asked for. Each
+ * interval between two readings is normalised by its own span and only then
+ * distributed, so one pass over the whole history produces a day-by-day answer
+ * every window can sum. This is the shape the text half already uses, where
+ * `pipelineForDates` slices one preloaded history the same way.
+ */
+export function periodReachByRow(
+  cache: VideoOverviewCache,
+  rows: readonly TargetRow[],
+  snapshots: ReadonlyMap<number, VideoSnapshot[]>,
+  days: readonly PeriodDay[],
+  timeZone: string,
+): Map<number, DailyReach> {
+  const history = historyDailyReach(cache, rows, snapshots, timeZone);
+  const totals = new Map<number, DailyReach>();
+  // Every window a render asks for is cut from the same union the bundle was
+  // loaded over, so this holds. It is checked rather than assumed because the
+  // failure is silent: an uncovered day reads as a day that earned nothing.
+  const covered = days.every((day) => cache.historyDayKeys.has(day.key));
+  for (const row of rows) {
+    if (!covered) {
+      totals.set(row.id, periodReach(videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? []), days, timeZone));
+      continue;
+    }
+    const daily = history.get(row.id);
+    const total = emptyDailyReach();
+    for (const day of days) {
+      const bucket = daily?.[day.key];
+      if (!bucket) continue;
+      total.views += bucket.views;
+      total.freshViews += bucket.freshViews;
+      total.reactions += bucket.reactions;
+      total.replies += bucket.replies;
+      total.reposts += bucket.reposts;
+    }
+    totals.set(row.id, total);
+  }
+  return totals;
+}
+
+/** One day-by-day pass per clip over the bundle's whole range, kept for the
+ * render that asked for it. */
+function historyDailyReach(
+  cache: VideoOverviewCache,
+  rows: readonly TargetRow[],
+  snapshots: ReadonlyMap<number, VideoSnapshot[]>,
+  timeZone: string,
+): Map<number, Record<string, DailyReach>> {
+  if (!cache.historyDays) {
+    cache.historyDays = cache.rangeStart && cache.rangeEnd ? calendarDays(cache.rangeStart, cache.rangeEnd, timeZone) : [];
+    cache.historyDayKeys = new Set(cache.historyDays.map((day) => day.key));
+    cache.dailyReachByRow.clear();
+  }
+  for (const row of rows) {
+    if (cache.dailyReachByRow.has(row.id)) continue;
+    cache.dailyReachByRow.set(
+      row.id,
+      dailyReach([videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? [])], cache.historyDays, timeZone),
+    );
+  }
+  return cache.dailyReachByRow;
 }
 
 function publishedTargets(backendDb: BackendDb, startIso: string, endIso: string): TargetRow[] {

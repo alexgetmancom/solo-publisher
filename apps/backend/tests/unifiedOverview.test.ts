@@ -275,6 +275,15 @@ function seedCrosspostedVideo(backendDb: ReturnType<typeof openBackendDb>): void
   }
 }
 
+/** One window, asked the way the dashboard asks it: a cache whose range is the
+ * window, then the overview cut from that. The bucket matches what the read
+ * model picks for a span of this length. */
+function overviewFor(backendDb: ReturnType<typeof openOverviewDb>, start: Date, end: Date) {
+  const cache = createVideoOverviewCache(end.getTime() - start.getTime() > 7 * 86_400_000 ? 86_400 : 3_600);
+  setVideoOverviewCacheRange(cache, start, end);
+  return videoOverview(backendDb, start, end, "Europe/Moscow", cache);
+}
+
 describe("unified overview video read model", () => {
   it("includes videos published during the selected current day", () =>
     withOverviewDb(async (backendDb) => {
@@ -293,7 +302,7 @@ describe("unified overview video read model", () => {
   it("keeps one clip on two destinations as one publication", () =>
     withOverviewDb(async (backendDb) => {
       seedCrosspostedVideo(backendDb);
-      const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const overview = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
       expect(overview.items).toHaveLength(1);
       expect(overview.totals.posts).toBe(1);
@@ -308,7 +317,7 @@ describe("unified overview video read model", () => {
   it("reports the latest sample per publication and names the destination", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const overview = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
       expect(overview.items).toHaveLength(1);
       expect(overview.totals.views).toBe(1_000);
@@ -368,7 +377,7 @@ describe("unified overview video read model", () => {
         })
         .run();
 
-      const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const overview = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
       expect(overview.items[0]?.url).toBe("https://www.instagram.com/reel/CODE123/");
     }));
@@ -377,13 +386,13 @@ describe("unified overview video read model", () => {
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
       seedLocalizedVideoProfiles(backendDb);
-      const overview = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const overview = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
 
       expect(overview.platforms.map((platform) => platform.label)).toEqual(["YouTube RU", "YouTube EN", "Instagram RU", "Instagram EN"]);
       expect(overview.platforms.map((platform) => platform.followers)).toEqual([16_800, 1_260, 5_120, 940]);
       expect(overview.platforms.map((platform) => platform.views)).toEqual([1_000, 0, 0, 0]);
 
-      const quiet = videoOverview(backendDb, new Date(Date.now() - 10 * 86_400_000), new Date(Date.now() - 5 * 86_400_000));
+      const quiet = overviewFor(backendDb, new Date(Date.now() - 10 * 86_400_000), new Date(Date.now() - 5 * 86_400_000));
       expect(quiet.platforms.map((platform) => platform.label)).toEqual(["YouTube RU", "YouTube EN", "Instagram RU", "Instagram EN"]);
       expect(quiet.platforms.every((platform) => platform.views === 0)).toBe(true);
     }));
@@ -391,7 +400,7 @@ describe("unified overview video read model", () => {
   it("excludes publications outside the window", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const older = videoOverview(backendDb, new Date(Date.now() - 10 * 86_400_000), new Date(Date.now() - 5 * 86_400_000));
+      const older = overviewFor(backendDb, new Date(Date.now() - 10 * 86_400_000), new Date(Date.now() - 5 * 86_400_000));
       expect(older.items).toHaveLength(0);
       expect(older.totals.views).toBe(0);
     }));
@@ -399,7 +408,7 @@ describe("unified overview video read model", () => {
   it("freezes a historical period and exposes later lifetime growth separately", () =>
     withOverviewDb(async (backendDb) => {
       seedHistoricalVideo(backendDb);
-      const overview = videoOverview(backendDb, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-07-30T20:59:59.999Z"));
+      const overview = overviewFor(backendDb, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-07-30T20:59:59.999Z"));
 
       // 800 by the last reading inside the period, plus the slice of the next
       // interval that the growth curve places before the period closed.
@@ -416,7 +425,7 @@ describe("unified overview video read model", () => {
   it("sums daily increments for a multi-day period instead of lifetime totals", () =>
     withOverviewDb(async (backendDb) => {
       seedHistoricalVideo(backendDb);
-      const overview = videoOverview(backendDb, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-07-31T20:59:59.999Z"));
+      const overview = overviewFor(backendDb, new Date("2026-07-29T21:00:00.000Z"), new Date("2026-07-31T20:59:59.999Z"));
 
       expect(overview.totals.views).toBe(1_557);
       expect(overview.dailyByDay["2026-07-30"]?.views).toBe(843);
@@ -578,7 +587,7 @@ describe("unified overview rendering", () => {
   it("draws one locale column for a half that publishes one language", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const video = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
       // The text half of a Studio with only Russian channels used to carry a
       // permanently empty EN column, an EN label and a "0% · 0" legend, while
       // its video half genuinely publishes in both.
@@ -598,7 +607,7 @@ describe("unified overview rendering", () => {
   it("shows both halves separately and never their sum", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const video = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
       const html = renderOverview({ ...baseInput, video });
 
       expect(html).toContain("<strong>1k</strong>");
@@ -694,7 +703,7 @@ describe("unified overview rendering", () => {
   it("derives the locale badge from the data rather than from the platform name", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const video = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
       // The seeded draft is Russian, so its platform is badged RU.
       expect(video.platforms.find((platform) => platform.target === "youtube_shorts")?.locales).toEqual(["RU"]);
       // Nothing published on Reels this period, so its language is unknown and
@@ -978,7 +987,7 @@ describe("unified overview rendering", () => {
   it("filters one half without disturbing the other", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const video = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
       const post: PipelinePost = {
         publication_key: "post:1",
         date: today().toISOString(),
@@ -1004,7 +1013,7 @@ describe("unified overview rendering", () => {
   it("points each half's list loader at its own publications", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const loaded = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const loaded = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
       // Both lists have to overflow before either offers to load more.
       const video = {
         ...loaded,
@@ -1027,7 +1036,7 @@ describe("unified overview rendering", () => {
   it("keeps both halves available in the single overview mode", () =>
     withOverviewDb(async (backendDb) => {
       seedVideo(backendDb);
-      const video = videoOverview(backendDb, new Date(Date.now() - 86_400_000), new Date());
+      const video = overviewFor(backendDb, new Date(Date.now() - 86_400_000), new Date());
       const html = renderOverview({ ...baseInput, video });
       expect(html).toContain("YouTube RU");
       expect(html).toContain("Telegram");

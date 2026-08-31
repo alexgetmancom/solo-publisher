@@ -180,6 +180,36 @@ describe("architecture fitness", () => {
     expect(asserting).toEqual(["apps/backend/src/publishing/delivery-payload.ts"]);
   });
 
+  /** The overview draws several windows of the same data side by side -- the
+   * period, the one before it, yesterday, the 30-day median, and the history
+   * behind the chart. Each half loads its history once and cuts every window
+   * from it: `pipelineForDates`, `xActivityForDates` and the video read model's
+   * `periodReachByRow` all slice, none re-derive.
+   *
+   * Video was the one that did not, and it cost 60-85% of the read model in
+   * production: five windows, each rebuilding every clip's series and re-running
+   * the daily spread over it. The spreading primitives are what makes that
+   * mistake expensive, so they stay inside the file that owns the single pass.
+   *
+   * The rule is that this set is empty, so the set being empty is the
+   * assertion. */
+  const windowSpreadingExceptions = new Set<string>();
+
+  it("cuts every overview comparison window from one loaded history", () => {
+    expect([...windowSpreadingExceptions]).toEqual([]);
+    const owner = "apps/backend/src/interfaces/web/dashboard/video-overview-data.ts";
+    for (const file of sourceFiles("apps/backend/src/interfaces/web/dashboard")) {
+      if (file === owner || windowSpreadingExceptions.has(file)) continue;
+      const text = source(file);
+      expect(text).not.toMatch(/\bdailyReach\(/);
+      expect(text).not.toMatch(/\bperiodReach\(/);
+    }
+    // The single pass, and the windows cut from it, both live in the owner.
+    const ownerText = source(owner);
+    expect(ownerText).toContain("export function periodReachByRow(");
+    expect(ownerText).toMatch(/\bdailyReach\(/);
+  });
+
   it("keeps infrastructure adapters behind the composition root", () => {
     const client = source("apps/backend/src/db/client.ts");
     expect(client).toContain("createDraftStore(db, clock)");

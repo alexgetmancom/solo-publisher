@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { calendarDays, calendarKey, latestAtOrBefore, periodReach } from "../src/analytics/reach/daily-reach.js";
+import { calendarDays, calendarKey, dailyReach, latestAtOrBefore, periodReach } from "../src/analytics/reach/daily-reach.js";
 import { isCurrentCalendarDay } from "../src/foundation/time.js";
 import {
   periodSubscriberDelta,
@@ -67,5 +67,47 @@ describe("video overview calendar helpers", () => {
     const now = new Date();
     expect(isCurrentCalendarDay(now, "Europe/Moscow")).toBe(true);
     expect(isCurrentCalendarDay(new Date("2000-01-01T00:00:00.000Z"), "Europe/Moscow")).toBe(false);
+  });
+});
+
+describe("daily reach is independent of the window it was asked in", () => {
+  // The whole video read model rests on this: one pass over the full history
+  // produces day figures that every comparison window can simply sum. It holds
+  // because each interval between two readings is normalised by its own span
+  // before being spread, never by the days that happened to be requested. If it
+  // ever stopped holding, the periods on the dashboard would quietly disagree
+  // with each other instead of failing.
+  const history: VideoSnapshot[] = [
+    { at: new Date("2026-08-01T00:00:00.000Z"), metrics: metrics({ views: 0 }) },
+    { at: new Date("2026-08-04T00:00:00.000Z"), metrics: metrics({ views: 900 }) },
+    { at: new Date("2026-08-09T00:00:00.000Z"), metrics: metrics({ views: 1400 }) },
+  ];
+  const series = videoReachSeries("2026-08-01T00:00:00.000Z", "youtube_shorts", history);
+
+  test("gives one day the same figure inside a wide window and a narrow one", () => {
+    const wide = dailyReach(
+      [series],
+      calendarDays(new Date("2026-08-01T00:00:00.000Z"), new Date("2026-08-10T23:59:59.999Z"), "UTC"),
+      "UTC",
+    );
+    const narrow = dailyReach(
+      [series],
+      calendarDays(new Date("2026-08-03T00:00:00.000Z"), new Date("2026-08-05T23:59:59.999Z"), "UTC"),
+      "UTC",
+    );
+    for (const key of ["2026-08-03", "2026-08-04", "2026-08-05"]) expect(narrow[key]).toEqual(wide[key]);
+  });
+
+  test("sums the same total whether a period is cut from history or measured directly", () => {
+    const start = new Date("2026-08-03T00:00:00.000Z");
+    const end = new Date("2026-08-05T23:59:59.999Z");
+    const days = calendarDays(start, end, "UTC");
+    const wide = dailyReach(
+      [series],
+      calendarDays(new Date("2026-08-01T00:00:00.000Z"), new Date("2026-08-10T23:59:59.999Z"), "UTC"),
+      "UTC",
+    );
+    const sliced = days.reduce((total, day) => total + (wide[day.key]?.views ?? 0), 0);
+    expect(sliced).toBe(periodReach(series, days, "UTC").views);
   });
 });
