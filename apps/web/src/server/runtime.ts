@@ -86,7 +86,6 @@ export async function stopRuntime(signal: string): Promise<void> {
   if (!runtime) return;
   log("info", "shutdown requested", { signal });
   await Promise.all(runtime.loops.map((loop) => loop.stop()));
-  if (runtime.bot?.isRunning()) await runtime.bot.stop();
   runtime.backendDb.close();
   delete runtimeGlobal.__soloPublisherRuntime;
   runtime = undefined;

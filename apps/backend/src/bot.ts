@@ -1,7 +1,8 @@
 import { autoRetry } from "@grammyjs/auto-retry";
+import { sequentialize } from "@grammyjs/runner";
 import { Bot, type Context } from "grammy";
-import { beginTapMeasurement, endTapMeasurement, installApiTiming } from "./bot/api-timing.js";
-import { runCallbackBoundary } from "./bot/callback-boundary.js";
+import { installApiTiming, withTapMeasurement } from "./bot/api-timing.js";
+import { acknowledgeCallback, runCallbackBoundary } from "./bot/callback-boundary.js";
 import { handlePublicationCallback, handlePublicationMessage } from "./bot/callback-router.js";
 import { executePublicationEffects, showMessage } from "./bot/effects.js";
 import { handleIntakeMessage, openIntake } from "./bot/intake.js";
@@ -51,25 +52,27 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
     const updateType = Object.keys(ctx.update).find((key) => key !== "update_id") ?? "unknown";
     let success = false;
     let failure: unknown;
-    // A callback runs its own measurement inside this one; a typed message has
-    // no such boundary, so this is where its split comes from.
-    const owned = updateType !== "callback_query";
-    if (owned) beginTapMeasurement();
     try {
-      await trackUsageAsync(backendDb, "telegram.update.handle", next);
+      const { measurement } = await withTapMeasurement(async () => {
+        await trackUsageAsync(backendDb, "telegram.update.handle", next);
+      });
       success = true;
+      logUpdate(measurement.apiMs, measurement.apiCalls);
     } catch (error) {
       failure = error;
+      logUpdate(0, 0);
       throw error;
-    } finally {
+    }
+    function logUpdate(apiMs: number, apiCalls: number): void {
       const totalMs = Date.now() - startedAt;
-      const { apiMs, apiCalls } = owned ? endTapMeasurement() : { apiMs: 0, apiCalls: 0 };
       log(success ? "info" : "warn", "operation timing", {
         operation: "telegram.update.handle",
         updateId: ctx.update.update_id,
         updateType,
         success,
-        ...(owned ? { apiMs: Math.round(apiMs), apiCalls, localMs: Math.round(totalMs - apiMs) } : {}),
+        apiMs: Math.round(apiMs),
+        apiCalls,
+        localMs: Math.round(totalMs - apiMs),
         totalMs,
         ...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
       });
@@ -83,6 +86,18 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
     if (isAdmin(config, ctx.from?.id)) return next();
     if (ctx.callbackQuery?.data !== undefined) await ctx.answerCallbackQuery();
   });
+  // Answering is what stops the spinner, and it is the one part of a tap that
+  // does not need to wait its turn. It goes out here, before sequentialize, so a
+  // burst of taps stops producing a row of buttons that visibly hang.
+  bot.use(async (ctx, next) => {
+    acknowledgeCallback(ctx);
+    await next();
+  });
+  // Everything after this point is serialised per chat, which is what the screen
+  // anchor has always depended on: one update writes over the tapped message,
+  // and anything after it must arrive below. Concurrency across chats is of no
+  // use to a single-operator Studio -- the ordering is the point, not throughput.
+  bot.use(sequentialize((ctx) => ctx.chat?.id.toString()));
   bot.use(async (ctx, next) => {
     if (!ctx.callbackQuery?.data) return next();
     await runCallbackBoundary(ctx, backendDb, next);

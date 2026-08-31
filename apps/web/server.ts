@@ -1,13 +1,15 @@
 import fs from "node:fs";
 import { createServer } from "node:http";
 import path from "node:path";
+import { type BotRunner, startBotRunner } from "../backend/src/bot/runner.js";
 import { log } from "../backend/src/foundation/logger.js";
 import { startRuntime, stopRuntime } from "./src/server/runtime.js";
 
 const runtime = startRuntime();
+let botRunner: BotRunner | undefined;
 if (runtime.bot) {
   await runtime.bot.init();
-  void runtime.bot.start({ onStart: (botInfo) => log("info", "grammY polling started", { username: botInfo.username }) });
+  botRunner = startBotRunner(runtime.bot);
 }
 const distDirectory = path.resolve(process.env.ASTRO_DIST_DIR ?? "/app/dist");
 const entry = process.env.ASTRO_DIST_ENTRY ?? path.join(distDirectory, "server/entry.mjs");
@@ -77,6 +79,7 @@ server.listen(runtime.config.PORT, runtime.config.BIND_HOST, () => {
 
 async function shutdown(signal: string): Promise<void> {
   server.close(async () => {
+    if (botRunner?.isRunning()) await botRunner.stop();
     await stopRuntime(signal);
     process.exit(0);
   });

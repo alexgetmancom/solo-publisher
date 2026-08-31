@@ -3,7 +3,7 @@ import type { BackendDb } from "../db/client.js";
 import { describeError } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { settingsService } from "../studio/services/settings.js";
-import { beginTapMeasurement, endTapMeasurement } from "./api-timing.js";
+import { currentTapMeasurement } from "./api-timing.js";
 import { callbackToast } from "./callback-effects.js";
 import { showMessage } from "./effects.js";
 
@@ -15,32 +15,52 @@ const seenCallbackQueries = new Map<string, number>();
 // within one bot process, but is not a distributed idempotency guarantee across
 // restarts or multiple instances; durable mutations must remain idempotent too.
 
-/** Runs every callback downstream of the bot's authorization middleware. */
-export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, next: () => Promise<void>): Promise<void> {
-  const startedAt = performance.now();
-  beginTapMeasurement();
+/**
+ * Answers a callback the moment its update arrives, before anything queues.
+ *
+ * The acknowledgement is what stops the spinner on the operator's phone, and it
+ * is the one part of a tap that does not need to wait its turn: screen edits
+ * must stay in order, an answer to "I got this" must not. Sitting behind the
+ * previous tap's screen edit, it turned a burst of taps into a row of buttons
+ * that visibly hang.
+ *
+ * Telegram accepts exactly one answer per callback, so the redirect that turns a
+ * later answer into a chat message is installed here too -- before any handler
+ * can run and try to answer for itself.
+ */
+export function acknowledgeCallback(ctx: Context): void {
   const callbackId = ctx.callbackQuery?.id;
-  if (callbackId && !claimCallbackQuery(callbackId)) {
-    await answerCallbackSafely(ctx);
+  if (!callbackId) return;
+  const receivedAt = performance.now();
+  if (!claimCallbackQuery(callbackId)) {
+    // A redelivery of something already handled. Answer it so it stops spinning,
+    // and mark it for the boundary to drop.
+    taps.set(ctx, { receivedAt, duplicate: true, acknowledgement: answerCallbackSafely(ctx) });
     return;
   }
   const answer = ctx.answerCallbackQuery.bind(ctx);
-  // The redirect is installed before either of them starts, not between them.
-  // The handler now runs while the acknowledgement is still in flight, and
-  // Telegram accepts exactly one answer: a handler that answers for itself must
-  // find the redirect already in place, whichever finishes first.
   redirectLaterAnswers(ctx);
-  // Sending the answer no longer blocks the work behind it. Measured over 78
-  // production taps the acknowledgement is a quarter of the tap -- 22 ms of a
-  // 115 ms median -- so this removes that quarter, and the screen the operator
-  // is waiting for lands that much sooner. Both are still awaited: an
-  // unacknowledged callback spins on the operator's phone.
-  let acknowledgedAt = startedAt;
   const acknowledgement = answer()
-    .catch((error) => log("warn", "Failed to acknowledge Telegram callback query", { error: String(error) }))
-    .finally(() => {
-      acknowledgedAt = performance.now();
-    });
+    .then(() => undefined)
+    .catch((error) => log("warn", "Failed to acknowledge Telegram callback query", { error: String(error) }));
+  taps.set(ctx, { receivedAt, duplicate: false, acknowledgement });
+}
+
+type Tap = { receivedAt: number; duplicate: boolean; acknowledgement: Promise<void> };
+const taps = new WeakMap<Context, Tap>();
+
+/** Runs every callback downstream of the bot's authorization middleware. */
+export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, next: () => Promise<void>): Promise<void> {
+  const tap = taps.get(ctx) ?? { receivedAt: performance.now(), duplicate: false, acknowledgement: Promise.resolve() };
+  const startedAt = performance.now();
+  if (tap.duplicate) {
+    await tap.acknowledgement;
+    return;
+  }
+  let acknowledgedAt = tap.receivedAt;
+  void tap.acknowledgement.then(() => {
+    acknowledgedAt = performance.now();
+  });
   const handlerStartedAt = performance.now();
   let handlerFinishedAt = handlerStartedAt;
   try {
@@ -50,12 +70,16 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
     await replySafely(ctx, callbackToast(describeError(locale, error)));
   } finally {
     handlerFinishedAt = performance.now();
-    await acknowledgement;
-    const { apiMs, apiCalls } = endTapMeasurement();
-    const totalMs = performance.now() - startedAt;
+    await tap.acknowledgement;
+    const { apiMs, apiCalls } = currentTapMeasurement();
+    const totalMs = performance.now() - tap.receivedAt;
     log("info", "Telegram callback timing", {
       callback: callbackRoute(ctx.callbackQuery?.data),
-      acknowledgeMs: Math.round(acknowledgedAt - startedAt),
+      // Measured from the update arriving, not from this handler starting: the
+      // wait for a turn is exactly what a burst of taps is made of, and leaving
+      // it out would hide the thing this ordering exists to fix.
+      acknowledgeMs: Math.round(acknowledgedAt - tap.receivedAt),
+      queuedMs: Math.round(startedAt - tap.receivedAt),
       handlerMs: Math.round(handlerFinishedAt - handlerStartedAt),
       // What Telegram cost, and what was ours. The first is the floor; only the
       // second is worth optimising, and a screen making three calls where one

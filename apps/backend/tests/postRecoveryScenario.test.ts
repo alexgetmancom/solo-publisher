@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { Bot, Context } from "grammy";
-import { runCallbackBoundary } from "../src/bot/callback-boundary.js";
+import { acknowledgeCallback, runCallbackBoundary } from "../src/bot/callback-boundary.js";
 import { handlePublicationCallback } from "../src/bot/callback-router.js";
 import { publicationCallback } from "../src/bot/publication-callback.js";
 import { publicationTargets, publishJobs } from "../src/db/schema.js";
@@ -67,6 +67,7 @@ describe("post recovery scenario", () => {
           },
         }) as unknown as Context;
       const firstRetry = retryContext("post-recovery-retry", answers);
+      acknowledgeCallback(firstRetry);
       await runCallbackBoundary(firstRetry, backendDb, async () => {
         await handlePublicationCallback(firstRetry, backendDb, config);
       });
@@ -84,6 +85,7 @@ describe("post recovery scenario", () => {
 
       const duplicateAnswers: Array<{ text?: string } | undefined> = [];
       const duplicateRetry = retryContext("post-recovery-retry-again", duplicateAnswers);
+      acknowledgeCallback(duplicateRetry);
       await runCallbackBoundary(duplicateRetry, backendDb, async () => {
         await handlePublicationCallback(duplicateRetry, backendDb, config);
       });

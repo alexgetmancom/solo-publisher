@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Context } from "grammy";
 import * as ts from "../../../tools/layer-checker/node_modules/typescript/lib/typescript.js";
-import { runCallbackBoundary } from "../src/bot/callback-boundary.js";
+import { acknowledgeCallback, runCallbackBoundary } from "../src/bot/callback-boundary.js";
 import type { BackendDb } from "../src/db/client.js";
 import { withDb } from "./helpers/db.js";
 
@@ -113,7 +113,10 @@ describe("telegram interface contour", () => {
       answerCallbackQuery: async (options?: { text?: string }) => void answers.push(options),
     } as unknown as Context;
 
-    await withDb(async (backendDb: BackendDb) => runCallbackBoundary(ctx, backendDb, async () => undefined));
+    await withDb(async (backendDb: BackendDb) => {
+      acknowledgeCallback(ctx);
+      return runCallbackBoundary(ctx, backendDb, async () => undefined);
+    });
 
     expect(answers).toEqual([undefined]);
   });
@@ -131,11 +134,12 @@ describe("telegram interface contour", () => {
       },
     } as unknown as Context;
 
-    await withDb(async (backendDb: BackendDb) =>
-      runCallbackBoundary(ctx, backendDb, async () => {
+    await withDb(async (backendDb: BackendDb) => {
+      acknowledgeCallback(ctx);
+      return runCallbackBoundary(ctx, backendDb, async () => {
         await ctx.answerCallbackQuery({ text: "Cancelled" });
-      }),
-    );
+      });
+    });
 
     expect(answers).toEqual([undefined]);
     expect(replies).toEqual(["Cancelled"]);
