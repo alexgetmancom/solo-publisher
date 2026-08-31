@@ -26,6 +26,17 @@ function sourceFiles(relativeDirectory: string): string[] {
  * automatically. */
 const applicationPersistenceExceptions = new Set<string>();
 
+/** The text of one function declaration, up to the next top-level one. Enough
+ * to say what a function does and does not call, without a parser. */
+function functionBody(text: string, name: string): string {
+  const start = text.indexOf(`function ${name}(`);
+  if (start < 0) throw new Error(`architecture rule names a function that does not exist: ${name}`);
+  const next = text.indexOf("\nfunction ", start + 1);
+  const nextExported = text.indexOf("\nexport function ", start + 1);
+  const ends = [next, nextExported].filter((index) => index > 0);
+  return ends.length ? text.slice(start, Math.min(...ends)) : text.slice(start);
+}
+
 describe("architecture fitness", () => {
   it("keeps application ports and domain event policy independent from infrastructure", () => {
     for (const file of ["apps/backend/src/application/ports.ts", "apps/backend/src/content/drafts.ts"]) {
@@ -204,10 +215,22 @@ describe("architecture fitness", () => {
       expect(text).not.toMatch(/\bdailyReach\(/);
       expect(text).not.toMatch(/\bperiodReach\(/);
     }
-    // The single pass, and the windows cut from it, both live in the owner.
+    // Inside the owner the rule is narrower, and this is where it first failed:
+    // exempting the whole file let a second, larger per-window spread sit next
+    // to the one that had just been removed, and production did not move. Every
+    // window function slices; only the single pass spreads.
     const ownerText = source(owner);
-    expect(ownerText).toContain("export function periodReachByRow(");
-    expect(ownerText).toMatch(/\bdailyReach\(/);
+    // Each window function reaches the history through a slicer, never through
+    // the spread itself.
+    const slicesVia: Record<string, string> = {
+      periodReachByRow: "historyDailyReach(",
+      dailyReachForWindow: "historyDailyReach(",
+      aggregateDailyMetrics: "dailyReachForWindow(",
+    };
+    for (const [windowFunction, required] of Object.entries(slicesVia)) {
+      expect(functionBody(ownerText, windowFunction)).toContain(required);
+    }
+    expect(functionBody(ownerText, "historyDailyReach")).toMatch(/\bdailyReach\(/);
   });
 
   it("keeps infrastructure adapters behind the composition root", () => {

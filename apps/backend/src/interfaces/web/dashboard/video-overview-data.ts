@@ -302,6 +302,50 @@ export function periodReachByRow(
   return totals;
 }
 
+/**
+ * The chart's bars for one window, summed from the same history the per-clip
+ * totals are cut from.
+ *
+ * This was the second of two identical spreads. Removing only the other one
+ * changed nothing in production -- Maru's video read model stayed at 466-2299 ms
+ * -- because this pass runs over every clip at once and is the larger of the
+ * two. Both now read the same day figures, which also means the chart and the
+ * totals can no longer disagree by a rounding step.
+ */
+function dailyReachForWindow(
+  cache: VideoOverviewCache,
+  rows: readonly TargetRow[],
+  snapshots: ReadonlyMap<number, VideoSnapshot[]>,
+  days: readonly PeriodDay[],
+  timeZone: string,
+): Record<string, DailyReach> {
+  const history = historyDailyReach(cache, rows, snapshots, timeZone);
+  const covered = days.every((day) => cache.historyDayKeys.has(day.key));
+  if (!covered)
+    return dailyReach(
+      rows.map((row) => videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? [])),
+      days,
+      timeZone,
+    );
+  const result: Record<string, DailyReach> = {};
+  for (const day of days) result[day.key] = emptyDailyReach();
+  for (const row of rows) {
+    const daily = history.get(row.id);
+    if (!daily) continue;
+    for (const day of days) {
+      const bucket = daily[day.key];
+      const target = result[day.key];
+      if (!bucket || !target) continue;
+      target.views += bucket.views;
+      target.freshViews += bucket.freshViews;
+      target.reactions += bucket.reactions;
+      target.replies += bucket.replies;
+      target.reposts += bucket.reposts;
+    }
+  }
+  return result;
+}
+
 /** One day-by-day pass per clip over the bundle's whole range, kept for the
  * render that asked for it. */
 function historyDailyReach(
@@ -533,19 +577,15 @@ export function aggregateDailyMetrics(
   snapshots: Map<number, VideoSnapshot[]>,
   days: PeriodDay[],
   timeZone: string,
-  cache?: VideoOverviewCache,
+  cache: VideoOverviewCache,
 ): Record<string, DailyVideoMetrics> {
-  const daily = dailyReach(
-    rows.map((row) => videoReachSeries(row.publishedAt, row.target, snapshots.get(row.id) ?? [])),
-    days,
-    timeZone,
-  );
+  const daily = dailyReachForWindow(cache, rows, snapshots, days, timeZone);
   const result: Record<string, DailyVideoMetrics> = {};
   for (const day of days) result[day.key] = { ...(daily[day.key] ?? emptyDailyReach()), subscribers: null };
   const profileKeys = new Set(rows.map(profileKeyForRow).filter((key): key is string => key !== null));
   const growthKey = `${days.map((day) => `${day.start.toISOString()}|${day.end.toISOString()}`).join(",")}|${[...profileKeys].sort().join(",")}`;
-  const growthByDay = cache?.audienceGrowthByDay.get(growthKey) ?? audienceGrowthByDay(backendDb, days, profileKeys);
-  cache?.audienceGrowthByDay.set(growthKey, growthByDay);
+  const growthByDay = cache.audienceGrowthByDay.get(growthKey) ?? audienceGrowthByDay(backendDb, days, profileKeys);
+  cache.audienceGrowthByDay.set(growthKey, growthByDay);
   for (const day of days) {
     const growth = growthByDay.get(day.key);
     const values = [...profileKeys].filter((key) => growth?.has(key)).map((key) => growth?.get(key) ?? 0);

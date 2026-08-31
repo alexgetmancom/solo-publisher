@@ -1,6 +1,7 @@
 import { calendarDays, emptyDailyReach, latestAtOrBefore } from "../../../analytics/reach/daily-reach.js";
 import { publicationRef } from "../../../application/publication-ref.js";
 import type { BackendDb } from "../../../db/client.js";
+import { log } from "../../../foundation/logger.js";
 import { emptyMetrics, periodSubscriberDelta } from "./video-overview-calendar.js";
 import {
   aggregateDailyMetrics,
@@ -39,6 +40,7 @@ export function videoOverview(
   cache: VideoOverviewCache,
   destination?: string,
 ): VideoOverview {
+  const startedAt = Date.now();
   const bundle = videoAnalyticsBundle(backendDb, start, end, cache);
   const startIso = start.toISOString();
   const endIso = end.toISOString();
@@ -59,8 +61,14 @@ export function videoOverview(
   const rows = reachRows.filter((row) => Boolean(row.publishedAt && row.publishedAt >= startIso && row.publishedAt <= endIso));
   const snapshots = new Map(reachRows.map((row) => [row.id, bundle.snapshots.get(row.id) ?? []]));
   const periodDays = calendarDays(start, end, timeZone);
+  // Five of these run per render. Two rounds of production measurement have now
+  // been spent guessing which part of one costs the most, so it says so itself.
+  const reachStartedAt = Date.now();
   const reachViews = periodReachByRow(cache, reachRows, snapshots, periodDays, timeZone);
+  const reachMs = Date.now() - reachStartedAt;
+  const summaryStartedAt = Date.now();
   const summary = videoSummaryMetrics(backendDb, reachRows, snapshots, reachViews, periodDays, end, timeZone, cache);
+  const summaryMs = Date.now() - summaryStartedAt;
   // One row per clip, not per destination: the same clip on Shorts and on Reels
   // is one publication that went to two places, which is how the text side has
   // always read a post that went to Telegram and to Threads.
@@ -149,12 +157,24 @@ export function videoOverview(
     .filter((row) => row.active)
     .map(({ active: _active, ...row }) => row);
 
+  const dailyStartedAt = Date.now();
+  const daily = aggregateDailyMetrics(backendDb, reachRows, snapshots, periodDays, timeZone, cache);
+  const dailyMs = Date.now() - dailyStartedAt;
+  log("info", "video overview timing", {
+    days: periodDays.length,
+    rows: reachRows.length,
+    reachMs,
+    summaryMs,
+    dailyMs,
+    totalMs: Date.now() - startedAt,
+  });
+
   return {
     items,
     totals,
     summary,
     platforms,
-    dailyByDay: aggregateDailyMetrics(backendDb, reachRows, snapshots, periodDays, timeZone, cache),
+    dailyByDay: daily,
     viewEvents: viewEvents(reachRows, snapshots, start, end),
   };
 }
