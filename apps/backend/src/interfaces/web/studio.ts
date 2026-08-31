@@ -4,6 +4,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { type Html, html, raw } from "../../foundation/html.js";
 import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
+import { log } from "../../foundation/logger.js";
 import { formatZonedDateTime } from "../../foundation/time.js";
 import { createStudioServices } from "../../studio/services/index.js";
 import { localeQuery, renderLocaleSwitcher } from "./dashboard/locale-links.js";
@@ -16,8 +17,15 @@ import { localeQuery, renderLocaleSwitcher } from "./dashboard/locale-links.js";
 export function renderStudioSection(config: BackendConfig, backendDb: BackendDb, actorId: number | null, locale: StudioLocale): Html {
   const services = createStudioServices(backendDb, config);
   const channels = services.channels;
+  // This section, not the Posts overview, is what a slow command-center render
+  // was: the page-level log said "content took 1.4s" and the read model it
+  // pointed at had never run. Three calls build the section, so say which.
+  const analyticsStartedAt = Date.now();
   const analytics = services.analytics.dashboard("overview", 7, locale);
+  const analyticsMs = Date.now() - analyticsStartedAt;
+  const queueStartedAt = Date.now();
   const queue = actorId ? services.queue.snapshot(actorId) : null;
+  log("info", "studio section timing", { analyticsMs, queueMs: Date.now() - queueStartedAt });
   const zone = { timeZone: config.TIMEZONE, label: config.TIMEZONE_LABEL };
   return html`
     <nav class="studio-toolbar">${renderLocaleSwitcher(locale, (target) => `/command-center?tab=studio${localeQuery(target)}`)}</nav>

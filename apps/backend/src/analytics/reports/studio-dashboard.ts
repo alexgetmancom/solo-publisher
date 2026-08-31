@@ -4,6 +4,7 @@ import { creatorProfiles, socialComments } from "../../db/schema.js";
 import { escapeHtml } from "../../foundation/html.js";
 import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
+import { log } from "../../foundation/logger.js";
 import { audienceGroup, uniqueAudienceConnections } from "../audience-groups.js";
 import {
   audienceGrowthByPlatform,
@@ -48,6 +49,7 @@ export function studioAnalyticsDashboard(
   days: AnalyticsPeriod,
   locale: StudioLocale,
 ): StudioAnalyticsDashboard {
+  const startedAt = Date.now();
   const since = new Date(Date.now() - days * 24 * 60 * 60_000).toISOString();
   const period = periodLabel(days, locale);
   const blocks: Block[] = [];
@@ -63,7 +65,21 @@ export function studioAnalyticsDashboard(
     const videos = publishedVideoTable(backendDb, since, locale);
     blocks.push(...(videos.length ? videos : [textBlock(t(locale, "sdash.no-videos"))]));
   } else blocks.push(...platformAnalyticsTable(backendDb, since, days, locale));
-  return { text: blocksToText(blocks), richHtml: blocksToHtml(blocks), hasComments: hasAudienceComments(backendDb) };
+  const blocksMs = Date.now() - startedAt;
+  const commentsStartedAt = Date.now();
+  const hasComments = hasAudienceComments(backendDb);
+  const commentsMs = Date.now() - commentsStartedAt;
+  const renderStartedAt = Date.now();
+  const rendered = { text: blocksToText(blocks), richHtml: blocksToHtml(blocks), hasComments };
+  log("info", "studio analytics dashboard timing", {
+    section,
+    days,
+    blocksMs,
+    commentsMs,
+    renderMs: Date.now() - renderStartedAt,
+    blocks: blocks.length,
+  });
+  return rendered;
 }
 
 function blocksToText(blocks: Block[]): string {
