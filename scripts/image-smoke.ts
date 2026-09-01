@@ -4,7 +4,12 @@ import path from "node:path";
 import { RESPONSIVE_WIDTHS } from "../apps/backend/src/content/site-media-naming.ts";
 import { responsiveWebpFfmpegArgs, sitePosterFfmpegArgs, siteVerticalFfmpegArgs } from "../apps/backend/src/delivery/site-media.js";
 import { devFixture, seedSiteFixture } from "../apps/web/src/server/site-fixture.js";
-import { storyFfmpegArgs } from "../deploy/media-processor/story-encode.js";
+import {
+  localStoryFfmpegArgs,
+  needsVerticalBlur,
+  telegramVideoKbps,
+  verticalImageFfmpegArgs,
+} from "../deploy/media-processor/story-encode.js";
 
 /**
  * Boots the built backend image against a throwaway seeded database and walks
@@ -314,54 +319,59 @@ try {
   ]);
   check(sources.code === 0, "ffmpeg builds the smoke sources", sources.out.trim().slice(0, 200));
 
-  /** Each entry runs prod's real arguments and states what the output must be. */
+  // The smoke source is 640x480, so the local executor blurs it -- which is the
+  // branch worth running in the shipped image, since it is the expensive one.
+  const smokeBlur = needsVerticalBlur(640, 480);
+
+  /** Each entry runs prod's real arguments and states what its outputs must be. */
   const encodes: {
     name: string;
     args: string[];
-    output: string;
-    expect?: string;
+    outputs: { path: string; expect: string }[];
   }[] = [
     {
+      // One invocation, two files: a Story video is both of them, and an image
+      // that only ever checked the standard one let the Telegram variant vanish.
       name: "story video (local executor)",
-      args: storyFfmpegArgs("/tmp/src.mp4", "/tmp/story.mp4", "video"),
-      output: "/tmp/story.mp4",
-      expect: "1080x1920",
+      args: localStoryFfmpegArgs("/tmp/src.mp4", "/tmp/story.mp4", "/tmp/story-telegram.mp4", telegramVideoKbps(0.8, 128_000), smokeBlur),
+      outputs: [
+        { path: "/tmp/story.mp4", expect: "1080x1920" },
+        { path: "/tmp/story-telegram.mp4", expect: "1080x1920" },
+      ],
     },
     {
       name: "story image (local executor)",
-      args: storyFfmpegArgs("/tmp/src.jpg", "/tmp/story.jpg", "image"),
-      output: "/tmp/story.jpg",
-      expect: "1080x1920",
+      args: verticalImageFfmpegArgs("/tmp/src.jpg", "/tmp/story.jpg", smokeBlur),
+      outputs: [{ path: "/tmp/story.jpg", expect: "1080x1920" }],
     },
     {
       name: "site vertical composite",
       args: siteVerticalFfmpegArgs("/tmp/src.mp4", "/tmp/vertical.mp4", "video"),
-      output: "/tmp/vertical.mp4",
-      expect: "1080x1920",
+      outputs: [{ path: "/tmp/vertical.mp4", expect: "1080x1920" }],
     },
     {
       name: "site poster frame",
       args: sitePosterFfmpegArgs("/tmp/vertical.mp4", "/tmp/poster.jpg"),
-      output: "/tmp/poster.jpg",
-      expect: "1080x1920",
+      outputs: [{ path: "/tmp/poster.jpg", expect: "1080x1920" }],
     },
     // libwebp is the encoder most likely to go missing in a rebuilt static
     // ffmpeg, and every responsive image on the site depends on it.
     {
       name: `responsive webp ${RESPONSIVE_WIDTHS[0]}px`,
       args: responsiveWebpFfmpegArgs("/tmp/src.jpg", `/tmp/responsive-${RESPONSIVE_WIDTHS[0]}.webp`, RESPONSIVE_WIDTHS[0]),
-      output: `/tmp/responsive-${RESPONSIVE_WIDTHS[0]}.webp`,
-      expect: `${RESPONSIVE_WIDTHS[0]}x270`,
+      outputs: [{ path: `/tmp/responsive-${RESPONSIVE_WIDTHS[0]}.webp`, expect: `${RESPONSIVE_WIDTHS[0]}x270` }],
     },
   ];
-  for (const { name, args, output, expect } of encodes) {
+  for (const { name, args, outputs } of encodes) {
     const encoded = await inContainer(["ffmpeg", "-hide_banner", "-loglevel", "error", ...args]);
     if (encoded.code !== 0) {
       check(false, `ffmpeg: ${name}`, `exit ${encoded.code}: ${encoded.out.trim().slice(0, 200)}`);
       continue;
     }
-    const size = await dimensions(output);
-    check(size === expect, `ffmpeg: ${name}`, `${size} (expected ${expect})`);
+    for (const { path: output, expect } of outputs) {
+      const size = await dimensions(output);
+      check(size === expect, `ffmpeg: ${name} -> ${output}`, `${size} (expected ${expect})`);
+    }
   }
 
   const logs = await run(["docker", "logs", container]);
