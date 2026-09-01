@@ -3,11 +3,17 @@ import path from "node:path";
 // deploy/media-processor is a separately built Docker image (see its Dockerfile),
 // not a workspace package, but it lives in this same repo: import its ffmpeg
 // recipe directly rather than keeping a second copy that can drift out of sync.
-import { storyFfmpegArgs } from "../../../../deploy/media-processor/story-encode.js";
+import {
+  localStoryFfmpegArgs,
+  needsVerticalBlur,
+  STORY_MAX_DURATION_SECONDS,
+  telegramVideoKbps,
+  verticalImageFfmpegArgs,
+} from "../../../../deploy/media-processor/story-encode.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { materializeTelegramFile } from "../foundation/external/telegram-files.js";
 import { log } from "../foundation/logger.js";
-import { runFfmpeg } from "../foundation/runtime/ffmpeg.js";
+import { probeMediaMetadata, runFfmpeg } from "../foundation/runtime/ffmpeg.js";
 import { withTimeout } from "../foundation/runtime/timeout.js";
 import { processVerticalMediaRemotely } from "./remote-media-processor.js";
 import type { PublishMediaItem } from "./social/payload.js";
@@ -33,13 +39,42 @@ export async function renderStoryVariants(
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
   if (config.MEDIA_PROCESSOR_PROVIDER === "remote_http") await transformRemotely(source, output, telegramOutput, video, config, fetchImpl);
-  else
-    await withTimeout(
-      runFfmpeg(storyFfmpegArgs(source, output, video ? "video" : "image")),
-      storyTransformTimeout(config),
-      "story_transform_timeout",
-    );
+  else await transformLocally(source, output, telegramOutput, video, config);
   await withTimeout(fs.promises.chmod(output, 0o664), 30_000, "story_output_finalize_timeout");
+  if (telegramOutput && fs.existsSync(telegramOutput))
+    await withTimeout(fs.promises.chmod(telegramOutput, 0o664), 30_000, "story_output_finalize_timeout");
+}
+
+/**
+ * The local executor, doing what the remote one does for itself.
+ *
+ * The remote worker probes the source and decides the blurred backdrop from the
+ * frame it finds; nothing was doing that here, so a source that is not 9:16 was
+ * rendered onto black bars locally and blurred remotely -- the same post, two
+ * looks, depending only on which executor a deployment happens to run. The probe
+ * is the input to that decision, so it belongs on both sides of it.
+ *
+ * A video also has two Story shapes, not one. The Telegram variant rides a
+ * bitrate computed for its upload ceiling, and delivery falls back to the
+ * standard render when it is absent -- a file that can be too large to send.
+ */
+async function transformLocally(
+  source: string,
+  output: string,
+  telegramOutput: string | undefined,
+  video: boolean,
+  config: BackendConfig,
+): Promise<void> {
+  if (video && !telegramOutput) throw new Error("story_variant_missing_telegram_output: a Story video is two files, not one");
+  const metadata = await probeMediaMetadata(source);
+  const blur = needsVerticalBlur(metadata.width, metadata.height);
+  // A probe that reports no duration would divide the Telegram budget by zero.
+  const duration = metadata.durationSeconds || STORY_MAX_DURATION_SECONDS;
+  const args =
+    video && telegramOutput
+      ? localStoryFfmpegArgs(source, output, telegramOutput, telegramVideoKbps(duration, metadata.audioBitrate ?? 0), blur)
+      : verticalImageFfmpegArgs(source, output, blur);
+  await withTimeout(runFfmpeg(args), storyTransformTimeout(config), "story_transform_timeout");
 }
 
 export async function generateStoryMedia(

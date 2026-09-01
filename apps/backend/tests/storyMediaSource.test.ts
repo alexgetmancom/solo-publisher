@@ -31,7 +31,12 @@ function config(root: string, overrides: Record<string, string> = {}) {
   return loadTestConfig({ CONTROLLER_ADMIN_IDS: "42", CONTROLLER_BOT_TOKEN: "bot-token", DATA_DIR: root, ...overrides });
 }
 
-const JPEG = Buffer.from("jpeg bytes");
+/** A real 2x2 JPEG: the encode is mocked, but the local executor probes the
+ * source before it to decide the blurred backdrop, and a probe wants an image. */
+const JPEG = Buffer.from(
+  "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAACAEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AJ/AB//Z",
+  "base64",
+);
 
 describe("generateStoryMedia input validation", () => {
   it("refuses anything but exactly one media item", async () => {

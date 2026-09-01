@@ -2,23 +2,46 @@ import { describe, expect, it, mock } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { needsVerticalBlur, remoteStoryFfmpegArgs } from "../../../deploy/media-processor/story-encode.js";
+import { localStoryFfmpegArgs, needsVerticalBlur, remoteStoryFfmpegArgs } from "../../../deploy/media-processor/story-encode.js";
 import { publishInstagramStory } from "../src/delivery/social/instagram.js";
 import { InstagramContainerInvalidError } from "../src/delivery/social/instagram-container.js";
 import { telegramStoryCaption, telegramStoryCaptionInput, telegramStoryUploadMedia } from "../src/delivery/social/telegramStories.js";
 import { generateStoryMedia } from "../src/delivery/story-media.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
+/** The encode is mocked, but the local executor probes the source before it to
+ * decide the blurred backdrop, so these cases need media a probe can read. */
+function encodeFixture(target: string, size: string): void {
+  const encoded = Bun.spawnSync([
+    "ffmpeg",
+    "-loglevel",
+    "error",
+    "-f",
+    "lavfi",
+    "-i",
+    `color=c=black:s=${size}:d=1`,
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-an",
+    "-y",
+    target,
+  ]);
+  if (encoded.exitCode !== 0) throw new Error(`fixture encode failed: ${encoded.stderr.toString()}`);
+}
+
 const ffmpegCalls: string[][] = [];
 const instantSleep = async (_milliseconds: number): Promise<void> => {};
-
 mock.module("../src/foundation/runtime/ffmpeg.js", () => {
   return {
     runFfmpeg: async (args: string[]) => {
       ffmpegCalls.push(args);
-      const outputPath = args.at(-1);
-      if (!outputPath) throw new Error("ffmpeg output path is missing");
-      fs.writeFileSync(outputPath, "fake story image content");
+      // Both Story outputs of a video come out of one invocation, so every path
+      // that is not a flag has to be written, not just the last argument.
+      const outputs = args.filter((arg) => /\.(mp4|jpg)$/.test(arg) && arg !== args[args.indexOf("-i") + 1]);
+      if (!outputs.length) throw new Error("ffmpeg output path is missing");
+      for (const output of outputs) fs.writeFileSync(output, "fake story image content");
     },
   };
 });
@@ -40,23 +63,57 @@ describe("story publishers", () => {
     }
   });
 
-  it("letterboxes video into a 1080x1920 H.264 Story master without changing source FPS", async () => {
+  it("renders both Story shapes of a video in one pass, without changing source FPS", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-story-video-"));
     const source = path.join(dir, "source.mp4");
-    fs.writeFileSync(source, "fake video");
+    encodeFixture(source, "1080x1920");
     try {
       const generated = await generateStoryMedia([{ type: "video", local_path: source }], 2, "en", loadTestConfig({ DATA_DIR: dir }));
       expect(generated[0]).toMatchObject({ story_width: 1080, story_height: 1920 });
       expect(String(generated[0]?.story_local_path)).toEndWith(".mp4");
       expect(fs.existsSync(String(generated[0]?.story_local_path))).toBe(true);
+      // Telegram's own encode rides a lower ceiling; delivery falling back to the
+      // standard render is how a Story became too large to send.
+      expect(fs.existsSync(String(generated[0]?.telegramStoryLocalPath))).toBe(true);
       const ffmpegArgs = ffmpegCalls.at(-1) ?? [];
       expect(ffmpegArgs[ffmpegArgs.indexOf("-t") + 1]).toBe("58.9");
       expect(ffmpegArgs).not.toContain("-r");
-      expect(ffmpegArgs.slice(ffmpegArgs.indexOf("-c:v"), ffmpegArgs.indexOf("-c:v") + 2)).toEqual(["-c:v", "libx264"]);
-      expect(ffmpegArgs.slice(ffmpegArgs.indexOf("-b:a"), ffmpegArgs.indexOf("-b:a") + 2)).toEqual(["-b:a", "320k"]);
+      expect(ffmpegArgs.filter((arg) => arg === "libx264")).toHaveLength(2);
+      // The Telegram budget is computed around the source audio's own bitrate,
+      // so re-encoding audio here would quietly spend it.
+      expect(ffmpegArgs.slice(ffmpegArgs.indexOf("-c:a"), ffmpegArgs.indexOf("-c:a") + 2)).toEqual(["-c:a", "copy"]);
+      expect(ffmpegArgs).not.toContain("-b:a");
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("blurs a backdrop locally for the same frames the remote worker blurs", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-story-blur-"));
+    const source = path.join(dir, "source.mp4");
+    // A landscape source: black bars locally and a blurred backdrop remotely was
+    // one post with two looks, decided by nothing but the configured executor.
+    encodeFixture(source, "1920x1080");
+    try {
+      await generateStoryMedia([{ type: "video", local_path: source }], 3, "en", loadTestConfig({ DATA_DIR: dir }));
+      const filter = (ffmpegCalls.at(-1) ?? [])[(ffmpegCalls.at(-1) ?? []).indexOf("-filter_complex") + 1] ?? "";
+      expect(filter).toContain("boxblur");
+      expect(filter).toContain("overlay=(W-w)/2:(H-h)/2");
+      // The blur is the only difference; the upload belongs to VAAPI alone.
+      expect(filter).not.toContain("hwupload");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the local and remote Story recipes on one graph", () => {
+    const local = localStoryFfmpegArgs("source.mp4", "standard.mp4", "telegram.mp4", 1100, true);
+    const remote = remoteStoryFfmpegArgs("source.mp4", "standard.mp4", "telegram.mp4", 1100, true);
+    const graph = (args: string[]) => args[args.indexOf("-filter_complex") + 1] ?? "";
+    // Same recipe either side of the encoder: the hardware upload is the delta.
+    expect(graph(remote)).toBe(graph(local).replace(",split=2[out0][out1]", ",format=nv12,hwupload,split=2[out0][out1]"));
+    expect(local.filter((arg) => arg === "-b:v")).toEqual(remote.filter((arg) => arg === "-b:v"));
+    expect(local[local.indexOf("telegram.mp4") - 8]).toBe(remote[remote.indexOf("telegram.mp4") - 8]);
   });
 
   it("uses VAAPI only in the remote worker recipe", () => {

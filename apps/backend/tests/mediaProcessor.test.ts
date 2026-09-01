@@ -2,12 +2,8 @@ import { describe, expect, it } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {
-  createMediaProcessor,
-  ffmpegFailure,
-  type MediaProcessorOptions,
-  telegramVideoKbps,
-} from "../../../deploy/media-processor/service.js";
+import { createMediaProcessor, ffmpegFailure, type MediaProcessorOptions } from "../../../deploy/media-processor/service.js";
+import { telegramVideoKbps } from "../../../deploy/media-processor/story-encode.js";
 
 /**
  * The service that runs on VM-106 and renders every Story. It is reached only

@@ -1,7 +1,13 @@
 import { existsSync, readdirSync, rmSync, statfsSync, statSync } from "node:fs";
 import { mkdir, rename } from "node:fs/promises";
 import { createSerialQueue } from "../../shared/serial-queue.js";
-import { needsVerticalBlur, remoteSiteVideoFfmpegArgs, remoteStoryFfmpegArgs, verticalImageFfmpegArgs } from "./story-encode.js";
+import {
+  needsVerticalBlur,
+  remoteSiteVideoFfmpegArgs,
+  remoteStoryFfmpegArgs,
+  telegramVideoKbps,
+  verticalImageFfmpegArgs,
+} from "./story-encode.js";
 
 /**
  * The whole media processor as a request handler, with its environment passed
@@ -70,14 +76,6 @@ export function ffmpegFailure(exitCode: number, stderr: string, timedOut: boolea
     .slice(-4)
     .join(" · ");
   return `media_processing_failed: ffmpeg exit ${exitCode}: ${detail || "no diagnostic output"}`.slice(0, 1200);
-}
-
-/** VAAPI rate control can overshoot on very short clips. 8.5 MiB leaves a real
- * margin below mtcute's 9.5 MiB upload boundary after MP4 overhead. Account for
- * the original (copied) audio plus container overhead. */
-export function telegramVideoKbps(duration: number, audioBitrate: number): number {
-  const targetBits = 8.5 * 1024 * 1024 * 8;
-  return Math.max(150, Math.floor((targetBits / duration - audioBitrate - 24_000) / 1000));
 }
 
 export function createMediaProcessor(options: MediaProcessorOptions): MediaProcessor {

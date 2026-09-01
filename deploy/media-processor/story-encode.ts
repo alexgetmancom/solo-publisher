@@ -21,13 +21,22 @@ export function needsVerticalBlur(width: number, height: number): boolean {
   return Math.abs(width / height / VERTICAL_ASPECT_RATIO - 1) > VERTICAL_ASPECT_TOLERANCE;
 }
 
-function verticalVideoFilter(duration: number | null, blur: boolean, splitOutputs: number): string {
+/**
+ * The vertical video graph, for whichever executor is going to encode it.
+ *
+ * `hardware` is the executor's own capability, not who called: a VAAPI encoder
+ * needs the frames uploaded before the split, and a software one must never see
+ * that upload. Everything before it -- the cadence, the blur, the overlay -- is
+ * the recipe, and there is one of it.
+ */
+function verticalVideoFilter(duration: number | null, blur: boolean, splitOutputs: number, hardware: boolean): string {
   const trim = duration == null ? "" : `trim=duration=${duration},`;
+  const labels = Array.from({ length: splitOutputs }, (_, index) => `[out${index}]`).join("");
   // Preserve source cadence for both site and Stories: do not turn a 24/30 FPS
   // input into duplicate frames, and do not discard real 60 FPS motion.
-  if (!blur)
-    return `[0:v:0]${trim}${VERTICAL_SCALE_FILTER},format=nv12,hwupload,split=${splitOutputs}${Array.from({ length: splitOutputs }, (_, i) => `[out${i}]`).join("")}`;
-  return `[0:v:0]${trim}split=2[background-source][foreground-source];[background-source]${VERTICAL_VIDEO_BACKGROUND_FILTER}[background];[foreground-source]${VERTICAL_FOREGROUND_FILTER}[foreground];[background][foreground]overlay=(W-w)/2:(H-h)/2,format=nv12,hwupload,split=${splitOutputs}${Array.from({ length: splitOutputs }, (_, i) => `[out${i}]`).join("")}`;
+  const split = `${hardware ? "format=nv12,hwupload," : ""}split=${splitOutputs}${labels}`;
+  if (!blur) return `[0:v:0]${trim}${VERTICAL_SCALE_FILTER},${split}`;
+  return `[0:v:0]${trim}split=2[background-source][foreground-source];[background-source]${VERTICAL_VIDEO_BACKGROUND_FILTER}[background];[foreground-source]${VERTICAL_FOREGROUND_FILTER}[foreground];[background][foreground]overlay=(W-w)/2:(H-h)/2,${split}`;
 }
 
 function verticalImageFilter(blur: boolean): string {
@@ -35,61 +44,12 @@ function verticalImageFilter(blur: boolean): string {
   return `[0:v:0]split=2[background-source][foreground-source];[background-source]${VERTICAL_IMAGE_BACKGROUND_FILTER}[background];[foreground-source]${VERTICAL_FOREGROUND_FILTER}[foreground];[background][foreground]overlay=(W-w)/2:(H-h)/2`;
 }
 
-/** Software (no VAAPI) counterpart of verticalVideoFilter, for the local executor. */
-function verticalSoftwareVideoFilter(blur: boolean): string {
-  if (!blur) return VERTICAL_SCALE_FILTER;
-  return `[0:v:0]split=2[background-source][foreground-source];[background-source]${VERTICAL_VIDEO_BACKGROUND_FILTER}[background];[foreground-source]${VERTICAL_FOREGROUND_FILTER}[foreground];[background][foreground]overlay=(W-w)/2:(H-h)/2[out0]`;
-}
-
-export function storyFfmpegArgs(input: string, output: string, kind: "video" | "image", blur = false): string[] {
-  if (kind === "image") {
-    const filter = verticalImageFilter(blur);
-    return ["-y", "-i", input, ...(blur ? ["-filter_complex", filter] : ["-vf", filter]), "-frames:v", "1", "-q:v", "2", output];
-  }
-  // A blurred backdrop needs filter_complex (two branches out of one input), so
-  // the video mapping changes with it: the labeled overlay output instead of
-  // the raw stream. Leaving `blur` unhandled here silently produced a
-  // letterboxed render on the local executor while the remote one blurred.
-  const filter = verticalSoftwareVideoFilter(blur);
-  return [
-    "-y",
-    "-i",
-    input,
-    "-t",
-    String(STORY_MAX_DURATION_SECONDS),
-    ...(blur ? ["-filter_complex", filter] : ["-vf", filter]),
-    "-map",
-    blur ? "[out0]" : "0:v:0",
-    "-map",
-    "0:a?",
-    "-c:v",
-    "libx264",
-    "-preset",
-    "medium",
-    "-b:v",
-    "3150k",
-    "-maxrate",
-    "3300k",
-    "-bufsize",
-    "6600k",
-    "-g",
-    "50",
-    "-pix_fmt",
-    "yuv420p",
-    "-c:a",
-    "aac",
-    "-b:a",
-    "320k",
-    "-ar",
-    "48000",
-    "-ac",
-    "2",
-    "-tag:v",
-    "avc1",
-    "-movflags",
-    "+faststart",
-    output,
-  ];
+/** VAAPI rate control can overshoot on very short clips. 8.5 MiB leaves a real
+ * margin below mtcute's 9.5 MiB upload boundary after MP4 overhead. Account for
+ * the original (copied) audio plus container overhead. */
+export function telegramVideoKbps(duration: number, audioBitrate: number): number {
+  const targetBits = 8.5 * 1024 * 1024 * 8;
+  return Math.max(150, Math.floor((targetBits / duration - audioBitrate - 24_000) / 1000));
 }
 
 /** The VAAPI init the remote executor puts in front of every encode. */
@@ -101,11 +61,16 @@ const VAAPI_DEVICE_ARGS = ["-init_hw_device", "vaapi=va:/dev/dri/renderD128", "-
 const STANDARD_RATE = { kbps: 3150, maxKbps: 3300 };
 
 /**
- * One encoded output off a filter-graph label. Every remote leg is this: the
- * three copies that used to spell it out drifted apart a keyframe interval at a
- * time, which is invisible until a platform rejects one of them.
+ * One encoded output off a filter-graph label. Every leg is this: the three
+ * copies that used to spell it out drifted apart a keyframe interval at a time,
+ * which is invisible until a platform rejects one of them.
+ *
+ * The encoder is the only difference between the two executors, so it is the
+ * only thing this branches on: VAAPI receives frames already on the device,
+ * libx264 needs the pixel format and a preset spelled out.
  */
-function vaapiOutputLeg(
+function outputLeg(
+  encoder: "h264_vaapi" | "libx264",
   label: string,
   rate: { kbps: number; maxKbps: number },
   gop: string | null,
@@ -118,7 +83,8 @@ function vaapiOutputLeg(
     "-map",
     "0:a?",
     "-c:v",
-    "h264_vaapi",
+    encoder,
+    ...(encoder === "libx264" ? ["-preset", "medium", "-pix_fmt", "yuv420p"] : []),
     "-b:v",
     `${rate.kbps}k`,
     "-maxrate",
@@ -126,6 +92,9 @@ function vaapiOutputLeg(
     "-bufsize",
     `${rate.maxKbps * 2}k`,
     ...(gop ? ["-g", gop] : []),
+    // Copied rather than re-encoded on both executors: telegramVideoKbps budgets
+    // the video around the source audio's own bitrate, and an encoder that
+    // decided its own would spend that budget without telling anyone.
     "-c:a",
     "copy",
     "-tag:v",
@@ -134,6 +103,26 @@ function vaapiOutputLeg(
     "+faststart",
     ...(duration == null ? [] : ["-t", String(duration)]),
     output,
+  ];
+}
+
+/** The Story pair as the local executor makes it. Same graph, same two outputs
+ * and same ladders as the remote one; software encoding is the whole delta. */
+export function localStoryFfmpegArgs(
+  input: string,
+  standardOutput: string,
+  telegramOutput: string,
+  telegramKbps: number,
+  blur: boolean,
+): string[] {
+  return [
+    "-y",
+    "-i",
+    input,
+    "-filter_complex",
+    verticalVideoFilter(STORY_MAX_DURATION_SECONDS, blur, 2, false),
+    ...outputLeg("libx264", "[out0]", STANDARD_RATE, "50", STORY_MAX_DURATION_SECONDS, standardOutput),
+    ...outputLeg("libx264", "[out1]", { kbps: telegramKbps, maxKbps: telegramKbps }, "50", STORY_MAX_DURATION_SECONDS, telegramOutput),
   ];
 }
 
@@ -149,9 +138,16 @@ export function remoteStoryFfmpegArgs(
     "-i",
     input,
     "-filter_complex",
-    verticalVideoFilter(STORY_MAX_DURATION_SECONDS, blur, 2),
-    ...vaapiOutputLeg("[out0]", STANDARD_RATE, "50", STORY_MAX_DURATION_SECONDS, standardOutput),
-    ...vaapiOutputLeg("[out1]", { kbps: telegramVideoKbps, maxKbps: telegramVideoKbps }, "50", STORY_MAX_DURATION_SECONDS, telegramOutput),
+    verticalVideoFilter(STORY_MAX_DURATION_SECONDS, blur, 2, true),
+    ...outputLeg("h264_vaapi", "[out0]", STANDARD_RATE, "50", STORY_MAX_DURATION_SECONDS, standardOutput),
+    ...outputLeg(
+      "h264_vaapi",
+      "[out1]",
+      { kbps: telegramVideoKbps, maxKbps: telegramVideoKbps },
+      "50",
+      STORY_MAX_DURATION_SECONDS,
+      telegramOutput,
+    ),
   ];
 }
 
@@ -161,8 +157,8 @@ export function remoteSiteVideoFfmpegArgs(input: string, output: string, blur: b
     "-i",
     input,
     "-filter_complex",
-    verticalVideoFilter(null, blur, 1),
-    ...vaapiOutputLeg("[out0]", STANDARD_RATE, null, null, output),
+    verticalVideoFilter(null, blur, 1, true),
+    ...outputLeg("h264_vaapi", "[out0]", STANDARD_RATE, null, null, output),
   ];
 }
 
