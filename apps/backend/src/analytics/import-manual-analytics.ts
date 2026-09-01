@@ -17,6 +17,7 @@ type ManualProfileResult = {
    * registry rather than named here: a snapshot filed under a handle this
    * installation does not own is analytics for somebody else's audience. */
   account: string;
+
   followersCount: number;
 };
 
@@ -31,10 +32,10 @@ type ManualAnalyticsImportResult = {
 export function importManualAnalytics(backendDb: BackendDb, input: ManualAnalyticsInput): ManualAnalyticsImportResult {
   const sampledAt = new Date(input.sampledAt);
   if (Number.isNaN(sampledAt.getTime())) throw new Error("--sampled-at must be an ISO timestamp");
-  const routing = targetRouting(backendDb);
+  const accounts = manualFollowerAccounts(backendDb);
   const profiles = [
-    profileInput("threads_ru", routing.threads_ru?.accountId, input.threadsRuFollowers),
-    profileInput("threads_en", routing.threads_en?.accountId, input.threadsEnFollowers),
+    profileInput("threads_ru", accounts.ru, input.threadsRuFollowers),
+    profileInput("threads_en", accounts.en, input.threadsEnFollowers),
   ].filter((profile): profile is ManualProfileResult => profile != null);
   if (!input.xFile && profiles.length === 0) throw new Error("provide --x-file, --threads-ru-followers, or --threads-en-followers");
 
@@ -60,6 +61,28 @@ function profileInput(
     throw new Error(`--${platform.replaceAll("_", "-")}-followers must be a non-negative integer`);
   if (!account) throw new Error(`connect the ${platform.replace("_", " ")} channel before importing its follower count`);
   return { platform, account, followersCount: value };
+}
+
+/** The account each Threads target files its snapshots under, or nothing when
+ * the target is not connected here.
+ *
+ * These used to be my two handles, written into the type. Replacing them with
+ * the connection's `providerAccountId` took the handles out but put nothing
+ * back: a native Threads connection never carries one, so every installation --
+ * both of mine included -- asked for a follower count and then refused to
+ * record it. The connected target is the identity this Studio actually owns and
+ * publishes under, and it is what the snapshot belongs to when the provider
+ * offers no account of its own.
+ *
+ * The screen reads this before it asks, so an unconnected target is never
+ * offered a question whose answer has nowhere to go. */
+export function manualFollowerAccounts(backendDb: BackendDb): Record<"ru" | "en", string | null> {
+  const routing = targetRouting(backendDb);
+  const account = (target: "threads_ru" | "threads_en") => {
+    const connection = routing[target];
+    return connection ? (connection.accountId ?? target) : null;
+  };
+  return { ru: account("threads_ru"), en: account("threads_en") };
 }
 
 export type ThreadsFollowersState = { ru: number | null; en: number | null; updatedAt: string | null };

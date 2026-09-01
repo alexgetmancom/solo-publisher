@@ -33,6 +33,22 @@ describe("manual analytics import", () => {
       });
     }));
 
+  it("files a native Threads connection under its target, since it carries no account of its own", () =>
+    withDb(async (backendDb) => {
+      // The shape both production Studios actually have. Requiring
+      // providerAccountId here made the follower screen ask for a number and
+      // then refuse to record it, on every installation, with no test to say so.
+      registerChannel(backendDb, { platform: "threads", locale: "ru", provider: "native", targetId: "threads_ru" });
+      const result = importManualAnalytics(backendDb, { sampledAt: "2026-07-29T18:00:00.000Z", threadsRuFollowers: 281 });
+
+      expect(result.profiles).toEqual([{ platform: "threads_ru", account: "threads_ru", followersCount: 281 }]);
+      expect(backendDb.db.select().from(creatorProfiles).where(eq(creatorProfiles.platform, "threads_ru")).get()?.dataJson).toEqual({
+        name: "threads_ru",
+        followersCount: 281,
+        manual: true,
+      });
+    }));
+
   it("rejects an empty or invalid observation before writing anything", () =>
     withDb(async (backendDb) => {
       expect(() => importManualAnalytics(backendDb, { sampledAt: "2026-07-29T18:00:00.000Z" })).toThrow("provide --x-file");

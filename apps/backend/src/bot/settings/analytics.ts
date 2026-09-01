@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { Menu } from "@grammyjs/menu";
 import type { Context } from "grammy";
-import { importManualAnalytics, manualThreadsFollowers } from "../../analytics/import-manual-analytics.js";
+import { importManualAnalytics, manualFollowerAccounts, manualThreadsFollowers } from "../../analytics/import-manual-analytics.js";
 import { importXAnalyticsCsv } from "../../analytics/import-x-csv.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -19,7 +19,12 @@ export function buildAnalyticsMenus(backendDb: BackendDb, systemBody: (locale: S
   const threadsFollowers = new Menu<Context>(THREADS_FOLLOWERS_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const actorId = Number(ctx.from?.id);
     const locale = settingsService(backendDb).locale(actorId);
-    for (const account of ["ru", "en"] as const)
+    const accounts = manualFollowerAccounts(backendDb);
+    // Only the connected accounts get a button. An unconnected one has no
+    // account to file the snapshot under, and the body says so rather than the
+    // keyboard offering a question whose answer would be thrown away.
+    for (const account of ["ru", "en"] as const) {
+      if (!accounts[account]) continue;
       range.text(t(locale, "settings.threads-edit", { account: account.toUpperCase() }), (ctx) =>
         askSettingsInput(
           ctx,
@@ -31,6 +36,7 @@ export function buildAnalyticsMenus(backendDb: BackendDb, systemBody: (locale: S
           { account },
         ),
       );
+    }
     range.row().back(
       t(locale, "settings.back-to-system"),
       settingsUpdate({
@@ -62,11 +68,17 @@ export function buildAnalyticsMenus(backendDb: BackendDb, systemBody: (locale: S
   return [threadsFollowers, xImport];
 }
 
-/** The stored follower counts as both screens print them, unknown included. */
+/** The stored follower counts as both screens print them. An account that is not
+ * connected says so instead of reading as a number nobody has entered yet. */
 function followerCounts(backendDb: BackendDb, locale: StudioLocale): { ru: string; en: string } {
   const followers = manualThreadsFollowers(backendDb);
-  const value = (count: number | null) => (count == null ? t(locale, "settings.threads-unknown") : String(count));
-  return { ru: value(followers.ru), en: value(followers.en) };
+  const accounts = manualFollowerAccounts(backendDb);
+  const value = (account: "ru" | "en") => {
+    if (!accounts[account]) return t(locale, "settings.threads-not-connected");
+    const count = followers[account];
+    return count == null ? t(locale, "settings.threads-unknown") : String(count);
+  };
+  return { ru: value("ru"), en: value("en") };
 }
 
 export async function collectThreadsFollowers(
@@ -81,6 +93,13 @@ export async function collectThreadsFollowers(
   const count = Number(text.replace(/[\s,]/gu, ""));
   if (!Number.isSafeInteger(count) || count < 0) {
     await showScreen(ctx, t(locale, "err.threads-followers-invalid"));
+    return true;
+  }
+  // The keyboard only offers connected accounts, but a channel disabled between
+  // the question and the answer would otherwise throw past this screen and
+  // reach the operator as silence: the number was typed and nothing came back.
+  if (!manualFollowerAccounts(backendDb)[account]) {
+    await showScreen(ctx, t(locale, "err.threads-account-not-connected", { account: account.toUpperCase() }));
     return true;
   }
   importManualAnalytics(backendDb, {

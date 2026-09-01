@@ -382,6 +382,7 @@ const en = {
   "settings.threads-ask": "⌨ Send the current follower count for Threads {account}.",
   "settings.threads-saved": "✅ Threads {account}: {count}",
   "settings.threads-unknown": "not set",
+  "settings.threads-not-connected": "not connected",
   "settings.x-import-body":
     "📈 *Import X CSV*\n\nSend the X Analytics content export. It is stamped with the time you send it, and re-sending the same file changes nothing.",
   "settings.x-import-start": "⬆️ Send the file",
@@ -624,6 +625,7 @@ const en = {
   "err.schedule-too-far": "Publication cannot be scheduled more than 30 days ahead.",
   "err.timezone-invalid": "That time zone is not valid.",
   "err.threads-followers-invalid": "Send a whole non-negative number.",
+  "err.threads-account-not-connected": "Connect the Threads {account} channel before setting its follower count.",
   "video.check-summary": "🔎 Video check: {dims}, {dur}, {codecs}, {sound}, {fps}, {mb} MB — looks good.",
   "video.aspect-warning": "⚠️ Not 9:16: platforms may crop the video or add bars.",
   "video.has-audio": "audio present",
@@ -1155,6 +1157,7 @@ const ru = {
   "settings.threads-ask": "⌨ Отправьте текущее число подписчиков Threads {account}.",
   "settings.threads-saved": "✅ Threads {account}: {count}",
   "settings.threads-unknown": "не задано",
+  "settings.threads-not-connected": "не подключён",
   "settings.x-import-body":
     "📈 *Импорт X CSV*\n\nПришлите выгрузку X Analytics. Она помечается временем отправки, повторная отправка того же файла ничего не меняет.",
   "settings.x-import-start": "⬆️ Отправить файл",
@@ -1396,6 +1399,7 @@ const ru = {
   "err.schedule-too-far": "Публикацию нельзя планировать более чем на 30 дней вперёд.",
   "err.timezone-invalid": "Такого часового пояса нет.",
   "err.threads-followers-invalid": "Нужно целое неотрицательное число.",
+  "err.threads-account-not-connected": "Подключите канал Threads {account}, прежде чем задавать число подписчиков.",
   "video.check-summary": "🔎 Проверка видео: {dims}, {dur}, {codecs}, {sound}, {fps}, {mb} МБ — подходит.",
   "video.aspect-warning": "⚠️ Формат не 9:16: платформы могут обрезать ролик или добавить поля.",
   "video.has-audio": "звук есть",
