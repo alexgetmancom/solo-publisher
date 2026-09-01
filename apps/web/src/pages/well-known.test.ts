@@ -6,6 +6,7 @@ import { GET as apiCatalog } from "./.well-known/api-catalog";
 import { GET as mcpServerCard } from "./.well-known/mcp/server-card.json";
 import { GET as authorizationServer } from "./.well-known/oauth-authorization-server";
 import { GET as protectedResource } from "./.well-known/oauth-protected-resource";
+import { telegramToSearchItems } from "./search-index.json";
 
 const context = { site: new URL("https://studio.example.com") } as never;
 
@@ -39,5 +40,27 @@ describe("discovery documents", () => {
     expect(body).toBe(readFeedSkill("https://studio.example.com"));
     expect(index.skills[0]?.digest).toBe(skillDigest(body));
     expect(index.skills[0]?.url).toBe("/.well-known/agent-skills/read-feed/SKILL.md");
+  });
+});
+
+describe("search index", () => {
+  it("attributes an entry to the host that served it", () => {
+    // Every entry carried a literal alexgetman.com, so a self-hosted Studio
+    // published a search index crediting somebody else for its own posts.
+    const item = {
+      post_id: 7,
+      date: "2026-01-01T00:00:00.000Z",
+      has_en: true,
+      has_ru: false,
+      text_en: "A headline. And the body that follows it.",
+      slug_en: "a-headline",
+      entities: [],
+    } as never;
+
+    const entries = telegramToSearchItems(item, "studio.example.com");
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.source).toBe("studio.example.com");
+    expect(JSON.stringify(entries)).not.toContain("alexgetman.com");
   });
 });

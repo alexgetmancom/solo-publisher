@@ -1,11 +1,14 @@
 import { type FeedItem, loadFeedItems } from "../server/public-site";
 import { postImagePath } from "../utils/media";
+import { siteUrlFromContext } from "../utils/site";
 import { localizedCategory } from "../utils/taxonomy";
 import { compactText, excerptAfterTitle, getFirstSentence, truncateText } from "../utils/text";
 
 export const prerender = false;
 
-function telegramToSearchItems(item: FeedItem) {
+/** The host serving this index, so a self-hosted Studio does not attribute
+ * every one of its own entries to somebody else. */
+export function telegramToSearchItems(item: FeedItem, source: string) {
   const postId = item.post_id;
   const entries = [];
 
@@ -19,7 +22,7 @@ function telegramToSearchItems(item: FeedItem) {
       excerpt: excerptAfterTitle(text, title, 180),
       url: `/${postId}/${item.slug_en}/`,
       date: item.date,
-      source: "alexgetman.com",
+      source,
       category: localizedCategory(text, "en"),
       image: postImagePath(item, "en"),
     });
@@ -35,7 +38,7 @@ function telegramToSearchItems(item: FeedItem) {
       excerpt: excerptAfterTitle(text, title, 180),
       url: `/ru/${postId}/${item.slug_ru}/`,
       date: item.date,
-      source: "alexgetman.com",
+      source,
       category: localizedCategory(item.text || text, "ru"),
       image: postImagePath(item, "ru"),
     });
@@ -44,10 +47,11 @@ function telegramToSearchItems(item: FeedItem) {
   return entries;
 }
 
-export async function GET() {
+export async function GET(context: { site?: URL | string | null }) {
+  const source = new URL(siteUrlFromContext(context)).host;
   const telegramItems = loadFeedItems()
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .flatMap(telegramToSearchItems);
+    .flatMap((item) => telegramToSearchItems(item, source));
 
   return new Response(
     JSON.stringify(

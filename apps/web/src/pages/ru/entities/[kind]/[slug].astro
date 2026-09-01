@@ -2,6 +2,7 @@
 import Layout from "../../../../layouts/Layout.astro";
 import { hubUrl } from "../../../../server/hubs";
 import { loadFeedItems } from "../../../../server/public-site";
+import { siteUrlFromContext } from "../../../../utils/site";
 import { getFirstSentence } from "../../../../utils/text";
 
 export const prerender = false;
@@ -16,8 +17,12 @@ const posts = loadFeedItems().filter(
 const entity = posts.flatMap((post) => post.entities).find((item) => item.kind === kind && item.slug === slug);
 if (!entity) return new Response("Not found\n", { status: 404 });
 const title = entity.title_ru;
-const url = `https://alexgetman.com/ru/entities/${kind}/${slug}/`;
-const enUrl = `https://alexgetman.com/entities/${kind}/${slug}/`;
+// The origin this install answers on, not the canonical deployment's: a
+// canonical link is a claim about where the page really lives, and naming a
+// domain here told every other Studio's pages to point at someone else's.
+const siteOrigin = siteUrlFromContext(Astro);
+const url = `${siteOrigin}/ru/entities/${kind}/${slug}/`;
+const enUrl = `${siteOrigin}/entities/${kind}/${slug}/`;
 ---
 
 <Layout title={`${title} | Алекс Гетман`} description={`Новости и контекст про ${title}.`} canonicalUrl={url} lang="ru" siteName="Алекс Гетман" alternateLinks={[{ hreflang: "ru", href: url }, { hreflang: "en", href: enUrl }, { hreflang: "x-default", href: enUrl }]}>

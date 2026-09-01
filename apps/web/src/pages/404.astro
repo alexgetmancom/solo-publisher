@@ -1,11 +1,14 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { siteUrlFromContext } from "../utils/site";
+
+const siteOrigin = siteUrlFromContext(Astro);
 ---
 
 <Layout
   title="Page not found | Alex Getman"
   description="The requested page was not found on alexgetman.com."
-  canonicalUrl="https://alexgetman.com/404/"
+  canonicalUrl={`${siteOrigin}/404/`}
   lang="en"
   siteName="Alex Getman"
   robots="noindex, follow"

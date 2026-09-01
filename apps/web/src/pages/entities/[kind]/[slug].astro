@@ -2,6 +2,7 @@
 import Layout from "../../../layouts/Layout.astro";
 import { hubUrl } from "../../../server/hubs";
 import { loadFeedItems } from "../../../server/public-site";
+import { siteUrlFromContext } from "../../../utils/site";
 import { getFirstSentence } from "../../../utils/text";
 
 export const prerender = false;
@@ -21,8 +22,9 @@ if (posts.length === 0) return new Response("Not found\n", { status: 404 });
 const entity = posts.flatMap((post) => post.entities).find((item) => item.kind === kind && item.slug === slug);
 if (!entity) return new Response("Not found\n", { status: 404 });
 const title = entity.title_en || entity.title_ru;
-const url = `https://alexgetman.com/entities/${kind}/${slug}/`;
-const ruUrl = `https://alexgetman.com/ru/entities/${kind}/${slug}/`;
+const siteOrigin = siteUrlFromContext(Astro);
+const url = `${siteOrigin}/entities/${kind}/${slug}/`;
+const ruUrl = `${siteOrigin}/ru/entities/${kind}/${slug}/`;
 ---
 
 <Layout title={`${title} | Alex Getman`} description={`Latest AI news and context about ${title}.`} canonicalUrl={url} lang="en" siteName="Alex Getman" alternateLinks={[{ hreflang: "en", href: url }, { hreflang: "ru", href: ruUrl }, { hreflang: "x-default", href: url }]}>
