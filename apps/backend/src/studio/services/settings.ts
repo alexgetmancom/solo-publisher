@@ -77,6 +77,10 @@ function readProfile(backendDb: SettingsDependencies) {
     timezone: row.timezone,
     timezoneLabel: row.timezoneLabel,
     siteEnabled: row.siteEnabled !== 0,
+    // The platforms the bot's default-targets screen has ticked. They decide
+    // what every new draft goes to and what preparation is worth doing, and
+    // until now no read-only command could show them.
+    defaultTargets: row.defaultTargetsJson,
     video: {
       prepareLeadMinutes: row.videoPrepareLeadMinutes,
       retentionHours: row.videoRetentionHours,

@@ -135,7 +135,14 @@ export function storyCardUse(targets: Record<string, boolean>): { stories: boole
   const enabled = Object.entries(targets)
     .filter(([, on]) => on)
     .map(([target]) => target);
-  return { stories: enabled.some(isStoryTarget), site: enabled.some(isSiteTarget) };
+  return { stories: storyTargetsEnabled(enabled), site: enabled.some(isSiteTarget) };
+}
+
+/** Whether anything this Studio publishes to carries a Story. Preparation reads
+ * it before spending an encode, the same way a card reads it before a render:
+ * work made for a platform nobody publishes to is work nobody asked for. */
+export function storyTargetsEnabled(targets: readonly string[]): boolean {
+  return targets.some(isStoryTarget);
 }
 
 export type PresetName = keyof typeof PRESETS | "manual";

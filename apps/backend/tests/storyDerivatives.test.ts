@@ -61,6 +61,39 @@ describe("story derivatives", () => {
     expect(preparedStoryMedia(config, { type: "IMAGE", fileId: "telegram-file" })).toBeNull();
   });
 
+  it("prepares nothing for a Studio that publishes no Stories", () =>
+    withDb(async (backendDb) => {
+      const config = { ...tempConfig(), MEDIA_PROCESSOR_PROVIDER: "remote_http" } as BackendConfig;
+      const localPath = path.join(config.DATA_DIR, `${"a".repeat(24)}.jpg`);
+      await fs.promises.writeFile(localPath, "source");
+      unsafeDb(backendDb)
+        .db.insert(studioMediaAssets)
+        .values({
+          actorId: 1,
+          kind: "image",
+          mimeType: "image/jpeg",
+          filename: "source.jpg",
+          localPath,
+          byteSize: 6,
+          sha256: "a".repeat(64),
+          source: "test",
+          createdAt: "2026-01-01T00:00:00.000Z",
+        })
+        .run();
+      // The operator's own selection, as the bot's default-targets screen holds
+      // it: Telegram and Threads, no Story platform anywhere.
+      backendDb.studioSettings.saveProfile({ defaultTargetsJson: ["telegram", "threads_ru"], updatedAt: "2026-01-01T00:00:00.000Z" });
+
+      expect(await runStoryDerivativeCycle(config, backendDb, 2)).toEqual({ attempted: 0, prepared: 0 });
+
+      // Ticking one is enough to make the same asset worth preparing again.
+      backendDb.studioSettings.saveProfile({
+        defaultTargetsJson: ["telegram", "instagram_stories_ru"],
+        updatedAt: "2026-01-01T00:00:01.000Z",
+      });
+      expect((await runStoryDerivativeCycle(config, backendDb, 2)).attempted).toBe(1);
+    }));
+
   it("limits failed preparations by attempts rather than successes", () =>
     withDb(async (backendDb) => {
       const config = { ...tempConfig(), MEDIA_PROCESSOR_PROVIDER: "remote_http" } as BackendConfig;

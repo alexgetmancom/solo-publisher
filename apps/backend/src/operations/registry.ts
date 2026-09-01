@@ -215,7 +215,7 @@ const operationDefs = {
     handler: (context) => settingsReport(context.db(), context.config()),
   }),
   "studio-profile": operation({
-    summary: "What this Studio publishes as, its time zone, whether it serves a public site, and video timing.",
+    summary: "What this Studio publishes as, where it publishes by default, its time zone, public site switch and video timing.",
     schema: z.object({}),
     mutates: false,
     agent: true,

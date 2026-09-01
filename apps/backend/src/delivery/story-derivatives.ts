@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { storyTargetsEnabled } from "../botTargets.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { studioMediaAssets } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
@@ -62,6 +63,11 @@ export async function runStoryDerivativeCycle(
   backendDb: BackendDb,
   limit = 2,
 ): Promise<{ attempted: number; prepared: number }> {
+  // A Studio that publishes no Stories has nothing to prepare them for, and
+  // this used to encode a vertical variant of every video it had ever imported
+  // anyway. Read per cycle rather than at startup, like the site worker: an
+  // operator who ticks a Story platform expects the next tick to act on it.
+  if (!storyTargetsEnabled(backendDb.studioSettings.profile().defaultTargetsJson)) return { attempted: 0, prepared: 0 };
   const assets = unsafeDb(backendDb).db.select().from(studioMediaAssets).orderBy(studioMediaAssets.id).all();
   let attempted = 0;
   let prepared = 0;
