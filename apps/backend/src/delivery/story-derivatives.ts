@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { storyTargetsEnabled } from "../botTargets.js";
+import { storyTargetsEnabled, targetsRecord } from "../botTargets.js";
+import { effectivePostTargets } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { studioMediaAssets } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
@@ -67,7 +68,13 @@ export async function runStoryDerivativeCycle(
   // this used to encode a vertical variant of every video it had ever imported
   // anyway. Read per cycle rather than at startup, like the site worker: an
   // operator who ticks a Story platform expects the next tick to act on it.
-  if (!storyTargetsEnabled(backendDb.studioSettings.profile().defaultTargetsJson)) return { attempted: 0, prepared: 0 };
+  //
+  // Through the registry, because the stored selection is not the answer on its
+  // own: a profile nobody has curated still carries every target the install
+  // seeded, Story platforms included, with no channel connected for them. That
+  // is the same intersection the operator's own screen calls "active".
+  const selected = effectivePostTargets(backendDb, targetsRecord(backendDb.studioSettings.profile().defaultTargetsJson));
+  if (!storyTargetsEnabled(selected)) return { attempted: 0, prepared: 0 };
   const assets = unsafeDb(backendDb).db.select().from(studioMediaAssets).orderBy(studioMediaAssets.id).all();
   let attempted = 0;
   let prepared = 0;

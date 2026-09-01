@@ -135,14 +135,18 @@ export function storyCardUse(targets: Record<string, boolean>): { stories: boole
   const enabled = Object.entries(targets)
     .filter(([, on]) => on)
     .map(([target]) => target);
-  return { stories: storyTargetsEnabled(enabled), site: enabled.some(isSiteTarget) };
+  return { stories: storyTargetsEnabled(targets), site: enabled.some(isSiteTarget) };
 }
 
 /** Whether anything this Studio publishes to carries a Story. Preparation reads
  * it before spending an encode, the same way a card reads it before a render:
- * work made for a platform nobody publishes to is work nobody asked for. */
-export function storyTargetsEnabled(targets: readonly string[]): boolean {
-  return targets.some(isStoryTarget);
+ * work made for a platform nobody publishes to is work nobody asked for.
+ *
+ * The selection alone does not answer this. A fresh profile has every target
+ * ticked, including ones no channel is connected for, and those cannot publish
+ * anything -- so callers pass the selection already narrowed by the registry. */
+export function storyTargetsEnabled(targets: Record<string, boolean>): boolean {
+  return Object.entries(targets).some(([target, on]) => on && isStoryTarget(target));
 }
 
 export type PresetName = keyof typeof PRESETS | "manual";
