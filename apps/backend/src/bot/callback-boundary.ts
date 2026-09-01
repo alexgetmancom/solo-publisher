@@ -2,8 +2,8 @@ import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import { describeError } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
+import { currentTapMeasurement } from "../foundation/tap-measurement.js";
 import { settingsService } from "../studio/services/settings.js";
-import { currentTapMeasurement } from "./api-timing.js";
 import { callbackToast } from "./callback-effects.js";
 import { showMessage } from "./effects.js";
 
@@ -71,7 +71,7 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   } finally {
     handlerFinishedAt = performance.now();
     await tap.acknowledgement;
-    const { apiSumMs, apiCalls } = currentTapMeasurement();
+    const { apiSumMs, apiCalls, providerMs, providerCalls } = currentTapMeasurement();
     const totalMs = performance.now() - tap.receivedAt;
     log("info", "Telegram callback timing", {
       callback: callbackRoute(ctx.callbackQuery?.data),
@@ -86,6 +86,8 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
       // apiCalls without inventing a negative "local" duration.
       apiSumMs: Math.round(apiSumMs),
       apiCalls,
+      providerMs: Math.round(providerMs),
+      providerCalls,
       totalMs: Math.round(totalMs),
     });
   }

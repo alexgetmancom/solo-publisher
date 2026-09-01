@@ -1,7 +1,7 @@
 import { autoRetry } from "@grammyjs/auto-retry";
 import { sequentialize } from "@grammyjs/runner";
 import { Bot, type Context } from "grammy";
-import { installApiTiming, withTapMeasurement } from "./bot/api-timing.js";
+import { installApiTiming } from "./bot/api-timing.js";
 import { acknowledgeCallback, runCallbackBoundary } from "./bot/callback-boundary.js";
 import { handlePublicationCallback, handlePublicationMessage } from "./bot/callback-router.js";
 import { executePublicationEffects, showMessage } from "./bot/effects.js";
@@ -19,6 +19,7 @@ import type { BackendConfig } from "./foundation/config.js";
 import { type MessageKey, t } from "./foundation/i18n/index.js";
 import type { StudioLocale } from "./foundation/locale.js";
 import { log } from "./foundation/logger.js";
+import { currentTapMeasurement, withTapMeasurement } from "./foundation/tap-measurement.js";
 import { trackUsageAsync } from "./observability/usage.js";
 import { settingsService } from "./studio/services/settings.js";
 
@@ -50,32 +51,34 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
   bot.use(async (ctx, next) => {
     const startedAt = Date.now();
     const updateType = Object.keys(ctx.update).find((key) => key !== "update_id") ?? "unknown";
-    let success = false;
-    let failure: unknown;
-    try {
-      const { measurement } = await withTapMeasurement(async () => {
+    // The log is written inside the measured scope so that a tap which throws
+    // still reports what it spent. Reporting zero for a failure hid exactly the
+    // updates most likely to have been slow before they broke.
+    await withTapMeasurement(async () => {
+      let failure: unknown;
+      try {
         await trackUsageAsync(backendDb, "telegram.update.handle", next);
-      });
-      success = true;
-      logUpdate(measurement.apiSumMs, measurement.apiCalls);
-    } catch (error) {
-      failure = error;
-      logUpdate(0, 0);
-      throw error;
-    }
-    function logUpdate(apiSumMs: number, apiCalls: number): void {
-      const totalMs = Date.now() - startedAt;
-      log(success ? "info" : "warn", "operation timing", {
+      } catch (error) {
+        failure = error;
+      }
+      const { apiSumMs, apiCalls, providerMs, providerCalls } = currentTapMeasurement();
+      log(failure === undefined ? "info" : "warn", "operation timing", {
         operation: "telegram.update.handle",
         updateId: ctx.update.update_id,
         updateType,
-        success,
+        success: failure === undefined,
         apiSumMs: Math.round(apiSumMs),
         apiCalls,
-        totalMs,
+        // A message that starts a draft waits on the translator, and that wait
+        // is not Telegram's. Without this it was only the gap between totalMs
+        // and apiSumMs, which named nothing.
+        providerMs: Math.round(providerMs),
+        providerCalls,
+        totalMs: Date.now() - startedAt,
         ...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
       });
-    }
+      if (failure !== undefined) throw failure;
+    });
   });
   // One gate for the whole bot. It has to sit in front of the menu plugin's own
   // callback_query:data middleware, or a non-admin's tap on a menu button would

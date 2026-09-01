@@ -13,7 +13,13 @@ type AnalyticsSection = "overview" | "audience" | "posts" | "video";
 type AnalyticsPeriod = 1 | 7 | 30;
 type AnalyticsDashboard = ReturnType<typeof studioAnalyticsDashboard>;
 
-const MAX_CACHED_DASHBOARDS = 8;
+/** Every screen the bot can be showing, with room for the surfaces that share
+ * this cache. The keyboard offers three sections against three periods, so
+ * eight entries guaranteed that the ninth screen evicted the first and an
+ * operator who had visited them all still paid for a rebuild on the way back.
+ * Web Studio and MCP key on their own locale and section, which is what the
+ * headroom above nine is for. */
+const MAX_CACHED_DASHBOARDS = 12;
 const dashboardCaches = new WeakMap<BackendDb, Map<string, { version: string; value: AnalyticsDashboard }>>();
 
 /**

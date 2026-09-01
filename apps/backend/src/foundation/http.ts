@@ -1,3 +1,6 @@
+import { redactExternalSecrets } from "./redact.js";
+import { recordTapProviderCall } from "./tap-measurement.js";
+
 export class ExternalHttpError extends Error {
   constructor(
     message: string,
@@ -84,6 +87,7 @@ export async function externalFetch(fetchImpl: typeof fetch, url: string, init: 
   // passing `init.signal` straight through used to leave that request with no
   // timeout at all while this timer aborted a controller nothing listened to.
   const signal = init.signal ? AbortSignal.any([init.signal, controller.signal]) : controller.signal;
+  const startedAt = performance.now();
   try {
     return await fetchImpl(url, { ...init, signal });
   } catch (error) {
@@ -92,10 +96,12 @@ export async function externalFetch(fetchImpl: typeof fetch, url: string, init: 
     throw new ExternalTransportError(`${init.method ?? "GET"} ${safeUrl(url)} failed before receiving an HTTP response`, error);
   } finally {
     clearTimeout(timeout);
+    // Every provider this process calls comes through here, so a tap that waits
+    // on one can say so instead of leaving the wait as the gap between its
+    // total and what it spent on Telegram. A failed request is still a wait.
+    recordTapProviderCall(performance.now() - startedAt);
   }
 }
-
-import { redactExternalSecrets } from "./redact.js";
 
 function safeUrl(value: string): string {
   try {
