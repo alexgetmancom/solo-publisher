@@ -2,7 +2,7 @@ import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import { describeError } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
-import { currentTapMeasurement, tapApiMethods } from "../foundation/tap-measurement.js";
+import { currentTapMeasurement, recordTapAnswered, tapApiMethods } from "../foundation/tap-measurement.js";
 import { settingsService } from "../studio/services/settings.js";
 import { callbackToast } from "./callback-effects.js";
 import { showMessage } from "./effects.js";
@@ -59,6 +59,7 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   const tap = taps.get(ctx) ?? { receivedAt: performance.now(), duplicate: false, acknowledgement: Promise.resolve(), claim: undefined };
   const startedAt = performance.now();
   if (tap.duplicate) {
+    recordTapAnswered();
     await tap.acknowledgement;
     return;
   }
@@ -66,6 +67,8 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   // this one draws whatever this one would have. Drawing it first costs a round
   // trip nobody ever sees -- a burst through the queue paid one per page.
   if (tap.claim && isSuperseded(tap.claim)) {
+    // The answer is the newer tap's to give, and it is already behind this one.
+    recordTapAnswered();
     await tap.acknowledgement;
     log("info", "Telegram callback superseded", {
       callback: callbackRoute(ctx.callbackQuery?.data),
@@ -86,16 +89,23 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
     await replySafely(ctx, callbackToast(describeError(locale, error)));
   } finally {
     handlerFinishedAt = performance.now();
+    // Taken before the acknowledgement is waited for, because the screen is
+    // drawn by now and the operator is no longer waiting for anything.
+    recordTapAnswered();
+    const answerMs = handlerFinishedAt - tap.receivedAt;
+    // Waited for all the same: it keeps `acknowledgeMs` and the method costs
+    // complete, and it is what stops an acknowledgement being dropped by a
+    // shutdown. It is simply not part of what this tap is judged by.
     await tap.acknowledgement;
     if (tap.claim) releaseSupersession(tap.claim);
     const measurement = currentTapMeasurement();
     const { apiSumMs, apiCalls, providerMs, providerCalls, unchangedEdits } = measurement;
-    const totalMs = performance.now() - tap.receivedAt;
     log("info", "Telegram callback timing", {
       callback: callbackRoute(ctx.callbackQuery?.data),
-      // Measured from the update arriving, not from this handler starting: the
-      // wait for a turn is exactly what a burst of taps is made of, and leaving
-      // it out would hide the thing this ordering exists to fix.
+      // Not a wait the operator has: the acknowledgement goes out ahead of the
+      // queue and settles whenever the event loop returns to it. That is what
+      // makes it worth logging -- two calls to the same server in one tap, one
+      // at 950 ms and one at 68 ms, is a busy loop and not a slow network.
       acknowledgeMs: Math.round(acknowledgedAt - tap.receivedAt),
       queuedMs: Math.round(startedAt - tap.receivedAt),
       handlerMs: Math.round(handlerFinishedAt - handlerStartedAt),
@@ -108,7 +118,8 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
       unchangedEdits,
       providerMs: Math.round(providerMs),
       providerCalls,
-      totalMs: Math.round(totalMs),
+      // Arrival to answer, which is the whole of what the operator sat through.
+      answerMs: Math.round(answerMs),
     });
   }
 }

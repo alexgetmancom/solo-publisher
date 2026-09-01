@@ -3,6 +3,7 @@ import type { Context } from "grammy";
 import { acknowledgeCallback, callbackRoute, runCallbackBoundary } from "../src/bot/callback-boundary.js";
 import type { BackendDb } from "../src/db/client.js";
 import { StudioError } from "../src/foundation/errors.js";
+import { currentTapMeasurement, withTapMeasurement } from "../src/foundation/tap-measurement.js";
 import { withDb } from "./helpers/db.js";
 
 function callbackContext(id: string, answers: Array<{ text?: string } | undefined>, replies: string[] = []): Context {
@@ -60,6 +61,36 @@ describe("Telegram callback boundary", () => {
 
       expect(answers).toEqual([undefined]);
       expect(replies).toEqual(["Finished"]);
+    }));
+});
+
+describe("what a tap is judged by", () => {
+  it("stops the clock at the answer, not at the acknowledgement behind it", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const acknowledgementMs = 150;
+      const ctx = {
+        callbackQuery: { id: "slow-ack", data: "queue_home", message: { message_id: 3 } },
+        chat: { id: 100 },
+        from: { id: 42 },
+        // The acknowledgement goes out ahead of the queue and settles whenever
+        // the event loop returns to it. Production has seen 950 ms of that in a
+        // tap whose screen edit took 68 ms.
+        answerCallbackQuery: () => Bun.sleep(acknowledgementMs),
+        reply: async () => undefined,
+      } as unknown as Context;
+
+      const startedAt = performance.now();
+      const answeredAt = await withTapMeasurement(async () => {
+        acknowledgeCallback(ctx);
+        await runCallbackBoundary(ctx, backendDb, async () => undefined);
+        return currentTapMeasurement().answeredAt;
+      });
+
+      // The boundary still waits for the acknowledgement -- it just no longer
+      // bills the operator for it.
+      expect(performance.now() - startedAt).toBeGreaterThanOrEqual(acknowledgementMs);
+      expect(answeredAt).not.toBeNull();
+      expect((answeredAt ?? 0) - startedAt).toBeLessThan(acknowledgementMs / 2);
     }));
 });
 

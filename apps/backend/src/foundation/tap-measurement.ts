@@ -37,6 +37,18 @@ export type TapMeasurement = {
   providerCalls: number;
   /** Bot API cost by method name, in call order. */
   apiMethods: Map<string, { ms: number; calls: number }>;
+  /** When the operator had their answer, on the `performance.now()` clock, or
+   * null while the update is still producing one.
+   *
+   * The number an update is judged by has to be the wait the operator actually
+   * sits through, and that ends when the screen is drawn. It was being measured
+   * past that point: the callback boundary awaits the acknowledgement before it
+   * reports, and the acknowledgement is deliberately not on the operator's path
+   * -- it goes out ahead of the queue and settles whenever the event loop gets
+   * back to it. Production has it settling at 950 ms in a tap whose screen edit
+   * took 68 ms, so every average was carrying hundreds of milliseconds of a wait
+   * nobody had. */
+  answeredAt: number | null;
   /** Screen edits the guard did not send, because the screen already showed
    * exactly that. They are round trips this tap did not pay for, and without a
    * count of their own they are indistinguishable from a tap that had nothing
@@ -47,7 +59,7 @@ export type TapMeasurement = {
 const measurements = new AsyncLocalStorage<TapMeasurement>();
 
 function emptyMeasurement(): TapMeasurement {
-  return { apiSumMs: 0, apiCalls: 0, providerMs: 0, providerCalls: 0, apiMethods: new Map(), unchangedEdits: 0 };
+  return { apiSumMs: 0, apiCalls: 0, providerMs: 0, providerCalls: 0, apiMethods: new Map(), answeredAt: null, unchangedEdits: 0 };
 }
 
 /** Runs one update with its own account of what it spent waiting. The account
@@ -84,6 +96,14 @@ export function recordTapTelegramCall(method: string, durationMs: number): void 
   } else {
     measurement.apiMethods.set(method, { ms: durationMs, calls: 1 });
   }
+}
+
+/** The operator has their answer. Recorded by whoever produced it; the first
+ * caller wins, because an update answers once. An update that never says so --
+ * every plain message handler -- is answered when its handling ends. */
+export function recordTapAnswered(): void {
+  const measurement = measurements.getStore();
+  if (measurement && measurement.answeredAt === null) measurement.answeredAt = performance.now();
 }
 
 /** One screen edit the guard answered from what the message already shows. */

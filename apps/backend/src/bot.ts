@@ -21,7 +21,7 @@ import { type MessageKey, t } from "./foundation/i18n/index.js";
 import type { StudioLocale } from "./foundation/locale.js";
 import { log } from "./foundation/logger.js";
 import { currentTapMeasurement, tapApiMethods, withTapMeasurement } from "./foundation/tap-measurement.js";
-import { trackUsageAsync } from "./observability/usage.js";
+import { recordUsage, type UsageFeatureKey } from "./observability/usage.js";
 import { settingsService } from "./studio/services/settings.js";
 
 export function createBot(config: BackendConfig, backendDb: BackendDb): Bot | null {
@@ -56,7 +56,7 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
   const settingsMenu = buildSettingsMenu(config, backendDb, bot);
   const mainMenu = buildMainMenu(config, backendDb, settingsMenu);
   bot.use(async (ctx, next) => {
-    const startedAt = Date.now();
+    const startedAt = performance.now();
     const updateType = Object.keys(ctx.update).find((key) => key !== "update_id") ?? "unknown";
     // The log is written inside the measured scope so that a tap which throws
     // still reports what it spent. Reporting zero for a failure hid exactly the
@@ -64,11 +64,19 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
     await withTapMeasurement(async () => {
       let failure: unknown;
       try {
-        await trackUsageAsync(backendDb, "telegram.update.handle", next);
+        await next();
       } catch (error) {
         failure = error;
       }
       const measurement = currentTapMeasurement();
+      // Usage is recorded here rather than by wrapping `next`, because wrapping
+      // it timed the whole chain -- and the tail of that chain is the callback
+      // boundary waiting for an acknowledgement the operator was never waiting
+      // for. Every average this feature has ever reported carried that wait.
+      // An update that says when it answered is billed to then; a plain message
+      // handler never says, and is billed to the end of its own handling.
+      const answerMs = (measurement.answeredAt ?? performance.now()) - startedAt;
+      recordUsage(backendDb, "telegram.update.handle" satisfies UsageFeatureKey, failure === undefined, answerMs);
       const { apiSumMs, apiCalls, providerMs, providerCalls, unchangedEdits } = measurement;
       log(failure === undefined ? "info" : "warn", "operation timing", {
         operation: "telegram.update.handle",
@@ -80,11 +88,12 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
         apiMethods: tapApiMethods(measurement),
         unchangedEdits,
         // A message that starts a draft waits on the translator, and that wait
-        // is not Telegram's. Without this it was only the gap between totalMs
+        // is not Telegram's. Without this it was only the gap between answerMs
         // and apiSumMs, which named nothing.
         providerMs: Math.round(providerMs),
         providerCalls,
-        totalMs: Date.now() - startedAt,
+        // Arrival to answer, which is what `usage` is billed for too.
+        answerMs: Math.round(answerMs),
         ...(failure === undefined ? {} : { error: failure instanceof Error ? failure.message : String(failure) }),
       });
       if (failure !== undefined) throw failure;
