@@ -8,7 +8,8 @@ const DEPLOYMENTS = {
 } as const;
 type Deployment = keyof typeof DEPLOYMENTS;
 const DEPLOYMENT_NAMES = Object.keys(DEPLOYMENTS).join(", ");
-const USAGE = `usage: bun run ops:prod [--as ${DEPLOYMENT_NAMES}] <command> [arguments]`;
+const USAGE = `usage: bun run ops:prod [--as ${DEPLOYMENT_NAMES}] <command> [arguments]
+       bun run ops:prod [--as ${DEPLOYMENT_NAMES}] logs [--since 6h] [--grep TEXT] [--lines N]`;
 
 const argv = process.argv.slice(2);
 if (argv.length === 0) {
@@ -47,8 +48,52 @@ console.error(`ops:prod → ${deployment} (${container})`);
  * container that cannot see it. Ship it in, run against the copy, remove it. */
 const FILE_FLAGS = new Set(["--file", "--x-file"]);
 
-const exitCode = await runProductionCommand();
+/** What `logs` accepts. Deliberately three: a window, a fixed-string filter and
+ * a tail. Anything more is a shell, and the shell is one ssh away. */
+const LOG_FLAGS = new Set(["--since", "--grep", "--lines"]);
+
+const exitCode = argv[0] === "logs" ? await readProductionLog() : await runProductionCommand();
 process.exit(exitCode);
+
+/**
+ * The container's own stdout, which no operation can reach.
+ *
+ * Every other command here is `docker exec` into the Studio, and the operations
+ * registry is the catalogue of what the Studio can do to itself. Reading its log
+ * is not one of those things: the log is a file Docker keeps on the host, and
+ * the container has no way to see it. So this lives beside the ssh rather than
+ * behind an operation, and `guide` does not list it.
+ *
+ * It is worth the exception because the timing lines are the only record of how
+ * long a tap, a publish or a render actually took, and every question about them
+ * is asked after the fact. Note what that costs: `docker compose up` on a new
+ * image builds a new container, and the replaced one's log goes with it, so this
+ * reads back to the last deployment and no further -- not the couple of weeks
+ * the retention in `studio.compose.yaml` sizes for.
+ */
+async function readProductionLog(): Promise<number> {
+  const options = new Map<string, string>();
+  for (let index = 1; index < argv.length; index += 2) {
+    const flag = argv[index] ?? "";
+    const value = argv[index + 1];
+    if (!LOG_FLAGS.has(flag) || value === undefined) {
+      console.error(`logs takes ${[...LOG_FLAGS].join(", ")}, each with a value`);
+      return 1;
+    }
+    options.set(flag, value);
+  }
+  const filter = options.get("--grep");
+  // One pipeline on the host, so the whole log never crosses the wire to be
+  // filtered here: a fortnight of a busy Studio is hundreds of megabytes.
+  const pipeline = [
+    remoteCommand(["docker", "logs", "--since", options.get("--since") ?? "1h", container]),
+    "2>&1",
+    ...(filter === undefined ? [] : ["|", remoteCommand(["grep", "-F", "--", filter])]),
+    "|",
+    remoteCommand(["tail", "-n", options.get("--lines") ?? "200"]),
+  ].join(" ");
+  return await run(["ssh", sshTarget, pipeline]);
+}
 
 async function runProductionCommand(): Promise<number> {
   const shipped: string[] = [];

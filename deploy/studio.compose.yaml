@@ -67,8 +67,10 @@ services:
     # The default 10 MB x 3 held under a day of this Studio's logs, and the
     # timing lines they carry are the only record of how long a publish, a
     # dashboard render or a bot tap actually took -- a question that is always
-    # asked after the fact. 50 MB x 5 is a couple of weeks and costs disk the
-    # host has.
+    # asked after the fact. 50 MB x 5 costs disk the host has and is weeks of
+    # room, but the size is not the binding limit: a new image means a new
+    # container, and the replaced one's log goes with it, so in practice this
+    # reaches back to the last deployment. `ops:prod logs` reads what is left.
     logging:
       driver: json-file
       options:
