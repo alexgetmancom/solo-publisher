@@ -32,6 +32,8 @@ function encodeFixture(target: string, size: string): void {
 }
 
 const ffmpegCalls: string[][] = [];
+/** Set by the case that needs an encode to die with its output half-written. */
+let ffmpegDiesAfterWriting = false;
 const instantSleep = async (_milliseconds: number): Promise<void> => {};
 mock.module("../src/foundation/runtime/ffmpeg.js", () => {
   return {
@@ -42,6 +44,7 @@ mock.module("../src/foundation/runtime/ffmpeg.js", () => {
       const outputs = args.filter((arg) => /\.(mp4|jpg)$/.test(arg) && arg !== args[args.indexOf("-i") + 1]);
       if (!outputs.length) throw new Error("ffmpeg output path is missing");
       for (const output of outputs) fs.writeFileSync(output, "fake story image content");
+      if (ffmpegDiesAfterWriting) throw new Error("media_processing_failed: ffmpeg exit 137: process was killed (likely out of memory)");
     },
   };
 });
@@ -114,6 +117,26 @@ describe("story publishers", () => {
     expect(graph(remote)).toBe(graph(local).replace(",split=2[out0][out1]", ",format=nv12,hwupload,split=2[out0][out1]"));
     expect(local.filter((arg) => arg === "-b:v")).toEqual(remote.filter((arg) => arg === "-b:v"));
     expect(local[local.indexOf("telegram.mp4") - 8]).toBe(remote[remote.indexOf("telegram.mp4") - 8]);
+  });
+
+  it("leaves nothing behind under the name that means the variant is ready", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-story-partial-"));
+    const source = path.join(dir, "source.mp4");
+    encodeFixture(source, "1080x1920");
+    // An encode killed halfway used to leave a truncated MP4 under the final
+    // name, and `moov atom not found` was then published as a finished Story.
+    ffmpegDiesAfterWriting = true;
+    try {
+      await expect(generateStoryMedia([{ type: "video", local_path: source }], 4, "en", loadTestConfig({ DATA_DIR: dir }))).rejects.toThrow(
+        "killed",
+      );
+      const storyDir = path.join(dir, "story-media");
+      const left = fs.existsSync(storyDir) ? fs.readdirSync(storyDir).filter((name) => name.includes("story-")) : [];
+      expect(left).toEqual([]);
+    } finally {
+      ffmpegDiesAfterWriting = false;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("uses VAAPI only in the remote worker recipe", () => {

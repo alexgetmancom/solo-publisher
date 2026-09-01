@@ -16,6 +16,7 @@ import { log } from "../foundation/logger.js";
 import { probeMediaMetadata, runFfmpeg } from "../foundation/runtime/ffmpeg.js";
 import { withTimeout } from "../foundation/runtime/timeout.js";
 import { processVerticalMediaRemotely } from "./remote-media-processor.js";
+import { temporaryPath } from "./site-media-storage.js";
 import type { PublishMediaItem } from "./social/payload.js";
 
 /** Where Story artefacts live, for both the prepared ones and the recovered ones. */
@@ -40,9 +41,6 @@ export async function renderStoryVariants(
 ): Promise<void> {
   if (config.MEDIA_PROCESSOR_PROVIDER === "remote_http") await transformRemotely(source, output, telegramOutput, video, config, fetchImpl);
   else await transformLocally(source, output, telegramOutput, video, config);
-  await withTimeout(fs.promises.chmod(output, 0o664), 30_000, "story_output_finalize_timeout");
-  if (telegramOutput && fs.existsSync(telegramOutput))
-    await withTimeout(fs.promises.chmod(telegramOutput, 0o664), 30_000, "story_output_finalize_timeout");
 }
 
 /**
@@ -70,11 +68,33 @@ async function transformLocally(
   const blur = needsVerticalBlur(metadata.width, metadata.height);
   // A probe that reports no duration would divide the Telegram budget by zero.
   const duration = metadata.durationSeconds || STORY_MAX_DURATION_SECONDS;
+  // ffmpeg writes its outputs in place, so a process killed mid-encode -- OOM,
+  // a container restart -- left a truncated MP4 sitting under the name that
+  // means "this variant is ready". `moov atom not found`, handed to Instagram
+  // as a finished Story. Encode beside the name and move in when it is whole:
+  // then the file being there is the record that it was made, as claimed.
+  const targets = [output, ...(telegramOutput ? [telegramOutput] : [])];
+  const partials = new Map(targets.map((target) => [target, temporaryPath(target)]));
+  const partial = (target: string) => partials.get(target) ?? target;
   const args =
     video && telegramOutput
-      ? localStoryFfmpegArgs(source, output, telegramOutput, telegramVideoKbps(duration, metadata.audioBitrate ?? 0), blur)
-      : verticalImageFfmpegArgs(source, output, blur);
-  await withTimeout(runFfmpeg(args), storyTransformTimeout(config), "story_transform_timeout");
+      ? localStoryFfmpegArgs(
+          source,
+          partial(output),
+          partial(telegramOutput),
+          telegramVideoKbps(duration, metadata.audioBitrate ?? 0),
+          blur,
+        )
+      : verticalImageFfmpegArgs(source, partial(output), blur);
+  try {
+    await withTimeout(runFfmpeg(args), storyTransformTimeout(config), "story_transform_timeout");
+    for (const target of targets) {
+      await withTimeout(fs.promises.chmod(partial(target), 0o664), 30_000, "story_output_finalize_timeout");
+      await withTimeout(fs.promises.rename(partial(target), target), 30_000, "story_output_finalize_timeout");
+    }
+  } finally {
+    for (const target of targets) await fs.promises.rm(partial(target), { force: true }).catch(() => {});
+  }
 }
 
 export async function generateStoryMedia(
