@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import * as ts from "../../../tools/layer-checker/node_modules/typescript/lib/typescript.js";
 import { publicationActionNames } from "../src/bot/publication-actions.js";
-import { SCREEN_ARGUMENTS, type ScreenId } from "../src/bot/screen-callback.js";
+import { SCREEN_BUTTONS, type ScreenId } from "../src/bot/screen-callback.js";
 import { SCREEN_ROUTES } from "../src/bot/screen-routes.js";
 
 /** Every button in the bot, read out of the source rather than out of a habit.
@@ -61,8 +61,8 @@ function screenEmissions(): Emission[] {
 describe("bot button graph", () => {
   it("emits only declared screens, with the arguments they declare", () => {
     for (const emission of screenEmissions()) {
-      expect(SCREEN_ARGUMENTS, emission.location).toHaveProperty(emission.id);
-      const declared = SCREEN_ARGUMENTS[emission.id as ScreenId] as readonly string[] | undefined;
+      expect(SCREEN_BUTTONS, emission.location).toHaveProperty(emission.id);
+      const declared = SCREEN_BUTTONS[emission.id as ScreenId]?.args as readonly string[] | undefined;
       if (!declared || emission.argumentCount === null) continue;
       expect(emission.argumentCount, emission.location).toBe(declared.length);
     }
@@ -72,12 +72,12 @@ describe("bot button graph", () => {
     const emitted = new Set(screenEmissions().map((emission) => emission.id));
     // A screen nothing emits is a screen nobody can reach: the analytics
     // archive lived like that for months, and so did a whole video wizard step.
-    const unreachable = Object.keys(SCREEN_ARGUMENTS).filter((id) => !emitted.has(id));
+    const unreachable = Object.keys(SCREEN_BUTTONS).filter((id) => !emitted.has(id));
     expect(unreachable).toEqual([]);
   });
 
   it("routes every declared screen", () => {
-    expect(Object.keys(SCREEN_ROUTES).sort()).toEqual(Object.keys(SCREEN_ARGUMENTS).sort());
+    expect(Object.keys(SCREEN_ROUTES).sort()).toEqual(Object.keys(SCREEN_BUTTONS).sort());
   });
 
   it("builds every button's callback data through a builder, never a literal", () => {
@@ -108,9 +108,9 @@ describe("bot button graph", () => {
   it("keeps a screen button inside Telegram's 64 bytes", () => {
     // Row ids, offsets and pages are numbers; a deployment revision is a Git
     // SHA and gets its own bound in the deployment test.
-    const budget = Object.entries(SCREEN_ARGUMENTS)
+    const budget = Object.entries(SCREEN_BUTTONS)
       .filter(([id]) => !id.startsWith("deploy_"))
-      .map(([id, args]) => id.length + (args as readonly string[]).length * 11);
+      .map(([id, button]) => id.length + button.args.length * 11);
     expect(Math.max(...budget)).toBeLessThanOrEqual(64);
     expect(publicationActionNames("post").length + publicationActionNames("video").length).toBeGreaterThan(0);
   });

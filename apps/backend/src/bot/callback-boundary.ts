@@ -2,10 +2,11 @@ import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import { describeError } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
-import { currentTapMeasurement } from "../foundation/tap-measurement.js";
+import { currentTapMeasurement, tapApiMethods } from "../foundation/tap-measurement.js";
 import { settingsService } from "../studio/services/settings.js";
 import { callbackToast } from "./callback-effects.js";
 import { showMessage } from "./effects.js";
+import { supersedableScreen } from "./screen-callback.js";
 
 const CALLBACK_DEDUPLICATION_TTL_MS = 15 * 60_000;
 const CALLBACK_DEDUPLICATION_LIMIT = 10_000;
@@ -27,6 +28,10 @@ const seenCallbackQueries = new Map<string, number>();
  * Telegram accepts exactly one answer per callback, so the redirect that turns a
  * later answer into a chat message is installed here too -- before any handler
  * can run and try to answer for itself.
+ *
+ * This is also where a tap claims its place in the supersession, for the same
+ * reason: the claim has to be made in arrival order, and everything downstream
+ * of `sequentialize` runs in it only one tap at a time.
  */
 export function acknowledgeCallback(ctx: Context): void {
   const callbackId = ctx.callbackQuery?.id;
@@ -35,7 +40,7 @@ export function acknowledgeCallback(ctx: Context): void {
   if (!claimCallbackQuery(callbackId)) {
     // A redelivery of something already handled. Answer it so it stops spinning,
     // and mark it for the boundary to drop.
-    taps.set(ctx, { receivedAt, duplicate: true, acknowledgement: answerCallbackSafely(ctx) });
+    taps.set(ctx, { receivedAt, duplicate: true, acknowledgement: answerCallbackSafely(ctx), claim: undefined });
     return;
   }
   const answer = ctx.answerCallbackQuery.bind(ctx);
@@ -43,18 +48,29 @@ export function acknowledgeCallback(ctx: Context): void {
   const acknowledgement = answer()
     .then(() => undefined)
     .catch((error) => log("warn", "Failed to acknowledge Telegram callback query", { error: String(error) }));
-  taps.set(ctx, { receivedAt, duplicate: false, acknowledgement });
+  taps.set(ctx, { receivedAt, duplicate: false, acknowledgement, claim: claimSupersession(ctx) });
 }
 
-type Tap = { receivedAt: number; duplicate: boolean; acknowledgement: Promise<void> };
+type Tap = { receivedAt: number; duplicate: boolean; acknowledgement: Promise<void>; claim: Claim | undefined };
 const taps = new WeakMap<Context, Tap>();
 
 /** Runs every callback downstream of the bot's authorization middleware. */
 export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, next: () => Promise<void>): Promise<void> {
-  const tap = taps.get(ctx) ?? { receivedAt: performance.now(), duplicate: false, acknowledgement: Promise.resolve() };
+  const tap = taps.get(ctx) ?? { receivedAt: performance.now(), duplicate: false, acknowledgement: Promise.resolve(), claim: undefined };
   const startedAt = performance.now();
   if (tap.duplicate) {
     await tap.acknowledgement;
+    return;
+  }
+  // The operator has already tapped this same button again, and the tap behind
+  // this one draws whatever this one would have. Drawing it first costs a round
+  // trip nobody ever sees -- a burst through the queue paid one per page.
+  if (tap.claim && isSuperseded(tap.claim)) {
+    await tap.acknowledgement;
+    log("info", "Telegram callback superseded", {
+      callback: callbackRoute(ctx.callbackQuery?.data),
+      queuedMs: Math.round(startedAt - tap.receivedAt),
+    });
     return;
   }
   let acknowledgedAt = tap.receivedAt;
@@ -71,7 +87,9 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
   } finally {
     handlerFinishedAt = performance.now();
     await tap.acknowledgement;
-    const { apiSumMs, apiCalls, providerMs, providerCalls } = currentTapMeasurement();
+    if (tap.claim) releaseSupersession(tap.claim);
+    const measurement = currentTapMeasurement();
+    const { apiSumMs, apiCalls, providerMs, providerCalls, unchangedEdits } = measurement;
     const totalMs = performance.now() - tap.receivedAt;
     log("info", "Telegram callback timing", {
       callback: callbackRoute(ctx.callbackQuery?.data),
@@ -86,6 +104,8 @@ export async function runCallbackBoundary(ctx: Context, backendDb: BackendDb, ne
       // apiCalls without inventing a negative "local" duration.
       apiSumMs: Math.round(apiSumMs),
       apiCalls,
+      apiMethods: tapApiMethods(measurement),
+      unchangedEdits,
       providerMs: Math.round(providerMs),
       providerCalls,
       totalMs: Math.round(totalMs),
@@ -151,4 +171,38 @@ async function replySafely(ctx: Context, text: string): Promise<void> {
   } catch (error) {
     log("warn", "Failed to send Telegram callback result", { error: String(error) });
   }
+}
+
+/** One tap's place in the queue for a button.
+ *
+ * A tap is superseded only by a later tap on the *same button of the same
+ * message*: that is the one relation under which the newer tap is known to do
+ * everything the older would have done, arguments included. Two different
+ * buttons, or the same button on two cards, never stand in for each other.
+ */
+type Claim = { key: string; sequence: number };
+const claims = new Map<string, number>();
+let taken = 0;
+
+function claimSupersession(ctx: Context): Claim | undefined {
+  const data = ctx.callbackQuery?.data;
+  const message = ctx.callbackQuery?.message;
+  const messageId = message && "message_id" in message ? message.message_id : null;
+  if (!data || messageId == null || ctx.chat?.id == null) return undefined;
+  const screen = supersedableScreen(data);
+  if (!screen) return undefined;
+  taken += 1;
+  const claim = { key: `${ctx.chat.id}:${messageId}:${screen}`, sequence: taken };
+  claims.set(claim.key, claim.sequence);
+  return claim;
+}
+
+function isSuperseded(claim: Claim): boolean {
+  return claims.get(claim.key) !== claim.sequence;
+}
+
+/** The last tap holding a key is the one that drew, so nothing has to be kept
+ * once it is done: the map holds only what is still waiting. */
+function releaseSupersession(claim: Claim): void {
+  if (claims.get(claim.key) === claim.sequence) claims.delete(claim.key);
 }

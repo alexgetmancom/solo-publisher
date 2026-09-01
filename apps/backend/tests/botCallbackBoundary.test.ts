@@ -63,6 +63,64 @@ describe("Telegram callback boundary", () => {
     }));
 });
 
+/** A tap on one button of one message, which is the only relation under which
+ * one tap can stand in for another. */
+function screenContext(id: string, data: string, messageId: number): Context {
+  return {
+    callbackQuery: { id, data, message: { message_id: messageId } },
+    chat: { id: 100 },
+    from: { id: 42 },
+    answerCallbackQuery: async () => undefined,
+    reply: async () => undefined,
+  } as unknown as Context;
+}
+
+describe("superseded taps", () => {
+  it("drops the page nobody would have seen and draws the one behind it", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const drawn: string[] = [];
+      const first = screenContext("burst-1", "queue_page:1", 9);
+      const second = screenContext("burst-2", "queue_page:2", 9);
+      // Both arrive before either is handled, which is what a burst is.
+      acknowledgeCallback(first);
+      acknowledgeCallback(second);
+
+      await runCallbackBoundary(first, backendDb, async () => void drawn.push("page 1"));
+      await runCallbackBoundary(second, backendDb, async () => void drawn.push("page 2"));
+
+      expect(drawn).toEqual(["page 2"]);
+    }));
+
+  it("draws every tap on a button that is not supersedable", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const drawn: string[] = [];
+      const first = screenContext("toggle-1", "intake_target:youtube", 9);
+      const second = screenContext("toggle-2", "intake_target:threads_ru", 9);
+      acknowledgeCallback(first);
+      acknowledgeCallback(second);
+
+      await runCallbackBoundary(first, backendDb, async () => void drawn.push("youtube"));
+      await runCallbackBoundary(second, backendDb, async () => void drawn.push("threads"));
+
+      // Two toggles are two changes; the later one does not include the earlier.
+      expect(drawn).toEqual(["youtube", "threads"]);
+    }));
+
+  it("keeps the same button on two different cards apart", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const drawn: string[] = [];
+      const first = screenContext("card-1", "progress:4", 11);
+      const second = screenContext("card-2", "progress:5", 12);
+      acknowledgeCallback(first);
+      acknowledgeCallback(second);
+
+      await runCallbackBoundary(first, backendDb, async () => void drawn.push("card 11"));
+      await runCallbackBoundary(second, backendDb, async () => void drawn.push("card 12"));
+
+      expect(drawn).toEqual(["card 11", "card 12"]);
+    }));
+});
+
 describe("callback route grouping", () => {
   it("groups a menu button by its position, not by its payload hash", () => {
     // What production logged: the menu hash is raw bytes, so every tap on the

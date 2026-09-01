@@ -15,8 +15,13 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * be attributed to the translator only by reading what happened to be logged
  * next to it.
  *
- * Both halves are collected at a chokepoint every call already goes through --
- * the Bot API transformer and `externalFetch` -- so no screen has to be
+ * `apiSumMs` is in turn a sum over methods, and the sum cannot say whether a
+ * tap paid for one screen edit or for an edit plus a menu the plugin decided
+ * was outdated. The methods are named, so a tap that costs two round trips is
+ * visible as two round trips rather than as one slow one.
+ *
+ * All of it is collected at chokepoints every call already goes through -- the
+ * Bot API transformer and `externalFetch` -- so no screen has to be
  * instrumented and none can be forgotten. Concurrent requests overlap, so each
  * duration is deliberately a sum of request cost, not a partition of wall time.
  *
@@ -25,29 +30,66 @@ import { AsyncLocalStorage } from "node:async_hooks";
  * bill their calls to each other. Work outside a tap -- every worker cycle --
  * runs with no store and is counted by nobody.
  */
-export type TapMeasurement = { apiSumMs: number; apiCalls: number; providerMs: number; providerCalls: number };
+export type TapMeasurement = {
+  apiSumMs: number;
+  apiCalls: number;
+  providerMs: number;
+  providerCalls: number;
+  /** Bot API cost by method name, in call order. */
+  apiMethods: Map<string, { ms: number; calls: number }>;
+  /** Screen edits the guard did not send, because the screen already showed
+   * exactly that. They are round trips this tap did not pay for, and without a
+   * count of their own they are indistinguishable from a tap that had nothing
+   * to draw. */
+  unchangedEdits: number;
+};
 
 const measurements = new AsyncLocalStorage<TapMeasurement>();
+
+function emptyMeasurement(): TapMeasurement {
+  return { apiSumMs: 0, apiCalls: 0, providerMs: 0, providerCalls: 0, apiMethods: new Map(), unchangedEdits: 0 };
+}
 
 /** Runs one update with its own account of what it spent waiting. The account
  * is read back with `currentTapMeasurement` from inside the run, so a tap that
  * throws can still report before it rethrows. */
 export function withTapMeasurement<T>(run: () => Promise<T>): Promise<T> {
-  return measurements.run({ apiSumMs: 0, apiCalls: 0, providerMs: 0, providerCalls: 0 }, run);
+  return measurements.run(emptyMeasurement(), run);
 }
 
 /** The account of the update currently being handled, for a caller that wants to
  * report before its own work has finished. */
 export function currentTapMeasurement(): TapMeasurement {
-  return measurements.getStore() ?? { apiSumMs: 0, apiCalls: 0, providerMs: 0, providerCalls: 0 };
+  return measurements.getStore() ?? emptyMeasurement();
+}
+
+/** The Bot API cost by method, as a log line carries it: rounded, and omitted
+ * entirely when the tap made no call, so an update that only read the database
+ * does not log an empty object. */
+export function tapApiMethods(measurement: TapMeasurement): Record<string, { ms: number; calls: number }> | undefined {
+  if (measurement.apiMethods.size === 0) return undefined;
+  return Object.fromEntries([...measurement.apiMethods].map(([method, cost]) => [method, { ms: Math.round(cost.ms), calls: cost.calls }]));
 }
 
 /** One finished Telegram Bot API call. */
-export function recordTapTelegramCall(durationMs: number): void {
+export function recordTapTelegramCall(method: string, durationMs: number): void {
   const measurement = measurements.getStore();
   if (!measurement) return;
   measurement.apiSumMs += durationMs;
   measurement.apiCalls += 1;
+  const cost = measurement.apiMethods.get(method);
+  if (cost) {
+    cost.ms += durationMs;
+    cost.calls += 1;
+  } else {
+    measurement.apiMethods.set(method, { ms: durationMs, calls: 1 });
+  }
+}
+
+/** One screen edit the guard answered from what the message already shows. */
+export function recordTapUnchangedEdit(): void {
+  const measurement = measurements.getStore();
+  if (measurement) measurement.unchangedEdits += 1;
 }
 
 /** One finished call to any other provider: translation, a platform API, media. */

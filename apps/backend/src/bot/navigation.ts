@@ -15,7 +15,21 @@ import { showStreamScreen } from "./stream-screen.js";
 const MAIN_MENU_ID = "main-menu";
 
 export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, settingsMenu: Menu<Context>): Menu<Context> {
-  const menu = new Menu<Context>(MAIN_MENU_ID);
+  const menu = new Menu<Context>(MAIN_MENU_ID, {
+    // The plugin hashes each button's own label into its callback data, and the
+    // queue button here carries a live count: every publication that went out in
+    // the background turned the operator's next tap on it into "Menu was
+    // outdated, try again" -- two Bot API calls, no handler, and a tap to make
+    // over. A fingerprint replaces that hash, so a label that moved on its own
+    // no longer counts as a menu that moved.
+    //
+    // With a fingerprint the plugin stops range-checking the tapped position, so
+    // this has to name everything the *shape* depends on or a stale tap reaches
+    // a button that is not there. The shape depends on the streams button and
+    // nothing else; the locale is in for the same reason it is in every label.
+    fingerprint: (ctx) =>
+      `${settingsService(backendDb).locale(Number(ctx.from?.id))}:${createStudioServices(backendDb, config).streams.connected()}`,
+  });
   // Three entities, three ways in: a text publication, a video publication and
   // the stream that is running right now. They share no step and no card, and
   // one entry point that asked which of them this was made the operator answer

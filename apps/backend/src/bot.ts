@@ -13,13 +13,14 @@ import { parseScreenCallback } from "./bot/screen-callback.js";
 import { SCREEN_ROUTES } from "./bot/screen-routes.js";
 import { buildSettingsMenu, handleSettingsMessage, showSettings } from "./bot/settings/index.js";
 import { handleStreamMessage, showStreamScreen } from "./bot/stream-screen.js";
+import { installUnchangedEditGuard } from "./bot/unchanged-edits.js";
 import type { BackendDb } from "./db/client.js";
 import { actorFromTelegramUser } from "./foundation/actors.js";
 import type { BackendConfig } from "./foundation/config.js";
 import { type MessageKey, t } from "./foundation/i18n/index.js";
 import type { StudioLocale } from "./foundation/locale.js";
 import { log } from "./foundation/logger.js";
-import { currentTapMeasurement, withTapMeasurement } from "./foundation/tap-measurement.js";
+import { currentTapMeasurement, tapApiMethods, withTapMeasurement } from "./foundation/tap-measurement.js";
 import { trackUsageAsync } from "./observability/usage.js";
 import { settingsService } from "./studio/services/settings.js";
 
@@ -36,6 +37,12 @@ export function createBot(config: BackendConfig, backendDb: BackendDb): Bot | nu
   // send the same message twice.
   installApiTiming(bot);
   bot.api.config.use(autoRetry({ maxRetryAttempts: 3, maxDelaySeconds: 30, rethrowInternalServerErrors: true }));
+  // Installed last, so it wraps the retry and the timing: a call it refuses to
+  // make is not a call that was retried, and not a round trip anyone is billed
+  // for. It still runs inside the menu plugin's own transformer, which grammY
+  // installs per update and therefore outside every transformer installed here,
+  // so the keyboard it compares has already been rendered.
+  installUnchangedEditGuard(bot);
   bindBotHandlers(bot, config, backendDb);
   void bot.api
     .setMyCommands([{ command: "start", description: t("en", "bot.command-start") }])
@@ -61,7 +68,8 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
       } catch (error) {
         failure = error;
       }
-      const { apiSumMs, apiCalls, providerMs, providerCalls } = currentTapMeasurement();
+      const measurement = currentTapMeasurement();
+      const { apiSumMs, apiCalls, providerMs, providerCalls, unchangedEdits } = measurement;
       log(failure === undefined ? "info" : "warn", "operation timing", {
         operation: "telegram.update.handle",
         updateId: ctx.update.update_id,
@@ -69,6 +77,8 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
         success: failure === undefined,
         apiSumMs: Math.round(apiSumMs),
         apiCalls,
+        apiMethods: tapApiMethods(measurement),
+        unchangedEdits,
         // A message that starts a draft waits on the translator, and that wait
         // is not Telegram's. Without this it was only the gap between totalMs
         // and apiSumMs, which named nothing.
