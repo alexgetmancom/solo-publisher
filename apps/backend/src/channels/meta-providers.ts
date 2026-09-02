@@ -53,7 +53,12 @@ export const META_PROVIDERS: Record<MetaOauthPlatform, MetaProvider> = {
     // Insights is not optional here: this Studio collects the metrics of what
     // it publishes, and a token minted without it is accepted everywhere except
     // the insights call, which fails for the life of the token.
-    scope: "threads_basic,threads_content_publish,threads_manage_insights",
+    // Replies are the same trap, and it already cost two half-published posts:
+    // a chain continues by creating a container with `reply_to_id`, which needs
+    // `threads_manage_replies`. A token minted without it publishes the first
+    // message and is refused on every continuation -- with an empty HTTP 500,
+    // not a permission error, so it reads as the platform being down.
+    scope: "threads_basic,threads_content_publish,threads_manage_replies,threads_manage_insights",
     authorizeExtras: {},
     appId: (config) => config.THREADS_APP_ID,
     appSecret: (config) => config.THREADS_APP_SECRET,

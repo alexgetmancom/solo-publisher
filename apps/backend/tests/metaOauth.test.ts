@@ -29,13 +29,20 @@ describe("Meta browser OAuth", () => {
     expect(authorize.searchParams.get("state")).toBe(state);
   });
 
-  it("asks for the permissions this Studio actually uses, insights included", () => {
+  it("asks for the permissions this Studio actually uses, insights and replies included", () => {
     // A Threads token minted without insights publishes fine and fails every
     // metrics call for the life of the token, which reads as "analytics are
-    // broken" rather than "this token cannot read them".
+    // broken" rather than "this token cannot read them". Without
+    // `threads_manage_replies` the same token publishes the first message of a
+    // chain and is refused on every continuation, with an empty HTTP 500.
     const threadsState = new URL(metaOauthConnectUrl(config, "threads", "ru", now)).searchParams.get("state") ?? "";
     const threads = new URL(metaOauthAuthorizeUrl(config, threadsState, now));
-    expect(threads.searchParams.get("scope")?.split(",")).toEqual(["threads_basic", "threads_content_publish", "threads_manage_insights"]);
+    expect(threads.searchParams.get("scope")?.split(",")).toEqual([
+      "threads_basic",
+      "threads_content_publish",
+      "threads_manage_replies",
+      "threads_manage_insights",
+    ]);
 
     const instagramState = new URL(metaOauthConnectUrl(config, "instagram", "ru", now)).searchParams.get("state") ?? "";
     const instagram = new URL(metaOauthAuthorizeUrl(config, instagramState, now));
