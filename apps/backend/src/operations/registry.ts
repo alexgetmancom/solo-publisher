@@ -13,6 +13,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
+import { engagementService } from "../engagement/service.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
@@ -30,7 +31,14 @@ import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
-import { buildOperationsGuide, formatOperationsGuide, type OperationCatalogEntry } from "./guide.js";
+import {
+  buildOperationsGuide,
+  formatOperationsGuide,
+  OPERATION_SECTIONS,
+  type OperationCatalogEntry,
+  type OperationSection,
+} from "./guide.js";
+import { journalEvents } from "./journal.js";
 import {
   cancelPostDraft,
   cancelVideoDraft,
@@ -83,6 +91,13 @@ export type OperationContext = {
 
 export type OperationDef<S extends z.ZodType = z.ZodType> = {
   summary: string;
+  /** Which part of the catalog this is read in. Required, so an operation
+   * cannot be added without saying where an operator would go looking for it. */
+  section: OperationSection;
+  /** The question this command is the answer to the start of, when it is one.
+   * `guide` builds its symptom index from these, and that index is what a
+   * caller reads before it knows any section name. */
+  startHere?: string;
   schema: S;
   mutates: boolean;
   note?: string;
@@ -196,17 +211,22 @@ function runRepair(context: OperationContext, action: string, input: Record<stri
 
 const operationDefs = {
   guide: operation({
+    section: "health",
     summary: "Which route to run operations through, and the command catalog this build accepts.",
-    schema: z.object({}),
+    schema: z.object({
+      section: z.enum(OPERATION_SECTIONS).optional().describe("expand one section into full entries"),
+      all: z.boolean().default(false).describe("expand every section at once"),
+    }),
     mutates: false,
     // Probes a host path and the launcher's local .env.local; neither is
     // meaningful to a remote caller.
     agent: false,
-    note: "start here for any worker, queue, configuration or publication question",
-    handler: (context) => buildOperationsGuide(context.dbPath, operationCatalog()),
+    note: "start here for any worker, queue, configuration or publication question; it answers with a symptom index and section names, and `--section` expands one",
+    handler: (context, input) => buildOperationsGuide(context.dbPath, operationCatalog(), { section: input.section, all: input.all }),
     format: formatOperationsGuide,
   }),
   settings: operation({
+    section: "studio",
     summary: "Studio settings as the bot screens hold them, and what the last daily news digests did.",
     note: "A failed digest records its error and is not due again for a day, so `runs` is where a missing digest is explained.",
     schema: z.object({}),
@@ -215,6 +235,7 @@ const operationDefs = {
     handler: (context) => settingsReport(context.db(), context.config()),
   }),
   "studio-profile": operation({
+    section: "studio",
     summary: "What this Studio publishes as, where it publishes by default, its time zone, public site switch and video timing.",
     schema: z.object({}),
     mutates: false,
@@ -222,6 +243,7 @@ const operationDefs = {
     handler: (context) => createStudioServices(context.db(), context.config()).settings.studioProfile(),
   }),
   "studio-profile-set": operation({
+    section: "studio",
     summary: "Change this Studio's identity, time zone, public site switch or video timing.",
     note: "Takes effect on the next request; no restart. Only the options given are changed, and each locale-keyed option replaces both languages at once.",
     schema: z.object({
@@ -239,7 +261,7 @@ const operationDefs = {
         .transform((value) => (value == null ? undefined : (JSON.parse(value) as LocalizedProfiles))),
     }),
     mutates: true,
-    agent: true,
+    agent: false,
     journalRef: () => "studio:profile",
     handler: (context, input) =>
       createStudioServices(context.db(), context.config()).settings.setStudioProfile({
@@ -255,6 +277,8 @@ const operationDefs = {
       }),
   }),
   live: operation({
+    section: "studio",
+    startHere: "a stream is on the air and something about it is wrong",
     summary: "Every surface this Studio streams on, and what each is showing right now.",
     note: "Twitch carries a channel title that survives the stream ending; YouTube carries a broadcast that exists only around one. Between streams a YouTube channel has nothing to edit, which is the normal answer and not a failure.",
     schema: z.object({}),
@@ -263,6 +287,7 @@ const operationDefs = {
     handler: (context) => streamService(context.db(), context.config()).current(context.fetchImpl),
   }),
   "live-set": operation({
+    section: "studio",
     summary: "Change the title or the description of the running stream, everywhere it is running.",
     note: "One line goes to every connected surface, and each answers for itself: Twitch takes a title off the air, YouTube has nothing to rename until a broadcast exists, and only YouTube has a description.",
     schema: z
@@ -286,14 +311,17 @@ const operationDefs = {
     },
   }),
   "live-say": operation({
+    section: "studio",
     summary: "Say one line in the chat of every stream that is on the air.",
     note: "It goes out as the channel and cannot be taken back, and it is never retried: neither platform offers a deduplication key, so a line that arrived twice is two lines an audience reads.",
     schema: z.object({ message: example(z.string().trim().min(1), "Погнали").describe("the chat message") }),
     mutates: true,
-    agent: true,
+    agent: false,
     handler: (context, input) => streamService(context.db(), context.config()).apply("chat", input.message, context.fetchImpl),
   }),
   status: operation({
+    section: "health",
+    startHere: "is this deployment alive and are its workers running",
     summary: "Worker heartbeats, publication counts and metric schedule health.",
     schema: z.object({}),
     mutates: false,
@@ -301,6 +329,8 @@ const operationDefs = {
     handler: (context) => compactOperationsStatus(context.config(), context.db()),
   }),
   doctor: operation({
+    section: "health",
+    startHere: "a fresh deployment is not working",
     summary: "Configuration, data directories and platform credentials for this deployment.",
     schema: z.object({}),
     mutates: false,
@@ -324,14 +354,17 @@ const operationDefs = {
     },
   }),
   "dates-repair": operation({
+    section: "health",
     summary: "Make every stored date a date: normalise SQLite's own spelling, drop readings stamped with a moment that never happened.",
     schema: z.object({ apply: applyOption }),
     mutates: true,
-    agent: true,
+    agent: false,
     note: "run when `audit` reports storedDates; fix whatever wrote them first, or they come back",
     handler: (context, input) => repairStoredDates(context.db(), input.apply),
   }),
   audit: operation({
+    section: "health",
+    startHere: "something is failing and it is not clear what",
     summary: "Failed jobs, stuck targets, publication inconsistencies across both pipelines, and stored dates that are not dates.",
     note: "event counts cover the last 30 days, reported as `eventsSince`; consistency, delivery state and `storedDates` are current, not windowed. A non-empty `storedDates` means a column is holding a value every query will compare as text and no report will show as wrong: fix the writer, then the rows",
     schema: z.object({}),
@@ -339,7 +372,58 @@ const operationDefs = {
     agent: true,
     handler: (context) => auditOperations(context.db()),
   }),
+  events: operation({
+    section: "health",
+    startHere: "a bug report was filed, or the journal recorded something and nothing shows it",
+    summary: "The journal itself: what was recorded, filtered by family, severity, publication or time.",
+    note: "`audit` counts the delivery window and `timeline` reads one publication; this reads everything else, which is where a feedback report, a restart loop and a token expiry warning land. `--type` matches a prefix, so `runtime.` or `mcp.` reads a whole family.",
+    schema: z.object({
+      since: example(isoInstant, "2026-08-27T14:01:34Z").optional().describe("only events at or after this instant"),
+      type: example(z.string().trim().min(1), "mcp.").optional().describe("event type, or a prefix of one"),
+      severity: z.enum(["info", "warn", "error"]).optional().describe("restrict to one severity"),
+      ref: refOption.optional(),
+      limit: z.coerce.number().int().min(1).max(500).default(50).describe("how many of the newest to return"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) =>
+      journalEvents(context.db(), {
+        since: input.since,
+        type: input.type,
+        severity: input.severity,
+        ref: input.ref,
+        limit: input.limit,
+      }),
+  }),
+  dashboard: operation({
+    section: "analytics",
+    startHere: "a number on the analytics screen looks wrong",
+    summary: "One section of the analytics dashboard, exactly as the Studio screens draw it.",
+    note: "The same computation the screen caches, run here against this database: a screen and this disagreeing means the cache, not the numbers.",
+    schema: z.object({
+      section: z.enum(["overview", "audience", "posts", "video"]).default("overview").describe("which section to compute"),
+      days: z
+        .union([z.literal(1), z.literal(7), z.literal(30)])
+        .default(7)
+        .describe("window in days"),
+      locale: z.enum(["ru", "en"]).default("ru").describe("which language's screen"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) =>
+      createStudioServices(context.db(), context.config()).analytics.dashboard(input.section, input.days, input.locale),
+  }),
+  "site-traffic": operation({
+    section: "analytics",
+    summary: "Pageviews of the public site: the total, today, and the last seven calendar days.",
+    note: "Counted only where the public site is served; a Studio with `site-enabled` off reports zeroes because nothing is recording them.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => engagementService(context.db(), context.config()).metrics(),
+  }),
   milestones: operation({
+    section: "analytics",
     summary: "Audience achievements: what each scope holds, what it has been credited with, and what it announces next.",
     note: "`reachedThrough` is the count a scope is done announcing. It follows the audience: connecting or removing an account re-credits the scope at its new size, so a scope can be credited with a number it never announced.",
     schema: z.object({}),
@@ -348,6 +432,7 @@ const operationDefs = {
     handler: (context) => audienceMilestoneReport(context.db()),
   }),
   "milestone-announce": operation({
+    section: "analytics",
     summary: "Announce one achievement a scope is owed, and credit it with that count.",
     note: "For a threshold that was passed while nothing was watching. `milestones` lists the scope ids. It reaches the Studio's administrators as a normal achievement and cannot be taken back.",
     schema: z.object({
@@ -355,7 +440,7 @@ const operationDefs = {
       threshold: z.coerce.number().int().min(1).describe("follower count to announce"),
     }),
     mutates: true,
-    agent: true,
+    agent: false,
     handler: (context, input) => {
       const backendDb = context.db();
       if (!announceAudienceMilestone(backendDb, input.scope, input.threshold))
@@ -364,6 +449,8 @@ const operationDefs = {
     },
   }),
   recent: operation({
+    section: "delivery",
+    startHere: "a post did not reach a target",
     summary: "Recent posts with their delivery targets and the targets each one is missing.",
     schema: z.object({ limit: z.coerce.number().int().min(1).max(50).default(5).describe("how many posts to report") }),
     mutates: false,
@@ -373,6 +460,7 @@ const operationDefs = {
     format: formatRecentPublications,
   }),
   "post-text": operation({
+    section: "delivery",
     summary: "The full text of one publication, in both languages.",
     schema: z.object({ ref: refOption }),
     mutates: false,
@@ -382,6 +470,8 @@ const operationDefs = {
     format: formatPostText,
   }),
   find: operation({
+    section: "delivery",
+    startHere: "only a fragment of the post text is known",
     summary: "Resolve a publication ref from a fragment of the post text.",
     schema: z.object({ query: example(z.string().min(1), "Astra").describe("text to search for") }),
     mutates: false,
@@ -390,6 +480,7 @@ const operationDefs = {
     format: formatPublicationMatches,
   }),
   verify: operation({
+    section: "delivery",
     summary: "Fetch every published target of one publication and report whether it is really live.",
     schema: z.object({ ref: refOption }),
     mutates: false,
@@ -397,6 +488,7 @@ const operationDefs = {
     handler: (context, input) => verifyPostTargets(context.db(), input.ref),
   }),
   publish: operation({
+    section: "delivery",
     summary: "Create and queue one text publication for an exact target list.",
     schema: z.object({
       locale: z.enum(["ru", "en"]),
@@ -408,6 +500,7 @@ const operationDefs = {
     handler: (context, input) => publishText(context.db(), context.config(), input),
   }),
   "article-publish": operation({
+    section: "delivery",
     summary: "Create and queue one long-form article from Markdown for an exact target list.",
     note: "The `# Title` heading becomes the article title and leaves the body; targets must be ones that carry articles.",
     schema: z.object({
@@ -420,6 +513,8 @@ const operationDefs = {
     handler: (context, input) => publishArticle(context.db(), context.config(), input),
   }),
   timeline: operation({
+    section: "delivery",
+    startHere: "what happened to one publication, in order",
     summary: "Jobs, targets and the full event log of one publication, in order.",
     schema: z.object({ ref: refOption }),
     mutates: false,
@@ -427,6 +522,8 @@ const operationDefs = {
     handler: (context, input) => publicationTimeline(context.db(), input.ref),
   }),
   channels: operation({
+    section: "channels",
+    startHere: "a target publishes nothing, or an account will not connect",
     summary: "Connected publishing channels and their credential state.",
     schema: z.object({}),
     mutates: false,
@@ -434,6 +531,7 @@ const operationDefs = {
     handler: (context) => createStudioServices(context.db(), context.config()).channels.report(false),
   }),
   "format-support": operation({
+    section: "channels",
     summary: "Which media formats each target is proven to carry, and what proved it.",
     note: "About what a platform accepts, not about whether its credentials are ready — `doctor` answers that.",
     schema: z.object({}),
@@ -442,6 +540,8 @@ const operationDefs = {
     handler: (context) => formatSupportSummary(context.db()),
   }),
   usage: operation({
+    section: "health",
+    startHere: "which commands and features are actually being used",
     summary: "Which features are exercised and which have gone unused.",
     note: "Each feature carries the window's totals, `recent` for the last 7 days of it, and `worstDay`, the day that failed most. A failure rate averaged over the window cannot tell an outage that ended from one still running: read `recent` before acting on `failures`. An `operations.NAME` key counts one command, whichever surface ran it, and every command appears even at zero.",
     schema: z.object({
@@ -458,6 +558,7 @@ const operationDefs = {
       }),
   }),
   "x-analytics": operation({
+    section: "analytics",
     summary:
       "What the X CSV imports hold: coverage, unlinked activity, and linkCandidates — items matching exactly one post but under the linker's 30-character bar, reported and never linked.",
     schema: z.object({ limit: z.coerce.number().int().min(1).max(100).default(10).describe("how many unlinked items to list") }),
@@ -467,6 +568,8 @@ const operationDefs = {
     handler: (context, input) => xAnalyticsReport(context.db(), input.limit),
   }),
   "x-reach": operation({
+    section: "analytics",
+    startHere: "a chart and a CSV disagree",
     summary: "The daily X reach bars the overview draws, computed here from this database.",
     schema: z.object({
       from: example(z.string().min(1), "ISO").describe("first moment of the window"),
@@ -479,22 +582,26 @@ const operationDefs = {
     handler: (context, input) => xReachProbe(context.db(), input.from, input.to, context.config().TIMEZONE, input.item),
   }),
   "x-import-delete": operation({
+    section: "analytics",
     summary: "Remove one X CSV import and every reading it wrote, leaving its posts in place.",
     schema: z.object({ import: z.coerce.number().int().min(1).describe("the import id from x-analytics"), apply: applyOption }),
     mutates: true,
-    agent: true,
+    agent: false,
     note: "for an import whose readings are stamped with a moment that never happened: a re-import cannot overwrite them",
     handler: (context, input) => deleteXImport(context.db(), input.import, input.apply),
   }),
   "x-relink": operation({
+    section: "analytics",
     summary: "Attach already-imported X activity to editorial posts and project its metrics.",
     schema: z.object({ apply: applyOption }),
     mutates: true,
-    agent: true,
+    agent: false,
     note: "an import runs this itself; use it after the matching rule changes, because re-importing a byte-identical CSV will not re-link anything",
     handler: (context, input) => attachXActivityToPosts(context.db(), input.apply),
   }),
   "media-status": operation({
+    section: "media",
+    startHere: "media is not being processed",
     summary: "Reachability and queue depth of the media processor.",
     schema: z.object({}),
     mutates: false,
@@ -502,6 +609,7 @@ const operationDefs = {
     handler: (context) => mediaProcessorStatus(context.config(), context.fetchImpl),
   }),
   "media-diagnose": operation({
+    section: "media",
     summary: "Deeper media processor probe: codecs, storage and round-trip.",
     schema: z.object({}),
     mutates: false,
@@ -509,6 +617,7 @@ const operationDefs = {
     handler: (context) => diagnoseMediaProcessor(context.config(), context.fetchImpl),
   }),
   "media-job": operation({
+    section: "media",
     summary: "Media assets and processing state behind one publication.",
     schema: z.object({ ref: refOption }),
     mutates: false,
@@ -516,6 +625,7 @@ const operationDefs = {
     handler: (context, input) => mediaJobReport(context.db(), input.ref),
   }),
   retry: operation({
+    section: "delivery",
     summary: "Queue a publication again for a target that never went out or failed.",
     schema: repairSchema({}),
     mutates: true,
@@ -525,6 +635,7 @@ const operationDefs = {
     handler: (context, input) => runRepair(context, "retry", input),
   }),
   edit: operation({
+    section: "delivery",
     summary: "Rewrite one locale's text, push it to the targets that can be edited and replace those that cannot.",
     schema: repairSchema({ text: example(z.string().min(1), '"new text"').describe("the replacement text") }),
     mutates: true,
@@ -534,6 +645,7 @@ const operationDefs = {
     handler: (context, input) => runRepair(context, "edit", input),
   }),
   "set-media": operation({
+    section: "delivery",
     summary: "Replace one locale's media from a JSON description, take the published targets down and publish them again.",
     schema: repairSchema({
       media_json: example(z.string().min(1), '[{"asset_id": 12}]').describe("media items, each naming file_id, local_path or asset_id"),
@@ -547,6 +659,7 @@ const operationDefs = {
     handler: (context, input) => runRepair(context, "replace_media", input),
   }),
   "use-other-media": operation({
+    section: "delivery",
     summary: "Drop one locale's own media so it falls back to the other locale's, then publish it again.",
     schema: repairSchema({}),
     mutates: true,
@@ -556,6 +669,7 @@ const operationDefs = {
     handler: (context, input) => runRepair(context, "use_other_media", input),
   }),
   delete: operation({
+    section: "delivery",
     summary: "Take a publication down from the targets that support remote deletion.",
     schema: repairSchema({ republish: z.boolean().default(false).describe("publish it again after taking it down") }),
     mutates: true,
@@ -565,10 +679,11 @@ const operationDefs = {
     handler: (context, input) => runRepair(context, "delete", input),
   }),
   purge: operation({
+    section: "delivery",
     summary: "Permanently remove an already-absent Studio publication and all of its stored state.",
     schema: z.object({ ref: refOption, apply: applyOption }),
     mutates: true,
-    agent: true,
+    agent: false,
     note: "reports every row in scope; set `apply` only after the remote publication is gone",
     // Purge has just deleted every event carrying this ref. Journalling the run
     // against it would put the first row of a fresh history back.
@@ -576,6 +691,7 @@ const operationDefs = {
     handler: (context, input) => purgePublication(context.db(), context.config(), input, context.fetchImpl),
   }),
   "resume-from": operation({
+    section: "delivery",
     summary: "Point a half-published target at the post it should finish onto, then let the retry write the rest.",
     note: "For a publication that goes out in more than one call and now names the wrong post, typically after a duplicate was removed by hand. The ordinary retry continues from whatever the job carries; this is how that is corrected. `apply` performs it.",
     schema: z.object({
@@ -600,6 +716,7 @@ const operationDefs = {
     },
   }),
   "draft-publish": operation({
+    section: "delivery",
     summary: "Send a draft that is already written to every platform it has enabled, now.",
     note: "The `publish` command writes a new publication from text; this one publishes a draft that exists. `apply` performs it.",
     schema: z.object({ draft: draftOption, apply: applyOption }),
@@ -608,6 +725,7 @@ const operationDefs = {
     handler: (context, input) => publishPostDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
   }),
   "draft-schedule": operation({
+    section: "delivery",
     summary: "Put a draft in the queue for a time instead of publishing it now.",
     note: "A bare wall clock is read in this Studio's time zone; an explicit offset is honoured as written. `reschedule` moves a publication that already has a plan. `apply` performs it.",
     schema: z.object({ draft: draftOption, at: scheduleAtOption, locale: scheduleLocaleOption, apply: applyOption }),
@@ -622,6 +740,7 @@ const operationDefs = {
       }),
   }),
   "draft-cancel": operation({
+    section: "delivery",
     summary: "Call off a draft and everything of it still waiting in the queue.",
     note: "Nothing already delivered is touched; use `delete` for that. `apply` performs it.",
     schema: z.object({ draft: draftOption, apply: applyOption }),
@@ -630,6 +749,7 @@ const operationDefs = {
     handler: (context, input) => cancelPostDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
   }),
   "video-publish": operation({
+    section: "delivery",
     summary: "Send a video draft to every platform it has chosen, now.",
     schema: z.object({ draft: draftOption, apply: applyOption }),
     mutates: true,
@@ -637,6 +757,7 @@ const operationDefs = {
     handler: (context, input) => publishVideoDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
   }),
   "video-schedule": operation({
+    section: "delivery",
     summary: "Put every platform of a video draft in the queue for one time.",
     note: "One time for all of them, because a per-platform time is a picker on the card. `apply` performs it.",
     schema: z.object({ draft: draftOption, at: scheduleAtOption, apply: applyOption }),
@@ -646,6 +767,7 @@ const operationDefs = {
       scheduleVideoDraft(context.db(), context.config(), { draftId: input.draft, at: input.at, apply: input.apply }),
   }),
   "video-cancel": operation({
+    section: "delivery",
     summary: "Call off a video: its queue, its reminders, and the YouTube upload it may already have made.",
     note: "An upload YouTube already holds is kept private rather than deleted, and anything published needs removing by hand; the answer says which. `apply` performs it.",
     schema: z.object({ draft: draftOption, apply: applyOption }),
@@ -654,6 +776,7 @@ const operationDefs = {
     handler: (context, input) => cancelVideoDraft(context.db(), context.config(), { draftId: input.draft, apply: input.apply }),
   }),
   skip: operation({
+    section: "delivery",
     summary: "Finish a publication without a target that did not land, instead of retrying it.",
     note: "The other answer to what `retry` asks, and the one the bot has always had next to it. Nothing is sent and nothing is removed from a platform: the jobs stop asking to be dealt with and the publication settles. Omit `target` to give up on every target that did not land; `apply` performs it.",
     schema: z.object({
@@ -676,6 +799,7 @@ const operationDefs = {
     },
   }),
   settle: operation({
+    section: "delivery",
     summary: "Answer a target stuck in verification_required with what the platform actually shows.",
     note: "Reconciliation resolves an ambiguous target by asking the platform about its stored id, so a worker lost before recording one leaves nothing to ask about. Name `external-id` to record the post as live, or omit it to report the post absent and queue it again; `apply` performs it.",
     schema: z.object({
@@ -702,6 +826,7 @@ const operationDefs = {
     },
   }),
   "video-retry": operation({
+    section: "delivery",
     summary: "Queue a failed video target again.",
     note: "Only a target that failed: a publication whose outcome is unknown is answered with `video-settle` first, because a retry of something that may have landed is a second post. The new attempt carries a new idempotency fence, so it can publish what the failed one never did.",
     schema: z.object({
@@ -716,6 +841,7 @@ const operationDefs = {
     },
   }),
   "video-settle": operation({
+    section: "delivery",
     summary: "Answer a provider-delivered video target stuck awaiting verification.",
     note: "Asks the provider what became of the publication and records the answer: a platform link means published, a provider-side failure sends the target back to `failed` where a retry can pick it up, anything else stays awaiting verification. Give `external_id`/`url` to record what you can see on the platform yourself, which outranks what the provider says. Provider routes only: a native upload has no idempotent replay to ask with.",
     schema: z.object({
@@ -742,6 +868,7 @@ const operationDefs = {
       ),
   }),
   "refresh-site": operation({
+    section: "delivery",
     summary: "Re-render one locale's public page without touching social targets.",
     // The same shape as every other repair, because the Command Center's card
     // posts one field set for whichever repair is chosen and an operation that
@@ -758,6 +885,7 @@ const operationDefs = {
     handler: (context, input) => runRepair(context, "refresh_site", { ...input, apply: true }),
   }),
   "replace-media": operation({
+    section: "delivery",
     summary: "Swap the media of a published post on one target and re-render the site.",
     schema: z.object({
       ref: refOption,
@@ -773,6 +901,7 @@ const operationDefs = {
     handler: (context, input) => replacePublishedMedia(context.db(), context.config(), input, context.fetchImpl, context.actorType),
   }),
   reschedule: operation({
+    section: "delivery",
     summary: "Move a scheduled publication to another time.",
     schema: z.object({
       ref: refOption,
@@ -797,6 +926,7 @@ const operationDefs = {
       ),
   }),
   "publication-repair": operation({
+    section: "delivery",
     summary: "Reconcile publication rows against their jobs and targets.",
     schema: z.object({
       ref: example(z.string().trim().min(1).optional(), "post:160")
@@ -821,6 +951,7 @@ const operationDefs = {
     },
   }),
   "media-reprocess": operation({
+    section: "media",
     summary: "Re-run media processing for one publication.",
     schema: z.object({ ref: refOption, apply: applyOption }),
     mutates: true,
@@ -828,13 +959,15 @@ const operationDefs = {
     handler: (context, input) => reprocessPostMedia(context.db(), context.config(), input.ref, input.apply),
   }),
   "story-card-backfill": operation({
+    section: "delivery",
     summary: "Render the story card a text publication is missing.",
     schema: z.object({ ref: refOption, apply: applyOption, force: z.boolean().default(false).describe("re-render an existing card") }),
     mutates: true,
-    agent: true,
+    agent: false,
     handler: (context, input) => backfillTextStoryCards(context.db(), context.config(), input.ref, input.apply, input.force),
   }),
   "metrics-backfill": operation({
+    section: "analytics",
     summary: "Re-sample metrics for published targets over a date range.",
     schema: z.object({
       targets: commaList("delivery targets").describe(`comma-separated delivery targets (default: ${METRIC_BACKFILL_TARGETS})`),
@@ -845,7 +978,7 @@ const operationDefs = {
       reset_counts: z.boolean().default(false).describe("clear existing counts before re-sampling"),
     }),
     mutates: true,
-    agent: true,
+    agent: false,
     handler: (context, input) => {
       const backendDb = context.db();
       const refs = splitList(input.refs)?.map(refSpelling);
@@ -862,6 +995,7 @@ const operationDefs = {
     },
   }),
   backup: operation({
+    section: "host",
     summary: "Copy the database to a timestamped file.",
     schema: z.object({ output: example(z.string().optional(), "DIRECTORY").describe("destination directory") }),
     mutates: true,
@@ -869,6 +1003,7 @@ const operationDefs = {
     handler: async (context, input) => ({ ok: true, path: await backupDatabase(context.db(), context.dbPath, input.output) }),
   }),
   "backup-stream": operation({
+    section: "host",
     summary: "Write one backup stream to stdout for a backup host to pull.",
     schema: z.object({
       what: example(z.enum(["media", "db"]).describe("media trees or the database"), "media"),
@@ -883,6 +1018,7 @@ const operationDefs = {
         : streamMediaArchive(context.config(), context.db(), "inherit"),
   }),
   restore: operation({
+    section: "host",
     summary: "Replace the database with a backup.",
     schema: z.object({ source: example(z.string().min(1), "PATH").describe("backup file to restore"), force: z.boolean().default(false) }),
     mutates: true,
@@ -894,6 +1030,7 @@ const operationDefs = {
     },
   }),
   "import-x-analytics": operation({
+    section: "analytics",
     summary: "Import an X analytics CSV export.",
     schema: z.object({
       file: example(z.string().min(1), "PATH").describe("CSV path on this host"),
@@ -907,6 +1044,7 @@ const operationDefs = {
     handler: (context, input) => importXAnalyticsCsv(context.db(), input.file, input.sampled_at),
   }),
   "import-manual-analytics": operation({
+    section: "analytics",
     summary: "Import hand-collected audience numbers.",
     schema: z.object({
       x_file: example(z.string().optional(), "PATH").describe("X analytics CSV path on this host"),
@@ -925,6 +1063,7 @@ const operationDefs = {
       }),
   }),
   "format-record": operation({
+    section: "channels",
     summary: "Record the message that proves a target carries a media format.",
     schema: z.object({
       test: example(z.string().min(1), "T01").describe("format test id"),
@@ -936,6 +1075,7 @@ const operationDefs = {
     handler: (context, input) => ({ ok: true, status: recordFormatEvidence(context.db(), input.test, input.message_id, input.notes) }),
   }),
   "site-media-images": operation({
+    section: "media",
     summary: "Upload site images that were never pushed to media storage.",
     schema: z.object({
       apply: applyOption,
@@ -946,6 +1086,7 @@ const operationDefs = {
     handler: (context, input) => backfillSiteImageMedia(context.db(), context.config(), input.apply, input.max_upload_kbps),
   }),
   "site-media-deduplicate": operation({
+    section: "media",
     summary: "Collapse identical assets in media storage.",
     schema: z.object({ apply: applyOption }),
     mutates: true,
@@ -953,6 +1094,7 @@ const operationDefs = {
     handler: (context, input) => deduplicateSiteMedia(context.config(), input.apply),
   }),
   "channel-connect": operation({
+    section: "channels",
     summary: "Connect a publishing route.",
     note: "A text or story route needs only `target`: it already names the platform and the language, and asking for them again is a way to store a channel that disagrees with itself. A video account needs `platform` with `locale`. An Instagram account connected for Reels does not carry the Story with it: connect `instagram_stories_ru` or `instagram_stories` when this Studio actually posts them, because a connected target is one the post screens offer and the queue waits for.",
     schema: z.object({
@@ -990,6 +1132,7 @@ const operationDefs = {
     },
   }),
   "connect-link": operation({
+    section: "channels",
     summary: "Start connecting an account, and say what has to happen next.",
     note: "Most platforms answer with a link to open, which carries a signed, short-lived state and authorizes nothing by itself. YouTube answers with an address and a code to type there, because Google's device flow is what a server with no browser can use; approval is picked up on its own within a minute and the account appears in the channel registry. Threads and Instagram need their app id and secret, X its client id and secret, YouTube its client id and secret for that language, and all of them TOKEN_ENCRYPTION_KEY.",
     schema: z.object({
@@ -1005,6 +1148,7 @@ const operationDefs = {
         : `${result.verificationUrl}\n\nEnter the code ${result.userCode} there within ${Math.round(result.expiresInSeconds / 60)} minutes. The connection completes on its own.`,
   }),
   "channel-disable": operation({
+    section: "channels",
     summary: "Disable a channel, keeping its publication history attributable.",
     schema: z.object({
       channel: example(z.string().min(1), "youtube_ru").describe("channel id"),
@@ -1017,6 +1161,7 @@ const operationDefs = {
     }),
   }),
   "credential-set": operation({
+    section: "channels",
     summary: "Store an API key this Studio is handed rather than negotiates.",
     note: 'Reads the key from standard input, so it never appears in a command line or a shell history: `printf %s "$KEY" | ops credential-set --target zernio`. The key is checked against the service before it is stored, and .env is not consulted for it afterwards.',
     schema: z.object({ target: z.enum(API_KEY_TARGETS).describe("service the key belongs to") }),
@@ -1027,6 +1172,7 @@ const operationDefs = {
     format: (result: { target: string; account: string }) => `${result.target} key stored (${result.account})`,
   }),
   "telegram-stories-login": operation({
+    section: "channels",
     summary: "Sign this Studio's Stories account in and store its session.",
     note: "Telegram Stories are posted by a user, not a bot, so the credential is an MTProto session. Needs TELEGRAM_CHANNEL_STORIES_API_ID, _API_HASH and _SESSION set first; run it with a terminal attached (docker compose exec -it) because it asks for the phone number, the code Telegram sends, and the 2FA password if the account has one.",
     schema: z.object({}),
@@ -1046,6 +1192,7 @@ const operationDefs = {
       }),
   }),
   "threads-authorize": operation({
+    section: "channels",
     summary: "Terminal fallback for obtaining a long-lived Threads token when the browser callback is unavailable.",
     note: "The normal path is Studio → Channels. This fallback needs THREADS_APP_ID and THREADS_APP_SECRET, prints a link, then asks for the redirect address. Run it with a terminal attached (docker compose exec -it).",
     schema: z.object({ locale: z.enum(["ru", "en"]) }),
@@ -1199,7 +1346,9 @@ export function operationCatalog(): OperationCatalogEntry[] {
     usage: operationUsage(name, def),
     mutates: def.mutates,
     agent: def.agent,
+    section: def.section,
     summary: def.summary,
     ...(def.note ? { note: def.note } : {}),
+    ...(def.startHere ? { startHere: def.startHere } : {}),
   }));
 }

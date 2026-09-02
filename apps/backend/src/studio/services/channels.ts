@@ -8,6 +8,7 @@ import { type ZernioConnectionKey, type ZernioConnectionOption, zernioConnection
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { listZernioAccounts, type ZernioAccount, zernioAccount } from "../../foundation/external/zernio.js";
+import { authCircuitStates } from "../../observability/auth-circuit.js";
 import { capabilityReport } from "../../observability/capabilities.js";
 import { trackUsageAsync, trackUsageSync } from "../../observability/usage.js";
 
@@ -26,7 +27,25 @@ export type ChannelReport = {
   publishable: boolean;
   status: "ready" | "missing" | "disabled";
   missing: string[];
+  /** What the publish path's breaker holds for this channel's credential.
+   * `ready` describes what is stored; this describes whether it still works. */
+  credential: {
+    /** Publishing to this target is paused until the breaker closes. */
+    blocked: boolean;
+    blockedUntil: string | null;
+    authFailureStreak: number;
+    lastAuthFailureAt: string | null;
+    tokenExpiresAt: string | null;
+  };
 };
+
+const NO_CIRCUIT = {
+  blocked: false,
+  blockedUntil: null,
+  authFailureStreak: 0,
+  lastAuthFailureAt: null,
+  tokenExpiresAt: null,
+} as const;
 
 /** Channel administration shared by Studio interfaces.
  *
@@ -45,6 +64,7 @@ export function channelService(backendDb: BackendDb, config: BackendConfig, fetc
     report(enabledOnly = true): ChannelReport[] {
       return trackUsageSync(backendDb, "studio.channel.list", () => {
         const readiness = new Map(capabilityReport(config, backendDb).map((entry) => [entry.target, entry]));
+        const circuits = new Map(authCircuitStates(backendDb).map((entry) => [entry.target, entry]));
         return listChannels(backendDb, enabledOnly).map((channel) => {
           const state = readiness.get(channel.targetId ?? channel.id);
           return {
@@ -60,6 +80,12 @@ export function channelService(backendDb: BackendDb, config: BackendConfig, fetc
             publishable: channel.targetId ? true : isPublishableVideoPlatform(channel.platform),
             status: channel.enabled === 0 ? "disabled" : (state?.status ?? "ready"),
             missing: state?.missing ?? [],
+            credential: (() => {
+              const circuit = circuits.get(channel.targetId ?? channel.id);
+              if (!circuit) return NO_CIRCUIT;
+              const { target: _target, lastPingAt: _lastPingAt, ...rest } = circuit;
+              return rest;
+            })(),
           };
         });
       });

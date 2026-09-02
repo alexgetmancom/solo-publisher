@@ -120,7 +120,24 @@ async function runProductionCommand(): Promise<number> {
     return await run([
       "ssh",
       sshTarget,
-      remoteCommand(["docker", "exec", "-i", "-u", "bun", container, "bun", "/app/ops/cli.js", ...argv]),
+      remoteCommand([
+        "docker",
+        "exec",
+        "-i",
+        "-u",
+        "bun",
+        // The container is reached through this launcher and cannot see it, so
+        // every command it prints for the operator to run next is written in
+        // the coordinates of a shell that is one ssh away. Hand it the spelling
+        // that actually got here, and the deployments it could have gone to.
+        ...["-e", `OPS_INVOCATION=bun run ops:prod --as ${deployment}`],
+        ...["-e", `OPS_INSTANCE=${deployment}`],
+        ...["-e", `OPS_INSTANCES=${Object.keys(DEPLOYMENTS).join(",")}`],
+        container,
+        "bun",
+        "/app/ops/cli.js",
+        ...argv,
+      ]),
     ]);
   } finally {
     for (const remotePath of shipped) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { listChannels } from "../src/channels/registry.js";
 import type { BackendDb } from "../src/db/client.js";
+import { recordAuthFailure } from "../src/observability/auth-circuit.js";
 import { channelService } from "../src/studio/services/channels.js";
 import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -47,5 +48,24 @@ describe("Studio channel service", () => {
       service.disable("telegram_stories");
       expect(service.report()).toEqual([]);
       expect(service.report(false)).toMatchObject([{ id: "telegram_stories", enabled: false, status: "disabled" }]);
+    }));
+
+  /** The breaker is read on the publish path and nowhere else, so a target
+   * whose credential is failing stops publishing while the channel it belongs
+   * to still reports `ready`: connected, stored, and quietly not publishing. */
+  it("reports a credential the publish path has stopped calling", () =>
+    withDb(async (backendDb) => {
+      const service = channelService(backendDb, loadTestConfig({}));
+      service.connectTarget("telegram_stories");
+
+      expect(service.report(false)[0]?.credential).toMatchObject({ blocked: false, authFailureStreak: 0 });
+
+      // Three consecutive auth failures is what trips it.
+      for (let attempt = 0; attempt < 3; attempt += 1) recordAuthFailure(backendDb, "telegram_stories");
+
+      const blocked = service.report(false)[0]?.credential;
+      expect(blocked?.blocked).toBe(true);
+      expect(blocked?.authFailureStreak).toBe(3);
+      expect(blocked?.blockedUntil).toBeTruthy();
     }));
 });

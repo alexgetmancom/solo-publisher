@@ -102,6 +102,42 @@ export function isTargetAuthBlocked(backendDb: BackendDb, target: string): boole
   return Number.isFinite(blockedUntilMs) && blockedUntilMs > Date.now();
 }
 
+/** What the breaker holds for every target it has an opinion about.
+ *
+ * The breaker is read on the publish path and nowhere else, so a target whose
+ * credential is failing stops publishing while every report about it still says
+ * `ready`: the channel is connected, the token is stored, and the queue simply
+ * stops. Published here so a channels report can say so. */
+export function authCircuitStates(backendDb: BackendDb, now = new Date()): AuthCircuitState[] {
+  return unsafeDb(backendDb)
+    .db.select()
+    .from(credentialChecks)
+    .all()
+    .map((row) => {
+      const details = parseDetails(row.detailsJson);
+      const blockedUntilMs = details.blockedUntil ? new Date(details.blockedUntil).getTime() : Number.NaN;
+      return {
+        target: row.target,
+        blocked: Number.isFinite(blockedUntilMs) && blockedUntilMs > now.getTime(),
+        blockedUntil: details.blockedUntil ?? null,
+        authFailureStreak: details.authFailureStreak ?? 0,
+        lastAuthFailureAt: details.lastAuthFailureAt ?? null,
+        lastPingAt: details.lastPingAt ?? null,
+        tokenExpiresAt: row.expiresAt ?? null,
+      };
+    });
+}
+
+export type AuthCircuitState = {
+  target: string;
+  blocked: boolean;
+  blockedUntil: string | null;
+  authFailureStreak: number;
+  lastAuthFailureAt: string | null;
+  lastPingAt: string | null;
+  tokenExpiresAt: string | null;
+};
+
 /** Throttles token-health.ts's live pings independently of the 5-minute
  * observability cadence, so we don't hit every provider's "whoami" endpoint
  * every cycle. */

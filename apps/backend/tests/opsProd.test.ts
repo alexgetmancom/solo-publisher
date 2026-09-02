@@ -111,7 +111,10 @@ describe("production operations launcher", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]?.args[1]).toContain("'maru-backend'");
     expect(calls[0]?.args[1]).not.toContain("alexgetman-backend");
-    expect(calls[0]?.args[1]).not.toContain("--as");
+    // The launcher's own flag is not an operation argument: it reaches the
+    // container as the invocation it should quote back, never as argv.
+    expect(calls[0]?.args[1]).toContain("'OPS_INVOCATION=bun run ops:prod --as maru'");
+    expect(calls[0]?.args[1]?.split("'/app/ops/cli.js'")[1]?.trim()).toBe("'audit'");
   });
 
   it("refuses an unknown deployment before SSH", async () => {

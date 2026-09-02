@@ -573,7 +573,14 @@ const studioTools = Object.entries(studioToolDefs).map(([name, def]) => ({
 /** Operations reach MCP as a projection of the same registry the CLI dispatches
  * from, so an agent diagnosing a delivery gap has the commands an operator has
  * — minus the ones the registry marks host-only. `ops_` keeps them apart from
- * the Studio authoring tools in a client's tool list. */
+ * the Studio authoring tools in a client's tool list.
+ *
+ * Every tool here is listed in full — name, description and schema — in every
+ * context this server is connected to, before a caller has asked anything. That
+ * is the budget `agent` spends: a read earns its place because diagnosis is
+ * what an agent is for, and a mutation earns it by being part of routine
+ * delivery work. A rare one does not, and stays where its note and its dry-run
+ * are in front of the operator running it. */
 const OPS_TOOL_PREFIX = "ops_";
 
 const opsToolNames = new Map(
@@ -586,7 +593,12 @@ const opsTools = [...opsToolNames].map(([toolName, operation]) => {
   const def = operationDef(operation) as OperationDef;
   return {
     name: toolName,
-    description: def.note ? `${def.summary} (${def.note})` : def.summary,
+    // The section leads, so a client's flat list of tools reads as the grouped
+    // catalog the terminal prints. A note is a warning to read before calling,
+    // which is a mutation's concern: on a read it is navigational advice, and
+    // the agent can simply run the command instead of carrying the advice in
+    // every context.
+    description: [`[${def.section}] ${def.summary}`, ...(def.note && def.mutates ? [`(${def.note})`] : [])].join(" "),
     inputSchema: agentSchema(inputJsonSchema(def.schema)),
   };
 });

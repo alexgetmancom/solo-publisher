@@ -24,7 +24,17 @@ afterEach(() => {
 /** Moving the database file, writing credentials, or reading a path off the
  * host are the operations an MCP caller must never reach. This is the list, and
  * it is the one thing about the registry worth failing a build over. */
-const HOST_ONLY = [
+/** Operations that reach the CLI and not MCP, and why each is off.
+ *
+ * Host-only: it moves the database file, writes a credential, or reads a path
+ * on the host, none of which a remote caller can mean.
+ *
+ * Rare mutation: every agent tool is listed in full in every context this
+ * server is connected to, before a caller has asked anything. A read earns that
+ * because diagnosis is what an agent is for; a mutation earns it by being part
+ * of routine delivery work. These are neither, and are run by an operator with
+ * the note and the dry-run in front of them. */
+const OFF_THE_AGENT_SURFACE = [
   "guide",
   "backup",
   "backup-stream",
@@ -39,6 +49,16 @@ const HOST_ONLY = [
   "credential-set",
   "telegram-stories-login",
   "threads-authorize",
+  // Rare mutations, in the order the catalog carries them.
+  "studio-profile-set",
+  "live-say",
+  "dates-repair",
+  "milestone-announce",
+  "x-import-delete",
+  "x-relink",
+  "purge",
+  "story-card-backfill",
+  "metrics-backfill",
 ];
 
 function context(db: UnsafeBackendDb): OperationContext {
@@ -74,21 +94,31 @@ describe("operations registry", () => {
     }
   });
 
-  it("keeps host-only operations off the agent surface", () => {
+  it("keeps host-only operations and rare mutations off the agent surface", () => {
     const catalog = new Map(operationCatalog().map((entry) => [entry.name, entry]));
 
-    // Both directions: the list has to name every host-only operation, or a new
-    // one added with `agent: false` and forgotten here reaches MCP the day
+    // Both directions: the list has to name every operation that is off, or a
+    // new one added with `agent: false` and forgotten here reaches MCP the day
     // someone flips it back without a test to say why it was off.
     expect(
       [...catalog.values()]
         .filter((entry) => !entry.agent)
         .map((entry) => entry.name)
         .sort(),
-    ).toEqual([...HOST_ONLY].sort());
+    ).toEqual([...OFF_THE_AGENT_SURFACE].sort());
     expect(catalog.get("recent")?.agent).toBe(true);
     expect(catalog.get("settle")?.agent).toBe(true);
     expect(catalog.get("retry")?.agent).toBe(true);
+    // Diagnosis is the whole point of the agent surface, so a read leaves it
+    // only by being unable to mean anything remotely: `guide` probes a host
+    // path, `backup-stream` writes an archive to stdout, and
+    // `threads-authorize` asks a terminal for the address it was redirected to.
+    expect(
+      [...catalog.values()]
+        .filter((entry) => !entry.mutates && !entry.agent)
+        .map((entry) => entry.name)
+        .sort(),
+    ).toEqual(["backup-stream", "guide", "threads-authorize"]);
   });
 
   it("refuses input the schema does not define, on every surface", async () => {
@@ -180,7 +210,7 @@ describe("operations registry", () => {
         .filter((entry) => entry.agent)
         .map((entry) => `ops_${entry.name.replace(/-/g, "_")}`),
     );
-    for (const name of HOST_ONLY) expect(opsTools).not.toContain(`ops_${name.replace(/-/g, "_")}`);
+    for (const name of OFF_THE_AGENT_SURFACE) expect(opsTools).not.toContain(`ops_${name.replace(/-/g, "_")}`);
   });
 
   it("refuses a host-only operation asked for over MCP", async () => {

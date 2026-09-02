@@ -61,15 +61,21 @@ path — with the stack in this repository, Caddy forwards it always.
 
 ## What an agent can and cannot do
 
-Every operation the CLI has is exposed except the ones that move the database
-file, write credentials or read a host path. So an agent can connect and disable
-channels, inspect delivery, retry a target, edit and reschedule a publication —
-and cannot take a backup, restore one, or run the YouTube and Telegram Stories
-sign-in flows, because those handle credentials or a terminal.
+Every read the CLI has is exposed, because diagnosing this Studio is what the
+agent surface is for. Mutations are exposed when they are part of routine
+delivery work. So an agent can connect and disable channels, inspect delivery
+and the journal, retry a target, edit and reschedule a publication — and cannot
+take a backup, restore one, or run the YouTube and Telegram Stories sign-in
+flows, because those handle credentials or a terminal. A handful of rare
+mutations — a milestone announcement, a date repair, a metrics backfill — are
+CLI-only too: they are run once in a season, with their note and their dry-run
+in front of the operator running them.
 
 ```bash
 docker compose exec app bun /app/ops/cli.js guide --json
 ```
 
-That catalogue is the same one the agent sees: each operation carries whether it
-mutates and whether it is on the agent surface at all.
+That catalogue is the same one the agent sees: each operation carries its
+section, whether it mutates and whether it is on the agent surface at all. It
+answers with a symptom index and section names; add `--section <name>` for the
+full entries of one, or `--all` for every entry.

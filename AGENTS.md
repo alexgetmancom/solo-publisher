@@ -90,13 +90,23 @@ Handed an X Analytics CSV, import it without asking: `import-x-analytics`, then 
 
 # Operations registry
 
-Every operation is one entry in `apps/backend/src/operations/registry.ts`: summary, zod schema,
-`mutates`, `agent`, handler, optional formatter. The CLI dispatch, the `--help` and `guide`
-catalogs, and the `ops_*` MCP tools are projections of it — adding an entry is the whole change, and
-a usage string is never written by hand. Whatever an operator needs to know about one command
-belongs in its `summary` or `note`, which reach all three surfaces; it does not belong here.
-`agent: false` keeps an operation off MCP: that is the line for anything moving the database file,
-writing credentials, or reading a host path.
+Every operation is one entry in `apps/backend/src/operations/registry.ts`: `section`, summary, zod
+schema, `mutates`, `agent`, handler, optional formatter, optional `startHere`. The CLI dispatch, the
+`--help` and `guide` catalogs, and the `ops_*` MCP tools are projections of it — adding an entry is
+the whole change, and a usage string is never written by hand. Whatever an operator needs to know
+about one command belongs in its `summary` or `note`, which reach all three surfaces; it does not
+belong here.
+
+`section` is which part of the catalog a command is read in, and it is required: `guide` answers
+with section names and a symptom index, and expands one section on request, because the whole
+catalog is 29KB and a caller reading it to answer one question pays for all of it. `startHere` is
+the question a command is the beginning of the answer to; the symptom index is built from those, and
+it is what a caller reads before it knows any section name.
+
+`agent: false` keeps an operation off MCP. Every agent tool is listed in full in every context the
+server is connected to, before anything is asked, so the line is: a read is on, because diagnosis is
+what the agent surface is for; a mutation is on only if it is part of routine delivery work.
+Anything that moves the database file, writes credentials or reads a host path is off regardless.
 
 # Local data
 
