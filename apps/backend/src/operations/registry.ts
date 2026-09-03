@@ -13,6 +13,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
+import { recentDiscussions } from "../engagement/discussion-comments.js";
 import { engagementService } from "../engagement/service.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
@@ -420,6 +421,18 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => engagementService(context.db(), context.config()).metrics(),
+  }),
+  comments: operation({
+    section: "analytics",
+    summary: "What the channel's discussion group is saying, newest discussed posts first.",
+    note: "Only comments written after the bot joined the group: Telegram delivers a group's history to nobody. A comment on a thread the bot never saw opened has no post to belong to and is not listed here until that thread's forward is seen.",
+    startHere: "what is the audience saying about a post",
+    schema: z.object({
+      limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many discussed posts to list"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => recentDiscussions(context.db(), input.limit),
   }),
   milestones: operation({
     section: "analytics",

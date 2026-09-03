@@ -78,6 +78,13 @@
       "when": 1788500000000,
       "tag": "0010_one_post_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1788600000000,
+      "tag": "0011_telegram_discussion_comments",
+      "breakpoints": true
     }
   ]
 }

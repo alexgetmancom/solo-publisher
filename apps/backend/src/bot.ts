@@ -21,6 +21,7 @@ import { type MessageKey, t } from "./foundation/i18n/index.js";
 import type { StudioLocale } from "./foundation/locale.js";
 import { log } from "./foundation/logger.js";
 import { currentTapMeasurement, tapApiMethods, withTapMeasurement } from "./foundation/tap-measurement.js";
+import { installDiscussionIngress } from "./interfaces/telegram/discussion-ingress.js";
 import { recordUsage, type UsageFeatureKey } from "./observability/usage.js";
 import { settingsService } from "./studio/services/settings.js";
 
@@ -99,6 +100,9 @@ function bindBotHandlers(bot: Bot, config: BackendConfig, backendDb: BackendDb):
       if (failure !== undefined) throw failure;
     });
   });
+  // Ahead of the gate on purpose: the discussion group is where people who are
+  // not the operator write, and the gate below stops exactly those updates.
+  installDiscussionIngress(bot, config, backendDb);
   // One gate for the whole bot. It has to sit in front of the menu plugin's own
   // callback_query:data middleware, or a non-admin's tap on a menu button would
   // be processed before ever reaching it; commands, text and albums pass the
