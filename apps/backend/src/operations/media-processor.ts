@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { type PublishMediaItem, payloadMedia } from "../delivery/social/payload.js";
 import { ensureStoryDerivative, preparedStoryMedia, storyVariantPaths } from "../delivery/story-derivatives.js";
-import { generateStoryMedia } from "../delivery/story-media.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { selectMediaForTarget } from "../publishing/media-policy.js";
 import { publicationTimeline } from "./timeline.js";
@@ -145,9 +144,10 @@ export async function reprocessPostMedia(
  * The operator's "make this Story again" for one item.
  *
  * It re-renders into the content-addressed path publishing reads, so the repair
- * is what the next attempt picks up. Only media that never became a Studio asset
- * -- a payload carrying nothing but a Telegram file id -- goes the resolving
- * route, which is also the only one that can fetch the source back.
+ * is what the next attempt picks up. That path is a function of the source
+ * file's own path, so a payload that carries no local media has nowhere for a
+ * repair to land: rendering one anyway wrote a file publishing never reads and
+ * reported it as a fix. Say what the operator has to do instead.
  */
 async function repairStoryMedia(
   config: BackendConfig,
@@ -156,7 +156,8 @@ async function repairStoryMedia(
   locale: "ru" | "en",
 ): Promise<PublishMediaItem[]> {
   const [source] = media;
-  if (!source || typeof source.localPath !== "string") return generateStoryMedia(media, postId, locale, config);
+  if (!source || typeof source.localPath !== "string")
+    throw new Error("story_repair_unavailable: this post carries no local media -- re-import it in Studio, then reschedule");
   const video = String(source.type ?? "")
     .toLowerCase()
     .includes("video");

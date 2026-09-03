@@ -294,6 +294,24 @@ jobs:
       - name: Dependency audit
         run: bun run check:audit
 
+  # There are no pull requests here, so the review runs on the push itself: the
+  # range is the one the push actually added. A branch's first push has no
+  # `before` commit to diff against and is skipped rather than passing silently.
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          base-ref: ${{ github.event.before }}
+          head-ref: ${{ github.sha }}
+
   # Image builds do not wait for the quality gates. The gates are enforced on
   # `deploy`, so a red commit can at worst leave a published tag that nothing
   # ever activates.

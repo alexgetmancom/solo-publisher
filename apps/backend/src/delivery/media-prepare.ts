@@ -81,8 +81,8 @@ export async function pruneMediaCache(config: BackendConfig, now = Date.now()): 
   // `.incoming` holds pre-hash upload temporaries; they are removed on the happy
   // path but leak when the process dies mid-import, so age them out here too.
   // Story derivatives are durable and named by their source's content hash, so
-  // that directory is not a cache -- except for the `draft-*` renders the
-  // resolving repair route writes, which nothing reads back and nothing owns.
+  // that directory is not a cache -- except for the dot-prefixed partials an
+  // encode killed mid-flight leaves behind, which nothing will ever rename in.
   const roots = [config.MEDIA_CACHE_DIR, config.REMOTE_MEDIA_PATH, path.join(config.STUDIO_MEDIA_DIR, ".incoming"), storyDirectory(config)];
   let removed = 0;
   for (const root of roots) {
@@ -91,7 +91,7 @@ export async function pruneMediaCache(config: BackendConfig, now = Date.now()): 
       entries.map(async (entry) => {
         if (!entry.isFile()) return;
         if (root === config.REMOTE_MEDIA_PATH && !entry.name.startsWith("cache-")) return;
-        if (root === storyDirectory(config) && !entry.name.startsWith("draft-")) return;
+        if (root === storyDirectory(config) && !entry.name.startsWith(".")) return;
         const target = path.join(root, entry.name);
         const stat = await fs.promises.stat(target).catch(() => null);
         if (stat && stat.mtimeMs < cutoff) {

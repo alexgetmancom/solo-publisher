@@ -74,10 +74,17 @@ export async function ensureStoryDerivative(
   const paths = storyVariantPaths(config, source, video);
   if (!force && variantsPresent(paths)) return false;
   const inFlight = renders.get(paths.standard);
-  if (inFlight) return inFlight;
-  const render = enqueueRender(() => renderVariants(config, source, paths, video, label, force)).finally(() => {
-    renders.delete(paths.standard);
-  });
+  // Sharing an in-flight render is what makes three Story targets wait on one
+  // encode -- but a forced render cannot be answered by one already running,
+  // which may be the very render the operator is repairing. It queues behind it
+  // instead, and a failure there is not this call's failure to report.
+  if (inFlight && !force) return inFlight;
+  const render = (inFlight ?? Promise.resolve(false))
+    .catch(() => false)
+    .then(() => enqueueRender(() => renderVariants(config, source, paths, video, label, force)))
+    .finally(() => {
+      if (renders.get(paths.standard) === render) renders.delete(paths.standard);
+    });
   renders.set(paths.standard, render);
   return render;
 }

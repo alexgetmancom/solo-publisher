@@ -6,7 +6,7 @@ import { localStoryFfmpegArgs, needsVerticalBlur, remoteStoryFfmpegArgs } from "
 import { publishInstagramStory as publishInstagramStoryStep } from "../src/delivery/social/instagram.js";
 import { InstagramContainerInvalidError } from "../src/delivery/social/instagram-container.js";
 import { telegramStoryCaption, telegramStoryCaptionInput, telegramStoryUploadMedia } from "../src/delivery/social/telegramStories.js";
-import { generateStoryMedia } from "../src/delivery/story-media.js";
+import { ensureStoryDerivative, storyVariantPaths } from "../src/delivery/story-derivatives.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 async function publishInstagramStory(
@@ -19,8 +19,8 @@ async function publishInstagramStory(
   for (let step = 0; step < 100; step += 1) {
     const result = await publishInstagramStoryStep(current, config, credentials, fetchImpl);
     if (!result.deferred) return result;
-    if (!result.resumeKey) throw new Error("deferred Instagram step has no resume key");
-    current = { ...current, [result.resumeKey]: result.resumeValue };
+    if (!result.progressKey) throw new Error("deferred Instagram step has no progress key");
+    current = { ...current, [result.progressKey]: result.progressValue };
   }
   throw new Error("Instagram test state machine did not finish");
 }
@@ -75,9 +75,9 @@ describe("story publishers", () => {
       Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
     );
     try {
-      const generated = await generateStoryMedia([{ type: "photo", local_path: source }], 1, "ru", loadTestConfig({ DATA_DIR: dir }));
-      expect(generated[0]).toMatchObject({ story_width: 1080, story_height: 1920 });
-      expect(fs.existsSync(String(generated[0]?.story_local_path))).toBe(true);
+      const config = loadTestConfig({ DATA_DIR: dir });
+      expect(await ensureStoryDerivative(config, source, false)).toBe(true);
+      expect(fs.existsSync(storyVariantPaths(config, source, false).standard)).toBe(true);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -88,13 +88,14 @@ describe("story publishers", () => {
     const source = path.join(dir, "source.mp4");
     encodeFixture(source, "1080x1920");
     try {
-      const generated = await generateStoryMedia([{ type: "video", local_path: source }], 2, "en", loadTestConfig({ DATA_DIR: dir }));
-      expect(generated[0]).toMatchObject({ story_width: 1080, story_height: 1920 });
-      expect(String(generated[0]?.story_local_path)).toEndWith(".mp4");
-      expect(fs.existsSync(String(generated[0]?.story_local_path))).toBe(true);
+      const config = loadTestConfig({ DATA_DIR: dir });
+      const paths = storyVariantPaths(config, source, true);
+      expect(await ensureStoryDerivative(config, source, true)).toBe(true);
+      expect(paths.standard).toEndWith(".mp4");
+      expect(fs.existsSync(paths.standard)).toBe(true);
       // Telegram's own encode rides a lower ceiling; delivery falling back to the
       // standard render is how a Story became too large to send.
-      expect(fs.existsSync(String(generated[0]?.telegramStoryLocalPath))).toBe(true);
+      expect(fs.existsSync(String(paths.telegram))).toBe(true);
       const ffmpegArgs = ffmpegCalls.at(-1) ?? [];
       expect(ffmpegArgs[ffmpegArgs.indexOf("-t") + 1]).toBe("58.9");
       expect(ffmpegArgs).not.toContain("-r");
@@ -115,7 +116,7 @@ describe("story publishers", () => {
     // one post with two looks, decided by nothing but the configured executor.
     encodeFixture(source, "1920x1080");
     try {
-      await generateStoryMedia([{ type: "video", local_path: source }], 3, "en", loadTestConfig({ DATA_DIR: dir }));
+      await ensureStoryDerivative(loadTestConfig({ DATA_DIR: dir }), source, true);
       const filter = (ffmpegCalls.at(-1) ?? [])[(ffmpegCalls.at(-1) ?? []).indexOf("-filter_complex") + 1] ?? "";
       expect(filter).toContain("boxblur");
       expect(filter).toContain("overlay=(W-w)/2:(H-h)/2");
@@ -144,12 +145,9 @@ describe("story publishers", () => {
     // name, and `moov atom not found` was then published as a finished Story.
     ffmpegDiesAfterWriting = true;
     try {
-      await expect(generateStoryMedia([{ type: "video", local_path: source }], 4, "en", loadTestConfig({ DATA_DIR: dir }))).rejects.toThrow(
-        "killed",
-      );
+      await expect(ensureStoryDerivative(loadTestConfig({ DATA_DIR: dir }), source, true)).rejects.toThrow("killed");
       const storyDir = path.join(dir, "story-media");
-      const left = fs.existsSync(storyDir) ? fs.readdirSync(storyDir).filter((name) => name.includes("story-")) : [];
-      expect(left).toEqual([]);
+      expect(fs.existsSync(storyDir) ? fs.readdirSync(storyDir) : []).toEqual([]);
     } finally {
       ffmpegDiesAfterWriting = false;
       fs.rmSync(dir, { recursive: true, force: true });
@@ -254,7 +252,7 @@ describe("story publishers", () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ deferred: true, retryAfterMs: 250, state: "processing" });
-    expect(result.resumeValue).toMatchObject({ containerId: "container-1", stage: "processing" });
+    expect(result.progressValue).toMatchObject({ containerId: "container-1", stage: "processing" });
   });
 
   it("recreates an Instagram Story container that reaches ERROR before publication", async () => {
