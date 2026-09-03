@@ -16,7 +16,6 @@ const draftProjection = {
   targets_json: drafts.targetsJson,
   mediaRu: ru.mediaJson,
   mediaEn: en.mediaJson,
-  channel_message_id: drafts.channelMessageId,
   scheduled_at: drafts.scheduledAt,
   scheduled_en_at: drafts.scheduledEnAt,
   post_id: drafts.postId,
@@ -24,6 +23,7 @@ const draftProjection = {
   textEnEntities: en.entitiesJson,
   threads_chain_approved: drafts.threadsChainApproved,
   story_publish_mode: drafts.storyPublishMode,
+  updated_at: drafts.updatedAt,
 };
 
 type DraftProjection = {
@@ -36,7 +36,6 @@ type DraftProjection = {
   targets_json: string;
   mediaRu: unknown;
   mediaEn: unknown;
-  channel_message_id: number | null;
   scheduled_at: string | null;
   scheduled_en_at: string | null;
   post_id: number | null;
@@ -44,6 +43,7 @@ type DraftProjection = {
   textEnEntities: string | null;
   threads_chain_approved: number;
   story_publish_mode: string | null;
+  updated_at: string;
 };
 
 function record(row: DraftProjection): DraftRecord {
@@ -57,7 +57,6 @@ function record(row: DraftProjection): DraftRecord {
     targets_json: row.targets_json,
     media_ru_json: jsonText(row.mediaRu),
     media_en_json: jsonText(row.mediaEn),
-    channel_message_id: row.channel_message_id,
     scheduled_at: row.scheduled_at,
     scheduled_en_at: row.scheduled_en_at,
     post_id: row.post_id,
@@ -65,6 +64,7 @@ function record(row: DraftProjection): DraftRecord {
     text_en_entities_json: row.textEnEntities,
     threads_chain_approved: row.threads_chain_approved,
     story_publish_mode: row.story_publish_mode,
+    updated_at: row.updated_at,
   };
 }
 
@@ -141,37 +141,60 @@ export function createDraftStore(db: BackendDatabase, clock: Clock): DraftStore 
     },
 
     update(id: number, patch: DraftPatch): void {
-      const now = patch.updatedAt ?? clock.now().toISOString();
-      db.transaction((tx) => {
-        const root = {
-          ...(patch.targetsJson === undefined ? {} : { targetsJson: patch.targetsJson }),
-          ...(patch.threadsChainApproved === undefined ? {} : { threadsChainApproved: patch.threadsChainApproved }),
-          updatedAt: now,
-        };
-        tx.update(drafts).set(root).where(eq(drafts.id, id)).run();
-        const ruPatch = {
-          ...(patch.textRu === undefined ? {} : { sourceText: patch.textRu }),
-          ...(patch.textRuEntitiesJson === undefined ? {} : { entitiesJson: patch.textRuEntitiesJson }),
-          ...(patch.mediaRuJson === undefined ? {} : { mediaJson: jsonValue(patch.mediaRuJson) }),
-          updatedAt: now,
-        };
-        const enPatch = {
-          ...(patch.textEnApproved === undefined ? {} : { approvedText: patch.textEnApproved }),
-          ...(patch.textEnEntitiesJson === undefined ? {} : { entitiesJson: patch.textEnEntitiesJson }),
-          ...(patch.mediaEnJson === undefined ? {} : { mediaJson: jsonValue(patch.mediaEnJson) }),
-          updatedAt: now,
-        };
-        if (Object.keys(ruPatch).length > 1)
-          tx.update(postLocales)
-            .set(ruPatch)
-            .where(and(eq(postLocales.draftId, id), eq(postLocales.locale, "ru")))
-            .run();
-        if (Object.keys(enPatch).length > 1)
-          tx.update(postLocales)
-            .set(enPatch)
-            .where(and(eq(postLocales.draftId, id), eq(postLocales.locale, "en")))
-            .run();
-      });
+      updateDraft(db, clock, id, patch);
+    },
+
+    updateIfCurrent(id: number, expectedStatus: string, expectedUpdatedAt: string, patch: DraftPatch): boolean {
+      return updateDraft(db, clock, id, patch, { status: expectedStatus, updatedAt: expectedUpdatedAt });
     },
   };
+}
+
+function updateDraft(
+  db: BackendDatabase,
+  clock: Clock,
+  id: number,
+  patch: DraftPatch,
+  expected?: { status: string; updatedAt: string },
+): boolean {
+  const now = patch.updatedAt ?? clock.now().toISOString();
+  return db.transaction((tx) => {
+    const root = {
+      ...(patch.targetsJson === undefined ? {} : { targetsJson: patch.targetsJson }),
+      ...(patch.threadsChainApproved === undefined ? {} : { threadsChainApproved: patch.threadsChainApproved }),
+      updatedAt: now,
+    };
+    const changed = tx
+      .update(drafts)
+      .set(root)
+      .where(
+        expected ? and(eq(drafts.id, id), eq(drafts.status, expected.status), eq(drafts.updatedAt, expected.updatedAt)) : eq(drafts.id, id),
+      )
+      .returning({ id: drafts.id })
+      .get();
+    if (!changed) return false;
+    const ruPatch = {
+      ...(patch.textRu === undefined ? {} : { sourceText: patch.textRu }),
+      ...(patch.textRuEntitiesJson === undefined ? {} : { entitiesJson: patch.textRuEntitiesJson }),
+      ...(patch.mediaRuJson === undefined ? {} : { mediaJson: jsonValue(patch.mediaRuJson) }),
+      updatedAt: now,
+    };
+    const enPatch = {
+      ...(patch.textEnApproved === undefined ? {} : { approvedText: patch.textEnApproved }),
+      ...(patch.textEnEntitiesJson === undefined ? {} : { entitiesJson: patch.textEnEntitiesJson }),
+      ...(patch.mediaEnJson === undefined ? {} : { mediaJson: jsonValue(patch.mediaEnJson) }),
+      updatedAt: now,
+    };
+    if (Object.keys(ruPatch).length > 1)
+      tx.update(postLocales)
+        .set(ruPatch)
+        .where(and(eq(postLocales.draftId, id), eq(postLocales.locale, "ru")))
+        .run();
+    if (Object.keys(enPatch).length > 1)
+      tx.update(postLocales)
+        .set(enPatch)
+        .where(and(eq(postLocales.draftId, id), eq(postLocales.locale, "en")))
+        .run();
+    return true;
+  });
 }

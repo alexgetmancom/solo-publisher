@@ -48,6 +48,14 @@ function countEvents(backendDb: ReturnType<typeof openBackendDb>, eventType: str
 }
 
 describe("observability", () => {
+  it("inserts a cooldown event once through the atomic event write", () =>
+    withHarness(({ backendDb }) => {
+      const event = { type: "atomic.cooldown", severity: "warn" as const, message: "once", cooldownSeconds: 60 };
+      expect(backendDb.events.record(event)).toBe(true);
+      expect(backendDb.events.record(event)).toBe(false);
+      expect(countEvents(backendDb, event.type)).toBe(1);
+    }));
+
   it("checks credentials and alerts the owner on a failure", () =>
     withHarness(async ({ backendDb, sendMessage, alertsPort, config }) => {
       recordFailure(backendDb, "API unavailable");
@@ -119,7 +127,6 @@ describe("observability", () => {
         .insert(siteJobs)
         .values({
           publicationKey: "post:7",
-          messageId: 7,
           reason: "site_ru",
           status: "failed",
           lastError: "Astro build failed",

@@ -51,12 +51,12 @@ export function seedFormatSupport(backendDb: BackendDb): void {
   });
 }
 
-export function recordFormatEvidence(backendDb: BackendDb, testId: string, messageId: number, notes?: string): string {
+export function recordFormatEvidence(backendDb: BackendDb, testId: string, postId: number, notes?: string): string {
   seedFormatSupport(backendDb);
   const test = unsafeDb(backendDb).db.select().from(mediaTestCases).where(eq(mediaTestCases.testId, testId)).get();
   if (!test) throw new Error(`unknown test: ${testId}`);
-  const post = unsafeDb(backendDb).db.select({ postId: drafts.postId }).from(drafts).where(eq(drafts.channelMessageId, messageId)).get();
-  if (!post?.postId) throw new Error(`message not found: ${messageId}`);
+  const post = unsafeDb(backendDb).db.select({ postId: drafts.postId }).from(drafts).where(eq(drafts.postId, postId)).get();
+  if (!post?.postId) throw new Error(`post not found: ${postId}`);
   const publicationKey = publicationRef("post", post.postId);
   const rows = unsafeDb(backendDb).db.select().from(publicationTargets).where(eq(publicationTargets.publicationKey, publicationKey)).all();
   const byTarget = new Map(rows.map((row) => [row.target, row]));
@@ -75,7 +75,7 @@ export function recordFormatEvidence(backendDb: BackendDb, testId: string, messa
             formatKey: test.formatKey,
             status,
             evidenceTestId: testId,
-            evidenceMessageId: messageId,
+            evidenceMessageId: postId,
             evidenceUrl: row?.url ?? row?.externalId ?? null,
             notes: notes ?? null,
             updatedAt: now,
@@ -85,7 +85,7 @@ export function recordFormatEvidence(backendDb: BackendDb, testId: string, messa
             set: {
               status,
               evidenceTestId: testId,
-              evidenceMessageId: messageId,
+              evidenceMessageId: postId,
               evidenceUrl: row?.url ?? row?.externalId ?? null,
               notes: notes ?? null,
               updatedAt: now,
@@ -102,7 +102,7 @@ export function recordFormatEvidence(backendDb: BackendDb, testId: string, messa
           ? "partial"
           : "pending";
     tx.update(mediaTestCases)
-      .set({ status: testStatus, lastMessageId: messageId, ...(notes ? { notes } : {}), updatedAt: now })
+      .set({ status: testStatus, lastMessageId: postId, ...(notes ? { notes } : {}), updatedAt: now })
       .where(eq(mediaTestCases.testId, testId))
       .run();
   });

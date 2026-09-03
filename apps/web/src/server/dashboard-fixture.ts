@@ -425,7 +425,6 @@ export function seedDashboardFixture(options: DashboardFixtureOptions): SeededDa
         .insert(siteJobs)
         .values({
           publicationKey: `post:${postId}`,
-          messageId: postId,
           reason: "publish",
           status: "done",
           attemptCount: 1,

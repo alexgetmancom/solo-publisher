@@ -99,7 +99,6 @@ function enqueueRepairSiteJob(db: UnsafeBackendDb["db"], ref: ResolvedPublicatio
   db.insert(siteJobs)
     .values({
       publicationKey: ref.publicationKey,
-      messageId: ref.messageId,
       reason,
       status: "queued",
       nextAttemptAt: now,

@@ -63,7 +63,6 @@ describe("publication reconciliation", () => {
         .values([
           {
             publicationKey: "post:90",
-            messageId: 90,
             reason: "site_en",
             status: "published",
             createdAt: now.toISOString(),
@@ -71,7 +70,6 @@ describe("publication reconciliation", () => {
           },
           {
             publicationKey: "post:90",
-            messageId: 90,
             reason: "site_ru",
             status: "queued",
             nextAttemptAt: later.toISOString(),
@@ -117,7 +115,7 @@ describe("publication reconciliation", () => {
         .run();
       backendDb.db
         .insert(siteJobs)
-        .values({ publicationKey: "post:91", messageId: 91, reason: "site_en", status: "published", createdAt: now, updatedAt: now })
+        .values({ publicationKey: "post:91", reason: "site_en", status: "published", createdAt: now, updatedAt: now })
         .run();
 
       refreshPublicationStatus(backendDb, 91);

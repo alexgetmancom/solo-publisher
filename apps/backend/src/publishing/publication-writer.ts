@@ -108,7 +108,6 @@ export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: Public
       tx.insert(siteJobs)
         .values({
           publicationKey: plan.publicationKey,
-          messageId: plan.messageId,
           reason: `site_${locale}`,
           status: "queued",
           nextAttemptAt: publishAt ?? plan.now,

@@ -1,11 +1,9 @@
 <!-- =============================================================================
-  Оверлей play/pause: круг с иконкой, вспыхивающий поверх сцены после клика.
-  Чисто презентационный, состояния нет. Иконка собрана из ::before/::after —
-  отдельных SVG для двух фигур не заводим.
+  Stateless play/pause flash drawn over the stage after a click. The icon is
+  built from pseudo-elements; two separate SVG assets add no value.
 
-  `overlayTick` — счётчик из StoryPlayer, а не булев флаг: {#key} по нему
-  перемонтирует блок и тем перезапускает анимацию на каждом клике, даже если
-  пауза переключается туда-обратно. Ноль означает «кликов ещё не было».
+  `overlayTick` is a counter from StoryPlayer. The keyed block remounts and
+  restarts animation on every click; zero means no click has happened.
 ============================================================================= -->
 <script lang="ts">
 let { paused, overlayTick }: { paused: boolean; overlayTick: number } = $props();
@@ -23,10 +21,10 @@ let { paused, overlayTick }: { paused: boolean; overlayTick: number } = $props()
   .play-pause-overlay {
     position: absolute;
     inset: 0;
-    z-index: 5;
+    z-index: var(--z-player-flash);
     display: grid;
     place-items: center;
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--overlay-flash);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -40,14 +38,14 @@ let { paused, overlayTick }: { paused: boolean; overlayTick: number } = $props()
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.72);
+    background: var(--overlay-icon-surface);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--overlay-icon-border);
     display: grid;
     place-items: center;
     position: relative;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px var(--overlay-icon-shadow);
   }
 
   /* Paused: two vertical bars. */
@@ -56,7 +54,7 @@ let { paused, overlayTick }: { paused: boolean; overlayTick: number } = $props()
     content: "";
     width: 6px;
     height: 20px;
-    background: #ffffff;
+    background: var(--overlay-text-strong);
     border-radius: 2px;
     position: absolute;
     top: 22px;
@@ -75,7 +73,7 @@ let { paused, overlayTick }: { paused: boolean; overlayTick: number } = $props()
     height: 0;
     border-style: solid;
     border-width: 10px 0 10px 18px;
-    border-color: transparent transparent transparent #ffffff;
+    border-color: transparent transparent transparent var(--overlay-text-strong);
     position: absolute;
     left: 25px;
     top: 22px;

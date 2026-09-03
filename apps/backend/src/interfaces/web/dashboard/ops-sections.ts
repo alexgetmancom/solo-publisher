@@ -50,7 +50,7 @@ function activeAudiencePlatforms(backendDb: BackendDb): AudiencePlatform[] {
 export function renderQueueSection(ops: OpsPayload, locale: StudioLocale): Html {
   const drafts = (ops.drafts ?? []).map(
     (row) =>
-      html`<tr><td>${Number(row.id)}</td><td>${row.status}</td><td class="wide">${shortPipelineText(row.textRu, 20)}</td><td>${row.scheduledAt}</td><td>${row.scheduledEnAt}</td><td>${row.channelMessageId}</td><td>${row.updatedAt}</td></tr>`,
+      html`<tr><td>${Number(row.id)}</td><td>${row.status}</td><td class="wide">${shortPipelineText(row.textRu, 20)}</td><td>${row.scheduledAt}</td><td>${row.scheduledEnAt}</td><td>${row.updatedAt}</td></tr>`,
   );
   const jobs = (ops.jobs ?? []).map(
     (row) =>

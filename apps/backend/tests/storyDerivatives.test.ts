@@ -3,8 +3,16 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { PublishMediaItem } from "../src/delivery/social/payload.js";
-import { preparedStoryMedia, storyVariantPaths } from "../src/delivery/story-derivatives.js";
+import {
+  ensurePreparedStoryMedia,
+  ensureStoryDerivative,
+  preparedStoryMedia,
+  storyVariantPaths,
+} from "../src/delivery/story-derivatives.js";
 import type { BackendConfig } from "../src/foundation/config.js";
+import { loadTestConfig } from "./helpers/studio-config.js";
+
+const PNG_BYTES = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
 
 function tempConfig(): BackendConfig {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "story-derivatives-"));
@@ -48,7 +56,7 @@ describe("story derivatives", () => {
     await fs.promises.writeFile(paths.standard, "variant");
     expect(preparedStoryMedia(config, item)).not.toBeNull();
 
-    // A missing durable derivative is not silently rebuilt by delivery.
+    // The file is the record: with it gone, the asset is simply unprepared.
     await fs.promises.rm(paths.standard);
     expect(preparedStoryMedia(config, item)).toBeNull();
   });
@@ -69,5 +77,51 @@ describe("story derivatives", () => {
   it("has nothing to offer for media that arrived without a local file", () => {
     const config = tempConfig();
     expect(preparedStoryMedia(config, { type: "IMAGE", fileId: "telegram-file" })).toBeNull();
+  });
+
+  it("renders a missing derivative once and leaves a present one alone", async () => {
+    const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-ensure-")) });
+    const source = path.join(config.DATA_DIR, "abcdef0123456789abcdef04.jpg");
+    await fs.promises.writeFile(source, PNG_BYTES);
+
+    expect(await ensureStoryDerivative(config, source, false)).toBe(true);
+    const paths = storyVariantPaths(config, source, false);
+    const renderedAt = fs.statSync(paths.standard).mtimeMs;
+
+    // Present means done: the second caller neither waits for ffmpeg nor
+    // replaces the file the first one made.
+    expect(await ensureStoryDerivative(config, source, false)).toBe(false);
+    expect(fs.statSync(paths.standard).mtimeMs).toBe(renderedAt);
+  });
+
+  it("recovers at publish time for a file imported before preparation existed", async () => {
+    const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-recover-")) });
+    const source = path.join(config.DATA_DIR, "abcdef0123456789abcdef05.jpg");
+    await fs.promises.writeFile(source, PNG_BYTES);
+    const item: PublishMediaItem = { type: "IMAGE", localPath: source };
+    expect(preparedStoryMedia(config, item)).toBeNull();
+
+    const prepared = await ensurePreparedStoryMedia(config, item);
+    expect(prepared?.storyLocalPath).toBe(storyVariantPaths(config, source, false).standard);
+    expect(fs.existsSync(String(prepared?.storyLocalPath))).toBe(true);
+  });
+
+  it("shares one render between the targets that arrive while it runs", async () => {
+    const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-share-")) });
+    const source = path.join(config.DATA_DIR, "abcdef0123456789abcdef06.jpg");
+    await fs.promises.writeFile(source, PNG_BYTES);
+
+    // Two Story targets of one post, asking at the same moment: one encode, and
+    // both see it as theirs.
+    const [first, second] = await Promise.all([ensureStoryDerivative(config, source, false), ensureStoryDerivative(config, source, false)]);
+    expect([first, second]).toEqual([true, true]);
+    expect(fs.readdirSync(path.join(config.DATA_DIR, "story-media"))).toHaveLength(1);
+  });
+
+  it("refuses to invent a derivative for a source that is gone", async () => {
+    const config = tempConfig();
+    await expect(ensureStoryDerivative(config, path.join(config.DATA_DIR, "abcdef0123456789abcdef08.jpg"), false)).rejects.toThrow(
+      "story_source_missing",
+    );
   });
 });

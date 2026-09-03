@@ -163,7 +163,6 @@ function fetchPostRows(backendDb: BackendDb, start: string, end: string, include
   const publicationRows = unsafeDb(backendDb)
     .db.select({
       postId: drafts.postId,
-      telegramMessageId: drafts.channelMessageId,
       createdAt: drafts.createdAt,
       updatedAt: drafts.updatedAt,
       ...(includeContent
@@ -198,7 +197,6 @@ function fetchPostRows(backendDb: BackendDb, start: string, end: string, include
     return {
       publication_key: publicationRef("post", row.postId),
       post_id: row.postId,
-      telegram_message_id: row.telegramMessageId,
       created_at: row.createdAt,
       updated_at: row.updatedAt,
       text_ru: row.textRu,
@@ -209,7 +207,6 @@ function fetchPostRows(backendDb: BackendDb, start: string, end: string, include
       media_en_json: row.mediaEnJson,
       site_en: row.siteEn,
       slug_en: row.slugEn,
-      message_id: row.telegramMessageId,
       date_msk: row.createdAt,
       telegram_url: null,
     };
@@ -275,7 +272,7 @@ export function recentPostMetrics(backendDb: BackendDb) {
       source: postMetrics.source,
       sampledAt: postMetrics.sampledAt,
       error: postMetrics.error,
-      messageId: drafts.channelMessageId,
+      postId: drafts.postId,
       postUrl: sql<string | null>`(
         select ${publicationTargets.url} from ${publicationTargets}
         where ${publicationTargets.publicationKey} = ${postMetrics.publicationKey}

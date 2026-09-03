@@ -70,12 +70,12 @@ describe("verifyPostTargets", () => {
     });
   });
 
-  it("resolves the same post by messageId when the key does not match", async () => {
+  it("does not treat a historical Telegram message id as a post id", async () => {
     await withDb(async (backendDb) => {
       insertPost(backendDb, { postId: 8, messageId: 106 });
       insertTarget(backendDb, { publicationKey: "post:8", target: "telegram", status: "queued" });
 
-      expect(await verifyPostTargets(backendDb, "post:106")).toMatchObject([{ ok: false, reason: "not_published" }]);
+      await expect(verifyPostTargets(backendDb, "post:106")).rejects.toThrow("post not found: post:106");
     });
   });
 

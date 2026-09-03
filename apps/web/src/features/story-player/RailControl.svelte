@@ -1,10 +1,8 @@
 <!-- =============================================================================
-  Боковая панель управления: аватар-меню (навигация, язык, телеграм) и меню
-  режимов ленты. Своего состояния нет — `feedMenuOpen` живёт в StoryPlayer,
-  потому что его закрывает глобальный клик по документу.
+  Stateless side controls: avatar navigation, language, Telegram and feed mode.
+  `feedMenuOpen` lives in StoryPlayer because a document click closes it.
 
-  Геометрия панели выведена из переменных `--rail-*` контейнера ленты
-  (см. .story-rail-container в StoryPlayer.svelte) — они наследуются сюда.
+  Geometry inherits the rail container's `--rail-*` variables.
 ============================================================================= -->
 <script lang="ts">
 import type { StoryUi } from "./i18n";

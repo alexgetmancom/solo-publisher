@@ -27,8 +27,8 @@ export function storyDirectory(config: BackendConfig): string {
 /**
  * One source file into the Story shapes, wherever the caller wants them.
  *
- * Media ingress is the only caller in the publication path. The explicit media
- * reprocess operation also uses this recipe when an operator requests repair.
+ * Ingress, publish-time recovery and the operator's repair all reach the recipe
+ * through here: the same transform, the same timeout, the same permissions.
  */
 export async function renderStoryVariants(
   source: string,

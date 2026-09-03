@@ -1,16 +1,10 @@
 <!-- =============================================================================
-  ПРАВАЯ ПАНЕЛЬ: текст поста + кнопка «Поделиться».
+  RIGHT PANEL: post text and sharing.
   ─────────────────────────────────────────────────────────────────────────────
-  Презентационный компонент: своего состояния нет. Показывает:
-    - строку рубрики: категория · дата · время чтения
-    - заголовок (единственный <h1> страницы — noscript-SEO в Astro-слое
-      дублирует его как <p>, во избежание двух h1 в разметке)
-    - параграфы поста + кнопку «Читать дальше» (видимость меряет корень)
-    - строку сноски: источники + «Поделиться» ссылкой (на телефоне скрыта —
-      там та же кнопка живёт на плавающей панели сцены)
-  Стили — в <style> внизу (scoped). Правила, зависящие от состояния корня
-  (.story-player.is-reading), написаны через :global(...) — корневой класс
-  живёт в StoryPlayer.svelte.
+  Stateless presentation of category metadata, the page's only h1, expandable
+  paragraphs, sources and the desktop share action. Astro's noscript copy uses
+  a paragraph to avoid a second h1. Scoped styles use :global only for state
+  classes owned by StoryPlayer.
 ============================================================================= -->
 <script lang="ts">
 import type { StoryUi } from "./i18n";

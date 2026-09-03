@@ -1,4 +1,4 @@
-import { asc, eq, or } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, publicationTargets } from "../db/schema.js";
@@ -13,7 +13,7 @@ export async function verifyPostTargets(backendDb: BackendDb, ref: string): Prom
   const post = unsafeDb(backendDb)
     .db.select({ postId: drafts.postId })
     .from(drafts)
-    .where(id == null ? eq(drafts.postId, -1) : or(eq(drafts.postId, id), eq(drafts.channelMessageId, id)))
+    .where(eq(drafts.postId, id ?? -1))
     .get();
   if (!post?.postId) throw new Error(`post not found: ${ref}`);
   const publicationKey = publicationRef("post", post.postId);

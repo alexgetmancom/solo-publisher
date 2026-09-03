@@ -31,7 +31,6 @@ html[data-theme="dark"] {
   --bg-deep: #050505; /* Player stage — stays dark in both themes, see below */
   --surface: rgba(5, 6, 9, 0.74); /* Glass-like black panel */
   --surface-raised: rgba(18, 21, 27, 0.82); /* Layer lifted above --surface */
-  --card-bg: var(--surface); /* Legacy name, kept for existing components */
 
   /* Text */
   --text-header: #f3f6fa; /* Soft pure-like white for major headers */
@@ -72,7 +71,6 @@ html[data-theme="light"] {
   --bg-deep: #050505; /* Player stage stays dark in the light theme too */
   --surface: #ffffff; /* Pure white card background */
   --surface-raised: #ffffff;
-  --card-bg: var(--surface);
 
   --text-header: #111827; /* Rich black header text */
   --text-main: #263241; /* High contrast dark grey text */
@@ -190,6 +188,27 @@ html[data-theme="light"] .story-visual * {
   --overlay-text: rgba(255, 255, 255, 0.62);
   --overlay-text-strong: #ffffff;
   --overlay-track: rgba(255, 255, 255, 0.3);
+  --overlay-fallback-glow: rgba(240, 68, 101, 0.18);
+  --overlay-fallback-wash: rgba(240, 68, 101, 0.12);
+  --overlay-fallback-sheen: rgba(255, 255, 255, 0.03);
+  --overlay-top-scrim: rgba(0, 0, 0, 0.45);
+  --overlay-clear: rgba(0, 0, 0, 0);
+  --overlay-cta-border: rgba(255, 255, 255, 0.22);
+  --overlay-cta-border-hover: rgba(255, 255, 255, 0.34);
+  --overlay-cta-surface: rgba(0, 0, 0, 0.62);
+  --overlay-cta-surface-hover: rgba(0, 0, 0, 0.75);
+  --overlay-flash: rgba(0, 0, 0, 0.12);
+  --overlay-icon-surface: rgba(0, 0, 0, 0.72);
+  --overlay-icon-border: rgba(255, 255, 255, 0.12);
+  --overlay-icon-shadow: rgba(0, 0, 0, 0.5);
+  --overlay-debug-border: rgba(255, 255, 255, 0.16);
+  --overlay-debug-surface: rgba(0, 0, 0, 0.82);
+  --overlay-debug-text: #e5e7eb;
+  --overlay-error-border: rgba(220, 38, 38, 0.35);
+  --overlay-error-fill: rgba(220, 38, 38, 0.12);
+  --overlay-error-text: #f87171;
+  --overlay-title-shadow: rgba(0, 0, 0, 0.75);
+  --overlay-rail-shade: rgba(8, 11, 16, 0.94);
 }
 
 /* Height of the strip the phone stage keeps clear at the bottom for the action
@@ -218,6 +237,10 @@ html[data-theme="light"] .story-visual * {
   --z-base: 1; /* background, media inside a card */
   --z-above: 2; /* text/gradient on top of media */
   --z-controls: 10; /* buttons and controls inside a block */
+  --z-player-media-control: 4;
+  --z-player-flash: 5;
+  --z-player-actions: 12;
+  --z-player-sound-cta: 13;
 
   /* Above the page content */
   --z-sticky: 20; /* stuck panels, mobile captions */

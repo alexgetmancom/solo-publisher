@@ -267,10 +267,9 @@ describe("Telegram event consumer", () => {
       backendDb.db
         .insert(siteJobs)
         .values([
-          { publicationKey: "post:113", messageId: 113, reason: "site_en", status: "published", createdAt: now, updatedAt: now },
+          { publicationKey: "post:113", reason: "site_en", status: "published", createdAt: now, updatedAt: now },
           {
             publicationKey: "post:113",
-            messageId: 113,
             reason: "site_ru",
             status: "queued",
             nextAttemptAt: later,
@@ -341,7 +340,6 @@ describe("Telegram event consumer", () => {
         .insert(siteJobs)
         .values({
           publicationKey: "post:110",
-          messageId: 110,
           reason: "site_en",
           status: "published",
           createdAt: now,

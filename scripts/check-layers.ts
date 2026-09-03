@@ -6,8 +6,9 @@ import * as ts from "../tools/layer-checker/node_modules/typescript/lib/typescri
 
 const root = path.resolve(import.meta.dirname, "..");
 const configPath = path.join(root, ".dependency-cruiser.jsonc");
-const sourceRoots = ["apps/backend/src", "apps/web/src", "scripts", "deploy/media-processor"];
+const sourceRoots = ["apps/backend/src", "apps/web/src", "scripts", "deploy", "shared"];
 const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage", ".astro"]);
+const sourceExtensions = new Set([".ts", ".svelte", ".astro"]);
 
 type RuleSelector = {
   path?: string;
@@ -37,7 +38,7 @@ function walk(directory: string, result: string[] = []): string[] {
     if (entry.isDirectory() && ignoredDirectories.has(entry.name)) continue;
     const absolute = path.join(directory, entry.name);
     if (entry.isDirectory()) walk(absolute, result);
-    else if (entry.isFile() && path.extname(entry.name) === ".ts") result.push(absolute);
+    else if (entry.isFile() && sourceExtensions.has(path.extname(entry.name))) result.push(absolute);
   }
   return result;
 }
@@ -127,6 +128,18 @@ function importSpecifiers(sourceFile: ts.SourceFile): string[] {
   return specifiers;
 }
 
+function componentImportSpecifiers(source: string): string[] {
+  return [...source.matchAll(/(?:import|export)\s+(?:[^"']+?\s+from\s+)?["']([^"']+)["']/g)].map((match) => match[1] as string);
+}
+
+function resolveLocalComponent(specifier: string, file: string): string | null {
+  const candidate = path.resolve(path.dirname(file), specifier);
+  for (const value of [candidate, ...[".ts", ".svelte", ".astro"].map((extension) => `${candidate}${extension}`)]) {
+    if (fs.existsSync(value) && fs.statSync(value).isFile()) return value;
+  }
+  return null;
+}
+
 function resolveEdges(files: string[]): Edge[] {
   const compilerOptions: ts.CompilerOptions = {
     module: ts.ModuleKind.NodeNext,
@@ -148,9 +161,15 @@ function resolveEdges(files: string[]): Edge[] {
   const edges: Edge[] = [];
   for (const file of files.filter(isSourceFile)) {
     const source = fs.readFileSync(file, "utf8");
-    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    for (const specifier of new Set(importSpecifiers(sourceFile))) {
-      const resolved = ts.resolveModuleName(specifier, file, compilerOptions, host).resolvedModule?.resolvedFileName;
+    const extension = path.extname(file);
+    const specifiers =
+      extension === ".ts"
+        ? importSpecifiers(ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS))
+        : componentImportSpecifiers(source);
+    for (const specifier of new Set(specifiers)) {
+      const resolved =
+        ts.resolveModuleName(specifier, file, compilerOptions, host).resolvedModule?.resolvedFileName ??
+        (specifier.startsWith(".") ? resolveLocalComponent(specifier, file) : null);
       if (specifier.startsWith(".") && resolved?.startsWith(root) && fs.existsSync(resolved)) {
         edges.push({ source: relativePath(file), target: relativePath(resolved), specifier, dependencyType: "local" });
       } else if (!specifier.startsWith(".") && !specifier.startsWith("node:")) {
@@ -199,6 +218,15 @@ const files = walk(root);
 const edges = resolveEdges(files);
 const violations: string[] = [];
 
+for (const file of files.filter((value) => relativePath(value).startsWith("apps/web/src/features/story-player/"))) {
+  const source = fs.readFileSync(file, "utf8");
+  for (const [index, line] of source.split("\n").entries()) {
+    if (/(?:#[0-9a-fA-F]{3,8}\b|(?:rgb|hsl)a?\()/.test(line))
+      violations.push(`story-player raw colour: ${relativePath(file)}:${index + 1}`);
+    if (/z-index:\s*-?\d/.test(line)) violations.push(`story-player raw z-index: ${relativePath(file)}:${index + 1}`);
+  }
+}
+
 for (const rule of config.forbidden ?? []) {
   if (rule.to?.circular) {
     for (const cycle of cycles(edges)) violations.push(`${rule.name}: ${cycle.join(" -> ")}`);
@@ -217,5 +245,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `TypeScript layer check passed: ${new Set(edges.flatMap((edge) => [edge.source, edge.target])).size} modules, ${edges.length} dependencies.`,
+  `Layer and Story CSS checks passed: ${new Set(edges.flatMap((edge) => [edge.source, edge.target])).size} modules, ${edges.length} dependencies.`,
 );

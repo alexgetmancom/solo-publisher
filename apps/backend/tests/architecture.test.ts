@@ -26,6 +26,16 @@ function sourceFiles(relativeDirectory: string): string[] {
  * automatically. */
 const applicationPersistenceExceptions = new Set<string>();
 
+const interfacePersistenceOwners = new Set([
+  "apps/backend/src/interfaces/http/health.ts",
+  "apps/backend/src/interfaces/telegram/control-cards.ts",
+  "apps/backend/src/interfaces/telegram/editorial-inbox.ts",
+  "apps/backend/src/interfaces/telegram/event-consumer.ts",
+  "apps/backend/src/interfaces/telegram/video-notifications.ts",
+  "apps/backend/src/interfaces/web/dashboard/ops-sections.ts",
+  "apps/backend/src/interfaces/web/dashboard/video-overview-data.ts",
+]);
+
 /** The text of one function declaration, up to the next top-level one. Enough
  * to say what a function does and does not call, without a parser. */
 function functionBody(text: string, name: string): string {
@@ -65,6 +75,13 @@ describe("architecture fitness", () => {
       expect(text).not.toMatch(/from ["'][^"']*\/db\/schema/);
       expect(text).not.toMatch(/from ["']drizzle-orm/);
     }
+  });
+
+  it("does not let new interface code acquire raw persistence silently", () => {
+    const owners = sourceFiles("apps/backend/src/interfaces")
+      .filter((file) => source(file).includes("unsafeDb("))
+      .sort();
+    expect(owners).toEqual([...interfacePersistenceOwners].sort());
   });
 
   it("keeps Telegram conversation state behind one persistence port", () => {

@@ -2,6 +2,7 @@ import { targetLocale } from "../botTargets.js";
 import { draftLocaleContent } from "../content/draft-content.js";
 import { textLocale } from "../content/text-locale.js";
 import { splitText } from "../delivery/social/payload.js";
+import { StudioError } from "../foundation/errors.js";
 import { formatPlatformText, platformProfile } from "./platform-profiles.js";
 import { assertKnownTargets, parseTargets } from "./targets.js";
 import { isThreadsTarget, threadsBody } from "./threads-text.js";
@@ -21,11 +22,9 @@ type DraftForPreflight = {
 export type PublicationPreflightIssue = {
   target: string;
   locale: "ru" | "en";
-  /** What is wrong, for surfaces that word it themselves. `message` is the
-   * wording every surface without its own catalog prints. */
+  /** What is wrong, for surfaces to word in their own locale. */
   kind: "text-limit" | "caption-limit" | "language" | "empty";
   label: string;
-  message: string;
   limit?: number;
   actual?: number;
   /** The language the text is actually written in, on a `language` issue. */
@@ -79,7 +78,6 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
           locale,
           kind: "empty" as const,
           label,
-          message: `${label}: нет ${locale.toUpperCase()}-содержимого. Напишите ${locale.toUpperCase()}-текст или отключите ${label}.`,
         },
       ];
     const written = textLocale(value.text);
@@ -93,7 +91,6 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
           kind: "language" as const,
           label,
           written,
-          message: `${label} публикует на ${locale.toUpperCase()}, а ${locale.toUpperCase()}-текст написан на ${written.toUpperCase()}. Исправьте его или отключите ${label}.`,
         },
       ];
     const waivable = isThreadsTarget(target);
@@ -104,14 +101,12 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
         limit: profile?.limits?.text,
         applies: !waived,
         waivable,
-        message: (l: number) => `${label}: ${text.length}/${l} символов.`,
       },
       {
         kind: "caption-limit" as const,
         limit: profile?.limits?.caption,
         applies: value.media.length > 0,
         waivable: false,
-        message: (l: number) => `${label} с медиа: ${text.length}/${l} символов.`,
       },
     ];
     return rules.flatMap((rule) =>
@@ -124,7 +119,6 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
               limit: rule.limit,
               actual: text.length,
               label,
-              message: `${rule.message(rule.limit)} Сократите ${locale.toUpperCase()}-текст или отключите ${label}.`,
               ...(rule.waivable ? { chainParts: splitText(text, rule.limit).length } : {}),
             },
           ]
@@ -140,8 +134,8 @@ export function assertPublicationPreflight(draft: DraftForPreflight): void {
   // channel, so an empty set is a publication with nowhere to go. It used to be
   // created anyway: no jobs, and a `scheduled` publication that no worker would
   // ever pick up and no status would ever move off "upcoming".
-  if (!Object.values(targets).some(Boolean))
-    throw new Error("Публиковать некуда: ни одна площадка не выбрана или не подключена. Подключите канал или включите площадку.");
+  if (!Object.values(targets).some(Boolean)) throw new StudioError("err.post-no-targets");
   const issues = publicationPreflight(draft);
-  if (issues.length > 0) throw new Error(issues.map((issue) => issue.message).join(" "));
+  const issue = issues[0];
+  if (issue) throw new StudioError("err.post-preflight", { target: issue.label, reason: issue.kind });
 }

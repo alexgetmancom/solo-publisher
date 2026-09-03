@@ -66,7 +66,8 @@ not be deployed unless asked.
 `BackendDb` is the application handle; raw SQLite only through the explicitly named `unsafeDb(...)`.
 Studio and Content go through persistence ports and their exception set in the architecture tests
 stays empty. Publishing, Delivery and Channels own their transactions directly — that is the shape,
-not a stage. Analytics, Operations, Observability and Engagement reach Drizzle directly, reads and writes both,
+not a stage. Analytics, Operations, Observability, Engagement, Notifications, the Public read model
+and StoryCards reach Drizzle directly, reads and writes both,
 for the tables they own. Writing another area's table from there is not covered by that: delivery
 state belongs to Delivery.
 

@@ -6,7 +6,6 @@ export const siteJobs = sqliteTable(
   {
     jobId: autoId(),
     publicationKey: text().notNull(),
-    messageId: integer().notNull(),
     reason: text().notNull(),
     status: text().notNull().default("queued"),
     ...queueAttempts(),

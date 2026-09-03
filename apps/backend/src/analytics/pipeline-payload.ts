@@ -37,8 +37,6 @@ type TargetRecord = {
 
 export type PipelinePost = {
   post_id?: number | string | null;
-  message_id?: number | string | null;
-  telegram_message_id?: number | string | null;
   publication_key?: string | null;
   date?: string | null;
   date_msk?: string | null;

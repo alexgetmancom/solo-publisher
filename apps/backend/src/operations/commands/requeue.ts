@@ -16,7 +16,7 @@ function requeuePublicationTx(
   source: Record<string, unknown>,
   target?: string,
 ): Record<string, unknown> {
-  const scope = { postId: ref.postId, publicationKey: ref.publicationKey, messageId: ref.messageId };
+  const scope = { postId: ref.postId, publicationKey: ref.publicationKey };
   const targets = target ? [target] : jobbedTargets(db, ref);
   if (targets.length === 0) throw new Error("no publish jobs found");
   const results = requeuePublicationTargetsTx(db, scope, targets, {
@@ -38,7 +38,6 @@ function requeuePublicationTx(
     ok: results.some((row) => row.outcome !== "not_retryable"),
     post_id: ref.postId,
     publication_key: ref.publicationKey,
-    message_id: ref.messageId,
     target: target ?? null,
     targets: results.map((row) => row.target),
     results,

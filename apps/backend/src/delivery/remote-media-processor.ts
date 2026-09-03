@@ -5,7 +5,9 @@ import { OperationTimeoutError, withTimeout } from "../foundation/runtime/timeou
 import { HttpPublishError } from "../publishing/errors.js";
 import { mediaTransformKey } from "./media-idempotency.js";
 import { writeResponseAtomically } from "./site-media-storage.js";
-import { VERTICAL_MEDIA_TRANSFORM, verticalMediaRecipe } from "./vertical-media-recipe.js";
+
+const VERTICAL_MEDIA_RECIPE = "vertical-variants-v6";
+const VERTICAL_MEDIA_TRANSFORM = "story_vertical";
 
 export type RemoteMediaManifest = {
   job?: string;
@@ -31,7 +33,7 @@ export async function processVerticalMediaRemotely(input: {
     throw new Error("media_processor_unavailable: remote_http requires MEDIA_PROCESSOR_URL and MEDIA_PROCESSOR_TOKEN");
   const fetchImpl = input.fetchImpl ?? fetch;
   const stat = await fs.promises.stat(source);
-  const idempotencyKey = await mediaTransformKey(source, verticalMediaRecipe(kind));
+  const idempotencyKey = await mediaTransformKey(source, `${VERTICAL_MEDIA_RECIPE}:${kind}`);
   const base = config.MEDIA_PROCESSOR_URL.replace(/\/$/, "");
   let response: Response;
   try {

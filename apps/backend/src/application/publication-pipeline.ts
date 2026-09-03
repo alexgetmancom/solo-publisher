@@ -23,10 +23,11 @@ type PublicationView = {
 };
 
 export type Issue = {
-  message: string;
   target?: string;
   locale?: "ru" | "en";
   code?: string;
+  kind?: string;
+  label?: string;
 };
 
 type PreviewModel = PublicationView & {

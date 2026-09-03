@@ -38,7 +38,6 @@ export type PipelineSampleRow = {
 export type PipelinePostRow = {
   publication_key: string;
   post_id: number;
-  telegram_message_id: number | null;
   created_at: string;
   updated_at: string;
   text_ru: string | null | undefined;
@@ -49,7 +48,6 @@ export type PipelinePostRow = {
   media_en_json: unknown;
   site_en: number | null | undefined;
   slug_en: string | null | undefined;
-  message_id: number | null | undefined;
   date_msk: string | null | undefined;
   telegram_url: string | null | undefined;
 };
@@ -107,17 +105,9 @@ export function formatPipelinePosts(
     const contentLoaded =
       row.text_ru !== undefined || row.media_ru_json !== undefined || row.text_en !== undefined || row.media_en_json !== undefined;
     const includeRowContent = includeContent && (!compact || contentLoaded);
-    const telegramMessageId = row.telegram_message_id == null ? null : Number(row.telegram_message_id);
-    const telegramUrl =
-      typeof row.telegram_url === "string" && row.telegram_url
-        ? row.telegram_url
-        : telegramMessageId
-          ? `https://t.me/${config.TELEGRAM_CHANNEL_USERNAME.replace(/^@/, "")}/${telegramMessageId}`
-          : null;
+    const telegramUrl = typeof row.telegram_url === "string" && row.telegram_url ? row.telegram_url : null;
     const result: Record<string, unknown> = {
       post_id: postId,
-      message_id: row.message_id == null ? telegramMessageId : Number(row.message_id),
-      telegram_message_id: telegramMessageId,
       date: row.created_at,
       date_msk: row.date_msk ?? formatZonedSortable(String(row.created_at), config.TIMEZONE),
       ...(includeRowContent

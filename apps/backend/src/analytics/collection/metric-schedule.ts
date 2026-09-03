@@ -81,7 +81,7 @@ export function claimDueMetricTasks(
       publicationKey: metricSchedule.publicationKey,
       target: metricSchedule.target,
       checkCount: metricSchedule.checkCount,
-      messageId: sql<number>`coalesce(${drafts.channelMessageId}, ${drafts.postId})`,
+      messageId: sql<number>`${drafts.postId}`,
       dateUtc: publicationTargets.publishedAt,
       externalId: publicationTargets.externalId,
       externalIds: publicationTargets.externalIdsJson,

@@ -3,6 +3,26 @@
  * Every Studio surface that shows or slots a schedule time reads from here. */
 import { STUDIO_LOCALE_TAGS, type StudioLocale } from "./locale.js";
 
+const FULL_ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+/** Machine timestamps name an instant with an explicit offset. JavaScript also
+ * accepts host-local and RFC-like dates whose meaning changes by timezone. */
+export function parseIsoInstant(value: string): Date {
+  if (!FULL_ISO_INSTANT.test(value)) throw new RangeError("must be a full ISO timestamp, for example 2026-08-27T14:01:34Z");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new RangeError("must be a full ISO timestamp, for example 2026-08-27T14:01:34Z");
+  return date;
+}
+
+export function isIsoInstant(value: string): boolean {
+  try {
+    parseIsoInstant(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** UTC-minus-local offset in ms for `date` in `timeZone`, read from the actual
  * civil-time offset rather than a fixed constant so it holds for zones that
  * observe daylight saving too. Computed by reading the zone's wall-clock digits

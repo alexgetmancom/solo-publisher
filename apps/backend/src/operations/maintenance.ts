@@ -108,7 +108,6 @@ export function buildMetricsBackfillPlan(
     .db.select({
       publicationKey: key,
       postId: drafts.postId,
-      messageId: drafts.channelMessageId,
       dateUtc: date,
       target: publicationTargets.target,
     })

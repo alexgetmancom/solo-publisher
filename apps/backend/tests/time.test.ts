@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   formatZonedDateTime,
   formatZonedSortable,
+  parseIsoInstant,
   timezoneOffsetMs,
   zonedDateParts,
   zonedSlot,
@@ -9,6 +10,12 @@ import {
 } from "../src/foundation/time.js";
 
 describe("foundation/time", () => {
+  it("accepts only timestamps that identify the same instant on every host", () => {
+    expect(parseIsoInstant("2026-08-20T00:00:00+03:00").toISOString()).toBe("2026-08-19T21:00:00.000Z");
+    expect(() => parseIsoInstant("Thu, Aug 20, 2026")).toThrow("must be a full ISO timestamp");
+    expect(() => parseIsoInstant("2026-08-20")).toThrow("must be a full ISO timestamp");
+  });
+
   it("resolves the configured IANA zone's offset from the actual civil time", () => {
     expect(timezoneOffsetMs(new Date("2026-07-18T12:00:00Z"), "Europe/Moscow")).toBe(3 * 3_600_000);
     expect(timezoneOffsetMs(new Date("2026-07-18T12:00:00Z"), "UTC")).toBe(0);

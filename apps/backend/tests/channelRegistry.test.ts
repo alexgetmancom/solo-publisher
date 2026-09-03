@@ -103,7 +103,7 @@ describe("channel registry", () => {
       // It used to create the publication anyway: no jobs behind it, and a
       // `scheduled` row that no worker would pick up and no status would ever
       // move — an upcoming post that was never going anywhere.
-      expect(() => publishDraftToQueue(backendDb, draftId)).toThrow("Публиковать некуда");
+      expect(() => publishDraftToQueue(backendDb, draftId)).toThrow("err.post-no-targets");
       expect(backendDb.db.select({ target: publishJobs.target }).from(publishJobs).all()).toEqual([]);
     }));
 });

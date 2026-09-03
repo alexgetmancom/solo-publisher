@@ -1,14 +1,10 @@
 <!-- =============================================================================
-  ЦЕНТРАЛЬНАЯ СЦЕНА: фото/видео активного поста.
+  CENTRAL STAGE: active post photo or video.
   ─────────────────────────────────────────────────────────────────────────────
-  Презентационный компонент: своё состояние — только фолбек упавшего видео.
-  Что здесь живёт:
-    - <img>/<video>/<audio> активного поста (элементы отдаёт корню через bind:)
-    - кнопка звука, кнопка «Читать», мобильная подпись и мобильные кнопки
-  Полоса прогресса — StoryProgressBar.svelte (её `progressFill` проходит
-  насквозь к корню), вспышка play/pause — PlayPauseOverlay.svelte.
-  Все клики уходят коллбеками в StoryPlayer.svelte.
-  Стили — в <style> внизу (scoped), включая мобильный полноэкранный режим.
+  Presentational component; only the failed-video fallback is local state.
+  It owns the active media elements, sound/read controls and mobile actions.
+  StoryProgressBar owns progress, PlayPauseOverlay owns the click flash, and
+  every interaction calls back into StoryPlayer. Styles below are scoped.
 ============================================================================= -->
 <script lang="ts">
 import { readTapIntent } from "../../scripts/story-player/gestures";
@@ -374,8 +370,8 @@ function releaseOnDestroy(el: HTMLVideoElement) {
     display: grid;
     align-content: end;
     background:
-      radial-gradient(circle at 35% 18%, rgba(240, 68, 101, 0.18), transparent 35%),
-      linear-gradient(135deg, rgba(240, 68, 101, 0.12), rgba(255, 255, 255, 0.03));
+      radial-gradient(circle at 35% 18%, var(--overlay-fallback-glow), transparent 35%),
+      linear-gradient(135deg, var(--overlay-fallback-wash), var(--overlay-fallback-sheen));
     color: var(--text-header);
     font-weight: 900;
     font-size: clamp(1.6rem, 3.1vw, 2.7rem);
@@ -389,7 +385,7 @@ function releaseOnDestroy(el: HTMLVideoElement) {
     z-index: var(--z-above);
     inset: 0 0 auto;
     height: 4.5rem;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0));
+    background: linear-gradient(180deg, var(--overlay-top-scrim), var(--overlay-clear));
     pointer-events: none;
   }
 
@@ -397,7 +393,7 @@ function releaseOnDestroy(el: HTMLVideoElement) {
    * story makes sense. It disappears for good once sound is granted. */
   .sound-cta {
     position: absolute;
-    z-index: 13;
+    z-index: var(--z-player-sound-cta);
     left: 50%;
     bottom: calc(4.2rem + env(safe-area-inset-bottom, 0));
     transform: translateX(-50%);
@@ -406,12 +402,12 @@ function releaseOnDestroy(el: HTMLVideoElement) {
     gap: 0.45rem;
     min-height: 44px;
     padding: 0.5rem 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    border: 1px solid var(--overlay-cta-border);
     border-radius: 14px;
-    background: rgba(0, 0, 0, 0.62);
+    background: var(--overlay-cta-surface);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    color: #f3f6fa;
+    color: var(--overlay-text-strong);
     font-size: 0.85rem;
     font-weight: 600;
     white-space: nowrap;
@@ -419,8 +415,8 @@ function releaseOnDestroy(el: HTMLVideoElement) {
   }
 
   .sound-cta:hover {
-    background: rgba(0, 0, 0, 0.75);
-    border-color: rgba(255, 255, 255, 0.34);
+    background: var(--overlay-cta-surface-hover);
+    border-color: var(--overlay-cta-border-hover);
   }
 
   /* ------------------------------ Sound control ----------------------------- */
@@ -431,7 +427,7 @@ function releaseOnDestroy(el: HTMLVideoElement) {
    * to read as a banner. State is the icon itself: crossed out or not. */
   .audio-chip {
     position: absolute;
-    z-index: 4;
+    z-index: var(--z-player-media-control);
     right: 0.8rem;
     top: 2.05rem;
     display: inline-flex;
@@ -536,7 +532,7 @@ function releaseOnDestroy(el: HTMLVideoElement) {
     .audio-chip {
       top: calc(env(safe-area-inset-top, 0) + 0.72rem);
       right: 0.72rem;
-      z-index: 12;
+      z-index: var(--z-player-actions);
     }
 
     .story-mobile-caption {
@@ -547,10 +543,10 @@ function releaseOnDestroy(el: HTMLVideoElement) {
     .story-mobile-caption span {
       width: fit-content;
       padding: 0.22rem 0.5rem;
-      border: 1px solid rgba(220, 38, 38, 0.35);
+      border: 1px solid var(--overlay-error-border);
       border-radius: 7px;
-      background: rgba(220, 38, 38, 0.12);
-      color: #f87171;
+      background: var(--overlay-error-fill);
+      color: var(--overlay-error-text);
       font-family: var(--font-mono);
       font-size: 0.7rem;
       font-weight: 900;
@@ -559,11 +555,11 @@ function releaseOnDestroy(el: HTMLVideoElement) {
 
     .story-mobile-caption strong {
       max-width: 13ch;
-      color: #fff;
+      color: var(--overlay-text-strong);
       font-size: clamp(2rem, 10.5vw, 3.25rem);
       line-height: 0.95;
       letter-spacing: 0;
-      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.75);
+      text-shadow: 0 4px 24px var(--overlay-title-shadow);
     }
 
     /* Geometry only — the bar's surface, blur and items are in
@@ -579,7 +575,7 @@ function releaseOnDestroy(el: HTMLVideoElement) {
          rule up top hides the bar on desktop and this is what brings it back. */
       display: flex;
       position: absolute;
-      z-index: 12;
+      z-index: var(--z-player-actions);
       left: 0.7rem;
       right: 0.7rem;
       bottom: calc(0.7rem + env(safe-area-inset-bottom, 0));

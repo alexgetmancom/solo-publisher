@@ -1,6 +1,7 @@
 import { calendarDays, emptyDailyReach, latestAtOrBefore } from "../../../analytics/reach/daily-reach.js";
 import { publicationRef } from "../../../application/publication-ref.js";
 import type { BackendDb } from "../../../db/client.js";
+import { t } from "../../../foundation/i18n/index.js";
 import { log } from "../../../foundation/logger.js";
 import { emptyMetrics } from "./video-overview-calendar.js";
 import {
@@ -118,7 +119,7 @@ export function videoOverview(
       return {
         key: publicationRef("video", first?.videoDraftId ?? 0),
         destinations,
-        title: first?.label || "Без названия",
+        title: first?.label || t("en", "common.untitled"),
         url: destinations.find((destination) => destination.url)?.url ?? null,
         publishedAt: draftRows.map((row) => row.publishedAt).sort()[0] ?? null,
         ...totals,

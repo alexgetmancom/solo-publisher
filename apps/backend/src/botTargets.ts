@@ -138,7 +138,11 @@ export function storyCardUse(targets: Record<string, boolean>): { stories: boole
   return { stories: storyTargetsEnabled(targets), site: enabled.some(isSiteTarget) };
 }
 
-function storyTargetsEnabled(targets: Record<string, boolean>): boolean {
+/** Whether anything this Studio publishes to carries a Story. Ingress reads it
+ * before spending an encode: work made for a platform nobody publishes to is
+ * work nobody asked for. Callers pass the selection already narrowed by the
+ * registry -- a fresh profile ticks every target, connected or not. */
+export function storyTargetsEnabled(targets: Record<string, boolean>): boolean {
   return Object.entries(targets).some(([target, on]) => on && isStoryTarget(target));
 }
 

@@ -4,7 +4,6 @@ type DashboardQueueDraft = {
   textRu?: string | null;
   scheduledAt?: string | null;
   scheduledEnAt?: string | null;
-  channelMessageId?: string | number | null;
   updatedAt?: string | null;
 };
 

@@ -46,7 +46,7 @@ function unpublishable(payload: Record<string, unknown>, target: string): Requeu
  * reconciliation. */
 export const RETRY_UNLESS_HELD = ["queued", "failed", "cancelled", "skipped", "published"] as const;
 
-export type RequeueScope = { postId: number | null; publicationKey: string; messageId: number | null };
+export type RequeueScope = { postId: number | null; publicationKey: string };
 
 type RequeueOptions = {
   /** Job states this caller may pull back. */

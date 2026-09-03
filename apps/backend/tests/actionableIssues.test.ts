@@ -34,7 +34,7 @@ describe("actionable issues", () => {
       seedDraft(backendDb, 1, 800);
       backendDb.db
         .insert(siteJobs)
-        .values({ publicationKey: "post:800", messageId: 0, reason: "publish", status: "failed", createdAt: NOW, updatedAt: NOW })
+        .values({ publicationKey: "post:800", reason: "publish", status: "failed", createdAt: NOW, updatedAt: NOW })
         .run();
 
       expect(backendDb.actionableIssues.list()).toMatchObject([{ kind: "site", publicationKey: "post:800", status: "failed" }]);

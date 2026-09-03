@@ -209,7 +209,7 @@ function commitOperation(
       details: {
         operation: input.action,
         surface: input.actor_type ?? "operations",
-        message_id: ref.messageId,
+        post_id: ref.postId,
         status: "ok",
         result,
       },

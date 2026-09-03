@@ -34,11 +34,7 @@ export function skipPublicationTargets(backendDb: BackendDb, input: SkipInput): 
   };
   if (!input.apply) return { ...plan, applied: false, hint: "re-run with apply to finish the publication without these targets" };
 
-  const results = abandonPublicationTargets(
-    backendDb,
-    { postId: input.ref.postId, publicationKey: input.ref.publicationKey, messageId: input.ref.messageId },
-    targets,
-  );
+  const results = abandonPublicationTargets(backendDb, { postId: input.ref.postId, publicationKey: input.ref.publicationKey }, targets);
   const abandoned = results.filter((row) => row.outcome === "abandoned").length;
   // The publication was being held open by the very jobs just abandoned; this
   // is what takes it, and its draft, out of the attention list.

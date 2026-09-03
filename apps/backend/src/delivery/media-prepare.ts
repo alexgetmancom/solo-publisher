@@ -6,6 +6,7 @@ import { probeMediaMetadata, runFfmpeg } from "../foundation/runtime/ffmpeg.js";
 import { videoBounds } from "../publishing/platform-profiles.js";
 import { copyFileAtomically } from "./site-media-storage.js";
 import { mediaExtension, type PublishMediaItem } from "./social/payload.js";
+import { storyDirectory } from "./story-media.js";
 
 const MEDIA_CACHE_TTL_SECONDS = 86_400;
 
@@ -79,13 +80,18 @@ export async function pruneMediaCache(config: BackendConfig, now = Date.now()): 
   const cutoff = now - MEDIA_CACHE_TTL_SECONDS * 1000;
   // `.incoming` holds pre-hash upload temporaries; they are removed on the happy
   // path but leak when the process dies mid-import, so age them out here too.
-  const roots = [config.MEDIA_CACHE_DIR, config.REMOTE_MEDIA_PATH, path.join(config.STUDIO_MEDIA_DIR, ".incoming")];
+  // Story derivatives are durable and named by their source's content hash, so
+  // that directory is not a cache -- except for the `draft-*` renders the
+  // resolving repair route writes, which nothing reads back and nothing owns.
+  const roots = [config.MEDIA_CACHE_DIR, config.REMOTE_MEDIA_PATH, path.join(config.STUDIO_MEDIA_DIR, ".incoming"), storyDirectory(config)];
   let removed = 0;
   for (const root of roots) {
     const entries = await fs.promises.readdir(root, { withFileTypes: true }).catch(() => []);
     await Promise.all(
       entries.map(async (entry) => {
-        if (!entry.isFile() || (root === config.REMOTE_MEDIA_PATH && !entry.name.startsWith("cache-"))) return;
+        if (!entry.isFile()) return;
+        if (root === config.REMOTE_MEDIA_PATH && !entry.name.startsWith("cache-")) return;
+        if (root === storyDirectory(config) && !entry.name.startsWith("draft-")) return;
         const target = path.join(root, entry.name);
         const stat = await fs.promises.stat(target).catch(() => null);
         if (stat && stat.mtimeMs < cutoff) {

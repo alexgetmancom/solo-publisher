@@ -1,10 +1,8 @@
 <!-- =============================================================================
-  Полоса прогресса поста в двух видах: одна дорожка либо сегменты по числу
-  картинок (как в Instagram-сторис). Своего состояния нет.
+  Stateless post progress: one track or one segment per gallery image.
 
-  Заполнением управляет progress.ts из корня — он анимирует элемент, который
-  прилетает сюда через `bind:progressFill`, поэтому `<i>` рендерится только
-  внутри активного сегмента: ровно одна ссылка на элемент за раз.
+  The root progress controller animates the bound fill element. Only the active
+  segment renders it, so exactly one element reference exists at a time.
 ============================================================================= -->
 <script lang="ts">
 import type { PlayerPost } from "./payload";

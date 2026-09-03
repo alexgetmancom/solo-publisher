@@ -157,7 +157,6 @@ describe("text Story cards", () => {
       en: { type: "IMAGE", localPath: "/cards/en.jpg", storyLocalPath: "/cards/en.jpg" },
     };
     const draft = {
-      channel_message_id: 10,
       text_ru: "Русский текст",
       text_en_machine: "English text",
       text_en_approved: null,

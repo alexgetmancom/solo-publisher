@@ -62,7 +62,6 @@ export function commandCenterPayload(config: BackendConfig, backendDb: BackendDb
       textRu: ru.sourceText,
       scheduledAt: drafts.scheduledAt,
       scheduledEnAt: drafts.scheduledEnAt,
-      channelMessageId: drafts.channelMessageId,
       updatedAt: drafts.updatedAt,
     })
     .from(drafts)

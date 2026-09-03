@@ -33,7 +33,6 @@ export const drafts = sqliteTable("drafts", {
   actorId: integer().notNull(),
   status: text().notNull(),
   targetsJson: text().notNull(),
-  channelMessageId: integer(),
   scheduledAt: text(),
   scheduledEnAt: text(),
   publishMode: text(),

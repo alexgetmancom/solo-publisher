@@ -375,7 +375,6 @@ describe("command center actions", () => {
         .insert(siteJobs)
         .values({
           publicationKey: "post:90",
-          messageId: 90,
           reason: "site_ru",
           status: "failed",
           attemptCount: 2,
@@ -406,7 +405,6 @@ describe("command center actions", () => {
         .insert(siteJobs)
         .values({
           publicationKey: "post:91",
-          messageId: 91,
           reason: "site_ru",
           status: "published",
           attemptCount: 1,

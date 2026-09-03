@@ -9,7 +9,6 @@ function feedItem(overrides: Partial<FeedItem> = {}): FeedItem {
   return {
     id: "post:1",
     post_id: 1,
-    message_id: 1,
     date: "2026-07-15T10:00:00.000Z",
     text: "Русский текст поста",
     text_ru: "Русский текст поста",

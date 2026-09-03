@@ -17,6 +17,7 @@ import { engagementService } from "../engagement/service.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
+import { isIsoInstant } from "../foundation/time.js";
 import { capabilityReport } from "../observability/capabilities.js";
 import { repairStoredDates } from "../observability/date-repair.js";
 import { recordUsage, usageReport } from "../observability/usage.js";
@@ -156,11 +157,9 @@ const scheduleLocaleOption = z.enum(["ru", "en", "both"]).optional().describe("w
  * import with it. Readings are keyed by the moment they were taken, so nothing
  * later corrected them: they simply sorted above every window and vanished from
  * the charts while every report still listed them. */
-const isoInstant = z
-  .string()
-  .refine((value) => !Number.isNaN(Date.parse(value)) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(value), {
-    message: "must be a full ISO timestamp, for example 2026-08-27T14:01:34Z",
-  });
+const isoInstant = z.string().refine(isIsoInstant, {
+  message: "must be a full ISO timestamp, for example 2026-08-27T14:01:34Z",
+});
 
 /** A string this Studio publishes about itself, given as JSON keyed by language.
  * Both languages are always supplied: an option that merged into the stored
@@ -1050,7 +1049,7 @@ const operationDefs = {
       x_file: example(z.string().optional(), "PATH").describe("X analytics CSV path on this host"),
       threads_ru_followers: z.coerce.number().int().min(0).optional(),
       threads_en_followers: z.coerce.number().int().min(0).optional(),
-      sampled_at: example(z.string().optional(), "ISO").describe("defaults to now"),
+      sampled_at: example(isoInstant.optional(), "ISO").describe("defaults to now"),
     }),
     mutates: true,
     agent: false,
@@ -1067,12 +1066,12 @@ const operationDefs = {
     summary: "Record the message that proves a target carries a media format.",
     schema: z.object({
       test: example(z.string().min(1), "T01").describe("format test id"),
-      message_id: z.coerce.number().int().describe("message that demonstrates it"),
+      post_id: z.coerce.number().int().positive().describe("post that demonstrates it"),
       notes: z.string().optional(),
     }),
     mutates: true,
     agent: false,
-    handler: (context, input) => ({ ok: true, status: recordFormatEvidence(context.db(), input.test, input.message_id, input.notes) }),
+    handler: (context, input) => ({ ok: true, status: recordFormatEvidence(context.db(), input.test, input.post_id, input.notes) }),
   }),
   "site-media-images": operation({
     section: "media",

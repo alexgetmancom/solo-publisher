@@ -40,7 +40,6 @@ export function seedTextPost(backendDb: UnsafeBackendDb, input: TextPostFixture)
       actorId: input.actorId ?? 0,
       status: input.status ?? "published",
       targetsJson: JSON.stringify(input.targets ?? {}),
-      channelMessageId: input.messageId ?? input.postId ?? null,
       postId: input.postId ?? null,
       scheduledAt: input.scheduledAt ?? null,
       scheduledEnAt: input.scheduledEnAt ?? null,

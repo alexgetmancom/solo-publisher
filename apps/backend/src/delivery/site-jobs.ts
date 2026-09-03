@@ -28,7 +28,6 @@ const SITE_JOB_BACKOFF_MAX_SECONDS = 900;
 type SiteJob = {
   job_id: number;
   publication_key: string;
-  message_id: number;
   attempt_count: number;
   lock_id: string;
 };
@@ -258,7 +257,6 @@ function claimSiteJobs(backendDb: BackendDb): SiteJob[] {
         claimed.push({
           job_id: row.jobId,
           publication_key: row.publicationKey,
-          message_id: row.messageId,
           attempt_count: row.attemptCount,
           lock_id: lockId,
         });

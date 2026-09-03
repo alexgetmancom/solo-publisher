@@ -334,7 +334,7 @@ describe("Studio MCP", () => {
       // through three separate fallbacks and publish it.
       const borrowed = await call("studio_post_create", { text: russian, targets: ["threads_en"] });
       expect((await call("studio_post_validate", { draft_id: borrowed.draft_id }))[0]).toMatchObject({ kind: "empty", locale: "en" });
-      expect(await call("studio_post_publish", { draft_id: borrowed.draft_id })).toMatchObject({ error: expect.stringContaining("EN") });
+      expect(await call("studio_post_publish", { draft_id: borrowed.draft_id })).toEqual({ error: "err.post-preflight" });
 
       // Russian typed into the English field is caught by what it is written in.
       const untranslated = await call("studio_post_create", { text: russian, text_en: russian, targets: ["threads_en"] });

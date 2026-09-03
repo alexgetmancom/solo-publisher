@@ -196,7 +196,6 @@ export function seedSiteFixture(options: { dbPath: string; publicDir: string; po
           status: "published",
           targetsJson: "{}",
           postId: post.postId,
-          channelMessageId: post.postId,
           createdAt,
           updatedAt: now,
         })

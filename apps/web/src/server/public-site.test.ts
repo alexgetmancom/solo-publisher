@@ -25,7 +25,6 @@ describe("Drizzle site feed", () => {
         status: "published",
         targetsJson: "{}",
         postId: 7,
-        channelMessageId: 77,
         createdAt: now,
         updatedAt: now,
       })
@@ -98,7 +97,6 @@ describe("Drizzle site feed", () => {
         status: "scheduled",
         targetsJson: "{}",
         postId: 8,
-        channelMessageId: 88,
         createdAt: now,
         updatedAt: now,
       })
@@ -130,7 +128,6 @@ describe("Drizzle site feed", () => {
         status: "scheduled",
         targetsJson: "{}",
         postId: 10,
-        channelMessageId: 110,
         createdAt: now,
         updatedAt: now,
       })
@@ -186,7 +183,6 @@ describe("Drizzle site feed", () => {
         status: "published",
         targetsJson: "{}",
         postId: 9,
-        channelMessageId: 99,
         createdAt: now,
         updatedAt: now,
       })

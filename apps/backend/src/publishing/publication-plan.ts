@@ -44,7 +44,6 @@ export function createPublicationPlan(
 ) {
   const parsedTargets = parseTargets(draft.targets_json);
   assertKnownTargets(parsedTargets);
-  const messageId = Number(draft.channel_message_id ?? postId);
   const publicationKey = publicationRef("post", postId);
   const contentRu = draftLocaleContent(draft, "ru");
   const contentEn = draftLocaleContent(draft, "en");
@@ -96,7 +95,6 @@ export function createPublicationPlan(
     draftId,
     postId,
     publicationKey,
-    messageId,
     mode: schedule.mode,
     ruAt: schedule.ruAt,
     enAt: schedule.enAt,

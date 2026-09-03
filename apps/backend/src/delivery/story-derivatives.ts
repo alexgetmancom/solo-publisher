@@ -1,17 +1,22 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createSerialQueue } from "../../../../shared/serial-queue.js";
 import type { StudioMediaAssetRecord } from "../application/ports.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import type { PublishMediaItem } from "./social/payload.js";
 import { renderStoryVariants, storyDirectory } from "./story-media.js";
 
+const enqueueRender = createSerialQueue();
+const renders = new Map<string, Promise<boolean>>();
+
 /**
  * The Story shapes of an imported file, made once and named by its content.
  *
  * A Story variant is a pure function of the source, and making it cost 8.5-12
  * seconds inside the operator's "Publish" tap. It is made at media ingress,
- * before a draft can point at the asset.
+ * before a draft can point at the asset, and rendered on demand at publish time
+ * for an asset that never went through it.
  *
  * There is no table. An imported asset is already stored under its own content
  * hash, so the variant's path is a function of the source's path, and the file
@@ -34,11 +39,8 @@ export function storyVariantPaths(config: BackendConfig, sourcePath: string, vid
 export function preparedStoryMedia(config: BackendConfig, item: PublishMediaItem): PublishMediaItem | null {
   const source = typeof item.localPath === "string" ? item.localPath : null;
   if (!source) return null;
-  const video = String(item.type ?? "")
-    .toLowerCase()
-    .includes("video");
-  const paths = storyVariantPaths(config, source, video);
-  if (!fs.existsSync(paths.standard) || (paths.telegram && !fs.existsSync(paths.telegram))) return null;
+  const paths = storyVariantPaths(config, source, storyItemIsVideo(item));
+  if (!variantsPresent(paths)) return null;
   return {
     ...item,
     story_local_path: paths.standard,
@@ -49,43 +51,98 @@ export function preparedStoryMedia(config: BackendConfig, item: PublishMediaItem
   };
 }
 
-/** Completes the representation an imported asset needs before it can enter a
- * post draft. Publishing reads the result and never renders a missing one. */
-export async function prepareStoryDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
-  return renderAssetDerivative(config, asset);
+/**
+ * The Story shapes for one source file, made if they are not already there.
+ *
+ * Ingress calls this so the operator's "Publish" tap finds the files ready;
+ * publishing calls the same function so a file that was never prepared -- an
+ * asset older than this path, or one whose derivative was lost with the disk --
+ * still publishes. One recipe, one content-addressed destination, so the two
+ * callers cannot disagree about where the variant lives or how it was made.
+ *
+ * Renders run one at a time: the transform is the heaviest thing this process
+ * does and the media host accepts a single ffmpeg job. In-flight renders are
+ * shared by path, so three Story targets of one post wait on one encode.
+ */
+export async function ensureStoryDerivative(
+  config: BackendConfig,
+  source: string,
+  video: boolean,
+  label: Record<string, unknown> = {},
+  force = false,
+): Promise<boolean> {
+  const paths = storyVariantPaths(config, source, video);
+  if (!force && variantsPresent(paths)) return false;
+  const inFlight = renders.get(paths.standard);
+  if (inFlight) return inFlight;
+  const render = enqueueRender(() => renderVariants(config, source, paths, video, label, force)).finally(() => {
+    renders.delete(paths.standard);
+  });
+  renders.set(paths.standard, render);
+  return render;
 }
 
-async function renderAssetDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
-  const video = asset.kind === "video";
-  const paths = storyVariantPaths(config, asset.localPath, video);
-  if (fs.existsSync(paths.standard) && (!paths.telegram || fs.existsSync(paths.telegram))) return false;
-  if (!fs.existsSync(asset.localPath)) throw new Error(`story_source_missing: asset ${asset.id}`);
+/** Completes the representation an imported asset needs before it can enter a
+ * post draft. Publishing recovers what this could not finish. */
+export async function prepareStoryDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
+  return ensureStoryDerivative(config, asset.localPath, asset.kind === "video", { assetId: asset.id, kind: asset.kind });
+}
+
+/** The Story variant of one publish item, rendering it first if it is missing. */
+export async function ensurePreparedStoryMedia(config: BackendConfig, item: PublishMediaItem): Promise<PublishMediaItem | null> {
+  const source = typeof item.localPath === "string" ? item.localPath : null;
+  if (!source) return null;
+  await ensureStoryDerivative(config, source, storyItemIsVideo(item), { source: "publish" });
+  return preparedStoryMedia(config, item);
+}
+
+function variantsPresent(paths: { standard: string; telegram?: string }): boolean {
+  return fs.existsSync(paths.standard) && (!paths.telegram || fs.existsSync(paths.telegram));
+}
+
+async function renderVariants(
+  config: BackendConfig,
+  source: string,
+  paths: { standard: string; telegram?: string },
+  video: boolean,
+  label: Record<string, unknown>,
+  force: boolean,
+): Promise<boolean> {
+  // Re-checked inside the lane: a render this call queued behind may have been
+  // for the same file, and the wait is where it finished.
+  if (!force && variantsPresent(paths)) return false;
+  if (!fs.existsSync(source)) throw new Error(`story_source_missing: ${source}`);
   await fs.promises.mkdir(storyDirectory(config), { recursive: true });
   const startedAt = Date.now();
   try {
-    await renderStoryVariants(asset.localPath, paths.standard, paths.telegram, video, config);
-    log("info", "operation timing", {
-      operation: "media.story.prepare",
-      assetId: asset.id,
-      kind: asset.kind,
-      success: true,
-      totalMs: Date.now() - startedAt,
-    });
+    await renderStoryVariants(source, paths.standard, paths.telegram, video, config);
+    log("info", "operation timing", { operation: "media.story.prepare", ...label, success: true, totalMs: Date.now() - startedAt });
     return true;
   } catch (error) {
-    await Promise.all(
-      [paths.standard, paths.telegram]
-        .filter((value): value is string => Boolean(value))
-        .map((value) => fs.promises.rm(value, { force: true })),
-    );
+    // A half-written pair is worse than none: it reads as prepared and ships a
+    // Telegram Story rendered for Instagram.
+    await removeVariants(paths);
     log("warn", "operation timing", {
       operation: "media.story.prepare",
-      assetId: asset.id,
-      kind: asset.kind,
+      ...label,
       success: false,
       totalMs: Date.now() - startedAt,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }
+}
+
+async function removeVariants(paths: { standard: string; telegram?: string }): Promise<void> {
+  await Promise.all(
+    [paths.standard, paths.telegram]
+      .filter((value): value is string => Boolean(value))
+      .map((value) => fs.promises.rm(value, { force: true })),
+  );
+}
+
+function storyItemIsVideo(item: PublishMediaItem): boolean {
+  return String(item.type ?? "")
+    .toLowerCase()
+    .includes("video");
 }

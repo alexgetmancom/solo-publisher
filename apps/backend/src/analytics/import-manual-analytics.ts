@@ -1,6 +1,7 @@
 import { targetRouting } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { creatorProfiles } from "../db/schema.js";
+import { parseIsoInstant } from "../foundation/time.js";
 import { importXAnalyticsCsv, type XCsvImportResult } from "./import-x-csv.js";
 import { recordProfileSnapshot } from "./snapshots/creator-store.js";
 
@@ -30,8 +31,7 @@ type ManualAnalyticsImportResult = {
 /** Records one operator-supplied weekly observation without coupling the flow
  * to Telegram or requiring ad-hoc SQL against production. */
 export function importManualAnalytics(backendDb: BackendDb, input: ManualAnalyticsInput): ManualAnalyticsImportResult {
-  const sampledAt = new Date(input.sampledAt);
-  if (Number.isNaN(sampledAt.getTime())) throw new Error("--sampled-at must be an ISO timestamp");
+  const sampledAt = parseIsoInstant(input.sampledAt);
   const accounts = manualFollowerAccounts(backendDb);
   const profiles = [
     profileInput("threads_ru", accounts.ru, input.threadsRuFollowers),

@@ -26,21 +26,21 @@ export function creatorVideoArchive(
   );
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
-      `SELECT d.id, COALESCE(d.label, 'Без названия') AS label FROM video_drafts d WHERE EXISTS (SELECT 1 FROM video_targets t WHERE t.video_draft_id=d.id AND t.status='published') ORDER BY d.updated_at DESC LIMIT ${ARCHIVE_PAGE_SIZE} OFFSET ?`,
+      `SELECT d.id, d.label FROM video_drafts d WHERE EXISTS (SELECT 1 FROM video_targets t WHERE t.video_draft_id=d.id AND t.status='published') ORDER BY d.updated_at DESC LIMIT ${ARCHIVE_PAGE_SIZE} OFFSET ?`,
     )
-    .all(offset) as Array<{ id: number; label: string }>;
+    .all(offset) as Array<{ id: number; label: string | null }>;
   return {
     text: rows.length ? `📚 ${t(locale, "report.video-archive-choose")}` : `📚 ${t(locale, "report.no-videos")}`,
-    items: rows,
+    items: rows.map((row) => ({ ...row, label: row.label || t(locale, "common.untitled") })),
     total,
     pageSize: ARCHIVE_PAGE_SIZE,
   };
 }
 
 export function creatorVideoMetrics(backendDb: BackendDb, videoDraftId: number, locale: StudioLocale = "en", timeZone = "UTC"): string {
-  const draft = unsafeDb(backendDb)
-    .sqlite.prepare("SELECT COALESCE(label, 'Без названия') AS label FROM video_drafts WHERE id=?")
-    .get(videoDraftId) as { label: string } | null;
+  const draft = unsafeDb(backendDb).sqlite.prepare("SELECT label FROM video_drafts WHERE id=?").get(videoDraftId) as {
+    label: string | null;
+  } | null;
   if (!draft) return t(locale, "report.video-not-found");
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
@@ -52,7 +52,7 @@ export function creatorVideoMetrics(backendDb: BackendDb, videoDraftId: number, 
     metrics_json: string | null;
     sampled_at: string | null;
   }>;
-  const lines = [`🎬 *${escapeMarkdown(draft.label)}*`];
+  const lines = [`🎬 *${escapeMarkdown(draft.label || t(locale, "common.untitled"))}*`];
   for (const row of rows) {
     const metrics = row.metrics_json ? (JSON.parse(row.metrics_json) as Record<string, unknown>) : {};
     const name = row.target === "youtube_shorts" ? "▶️ YouTube" : "📸 Instagram";

@@ -1,12 +1,9 @@
 /* =============================================================================
- * ГЛОБАЛЬНЫЕ ОСТАТКИ СТИЛЕЙ ГЛАВНОЙ (подключает HomeNewsPage.astro)
+ * GLOBAL HOME PAGE STYLES (loaded by HomeNewsPage.astro)
  * -----------------------------------------------------------------------------
- * Здесь ТОЛЬКО то, что нельзя заскоупить в Svelte-компоненты плеера:
- *   - body.immersive-home — класс вешает layouts/Layout.astro на <body>
- *   - .home-page / .empty — обёртка страницы в HomeNewsPage.astro
- *   - .story-seo-content  — noscript-статья для поисковиков (Astro-слой)
- * ВСЕ стили самого плеера живут в <style> компонентов:
- * features/story-player/*.svelte. Сюда ничего про плеер не добавлять.
+ * Only selectors that cannot be scoped inside player components belong here:
+ * body.immersive-home, HomeNewsPage wrappers and Astro's noscript SEO content.
+ * Player styles stay in features/story-player components.
  * ========================================================================== */
 
 .home-page {

@@ -82,12 +82,9 @@ describe("telegram interface contour", () => {
     "apps/backend/src/operations/registry.ts",
     // Copy that still bypasses the catalogue. Each one renders Russian to an
     // English operator, and each one is a key waiting to be written.
-    "apps/backend/src/publishing/preflight.ts",
     "apps/backend/src/bot/settings/shared.ts",
     "apps/backend/src/analytics/audience-milestones.ts",
-    "apps/backend/src/analytics/collection/video-metrics.ts",
     "apps/backend/src/analytics/reports/video-archive.ts",
-    "apps/backend/src/interfaces/web/dashboard/video-overview.ts",
   ]);
 
   it("keeps Russian copy out of the code and inside the catalogue", () => {

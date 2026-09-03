@@ -19,7 +19,6 @@ const feedItemSchema = z
   .object({
     id: z.string(),
     post_id: z.number().int().positive(),
-    message_id: z.number().int(),
     date: z.string(),
     text: z.string(),
     text_ru: z.string(),
@@ -107,7 +106,6 @@ function buildPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
     .db.select({
       draftId: drafts.id,
       postId: drafts.postId,
-      messageId: drafts.channelMessageId,
       scheduledAt: drafts.scheduledAt,
       scheduledEnAt: drafts.scheduledEnAt,
       createdAt: drafts.createdAt,
@@ -182,7 +180,6 @@ function buildPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
     const parsed = feedItemSchema.safeParse({
       id: publicationKey,
       post_id: row.postId,
-      message_id: row.messageId ?? row.postId,
       date: publicationDate(ru, en) ?? row.scheduledAt ?? row.scheduledEnAt ?? row.createdAt,
       text: ru.text,
       text_ru: ru.text,

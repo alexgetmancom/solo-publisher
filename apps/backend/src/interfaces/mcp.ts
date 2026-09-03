@@ -5,6 +5,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { STUDIO_LOCALES } from "../foundation/locale.js";
 import { log } from "../foundation/logger.js";
 import { redactExternalSecrets } from "../foundation/redact.js";
+import { parseIsoInstant } from "../foundation/time.js";
 import {
   inputJsonSchema,
   type OperationDef,
@@ -32,7 +33,7 @@ const localeSchema = z.enum(["ru", "en"]);
 const uiLocaleSchema = z.enum(STUDIO_LOCALES);
 const videoTargetSchema = z.enum(["youtube_shorts", "instagram_reels"]);
 
-/** Empty string or absent both mean "no value"; otherwise must be a parseable ISO date. */
+/** Empty string or absent both mean "no value"; otherwise it names one instant. */
 function isoDateOrNull(maxLength: number) {
   return z
     .string()
@@ -40,12 +41,12 @@ function isoDateOrNull(maxLength: number) {
     .optional()
     .transform((value, ctx) => {
       if (value == null || value === "") return null;
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) {
-        ctx.addIssue({ code: "custom", message: "must be an ISO date" });
+      try {
+        return parseIsoInstant(value);
+      } catch (error) {
+        ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : "must be a full ISO timestamp" });
         return z.NEVER;
       }
-      return date;
     });
 }
 

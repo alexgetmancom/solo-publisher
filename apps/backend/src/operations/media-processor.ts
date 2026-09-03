@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import { payloadMedia } from "../delivery/social/payload.js";
+import { type PublishMediaItem, payloadMedia } from "../delivery/social/payload.js";
+import { ensureStoryDerivative, preparedStoryMedia, storyVariantPaths } from "../delivery/story-derivatives.js";
 import { generateStoryMedia } from "../delivery/story-media.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { selectMediaForTarget } from "../publishing/media-policy.js";
@@ -125,7 +126,7 @@ export async function reprocessPostMedia(
   const results = [];
   for (const plan of unique) {
     const startedAt = Date.now();
-    const output = await generateStoryMedia(plan.media, postId, plan.locale, config);
+    const output = await repairStoryMedia(config, plan.media, postId, plan.locale);
     results.push({
       jobId: plan.jobId,
       target: plan.target,
@@ -138,6 +139,31 @@ export async function reprocessPostMedia(
     });
   }
   return { ok: true, apply: true, ref, count: results.length, results, published: false };
+}
+
+/**
+ * The operator's "make this Story again" for one item.
+ *
+ * It re-renders into the content-addressed path publishing reads, so the repair
+ * is what the next attempt picks up. Only media that never became a Studio asset
+ * -- a payload carrying nothing but a Telegram file id -- goes the resolving
+ * route, which is also the only one that can fetch the source back.
+ */
+async function repairStoryMedia(
+  config: BackendConfig,
+  media: PublishMediaItem[],
+  postId: number,
+  locale: "ru" | "en",
+): Promise<PublishMediaItem[]> {
+  const [source] = media;
+  if (!source || typeof source.localPath !== "string") return generateStoryMedia(media, postId, locale, config);
+  const video = String(source.type ?? "")
+    .toLowerCase()
+    .includes("video");
+  await ensureStoryDerivative(config, source.localPath, video, { postId, locale, source: "repair" }, true);
+  const prepared = preparedStoryMedia(config, source);
+  if (!prepared) throw new Error(`story_repair_failed: ${storyVariantPaths(config, source.localPath, video).standard}`);
+  return [prepared];
 }
 
 function mediaUrl(config: BackendConfig, pathname: string): string {

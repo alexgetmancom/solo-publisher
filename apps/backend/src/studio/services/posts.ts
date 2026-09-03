@@ -1,4 +1,4 @@
-import type { DraftPatch, DraftRecord, StoryPublishMode } from "../../application/ports.js";
+import type { DomainEventInput, DraftPatch, DraftRecord, StoryPublishMode } from "../../application/ports.js";
 import type { PublicationPipeline, PublicationSchedule } from "../../application/publication-pipeline.js";
 import { publicationRef } from "../../application/publication-ref.js";
 import { isStoryTarget, PRESETS, presetName, TARGETS, targetLocale, targetsFor } from "../../botTargets.js";
@@ -24,6 +24,7 @@ import { refreshPublicationStatus } from "../../publishing/publication-status.js
 import { publishDraftToQueue } from "../../publishing/publication-workflow.js";
 import { requeuePublicationTargets } from "../../publishing/requeue.js";
 import { assertFutureSchedule, assertValidScheduleDate, parseManualSchedule, publicationSlotTime } from "../../publishing/schedule.js";
+import { mutateScheduledDraft } from "../../publishing/scheduled-draft-mutation.js";
 import { AUDIENCE_MUTATION_RETRYABLE_STATUSES, isPostTargetRetryable } from "../../publishing/state.js";
 import { parseTargets } from "../../publishing/targets.js";
 
@@ -43,19 +44,6 @@ type EditInput = {
   clearMedia?: boolean;
 };
 type DraftEntityCandidate = { kind: "company" | "model" | "person" | "topic"; slug: string; titleRu: string; titleEn: string | null };
-type DraftPatchField = Exclude<keyof DraftPatch, "updatedAt">;
-
-const draftPatchReaders = {
-  textRu: (draft: DraftRecord) => draft.text_ru,
-  textEnApproved: (draft: DraftRecord) => draft.text_en_approved,
-  textRuEntitiesJson: (draft: DraftRecord) => draft.text_ru_entities_json,
-  textEnEntitiesJson: (draft: DraftRecord) => draft.text_en_entities_json,
-  targetsJson: (draft: DraftRecord) => draft.targets_json,
-  mediaRuJson: (draft: DraftRecord) => draft.media_ru_json,
-  mediaEnJson: (draft: DraftRecord) => draft.media_en_json,
-  threadsChainApproved: (draft: DraftRecord) => draft.threads_chain_approved,
-} satisfies Record<DraftPatchField, (draft: DraftRecord) => string | number | null>;
-
 type PostScheduleInput = { ruAt: Date | null; enAt: Date | null; allowPast?: boolean; immediateLocale?: "ru" | "en" };
 type PostScheduleScope = "ru" | "en" | "both";
 
@@ -209,38 +197,36 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       );
       const key = locale === "ru" ? "mediaRuJson" : "mediaEnJson";
       const current = replace ? [] : draftMedia(draft, locale);
-      backendDb.drafts.update(draftId, {
+      const patch = {
         [key]: JSON.stringify([...current, ...assets]),
         updatedAt: backendDb.clock.now().toISOString(),
-      });
-      backendDb.storyCards.queue(draftId);
-      replanScheduledPostAfterMutation(backendDb, config, draftId);
-      backendDb.events.record({
+      };
+      const event: DomainEventInput = {
         ref: publicationRef("draft", draftId),
         type: "content.draft.media_attached",
         severity: "info",
         message: `Draft #${draftId} media attached`,
         details: { locale, asset_ids: assetIds, replace },
-      });
+      };
+      saveContentMutation(backendDb, draft, patch, event);
     },
     removeMedia(actorId: number, draftId: number, locale: "ru" | "en", assetIds: number[]): void {
       const draft = requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
       const current = draftMedia(draft, locale);
       const removed = new Set(assetIds);
       const media = current.filter((item) => !removed.has(Number(item.asset_id)));
-      backendDb.drafts.update(draftId, {
+      const patch = {
         [locale === "ru" ? "mediaRuJson" : "mediaEnJson"]: JSON.stringify(media),
         updatedAt: backendDb.clock.now().toISOString(),
-      });
-      backendDb.storyCards.queue(draftId);
-      replanScheduledPostAfterMutation(backendDb, config, draftId);
-      backendDb.events.record({
+      };
+      const event: DomainEventInput = {
         ref: publicationRef("draft", draftId),
         type: "content.draft.media_removed",
         severity: "info",
         message: `Draft #${draftId} media removed`,
         details: { locale, asset_ids: assetIds },
-      });
+      };
+      saveContentMutation(backendDb, draft, patch, event);
     },
     schedule(actorId: number, draftId: number, input: PostScheduleInput | PublicationSchedule): number {
       return trackUsageSync(backendDb, "studio.post.schedule", () =>
@@ -337,7 +323,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         const postId = draft.post_id;
         const results = requeuePublicationTargets(
           backendDb,
-          { postId, publicationKey: publicationRef("post", postId), messageId: null },
+          { postId, publicationKey: publicationRef("post", postId) },
           selected.map((item) => item.target),
           {
             from: AUDIENCE_MUTATION_RETRYABLE_STATUSES,
@@ -371,7 +357,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         const postId = draft.post_id;
         const results = abandonPublicationTargets(
           backendDb,
-          { postId, publicationKey: publicationRef("post", postId), messageId: null },
+          { postId, publicationKey: publicationRef("post", postId) },
           selected.map((item) => item.target),
         );
         const abandoned = results.filter((item) => item.outcome === "abandoned").length;
@@ -387,7 +373,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       assertKnownTarget(backendDb, target);
       const targets = parseTargets(draft.targets_json);
       targets[target] = !targets[target];
-      saveTargetsAndReschedule(backendDb, config, actorId, draftId, draft, targets);
+      saveTargetsAndReschedule(backendDb, draftId, draft, targets);
     },
     removeTarget(actorId: number, draftId: number, target: string): void {
       const draft = requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
@@ -395,7 +381,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       const targets = parseTargets(draft.targets_json);
       if (!targets[target]) return;
       targets[target] = false;
-      saveTargetsAndReschedule(backendDb, config, actorId, draftId, draft, targets);
+      saveTargetsAndReschedule(backendDb, draftId, draft, targets);
     },
     cycleMode(actorId: number, draftId: number): keyof typeof PRESETS {
       const draft = requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
@@ -410,7 +396,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       const nextPreset = PRESETS[next];
       if (!nextPreset) throw new StudioError("err.post-mode");
       const preset = effectivePostTargets(backendDb, nextPreset);
-      saveTargetsAndReschedule(backendDb, config, actorId, draftId, draft, preset);
+      saveTargetsAndReschedule(backendDb, draftId, draft, preset);
       return next;
     },
     edit(actorId: number, draftId: number, input: EditInput): void {
@@ -420,20 +406,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         if (!postLocales(backendDb).includes(input.locale))
           throw new StudioError("err.post-locale-not-served", { locale: input.locale.toUpperCase() });
         const { draft, patch } = prepareDraftContentEdit(backendDb, config, actorId, draftId, input);
-        withDraftRollback(
-          backendDb,
-          draftId,
-          draft,
-          patch,
-          () => {
-            backendDb.drafts.update(draftId, patch);
-            backendDb.storyCards.queue(draftId);
-            const updated = backendDb.drafts.get(draftId) ?? draft;
-            if (!waitForStoryCardReplan(backendDb, updated)) rescheduleIfNeeded(backendDb, config, actorId, draftId, updated);
-          },
-          { queueStoryCards: true },
-        );
-        recordEditEvent(backendDb, draftId, input);
+        saveContentMutation(backendDb, draft, patch, editEvent(draftId, input));
       });
     },
   };
@@ -459,12 +432,6 @@ function hasStoryTarget(backendDb: BackendDb, draft: DraftRecord): boolean {
   return Object.entries(effectivePostTargets(backendDb, parseTargets(draft.targets_json))).some(
     ([target, enabled]) => enabled && isStoryTarget(target),
   );
-}
-
-function waitForStoryCardReplan(backendDb: BackendDb, draft: DraftRecord): boolean {
-  if (draft.status !== "scheduled" || !isStoryPublishMode(draft)) return false;
-  if (draftMedia(draft, "ru").length > 0 || draftMedia(draft, "en").length > 0) return false;
-  return hasStoryTarget(backendDb, draft);
 }
 
 function prepareDraftContentEdit(
@@ -493,33 +460,8 @@ function prepareDraftContentEdit(
   return { draft, patch: update };
 }
 
-function withDraftRollback<T>(
-  backendDb: BackendDb,
-  draftId: number,
-  draft: DraftRecord,
-  patch: DraftPatch,
-  operation: () => T,
-  options: { queueStoryCards?: boolean } = {},
-): T {
-  try {
-    return operation();
-  } catch (error) {
-    const restored: DraftPatch = {
-      ...Object.fromEntries(
-        (Object.keys(patch) as Array<keyof DraftPatch>)
-          .filter((field): field is DraftPatchField => field !== "updatedAt")
-          .map((field) => [field, draftPatchReaders[field](draft)]),
-      ),
-      updatedAt: backendDb.clock.now().toISOString(),
-    };
-    backendDb.drafts.update(draftId, restored);
-    if (options.queueStoryCards) backendDb.storyCards.queue(draftId);
-    throw error;
-  }
-}
-
-function recordEditEvent(backendDb: BackendDb, draftId: number, input: EditInput): void {
-  backendDb.events.record({
+function editEvent(draftId: number, input: EditInput): DomainEventInput {
+  return {
     ref: publicationRef("draft", draftId),
     type: "content.draft.edited",
     severity: "info",
@@ -529,27 +471,26 @@ function recordEditEvent(backendDb: BackendDb, draftId: number, input: EditInput
       media_changed: input.media.length > 0 || Boolean(input.clearMedia),
       text_changed: !input.replaceMediaOnly,
     },
-  });
+  };
 }
 
-function saveTargetsAndReschedule(
-  backendDb: BackendDb,
-  config: BackendConfig,
-  actorId: number,
-  draftId: number,
-  draft: DraftRecord,
-  targets: Record<string, boolean>,
-): void {
+function saveTargetsAndReschedule(backendDb: BackendDb, draftId: number, draft: DraftRecord, targets: Record<string, boolean>): void {
   const patch: DraftPatch = { targetsJson: JSON.stringify(targets), updatedAt: backendDb.clock.now().toISOString() };
-  withDraftRollback(backendDb, draftId, draft, patch, () => {
-    backendDb.drafts.update(draftId, patch);
-    rescheduleIfNeeded(backendDb, config, actorId, draftId, draft);
-  });
+  if (draft.status === "scheduled") {
+    if (!mutateScheduledDraft(backendDb, draft, { patch })) throw new StudioError("err.post-stale");
+    return;
+  }
+  backendDb.drafts.update(draftId, patch);
 }
 
-function rescheduleIfNeeded(backendDb: BackendDb, config: BackendConfig, actorId: number, draftId: number, draft: DraftRecord): void {
-  if (draft.status !== "scheduled") return;
-  schedulePost(backendDb, config, actorId, draftId, scheduledPostInput(draft));
+function saveContentMutation(backendDb: BackendDb, draft: DraftRecord, patch: DraftPatch, event: DomainEventInput): void {
+  if (draft.status === "scheduled") {
+    if (!mutateScheduledDraft(backendDb, draft, { patch, queueStoryCards: true, event })) throw new StudioError("err.post-stale");
+    return;
+  }
+  backendDb.drafts.update(draft.id, patch);
+  backendDb.storyCards.queue(draft.id);
+  backendDb.events.record(event);
 }
 
 function schedulePost(backendDb: BackendDb, config: BackendConfig, actorId: number, draftId: number, input: PostScheduleInput): number {

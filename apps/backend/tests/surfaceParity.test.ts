@@ -46,7 +46,6 @@ const POSTS: Record<string, string> = {
   schedule: "draft-schedule",
   manualSchedule: "draft-schedule",
   scheduleAt: "draft-schedule",
-  rescheduleIfNeeded: "internal: replanning after an edit, not a capability anyone asks for",
   scheduleReminder: "internal: the reminder the scheduler sets for itself",
   cancel: "draft-cancel",
   cancelJobs: "draft-cancel",

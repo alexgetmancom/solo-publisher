@@ -1,22 +1,17 @@
 <!-- =============================================================================
-  КОРЕНЬ ПЛЕЕРА. Единственный владелец состояния.
+  PLAYER ROOT. The sole owner of state.
   ─────────────────────────────────────────────────────────────────────────────
-  Всё состояние плеера объявлено здесь ($state ниже):
-    active            — индекс активного поста
-    manualPaused      — пользователь нажал паузу (пробел / клик по видео)
-    readingVisible    — открыт режим «Читать» (текстовая панель на мобильном)
-    expanded          — «Читать дальше» развёрнут
-    feedMode          — режим ленты: latest / deep / watched
-    audioState        — звук + обходы autoplay (чистая машина audio-state.ts)
+  All player state is declared here ($state below): active post, manual pause,
+  reading panel, expanded text, feed mode, and the audio-state machine.
 
-  Дочерние компоненты (Rail / Visual / Context) НЕ имеют своего состояния —
-  только props + коллбеки сюда. Хочешь новое поведение: state здесь,
-  разметка в дочернем, сложные переходы — чистой функцией с тестом.
+  Child components (Rail / Visual / Context) own no state. They receive props
+  and call back here. New behaviour keeps state here, markup in the child, and
+  complex transitions in a tested pure function.
 
-  Здесь же: клавиатура, свайпы, колесо мыши, автопереход (progress.ts),
-  аналитика просмотров. Медиа-API (play/pause/load) — в $effect'ах внизу.
+  Keyboard, swipes, wheel navigation, automatic progress and view analytics
+  also live here. Media API calls live in the effects below.
 
-  СЮДА НЕЛЬЗЯ: SEO-разметку (h1/canonical/JSON-LD — слой Astro), запросы к БД.
+  Keep SEO markup (h1/canonical/JSON-LD, owned by Astro) and database queries out.
 ============================================================================= -->
 <script lang="ts">
 import { onMount, tick } from "svelte";
@@ -68,13 +63,13 @@ let audioState = $state(initialVideoAudioState(true));
 /* Starts false during SSR and is set from storage on mount, so the prompt is
  * only ever shown to someone who has genuinely not answered yet. */
 let soundChoiceMade = $state(true);
-let updating = $state(false); // короткая анимация смены поста (.is-updating)
+let updating = $state(false); // Short post-change animation (.is-updating).
 let readMoreVisible = $state(false);
 let feedMenuOpen = $state(false);
 let shareCopied = $state(false);
-let overlayTick = $state(0); // перезапускает анимацию play/pause-оверлея
+let overlayTick = $state(0); // Restarts the play/pause overlay animation.
 let debugEnabled = $state(false);
-let gallerySubIndex = $state(0); // текущий слайд, если у поста несколько картинок
+let gallerySubIndex = $state(0); // Current slide for a multi-image post.
 
 const activePost = $derived(posts[active] ?? posts[0]);
 const paused = $derived(manualPaused);
@@ -621,10 +616,10 @@ onMount(() => {
     max-height: 48vh;
     overflow: auto;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid var(--overlay-debug-border);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.82);
-    color: #e5e7eb;
+    background: var(--overlay-debug-surface);
+    color: var(--overlay-debug-text);
     font: 12px / 1.45 var(--font-mono);
     white-space: pre-wrap;
   }

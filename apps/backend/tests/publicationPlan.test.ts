@@ -6,7 +6,6 @@ describe("PublicationPlan", () => {
   it("decides localized content and target schedule before persistence", () => {
     const plan = createPublicationPlan(
       {
-        channel_message_id: 42,
         text_ru: "Русский заголовок\nТекст",
         text_en_machine: "English title\nText",
         text_en_approved: null,
@@ -22,7 +21,7 @@ describe("PublicationPlan", () => {
       "2026-07-14T10:00:00.000Z",
     );
 
-    expect(plan).toMatchObject({ draftId: 9, postId: 99, publicationKey: "post:99", messageId: 42, mode: "scheduled" });
+    expect(plan).toMatchObject({ draftId: 9, postId: 99, publicationKey: "post:99", mode: "scheduled" });
     expect(plan.payload).toMatchObject({
       locales: {
         ru: { text: "Русский заголовок\nТекст" },
@@ -41,7 +40,6 @@ describe("PublicationPlan", () => {
     expect(() =>
       createPublicationPlan(
         {
-          channel_message_id: 42,
           text_ru: "Text",
           text_en_machine: "Text",
           text_en_approved: null,
@@ -65,9 +63,7 @@ describe("publication preflight", () => {
       media_ru_json: JSON.stringify([{ type: "photo" }]),
       targets_json: JSON.stringify({ telegram: true, site_ru: true, threads_ru: false, threads_en: false }),
     });
-    expect(issues).toEqual([
-      expect.objectContaining({ target: "telegram", actual: 1025, limit: 1024, message: expect.stringContaining("отключите Telegram") }),
-    ]);
+    expect(issues).toEqual([expect.objectContaining({ target: "telegram", kind: "caption-limit", actual: 1025, limit: 1024 })]);
   });
 
   it("does not block a long Telegram text post without media", () => {

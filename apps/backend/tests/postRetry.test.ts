@@ -50,7 +50,6 @@ describe("post publication retry", () => {
         .insert(siteJobs)
         .values({
           publicationKey: "post:700",
-          messageId: 700,
           reason: "site_en",
           status: "verification_required",
           attemptCount: 2,
@@ -220,7 +219,7 @@ describe("post publication retry", () => {
         })
         .run();
 
-      requeuePublicationTargets(backendDb, { postId: 1300, publicationKey: "post:1300", messageId: null }, ["threads_ru"], {
+      requeuePublicationTargets(backendDb, { postId: 1300, publicationKey: "post:1300" }, ["threads_ru"], {
         from: RETRY_UNLESS_HELD,
         audienceReached: "republish",
         source: () => backendDb.studioPosts.publicationSource(1300),
@@ -271,7 +270,7 @@ describe("post publication retry", () => {
         })
         .run();
 
-      requeuePublicationTargets(backendDb, { postId: 1100, publicationKey: "post:1100", messageId: null }, ["threads_ru"], {
+      requeuePublicationTargets(backendDb, { postId: 1100, publicationKey: "post:1100" }, ["threads_ru"], {
         from: RETRY_UNLESS_HELD,
         audienceReached: "republish",
         source: () => backendDb.studioPosts.publicationSource(1100),

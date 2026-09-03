@@ -37,13 +37,11 @@ export type UnsafeBackendDb = BackendDb & {
   db: RawBackendDb["db"];
 };
 
-type SqliteCompat = RawSqlite;
-
 export function openBackendDb(path: string, timeout = 30_000): BackendDb {
   if (path !== ":memory:") {
     mkdirSync(dirname(path), { recursive: true });
   }
-  const sqlite = new Database(path, { create: true, strict: true }) as SqliteCompat;
+  const sqlite = new Database(path, { create: true, strict: true }) as RawSqlite;
   sqlite.backup = async (target: string) => {
     // serialize() only snapshots the main .db file; in WAL mode, recently
     // committed data can still be sitting in .db-wal and would be silently

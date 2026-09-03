@@ -8,15 +8,12 @@ import { instagramCredentialsForLocale, instagramGraphHost } from "../../foundat
 import { youtubeAccessToken } from "../../foundation/external/youtube.js";
 import { zernioRequest } from "../../foundation/external/zernio.js";
 import { requestJson } from "../../foundation/http.js";
+import { t } from "../../foundation/i18n/index.js";
 import { markSynced, mergeVideoSnapshot, metricNumber, upsertComment, upsertVideoSnapshot } from "../snapshots/creator-store.js";
 import { describeMetricFreeze, isTerminalMetricError, terminalIfMissingRemoteObject } from "./collectors/errors.js";
 import { nextVideoMetricCheckAt, videoMetricCheckpointAt } from "./metric-checkpoints.js";
 import { MAX_METRIC_TASKS_PER_CYCLE, METRIC_LOCK_TIMEOUT_SECONDS } from "./metric-schedule.js";
 import { queryYouTubeAnalytics, youtubeAnalyticsCompletedEnd, youtubeAnalyticsDate } from "./youtube-analytics.js";
-
-/** Matches the "common.untitled" i18n fallback shown for drafts without a label;
- * this collector runs in the background with no locale, so it can't call `t()`. */
-const UNTITLED_VIDEO = "Без названия";
 
 type VideoMetricTask = {
   id: number;
@@ -317,7 +314,7 @@ async function collectZernioInstagramVideoMetrics(
   const completionRate =
     providerCompletionRate(metrics) ?? derivedCompletionRate(views, averageWatchTimeMs, totalWatchTimeMs, videoDurationMs);
   upsertVideoSnapshot(backendDb, target.id, "instagram_reels", target.checkpointIndex, {
-    title: target.label ?? UNTITLED_VIDEO,
+    title: target.label ?? t(target.locale, "common.untitled"),
     url: platform?.platformPostUrl ?? data.platformPostUrl ?? target.externalUrl,
     publishedAt: data.publishedAt ?? target.publishedAt,
     views,
@@ -420,7 +417,7 @@ async function collectYouTubeVideoMetrics(
   );
   const item = video.items?.[0];
   upsertVideoSnapshot(backendDb, target.id, "youtube_shorts", target.checkpointIndex, {
-    title: item?.snippet?.title ?? target.label ?? UNTITLED_VIDEO,
+    title: item?.snippet?.title ?? target.label ?? t(target.locale, "common.untitled"),
     url: target.externalUrl,
     publishedAt: item?.snippet?.publishedAt ?? target.publishedAt,
     views: metricNumber(item?.statistics?.viewCount),
@@ -569,7 +566,7 @@ async function collectInstagramVideoMetrics(
   const views = await instagramReelViews(fetchImpl, base, token);
   const videoDurationMs = targetVideoDurationMs(target);
   upsertVideoSnapshot(backendDb, target.id, "instagram_reels", target.checkpointIndex, {
-    title: target.label ?? UNTITLED_VIDEO,
+    title: target.label ?? t(target.locale, "common.untitled"),
     url: media.permalink ?? target.externalUrl,
     publishedAt: media.timestamp ?? target.publishedAt,
     views,

@@ -87,6 +87,8 @@ describe("openBackendDb", () => {
       expect(backendDb.sqlite.query("SELECT count(*) c FROM metric_samples").get()).toMatchObject({ c: 1 });
       expect(backendDb.sqlite.query("SELECT count(*) c FROM publication_targets").get()).toMatchObject({ c: 1 });
       expect(backendDb.sqlite.query("SELECT count(*) c FROM worker_state").get()).toMatchObject({ c: 1 });
+      expect(backendDb.sqlite.query("SELECT name FROM pragma_table_info('drafts') WHERE name='channel_message_id'").get()).toBeNull();
+      expect(backendDb.sqlite.query("SELECT name FROM pragma_table_info('site_jobs') WHERE name='message_id'").get()).toBeNull();
       backendDb.sqlite.query("DELETE FROM metric_samples").run();
       backendDb.sqlite.query("UPDATE publication_targets SET status = 'published'").run();
       // An index the baseline grew after the squash reaches an old database too.
@@ -149,16 +151,13 @@ describe("openBackendDb", () => {
     try {
       expect(
         backendDb.sqlite
-          .prepare(
-            "SELECT id, actor_id, status, post_id, channel_message_id, threads_chain_approved, story_publish_mode FROM drafts WHERE post_id=42",
-          )
+          .prepare("SELECT id, actor_id, status, post_id, threads_chain_approved, story_publish_mode FROM drafts WHERE post_id=42")
           .get(),
       ).toEqual({
         id: 7,
         actor_id: 42,
         status: "published",
         post_id: 42,
-        channel_message_id: 99,
         threads_chain_approved: 1,
         story_publish_mode: "publish",
       });

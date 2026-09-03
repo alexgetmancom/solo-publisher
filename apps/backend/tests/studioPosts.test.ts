@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { registerChannel } from "../src/channels/registry.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { channelConnections, drafts, postLocales, publishJobs, siteJobs } from "../src/db/schema.js";
+import { mutateScheduledDraft } from "../src/publishing/scheduled-draft-mutation.js";
 import { publicationSourceFromDb } from "../src/publishing/source-store.js";
 import { postService } from "../src/studio/services/posts.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
@@ -136,6 +137,38 @@ describe("Studio post commands", () => {
       .get();
     expect(source.locales.ru).toMatchObject({ text: "After" });
     expect(job?.payloadJson).toMatchObject({ locale: "ru", text: "After" });
+  });
+
+  it("rolls a scheduled content edit back when the replacement plan is invalid", () => {
+    backendDb = openPostDb();
+    const posts = postService(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }));
+    const original = "Исходный русский текст";
+    const draftId = posts.create(42, { text: original, textEn: "Before", entities: [], media: [] });
+    posts.schedule(42, draftId, { ruAt: new Date(Date.now() + 5 * 60_000), enAt: null });
+
+    expect(() =>
+      posts.edit(42, draftId, {
+        locale: "ru",
+        text: "This text is definitely written only in English.",
+        entities: [],
+        media: [],
+      }),
+    ).toThrow("err.post-preflight");
+    expect(posts.get(42, draftId).text_ru).toBe(original);
+  });
+
+  it("does not overwrite a scheduled draft after its revision changed", () => {
+    backendDb = openPostDb();
+    const posts = postService(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }));
+    const draftId = posts.create(42, { text: "Before", textEn: "Before", entities: [], media: [] });
+    posts.schedule(42, draftId, { ruAt: new Date(Date.now() + 5 * 60_000), enAt: null });
+    const stale = posts.get(42, draftId);
+    backendDb.drafts.update(draftId, { textRu: "Winner", updatedAt: new Date(Date.now() + 1_000).toISOString() });
+
+    expect(
+      mutateScheduledDraft(backendDb, stale, { patch: { textRu: "Loser", updatedAt: new Date(Date.now() + 2_000).toISOString() } }),
+    ).toBe(false);
+    expect(posts.get(42, draftId).text_ru).toBe("Winner");
   });
 
   it("refuses English copy for a Studio that publishes no English", () => {

@@ -1,13 +1,10 @@
 <!-- =============================================================================
-  ЛЕНТА КАРТОЧЕК (левая колонка / низ на мобильном).
+  STORY RAIL (left column, bottom strip on mobile).
   ─────────────────────────────────────────────────────────────────────────────
-  Презентационный компонент: своего состояния НЕТ.
-  Получает: posts, active (какая карточка подсвечена), visibleIndexes
-  (фильтр режима ленты), onselect — сообщает корню, что кликнули карточку.
-  Сам умеет только: отрисовать карточки + плавно доскроллить к активной.
-  Стили — в <style> внизу (scoped): лента и карточки, включая мобильные
-  переопределения. Геометрия ленты (высота карточки, отступы) задаётся CSS-
-  переменными --rail-* на .story-rail-container в StoryPlayer.svelte.
+  Stateless presentation of posts, the active card and visible feed indexes.
+  It renders cards, scrolls to the active one and reports selection to the root.
+  Scoped styles include mobile overrides; --rail-* variables on StoryPlayer's
+  container own the rail geometry.
 ============================================================================= -->
 <script lang="ts">
 import { onStoryImageError } from "../../scripts/story-player/media";
@@ -398,7 +395,7 @@ $effect(() => {
     }
 
     .rail-card__shade {
-      background: linear-gradient(180deg, transparent 32%, rgba(8, 11, 16, 0.94) 100%);
+      background: linear-gradient(180deg, transparent 32%, var(--overlay-rail-shade) 100%);
     }
 
     .rail-card__text {

@@ -97,7 +97,7 @@ describe("dashboard read model bounds", () => {
       }) as unknown as { posts: Array<Record<string, unknown>> };
       expect(compact.posts[0]).not.toHaveProperty("full_text_en");
       expect(compact.posts[0]).not.toHaveProperty("media_en_json");
-      expect(compact.posts[0]).toMatchObject({ post_id: 1, telegram_url: expect.any(String) });
+      expect(compact.posts[0]).toMatchObject({ post_id: 1, telegram_url: null });
       expect(compact.posts[0]?.targets).toEqual({ telegram: { status: "published", url: null } });
       expect(compact.posts[0]?.metrics).toEqual({ telegram: { views: { value: 250 } } });
     }));

@@ -38,6 +38,11 @@ function visit(directory: string): void {
     const extension = path.extname(entry.name);
     if (allowedShellSources.has(relative)) continue;
     if (forbiddenExtensions.has(extension)) violations.push(relative);
+    if (relative.startsWith("apps/web/src/features/story-player/") && extension === ".svelte") {
+      const text = fs.readFileSync(absolute, "utf8");
+      const comments = [...text.matchAll(/<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g)].map((match) => match[0]).join("\n");
+      if (/[А-Яа-яЁё]/.test(comments)) violations.push(relative);
+    }
     const disabledTypecheckDirective = "@ts-" + "nocheck";
     if (extension === ".ts" && fs.readFileSync(absolute, "utf8").includes(disabledTypecheckDirective)) violations.push(relative);
     if (!extension || extension === ".sh") {
@@ -61,4 +66,4 @@ if (violations.length > 0) {
   );
   process.exit(1);
 }
-console.log("Language gate passed: no Python, JavaScript, or shell source files beyond the installer.");
+console.log("Language gate passed: executable sources and Story-player comments follow the repository language rules.");

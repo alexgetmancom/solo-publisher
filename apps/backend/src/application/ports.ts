@@ -24,7 +24,6 @@ export type DraftRecord = {
   targets_json: string;
   media_ru_json: string | null;
   media_en_json: string | null;
-  channel_message_id: number | null;
   scheduled_at: string | null;
   scheduled_en_at: string | null;
   post_id: number | null;
@@ -32,6 +31,7 @@ export type DraftRecord = {
   text_en_entities_json: string | null;
   threads_chain_approved: number;
   story_publish_mode: string | null;
+  updated_at: string;
 };
 
 export type NewDraft = {
@@ -431,6 +431,7 @@ export type DraftStore = {
   get(id: number): DraftRecord | null;
   list(actorIds: number[], limit: number): DraftRecord[];
   update(id: number, patch: DraftPatch): void;
+  updateIfCurrent(id: number, expectedStatus: string, expectedUpdatedAt: string, patch: DraftPatch): boolean;
 };
 
 /** Durable event port. Consumers can remain independent from the event table. */
