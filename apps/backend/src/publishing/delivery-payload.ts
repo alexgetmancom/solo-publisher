@@ -18,7 +18,7 @@ declare const deliveryPayloadBrand: unique symbol;
  * Every duplicate publication this system has produced was an object literal
  * assigned to `payloadJson`, built from the publication source by code that had
  * no reason to think about what the delivery had already sent. Comments did not
- * stop it and neither did review. So the column takes a type that only the four
+ * stop it and neither did review. So the column takes a type that only the
  * constructors below can produce, and each of them is a different answer to the
  * one question that matters: has this delivery already put something in front
  * of an audience, and is this write continuing it or replacing it?
@@ -30,6 +30,12 @@ export type DeliveryPayload = JsonObject & { readonly [deliveryPayloadBrand]: "d
 function branded(fields: JsonObject): DeliveryPayload {
   return fields as DeliveryPayload;
 }
+
+/** In-flight adapter state carries no answer to that question and so must not
+ * wear the resume prefix: a container being processed has reached nobody, and a
+ * job holding only that is an ordinary first delivery -- its media still has to
+ * be prepared, and a replan may still replace it. */
+const PROGRESS_KEY_PREFIX_FORBIDDEN = RESUME_KEY_PREFIX;
 
 export function resumeState(payload: JsonObject): JsonObject {
   return Object.fromEntries(Object.entries(payload).filter(([key]) => key.startsWith(RESUME_KEY_PREFIX)));
@@ -59,6 +65,22 @@ export function continuedDeliveryPayload(previous: JsonObject | null, fields: Js
 export function restartedDeliveryPayload(fields: JsonObject, reason: "posts_removed" | "operator_republish"): DeliveryPayload {
   void reason;
   return branded(fields);
+}
+
+/** A delivery that is mid-flight at the provider: the adapter's own progress
+ * state, plus -- only once something has actually reached the audience -- the
+ * ids it must never publish again. */
+export function deferredDeliveryPayload(
+  previous: JsonObject,
+  progressKey: string,
+  progress: JsonValue,
+  published?: { key: string; ids: JsonValue },
+): DeliveryPayload {
+  if (progressKey.startsWith(PROGRESS_KEY_PREFIX_FORBIDDEN))
+    throw new Error(`progress key ${progressKey} claims to be resume state: it says nothing reached an audience`);
+  if (published && !published.key.startsWith(RESUME_KEY_PREFIX))
+    throw new Error(`resume key ${published.key} must carry the ${RESUME_KEY_PREFIX} prefix`);
+  return branded({ ...previous, [progressKey]: progress, ...(published ? { [published.key]: published.ids } : {}) });
 }
 
 /** A delivery pointed at the ids it is to continue from, named rather than

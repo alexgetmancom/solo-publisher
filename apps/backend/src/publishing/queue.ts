@@ -10,7 +10,7 @@ import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { ringWorker, ringWorkerAfter } from "../foundation/worker-signal.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
-import { type DeliveryPayload, hasResumeState, resumedDeliveryPayload } from "./delivery-payload.js";
+import { type DeliveryPayload, deferredDeliveryPayload, hasResumeState, resumedDeliveryPayload } from "./delivery-payload.js";
 import { classifyPublishError, normalizePublishResult, type PublishResult } from "./errors.js";
 import { failedJobTransition, mayHaveReachedAudience, partialPublicationTransition } from "./job-policy.js";
 import { refreshPublicationOwner } from "./publication-owner.js";
@@ -265,7 +265,7 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
   if (job?.status !== "publishing" || job.lockedBy !== lockId) return;
   const publicationKey = job.publicationKey;
-  if (result.deferred && typeof result.resumeKey === "string" && result.resumeKey.startsWith("_") && result.resumeValue !== undefined) {
+  if (result.deferred && typeof result.progressKey === "string" && result.progressValue !== undefined) {
     settleDeferredPublication(backendDb, job, result, now, lockId);
     return;
   }
@@ -365,8 +365,16 @@ function settleDeferredPublication(
 ): void {
   const delayMs = Math.max(0, Math.min(60_000, Number(result.retryAfterMs) || 0));
   const nextAttemptAt = new Date(Date.parse(now) + delayMs).toISOString();
-  const resumeKey = String(result.resumeKey);
-  const payload = resumedDeliveryPayload(parsePayload(job.payloadJson), resumeKey, result.resumeValue ?? null);
+  const published =
+    typeof result.resumeKey === "string" && result.resumeValue !== undefined
+      ? { key: result.resumeKey, ids: result.resumeValue }
+      : undefined;
+  const payload = deferredDeliveryPayload(
+    parsePayload(job.payloadJson),
+    String(result.progressKey),
+    result.progressValue ?? null,
+    published,
+  );
   const state = typeof result.state === "string" ? result.state : "processing";
   const settled = withLease(backendDb, job.jobId, (tx) =>
     settleJob(

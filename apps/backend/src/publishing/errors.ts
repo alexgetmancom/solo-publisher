@@ -117,11 +117,13 @@ export type PublishResult = {
   reason?: string | null;
   retryable?: boolean;
   partial?: boolean;
-  /** A provider-side operation that has started but has not reached an audience.
-   * The queue persists the adapter-owned state and releases the worker until the
-   * requested next check. */
+  /** A provider-side operation that has started but has not finished. The queue
+   * persists the adapter-owned progress under `progressKey` and releases the
+   * worker until the requested next check, spending no publish attempt. */
   deferred?: boolean;
   retryAfterMs?: number;
+  progressKey?: string;
+  progressValue?: JsonValue;
   /** Where a partially finished publication leaves what it already did, so the
    * next attempt resumes instead of repeating it. The adapter names its own
    * payload key; the queue only stores and returns it. */

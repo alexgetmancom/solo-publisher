@@ -7,7 +7,7 @@ import type { DeliveryAdapter, DeliveryPorts, DeliveryPublisher } from "../src/d
 import { runDeliveryPublishCycle } from "../src/delivery/publish-workflow.js";
 import { PUBLISH_MAX_ATTEMPTS, PUBLISH_PARTIAL_MAX_ATTEMPTS } from "../src/foundation/config.js";
 import { recordAuthFailure } from "../src/observability/auth-circuit.js";
-import { type DeliveryPayload, newDeliveryPayload } from "../src/publishing/delivery-payload.js";
+import { type DeliveryPayload, hasResumeState, newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { HttpPublishError } from "../src/publishing/errors.js";
 import {
   claimDuePublishJobs,
@@ -751,8 +751,8 @@ describe("publish queue", () => {
         id,
         {
           deferred: true,
-          resumeKey: "_instagramStoryState",
-          resumeValue: { stage: "processing", containerId: "container-1", polls: 0 },
+          progressKey: "instagramStoryProgress",
+          progressValue: { stage: "processing", containerId: "container-1", polls: 0 },
           retryAfterMs: 250,
           state: "processing",
         },
@@ -772,9 +772,72 @@ describe("publish queue", () => {
       expect(job).toMatchObject({
         status: "queued",
         attemptCount: 0,
-        payloadJson: { _instagramStoryState: { stage: "processing", containerId: "container-1", polls: 0 } },
+        payloadJson: { instagramStoryProgress: { stage: "processing", containerId: "container-1", polls: 0 } },
       });
       expect(Date.parse(String(job?.nextAttemptAt))).toBeGreaterThan(Date.now());
+    }));
+
+  it("keeps in-flight progress out of resume state until something reaches the audience", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, {
+        publicationId: 108,
+        target: "threads_ru",
+        payload: newDeliveryPayload({ text: "Chain" }),
+      });
+      const claim = () => {
+        const [claimed] = claimDuePublishJobs(backendDb, 1, "test-worker");
+        if (!claimed) throw new Error("expected claimed job");
+        return claimed;
+      };
+      const payloadOf = () =>
+        backendDb.db.select({ payloadJson: publishJobs.payloadJson }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()
+          ?.payloadJson as Record<string, unknown>;
+
+      completePublishJob(
+        backendDb,
+        id,
+        { deferred: true, progressKey: "threadsProgress", progressValue: { stage: "wait_primary", publishedIds: [] }, retryAfterMs: 0 },
+        claim().lockId,
+      );
+      // Nothing has been published, so the job is still an ordinary first
+      // delivery: its media must still be prepared and a replan may replace it.
+      expect(hasResumeState(payloadOf())).toBe(false);
+
+      backendDb.db.update(publishJobs).set({ nextAttemptAt: null }).where(eq(publishJobs.jobId, id)).run();
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          deferred: true,
+          progressKey: "threadsProgress",
+          progressValue: { stage: "create_reply", publishedIds: ["root-1"] },
+          resumeKey: "_threadsPublishedIds",
+          resumeValue: ["root-1"],
+          retryAfterMs: 0,
+        },
+        claim().lockId,
+      );
+      expect(payloadOf()._threadsPublishedIds).toEqual(["root-1"]);
+      expect(hasResumeState(payloadOf())).toBe(true);
+    }));
+
+  it("refuses to file in-flight progress as resume state", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, {
+        publicationId: 109,
+        target: "threads_ru",
+        payload: newDeliveryPayload({ text: "Chain" }),
+      });
+      const [claimed] = claimDuePublishJobs(backendDb, 1, "test-worker");
+      if (!claimed) throw new Error("expected claimed job");
+      expect(() =>
+        completePublishJob(
+          backendDb,
+          id,
+          { deferred: true, progressKey: "_threadsProgress", progressValue: { stage: "wait_primary" }, retryAfterMs: 0 },
+          claimed.lockId,
+        ),
+      ).toThrow(/claims to be resume state/);
     }));
 
   it("does not leave a job publishing when result finalization fails", () =>

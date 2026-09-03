@@ -130,7 +130,6 @@ const envSchema = z
     // Both stay configurable: a test has to be able to shorten the wait for a
     // container that never leaves IN_PROGRESS.
     THREADS_CONTAINER_TIMEOUT_SECONDS: z.coerce.number().int().positive().default(180),
-    THREADS_RETRY_DELAY_MS: z.coerce.number().int().min(1).max(30_000).default(2_000),
     THREADS_APP_ID: z.string().optional(),
     THREADS_APP_SECRET: z.string().optional(),
     /** The Twitch application, which is infrastructure rather than an account:

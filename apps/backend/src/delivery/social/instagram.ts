@@ -31,7 +31,8 @@ type InstagramStoryState = {
   publishAttempts: number;
 };
 
-const INSTAGRAM_STATE_KEY = "_instagramStoryState";
+const INSTAGRAM_PROGRESS_KEY = "instagramStoryProgress";
+const INSTAGRAM_RESUME_KEY = "_instagramPublishedId";
 const READY_POLLS = 30;
 const PUBLISH_ATTEMPTS = 5;
 const CONTAINER_ATTEMPTS = 2;
@@ -46,12 +47,14 @@ export async function publishInstagramStory(
   if (!credentials.accessToken) throw new Error("missing Instagram access token");
   if (!credentials.userId) throw new Error("missing Instagram user id");
 
+  const state = instagramStoryState(payload[INSTAGRAM_PROGRESS_KEY]);
+  // The staged public URL belongs to the attempt that built the container, not
+  // to the ones that watch it: a continuation carries the story's own state and
+  // never re-reads the media, so only the creating stages may demand a URL.
   const media = payloadMedia(payload).find((item) => item.storyVpsUrl || item.vpsUrl);
-  if (!media) return { ok: false, skipped: true, reason: "missing_public_media_url" };
-  const publicUrl = media.storyVpsUrl || media.vpsUrl;
-  if (!publicUrl) return { ok: false, skipped: true, reason: "missing_public_media_url" };
-  const state = instagramStoryState(payload[INSTAGRAM_STATE_KEY]);
+  const publicUrl = media?.storyVpsUrl || media?.vpsUrl;
   if (!state || state.stage === "create") {
+    if (!media || !publicUrl) return { ok: false, skipped: true, reason: "missing_public_media_url" };
     const rebuilds = state?.rebuilds ?? 0;
     const creation = await graphPost(
       config,
@@ -78,15 +81,15 @@ export async function publishInstagramStory(
           { stage: "create", polls: 0, rebuilds: state.rebuilds + 1, publishAttempts: 0 },
           pollDelay(state.rebuilds),
         );
-      const mediaProbe = await probePublicMedia(publicUrl, fetchImpl);
+      const mediaProbe = publicUrl ? await probePublicMedia(publicUrl, fetchImpl) : null;
       throw new InstagramContainerInvalidError(
         `Instagram container rejected media: ${JSON.stringify({
           containerId: state.containerId,
           statusCode: code,
           providerStatus: status.status ?? null,
           providerError: status.error ?? null,
-          mediaType: media.type,
-          publicUrl,
+          mediaType: media?.type ?? null,
+          publicUrl: publicUrl ?? null,
           mediaProbe,
         })}`,
       );
@@ -132,8 +135,9 @@ export async function publishInstagramStory(
 function deferredInstagram(state: InstagramStoryState, retryAfterMs: number): PublishResult {
   return {
     deferred: true,
-    resumeKey: INSTAGRAM_STATE_KEY,
-    resumeValue: state,
+    progressKey: INSTAGRAM_PROGRESS_KEY,
+    progressValue: state,
+    ...(state.publishedId ? { resumeKey: INSTAGRAM_RESUME_KEY, resumeValue: state.publishedId } : {}),
     retryAfterMs,
     state: state.stage,
   };

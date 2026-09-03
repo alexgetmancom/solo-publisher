@@ -14,7 +14,6 @@ import { loadTestConfig } from "./helpers/studio-config.js";
 
 const config = loadTestConfig({
   THREADS_RU_ACCESS_TOKEN: "threads-token",
-  THREADS_RETRY_DELAY_MS: "1",
   THREADS_CONTAINER_TIMEOUT_SECONDS: "1",
 });
 
@@ -30,8 +29,8 @@ async function publishToThreads(
   for (let step = 0; step < 100; step += 1) {
     const result = await publishToThreadsStep(current, effectiveConfig, fetchImpl, target);
     if (!result.deferred) return result;
-    if (!result.resumeKey) throw new Error("deferred Threads step has no resume key");
-    current = { ...current, [result.resumeKey]: result.resumeValue };
+    if (!result.progressKey) throw new Error("deferred Threads step has no progress key");
+    current = { ...current, [result.progressKey]: result.progressValue };
   }
   throw new Error("Threads test state machine did not finish");
 }
@@ -97,7 +96,7 @@ describe("publishToThreads", () => {
 
     expect(calls).toHaveLength(1);
     expect(result).toMatchObject({ deferred: true, retryAfterMs: 250, state: "wait_primary" });
-    expect(result.resumeValue).toMatchObject({ containerId: "c1", stage: "wait_primary" });
+    expect(result.progressValue).toMatchObject({ containerId: "c1", stage: "wait_primary" });
   });
 
   it("attaches a single image to the first container rather than posting it separately", async () => {
@@ -242,7 +241,7 @@ describe("publishToThreads", () => {
       {
         text: `${"a".repeat(500)} tail`,
         threadsChainApproved: true,
-        _threadsState: {
+        threadsProgress: {
           stage: "create_reply",
           childIds: [],
           itemIndex: 0,
@@ -301,8 +300,8 @@ describe("publishToThreads", () => {
     for (let step = 0; step < 5; step += 1) {
       try {
         const result = await publishToThreadsStep(payload, config, fetchImpl, "threads_ru", () => now);
-        if (!result.deferred || !result.resumeKey) break;
-        payload = { ...payload, [result.resumeKey]: result.resumeValue };
+        if (!result.deferred || !result.progressKey) break;
+        payload = { ...payload, [result.progressKey]: result.progressValue };
         now += Number(result.retryAfterMs ?? 0);
       } catch (error) {
         failure = error;

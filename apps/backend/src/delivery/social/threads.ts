@@ -35,7 +35,10 @@ type ThreadsState = {
   startedAtMs: number;
 };
 
-const THREADS_STATE_KEY = "_threadsState";
+/** The adapter's own progress, and -- separately -- the ids that have reached
+ * the audience: only the second may carry the resume prefix. */
+const THREADS_PROGRESS_KEY = "threadsProgress";
+const THREADS_RESUME_KEY = "_threadsPublishedIds";
 const POLL_DELAYS_MS = [250, 750, 1_500, 3_000, 5_000] as const;
 
 export async function publishToThreads(
@@ -57,7 +60,7 @@ export async function publishToThreads(
   if (text.length > limit && !chainApproved) return { ok: false, error: `threads_text_too_long:${text.length}/${limit}` };
   const parts = chainApproved ? splitText(text, limit) : [text];
   const mediaItems = payloadMedia(payload).filter((item) => item.vpsUrl);
-  const state = threadsState(payload[THREADS_STATE_KEY]) ?? initialThreadsState(mediaItems.length, nowImpl());
+  const state = threadsState(payload[THREADS_PROGRESS_KEY]) ?? initialThreadsState(mediaItems.length, nowImpl());
 
   if (state.stage === "create_child") {
     const item = mediaItems[state.itemIndex];
@@ -191,7 +194,14 @@ function initialThreadsState(mediaCount: number, now: number): ThreadsState {
 }
 
 function deferredThreads(state: ThreadsState, retryAfterMs: number): PublishResult {
-  return { deferred: true, resumeKey: THREADS_STATE_KEY, resumeValue: state, retryAfterMs, state: state.stage };
+  return {
+    deferred: true,
+    progressKey: THREADS_PROGRESS_KEY,
+    progressValue: state,
+    ...(state.publishedIds.length > 0 ? { resumeKey: THREADS_RESUME_KEY, resumeValue: state.publishedIds } : {}),
+    retryAfterMs,
+    state: state.stage,
+  };
 }
 
 function threadsState(value: unknown): ThreadsState | null {
