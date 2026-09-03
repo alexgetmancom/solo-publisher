@@ -43,6 +43,14 @@ const server = createServer((req, res) => {
     res.end("Bad request\n");
     return;
   }
+  // A percent-encoded null byte survives decoding and reaches fs.stat, which
+  // rejects it by throwing from the request handler and taking the process
+  // down. Vulnerability scanners send these by the dozen.
+  if (decodedPath.includes("\0")) {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad request\n");
+    return;
+  }
   const safePath = path.normalize(decodedPath).replace(/^(\.\.[/\\])+/, "");
   const filePath = path.join(CLIENT_DIR, safePath);
   // normalize() already collapses ".." against the leading slash, but the
