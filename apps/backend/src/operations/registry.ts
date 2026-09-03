@@ -3,6 +3,7 @@ import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
 import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
 import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
+import { recentSocialComments } from "../analytics/reports/audience.js";
 import { audienceMilestoneReport } from "../analytics/reports/milestone-report.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
@@ -16,6 +17,7 @@ import type { BackendDb } from "../db/client.js";
 import { recentDiscussions } from "../engagement/discussion-comments.js";
 import { engagementService } from "../engagement/service.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { readDeploymentReleases } from "../foundation/deployment.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
 import { isIsoInstant } from "../foundation/time.js";
@@ -353,6 +355,16 @@ const operationDefs = {
       };
     },
   }),
+  deployments: operation({
+    section: "health",
+    startHere: "which revision is actually running, and what a rollback would go back to",
+    summary: "What every deployment this host drives is running, and the release each would roll back to.",
+    note: "Asked of the deploy agent, not of this database: `status` reports the revision this container was built from, which is the same answer only when the deployment succeeded. A target mid-rollout reports `deploying`.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => readDeploymentReleases(context.config(), context.fetchImpl),
+  }),
   "dates-repair": operation({
     section: "health",
     summary: "Make every stored date a date: normalise SQLite's own spelling, drop readings stamped with a moment that never happened.",
@@ -424,15 +436,18 @@ const operationDefs = {
   }),
   comments: operation({
     section: "analytics",
-    summary: "What the channel's discussion group is saying, newest discussed posts first.",
-    note: "Only comments written after the bot joined the group: Telegram delivers a group's history to nobody. A comment on a thread the bot never saw opened has no post to belong to and is not listed here until that thread's forward is seen.",
-    startHere: "what is the audience saying about a post",
+    summary: "What the audience wrote back: the channel's discussion group under posts, and the video platforms under videos.",
+    note: "Telegram comments only from after the bot joined the group -- a group's history is delivered to nobody -- and only on threads whose forwarded post the bot has seen. YouTube and Instagram comments ride along on the video metrics checkpoint rather than a schedule of their own, so an empty list there means either nothing was said or the checkpoint never reached the comment call.",
+    startHere: "what is the audience saying about a post or a video",
     schema: z.object({
-      limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many discussed posts to list"),
+      limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many discussed publications to list per source"),
     }),
     mutates: false,
     agent: true,
-    handler: (context, input) => recentDiscussions(context.db(), input.limit),
+    handler: (context, input) => ({
+      telegram: recentDiscussions(context.db(), input.limit),
+      video: recentSocialComments(context.db(), input.limit),
+    }),
   }),
   milestones: operation({
     section: "analytics",
