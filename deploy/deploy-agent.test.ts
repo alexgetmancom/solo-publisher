@@ -95,6 +95,20 @@ esac
       }
       expect(response?.ok).toBe(true);
 
+      // Reading what is deployed, without deploying to find out. Behind the
+      // same bearer token as every action: the state names images and
+      // revisions, and the port is on the Docker bridge.
+      expect((await fetch(`http://127.0.0.1:${agentPort}/v1/releases`)).status).toBe(403);
+      const releases = await fetch(`http://127.0.0.1:${agentPort}/v1/releases`, {
+        headers: { authorization: "Bearer test-token" },
+      });
+      expect(releases.ok).toBe(true);
+      expect(await releases.json()).toMatchObject({
+        ok: true,
+        deploying: false,
+        targets: [{ target: "alex", kind: "compose", current: { image: oldImage, revision: oldRevision } }],
+      });
+
       const deployed = await fetch(`http://127.0.0.1:${agentPort}/v1/deploy/alex`, {
         method: "POST",
         headers: { authorization: "Bearer test-token", "content-type": "application/json" },

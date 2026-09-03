@@ -64,9 +64,10 @@ path — with the stack in this repository, Caddy forwards it always.
 Every read the CLI has is exposed, because diagnosing this Studio is what the
 agent surface is for. Mutations are exposed when they are part of routine
 delivery work. So an agent can connect and disable channels, inspect delivery
-and the journal, retry a target, edit and reschedule a publication — and cannot
+and the journal, retry a target, edit and reschedule a publication — read what every deployment on the host is running, and cannot
 take a backup, restore one, or run the YouTube and Telegram Stories sign-in
-flows, because those handle credentials or a terminal. A handful of rare
+flows, because those handle credentials or a terminal. Nor can it deploy:
+`deployments` reads, and promoting or rolling back stays a tap in the bot. A handful of rare
 mutations — a milestone announcement, a date repair, a metrics backfill — are
 CLI-only too: they are run once in a season, with their note and their dry-run
 in front of the operator running them.

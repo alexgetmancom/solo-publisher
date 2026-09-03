@@ -514,6 +514,23 @@ async function requestHandler(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     const [, , action, requestedTarget] = url.pathname.split("/");
+    // Reading what is deployed, for every target this agent drives. The three
+    // actions below are the only way anything learned a revision, so the
+    // question "what is actually running, and what would a rollback go back
+    // to" could be answered by deploying -- and by nothing else.
+    if (request.method === "GET" && action === "releases") {
+      return json({
+        ok: true,
+        deploying,
+        targets: await Promise.all(
+          [...targets.values()].map(async (deploymentTarget) => ({
+            target: deploymentTarget.name,
+            kind: deploymentTarget.kind,
+            ...(await state(deploymentTarget)),
+          })),
+        ),
+      });
+    }
     const deploymentTarget = target(requestedTarget);
     if (request.method === "POST" && action === "deploy") {
       if (!immutableImage(body?.image) || !revision(body?.release))

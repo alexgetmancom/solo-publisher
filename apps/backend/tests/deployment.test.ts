@@ -3,6 +3,7 @@ import { parseScreenCallback, screenCallback } from "../src/bot/screen-callback.
 import {
   isDeploymentRevision,
   isDeploymentTarget,
+  readDeploymentReleases,
   requestDeploymentPromote,
   requestDeploymentRollback,
 } from "../src/foundation/deployment.js";
@@ -98,5 +99,45 @@ describe("deployment agent requests", () => {
       message: "This button belongs to an older source release.",
     });
     expect(attempts).toBe(1);
+  });
+
+  /** Until this, nothing but a deploy ever learned a revision: the question
+   * "what is actually running" had no read that could answer it. */
+  it("reads what every target is running, and says so when it cannot", async () => {
+    const requests: { url: string; method: string; authorization: string | null }[] = [];
+    const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
+      requests.push({
+        url: String(input),
+        method: init?.method ?? "GET",
+        authorization: new Headers(init?.headers).get("authorization"),
+      });
+      return Response.json({
+        ok: true,
+        deploying: false,
+        targets: [{ target: "maru", kind: "compose", current: { revision, deployedAt: "2026-01-01T00:00:00.000Z" } }],
+      });
+    }) as typeof fetch;
+
+    await expect(readDeploymentReleases(loadTestConfig(agent), fetchImpl)).resolves.toMatchObject({
+      ok: true,
+      targets: [{ target: "maru", current: { revision } }],
+    });
+    expect(requests).toEqual([
+      { url: "http://host.docker.internal:9899/v1/releases", method: "GET", authorization: `Bearer ${"t".repeat(16)}` },
+    ]);
+
+    // An unconfigured agent and an unreachable one are different answers, and
+    // neither is an empty list of deployments.
+    await expect(readDeploymentReleases(loadTestConfig({}), fetchImpl)).resolves.toEqual({
+      ok: false,
+      message: "Deployment agent is not configured.",
+    });
+    const failing = (async () => {
+      throw new Error("connection refused");
+    }) as unknown as typeof fetch;
+    await expect(readDeploymentReleases(loadTestConfig(agent), failing)).resolves.toEqual({
+      ok: false,
+      message: "Deployment agent is unavailable.",
+    });
   });
 });
