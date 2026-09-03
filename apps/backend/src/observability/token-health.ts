@@ -1,3 +1,4 @@
+import { META_PROVIDERS, type MetaOauthPlatform } from "../channels/meta-providers.js";
 import { listChannels } from "../channels/registry.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
@@ -24,57 +25,94 @@ const PING_RETRY_SECONDS = 5 * 60;
 // instead of after a burst of dead publishes.
 const EXPIRY_WARNING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** What one probe learned about a credential. Both fields are optional
+ * because most providers answer neither question: a probe that only proves the
+ * token still authenticates returns an empty result, not a special case. */
+type ProbeResult = {
+  /** An ISO expiry timestamp when the provider can report one. */
+  expiresAt?: string | null;
+  /** Permissions this Studio's code needs that the token was not granted.
+   * Empty when the grant is complete; absent when the provider will not say. */
+  missingScopes?: string[];
+};
+
 type Probe = {
   target: string;
   configured: (config: BackendConfig) => boolean;
-  /** Resolves to an ISO expiry timestamp when the provider can report one. */
-  run: (config: BackendConfig, fetchImpl: typeof fetch) => Promise<string | null | undefined>;
+  run: (config: BackendConfig, fetchImpl: typeof fetch) => Promise<ProbeResult>;
 };
 
 /** Best-effort token expiry lookup; a failure here must not turn an otherwise
  * healthy probe into a reported auth failure. Meta reports a non-expiring
  * token as expires_at: 0, which must not be treated the same as "lookup
  * failed" (a plain falsy check on the number would conflate the two). */
-async function debugTokenExpiry(
+async function debugToken(
   target: string,
   host: string,
   version: string,
   token: string,
   fetchImpl: typeof fetch,
-): Promise<string | null> {
+): Promise<{ expiresAt: string | null; scopes: string[] | null }> {
   try {
-    const data = await requestJson<{ data?: { expires_at?: number } }>(
+    const data = await requestJson<{ data?: { expires_at?: number; scopes?: unknown } }>(
       fetchImpl,
       `https://${host}/${version}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(token)}`,
     );
     const expiresAtSeconds = data.data?.expires_at;
-    if (typeof expiresAtSeconds !== "number" || expiresAtSeconds <= 0) return null;
-    return new Date(expiresAtSeconds * 1000).toISOString();
+    const granted = data.data?.scopes;
+    return {
+      expiresAt: typeof expiresAtSeconds === "number" && expiresAtSeconds > 0 ? new Date(expiresAtSeconds * 1000).toISOString() : null,
+      scopes: Array.isArray(granted) ? granted.filter((scope): scope is string => typeof scope === "string") : null,
+    };
   } catch (error) {
     // graph.instagram.com rejects debug_token for Instagram Login tokens with
     // a 403 unless called with an app access token (needs an app id/secret we
     // don't have configured) - expected and not worth alerting on, but still
     // worth a breadcrumb so "why don't we know this token's expiry" is
     // answerable from the logs instead of looking like silent data loss.
-    log("debug", "token expiry lookup failed", {
+    log("debug", "token debug lookup failed", {
       target,
       host,
       error: error instanceof Error ? error.message : String(error),
     });
-    return null;
+    return { expiresAt: null, scopes: null };
   }
+}
+
+/**
+ * The permissions a token was granted, against the ones the connect flow asks
+ * for. Those are the same list this Studio's code was written against, so a
+ * token minted before a permission was added -- or by hand, or through another
+ * Studio -- is a token that publishes until it reaches the one call it cannot
+ * make. Threads answers a refused reply with an empty HTTP 500 rather than a
+ * permission error, which is a whole outage's worth of looking in the wrong
+ * place; asking `debug_token` up front is how that becomes one warning.
+ */
+function missingMetaScopes(platform: MetaOauthPlatform, granted: string[] | null): string[] | undefined {
+  if (!granted) return undefined;
+  const required = META_PROVIDERS[platform].scope
+    .split(",")
+    .map((scope) => scope.trim())
+    .filter(Boolean);
+  return required.filter((scope) => !granted.includes(scope));
 }
 
 async function graphMeCheck(
   target: string,
+  platform: MetaOauthPlatform,
   host: string,
   version: string,
   id: string,
   token: string,
   fetchImpl: typeof fetch,
-): Promise<string | null> {
+): Promise<ProbeResult> {
   await requestJson(fetchImpl, `https://${host}/${version}/${id}?fields=id&access_token=${encodeURIComponent(token)}`);
-  return debugTokenExpiry(target, host, version, token, fetchImpl);
+  const { expiresAt, scopes } = await debugToken(target, host, version, token, fetchImpl);
+  const missingScopes = missingMetaScopes(platform, scopes);
+  // The key is omitted rather than set to undefined: "the provider would not
+  // say" and "the grant is complete" are different answers, and only the
+  // absent key carries the first one.
+  return missingScopes ? { expiresAt, missingScopes } : { expiresAt };
 }
 
 function youtubeProbe(target: string, locale: VideoLocale): Probe {
@@ -89,7 +127,7 @@ function youtubeProbe(target: string, locale: VideoLocale): Probe {
       await requestJson(fetchImpl, "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return null;
+      return {};
     },
   };
 }
@@ -104,7 +142,7 @@ function instagramProbe(target: string, locale: VideoLocale): Probe {
     run: (config, fetchImpl) => {
       const { accessToken: token, userId } = instagramCredentialsForLocale(config, locale);
       if (!token || !userId) throw new Error(`${target} credentials are missing`);
-      return graphMeCheck(target, instagramGraphHost(token), config.INSTAGRAM_GRAPH_API_VERSION, userId, token, fetchImpl);
+      return graphMeCheck(target, "instagram", instagramGraphHost(token), config.INSTAGRAM_GRAPH_API_VERSION, userId, token, fetchImpl);
     },
   };
 }
@@ -116,8 +154,7 @@ function threadsProbe(target: ThreadsTarget): Probe {
     run: async (config, fetchImpl) => {
       const { accessToken } = threadsCredentials(config, target);
       if (!accessToken) throw new Error(`${target} credentials are missing`);
-      await requestJson(fetchImpl, `https://graph.threads.net/v1.0/me?fields=id&access_token=${encodeURIComponent(accessToken)}`);
-      return null;
+      return graphMeCheck(target, "threads", "graph.threads.net", "v1.0", "me", accessToken, fetchImpl);
     },
   };
 }
@@ -128,7 +165,7 @@ const probes: Probe[] = [
     configured: (c) => Boolean(c.controllerBotToken),
     run: async (config, fetchImpl) => {
       await requestJson(fetchImpl, `${config.TELEGRAM_API_BASE_URL}/bot${config.controllerBotToken}/getMe`);
-      return null;
+      return {};
     },
   },
   {
@@ -137,7 +174,7 @@ const probes: Probe[] = [
     run: async (config, fetchImpl) => {
       const url = "https://api.x.com/2/users/me";
       await requestJson(fetchImpl, url, { headers: { Authorization: `Bearer ${config.X_ACCESS_TOKEN}` } });
-      return null;
+      return {};
     },
   },
   threadsProbe("threads_ru"),
@@ -164,9 +201,23 @@ export async function checkTokenHealth(config: BackendConfig, backendDb: Backend
     if (!probe.configured(config) || !shouldPingToken(backendDb, probe.target, PING_INTERVAL_SECONDS)) continue;
     checked += 1;
     try {
-      const expiresAt = (await probe.run(config, fetchImpl)) ?? undefined;
+      const result = await probe.run(config, fetchImpl);
+      const expiresAt = result.expiresAt ?? undefined;
       recordTokenPing(backendDb, probe.target, expiresAt);
       recordAuthSuccess(backendDb, probe.target);
+      // A token can authenticate perfectly and still be unable to do the job:
+      // the grant is checked here rather than at the call that needs it,
+      // because that call is a publish in front of an audience.
+      if (result.missingScopes?.length) {
+        backendDb.events.record({
+          target: probe.target,
+          type: "credential.token_missing_scope",
+          severity: "warn",
+          message: `${probe.target}: token is missing ${result.missingScopes.join(", ")}; reconnect it from Studio > Channels`,
+          details: { target: probe.target, missingScopes: result.missingScopes },
+          cooldownSeconds: 24 * 60 * 60,
+        });
+      }
       if (expiresAt && new Date(expiresAt).getTime() - Date.now() < EXPIRY_WARNING_WINDOW_MS) {
         backendDb.events.record({
           target: probe.target,

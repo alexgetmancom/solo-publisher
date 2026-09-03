@@ -55,6 +55,55 @@ describe("token health probes", () => {
       expect(event?.target).toBe("instagram_ru");
     }));
 
+  it("warns when a token authenticates but was never granted a permission the code needs", () =>
+    withTempDb(async (backendDb) => {
+      // Exactly the Threads chain failure: `me` answers, publishing the first
+      // message works, and only the reply is refused -- with an empty HTTP 500
+      // that reads as the platform being down rather than as a missing grant.
+      const fetchMock = mock(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("debug_token"))
+          return jsonResponse({ data: { scopes: ["threads_basic", "threads_content_publish", "threads_manage_insights"] } });
+        return jsonResponse({ id: "123" });
+      });
+      const config = loadTestConfig({ THREADS_RU_ACCESS_TOKEN: "THtoken" });
+
+      await checkTokenHealth(config, backendDb, fetchMock as unknown as typeof fetch);
+
+      const event = backendDb.db
+        .select()
+        .from(publicationEvents)
+        .where(and(eq(publicationEvents.eventType, "credential.token_missing_scope"), eq(publicationEvents.target, "threads_ru")))
+        .get();
+      expect(event?.message).toContain("threads_manage_replies");
+    }));
+
+  it("says nothing about a complete grant, or about a provider that will not list one", () =>
+    withTempDb(async (backendDb) => {
+      const scopes = ["threads_basic", "threads_content_publish", "threads_manage_replies", "threads_manage_insights"];
+      const complete = mock(async (url: string | URL | Request) =>
+        String(url).includes("debug_token") ? jsonResponse({ data: { scopes } }) : jsonResponse({ id: "123" }),
+      );
+      const config = loadTestConfig({ THREADS_RU_ACCESS_TOKEN: "THtoken" });
+      await checkTokenHealth(config, backendDb, complete as unknown as typeof fetch);
+
+      // Instagram Login tokens are refused by debug_token, and an unanswered
+      // question must not be reported as a missing permission.
+      const silent = mock(async (url: string | URL | Request) =>
+        String(url).includes("debug_token") ? jsonResponse({ error: "no" }, 403) : jsonResponse({ id: "123" }),
+      );
+      const igConfig = loadTestConfig({ INSTAGRAM_RU_ACCESS_TOKEN: "EAAtoken", INSTAGRAM_RU_USER_ID: "123" });
+      registerTestChannels(backendDb, ["instagram_ru"]);
+      await checkTokenHealth(igConfig, backendDb, silent as unknown as typeof fetch);
+
+      const events = backendDb.db
+        .select()
+        .from(publicationEvents)
+        .where(eq(publicationEvents.eventType, "credential.token_missing_scope"))
+        .all();
+      expect(events).toHaveLength(0);
+    }));
+
   it("checks the YouTube refresh token against the authenticated channel before publishing is due", () =>
     withTempDb(async (backendDb) => {
       const calls: string[] = [];
