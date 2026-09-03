@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { ensureStoryDerivative } from "../src/delivery/story-derivatives.js";
 import { flushUsage } from "../src/observability/usage.js";
 import { createStudioServices } from "../src/studio/services/index.js";
 import { withDb } from "./helpers/db.js";
@@ -86,6 +87,9 @@ describe("Studio service boundaries", () => {
         bytes: Buffer.concat([PNG_BYTES, Buffer.from("b")]),
         source: "ops_upload",
       });
+      // The import does not wait for the encode. Publishing joins the render
+      // already running for this file, which is what this awaits.
+      await ensureStoryDerivative(config, prepared.localPath, false);
       expect(fs.existsSync(variant(prepared))).toBe(true);
     } finally {
       backendDb.close();

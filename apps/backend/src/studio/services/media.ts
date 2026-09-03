@@ -19,7 +19,7 @@ type MediaFileInput = Parameters<typeof importStudioMediaFile>[3];
  * always happen in Content through this service.
  */
 export function mediaService(backendDb: BackendDb, config: BackendConfig) {
-  const prepareStory = async (asset: StudioMediaAssetRecord) => {
+  const prepareStory = (asset: StudioMediaAssetRecord) => {
     // A Studio that publishes no Stories has nothing to prepare them for, and
     // the encode is the heaviest thing this process does. Read the selection the
     // way the operator's own screen reads it: through the registry, because a
@@ -27,10 +27,12 @@ export function mediaService(backendDb: BackendDb, config: BackendConfig) {
     // connected for them.
     const selected = effectivePostTargets(backendDb, targetsRecord(backendDb.studioSettings.profile().defaultTargetsJson));
     if (!storyTargetsEnabled(selected)) return;
-    // Best effort by design: this is the fast path, not the only one. Publishing
-    // renders what is missing, so a failed encode must not cost the operator the
-    // upload -- least of all the eighth file of an album.
-    await prepareStoryDerivative(config, asset).catch((error: unknown) => {
+    // Nobody waits for this. The derivative is not what the draft card shows --
+    // it is what publishing reads -- so holding the import for the encode only
+    // delays the card by an album's worth of ffmpeg. A "Publish" that arrives
+    // mid-render joins that render by path instead of starting a second one,
+    // and one that finds nothing renders it then.
+    void prepareStoryDerivative(config, asset).catch((error: unknown) => {
       log("warn", "story derivative not prepared at ingress", {
         assetId: asset.id,
         error: error instanceof Error ? error.message : String(error),
@@ -41,14 +43,14 @@ export function mediaService(backendDb: BackendDb, config: BackendConfig) {
     import(actorId: number, input: MediaBytesInput) {
       return trackUsageAsync(backendDb, "studio.media.import", async () => {
         const asset = await importStudioMediaAsset(backendDb, config, actorId, input);
-        await prepareStory(asset);
+        prepareStory(asset);
         return asset;
       });
     },
     importFile(actorId: number, input: MediaFileInput) {
       return trackUsageAsync(backendDb, "studio.media.import", async () => {
         const asset = await importStudioMediaFile(backendDb, config, actorId, input);
-        await prepareStory(asset);
+        prepareStory(asset);
         return asset;
       });
     },
