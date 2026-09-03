@@ -121,7 +121,7 @@ function resolveChannelPost(backendDb: BackendDb, chatId: string, threadId: numb
   return null;
 }
 
-export type DiscussionComment = {
+type DiscussionComment = {
   messageId: number;
   author: string;
   text: string;
