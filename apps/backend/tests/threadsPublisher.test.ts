@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { splitText } from "../src/delivery/social/payload.js";
-import { publishToThreads } from "../src/delivery/social/threads.js";
+import { publishToThreads as publishToThreadsStep } from "../src/delivery/social/threads.js";
+import type { PublishResult } from "../src/publishing/errors.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 /**
@@ -18,6 +19,22 @@ const config = loadTestConfig({
 });
 
 type Recorded = { endpoint: string; params: Record<string, string> };
+
+async function publishToThreads(
+  payload: Record<string, unknown>,
+  effectiveConfig: ReturnType<typeof loadTestConfig>,
+  fetchImpl: typeof fetch,
+  target: "threads_ru" | "threads_en" = "threads_ru",
+): Promise<PublishResult> {
+  let current = payload;
+  for (let step = 0; step < 100; step += 1) {
+    const result = await publishToThreadsStep(current, effectiveConfig, fetchImpl, target);
+    if (!result.deferred) return result;
+    if (!result.resumeKey) throw new Error("deferred Threads step has no resume key");
+    current = { ...current, [result.resumeKey]: result.resumeValue };
+  }
+  throw new Error("Threads test state machine did not finish");
+}
 
 /**
  * Threads talks to one host with the endpoint in the path, so the stub routes
@@ -37,7 +54,8 @@ function transport(replies: { publishIds?: string[]; containerIds?: string[]; st
     if (init?.body instanceof URLSearchParams) for (const [key, value] of init.body.entries()) params[key] = value;
     calls.push({ endpoint, params });
     const json = (value: unknown) => new Response(JSON.stringify(value), { status: 200, headers: { "content-type": "application/json" } });
-    if (params.fields === "permalink") return json({ permalink: replies.permalink ?? "https://www.threads.net/@a/post/1" });
+    if (params.fields === "id,permalink")
+      return json({ id: endpoint, permalink: replies.permalink ?? "https://www.threads.net/@a/post/1" });
     if (params.fields === "status,error_message") return json({ status: statuses.shift() ?? "FINISHED" });
     if (endpoint === "me/threads_publish") return json({ id: publishIds.shift() ?? "published" });
     if (endpoint === "me/threads") return json({ id: containerIds.shift() ?? "container" });
@@ -70,9 +88,16 @@ describe("publishToThreads", () => {
 
     expect(creations()[0]).toMatchObject({ media_type: "TEXT", text: "hello" });
     expect(result.ok).toBe(true);
-    // Permalink enrichment belongs to the adapter verification phase so the
-    // public mutation itself performs no duplicate GET.
-    expect(result.url).toBeNull();
+    expect(result.url).toBe("https://www.threads.com/@alex/post/abc");
+  });
+
+  it("persists the container after one API call instead of polling in place", async () => {
+    const { fetchImpl, calls } = transport({ containerIds: ["c1"] });
+    const result = await publishToThreadsStep({ text: "hello" }, config, fetchImpl);
+
+    expect(calls).toHaveLength(1);
+    expect(result).toMatchObject({ deferred: true, retryAfterMs: 250, state: "wait_primary" });
+    expect(result.resumeValue).toMatchObject({ containerId: "c1", stage: "wait_primary" });
   });
 
   it("attaches a single image to the first container rather than posting it separately", async () => {
@@ -214,7 +239,20 @@ describe("publishToThreads", () => {
   it("resumes a chain from what it already published instead of posting the first message twice", async () => {
     const { fetchImpl, creations } = transport({ publishIds: ["p2"], containerIds: ["c2"] });
     const result = await publishToThreads(
-      { text: `${"a".repeat(500)} tail`, threadsChainApproved: true, _threadsPublishedIds: ["p1"] },
+      {
+        text: `${"a".repeat(500)} tail`,
+        threadsChainApproved: true,
+        _threadsState: {
+          stage: "create_reply",
+          childIds: [],
+          itemIndex: 0,
+          publishedIds: ["p1"],
+          partIndex: 1,
+          polls: 0,
+          carouselRebuilds: 0,
+          startedAtMs: Date.now(),
+        },
+      },
       config,
       fetchImpl,
     );
@@ -225,7 +263,7 @@ describe("publishToThreads", () => {
     expect(creations()[0]).toMatchObject({ media_type: "TEXT", reply_to_id: "p1" });
     expect(result.ids).toEqual(["p1", "p2"]);
     expect(result.ok).toBe(true);
-    expect(result.partial).toBe(false);
+    expect(result.verification).toMatchObject({ status: "verified", providerId: "p1" });
   });
 
   it("publishes text that fits as a single post, keeping a typed url and one hidden link", async () => {
@@ -258,13 +296,23 @@ describe("publishToThreads", () => {
   it("stops waiting once the container timeout passes", async () => {
     const { fetchImpl } = transport({ statuses: ["IN_PROGRESS", "IN_PROGRESS", "IN_PROGRESS"] });
     let now = 0;
-    const advanceTime = async (milliseconds: number): Promise<void> => {
-      now += milliseconds;
-    };
-    await expect(publishToThreads({ text: "hello" }, config, fetchImpl, "threads_ru", advanceTime, () => now)).rejects.toThrow(/timed out/);
+    let payload: Record<string, unknown> = { text: "hello" };
+    let failure: unknown;
+    for (let step = 0; step < 5; step += 1) {
+      try {
+        const result = await publishToThreadsStep(payload, config, fetchImpl, "threads_ru", () => now);
+        if (!result.deferred || !result.resumeKey) break;
+        payload = { ...payload, [result.resumeKey]: result.resumeValue };
+        now += Number(result.retryAfterMs ?? 0);
+      } catch (error) {
+        failure = error;
+        break;
+      }
+    }
+    expect(String(failure)).toContain("timed out");
   });
 
-  it("retries a throttled call before giving up on it", async () => {
+  it("hands a throttled call back to the durable queue without sleeping", async () => {
     let attempts = 0;
     const { fetchImpl } = transport({});
     const throttledOnce = (async (input: URL | RequestInfo, init?: RequestInit) => {
@@ -274,9 +322,8 @@ describe("publishToThreads", () => {
       }
       return fetchImpl(input, init);
     }) as unknown as typeof fetch;
-    const result = await publishToThreads({ text: "hello" }, config, throttledOnce);
-    expect(attempts).toBe(2);
-    expect(result.ok).toBe(true);
+    await expect(publishToThreadsStep({ text: "hello" }, config, throttledOnce)).rejects.toThrow("429");
+    expect(attempts).toBe(1);
   });
 });
 

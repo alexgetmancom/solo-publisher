@@ -36,3 +36,11 @@ export function ringWorker(queue: WorkerQueue): void {
   }, 0);
   timer.unref?.();
 }
+
+/** Wakes a queue when a durable `next_attempt_at` becomes due. The ordinary
+ * polling interval remains the restart-safe fallback; this timer only removes
+ * that interval from the live process's latency. */
+export function ringWorkerAfter(queue: WorkerQueue, delayMs: number): void {
+  const timer = setTimeout(() => wakes.get(queue)?.(), Math.max(0, delayMs));
+  timer.unref?.();
+}

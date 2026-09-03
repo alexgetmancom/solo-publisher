@@ -736,6 +736,47 @@ describe("publish queue", () => {
       expect(target).toEqual({ status: "verification_required", externalId: "at://did/app.bsky.feed.post/root" });
     }));
 
+  it("persists deferred provider state without spending a publish attempt", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, {
+        publicationId: 107,
+        target: "instagram_stories_ru",
+        payload: newDeliveryPayload({ text: "Story" }),
+      });
+      const [claimed] = claimDuePublishJobs(backendDb, 1, "test-worker");
+      if (!claimed) throw new Error("expected claimed job");
+
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          deferred: true,
+          resumeKey: "_instagramStoryState",
+          resumeValue: { stage: "processing", containerId: "container-1", polls: 0 },
+          retryAfterMs: 250,
+          state: "processing",
+        },
+        claimed.lockId,
+      );
+
+      const job = backendDb.db
+        .select({
+          status: publishJobs.status,
+          attemptCount: publishJobs.attemptCount,
+          nextAttemptAt: publishJobs.nextAttemptAt,
+          payloadJson: publishJobs.payloadJson,
+        })
+        .from(publishJobs)
+        .where(eq(publishJobs.jobId, id))
+        .get();
+      expect(job).toMatchObject({
+        status: "queued",
+        attemptCount: 0,
+        payloadJson: { _instagramStoryState: { stage: "processing", containerId: "container-1", polls: 0 } },
+      });
+      expect(Date.parse(String(job?.nextAttemptAt))).toBeGreaterThan(Date.now());
+    }));
+
   it("does not leave a job publishing when result finalization fails", () =>
     withDb(async (backendDb) => {
       const id = enqueuePublishJob(backendDb, {

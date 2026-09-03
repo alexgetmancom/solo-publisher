@@ -1,4 +1,4 @@
-import type { JsonObject } from "../db/schema.js";
+import type { JsonObject, JsonValue } from "../db/schema.js";
 
 /** Continuation state a delivery adapter left on its job: the external ids it
  * has already published, under the key the adapter itself named. Adapters name
@@ -64,6 +64,6 @@ export function restartedDeliveryPayload(fields: JsonObject, reason: "posts_remo
 /** A delivery pointed at the ids it is to continue from, named rather than
  * inherited: the queue recording what an attempt just published, or an operator
  * saying which post survived. */
-export function resumedDeliveryPayload(previous: JsonObject, resumeKey: string, ids: string[]): DeliveryPayload {
-  return branded({ ...previous, [resumeKey]: ids });
+export function resumedDeliveryPayload(previous: JsonObject, resumeKey: string, value: JsonValue): DeliveryPayload {
+  return branded({ ...previous, [resumeKey]: value });
 }

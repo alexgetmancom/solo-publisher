@@ -3,11 +3,27 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { localStoryFfmpegArgs, needsVerticalBlur, remoteStoryFfmpegArgs } from "../../../deploy/media-processor/story-encode.js";
-import { publishInstagramStory } from "../src/delivery/social/instagram.js";
+import { publishInstagramStory as publishInstagramStoryStep } from "../src/delivery/social/instagram.js";
 import { InstagramContainerInvalidError } from "../src/delivery/social/instagram-container.js";
 import { telegramStoryCaption, telegramStoryCaptionInput, telegramStoryUploadMedia } from "../src/delivery/social/telegramStories.js";
 import { generateStoryMedia } from "../src/delivery/story-media.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
+
+async function publishInstagramStory(
+  payload: Record<string, unknown>,
+  config: ReturnType<typeof loadTestConfig>,
+  credentials: { accessToken: string; userId: string },
+  fetchImpl: typeof fetch,
+) {
+  let current = payload;
+  for (let step = 0; step < 100; step += 1) {
+    const result = await publishInstagramStoryStep(current, config, credentials, fetchImpl);
+    if (!result.deferred) return result;
+    if (!result.resumeKey) throw new Error("deferred Instagram step has no resume key");
+    current = { ...current, [result.resumeKey]: result.resumeValue };
+  }
+  throw new Error("Instagram test state machine did not finish");
+}
 
 /** The encode is mocked, but the local executor probes the source before it to
  * decide the blurred backdrop, so these cases need media a probe can read. */
@@ -34,7 +50,6 @@ function encodeFixture(target: string, size: string): void {
 const ffmpegCalls: string[][] = [];
 /** Set by the case that needs an encode to die with its output half-written. */
 let ffmpegDiesAfterWriting = false;
-const instantSleep = async (_milliseconds: number): Promise<void> => {};
 const realFfmpeg = await import("../src/foundation/runtime/ffmpeg.js");
 mock.module("../src/foundation/runtime/ffmpeg.js", () => {
   return {
@@ -197,7 +212,7 @@ describe("story publishers", () => {
       { id: "container-1" },
       { status_code: "FINISHED" },
       { id: "story-1" },
-      { permalink: "https://instagram.com/stories/a/1" },
+      { id: "story-1", permalink: "https://instagram.com/stories/a/1" },
     ];
     const fetchImpl = mock(async (input: string | URL | Request, init?: RequestInit) => {
       requests.push({ url: String(input), ...(init ? { init } : {}) });
@@ -226,16 +241,31 @@ describe("story publishers", () => {
     expect(String(requests[0]?.init?.body)).toContain("image_url=https%3A%2F%2Fexample.com%2Fstory.jpg");
   });
 
+  it("persists the Instagram container after one API call instead of polling in place", async () => {
+    const fetchImpl = mock(async () => new Response(JSON.stringify({ id: "container-1" }), { status: 200 })) as unknown as typeof fetch;
+    const config = loadTestConfig({ INSTAGRAM_RU_ACCESS_TOKEN: "IG-token", INSTAGRAM_RU_USER_ID: "ig-user" });
+
+    const result = await publishInstagramStoryStep(
+      { media: [{ type: "IMAGE", vpsUrl: "https://example.com/story.jpg" }] },
+      config,
+      { accessToken: "IG-token", userId: "ig-user" },
+      fetchImpl,
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ deferred: true, retryAfterMs: 250, state: "processing" });
+    expect(result.resumeValue).toMatchObject({ containerId: "container-1", stage: "processing" });
+  });
+
   it("recreates an Instagram Story container that reaches ERROR before publication", async () => {
     const requests: string[] = [];
     const responses = [
       { id: "container-bad" },
       { status_code: "ERROR", status: "upload failed" },
-      null,
       { id: "container-good" },
       { status_code: "FINISHED" },
       { id: "story-2" },
-      { permalink: "https://instagram.com/stories/a/2" },
+      { id: "story-2", permalink: "https://instagram.com/stories/a/2" },
     ];
     const fetchImpl = mock(async (input: string | URL | Request, init?: RequestInit) => {
       requests.push(String(input));
@@ -258,12 +288,10 @@ describe("story publishers", () => {
       config,
       { accessToken: "IG-token", userId: "ig-user" },
       fetchImpl,
-      instantSleep,
     );
 
     expect(result).toMatchObject({ ok: true, id: "story-2" });
     expect(requests.filter((url) => url.endsWith("/ig-user/media"))).toHaveLength(2);
-    expect(requests).toContain("https://example.com/story.jpg");
   }, 10_000);
 
   it("includes public media diagnostics when Instagram rejects both containers", async () => {
@@ -292,7 +320,6 @@ describe("story publishers", () => {
       config,
       { accessToken: "IG-token", userId: "ig-user" },
       fetchImpl,
-      instantSleep,
     ).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(InstagramContainerInvalidError);

@@ -174,6 +174,7 @@ export async function verifyPlatformPublication(
   config: BackendConfig,
   fetchImpl: typeof fetch = fetch,
 ): Promise<PublishResult> {
+  if (result.deferred || (result.verification && typeof result.verification === "object")) return result;
   if (!result.ok || result.id == null) return result;
   const id = String(result.id);
   try {

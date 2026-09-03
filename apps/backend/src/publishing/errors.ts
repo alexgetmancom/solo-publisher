@@ -1,3 +1,4 @@
+import type { JsonValue } from "../db/schema.js";
 import { retryAfterSecondsFromHeaders } from "../foundation/http.js";
 import { redactExternalSecrets } from "../foundation/redact.js";
 
@@ -116,10 +117,16 @@ export type PublishResult = {
   reason?: string | null;
   retryable?: boolean;
   partial?: boolean;
+  /** A provider-side operation that has started but has not reached an audience.
+   * The queue persists the adapter-owned state and releases the worker until the
+   * requested next check. */
+  deferred?: boolean;
+  retryAfterMs?: number;
   /** Where a partially finished publication leaves what it already did, so the
    * next attempt resumes instead of repeating it. The adapter names its own
    * payload key; the queue only stores and returns it. */
   resumeKey?: string;
+  resumeValue?: JsonValue;
   [key: string]: unknown;
 };
 

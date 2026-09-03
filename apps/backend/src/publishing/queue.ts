@@ -8,7 +8,7 @@ import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js"
 import { type JsonObject, publicationTargets, publishJobs } from "../db/schema.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
-import { ringWorker } from "../foundation/worker-signal.js";
+import { ringWorker, ringWorkerAfter } from "../foundation/worker-signal.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
 import { type DeliveryPayload, hasResumeState, resumedDeliveryPayload } from "./delivery-payload.js";
 import { classifyPublishError, normalizePublishResult, type PublishResult } from "./errors.js";
@@ -265,6 +265,10 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
   if (job?.status !== "publishing" || job.lockedBy !== lockId) return;
   const publicationKey = job.publicationKey;
+  if (result.deferred && typeof result.resumeKey === "string" && result.resumeKey.startsWith("_") && result.resumeValue !== undefined) {
+    settleDeferredPublication(backendDb, job, result, now, lockId);
+    return;
+  }
   // A publication that got part of the way out comes back to finish it, from the
   // ids the adapter names on its own key: which platform publishes in more than
   // one call is the adapter's business and never the queue's.
@@ -348,6 +352,51 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
       publishedAt: now,
     });
   refreshPublicationOwner(backendDb, job.publicationKey);
+}
+
+/** Persists an adapter's pre-publication state without spending a retry. A
+ * container being processed is normal progress, not a failed attempt. */
+function settleDeferredPublication(
+  backendDb: BackendDb,
+  job: typeof publishJobs.$inferSelect,
+  result: PublishResult,
+  now: string,
+  lockId: string,
+): void {
+  const delayMs = Math.max(0, Math.min(60_000, Number(result.retryAfterMs) || 0));
+  const nextAttemptAt = new Date(Date.parse(now) + delayMs).toISOString();
+  const resumeKey = String(result.resumeKey);
+  const payload = resumedDeliveryPayload(parsePayload(job.payloadJson), resumeKey, result.resumeValue ?? null);
+  const state = typeof result.state === "string" ? result.state : "processing";
+  const settled = withLease(backendDb, job.jobId, (tx) =>
+    settleJob(
+      tx,
+      job.jobId,
+      {
+        patch: {
+          status: "queued",
+          currentPhase: null,
+          nextAttemptAt,
+          lockedBy: null,
+          lockedAt: null,
+          payloadJson: payload,
+          lastError: null,
+          updatedAt: now,
+        },
+        fence: lockId,
+      },
+      job.publicationKey,
+      job.target,
+      { status: "queued", error: null, skipped: 0, updatedAt: now, rawJson: JSON.stringify(result) },
+      {
+        type: "publish.job.deferred",
+        severity: "info",
+        message: `${job.target} ${state}`,
+        details: { job_id: job.jobId, state, next_attempt_at: nextAttemptAt },
+      },
+    ),
+  );
+  if (settled) ringWorkerAfter("publish", delayMs);
 }
 
 /** Hands an ambiguous outcome to the reconciliation sweep: the ids go on the

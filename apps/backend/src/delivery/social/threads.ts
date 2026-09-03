@@ -12,20 +12,37 @@ type ThreadsResponse = {
   status?: string;
   error_message?: string;
 };
-type SleepImplementation = (milliseconds: number) => Promise<void>;
 type NowImplementation = () => number;
-type ThreadsRuntime = { accessToken: string; retryDelayMs: number; containerTimeoutSeconds: number };
-/** Where a half-finished chain leaves the ids it already published. */
-const THREADS_RESUME_KEY = "_threadsPublishedIds";
+type ThreadsRuntime = { accessToken: string; containerTimeoutSeconds: number };
+type ThreadsState = {
+  stage:
+    | "create_child"
+    | "wait_child"
+    | "create_primary"
+    | "wait_primary"
+    | "create_parent"
+    | "publish"
+    | "create_reply"
+    | "wait_reply"
+    | "verify";
+  containerId?: string;
+  childIds: string[];
+  itemIndex: number;
+  publishedIds: string[];
+  partIndex: number;
+  polls: number;
+  carouselRebuilds: number;
+  startedAtMs: number;
+};
 
-const defaultSleep: SleepImplementation = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+const THREADS_STATE_KEY = "_threadsState";
+const POLL_DELAYS_MS = [250, 750, 1_500, 3_000, 5_000] as const;
 
 export async function publishToThreads(
   payload: Record<string, unknown>,
   config: BackendConfig,
   fetchImpl: typeof fetch = fetch,
   target: ThreadsTarget = "threads_ru",
-  sleepImpl: SleepImplementation = defaultSleep,
   nowImpl: NowImplementation = Date.now,
 ): Promise<PublishResult> {
   const runtime = threadsRuntime(config, target);
@@ -40,135 +57,177 @@ export async function publishToThreads(
   if (text.length > limit && !chainApproved) return { ok: false, error: `threads_text_too_long:${text.length}/${limit}` };
   const parts = chainApproved ? splitText(text, limit) : [text];
   const mediaItems = payloadMedia(payload).filter((item) => item.vpsUrl);
-  const ids = Array.isArray(payload[THREADS_RESUME_KEY])
-    ? (payload[THREADS_RESUME_KEY] as unknown[]).filter((id): id is string => typeof id === "string" && id.length > 0)
-    : [];
-  let firstContainer: string | null = null;
+  const state = threadsState(payload[THREADS_STATE_KEY]) ?? initialThreadsState(mediaItems.length, nowImpl());
 
-  if (ids.length === 0 && mediaItems.length > 1) {
-    // Threads can report a child as FINISHED, then reject it while the carousel
-    // parent is being assembled (error 4279004). Those child IDs cannot be
-    // repaired, so build a fresh set once instead of failing the whole target.
-    for (let carouselAttempt = 0; carouselAttempt < 2 && !firstContainer; carouselAttempt += 1) {
-      try {
-        const children: string[] = [];
-        for (const item of mediaItems) {
-          const child = await callThreadsWithRetry(
-            runtime,
-            "me/threads",
-            {
-              media_type: item.type,
-              is_carousel_item: true,
-              [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl,
-            },
-            fetchImpl,
-            "POST",
-            sleepImpl,
-          );
-          if (!child.id) throw new Error("threads_carousel_child_missing");
-          await waitForThreadsContainer(runtime, child.id, fetchImpl, sleepImpl, nowImpl);
-          children.push(child.id);
-        }
-        const parent = await callThreadsWithRetry(
-          runtime,
-          "me/threads",
-          { media_type: "CAROUSEL", text: parts[0], children: children.join(",") },
-          fetchImpl,
-          "POST",
-          sleepImpl,
-        );
-        if (!parent.id) throw new Error("threads_carousel_parent_missing");
-        await waitForThreadsContainer(runtime, parent.id, fetchImpl, sleepImpl, nowImpl);
-        firstContainer = parent.id;
-      } catch (error) {
-        if (carouselAttempt === 0 && isInvalidCarouselError(error)) {
-          await sleepImpl(runtime.retryDelayMs);
-          continue;
-        }
-        throw error;
-      }
-    }
-  } else if (ids.length === 0 && mediaItems[0]) {
-    const item = mediaItems[0];
-    const container = await callThreadsWithRetry(
+  if (state.stage === "create_child") {
+    const item = mediaItems[state.itemIndex];
+    if (!item) throw new Error("threads_carousel_item_missing");
+    const child = await callThreads(
       runtime,
       "me/threads",
       {
         media_type: item.type,
-        text: parts[0],
+        is_carousel_item: true,
         [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl,
       },
       fetchImpl,
       "POST",
-      sleepImpl,
     );
-    if (container.id) {
-      await waitForThreadsContainer(runtime, container.id, fetchImpl, sleepImpl, nowImpl);
-      firstContainer = container.id;
-    }
-  } else if (ids.length === 0) {
-    const container = await callThreadsWithRetry(
+    if (!child.id) throw new Error("threads_carousel_child_missing");
+    return deferredThreads({ ...state, stage: "wait_child", containerId: child.id, polls: 0, startedAtMs: nowImpl() }, 250);
+  }
+
+  if (state.stage === "create_primary") {
+    const item = mediaItems[0];
+    const container = await callThreads(
       runtime,
       "me/threads",
-      { media_type: "TEXT", text: parts[0] },
+      item
+        ? { media_type: item.type, text: parts[0], [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl }
+        : { media_type: "TEXT", text: parts[0] },
       fetchImpl,
       "POST",
-      sleepImpl,
     );
-    if (container.id) {
-      await waitForThreadsContainer(runtime, container.id, fetchImpl, sleepImpl, nowImpl);
-      firstContainer = container.id;
+    if (!container.id) throw new Error("threads_container_missing");
+    return deferredThreads({ ...state, stage: "wait_primary", containerId: container.id, polls: 0, startedAtMs: nowImpl() }, 250);
+  }
+
+  if (state.stage === "create_parent") {
+    try {
+      const parent = await callThreads(
+        runtime,
+        "me/threads",
+        { media_type: "CAROUSEL", text: parts[0], children: state.childIds.join(",") },
+        fetchImpl,
+        "POST",
+      );
+      if (!parent.id) throw new Error("threads_carousel_parent_missing");
+      return deferredThreads({ ...state, stage: "wait_primary", containerId: parent.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    } catch (error) {
+      if (state.carouselRebuilds === 0 && isInvalidCarouselError(error)) {
+        const { containerId: _containerId, ...withoutContainer } = state;
+        return deferredThreads({ ...withoutContainer, stage: "create_child", childIds: [], itemIndex: 0, carouselRebuilds: 1 }, 250);
+      }
+      throw error;
     }
   }
 
-  if (firstContainer) {
-    const published = await ambiguousExternalMutation("threads", () =>
-      callThreadsWithRetry(runtime, "me/threads_publish", { creation_id: firstContainer }, fetchImpl, "POST", sleepImpl),
-    );
-    if (!published.id) return { ok: false, error: "threads_publish_missing" };
-    ids.push(published.id);
+  if (state.stage === "create_reply") {
+    const parentId = state.publishedIds.at(-1);
+    const part = parts[state.partIndex];
+    if (!parentId || !part) throw new Error("threads_reply_state_invalid");
+    const reply = await callThreads(runtime, "me/threads", { media_type: "TEXT", text: part, reply_to_id: parentId }, fetchImpl, "POST");
+    if (!reply.id) throw new Error("threads_reply_container_missing");
+    return deferredThreads({ ...state, stage: "wait_reply", containerId: reply.id, polls: 0, startedAtMs: nowImpl() }, 250);
   }
-  let parentId = ids.at(-1);
-  if (!parentId) return { ok: false, error: "threads_container_missing" };
-  for (const part of parts.slice(ids.length)) {
-    try {
-      const reply = await callThreadsWithRetry(
-        runtime,
-        "me/threads",
-        { media_type: "TEXT", text: part, reply_to_id: parentId },
-        fetchImpl,
-        "POST",
-        sleepImpl,
-      );
-      if (!reply.id)
-        return { partial: true, resumeKey: THREADS_RESUME_KEY, ids, error: "threads_reply_container_missing", retryable: true };
-      await waitForThreadsContainer(runtime, reply.id, fetchImpl, sleepImpl, nowImpl);
-      const replyPublish = await ambiguousExternalMutation("threads", () =>
-        callThreadsWithRetry(runtime, "me/threads_publish", { creation_id: reply.id }, fetchImpl, "POST", sleepImpl),
-      );
-      if (!replyPublish.id)
-        return { partial: true, resumeKey: THREADS_RESUME_KEY, ids, error: "threads_reply_publish_missing", retryable: true };
-      ids.push(replyPublish.id);
-      parentId = replyPublish.id;
-    } catch (error) {
-      return {
-        partial: true,
-        resumeKey: THREADS_RESUME_KEY,
-        ids,
-        error: String(error instanceof Error ? error.message : error),
-        retryable: true,
-      };
+
+  if (state.stage === "wait_child" || state.stage === "wait_primary" || state.stage === "wait_reply") {
+    if (!state.containerId) throw new Error("threads_state_missing_container");
+    const status = await callThreads(runtime, state.containerId, { fields: "status,error_message" }, fetchImpl, "GET");
+    if (status.status === "ERROR" || status.status === "EXPIRED")
+      throw new Error(`Threads container ${state.containerId} failed: ${status.error_message ?? status.status}`);
+    if (status.status !== "FINISHED") {
+      if (nowImpl() >= state.startedAtMs + runtime.containerTimeoutSeconds * 1000)
+        throw new Error(`Threads container ${state.containerId} timed out`);
+      const polls = state.polls + 1;
+      return deferredThreads({ ...state, polls }, pollDelay(polls));
     }
+    if (state.stage === "wait_child") {
+      const childIds = [...state.childIds, state.containerId];
+      const itemIndex = state.itemIndex + 1;
+      const { containerId: _containerId, ...withoutContainer } = state;
+      return deferredThreads(
+        { ...withoutContainer, stage: itemIndex < mediaItems.length ? "create_child" : "create_parent", childIds, itemIndex },
+        0,
+      );
+    }
+    return deferredThreads({ ...state, stage: "publish", containerId: state.containerId }, 0);
   }
+
+  if (state.stage === "publish") {
+    if (!state.containerId) throw new Error("threads_state_missing_container");
+    const published = await ambiguousExternalMutation("threads", () =>
+      callThreads(runtime, "me/threads_publish", { creation_id: state.containerId as string }, fetchImpl, "POST"),
+    );
+    if (!published.id) throw new Error("threads_publish_missing");
+    const publishedIds = [...state.publishedIds, published.id];
+    const partIndex = state.partIndex + 1;
+    const { containerId: _containerId, ...withoutContainer } = state;
+    return deferredThreads(
+      {
+        ...withoutContainer,
+        stage: partIndex < parts.length ? "create_reply" : "verify",
+        publishedIds,
+        partIndex,
+      },
+      0,
+    );
+  }
+
+  const rootId = state.publishedIds[0];
+  if (!rootId) throw new Error("threads_state_missing_publication");
+  const verified = await callThreads(runtime, rootId, { fields: "id,permalink" }, fetchImpl, "GET");
+  if (verified.id !== rootId) throw new Error("Threads verification returned a different post");
   return {
-    ok: ids.length > 0,
-    id: ids[0] ?? null,
-    ids,
-    url: null,
-    urls: [],
-    partial: ids.length < parts.length,
-    resumeKey: THREADS_RESUME_KEY,
+    ok: true,
+    id: rootId,
+    ids: state.publishedIds,
+    url: verified.permalink?.replace("threads.net", "threads.com") ?? null,
+    verification: { status: "verified", providerId: rootId },
   };
+}
+
+function initialThreadsState(mediaCount: number, now: number): ThreadsState {
+  return {
+    stage: mediaCount > 1 ? "create_child" : "create_primary",
+    childIds: [],
+    itemIndex: 0,
+    publishedIds: [],
+    partIndex: 0,
+    polls: 0,
+    carouselRebuilds: 0,
+    startedAtMs: now,
+  };
+}
+
+function deferredThreads(state: ThreadsState, retryAfterMs: number): PublishResult {
+  return { deferred: true, resumeKey: THREADS_STATE_KEY, resumeValue: state, retryAfterMs, state: state.stage };
+}
+
+function threadsState(value: unknown): ThreadsState | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const state = value as Partial<ThreadsState>;
+  const stages: ThreadsState["stage"][] = [
+    "create_child",
+    "wait_child",
+    "create_primary",
+    "wait_primary",
+    "create_parent",
+    "publish",
+    "create_reply",
+    "wait_reply",
+    "verify",
+  ];
+  if (!state.stage || !stages.includes(state.stage)) return null;
+  return {
+    stage: state.stage,
+    ...(typeof state.containerId === "string" ? { containerId: state.containerId } : {}),
+    childIds: Array.isArray(state.childIds) ? state.childIds.filter((id): id is string => typeof id === "string") : [],
+    itemIndex: integer(state.itemIndex),
+    publishedIds: Array.isArray(state.publishedIds) ? state.publishedIds.filter((id): id is string => typeof id === "string") : [],
+    partIndex: integer(state.partIndex),
+    polls: integer(state.polls),
+    carouselRebuilds: integer(state.carouselRebuilds),
+    startedAtMs: typeof state.startedAtMs === "number" && Number.isFinite(state.startedAtMs) ? state.startedAtMs : Date.now(),
+  };
+}
+
+function integer(value: unknown): number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+}
+
+function pollDelay(attempt: number): number {
+  return POLL_DELAYS_MS[Math.min(Math.max(0, attempt), POLL_DELAYS_MS.length - 1)] ?? 5_000;
 }
 
 export async function verifyThreadsPost(
@@ -182,36 +241,6 @@ export async function verifyThreadsPost(
   const post = await callThreads(runtime, id, { fields: "id,permalink" }, fetchImpl, "GET");
   if (post.id !== id) throw new Error("Threads verification returned a different post");
   return { id, url: post.permalink?.replace("threads.net", "threads.com") ?? null };
-}
-
-async function callThreadsWithRetry(
-  runtime: ThreadsRuntime,
-  endpoint: string,
-  payload: Record<string, unknown>,
-  fetchImpl: typeof fetch,
-  method: "GET" | "POST" = "POST",
-  sleepImpl: SleepImplementation = defaultSleep,
-): Promise<ThreadsResponse> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      return await callThreads(runtime, endpoint, payload, fetchImpl, method);
-    } catch (error) {
-      lastError = error;
-      if (!isRetryableThreadsError(error)) throw error;
-      await sleepImpl(runtime.retryDelayMs * (attempt + 1));
-    }
-  }
-  throw lastError;
-}
-
-function isRetryableThreadsError(error: unknown): boolean {
-  if (error instanceof Error && "status" in error) {
-    const status = Number((error as { status?: unknown }).status);
-    if (status === 429 || status >= 500) return true;
-  }
-  const message = String(error instanceof Error ? error.message : error).toLowerCase();
-  return message.includes("media") || message.includes("4279009") || message.includes("timed out");
 }
 
 function isInvalidCarouselError(error: unknown): boolean {
@@ -239,30 +268,11 @@ async function callThreads(
   });
 }
 
-async function waitForThreadsContainer(
-  runtime: ThreadsRuntime,
-  id: string,
-  fetchImpl: typeof fetch,
-  sleepImpl: SleepImplementation,
-  nowImpl: NowImplementation,
-): Promise<void> {
-  const deadline = nowImpl() + runtime.containerTimeoutSeconds * 1000;
-  while (nowImpl() < deadline) {
-    const status = await callThreads(runtime, id, { fields: "status,error_message" }, fetchImpl, "GET");
-    if (status.status === "FINISHED") return;
-    if (status.status === "ERROR" || status.status === "EXPIRED")
-      throw new Error(`Threads container ${id} failed: ${status.error_message ?? status.status}`);
-    await sleepImpl(2000);
-  }
-  throw new Error(`Threads container ${id} timed out`);
-}
-
 function threadsRuntime(config: BackendConfig, target: ThreadsTarget): ThreadsRuntime | null {
   const { accessToken } = threadsCredentials(config, target);
   return accessToken
     ? {
         accessToken,
-        retryDelayMs: config.THREADS_RETRY_DELAY_MS,
         containerTimeoutSeconds: config.THREADS_CONTAINER_TIMEOUT_SECONDS,
       }
     : null;
