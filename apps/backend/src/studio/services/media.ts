@@ -1,11 +1,6 @@
-import type { StudioMediaAssetRecord } from "../../application/ports.js";
-import { storyTargetsEnabled, targetsRecord } from "../../botTargets.js";
-import { effectivePostTargets } from "../../channels/registry.js";
 import { importStudioMediaAsset, importStudioMediaFile } from "../../content/assets.js";
 import type { BackendDb } from "../../db/client.js";
-import { prepareStoryDerivative } from "../../delivery/story-derivatives.js";
 import type { BackendConfig } from "../../foundation/config.js";
-import { log } from "../../foundation/logger.js";
 import { trackUsageAsync } from "../../observability/usage.js";
 
 type MediaBytesInput = Parameters<typeof importStudioMediaAsset>[3];
@@ -19,40 +14,12 @@ type MediaFileInput = Parameters<typeof importStudioMediaFile>[3];
  * always happen in Content through this service.
  */
 export function mediaService(backendDb: BackendDb, config: BackendConfig) {
-  const prepareStory = (asset: StudioMediaAssetRecord) => {
-    // A Studio that publishes no Stories has nothing to prepare them for, and
-    // the encode is the heaviest thing this process does. Read the selection the
-    // way the operator's own screen reads it: through the registry, because a
-    // profile nobody has curated still carries Story targets with no channel
-    // connected for them.
-    const selected = effectivePostTargets(backendDb, targetsRecord(backendDb.studioSettings.profile().defaultTargetsJson));
-    if (!storyTargetsEnabled(selected)) return;
-    // Nobody waits for this. The derivative is not what the draft card shows --
-    // it is what publishing reads -- so holding the import for the encode only
-    // delays the card by an album's worth of ffmpeg. A "Publish" that arrives
-    // mid-render joins that render by path instead of starting a second one,
-    // and one that finds nothing renders it then.
-    void prepareStoryDerivative(config, asset).catch((error: unknown) => {
-      log("warn", "story derivative not prepared at ingress", {
-        assetId: asset.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
-  };
   return {
     import(actorId: number, input: MediaBytesInput) {
-      return trackUsageAsync(backendDb, "studio.media.import", async () => {
-        const asset = await importStudioMediaAsset(backendDb, config, actorId, input);
-        prepareStory(asset);
-        return asset;
-      });
+      return trackUsageAsync(backendDb, "studio.media.import", () => importStudioMediaAsset(backendDb, config, actorId, input));
     },
     importFile(actorId: number, input: MediaFileInput) {
-      return trackUsageAsync(backendDb, "studio.media.import", async () => {
-        const asset = await importStudioMediaFile(backendDb, config, actorId, input);
-        prepareStory(asset);
-        return asset;
-      });
+      return trackUsageAsync(backendDb, "studio.media.import", () => importStudioMediaFile(backendDb, config, actorId, input));
     },
   };
 }

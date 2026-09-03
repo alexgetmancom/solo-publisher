@@ -2,7 +2,6 @@ import { describe, expect, it } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ensureStoryDerivative } from "../src/delivery/story-derivatives.js";
 import { flushUsage } from "../src/observability/usage.js";
 import { createStudioServices } from "../src/studio/services/index.js";
 import { withDb } from "./helpers/db.js";
@@ -47,50 +46,6 @@ describe("Studio service boundaries", () => {
 
       expect(second.id).toBe(first.id);
       expect(second.localPath).toBe(first.localPath);
-    } finally {
-      backendDb.close();
-      fs.rmSync(directory, { recursive: true, force: true });
-    }
-  });
-
-  it("prepares the Story derivative at ingress only for a Studio that publishes Stories", async () => {
-    const backendDb = openBackendDb(":memory:");
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "studio-service-story-"));
-    try {
-      const config = loadTestConfig({ DATA_DIR: directory, STUDIO_MEDIA_MAX_BYTES: "1000" });
-      const media = createStudioServices(backendDb, config).media;
-      const variant = (asset: { localPath: string }) =>
-        path.join(directory, "story-media", `${path.parse(asset.localPath).name}-story-standard.jpg`);
-
-      // No Story channel is connected, so the encode would be for a platform
-      // this Studio cannot publish to.
-      const skipped = await media.import(42, { filename: "a.jpg", contentType: "image/jpeg", bytes: PNG_BYTES, source: "ops_upload" });
-      expect(fs.existsSync(variant(skipped))).toBe(false);
-
-      backendDb.channels.upsert(
-        {
-          id: "telegram_stories",
-          platform: "telegram",
-          locale: "ru",
-          targetId: "telegram_stories",
-          label: "Telegram Stories",
-          provider: "native",
-          providerAccountId: null,
-          enabled: 1,
-          source: "fixture",
-        },
-        new Date().toISOString(),
-      );
-      const prepared = await media.import(42, {
-        filename: "b.jpg",
-        contentType: "image/jpeg",
-        bytes: Buffer.concat([PNG_BYTES, Buffer.from("b")]),
-        source: "ops_upload",
-      });
-      // The import does not wait for the encode. Publishing joins the render
-      // already running for this file, which is what this awaits.
-      await ensureStoryDerivative(config, prepared.localPath, false);
-      expect(fs.existsSync(variant(prepared))).toBe(true);
     } finally {
       backendDb.close();
       fs.rmSync(directory, { recursive: true, force: true });
