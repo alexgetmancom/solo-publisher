@@ -17,7 +17,6 @@ import type { ClaimedPublishJob } from "../src/publishing/queue.js";
 
 const calls: { target: string; payload: Record<string, unknown>; token?: string | undefined; userId?: string | undefined }[] = [];
 let prepareCount = 0;
-let storyRenderCount = 0;
 let failPreparation = false;
 /**
  * bun's `mock.module` replaces a module for the whole process, not for this
@@ -34,7 +33,7 @@ const real = {
   publishInstagramStory: (await import("../src/delivery/social/instagram.js")).publishInstagramStory,
   publishTelegramStory: (await import("../src/delivery/social/telegramStories.js")).publishTelegramStory,
   prepareMediaItems: (await import("../src/delivery/media-prepare.js")).prepareMediaItems,
-  generateStoryMedia: (await import("../src/delivery/story-media.js")).generateStoryMedia,
+  preparedStoryMedia: (await import("../src/delivery/story-derivatives.js")).preparedStoryMedia,
 };
 
 mock.module("../src/delivery/social/telegram.js", () => ({
@@ -84,11 +83,11 @@ mock.module("../src/delivery/media-prepare.js", () => ({
     return args[1].map((item) => ({ ...item, localPath: `/prepared/${item.fileId}` }));
   },
 }));
-mock.module("../src/delivery/story-media.js", () => ({
-  generateStoryMedia: async (...args: Parameters<typeof real.generateStoryMedia>) => {
-    if (!intercepting) return real.generateStoryMedia(...args);
-    storyRenderCount += 1;
-    return (args[0] as { fileId?: string }[]).map((item) => ({ ...item, storyLocalPath: `/story/${item.fileId}.mp4` }));
+mock.module("../src/delivery/story-derivatives.js", () => ({
+  preparedStoryMedia: (...args: Parameters<typeof real.preparedStoryMedia>) => {
+    if (!intercepting) return real.preparedStoryMedia(...args);
+    const item = args[1];
+    return item.localPath ? { ...item, storyLocalPath: `/story/${item.fileId}.mp4` } : null;
   },
 }));
 
@@ -123,7 +122,6 @@ function job(target: string, payload: Record<string, unknown> = {}, overrides: P
 function reset(): void {
   calls.length = 0;
   prepareCount = 0;
-  storyRenderCount = 0;
   failPreparation = false;
 }
 
@@ -135,7 +133,7 @@ async function deliver(adapter: DeliveryAdapter | undefined, publication: Claime
   return adapter.verify(publication, published);
 }
 
-const image = (fileId: string) => ({ type: "IMAGE" as const, fileId });
+const image = (fileId: string) => ({ type: "IMAGE" as const, fileId, localPath: `/stored/${fileId}.jpg` });
 
 describe("createPlatformPorts", () => {
   it("refuses a target whose credentials are missing before touching the provider", async () => {
@@ -217,7 +215,7 @@ describe("createPlatformPorts", () => {
     expect(prepareCount).toBe(2);
   });
 
-  it("renders a Story from the first album image only", async () => {
+  it("takes prepared Story media from the first album image only", async () => {
     reset();
     const ports = createPlatformPorts(config);
     await deliver(ports.telegram_stories, job("telegram_stories", { text: "hi", media: [image("a"), image("b"), image("c")] }));
@@ -226,7 +224,7 @@ describe("createPlatformPorts", () => {
     expect(calls[0]?.payload.media).toEqual([{ type: "IMAGE", fileId: "a", storyLocalPath: "/story/a.mp4", localPath: "/prepared/a" }]);
   });
 
-  it("shares one Story render between the Telegram and Instagram targets of a locale", async () => {
+  it("publishes one prepared Story asset to both locale targets without rendering", async () => {
     reset();
     const ports = createPlatformPorts(config);
     const payload = { text: "hi", locale: "ru", draft_id: 7, media: [image("a")] };
@@ -234,7 +232,10 @@ describe("createPlatformPorts", () => {
       deliver(ports.telegram_stories, job("telegram_stories", payload)),
       deliver(ports.instagram_stories_ru, job("instagram_stories_ru", payload)),
     ]);
-    expect(storyRenderCount).toBe(1);
+    expect(calls.map((call) => call.payload.media)).toEqual([
+      [{ type: "IMAGE", fileId: "a", localPath: "/prepared/a", storyLocalPath: "/story/a.mp4" }],
+      [{ type: "IMAGE", fileId: "a", localPath: "/prepared/a", storyLocalPath: "/story/a.mp4" }],
+    ]);
   });
 
   it("keeps Story media out of the feed target's staging entry", async () => {
@@ -248,14 +249,20 @@ describe("createPlatformPorts", () => {
     expect(prepareCount).toBe(2);
   });
 
-  it("reuses an already rendered Story instead of transcoding it again on retry", async () => {
+  it("reads the durable Story derivative again on retry", async () => {
     reset();
     const ports = createPlatformPorts(config);
-    const payload = { text: "hi", media: [{ type: "IMAGE", fileId: "a", storyLocalPath: "/story/existing.mp4" }] };
+    const payload = { text: "hi", media: [image("a")] };
     await deliver(ports.telegram_stories, job("telegram_stories", payload));
-    expect(storyRenderCount).toBe(0);
-    expect(calls[0]?.payload.media).toEqual([
-      { type: "IMAGE", fileId: "a", storyLocalPath: "/story/existing.mp4", localPath: "/prepared/a" },
-    ]);
+    expect(calls[0]?.payload.media).toEqual([{ type: "IMAGE", fileId: "a", storyLocalPath: "/story/a.mp4", localPath: "/prepared/a" }]);
+  });
+
+  it("refuses Story delivery when ingress did not produce a derivative", async () => {
+    reset();
+    const ports = createPlatformPorts(config);
+    await expect(
+      deliver(ports.telegram_stories, job("telegram_stories", { text: "hi", media: [{ type: "IMAGE", fileId: "a" }] })),
+    ).rejects.toThrow("story_media_not_prepared");
+    expect(prepareCount).toBe(0);
   });
 });

@@ -1,9 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { storyTargetsEnabled, targetsRecord } from "../botTargets.js";
-import { effectivePostTargets } from "../channels/registry.js";
-import { type BackendDb, unsafeDb } from "../db/client.js";
-import { studioMediaAssets } from "../db/schema.js";
+import type { StudioMediaAssetRecord } from "../application/ports.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import type { PublishMediaItem } from "./social/payload.js";
@@ -13,8 +10,8 @@ import { renderStoryVariants, storyDirectory } from "./story-media.js";
  * The Story shapes of an imported file, made once and named by its content.
  *
  * A Story variant is a pure function of the source, and making it cost 8.5-12
- * seconds inside the operator's "Publish" tap. It is made instead by a worker,
- * against a file nobody is waiting on, so the tap finds it already there.
+ * seconds inside the operator's "Publish" tap. It is made at media ingress,
+ * before a draft can point at the asset.
  *
  * There is no table. An imported asset is already stored under its own content
  * hash, so the variant's path is a function of the source's path, and the file
@@ -41,78 +38,54 @@ export function preparedStoryMedia(config: BackendConfig, item: PublishMediaItem
     .toLowerCase()
     .includes("video");
   const paths = storyVariantPaths(config, source, video);
-  if (!fs.existsSync(paths.standard)) return null;
+  if (!fs.existsSync(paths.standard) || (paths.telegram && !fs.existsSync(paths.telegram))) return null;
   return {
     ...item,
     story_local_path: paths.standard,
     storyLocalPath: paths.standard,
-    ...(paths.telegram && fs.existsSync(paths.telegram) ? { telegramStoryLocalPath: paths.telegram } : {}),
+    ...(paths.telegram ? { telegramStoryLocalPath: paths.telegram } : {}),
     story_width: 1080,
     story_height: 1920,
   };
 }
 
-/**
- * Prepares what has not been prepared yet.
- *
- * This is also the backfill: an asset imported before any of this existed is
- * simply an asset whose variant is not on disk, which is exactly what this
- * claims. No separate migration step, and no state that is half moved.
- */
-export async function runStoryDerivativeCycle(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  limit = 2,
-): Promise<{ attempted: number; prepared: number }> {
-  // A Studio that publishes no Stories has nothing to prepare them for, and
-  // this used to encode a vertical variant of every video it had ever imported
-  // anyway. Read per cycle rather than at startup, like the site worker: an
-  // operator who ticks a Story platform expects the next tick to act on it.
-  //
-  // Through the registry, because the stored selection is not the answer on its
-  // own: a profile nobody has curated still carries every target the install
-  // seeded, Story platforms included, with no channel connected for them. That
-  // is the same intersection the operator's own screen calls "active".
-  const selected = effectivePostTargets(backendDb, targetsRecord(backendDb.studioSettings.profile().defaultTargetsJson));
-  if (!storyTargetsEnabled(selected)) return { attempted: 0, prepared: 0 };
-  const assets = unsafeDb(backendDb).db.select().from(studioMediaAssets).orderBy(studioMediaAssets.id).all();
-  let attempted = 0;
-  let prepared = 0;
-  for (const asset of assets) {
-    if (attempted >= limit) break;
-    const video = asset.kind === "video";
-    const paths = storyVariantPaths(config, asset.localPath, video);
-    if (fs.existsSync(paths.standard)) continue;
-    if (!fs.existsSync(asset.localPath)) {
-      // Nothing to make it from; the source was pruned after its retention.
-      continue;
-    }
-    attempted += 1;
-    await fs.promises.mkdir(storyDirectory(config), { recursive: true });
-    const startedAt = Date.now();
-    try {
-      await renderStoryVariants(asset.localPath, paths.standard, paths.telegram, video, config);
-      prepared += 1;
-      log("info", "operation timing", {
-        operation: "media.story.prepare",
-        assetId: asset.id,
-        kind: asset.kind,
-        success: true,
-        totalMs: Date.now() - startedAt,
-      });
-    } catch (error) {
-      // Leaving no file behind is what makes the next cycle try again, and what
-      // keeps publishing's own render as the path that still works today.
-      await fs.promises.rm(paths.standard, { force: true });
-      log("warn", "operation timing", {
-        operation: "media.story.prepare",
-        assetId: asset.id,
-        kind: asset.kind,
-        success: false,
-        totalMs: Date.now() - startedAt,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
+/** Completes the representation an imported asset needs before it can enter a
+ * post draft. Publishing reads the result and never renders a missing one. */
+export async function prepareStoryDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
+  return renderAssetDerivative(config, asset);
+}
+
+async function renderAssetDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
+  const video = asset.kind === "video";
+  const paths = storyVariantPaths(config, asset.localPath, video);
+  if (fs.existsSync(paths.standard) && (!paths.telegram || fs.existsSync(paths.telegram))) return false;
+  if (!fs.existsSync(asset.localPath)) throw new Error(`story_source_missing: asset ${asset.id}`);
+  await fs.promises.mkdir(storyDirectory(config), { recursive: true });
+  const startedAt = Date.now();
+  try {
+    await renderStoryVariants(asset.localPath, paths.standard, paths.telegram, video, config);
+    log("info", "operation timing", {
+      operation: "media.story.prepare",
+      assetId: asset.id,
+      kind: asset.kind,
+      success: true,
+      totalMs: Date.now() - startedAt,
+    });
+    return true;
+  } catch (error) {
+    await Promise.all(
+      [paths.standard, paths.telegram]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => fs.promises.rm(value, { force: true })),
+    );
+    log("warn", "operation timing", {
+      operation: "media.story.prepare",
+      assetId: asset.id,
+      kind: asset.kind,
+      success: false,
+      totalMs: Date.now() - startedAt,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
   }
-  return { attempted, prepared };
 }

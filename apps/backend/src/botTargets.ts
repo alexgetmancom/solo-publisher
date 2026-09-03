@@ -138,14 +138,7 @@ export function storyCardUse(targets: Record<string, boolean>): { stories: boole
   return { stories: storyTargetsEnabled(targets), site: enabled.some(isSiteTarget) };
 }
 
-/** Whether anything this Studio publishes to carries a Story. Preparation reads
- * it before spending an encode, the same way a card reads it before a render:
- * work made for a platform nobody publishes to is work nobody asked for.
- *
- * The selection alone does not answer this. A fresh profile has every target
- * ticked, including ones no channel is connected for, and those cannot publish
- * anything -- so callers pass the selection already narrowed by the registry. */
-export function storyTargetsEnabled(targets: Record<string, boolean>): boolean {
+function storyTargetsEnabled(targets: Record<string, boolean>): boolean {
   return Object.entries(targets).some(([target, on]) => on && isStoryTarget(target));
 }
 

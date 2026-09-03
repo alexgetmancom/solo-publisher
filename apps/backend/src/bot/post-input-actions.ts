@@ -4,6 +4,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { StudioError } from "../foundation/errors.js";
 import { t } from "../foundation/i18n/index.js";
 import { formatZonedDateTime } from "../foundation/time.js";
+import { importTelegramMedia } from "../interfaces/telegram/media-ingress.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { requireConversationState } from "./conversation-state.js";
@@ -26,7 +27,10 @@ export async function applyAdminState(
   expectedRevision?: number | null,
 ): Promise<PublicationEffect[]> {
   const actorId = Number(ctx.from?.id);
-  const message = extractMessage(ctx);
+  const extracted = extractMessage(ctx);
+  const message = extracted.media.length
+    ? { ...extracted, media: await importTelegramMedia(ctx.api, backendDb, config, actorId, extracted.media) }
+    : extracted;
   const input: PostFlowInput = { backendDb, config, actorId, draftId, controlMessageId, step, message };
   const session = requireConversationState(backendDb, actorId, "post", expectedRevision ?? null);
   const saved = await advancePublicationFlow(backendDb, actorId, POST_FLOW, session, input, session.data, "action.session-stale");

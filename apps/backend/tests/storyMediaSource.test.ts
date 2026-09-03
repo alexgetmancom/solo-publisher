@@ -8,11 +8,13 @@ import { loadTestConfig } from "./helpers/studio-config.js";
 
 /** These cases are about how the source is found, not about the encode, and the
  * real recipe needs a real image. stories.test.ts covers the ffmpeg arguments. */
+const realFfmpeg = await import("../src/foundation/runtime/ffmpeg.js");
 mock.module("../src/foundation/runtime/ffmpeg.js", () => ({
+  ...realFfmpeg,
   runFfmpeg: async (args: string[]) => {
-    const output = args.at(-1);
-    if (!output) throw new Error("ffmpeg output path is missing");
-    fs.writeFileSync(output, "encoded story");
+    const outputs = args.filter((arg) => /\.(mp4|jpg)$/.test(arg) && arg !== args[args.indexOf("-i") + 1]);
+    if (!outputs.length) throw new Error("ffmpeg output path is missing");
+    for (const output of outputs) fs.writeFileSync(output, "encoded story");
   },
 }));
 

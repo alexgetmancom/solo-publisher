@@ -2,13 +2,9 @@ import { describe, expect, it } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { unsafeDb } from "../src/db/client.js";
-import { studioMediaAssets } from "../src/db/schema.js";
 import type { PublishMediaItem } from "../src/delivery/social/payload.js";
-import { preparedStoryMedia, runStoryDerivativeCycle, storyVariantPaths } from "../src/delivery/story-derivatives.js";
+import { preparedStoryMedia, storyVariantPaths } from "../src/delivery/story-derivatives.js";
 import type { BackendConfig } from "../src/foundation/config.js";
-import { registerTestChannels } from "./helpers/channels.js";
-import { withDb } from "./helpers/db.js";
 
 function tempConfig(): BackendConfig {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "story-derivatives-"));
@@ -42,7 +38,7 @@ describe("story derivatives", () => {
     expect(prepared?.story_width).toBe(1080);
   });
 
-  it("treats a vanished artefact as never prepared, so publishing renders it again", async () => {
+  it("treats a vanished artefact as not prepared", async () => {
     const config = tempConfig();
     const source = path.join(config.DATA_DIR, "abcdef0123456789abcdef02.jpg");
     await fs.promises.writeFile(source, "source");
@@ -52,77 +48,26 @@ describe("story derivatives", () => {
     await fs.promises.writeFile(paths.standard, "variant");
     expect(preparedStoryMedia(config, item)).not.toBeNull();
 
-    // Retrying a publication must never depend on a file having survived.
+    // A missing durable derivative is not silently rebuilt by delivery.
     await fs.promises.rm(paths.standard);
     expect(preparedStoryMedia(config, item)).toBeNull();
+  });
+
+  it("requires both video derivatives before delivery can use either", async () => {
+    const config = tempConfig();
+    const source = path.join(config.DATA_DIR, "abcdef0123456789abcdef03.mp4");
+    const paths = storyVariantPaths(config, source, true);
+    await fs.promises.mkdir(path.dirname(paths.standard), { recursive: true });
+    await fs.promises.writeFile(paths.standard, "standard");
+
+    expect(preparedStoryMedia(config, { type: "VIDEO", localPath: source })).toBeNull();
+
+    await fs.promises.writeFile(String(paths.telegram), "telegram");
+    expect(preparedStoryMedia(config, { type: "VIDEO", localPath: source })?.telegramStoryLocalPath).toBe(paths.telegram);
   });
 
   it("has nothing to offer for media that arrived without a local file", () => {
     const config = tempConfig();
     expect(preparedStoryMedia(config, { type: "IMAGE", fileId: "telegram-file" })).toBeNull();
   });
-
-  it("prepares nothing for a Studio that publishes no Stories", () =>
-    withDb(async (backendDb) => {
-      const config = { ...tempConfig(), MEDIA_PROCESSOR_PROVIDER: "remote_http" } as BackendConfig;
-      const localPath = path.join(config.DATA_DIR, `${"a".repeat(24)}.jpg`);
-      await fs.promises.writeFile(localPath, "source");
-      unsafeDb(backendDb)
-        .db.insert(studioMediaAssets)
-        .values({
-          actorId: 1,
-          kind: "image",
-          mimeType: "image/jpeg",
-          filename: "source.jpg",
-          localPath,
-          byteSize: 6,
-          sha256: "a".repeat(64),
-          source: "test",
-          createdAt: "2026-01-01T00:00:00.000Z",
-        })
-        .run();
-      // A Story platform is selected but no channel is connected for it -- the
-      // shape a profile nobody has curated actually has, and the one the
-      // operator's screen reports as inactive because it cannot publish.
-      backendDb.studioSettings.saveProfile({
-        defaultTargetsJson: ["telegram", "threads_ru", "instagram_stories_ru"],
-        updatedAt: "2026-01-01T00:00:00.000Z",
-      });
-
-      expect(await runStoryDerivativeCycle(config, backendDb, 2)).toEqual({ attempted: 0, prepared: 0 });
-
-      // Connecting the channel is what makes the same asset worth preparing.
-      registerTestChannels(backendDb, ["instagram_stories_ru"]);
-      expect((await runStoryDerivativeCycle(config, backendDb, 2)).attempted).toBe(1);
-    }));
-
-  // Preparation only runs where a Story is published, so this case needs the
-  // channel that makes it worth preparing at all.
-  it("limits failed preparations by attempts rather than successes", () =>
-    withDb(
-      async (backendDb) => {
-        const config = { ...tempConfig(), MEDIA_PROCESSOR_PROVIDER: "remote_http" } as BackendConfig;
-        const assets = await Promise.all(
-          [1, 2, 3].map(async (index) => {
-            const localPath = path.join(config.DATA_DIR, `${index.toString().repeat(24)}.jpg`);
-            await fs.promises.writeFile(localPath, "source");
-            return {
-              actorId: 1,
-              kind: "image",
-              mimeType: "image/jpeg",
-              filename: `source-${index}.jpg`,
-              localPath,
-              byteSize: 6,
-              sha256: index.toString().repeat(64),
-              source: "test",
-              createdAt: `2026-01-01T00:00:0${index}.000Z`,
-            };
-          }),
-        );
-        unsafeDb(backendDb).db.insert(studioMediaAssets).values(assets).run();
-
-        expect(await runStoryDerivativeCycle(config, backendDb, 2)).toEqual({ attempted: 2, prepared: 0 });
-      },
-      ["instagram_stories_ru"],
-    ));
 });

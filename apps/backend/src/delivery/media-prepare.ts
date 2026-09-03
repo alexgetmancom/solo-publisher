@@ -79,12 +79,7 @@ export async function pruneMediaCache(config: BackendConfig, now = Date.now()): 
   const cutoff = now - MEDIA_CACHE_TTL_SECONDS * 1000;
   // `.incoming` holds pre-hash upload temporaries; they are removed on the happy
   // path but leak when the process dies mid-import, so age them out here too.
-  const roots = [
-    config.MEDIA_CACHE_DIR,
-    config.REMOTE_MEDIA_PATH,
-    path.join(config.DATA_DIR, "story-media"),
-    path.join(config.STUDIO_MEDIA_DIR, ".incoming"),
-  ];
+  const roots = [config.MEDIA_CACHE_DIR, config.REMOTE_MEDIA_PATH, path.join(config.STUDIO_MEDIA_DIR, ".incoming")];
   let removed = 0;
   for (const root of roots) {
     const entries = await fs.promises.readdir(root, { withFileTypes: true }).catch(() => []);

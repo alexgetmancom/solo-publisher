@@ -9,6 +9,8 @@ import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js";
 
+const PNG_BYTES = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+
 function request(app: ReturnType<typeof createApiHandler>, body: unknown, authorization?: string) {
   return app(
     new Request("http://localhost/api/mcp", {
@@ -246,10 +248,15 @@ describe("Studio MCP", () => {
         new Request("http://localhost/api/studio/media", {
           method: "POST",
           headers: { authorization, "content-type": "image/jpeg", "x-filename": "agent-image.jpg" },
-          body: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]),
+          body: PNG_BYTES,
         }),
       );
-      expect(await uploaded.json()).toMatchObject({ asset_id: 1, kind: "photo", filename: "agent-image.jpg", byte_size: 4 });
+      expect(await uploaded.json()).toMatchObject({
+        asset_id: 1,
+        kind: "photo",
+        filename: "agent-image.jpg",
+        byte_size: PNG_BYTES.byteLength,
+      });
 
       const attached = await request(
         app,

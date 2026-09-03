@@ -9,6 +9,7 @@ import { StudioError } from "../foundation/errors.js";
 import type { MessageKey } from "../foundation/i18n/index.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
+import { importTelegramMedia } from "../interfaces/telegram/media-ingress.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
 import { type VideoTarget, videoTargetLabel } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
@@ -149,8 +150,12 @@ export async function applyIntakeKind(
   const asked = ctx.callbackQuery !== undefined;
 
   if (kind === "post") {
+    const message = {
+      ...captured.message,
+      media: await importTelegramMedia(ctx.api, backendDb, config, actorId, captured.message.media),
+    };
     clearConversationState(backendDb, actorId, "intake");
-    return createPostFromMessage(backendDb, config, actorId, captured.message);
+    return createPostFromMessage(backendDb, config, actorId, message);
   }
 
   if (kind === "article") {

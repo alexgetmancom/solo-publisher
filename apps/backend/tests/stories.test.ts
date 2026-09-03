@@ -35,8 +35,10 @@ const ffmpegCalls: string[][] = [];
 /** Set by the case that needs an encode to die with its output half-written. */
 let ffmpegDiesAfterWriting = false;
 const instantSleep = async (_milliseconds: number): Promise<void> => {};
+const realFfmpeg = await import("../src/foundation/runtime/ffmpeg.js");
 mock.module("../src/foundation/runtime/ffmpeg.js", () => {
   return {
+    ...realFfmpeg,
     runFfmpeg: async (args: string[]) => {
       ffmpegCalls.push(args);
       // Both Story outputs of a video come out of one invocation, so every path

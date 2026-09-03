@@ -18,6 +18,26 @@ function withMediaDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
   return fn(dir).finally(() => fs.rmSync(dir, { recursive: true, force: true }));
 }
 
+function encodeFixture(target: string): void {
+  const encoded = Bun.spawnSync([
+    "ffmpeg",
+    "-loglevel",
+    "error",
+    "-f",
+    "lavfi",
+    "-i",
+    "color=c=black:s=16x16:d=0.1",
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-an",
+    "-y",
+    target,
+  ]);
+  if (encoded.exitCode !== 0) throw new Error(`fixture encode failed: ${encoded.stderr.toString()}`);
+}
+
 describe("storeTelegramVideo", () => {
   it("rejects a message with neither a video nor a document", async () => {
     await withMediaDir(async (dir) => {
@@ -54,7 +74,7 @@ describe("storeTelegramVideo", () => {
       const config = loadTestConfig({ CONTROLLER_BOT_TOKEN: "token", DATA_DIR: dir });
       try {
         const sourceFile = path.join(dir, "source.mp4");
-        fs.writeFileSync(sourceFile, Buffer.from("fake mp4 bytes"));
+        encodeFixture(sourceFile);
         const ctx = contextWith({ video: { file_id: "vid-1" } }, async () => ({ file_path: sourceFile }));
 
         const result = await storeTelegramVideo(ctx, backendDb, config, 7);
@@ -77,9 +97,12 @@ describe("storeTelegramVideo", () => {
       });
       const originalFetch = globalThis.fetch;
       const requestedUrls: string[] = [];
+      const sourceFile = path.join(dir, "source.mp4");
+      encodeFixture(sourceFile);
+      const sourceBytes = fs.readFileSync(sourceFile);
       globalThis.fetch = (async (input: string | URL | Request) => {
         requestedUrls.push(String(input));
-        return new Response(Buffer.from("remote mp4 bytes"), { status: 200 });
+        return new Response(sourceBytes, { status: 200 });
       }) as typeof fetch;
       try {
         const ctx = contextWith({ document: { file_id: "doc-2", file_name: "clip.mp4" } }, async () => ({ file_path: "videos/clip.mp4" }));

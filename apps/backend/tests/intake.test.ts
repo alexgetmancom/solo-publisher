@@ -1,4 +1,7 @@
 import { describe, expect, it } from "bun:test";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { handlePublicationMessage } from "../src/bot/callback-router.js";
 import { getConversationState } from "../src/bot/conversation-state.js";
 import { applyIntakeKind, handleIntakeMessage, openIntake, publishReviewedArticle, toggleIntakeVideoTarget } from "../src/bot/intake.js";
@@ -13,12 +16,12 @@ import { loadTestConfig } from "./helpers/studio-config.js";
 const config = loadTestConfig({ CONTROLLER_BOT_TOKEN: "bot-token", CONTROLLER_ADMIN_IDS: "42" });
 const article = "# Chapter one\n\nBody with a **bold** word.";
 
-function ctxWith(message: Record<string, unknown>) {
+function ctxWith(message: Record<string, unknown>, filePath = "documents/file.md") {
   return {
     from: { id: 42 },
     chat: { id: 42 },
     message,
-    api: { getFile: async () => ({ file_path: "documents/file.md" }) },
+    api: { getFile: async () => ({ file_path: filePath }) },
     reply: async () => undefined,
   } as never;
 }
@@ -36,9 +39,15 @@ function buttonRows(effect: { options?: Record<string, unknown> }): string[] {
   return (markup?.inline_keyboard ?? []).flat().map((button) => button.text);
 }
 
-async function capture(backendDb: ReturnType<typeof openBackendDb>, message: Record<string, unknown>, entry: "text" | "video" = "text") {
+async function capture(
+  backendDb: ReturnType<typeof openBackendDb>,
+  message: Record<string, unknown>,
+  entry: "text" | "video" = "text",
+  effectiveConfig = config,
+  filePath?: string,
+) {
   await openIntake(ctxWith({ text: "" }), backendDb, entry);
-  return handleIntakeMessage(ctxWith(message), backendDb, config);
+  return handleIntakeMessage(ctxWith(message, filePath), backendDb, effectiveConfig);
 }
 
 describe("bot intake", () => {
@@ -76,12 +85,42 @@ describe("bot intake", () => {
    * without a file is not a publication. */
   it("attaches a video to a post under the text button, and sends bare text back from the video one", () =>
     withDb(async (backendDb) => {
-      const video = await capture(backendDb, { document: { file_id: "v4", file_name: "clip.mp4", mime_type: "video/mp4" } }, "text");
-      expect(video.effects[0]).toMatchObject({ card: { kind: "post" } });
-      const text = await capture(backendDb, { text: "Just words." }, "video");
-      expect(text.effects[0]).toMatchObject({ text: expect.stringContaining("📝") });
-      // The intake stays open, so the next message is still the first one.
-      expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "intake-post-video-"));
+      try {
+        const source = path.join(dir, "clip.mp4");
+        const encoded = Bun.spawnSync([
+          "ffmpeg",
+          "-loglevel",
+          "error",
+          "-f",
+          "lavfi",
+          "-i",
+          "color=c=black:s=16x16:d=0.1",
+          "-c:v",
+          "libx264",
+          "-pix_fmt",
+          "yuv420p",
+          "-an",
+          "-y",
+          source,
+        ]);
+        if (encoded.exitCode !== 0) throw new Error(`fixture encode failed: ${encoded.stderr.toString()}`);
+        const mediaConfig = loadTestConfig({ CONTROLLER_BOT_TOKEN: "bot-token", CONTROLLER_ADMIN_IDS: "42", DATA_DIR: dir });
+        const video = await capture(
+          backendDb,
+          { document: { file_id: "v4", file_name: "clip.mp4", mime_type: "video/mp4" } },
+          "text",
+          mediaConfig,
+          source,
+        );
+        expect(video.effects[0]).toMatchObject({ card: { kind: "post" } });
+        const text = await capture(backendDb, { text: "Just words." }, "video");
+        expect(text.effects[0]).toMatchObject({ text: expect.stringContaining("📝") });
+        // The intake stays open, so the next message is still the first one.
+        expect(getConversationState(backendDb, 42, "intake")?.step).toBe("awaiting");
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
     }));
 
   /** The destination screen answers both questions at once: which platforms

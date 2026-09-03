@@ -7,7 +7,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { setTelegramPostCard } from "../interfaces/telegram/control-cards.js";
-import { importTelegramAlbumMedia } from "../interfaces/telegram/media-ingress.js";
+import { importTelegramMedia } from "../interfaces/telegram/media-ingress.js";
 import { jsonRecordArray } from "../json.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
@@ -157,7 +157,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
         log("warn", "stale album discarded", { album: row.id, actorId: row.actorId, stateRevision: row.stateRevision });
         continue;
       }
-      const media = await importTelegramAlbumMedia(bot, backendDb, config, row.actorId, jsonRecordArray(row.mediaJson));
+      const media = await importTelegramMedia(bot.api, backendDb, config, row.actorId, jsonRecordArray(row.mediaJson));
       const draftId = row.draftId;
       const step = row.step as PostSessionStep | null;
       const locale = resolveLocale(row.stepDataJson.locale) ?? resolveLocale(state?.data.locale);

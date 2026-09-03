@@ -4,9 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import type { Bot } from "grammy";
 import type { BackendConfig } from "../src/foundation/config.js";
-import { importTelegramAlbumMedia } from "../src/interfaces/telegram/media-ingress.js";
+import { importTelegramMedia } from "../src/interfaces/telegram/media-ingress.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
+
+const PNG_BYTES = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
 
 function botWith(getFile: (fileId: string) => Promise<{ file_path?: string }>): Bot {
   return { api: { getFile } } as unknown as Bot;
@@ -27,14 +29,14 @@ function withIngress<T>(
   });
 }
 
-describe("importTelegramAlbumMedia", () => {
+describe("importTelegramMedia", () => {
   it("leaves items that already carry an asset_id or local_path untouched", async () => {
     await withIngress(async ({ backendDb, config }) => {
       const bot = botWith(async () => {
         throw new Error("getFile should not be called for an already-imported item");
       });
       const media = [{ type: "photo", asset_id: 42, local_path: "/already/imported.jpg" }];
-      const result = await importTelegramAlbumMedia(bot, backendDb, config, 1, media);
+      const result = await importTelegramMedia(bot.api, backendDb, config, 1, media);
       expect(result).toEqual(media);
     });
   });
@@ -42,7 +44,7 @@ describe("importTelegramAlbumMedia", () => {
   it("rejects an item with no file id", async () => {
     await withIngress(async ({ backendDb, config }) => {
       const bot = botWith(async () => ({ file_path: "photos/1.jpg" }));
-      await expect(importTelegramAlbumMedia(bot, backendDb, config, 1, [{ type: "photo" }])).rejects.toThrow(
+      await expect(importTelegramMedia(bot.api, backendDb, config, 1, [{ type: "photo" }])).rejects.toThrow(
         "Telegram media item has no file id.",
       );
     });
@@ -51,7 +53,7 @@ describe("importTelegramAlbumMedia", () => {
   it("rejects when Telegram returns no file path", async () => {
     await withIngress(async ({ backendDb, config }) => {
       const bot = botWith(async () => ({}));
-      await expect(importTelegramAlbumMedia(bot, backendDb, config, 1, [{ type: "photo", file_id: "abc" }])).rejects.toThrow(
+      await expect(importTelegramMedia(bot.api, backendDb, config, 1, [{ type: "photo", file_id: "abc" }])).rejects.toThrow(
         "Telegram did not return a media file path.",
       );
     });
@@ -61,11 +63,27 @@ describe("importTelegramAlbumMedia", () => {
     await withIngress(async ({ dir, backendDb, config }) => {
       const photoSource = path.join(dir, "photo.jpg");
       const videoSource = path.join(dir, "video.mp4");
-      fs.writeFileSync(photoSource, Buffer.from("fake jpg bytes"));
-      fs.writeFileSync(videoSource, Buffer.from("fake mp4 bytes"));
+      fs.writeFileSync(photoSource, PNG_BYTES);
+      const encoded = Bun.spawnSync([
+        "ffmpeg",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=c=black:s=16x16:d=0.1",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-an",
+        "-y",
+        videoSource,
+      ]);
+      if (encoded.exitCode !== 0) throw new Error(`fixture encode failed: ${encoded.stderr.toString()}`);
       const bot = botWith(async (fileId: string) => ({ file_path: fileId === "photo-1" ? photoSource : videoSource }));
 
-      const result = await importTelegramAlbumMedia(bot, backendDb, config, 9, [
+      const result = await importTelegramMedia(bot.api, backendDb, config, 9, [
         { type: "photo", file_id: "photo-1" },
         { type: "video", file_id: "video-1" },
       ]);
@@ -87,11 +105,11 @@ describe("importTelegramAlbumMedia", () => {
         const requestedUrls: string[] = [];
         globalThis.fetch = (async (input: string | URL | Request) => {
           requestedUrls.push(String(input));
-          return new Response(Buffer.from("remote jpg bytes"), { status: 200 });
+          return new Response(PNG_BYTES, { status: 200 });
         }) as typeof fetch;
         try {
           const bot = botWith(async () => ({ file_path: "photos/remote.jpg" }));
-          const result = await importTelegramAlbumMedia(bot, backendDb, config, 1, [{ type: "photo", file_id: "remote-1" }]);
+          const result = await importTelegramMedia(bot.api, backendDb, config, 1, [{ type: "photo", file_id: "remote-1" }]);
           expect(result[0]?.asset_id).toBeGreaterThan(0);
           expect(requestedUrls).toEqual(["https://telegram.local/file/bottoken/photos/remote.jpg"]);
         } finally {

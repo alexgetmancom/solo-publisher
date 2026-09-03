@@ -19,7 +19,7 @@ import { processVerticalMediaRemotely } from "./remote-media-processor.js";
 import { temporaryPath } from "./site-media-storage.js";
 import type { PublishMediaItem } from "./social/payload.js";
 
-/** Where Story artefacts live, for both the prepared ones and the recovered ones. */
+/** Where durable Story derivatives live. */
 export function storyDirectory(config: BackendConfig): string {
   return path.join(config.DATA_DIR, "story-media");
 }
@@ -27,9 +27,8 @@ export function storyDirectory(config: BackendConfig): string {
 /**
  * One source file into the Story shapes, wherever the caller wants them.
  *
- * The preparation worker and the publish-time recovery path both go through
- * here: the same recipe, the same timeout, the same permissions. Two
- * implementations of "make the Story version" is how they would disagree.
+ * Media ingress is the only caller in the publication path. The explicit media
+ * reprocess operation also uses this recipe when an operator requests repair.
  */
 export async function renderStoryVariants(
   source: string,

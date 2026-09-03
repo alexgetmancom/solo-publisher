@@ -8,6 +8,8 @@ import { withDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
+const PNG_BYTES = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
+
 describe("Studio service boundaries", () => {
   it("builds one service graph per runtime and reuses a fresh analytics dashboard", () =>
     withDb(async (backendDb) => {
@@ -26,7 +28,7 @@ describe("Studio service boundaries", () => {
     try {
       const config = loadTestConfig({ DATA_DIR: directory, STUDIO_MEDIA_MAX_BYTES: "1000" });
       const media = createStudioServices(backendDb, config).media;
-      const bytes = new Uint8Array([1, 2, 3, 4]);
+      const bytes = PNG_BYTES;
       const first = await media.import(42, {
         filename: "first.jpg",
         contentType: "image/jpeg",
@@ -44,6 +46,7 @@ describe("Studio service boundaries", () => {
 
       expect(second.id).toBe(first.id);
       expect(second.localPath).toBe(first.localPath);
+      expect(fs.existsSync(path.join(directory, "story-media", `${path.parse(first.localPath).name}-story-standard.jpg`))).toBe(true);
     } finally {
       backendDb.close();
       fs.rmSync(directory, { recursive: true, force: true });

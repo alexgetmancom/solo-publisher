@@ -7,12 +7,14 @@ import { deduplicateSiteMedia } from "../src/operations/site-media-deduplicate.j
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 let ffmpegCalls = 0;
+const realFfmpeg = await import("../src/foundation/runtime/ffmpeg.js");
 mock.module("../src/foundation/runtime/ffmpeg.js", () => ({
+  ...realFfmpeg,
   runFfmpeg: async (args: string[]) => {
     ffmpegCalls += 1;
-    const output = args.at(-1);
-    if (!output) throw new Error("missing responsive output path");
-    fs.writeFileSync(output, "webp");
+    const outputs = args.filter((arg) => /\.(mp4|jpg|webp)$/.test(arg) && arg !== args[args.indexOf("-i") + 1]);
+    if (!outputs.length) throw new Error("missing responsive output path");
+    for (const output of outputs) fs.writeFileSync(output, "encoded media");
   },
 }));
 

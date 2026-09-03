@@ -10,7 +10,6 @@ import { createPlatformAdapters, type TargetRouting } from "../platform-adapters
 import type { DeliveryPorts } from "../ports.js";
 import { payloadMedia } from "../social/payload.js";
 import { preparedStoryMedia } from "../story-derivatives.js";
-import { generateStoryMedia } from "../story-media.js";
 
 type PreparedMedia = Awaited<ReturnType<typeof prepareMediaItems>>;
 const MAX_PREPARATION_CACHE_ENTRIES = 32;
@@ -19,27 +18,9 @@ export function createPlatformPorts(config: BackendConfig, fetchImpl: typeof fet
   // Publisher instances own their preparation state. This prevents cache entries
   // from leaking between test runs or independently configured worker instances.
   const mediaCache = new Map<string, Promise<PreparedMedia>>();
-  // VM-106 accepts one ffmpeg job at a time.  Rendering had previously been
-  // started before the ordinary media-preparation queue, so three Story
-  // targets for one post could open concurrent streamed requests through the
-  // SSH tunnel.  Keep that resource explicit and share the finished render
-  // between Telegram and Instagram targets of the same locale.
-  const storyMediaCache = new Map<string, Promise<ReturnType<typeof payloadMedia>>>();
   const enqueueMediaPreparation = createSerialQueue();
-  const enqueueStoryPreparation = createSerialQueue();
   const prepare = (job: ClaimedPublishJob, publisherConfig: BackendConfig) =>
-    withPreparedMedia(job, publisherConfig, fetchImpl, mediaCache, enqueueMediaPreparation, (job, media) => {
-      const key = storyMediaCacheKey(job, media);
-      let rendered = readBoundedCache(storyMediaCache, key);
-      if (!rendered) {
-        rendered = enqueueStoryPreparation(() => createStoryMedia(job, media, publisherConfig));
-        writeBoundedCache(storyMediaCache, key, rendered);
-      }
-      return rendered.catch((error) => {
-        storyMediaCache.delete(key);
-        throw error;
-      });
-    });
+    withPreparedMedia(job, publisherConfig, fetchImpl, mediaCache, enqueueMediaPreparation);
   return createPlatformAdapters(config, fetchImpl, prepare, routing);
 }
 
@@ -49,7 +30,6 @@ async function withPreparedMedia(
   fetchImpl: typeof fetch,
   mediaCache: Map<string, Promise<PreparedMedia>>,
   enqueue: <T>(prepare: () => Promise<T>) => Promise<T>,
-  renderStory: (job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>) => Promise<ReturnType<typeof payloadMedia>>,
 ): Promise<ClaimedPublishJob> {
   // A job carrying resume state is going back to finish a publication, not to
   // build one: the media it would prepare has already been uploaded and the
@@ -65,11 +45,11 @@ async function withPreparedMedia(
   // before it ever reaches the Media Processing Port.
   const storySource = selectMediaForTarget(job.target, media);
   if (isStoryTarget(job.target)) log("info", "story delivery preparation started", { jobId: job.jobId, target: job.target });
-  const sourceMedia = isStoryTarget(job.target) ? await renderStory(job, storySource) : storySource;
+  const sourceMedia = isStoryTarget(job.target) ? requirePreparedStoryMedia(config, storySource) : storySource;
   const key = mediaCacheKey(job, sourceMedia, config);
   // One preparation per (post, target, media) within a delivery cycle. The
-  // rendered files persist on disk and are aged out by pruneMediaCache, so
-  // there is no per-user refcount: nothing here owns eager deletion.
+  // The staged public copy is a cache. The Story derivative itself belongs to
+  // the durable asset and was completed before the draft was written.
   let prepared = readBoundedCache(mediaCache, key);
   if (!prepared) {
     prepared = enqueue(() => prepareMediaItems(config, sourceMedia, fetchImpl, job.target));
@@ -85,22 +65,12 @@ async function withPreparedMedia(
   return { ...job, payload: { ...job.payload, media: items } };
 }
 
-async function createStoryMedia(job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>, config: BackendConfig) {
+function requirePreparedStoryMedia(config: BackendConfig, media: ReturnType<typeof payloadMedia>): ReturnType<typeof payloadMedia> {
   const [source] = media;
   if (!source) return media;
-  // A prior attempt may already have rendered a valid Story asset. Reusing it
-  // is both idempotent and essential for recovery: retrying must not depend on
-  // re-downloading or re-transcoding an unchanged source video.
-  if (source.storyLocalPath) return [source];
-  // The variant is a pure function of the source file, so it was made when the
-  // file was imported and nobody was waiting. Rendering it here still happens --
-  // for a file imported before this existed, or one whose artefact is gone --
-  // but it is now the miss, not the norm.
   const prepared = preparedStoryMedia(config, source);
   if (prepared) return [prepared];
-  const locale = job.payload.locale === "ru" ? "ru" : "en";
-  const draftId = Number(job.payload.draftId ?? job.jobId);
-  return generateStoryMedia([source], Number.isSafeInteger(draftId) ? draftId : job.jobId, locale, config);
+  throw new Error("story_media_not_prepared: re-import the media before publishing");
 }
 
 function mediaCacheKey(job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>, config: BackendConfig): string {
@@ -113,14 +83,6 @@ function mediaCacheKey(job: ClaimedPublishJob, media: ReturnType<typeof payloadM
     story: isStoryTarget(job.target),
     media: media.map((item) => [item.fileId, item.localPath, item.type]),
     remote: config.REMOTE_MEDIA_PATH,
-  });
-}
-
-function storyMediaCacheKey(job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>): string {
-  return JSON.stringify({
-    draft: job.payload.draftId ?? job.publicationKey,
-    locale: job.payload.locale ?? "en",
-    media: media.map((item) => [item.fileId, item.localPath, item.type]),
   });
 }
 
