@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { createServer } from "node:http";
+import { createServer, type ServerResponse } from "node:http";
 import path from "node:path";
 import { type BotRunner, startBotRunner } from "../backend/src/bot/runner.js";
 import { log } from "../backend/src/foundation/logger.js";
@@ -66,7 +66,15 @@ const server = createServer((req, res) => {
   // reaches this stat as a guaranteed miss, so it must not block the loop.
   fs.stat(filePath, (error, stat) => {
     if (error || !stat.isFile()) {
-      handler(req, res);
+      // The SSR handler owns the response from here. A route that throws must
+      // not reach the process: nothing above this callback can catch it, and an
+      // uncaught throw in a request handler is a restart.
+      try {
+        const answered = handler(req, res);
+        if (answered instanceof Promise) answered.catch((reason: unknown) => failRequest(res, reason));
+      } catch (reason) {
+        failRequest(res, reason);
+      }
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
@@ -77,9 +85,30 @@ const server = createServer((req, res) => {
           ? "public, max-age=31536000, immutable"
           : "public, max-age=3600",
     });
-    fs.createReadStream(filePath).pipe(res);
+    // The file was there a moment ago at stat; between then and open it can be
+    // gone, replaced by a deploy, or unreadable. An unhandled stream "error"
+    // event is thrown, and headers are already sent, so all that is left is to
+    // log it and cut the response.
+    const body = fs.createReadStream(filePath);
+    body.on("error", (streamError) => {
+      log("warn", "static asset read failed", { path: safePath, error: String(streamError) });
+      res.destroy();
+    });
+    body.pipe(res);
   });
 });
+
+/** Answers a request whose handler threw. Headers may already be sent, in which
+ * case the only honest ending is to drop the connection. */
+function failRequest(res: ServerResponse, reason: unknown): void {
+  log("error", "request handler failed", { error: String(reason) });
+  if (res.headersSent) {
+    res.destroy();
+    return;
+  }
+  res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end("Internal error\n");
+}
 
 server.listen(runtime.config.PORT, runtime.config.BIND_HOST, () => {
   log("info", "Astro SSR listening", { hostname: runtime.config.BIND_HOST, port: runtime.config.PORT });

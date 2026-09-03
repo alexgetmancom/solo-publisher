@@ -5,6 +5,7 @@ import type { BackendConfig } from "../foundation/config.js";
 import { isDeploymentRevision, isDeploymentTarget, requestDeploymentPromote, requestDeploymentRollback } from "../foundation/deployment.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
+import { log } from "../foundation/logger.js";
 import { settingsService } from "../studio/services/settings.js";
 import { showScreen } from "./effects.js";
 import { type ScreenCallback, screenCallback } from "./screen-callback.js";
@@ -92,7 +93,12 @@ async function runDeployAction(
     .then((result) => (result.ok ? finishDeployAction(ctx, locale, result.value, menuRevision) : undefined))
     .catch((error) =>
       finishDeployAction(ctx, locale, { ok: false, message: error instanceof Error ? error.message : String(error) }, menuRevision),
-    );
+    )
+    // Nothing above is inside a grammY handler any more, so `bot.catch` cannot
+    // see this: the screen edit that reports the outcome is itself a Telegram
+    // call, and its failure would otherwise be an unhandled rejection -- which
+    // takes the whole process down with it.
+    .catch((error: unknown) => log("error", "deployment action could not report its outcome", { error: String(error) }));
 }
 
 async function finishDeployAction(
