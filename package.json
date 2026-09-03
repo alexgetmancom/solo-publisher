@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
-    "@mtcute/bun": "^0.31.0",
+    "@mtcute/bun": "^0.32.0",
     "svelte": "^5.56.10"
   },
   "devDependencies": {
@@ -54,7 +54,7 @@
     "@astrojs/svelte": "^9.0.1",
     "@biomejs/biome": "^2.5.10",
     "astro": "^7.2.4",
-    "happy-dom": "20.11.6",
+    "happy-dom": "20.11.13",
     "lefthook": "^2.1.10",
     "sharp": "^0.35.3",
     "taze": "^21.1.0",
