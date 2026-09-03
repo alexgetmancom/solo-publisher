@@ -260,7 +260,16 @@ export function recoverStalePublishJobs(backendDb: BackendDb, maxLockAgeSeconds 
   return stale.length;
 }
 
-export function completePublishJob(backendDb: BackendDb, jobId: number, result: PublishResult, lockId: string): void {
+export function completePublishJob(
+  backendDb: BackendDb,
+  jobId: number,
+  result: PublishResult,
+  lockId: string,
+  /** When this target's provider last answered anything, supplied by the caller
+   * that already reads the credential breaker. Publishing does not reach into
+   * another area's tables to learn it; it only decides what the fact means. */
+  providerAnsweredAt: string | null = null,
+): void {
   const now = new Date().toISOString();
   const job = unsafeDb(backendDb).db.select().from(publishJobs).where(eq(publishJobs.jobId, jobId)).get();
   if (job?.status !== "publishing" || job.lockedBy !== lockId) return;
@@ -274,7 +283,18 @@ export function completePublishJob(backendDb: BackendDb, jobId: number, result: 
   // one call is the adapter's business and never the queue's.
   if (result.partial && typeof result.resumeKey === "string" && result.resumeKey.length > 0) {
     const ids = Array.isArray(result.ids) ? result.ids.map(String).filter(Boolean) : [];
-    const retry = settlePartialPublication(backendDb, job, jobId, publicationKey, ids, result.resumeKey, result, now, lockId);
+    const retry = settlePartialPublication(
+      backendDb,
+      job,
+      jobId,
+      publicationKey,
+      ids,
+      result.resumeKey,
+      result,
+      now,
+      lockId,
+      providerAnsweredAt,
+    );
     if (!retry) refreshPublicationOwner(backendDb, job.publicationKey);
     return;
   }
@@ -473,14 +493,22 @@ function settlePartialPublication(
   result: PublishResult,
   now: string,
   lockId: string,
+  providerAnsweredAt: string | null,
 ): boolean {
   const transition = partialPublicationTransition(job.attemptCount, partialRetryPolicy());
   // The long budget a half-finished delivery gets is patience for a platform
   // that is down. It is not patience for a platform that is up and refusing
-  // this one call: another publication landing on the same target since the
-  // last attempt says the outage theory is wrong, and repeating an identical
-  // refusal for hours only delays telling someone who can look at it.
-  const providerAnsweredSince = publishedOnTargetSince(backendDb, job.target, job.updatedAt);
+  // this one call: anything the platform answered since the last attempt says
+  // the outage theory is wrong, and repeating an identical refusal for hours
+  // only delays telling someone who can look at it.
+  //
+  // Another publication landing on the same target used to be the only
+  // evidence accepted, so a Studio publishing one post at a time never
+  // produced any: a Threads chain refused for a missing permission spent its
+  // whole budget -- five and a half hours -- while the hourly credential probe
+  // was talking to Threads the entire time. Any answer counts now.
+  const providerAnsweredSince =
+    publishedOnTargetSince(backendDb, job.target, job.updatedAt) ?? answeredSince(providerAnsweredAt, job.updatedAt);
   const attempt = transition.attempt;
   const retry = transition.status === "queued" && !providerAnsweredSince;
   const status = retry ? "queued" : "failed";
@@ -541,6 +569,13 @@ function settlePartialPublication(
  * moment. Evidence about the platform, not about this publication: it is how a
  * delivery tells "the platform is down" from "the platform will not take this
  * particular call". */
+/** The provider's last answer, but only when it lands after this job's last
+ * attempt: an older one says nothing about whether the platform is up now. */
+function answeredSince(answeredAt: string | null, since: string | null): string | null {
+  if (!answeredAt || !since) return null;
+  return new Date(answeredAt).getTime() > new Date(since).getTime() ? answeredAt : null;
+}
+
 function publishedOnTargetSince(backendDb: BackendDb, target: string, since: string | null): string | null {
   if (!since) return null;
   const row = unsafeDb(backendDb)

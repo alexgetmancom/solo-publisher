@@ -15,6 +15,10 @@ type AuthCircuitDetails = {
   blockedUntil?: string | null;
   lastAuthFailureAt?: string;
   lastPingAt?: string;
+  /** When this target's provider last answered a call with this credential --
+   * a publish or a health probe alike. It is the only evidence there is that a
+   * platform is up while one delivery keeps being refused. */
+  lastAnswerAt?: string;
 };
 
 function parseDetails(json: string | null | undefined): AuthCircuitDetails {
@@ -73,21 +77,40 @@ export function recordAuthFailure(backendDb: BackendDb, target: string): void {
   }
 }
 
-/** Called after a publish attempt to `target` succeeds, to clear any tripped breaker. */
+/** Called after a call to `target` succeeds: it clears any tripped breaker and
+ * records that the provider answered. The timestamp is kept even when there was
+ * no breaker to clear, because it is read by a half-finished delivery deciding
+ * whether it is waiting out an outage or repeating a refusal. */
 export function recordAuthSuccess(backendDb: BackendDb, target: string): void {
   const row = unsafeDb(backendDb).db.select().from(credentialChecks).where(eq(credentialChecks.target, target)).get();
   if (!row) return;
   const details = parseDetails(row.detailsJson);
-  if (!details.authFailureStreak && !details.blockedUntil) return;
   // Preserve unrelated fields (e.g. token-health.ts's lastPingAt) instead of
   // wiping the whole details blob, but still clear every circuit-breaker field.
-  const nextDetails: AuthCircuitDetails = { ...details, authFailureStreak: 0, blockedUntil: null };
+  const nextDetails: AuthCircuitDetails = {
+    ...details,
+    authFailureStreak: 0,
+    blockedUntil: null,
+    lastAnswerAt: new Date().toISOString(),
+  };
   delete nextDetails.lastAuthFailureAt;
   unsafeDb(backendDb)
     .db.update(credentialChecks)
     .set({ detailsJson: JSON.stringify(nextDetails) })
     .where(eq(credentialChecks.target, target))
     .run();
+}
+
+/** When this target's provider last answered, or null if it never has here.
+ *
+ * A publication that got half-way out is retried for hours on the theory that
+ * the platform is down. This is what tests that theory: the platform answering
+ * anything at all -- another publish, an hourly credential probe -- says the
+ * refusal belongs to this one call, and hours of repeating it only delay
+ * telling someone who can look at it. */
+export function providerAnsweredAt(backendDb: BackendDb, target: string): string | null {
+  const row = unsafeDb(backendDb).db.select().from(credentialChecks).where(eq(credentialChecks.target, target)).get();
+  return parseDetails(row?.detailsJson).lastAnswerAt ?? null;
 }
 
 /** Checked before a publish call is attempted for `target`. */

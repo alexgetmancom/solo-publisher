@@ -1019,6 +1019,71 @@ describe("publish queue", () => {
       expect(claimDuePublishJobs(backendDb, 1, "test-worker").map((job) => job.jobId)).toEqual([id]);
     }));
 
+  it("stops retrying a partial publication once the platform answered anything at all", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, {
+        publicationId: 307,
+        target: "threads_en",
+        payload: newDeliveryPayload({ text_en: "Первая часть" }),
+      });
+      const refusal = () => ({
+        partial: true,
+        resumeKey: "_threadsPublishedIds",
+        ids: ["root-id"],
+        error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+      });
+      claimDuePublishJobs(backendDb, 1, "test-worker");
+      completePublishJob(backendDb, id, refusal(), "test-worker", null);
+      expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.status).toBe(
+        "queued",
+      );
+
+      // No second publication anywhere -- a Studio posting one thing at a time
+      // never produces one. The hourly credential probe reaching the platform
+      // is the evidence, and it is enough: this refusal is not an outage.
+      backendDb.db.update(publishJobs).set({ nextAttemptAt: null }).where(eq(publishJobs.jobId, id)).run();
+      claimDuePublishJobs(backendDb, 1, "test-worker");
+      completePublishJob(backendDb, id, refusal(), "test-worker", new Date(Date.now() + 1000).toISOString());
+
+      const job = backendDb.db
+        .select({ status: publishJobs.status, lastError: publishJobs.lastError, payloadJson: publishJobs.payloadJson })
+        .from(publishJobs)
+        .where(eq(publishJobs.jobId, id))
+        .get();
+      expect(job?.status).toBe("failed");
+      expect(job?.lastError).toContain("stopped early");
+      expect(job?.payloadJson).toMatchObject({ _threadsPublishedIds: ["root-id"] });
+    }));
+
+  it("keeps waiting when the platform's last answer predates this attempt", () =>
+    withDb((backendDb) => {
+      const id = enqueuePublishJob(backendDb, {
+        publicationId: 308,
+        target: "threads_en",
+        payload: newDeliveryPayload({ text_en: "Первая часть" }),
+      });
+      claimDuePublishJobs(backendDb, 1, "test-worker");
+      // An answer from before the attempt says nothing about whether the
+      // platform is up now, and treating it as evidence would end the patience
+      // a real outage is owed.
+      completePublishJob(
+        backendDb,
+        id,
+        {
+          partial: true,
+          resumeKey: "_threadsPublishedIds",
+          ids: ["root-id"],
+          error: "POST https://graph.threads.net/v1.0/me/threads failed: 500",
+        },
+        "test-worker",
+        new Date(Date.now() - 60_000).toISOString(),
+      );
+
+      expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).where(eq(publishJobs.jobId, id)).get()?.status).toBe(
+        "queued",
+      );
+    }));
+
   it("persists a partial publication under the key its adapter named, and requeues only the unfinished tail", () =>
     withDb((backendDb) => {
       const id = enqueuePublishJob(backendDb, {

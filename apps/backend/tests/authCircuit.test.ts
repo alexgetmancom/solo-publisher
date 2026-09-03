@@ -7,6 +7,7 @@ import type { UnsafeBackendDb } from "../src/db/client.js";
 import { credentialChecks } from "../src/db/schema.js";
 import {
   isTargetAuthBlocked,
+  providerAnsweredAt,
   recordAuthFailure,
   recordAuthSuccess,
   recordTokenPing,
@@ -44,7 +45,14 @@ describe("auth circuit breaker", () => {
       expect(isTargetAuthBlocked(backendDb, "telegram")).toBe(false);
 
       const row = backendDb.db.select().from(credentialChecks).where(eq(credentialChecks.target, "test_platform")).get();
-      expect(JSON.parse(row?.detailsJson ?? "{}")).toEqual({ authFailureStreak: 0, blockedUntil: null });
+      const details = JSON.parse(row?.detailsJson ?? "{}");
+      // Every circuit-breaker field is cleared, and the moment the provider
+      // answered is kept: a half-finished delivery reads it to tell an outage
+      // from a refusal aimed at one call.
+      expect(details).toMatchObject({ authFailureStreak: 0, blockedUntil: null });
+      expect(details.lastAuthFailureAt).toBeUndefined();
+      expect(providerAnsweredAt(backendDb, "test_platform")).toBe(details.lastAnswerAt);
+      expect(Date.parse(details.lastAnswerAt)).toBeGreaterThan(Date.now() - 10_000);
     }));
 
   it("does not block a different target", () =>

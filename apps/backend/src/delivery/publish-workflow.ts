@@ -8,7 +8,7 @@ import { PUBLISH_HEARTBEAT_INTERVAL_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { withJobHeartbeat } from "../foundation/runtime/job-heartbeat.js";
 import { recordWorkerState } from "../foundation/runtime/worker-state.js";
-import { isTargetAuthBlocked } from "../observability/auth-circuit.js";
+import { isTargetAuthBlocked, providerAnsweredAt } from "../observability/auth-circuit.js";
 import { trackUsageAsync } from "../observability/usage.js";
 import { mayHaveReachedAudience } from "../publishing/job-policy.js";
 import {
@@ -123,7 +123,7 @@ export async function runDeliveryPublishCycle(
           return;
         }
         try {
-          completePublishJob(backendDb, job.jobId, result, job.lockId);
+          completePublishJob(backendDb, job.jobId, result, job.lockId, providerAnsweredAt(backendDb, job.target));
         } catch (error) {
           settleUnexpectedFinalization(backendDb, job, error, result);
         }
