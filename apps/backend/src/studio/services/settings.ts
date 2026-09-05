@@ -89,6 +89,7 @@ function readProfile(backendDb: SettingsDependencies) {
     tagline: row.taglineJson,
     about: row.aboutJson,
     bio: row.bioJson,
+    siteTimezone: row.siteTimezoneJson,
     profiles: row.profilesJson,
   };
 }
@@ -103,6 +104,7 @@ export type StudioProfileInput = {
   tagline?: LocalizedText | undefined;
   about?: LocalizedText | undefined;
   bio?: LocalizedText | undefined;
+  siteTimezone?: LocalizedText | undefined;
   profiles?: LocalizedProfiles | undefined;
 };
 
@@ -114,6 +116,11 @@ export function settingsService(backendDb: SettingsDependencies) {
     },
     setStudioProfile(input: StudioProfileInput) {
       if (input.timezone != null && !isValidTimeZone(input.timezone.trim())) throw new StudioError("err.timezone-invalid");
+      // A blank clears the override back to the operator's zone; anything else
+      // has to be a real zone, or the public site renders every date as a raw
+      // ISO string and nobody finds out until a reader says so.
+      for (const zone of Object.values(input.siteTimezone ?? {}))
+        if (zone.trim() && !isValidTimeZone(zone.trim())) throw new StudioError("err.timezone-invalid");
       if (
         input.prepareLeadMinutes != null &&
         (!Number.isInteger(input.prepareLeadMinutes) || input.prepareLeadMinutes < 1 || input.prepareLeadMinutes > 120)
@@ -134,6 +141,7 @@ export function settingsService(backendDb: SettingsDependencies) {
         ...(input.tagline != null ? { taglineJson: input.tagline } : {}),
         ...(input.about != null ? { aboutJson: input.about } : {}),
         ...(input.bio != null ? { bioJson: input.bio } : {}),
+        ...(input.siteTimezone != null ? { siteTimezoneJson: input.siteTimezone } : {}),
         ...(input.profiles != null ? { profilesJson: input.profiles } : {}),
         updatedAt: backendDb.clock.now().toISOString(),
       });

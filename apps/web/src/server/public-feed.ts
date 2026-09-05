@@ -1,6 +1,6 @@
 import rss from "@astrojs/rss";
 import type { APIContext } from "astro";
-import { formatDate } from "../utils/dates";
+import { formatDate, timeZoneLabel } from "../utils/dates";
 import { keyEntities } from "../utils/key-entities";
 import { localePath, SITE_LOCALE_TAGS, SITE_LOCALES, type SiteLocale } from "../utils/locale";
 import { hasPublishedLocale, localizedHtml, localizedSlug, localizedText, sortedPublishedItems } from "../utils/public-feed";
@@ -159,7 +159,7 @@ export async function publicMarkdownResponse(context: APIContext, locale: SiteLo
  * URLs each row points at, not in the index itself.
  */
 export async function publicLlmsResponse(context: APIContext, locale: SiteLocale, contentType: string): Promise<Response> {
-  const timeZone = getRuntime().config.TIMEZONE;
+  const timeZone = getRuntime().config.studio.siteTimezone(locale);
   const items = sortedPublishedItems(loadFeedItems(), locale);
   const copy = siteCopy(locale);
   const siteUrl = siteUrlFromContext(context);
@@ -203,7 +203,8 @@ export async function publicLlmsResponse(context: APIContext, locale: SiteLocale
       if (!slug) continue;
       const title = postTitle(localizedText(item, locale), item.post_id, locale);
       const date = formatDate(item.date, SITE_LOCALE_TAGS[locale], timeZone);
-      lines.push(`- [${title}](${siteUrl}${localePath(locale, `/${item.post_id}/${slug}.md`)}) - ${date} MSK`);
+      const zone = timeZoneLabel(item.date, timeZone, SITE_LOCALE_TAGS[locale]);
+      lines.push(`- [${title}](${siteUrl}${localePath(locale, `/${item.post_id}/${slug}.md`)}) - ${date}${zone ? ` ${zone}` : ""}`);
     }
   }
 

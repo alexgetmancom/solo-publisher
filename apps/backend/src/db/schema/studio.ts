@@ -22,6 +22,10 @@ export const studioProfile = sqliteTable("studio_profile", {
    * is the one-paragraph summary feeds, meta descriptions and structured data
    * carry; a page-length text in that field would wreck every one of them. */
   bioJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.bioJson),
+  /** Per language, the zone the public site dates its posts in. Blank means the
+   * operator's own `timezone`. Kept apart from it because the audience of a
+   * language and the operator of the Studio are not in the same place. */
+  siteTimezoneJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.siteTimezoneJson),
   profilesJson: json<LocalizedProfiles>().notNull().default(DEFAULT_STUDIO_PROFILE.profilesJson),
   /** Which platforms a new draft starts with, as target ids. Every Studio
    * publishes to its own subset of what it has connected — the hand-driven

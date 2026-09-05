@@ -113,6 +113,13 @@
       "when": 1789000000000,
       "tag": "0015_video_tags_and_audience_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788800000000,
+      "tag": "0013_studio_profile_site_timezone",
+      "breakpoints": true
     }
   ]
 }

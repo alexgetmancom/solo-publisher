@@ -1,38 +1,148 @@
 ---
+/* A hub is a reference page, not a second feed. What it has that the vendor's
+ * own pages do not is the record: every dated event about this subject, in the
+ * order it happened, going back to the first one. The list of headlines it used
+ * to be said nothing the home page did not already say. */
 import Layout from "../layouts/Layout.astro";
-import type { HubDefinition } from "../server/hubs";
+import { type HubDefinition, hubChronology } from "../server/hubs";
 import type { FeedItem } from "../server/public-site";
-import { getFirstSentence } from "../utils/text";
+import { getRuntime } from "../server/runtime";
+import { fill, siteCopy } from "../server/site-copy";
+import { formatDate, timeZoneLabel } from "../utils/dates";
+import { localePath, SITE_LOCALE_TAGS, SITE_LOCALES } from "../utils/locale";
+import { siteUrlFromContext } from "../utils/site";
+import { eventKindLabel } from "../utils/taxonomy";
 
 type Props = { locale: "en" | "ru"; hub: string; definition: HubDefinition; posts: FeedItem[] };
 
-import { siteUrlFromContext } from "../utils/site";
-
-const siteOrigin = siteUrlFromContext(Astro);
 const { locale, hub, definition, posts } = Astro.props;
-const russian = locale === "ru";
-const url = `${siteOrigin}/${russian ? "ru/" : ""}${hub}/`;
+const copy = siteCopy(locale);
+const siteOrigin = siteUrlFromContext(Astro);
+const url = `${siteOrigin}${localePath(locale, `/${hub}/`)}`;
 const englishUrl = `${siteOrigin}/${hub}/`;
-const russianUrl = `${siteOrigin}/ru/${hub}/`;
+const tag = SITE_LOCALE_TAGS[locale];
+const timeZone = getRuntime().config.studio.siteTimezone(locale);
+
+const months = hubChronology(posts, locale, timeZone);
+const events = months.flatMap((month) => month.events);
+// Russian short dates end in " г.", which collided with the sentence's own
+// full stop and printed "2026 г..". The era marker carries nothing here.
+const dayOf = (value: string) =>
+  new Intl.DateTimeFormat(tag, { timeZone, day: "2-digit", month: "short", year: "numeric" })
+    .format(new Date(value))
+    .replace(/\s*г\.?$/, "");
+const summary =
+  events.length > 0
+    ? fill(copy.hubSummary, {
+        count: events.length,
+        from: dayOf(events[events.length - 1].date),
+        to: dayOf(events[0].date),
+      })
+    : copy.hubEmpty;
+
+const description = `${definition.title} — ${definition.intro[locale]}`;
+
+// The chronology is the page's subject, so it is what the graph describes: an
+// ordered list a reader of the markup can walk without parsing the prose.
+const schema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "@id": `${url}#hub`,
+      url,
+      name: `${definition.title} | ${copy.llmsTitle}`,
+      description,
+      inLanguage: locale === "ru" ? "ru-RU" : "en-US",
+      isPartOf: { "@id": `${siteOrigin}/#website` },
+      about: { "@type": "Thing", name: definition.title },
+      mainEntity: {
+        "@type": "ItemList",
+        name: `${definition.title} — ${copy.headingTimeline}`,
+        itemListOrder: "https://schema.org/ItemListOrderDescending",
+        numberOfItems: events.length,
+        itemListElement: events.slice(0, 100).map((event, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: event.title,
+          url: `${siteOrigin}${event.href}`,
+        })),
+      },
+    },
+  ],
+});
 ---
 
 <Layout
-  title={`${definition.title} | ${russian ? "Алекс Гетман" : "Alex Getman"}`}
-  description={russian ? `Новости и контекст про ${definition.title}.` : `Latest news and context about ${definition.title}.`}
+  title={`${definition.title} | ${copy.llmsTitle}`}
+  description={description}
   canonicalUrl={url}
   lang={locale}
-  siteName={russian ? "Алекс Гетман" : "Alex Getman"}
+  siteName={copy.llmsTitle}
+  schema={schema}
+  rssHref={localePath(locale, "/feed.xml")}
   alternateLinks={[
-    { hreflang: "en", href: englishUrl },
-    { hreflang: "ru", href: russianUrl },
+    ...SITE_LOCALES.map((other) => ({ hreflang: other, href: `${siteOrigin}${localePath(other, `/${hub}/`)}` })),
     { hreflang: "x-default", href: englishUrl },
   ]}
 >
-  <main class="hub">
+  <article class="hub">
     <h1>{definition.title}</h1>
-    <p>{definition.intro[locale]}</p>
-    <h2>{russian ? "Последние обновления" : "Latest updates"}</h2>
-    <ol>{posts.map((post) => <li><a href={`/${russian ? "ru/" : ""}${post.post_id}/${russian ? post.slug_ru : post.slug_en}/`}>{getFirstSentence(russian ? post.text : post.text_en) || `${russian ? "Пост" : "Post"} ${post.post_id}`}</a></li>)}</ol>
-  </main>
+    <p class="hub__intro">{definition.intro[locale]}</p>
+    <p class="hub__summary">{summary}</p>
+
+    <h2>{copy.headingTimeline}</h2>
+    {
+      months.map((month) => (
+        <section class="hub__month">
+          <h3>{month.label}</h3>
+          <ol class="hub__events">
+            {month.events.map((event) => (
+              <li>
+                <time datetime={event.date}>{formatDate(event.date, tag, timeZone)}</time>
+                <span class={`hub__kind hub__kind--${event.kind}`}>{eventKindLabel(event.kind, locale)}</span>
+                <a href={event.href}>{event.title}</a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+    <p class="hub__zone">{timeZoneLabel(new Date().toISOString(), timeZone, tag)}</p>
+  </article>
 </Layout>
-<style>.hub { max-width: 720px; margin: 0 auto; padding: 5rem 1.5rem; } ol { padding-left: 1.2rem; line-height: 1.6; } a { color: inherit; }</style>
+
+<style>
+  .hub { max-width: 820px; margin: 0 auto; padding: 5rem 1.5rem; line-height: 1.6; }
+  .hub h1 { margin-top: 0; }
+  .hub__intro { font-size: 1.1rem; }
+  .hub__summary { opacity: 0.7; font-variant-numeric: tabular-nums; }
+  .hub h3 { margin: 2rem 0 0.5rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+  .hub__events { list-style: none; margin: 0; padding: 0; }
+  .hub__events li {
+    display: grid;
+    grid-template-columns: 10.5rem 6.5rem 1fr;
+    gap: 0.75rem;
+    padding: 0.45rem 0;
+    border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    align-items: baseline;
+  }
+  .hub__events time { opacity: 0.6; font-variant-numeric: tabular-nums; font-size: 0.85rem; white-space: nowrap; }
+  .hub__kind {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .hub__events a { color: inherit; }
+  .hub__zone { margin-top: 2.5rem; opacity: 0.5; font-size: 0.8rem; }
+  @media (max-width: 640px) {
+    .hub__events li { grid-template-columns: 1fr; gap: 0.15rem; }
+    .hub__kind { justify-self: start; }
+  }
+</style>

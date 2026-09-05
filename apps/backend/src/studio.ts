@@ -18,6 +18,7 @@ export const DEFAULT_STUDIO_PROFILE = {
   taglineJson: { en: "", ru: "" },
   aboutJson: { en: "", ru: "" },
   bioJson: { en: "", ru: "" },
+  siteTimezoneJson: { en: "", ru: "" },
   profilesJson: { en: [], ru: [] },
   // X and Discord are published by hand, so a fresh install starts without
   // them; every other target is on until an operator says otherwise.
@@ -38,6 +39,13 @@ export type StudioConfig = {
   siteEnabled: boolean;
   /** What this Studio says it is, resolved per language. */
   site: (locale: "en" | "ru") => { name: string; tagline: string; about: string; bio: string; profiles: StudioSocialProfile[] };
+  /** The zone the public site prints its timestamps in for one language. It is
+   * not `timezone`: that one is the operator's, and it is what the bot screens
+   * and every schedule are read in. A publication whose readers are somewhere
+   * else has to be able to date its posts for them without moving its own
+   * operator to that clock. Unset falls back to the operator's zone, which is
+   * what a Studio publishing to its own timezone wants and never has to set. */
+  siteTimezone: (locale: "en" | "ru") => string;
   video: { prepare_lead_minutes: number; retention_hours: number };
 };
 
@@ -69,6 +77,10 @@ export function studioConfig(ports: Pick<ApplicationPorts, "studioSettings">): S
         bio: row.bioJson[locale],
         profiles: row.profilesJson[locale],
       };
+    },
+    siteTimezone: (locale) => {
+      const row = read();
+      return row.siteTimezoneJson[locale].trim() || row.timezone;
     },
     get video() {
       const row = read();

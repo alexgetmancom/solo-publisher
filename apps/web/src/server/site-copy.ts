@@ -35,6 +35,12 @@ type SiteChrome = {
   headingTopics: string;
   headingMachine: string;
   aboutPending: string;
+  /** Hub chronology chrome. The count is written as a labelled value rather
+   * than as "{count} events", because the noun after a number declines in
+   * Russian and a template cannot agree with it. */
+  headingTimeline: string;
+  hubSummary: string;
+  hubEmpty: string;
 };
 
 /** Who this Studio publishes as, from its profile row. An install that has not
@@ -74,6 +80,9 @@ const en: SiteChrome = {
   headingTopics: "Topics",
   headingMachine: "Machine-readable",
   aboutPending: "This Studio has not written its About text yet.",
+  headingTimeline: "Timeline",
+  hubSummary: "Events recorded: {count}. {from} to {to}. Newest first.",
+  hubEmpty: "Nothing recorded here yet.",
 };
 
 const ru: SiteChrome = {
@@ -97,6 +106,9 @@ const ru: SiteChrome = {
   headingTopics: "Темы",
   headingMachine: "Для машин",
   aboutPending: "Эта Студия ещё не написала текст о себе.",
+  headingTimeline: "Хроника",
+  hubSummary: "Событий в хронике: {count}. {from} — {to}. Сначала новые.",
+  hubEmpty: "Здесь пока ничего не зафиксировано.",
 } satisfies SiteChrome;
 
 const catalog: Record<SiteLocale, SiteChrome> = { en, ru };

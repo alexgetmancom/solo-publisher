@@ -33,7 +33,16 @@ export type FixturePost = {
   /** Publication date, defaulting to now. Backdated posts are what give the
    * dashboard a history to take a median and draw a sparkline over. */
   dateUtc?: string;
-  entities?: Array<{ kind: "company" | "model" | "person" | "product" | "topic"; slug: string; titleRu: string; titleEn: string }>;
+  /** `linkRole` decides whether a hub collects the post: a hub is built from
+   * its focus entities, so a fixture that only ever wrote mentions left every
+   * hub route answering 404 and unverifiable outside production. */
+  entities?: Array<{
+    kind: "company" | "model" | "person" | "product" | "topic";
+    slug: string;
+    titleRu: string;
+    titleEn: string;
+    linkRole?: "focus" | "mention";
+  }>;
 };
 
 export const FULL_DEV_HISTORY_DAYS = 30;
@@ -85,12 +94,22 @@ export function fullDevFixture(galleryImages: number, options: FullDevFixtureOpt
   const days = Math.max(1, Math.floor(options.days ?? FULL_DEV_HISTORY_DAYS));
   const counts = fullFixtureDayCounts(days, options.minPostsPerDay, options.maxPostsPerDay);
   const random = fixtureRandom(0x7a11ce);
+  // The wording is what the hub chronology classifies, so the list covers every
+  // event kind it can label. A fixture of five interchangeable sentences tagged
+  // all thirty days "Update" and proved nothing about the classifier.
   const topics = [
-    ["A practical look at the newest model", "Практический разбор новой модели"],
-    ["What changed in the latest release", "Что изменилось в последнем релизе"],
-    ["A small experiment with a useful result", "Небольшой эксперимент с полезным результатом"],
-    ["The workflow that saved an afternoon", "Процесс, который сэкономил целый вечер"],
+    ["The newest model is out today", "Новая модель вышла сегодня"],
+    ["Limits were reset and the quota is larger", "Лимиты сбросили, квота стала больше"],
+    ["Pricing drops to $0.40 per 1M input tokens", "Цены упали до $0.40 за 1M входных токенов"],
+    ["It now tops the arena leaderboard", "Теперь она возглавляет рейтинг арены"],
+    ["The next version showed up in the docs", "Следующая версия появилась в документации"],
     ["Three details worth noticing", "Три детали, на которые стоит обратить внимание"],
+  ] as const;
+  // Both hub routes need focus links or they answer 404, and a hub of one
+  // subject shows nothing about how two of them stay apart.
+  const subjects = [
+    { kind: "model", slug: "claude", titleRu: "Claude", titleEn: "Claude" },
+    { kind: "topic", slug: "codex", titleRu: "Codex", titleEn: "Codex" },
   ] as const;
   let postId = 1;
   const posts: FixturePost[] = [];
@@ -117,6 +136,7 @@ export function fullDevFixture(galleryImages: number, options: FullDevFixtureOpt
           text: `${russianTopic} · пост фикстуры ${number}${premiumMark ? " · премиальный охват" : ""}.\nВторой абзац для режима чтения.`,
           images,
         },
+        entities: [{ ...subjects[(number - 1) % subjects.length], linkRole: "focus" }],
       });
       postId += 1;
     }
@@ -215,13 +235,18 @@ export function seedSiteFixture(options: { dbPath: string; publicDir: string; po
               path: `media/posts/${post.postId}-${locale}-${index}-vertical.jpg`,
             })),
             siteEnabled: 1,
-            publishedAt: now,
+            // `dateUtc` is the publication date, and it reached `createdAt`
+            // only: every backdated post was published "now", so the seeded
+            // site had one day of history while the dashboard had thirty.
+            publishedAt: createdAt,
             updatedAt: now,
           })
           .run();
         for (let index = 0; index < images; index += 1) imagePaths.push(writeFixtureImage(options.publicDir, post.postId, locale, index));
       }
       for (const entity of post.entities ?? []) {
+        // (kind, slug) is unique, and a subject that many posts share is the
+        // normal case — the plain insert threw on the second post about it.
         const row = rawDb.db
           .insert(knowledgeEntities)
           .values({
@@ -232,9 +257,16 @@ export function seedSiteFixture(options: { dbPath: string; publicDir: string; po
             createdAt: now,
             updatedAt: now,
           })
+          .onConflictDoUpdate({
+            target: [knowledgeEntities.kind, knowledgeEntities.slug],
+            set: { titleRu: entity.titleRu, titleEn: entity.titleEn, updatedAt: now },
+          })
           .returning({ id: knowledgeEntities.id })
           .get();
-        rawDb.db.insert(draftEntityLinks).values({ draftId: post.postId, entityId: row.id, createdAt: now }).run();
+        rawDb.db
+          .insert(draftEntityLinks)
+          .values({ draftId: post.postId, entityId: row.id, linkRole: entity.linkRole ?? "mention", createdAt: now })
+          .run();
       }
     }
   } finally {

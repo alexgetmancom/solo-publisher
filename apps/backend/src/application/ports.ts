@@ -261,6 +261,7 @@ export type StudioProfileRecord = {
   taglineJson: LocalizedText;
   aboutJson: LocalizedText;
   bioJson: LocalizedText;
+  siteTimezoneJson: LocalizedText;
   profilesJson: LocalizedProfiles;
   defaultTargetsJson: string[];
   updatedAt: string;
