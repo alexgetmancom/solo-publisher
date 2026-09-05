@@ -1,5 +1,5 @@
 import { redactExternalSecrets } from "./redact.js";
-import { recordTapProviderCall } from "./tap-measurement.js";
+import { recordTapProviderBodyRead, recordTapProviderCall } from "./tap-measurement.js";
 
 export class ExternalHttpError extends Error {
   constructor(
@@ -89,7 +89,7 @@ export async function externalFetch(fetchImpl: typeof fetch, url: string, init: 
   const signal = init.signal ? AbortSignal.any([init.signal, controller.signal]) : controller.signal;
   const startedAt = performance.now();
   try {
-    return await fetchImpl(url, { ...init, signal });
+    return timedBody(await fetchImpl(url, { ...init, signal }));
   } catch (error) {
     if (controller.signal.aborted)
       throw new ExternalTransportError(`${init.method ?? "GET"} ${safeUrl(url)} timed out after ${Math.ceil(timeoutMs / 1000)}s`, error);
@@ -101,6 +101,32 @@ export async function externalFetch(fetchImpl: typeof fetch, url: string, init: 
     // total and what it spent on Telegram. A failed request is still a wait.
     recordTapProviderCall(performance.now() - startedAt);
   }
+}
+
+/** The same response, with the wait for its body counted against the call that
+ * fetched it. Callers read the body themselves and at their own pace, so the
+ * timer cannot live here as a straight `await`; the read is where the wait is,
+ * so that is where it is measured. */
+function timedBody(response: Response): Response {
+  for (const method of ["text", "json", "arrayBuffer", "blob", "bytes"] as const) {
+    const read = response[method];
+    // Tests hand back stand-ins that implement only the reader they expect to
+    // be called; a missing one is not a body this process ever waits for.
+    if (typeof read !== "function") continue;
+    const boundRead = read.bind(response) as () => Promise<unknown>;
+    Object.defineProperty(response, method, {
+      configurable: true,
+      value: async () => {
+        const startedAt = performance.now();
+        try {
+          return await boundRead();
+        } finally {
+          recordTapProviderBodyRead(performance.now() - startedAt);
+        }
+      },
+    });
+  }
+  return response;
 }
 
 function safeUrl(value: string): string {

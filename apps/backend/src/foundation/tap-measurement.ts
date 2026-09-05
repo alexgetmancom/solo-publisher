@@ -119,3 +119,15 @@ export function recordTapProviderCall(durationMs: number): void {
   measurement.providerMs += durationMs;
   measurement.providerCalls += 1;
 }
+
+/** The rest of a call already counted by `recordTapProviderCall`: the time its
+ * body took to arrive, added to the same call rather than as a new one.
+ *
+ * A response is answered as soon as its headers are, and for a generating model
+ * that is the smaller half -- DeepSeek sends headers immediately and then takes
+ * seconds over the text. Counting only the headers billed that wait to nobody,
+ * so a message that waits on a translation looked like local work. */
+export function recordTapProviderBodyRead(durationMs: number): void {
+  const measurement = measurements.getStore();
+  if (measurement) measurement.providerMs += durationMs;
+}
