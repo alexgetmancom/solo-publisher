@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { importXAnalyticsCsv } from "../src/analytics/import-x-csv.js";
 import { calendarDays } from "../src/analytics/reach/daily-reach.js";
 import { textOverviewOf } from "../src/analytics/reach/text-overview.js";
+import { xActivityReachSeries } from "../src/analytics/reach/text-reach.js";
 import { xActivityDashboard } from "../src/analytics/x-activity-dashboard.js";
 import { attachXActivityToPosts } from "../src/analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../src/analytics/x-activity-report.js";
@@ -12,7 +13,6 @@ import { recordPublishedXActivity } from "../src/analytics/x-activity-store.js";
 import { xActivityItems, xActivityMetricSnapshots } from "../src/db/schema.js";
 import { type CombinedSectionInput, renderCombinedSection } from "../src/interfaces/web/dashboard/combined-section.js";
 import { emptyVideoOverview } from "../src/interfaces/web/dashboard/video-overview.js";
-import { xActivityPost } from "../src/interfaces/web/dashboard/x-activity-posts.js";
 import { withDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
 
@@ -44,14 +44,20 @@ function renderOverview(
 ): string {
   const start = new Date(input.rangeEnd);
   start.setUTCDate(start.getUTCDate() - (input.periodDays + 40));
-  const days = calendarDays(start, new Date(input.rangeEnd.getTime() + 86_400_000 - 1), "UTC");
-  // Without a database the X rows arrive as items, so they stand in for the
-  // series the read model would load — including the rule that an X row wins
-  // over the pipeline's own copy of the same tweet.
+  const end = new Date(input.rangeEnd.getTime() + 86_400_000 - 1);
+  const days = calendarDays(start, end, "UTC");
+  // Without a database the X rows arrive as items, so their metrics stand in for
+  // the snapshots the read model would load. They go through the series the read
+  // model builds, not through the publication list, because that is where a
+  // reply is separated from a post — a harness that fed them in as posts would
+  // report a split the dashboard does not have.
   const items = input.xItems ?? [];
   const covered = new Set(items.map((item) => item.linkedPublicationKey).filter(Boolean));
   const posts = [...(input.data?.posts ?? []), ...(input.previousData?.posts ?? [])].map((post) =>
     post.publication_key && covered.has(post.publication_key) ? { ...post, targets: { ...post.targets, x: undefined } } : post,
+  );
+  const snapshots = items.flatMap((item) =>
+    Object.entries(item.metrics).map(([metricName, value]) => ({ xPostId: item.xPostId, metricName, value, sampledAt: item.publishedAt })),
   );
   return String(
     renderCombinedSection(
@@ -60,7 +66,7 @@ function renderOverview(
         videoLocales: ["ru", "en"],
         ...input,
         videoReach: input.video.dailyByDay,
-        textReach: textOverviewOf([...posts, ...items.map(xActivityPost)], [], days, "UTC"),
+        textReach: textOverviewOf(posts, xActivityReachSeries(items, snapshots, start, end), days, "UTC"),
       },
       "ru",
     ),
@@ -390,9 +396,12 @@ describe("X Activity", () => {
       platformMetric: "reach",
     });
 
-    // Standalone X activity is folded into the text half: 150 from the post's
-    // targets plus 500 from the unlinked reply.
-    expect(html).toContain("<strong>650</strong>");
+    // The text half reports what was published — 100 from the post's Telegram
+    // copy and 50 from its tweet. The reply's 500 views are real and are
+    // reported beside that figure, never inside it: everything on this card is
+    // divided by a count of posts, and a reply was never one of them.
+    expect(html).toContain("<strong>150</strong>");
+    expect(html).toContain("<b>500</b> просм. в ответах");
     expect(html).toContain("ПУБЛИКАЦИИ");
     expect(html).not.toContain("Детальная динамика и публикации");
     // The two halves are reported separately and never added together.

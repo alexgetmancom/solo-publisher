@@ -11,7 +11,10 @@
         "PIPELINE_DB": "/Users/alex/projects/solo-publisher/.dev-fixture/pipeline.db",
         "SITE_PUBLIC_DIR": "/Users/alex/projects/solo-publisher/.dev-fixture/site",
         "COMMAND_CENTER_TOKEN": "dev",
-        "PUBLIC_BASE_URL": "http://localhost:4321"
+        "PUBLIC_BASE_URL": "http://localhost:4321",
+        "MCP_STUDIO_TOKEN": "demo-studio-token",
+        "MCP_STUDIO_ACTOR_ID": "1",
+        "STUDIO_ACTOR_IDS": "1"
       }
     },
     {
