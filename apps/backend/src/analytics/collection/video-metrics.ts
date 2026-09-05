@@ -22,6 +22,7 @@ type VideoMetricTask = {
   target: "youtube_shorts" | "instagram_reels";
   externalId: string;
   providerPostId: string | null;
+  providerAccountId: string | null;
   deliveryProvider: string;
   externalUrl: string | null;
   publishedAt: string;
@@ -80,6 +81,16 @@ type ZernioPostAnalytics = {
     platformPostId?: string;
     platformPostUrl?: string;
     analytics?: Record<string, number | string | null>;
+  }>;
+};
+
+type ZernioComments = {
+  comments?: Array<{
+    id?: string;
+    message?: string;
+    createdTime?: string;
+    likeCount?: number;
+    from?: { username?: string; name?: string };
   }>;
 };
 
@@ -246,6 +257,7 @@ function claimDueVideoMetricTasks(backendDb: BackendDb, limit: number, worker = 
       target: videoTargets.target,
       externalId: videoTargets.externalId,
       providerPostId: videoTargets.providerPostId,
+      providerAccountId: videoTargets.providerAccountId,
       deliveryProvider: videoTargets.deliveryProvider,
       externalUrl: videoTargets.externalUrl,
       publishedAt: videoTargets.publishedAt,
@@ -332,6 +344,54 @@ async function collectZernioInstagramVideoMetrics(
     ...(videoDurationMs === null ? {} : { videoDurationMs }),
     ...(completionRate === null ? {} : { completionRate }),
   });
+  await collectZernioComments(config, backendDb, target, fetchImpl);
+}
+
+/**
+ * Comment texts for a Reel published through the provider.
+ *
+ * The analytics endpoint answers with a flat map of numbers, so a Reel routed
+ * this way had a comment count and no comments. They come from the provider's
+ * engagement endpoint instead, which takes the same provider post id and
+ * resolves it itself, and returns what the snapshot store already keeps:
+ * an id, the text, an author, a like count and a published time.
+ */
+async function collectZernioComments(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  target: VideoMetricTask,
+  fetchImpl: typeof fetch,
+): Promise<void> {
+  if (!target.providerAccountId) return;
+  let page: ZernioComments;
+  try {
+    page = await zernioRequest<ZernioComments>(
+      config,
+      `inbox/comments/${encodeURIComponent(target.providerPostId as string)}?${new URLSearchParams({
+        accountId: target.providerAccountId,
+        limit: "100",
+      })}`,
+      fetchImpl,
+    );
+  } catch (error) {
+    // Enrichment, exactly like the native Instagram and YouTube reads: a
+    // provider that will not hand over comments must not discard the snapshot
+    // collected above, and must not stay invisible either.
+    log("warn", "zernio comments unavailable", { videoTargetId: target.id, providerPostId: target.providerPostId, error });
+    return;
+  }
+  for (const comment of page.comments ?? [])
+    if (comment.id && comment.message)
+      upsertComment(
+        backendDb,
+        "instagram",
+        comment.id,
+        target.id,
+        comment.message,
+        comment.from?.username ?? comment.from?.name,
+        metricNumber(comment.likeCount),
+        comment.createdTime,
+      );
 }
 
 function targetVideoDurationMs(target: VideoMetricTask): number | null {

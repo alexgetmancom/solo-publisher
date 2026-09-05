@@ -554,6 +554,20 @@ describe("creator analytics collection", () => {
           return new Response(
             JSON.stringify({ metrics: { follower_count: { total: 0 }, followers_gained: { total: 8 }, followers_lost: { total: 2 } } }),
           );
+        if (url.includes("inbox/comments/zernio-post"))
+          return new Response(
+            JSON.stringify({
+              comments: [
+                {
+                  id: "zernio-comment-1",
+                  message: "огонь",
+                  createdTime: now,
+                  likeCount: 4,
+                  from: { username: "viewer", name: "Viewer" },
+                },
+              ],
+            }),
+          );
         if (url.includes("postId=zernio-post"))
           return new Response(
             JSON.stringify({
@@ -596,6 +610,15 @@ describe("creator analytics collection", () => {
           followersGained30d: 8,
         },
       );
+      // The provider's analytics answer carries a comment count and no texts,
+      // so a Reel routed this way stored none until the engagement read landed.
+      expect(backendDb.db.select().from(socialComments).where(eq(socialComments.videoTargetId, targetId)).get()).toMatchObject({
+        platform: "instagram",
+        commentId: "zernio-comment-1",
+        text: "огонь",
+        author: "viewer",
+        likeCount: 4,
+      });
     });
   });
 });
