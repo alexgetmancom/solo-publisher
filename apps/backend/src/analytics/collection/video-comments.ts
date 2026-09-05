@@ -5,7 +5,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { instagramCredentialsForLocale, instagramGraphHost } from "../../foundation/external/instagram.js";
 import { youtubeAccessToken } from "../../foundation/external/youtube.js";
 import { zernioRequest } from "../../foundation/external/zernio.js";
-import { requestJson } from "../../foundation/http.js";
+import { ExternalHttpError, requestJson } from "../../foundation/http.js";
 import { log } from "../../foundation/logger.js";
 import { metricNumber, upsertComment } from "../snapshots/creator-store.js";
 
@@ -260,7 +260,13 @@ async function zernioThreadReplies(
   return all;
 }
 
-function zernioComments(
+/**
+ * The provider rate-limits this endpoint, and a sweep of every video ever
+ * published is exactly the shape that trips it. A 429 is not a failure to
+ * report, it is the provider saying when to come back -- so it is waited out
+ * for as long as it asked, and only a run of them gives up.
+ */
+async function zernioComments(
   config: BackendConfig,
   accountId: string,
   postId: string,
@@ -268,7 +274,23 @@ function zernioComments(
   fetchImpl: typeof fetch,
 ): Promise<ZernioComments> {
   const query = new URLSearchParams({ accountId, limit: "100", ...(cursor ? { cursor } : {}) });
-  return zernioRequest<ZernioComments>(config, `inbox/comments/${encodeURIComponent(postId)}?${query}`, fetchImpl);
+  const path = `inbox/comments/${encodeURIComponent(postId)}?${query}`;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await zernioRequest<ZernioComments>(config, path, fetchImpl);
+    } catch (error) {
+      const rateLimited = error instanceof ExternalHttpError && error.status === 429;
+      if (!rateLimited || attempt >= RATE_LIMIT_ATTEMPTS) throw error;
+      await sleep((error.retryAfterSeconds ?? RATE_LIMIT_BACKOFF_SECONDS[attempt] ?? 10) * 1000);
+    }
+  }
+}
+
+const RATE_LIMIT_ATTEMPTS = 3;
+const RATE_LIMIT_BACKOFF_SECONDS = [2, 5, 10];
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function storeZernio(backendDb: BackendDb, videoTargetId: number, comment: ZernioComment, parentCommentId: string | undefined): number {
@@ -329,7 +351,8 @@ export async function backfillVideoComments(
     .limit(options.limit)
     .all();
 
-  const tokens = new Map<string, string>();
+  const tokens = new Map<string, string | null>();
+  const refusals = new Map<string, string>();
   const failures: Array<{ videoTargetId: number; target: string; error: string }> = [];
   let stored = 0;
   let read = 0;
@@ -345,10 +368,20 @@ export async function backfillVideoComments(
     try {
       if (row.target === "youtube_shorts") {
         if (!target.externalId) continue;
-        // One token per language for the whole sweep. Refreshing per video
-        // turns a revoked credential into a hundred identical OAuth failures.
-        if (!tokens.has(locale)) tokens.set(locale, await youtubeAccessToken(config, fetchImpl, locale));
-        stored += await collectYouTubeComments(backendDb, target, tokens.get(locale) as string, fetchImpl);
+        // One token per language for the whole sweep, and one refusal per
+        // language too: a revoked credential is asked about once and then
+        // remembered, rather than replayed as a hundred identical 401s.
+        if (!tokens.has(locale))
+          tokens.set(
+            locale,
+            await youtubeAccessToken(config, fetchImpl, locale).catch((error: unknown) => {
+              refusals.set(locale, error instanceof Error ? error.message : String(error));
+              return null;
+            }),
+          );
+        const token = tokens.get(locale);
+        if (!token) throw new Error(refusals.get(locale) ?? "YouTube credentials are missing");
+        stored += await collectYouTubeComments(backendDb, target, token, fetchImpl);
       } else if (row.deliveryProvider === "zernio") {
         stored += await collectZernioComments(config, backendDb, target, fetchImpl);
       } else {

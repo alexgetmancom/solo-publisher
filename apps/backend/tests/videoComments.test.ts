@@ -104,3 +104,28 @@ function target(id: number, externalId: string) {
 function stored(backendDb: UnsafeBackendDb, targetId: number) {
   return backendDb.db.select().from(socialComments).where(eq(socialComments.videoTargetId, targetId)).all();
 }
+
+describe("provider rate limits", () => {
+  it("waits out a 429 for as long as the provider asked instead of dropping the video", () =>
+    withDb(async (backendDb) => {
+      const { targetId } = insertPublishedVideo(backendDb, {
+        target: "instagram_reels",
+        publishedAt: now,
+        deliveryProvider: "zernio",
+        providerAccountId: "acct",
+        providerPostId: "zpost",
+      });
+      const config = Object.assign(loadTestConfig({}), { ZERNIO_API_KEY: "z".repeat(16) });
+      let attempts = 0;
+      const fetchImpl = (async () => {
+        attempts += 1;
+        // A sweep of every video ever published is the shape that trips the
+        // limit, so giving up on the first refusal loses most of the backlog.
+        if (attempts === 1) return new Response("{}", { status: 429, headers: { "retry-after": "0" } });
+        return Response.json({ comments: [{ id: "c1", message: "поздно, но дошло", createdTime: now }], pagination: { hasMore: false } });
+      }) as unknown as typeof fetch;
+
+      expect(await collectZernioComments(config, backendDb, target(targetId, ""), fetchImpl)).toBe(1);
+      expect(attempts).toBe(2);
+    }));
+});
