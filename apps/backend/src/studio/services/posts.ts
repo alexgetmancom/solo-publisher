@@ -1,7 +1,7 @@
 import type { DomainEventInput, DraftPatch, DraftRecord, StoryPublishMode } from "../../application/ports.js";
 import type { PublicationPipeline, PublicationSchedule } from "../../application/publication-pipeline.js";
 import { publicationRef } from "../../application/publication-ref.js";
-import { PRESETS, presetName, TARGETS, targetLocale, targetsFor } from "../../botTargets.js";
+import { isSiteTarget, PRESETS, presetName, TARGETS, targetLocale, targetsFor } from "../../botTargets.js";
 import { postLocales } from "../../channels/locales.js";
 import { effectivePostTargets, publishesStory, registeredPostTargetIds } from "../../channels/registry.js";
 import { listStudioMediaAssets, mediaItemsFromAssets, requireStudioMediaAssets } from "../../content/assets.js";
@@ -20,6 +20,7 @@ import { trackUsageSync } from "../../observability/usage.js";
 import { abandonPublicationTargets } from "../../publishing/abandon.js";
 import { publishArticle } from "../../publishing/article-publish.js";
 import { cancelDraft, cancelPendingPostJobs } from "../../publishing/draft-lifecycle.js";
+import { deliverExtraTarget } from "../../publishing/extra-delivery.js";
 import { mediaPolicyForTarget } from "../../publishing/media-policy.js";
 import { publicationPreflight } from "../../publishing/preflight.js";
 import { refreshPublicationStatus } from "../../publishing/publication-status.js";
@@ -353,6 +354,39 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         return { results, requeued, alreadyQueued };
       });
     },
+    /** The platforms this settled publication has never been sent to, as the
+     * card offers them: the author remembered X after the post went out.
+     *
+     * The site is absent because it is not delivered from a publish job -- its
+     * pages are rendered by their own build, and `ops repair-content` owns
+     * making one after the fact. */
+    resendableTargets(actorId: number, draftId: number) {
+      const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
+      if (draft.post_id == null) return [];
+      const targets = effectivePostTargets(backendDb, parseTargets(draft.targets_json));
+      const registered = registeredPostTargetIds(backendDb);
+      return targetsFor("post")
+        .filter(({ id, kind }) => kind !== "site" && registered.has(id) && !targets[id])
+        .map(({ id, label, locale }) => ({ target: id, label, locale }));
+    },
+    /** Sends an already-published post to one more platform. */
+    resendTarget(actorId: number, draftId: number, target: string) {
+      return trackUsageSync(backendDb, "studio.post.resend", () => {
+        const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
+        if (draft.post_id == null) throw new StudioError("err.resend-unpublished");
+        assertKnownTarget(backendDb, target);
+        if (isSiteTarget(target)) throw new StudioError("err.resend-site");
+        const postId = draft.post_id;
+        const result = deliverExtraTarget(backendDb, { draftId, postId, publicationKey: publicationRef("post", postId) }, target, () =>
+          backendDb.studioPosts.publicationSource(postId),
+        );
+        if (result.outcome !== "requeued") throw resendRefusal(result);
+        // A Story target just turned on is media that now needs its 9:16
+        // shapes, the same as toggling one before publication.
+        prepareDraftStoryMedia(backendDb, config, draftId);
+        return result;
+      });
+    },
     /** Gives up on a target that did not land: the publication is finished
      * without it. Unlike a retry, an ambiguous `verification_required` target is
      * included -- abandoning it sends nothing, and leaving it is what keeps the
@@ -597,4 +631,13 @@ function scheduledDate(value: string | null): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** Why the queue would not take an extra delivery, in the words the operator
+ * needs: each refusal is a different thing to do next. */
+function resendRefusal(result: { outcome: string; reason?: string }): StudioError {
+  if (result.reason === "already_delivered" || result.outcome === "already_queued") return new StudioError("err.resend-already");
+  if (result.reason === "empty") return new StudioError("err.resend-empty");
+  if (result.reason === "language") return new StudioError("err.resend-language");
+  return new StudioError("err.resend-refused");
 }

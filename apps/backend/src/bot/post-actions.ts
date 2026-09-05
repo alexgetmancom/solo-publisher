@@ -1,4 +1,5 @@
 import { InlineKeyboard } from "grammy";
+import { TARGETS } from "../botTargets.js";
 import { StudioError } from "../foundation/errors.js";
 import { plural, t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
@@ -46,6 +47,7 @@ export function definePostActionHandlers(define: typeof action): Record<string, 
     story_schedule_site: define(handleStoryChoice, { entity: "draft", freshCard: true, args: [] }),
     threads_chain: define(handleThreadsChain, { entity: "draft", freshCard: true, args: [] }),
     skip: define(handleSkip, { entity: "draft", args: ["target", "origin"] }),
+    resend: define(handleResend, { entity: "draft", freshCard: true, args: ["target"] }),
     publish: define(handlePublish, { entity: "draft", freshCard: true, args: [] }),
     publish_confirm: define(handlePublishConfirm, { entity: "draft", freshCard: true, args: [] }),
   };
@@ -84,6 +86,18 @@ async function handleSkip(args: PostActionArgs): Promise<PublicationActionResult
   if (args.args.origin !== "card") return [toast];
   const card = args.renderer.card({ actorId: args.actorId, publicationId: args.draftId, locale: args.locale });
   return [toast, ...publicationCardEffect(card)];
+}
+
+/** Sends a settled publication to one more platform, from the card of the post
+ * itself: the author remembered X after it went out. The refusals -- already
+ * there, nothing to send, wrong language -- reach them as the error toast the
+ * service raises. */
+async function handleResend(args: PostActionArgs): Promise<PublicationActionResult> {
+  const target = args.args.target;
+  if (!target) throw new StudioError("action.unknown");
+  args.services.posts.resendTarget(args.actorId, args.draftId, target);
+  const card = args.renderer.card({ actorId: args.actorId, publicationId: args.draftId, locale: args.locale, view: "resend" });
+  return [{ type: "toast", text: t(args.locale, "action.resend-queued", { target: targetLabel(target) }) }, ...publicationCardEffect(card)];
 }
 
 async function handleCancel(args: PostActionArgs): Promise<PublicationActionResult> {
@@ -363,4 +377,8 @@ function previewEffects(args: PostActionArgs, view: DraftView = "overview", call
 function requireScheduleLocale(value: string): "ru" | "en" {
   if (value === "ru" || value === "en") return value;
   throw new StudioError("err.unknown-scope");
+}
+
+function targetLabel(target: string): string {
+  return TARGETS.find(({ id }) => id === target)?.label ?? target;
 }

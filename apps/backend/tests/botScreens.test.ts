@@ -33,6 +33,7 @@ import { replaceVideoTargets } from "../src/publishing/video-service.js";
 import { videoService } from "../src/studio/services/videos.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { openBackendDb } from "./helpers/open-db.js";
+import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 import { createTestVideoDraft } from "./helpers/video.js";
 
@@ -112,6 +113,21 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
   parts.push(section("Post card · scheduled", keyboardRows(draftPreview(backendDb, scheduledId, config, "en").keyboard)));
   parts.push(section("Publication progress", keyboardRows(postProgress(backendDb, scheduledId).keyboard)));
   parts.push(section("Publication progress · details", keyboardRows(postProgress(backendDb, scheduledId, true).keyboard)));
+
+  // The settled publication: its card no longer edits anything, and the one
+  // thing it still offers is the platform the author remembered afterwards.
+  const publishedId = seedTextPost(backendDb, {
+    draftId: 900,
+    postId: 900,
+    actorId: 42,
+    status: "published",
+    targets: { telegram: true },
+    ru: "Опубликован",
+    en: "Published",
+    now: NOW.toISOString(),
+  });
+  for (const view of ["overview", "resend"] as const)
+    parts.push(section(`Post card · published · ${view}`, keyboardRows(draftPreview(backendDb, publishedId, config, "en", view).keyboard)));
 
   const videoId = createTestVideoDraft(backendDb, 42, "clip.mp4", 24);
   replaceVideoTargets(backendDb, videoId, ["youtube_shorts", "instagram_reels"]);

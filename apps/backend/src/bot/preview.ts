@@ -36,6 +36,7 @@ const DRAFT_VIEWS = [
   "confirm_delete",
   "confirm_cancel",
   "platforms",
+  "resend",
 ] as const;
 
 export type DraftView = (typeof DRAFT_VIEWS)[number];
@@ -94,7 +95,8 @@ export function draftPreview(
   view: DraftView = "overview",
 ): { text: string; keyboard: InlineKeyboard } {
   const draft = requireDraft(backendDb, draftId);
-  const timeConfig = createStudioServices(backendDb, config).settings.timeConfig(draft.actor_id, config);
+  const services = createStudioServices(backendDb, config);
+  const timeConfig = services.settings.timeConfig(draft.actor_id, config);
   const targets = effectivePostTargets(backendDb, parseTargets(draft.targets_json));
   const registered = registeredPostTargetIds(backendDb);
   const targetRows = TARGETS.filter(({ id }) => registered.has(id));
@@ -106,9 +108,28 @@ export function draftPreview(
   const mode = presetName(targets);
   const mutable = isPostDraftMutable(draft.status);
 
-  // Every view except the overview edits or acts on the draft, so a frozen draft only ever shows the overview.
-  if (!mutable && view !== "overview") return draftPreview(backendDb, draftId, config, locale, "overview");
+  // Every view except the overview edits or acts on the draft, so a frozen
+  // draft only ever shows the overview -- and "resend", which is the one thing
+  // a settled publication can still be asked for.
+  if (!mutable && view !== "overview" && view !== "resend") return draftPreview(backendDb, draftId, config, locale, "overview");
   if (!servesEn && view.startsWith("schedule_en")) return draftPreview(backendDb, draftId, config, locale, "overview");
+
+  if (view === "resend") {
+    // The draft has to be published for there to be anything to send again, and
+    // the frozen card is the only place offering it -- but a view is reachable
+    // by its callback long after the card that drew it, so it says so itself.
+    const candidates = mutable ? [] : services.posts.resendableTargets(draft.actor_id, draftId);
+    for (let index = 0; index < candidates.length; index += 2) {
+      for (const { target, label } of candidates.slice(index, index + 2))
+        keyboard.text(label, publicationCallback("post", "resend", [draftId, target]));
+      keyboard.row();
+    }
+    keyboard.text(t(locale, "post.back-to-preview"), publicationCallback("post", "view", [draftId, "overview"]));
+    return {
+      text: `📝 *${t(locale, "post.resend-title", { id: draftId })}*\n\n${candidates.length ? t(locale, "post.resend-hint") : t(locale, "post.resend-none")}`,
+      keyboard,
+    };
+  }
 
   if (view === "platforms") {
     for (let index = 0; index < targetRows.length; index += 2) {
@@ -164,7 +185,7 @@ export function draftPreview(
     const scheduleEngine = createPublicationScheduleEngine({
       kind: "post",
       publicationId: draftId,
-      scheduleAxis: createStudioServices(backendDb, config).posts.capabilities.scheduleAxis,
+      scheduleAxis: services.posts.capabilities.scheduleAxis,
       axisKeys: [scheduleGrid.target],
       axisLabel: (key) => key.toUpperCase(),
       slotValues: scheduleGrid.slots[view] ?? [],
@@ -255,6 +276,8 @@ export function draftPreview(
       .text(t(locale, "post.delete-btn"), publicationCallback("post", "cancel", [draftId, "confirm_delete"]));
   } else {
     appendUnlandedControls(keyboard, { locale, kind: "post", draftId, origin: "card", targets: unlandedTargets(backendDb, draftId) });
+    if (services.posts.resendableTargets(draft.actor_id, draftId).length)
+      keyboard.text(t(locale, "post.resend-btn"), publicationCallback("post", "view", [draftId, "resend"])).row();
     appendResultNavigation(keyboard, locale);
   }
 

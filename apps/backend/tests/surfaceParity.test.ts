@@ -55,6 +55,8 @@ const POSTS: Record<string, string> = {
   approveThreadsChain: "bot-only: the author waiving a rule after seeing what it costs, which is a conversation and not an argument",
   publish: "draft-publish",
   publishArticle: "article-publish",
+  resendableTargets: READ,
+  resendTarget: "resend",
   retryTarget: "retry",
   skipTarget: "skip",
   toggleTarget: "bot-only: choosing where a publication goes, on the card that shows where it goes",

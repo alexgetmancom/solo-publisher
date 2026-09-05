@@ -31,6 +31,7 @@ const TRACKED_FEATURES = [
   "studio.post.cancel",
   "studio.post.retry",
   "studio.post.skip",
+  "studio.post.resend",
   "studio.video.create",
   "studio.video.edit",
   "studio.video.publish",

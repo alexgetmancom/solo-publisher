@@ -69,6 +69,7 @@ import { purgePublication } from "./publication-purge.js";
 import { resolvePublicationRef } from "./publication-ref.js";
 import { publishText } from "./publish.js";
 import { findPublication, formatPublicationMatches, formatRecentPublications, recentPublications } from "./recent.js";
+import { resendPublicationTarget } from "./resend.js";
 import { resumeTargetFrom } from "./resume-from.js";
 import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
@@ -858,6 +859,30 @@ const operationDefs = {
       return skipPublicationTargets(backendDb, {
         ref: resolved,
         ...(input.target === undefined ? {} : { target: input.target }),
+        apply: input.apply,
+        actorType: context.actorType,
+      });
+    },
+  }),
+  resend: operation({
+    section: "delivery",
+    summary: "Send an already-published post to a platform it never went to.",
+    note: "For a platform remembered after the fact, which `retry` cannot do: retry republishes what a target already delivered. A target that already has the post is refused, so this cannot publish it twice. `apply` performs it.",
+    startHere: "The post should have gone to one more platform.",
+    schema: z.object({
+      ref: refOption,
+      target: example(z.string().trim().min(1), "x").describe("the target to send it to now"),
+      apply: applyOption,
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => {
+      const backendDb = context.db();
+      const resolved = resolvePublicationRef(backendDb, input.ref);
+      if (!resolved) throw new Error(`publication not found: ${input.ref}`);
+      return resendPublicationTarget(backendDb, {
+        ref: resolved,
+        target: input.target,
         apply: input.apply,
         actorType: context.actorType,
       });
