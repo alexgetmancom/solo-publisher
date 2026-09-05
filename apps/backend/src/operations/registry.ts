@@ -5,11 +5,12 @@ import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
 import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
 import { recentSocialComments } from "../analytics/reports/audience.js";
 import { audienceMilestoneReport } from "../analytics/reports/milestone-report.js";
+import { videoPerformanceDetail, videoPerformanceReport } from "../analytics/reports/video-performance.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
 import { deleteXImport } from "../analytics/x-import-delete.js";
 import type { LocalizedProfiles, LocalizedText } from "../application/ports.js";
-import { publicationRef } from "../application/publication-ref.js";
+import { parsePublicationRef, publicationRef } from "../application/publication-ref.js";
 import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
@@ -419,8 +420,10 @@ const operationDefs = {
     note: "The same computation the screen caches, run here against this database: a screen and this disagreeing means the cache, not the numbers.",
     schema: z.object({
       section: z.enum(["overview", "audience", "posts", "video"]).default("overview").describe("which section to compute"),
-      days: z
-        .union([z.literal(1), z.literal(7), z.literal(30)])
+      days: z.coerce
+        .number()
+        .int()
+        .refine((value): value is 1 | 7 | 30 => value === 1 || value === 7 || value === 30, "must be 1, 7 or 30")
         .default(7)
         .describe("window in days"),
       locale: z.enum(["ru", "en"]).default("ru").describe("which language's screen"),
@@ -429,6 +432,36 @@ const operationDefs = {
     agent: true,
     handler: (context, input) =>
       createStudioServices(context.db(), context.config()).analytics.dashboard(input.section, input.days, input.locale),
+  }),
+  "video-report": operation({
+    section: "analytics",
+    startHere: "how are the videos doing, and when should the next one go out",
+    summary:
+      "One pass over published videos: what went out, how each platform's copy performed, which local hour and day type it went out in, how fast it got there, and how far each figure can be trusted.",
+    note: "The whole analysis surface for videos. Slots carry `videos` and `confidence`; anything under five videos, or marked dominatedBySingleVideo, is not evidence for an hour recommendation. Native heatmaps, traffic sources and per-second retention are not here and never were: they exist only in YouTube Studio and Instagram Insights, and a browser has to read them.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days, counted back from now"),
+      limit: z.coerce.number().int().min(1).max(100).default(20).describe("how many videos to list, biggest first"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) =>
+      videoPerformanceReport(context.db(), { days: input.days, limit: input.limit, timeZone: context.config().TIMEZONE }),
+  }),
+  "video-metrics": operation({
+    section: "analytics",
+    startHere: "why did this one video do what it did",
+    summary:
+      "Every reading one video has, per platform: the value, what it gained since the previous reading, its speed, and the comments under it.",
+    note: "The drill-down `video-report` points at. `atAges` answers what the video had at 1, 2, 6, 24, 48 and 168 hours old, each with the age the reading actually came from.",
+    schema: z.object({ ref: refOption }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => {
+      const parsed = parsePublicationRef(input.ref);
+      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
+      return videoPerformanceDetail(context.db(), parsed.id, context.config().TIMEZONE);
+    },
   }),
   "site-traffic": operation({
     section: "analytics",
