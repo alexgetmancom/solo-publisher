@@ -995,13 +995,14 @@ const operationDefs = {
     schema: z.object({
       apply: applyOption,
       limit: z.coerce.number().int().positive().default(25).describe("how many sources to render in this run"),
+      all: z.boolean().default(false).describe("also prepare media no draft has asked a Story of"),
     }),
     mutates: true,
     // Renders on the host and reads host paths, which is where the agent line
     // is drawn regardless of how routine the work is.
     agent: false,
-    note: "Publishing reads these files and never makes them, so a source listed as missing here is a publication that will refuse. Reports the plan; `apply` renders `limit` of them, one encode at a time -- a video is 8-12 seconds, so run it again until `remaining` is zero.",
-    handler: (context, input) => backfillStoryMedia(context.db(), context.config(), input.apply, input.limit),
+    note: "`missing_wanted` is the number to act on: a draft that publishes a Story points at that file, delivery only reads these files, so that publication will refuse. `missing_unused` is media no draft has asked a Story of -- normal, and left alone unless `all` is passed. Reports the plan; `apply` renders `limit` of them, one encode at a time -- a video is 8-12 seconds, so run it again until `remaining` is zero.",
+    handler: (context, input) => backfillStoryMedia(context.db(), context.config(), input.apply, input.limit, input.all),
   }),
   "story-card-backfill": operation({
     section: "delivery",

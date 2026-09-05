@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { storyVariantPaths } from "../src/delivery/story-derivatives.js";
 import { backfillStoryMedia } from "../src/operations/story-media-backfill.js";
+import { createStudioServices } from "../src/studio/services/index.js";
 import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -16,11 +17,44 @@ function assetFile(dataDir: string, stem: string): string {
 }
 
 describe("story media backfill", () => {
-  it("renders what publishing would otherwise have to render itself", async () => {
+  it("renders what a Story publication would otherwise refuse for", async () => {
     await withDb(
       async (backendDb) => {
         const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-backfill-")) });
         const source = assetFile(config.DATA_DIR, "abcdef0123456789abcdef11");
+        // A draft that publishes a Story and points at this file: exactly the
+        // publication that would arrive at delivery and find nothing.
+        createStudioServices(backendDb, config).posts.create(
+          1,
+          { text: "текст", media: [{ type: "photo", local_path: source }], entities: [] },
+          { targets: ["telegram"] },
+        );
+        const draftId = createStudioServices(backendDb, config).posts.list(1)[0]?.id ?? 0;
+        createStudioServices(backendDb, config).posts.toggleTarget(1, draftId, "telegram_stories");
+        // The draft's own preparation is the fast path; this test is about the
+        // repair, so start from a variant that is not there.
+        await fs.promises.rm(storyVariantPaths(config, source, false).standard, { force: true });
+
+        const report = await backfillStoryMedia(backendDb, config, false, 25);
+        expect(report.missing_wanted).toBe(1);
+        expect(report.missing_unused).toBe(0);
+        expect(report.applied).toBe(false);
+
+        const applied = await backfillStoryMedia(backendDb, config, true, 25);
+        expect(applied.rendered).toBe(1);
+        expect(applied.remaining).toBe(0);
+        expect(fs.existsSync(storyVariantPaths(config, source, false).standard)).toBe(true);
+        expect((await backfillStoryMedia(backendDb, config, true, 25)).missing_wanted).toBe(0);
+      },
+      ["telegram", "telegram_stories"],
+    );
+  });
+
+  it("leaves media no draft has asked a Story of alone, until it is asked for", async () => {
+    await withDb(
+      async (backendDb) => {
+        const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-backfill-unused-")) });
+        const source = assetFile(config.DATA_DIR, "abcdef0123456789abcdef14");
         backendDb.studioMediaAssets.insertIfAbsent({
           actorId: 1,
           kind: "photo",
@@ -28,26 +62,23 @@ describe("story media backfill", () => {
           filename: "photo.jpg",
           localPath: source,
           byteSize: PNG_BYTES.length,
-          sha256: "abcdef0123456789abcdef11",
+          sha256: "abcdef0123456789abcdef14",
           source: "telegram",
           createdAt: new Date(0).toISOString(),
         });
 
-        // Reporting changes nothing: the plan is what the operator reads before
-        // spending an encode per source.
-        const report = await backfillStoryMedia(backendDb, config, false, 25);
-        expect(report.missing).toBe(1);
+        // An imported file nobody has pointed at a Story: reported, not encoded.
+        // A Studio that posts to Stories now and then would otherwise pay 8-12
+        // seconds per video for a decision that was never made.
+        const report = await backfillStoryMedia(backendDb, config, true, 25);
+        expect(report.missing_unused).toBe(1);
+        expect(report.missing_wanted).toBe(0);
         expect(report.applied).toBe(false);
         expect(fs.existsSync(storyVariantPaths(config, source, false).standard)).toBe(false);
 
-        const applied = await backfillStoryMedia(backendDb, config, true, 25);
-        expect(applied.rendered).toBe(1);
-        expect(applied.remaining).toBe(0);
+        const everything = await backfillStoryMedia(backendDb, config, true, 25, true);
+        expect(everything.rendered).toBe(1);
         expect(fs.existsSync(storyVariantPaths(config, source, false).standard)).toBe(true);
-
-        // Prepared is prepared: a second run has nothing to do and does not
-        // re-encode what is already there.
-        expect((await backfillStoryMedia(backendDb, config, true, 25)).missing).toBe(0);
       },
       ["telegram", "telegram_stories"],
     );
@@ -68,9 +99,10 @@ describe("story media backfill", () => {
           source: "telegram",
           createdAt: new Date(0).toISOString(),
         });
-        const report = await backfillStoryMedia(backendDb, config, true, 25);
+        const report = await backfillStoryMedia(backendDb, config, true, 25, true);
         expect(report.source_file_gone).toBe(1);
-        expect(report.missing).toBe(0);
+        expect(report.missing_wanted).toBe(0);
+        expect(report.missing_unused).toBe(0);
       },
       ["telegram", "telegram_stories"],
     );
@@ -81,7 +113,7 @@ describe("story media backfill", () => {
       async (backendDb) => {
         const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-backfill-none-")) });
         assetFile(config.DATA_DIR, "abcdef0123456789abcdef13");
-        const report = await backfillStoryMedia(backendDb, config, true, 25);
+        const report = await backfillStoryMedia(backendDb, config, true, 25, true);
         expect(report.story_targets_connected).toBe(false);
         expect(report.applied).toBe(false);
       },
