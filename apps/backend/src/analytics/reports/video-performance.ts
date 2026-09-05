@@ -7,7 +7,7 @@ import { metricNumber } from "../snapshots/creator-store.js";
  * so 1, 2, 6, 24 and 48 are real readings rather than interpolations, while
  * 168 lands on the six-hourly stretch and is reported with the age it actually
  * came from. */
-const AGE_BUCKETS_HOURS = [1, 2, 6, 24, 48, 168] as const;
+const AGE_BUCKETS_HOURS = [0.25, 0.5, 1, 2, 6, 24, 48, 168] as const;
 
 /** Below this a per-hour recommendation is arithmetic, not evidence. Every
  * bucket carries its own sample size as well; this only decides the label. */
