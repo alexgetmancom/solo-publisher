@@ -166,3 +166,42 @@ export const xActivityMetricSnapshots = sqliteTable(
     index("idx_x_activity_metric_sampled_at").on(table.sampledAt),
   ],
 );
+
+/** Native audience activity as a platform's own dashboard draws it: when the
+ * people who follow this account are awake, by local hour.
+ *
+ * No API reports this -- it is read off YouTube Studio and Instagram Insights
+ * by a browser and handed over. That is why the source, the period it covers
+ * and the moment it was captured are columns and not commentary: a heatmap
+ * with no capture date is quoted forever as if it were current, and this one
+ * describes followers while most Reels views come from people who follow
+ * nothing.
+ */
+export const audienceActivity = sqliteTable(
+  "audience_activity",
+  {
+    id: autoId(),
+    platform: text().notNull(),
+    account: text().notNull(),
+    metric: text().notNull(),
+    weekday: text().notNull(),
+    hourLocal: integer().notNull(),
+    value: integer().notNull(),
+    timeZone: text().notNull(),
+    periodStart: text(),
+    periodEnd: text(),
+    capturedAt: text().notNull(),
+    source: text(),
+  },
+  (table) => [
+    uniqueIndex("idx_audience_activity_slot").on(
+      table.platform,
+      table.account,
+      table.metric,
+      table.capturedAt,
+      table.weekday,
+      table.hourLocal,
+    ),
+    index("idx_audience_activity_captured_at").on(table.capturedAt),
+  ],
+);

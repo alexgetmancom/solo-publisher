@@ -23,6 +23,12 @@ export const videoDrafts = sqliteTable(
     sourcePrunedAt: text(),
     controlChatId: integer(),
     controlMessageId: integer(),
+    /** What the video is about and how it opens, written by whoever publishes
+     * it. Two fields rather than the dozen an analyst would ask for: a slot
+     * comparison is only as good as the share of videos that carry the field,
+     * and a field nobody fills in describes nothing. */
+    game: text(),
+    hook: text(),
     ...timestamps(),
   },
   (table) => [

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { videoPerformanceDetail, videoPerformanceReport } from "../src/analytics/reports/video-performance.js";
 import { videoMetricSnapshots } from "../src/db/schema.js";
+import { tagVideo } from "../src/operations/video-tag.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
 
@@ -100,6 +101,44 @@ describe("video performance report", () => {
       expect(slot?.videos).toBe(3);
       expect(slot?.confidence).toBe("low");
       expect(slot?.dominatedBySingleVideo).toBe(true);
+    });
+  });
+
+  it("reports what share of the window carries a tag, not just the ranking", async () => {
+    await withDb(async (backendDb) => {
+      const tagged: number[] = [];
+      for (const views of [1000, 2000, 3000]) {
+        const { draftId, targetId } = insertPublishedVideo(backendDb, {
+          target: "youtube_shorts",
+          publishedAt: hoursAgo(50),
+          label: `Short ${views}`,
+        });
+        backendDb.db
+          .insert(videoMetricSnapshots)
+          .values({
+            videoTargetId: targetId,
+            platform: "youtube_shorts",
+            checkpointIndex: 0,
+            sampledAt: hoursAgo(1),
+            metricsJson: { views },
+          })
+          .run();
+        tagged.push(draftId);
+      }
+      tagVideo(backendDb, tagged[0] as number, { game: "Lethal Company" });
+      const cleared = tagVideo(backendDb, tagged[1] as number, { game: "Lethal Company", hook: "" });
+      expect(cleared.hook).toBeNull();
+
+      const report = videoPerformanceReport(backendDb, { days: 30, limit: 10, timeZone: TIME_ZONE });
+      const games = (
+        report.byTag as {
+          game: { taggedVideos: number; taggedShare: number; values: Array<{ value: string; videos: number; confidence: string }> };
+        }
+      ).game;
+      expect(games.taggedVideos).toBe(2);
+      // Two of three videos carry a game, and the ranking says it is thin evidence.
+      expect(games.taggedShare).toBe(67);
+      expect(games.values[0]?.confidence).toBe("anecdotal");
     });
   });
 });

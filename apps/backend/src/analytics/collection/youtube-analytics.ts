@@ -74,3 +74,76 @@ function youtubeAnalyticsDateParts(value: Date): YouTubeDateParts {
     day: parts.day ?? "01",
   };
 }
+
+/** Where a Short's views came from, as YouTube groups them. One video per
+ * call: the traffic-source dimension cannot be split by video in a batch the
+ * way the plain metrics report can. */
+export async function youtubeTrafficSources(
+  fetchImpl: typeof fetch,
+  token: string,
+  videoId: string,
+  range: { startDate: string; endDate: string },
+): Promise<Record<string, number>> {
+  const report = await queryYouTubeAnalytics(fetchImpl, token, {
+    ...range,
+    metrics: "views",
+    dimensions: "insightTrafficSourceType",
+    filters: `video==${videoId}`,
+    maxResults: 50,
+  });
+  const sources: Record<string, number> = {};
+  for (const row of report.rows ?? []) {
+    const [name, views] = row;
+    if (typeof name === "string") sources[name] = Number(views ?? 0);
+  }
+  return sources;
+}
+
+/** The retention curve, sampled by YouTube at percentages of the video. The
+ * first seconds are the whole question for a Short, so the caller converts the
+ * ratios it wants using the video's own duration. */
+export async function youtubeAudienceRetention(
+  fetchImpl: typeof fetch,
+  token: string,
+  videoId: string,
+  range: { startDate: string; endDate: string },
+): Promise<Array<{ ratio: number; watchRatio: number }>> {
+  const report = await queryYouTubeAnalytics(fetchImpl, token, {
+    ...range,
+    metrics: "audienceWatchRatio",
+    dimensions: "elapsedVideoTimeRatio",
+    filters: `video==${videoId};audienceType==ORGANIC`,
+    maxResults: 200,
+  });
+  return (report.rows ?? [])
+    .map((row) => ({ ratio: Number(row[0] ?? 0), watchRatio: Number(row[1] ?? 0) }))
+    .filter((point) => Number.isFinite(point.ratio) && Number.isFinite(point.watchRatio))
+    .sort((left, right) => left.ratio - right.ratio);
+}
+
+/** Retention at the seconds a Short is won or lost in, read off the curve.
+ * Returns null where the video is too short for that second to exist. */
+export function retentionAtSeconds(
+  curve: Array<{ ratio: number; watchRatio: number }>,
+  videoDurationMs: number | null,
+  seconds: number[],
+): Record<string, number | null> {
+  const result: Record<string, number | null> = {};
+  for (const second of seconds) {
+    const key = `retentionAt${second}s`;
+    if (!curve.length || !videoDurationMs || videoDurationMs <= 0) {
+      result[key] = null;
+      continue;
+    }
+    const ratio = (second * 1_000) / videoDurationMs;
+    if (ratio > 1) {
+      result[key] = null;
+      continue;
+    }
+    const point = curve.reduce((closest, candidate) =>
+      Math.abs(candidate.ratio - ratio) < Math.abs(closest.ratio - ratio) ? candidate : closest,
+    );
+    result[key] = Math.round(point.watchRatio * 1000) / 10;
+  }
+  return result;
+}

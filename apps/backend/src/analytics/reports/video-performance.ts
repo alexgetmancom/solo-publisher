@@ -1,5 +1,6 @@
 import type { BackendDb } from "../../db/client.js";
 import { unsafeDb } from "../../db/client.js";
+import { heatmapCoverage } from "../audience-heatmap.js";
 import { metricNumber } from "../snapshots/creator-store.js";
 
 /** Ages, in hours since publication, a video is compared at. They mirror the
@@ -30,6 +31,8 @@ type TargetRow = {
   external_url: string | null;
   label: string | null;
   locale: string;
+  game: string | null;
+  hook: string | null;
   frozen_at: string | null;
   last_error: string | null;
   last_checked_at: string | null;
@@ -59,6 +62,10 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
     totals: totals(series),
     publishHours: publishHours(series, options.timeZone),
     ageCurve: ageCurve(series),
+    byTag: byTag(byDraft),
+    audienceGrowth: audienceGrowth(backendDb, from.toISOString()),
+    queue: queue(backendDb, options.timeZone),
+    heatmaps: heatmapCoverage(backendDb, now),
     videos: videoList(byDraft, options.timeZone, options.limit),
     collection: collectionHealth(series),
     reading: readingNotes(),
@@ -106,7 +113,7 @@ function loadSeries(backendDb: BackendDb, publishedFrom: string | null, videoDra
   const where = videoDraftId ? "t.video_draft_id = ?" : "t.published_at >= ?";
   const targets = sqlite
     .prepare(
-      `SELECT t.id, t.video_draft_id, t.target, t.published_at, t.external_url, d.label, d.locale,
+      `SELECT t.id, t.video_draft_id, t.target, t.published_at, t.external_url, d.label, d.locale, d.game, d.hook,
               s.frozen_at, s.last_error, s.last_checked_at, s.checkpoint_index
          FROM video_targets t
          JOIN video_drafts d ON d.id = t.video_draft_id
@@ -308,6 +315,100 @@ function ageCurve(series: TargetSeries[]): Record<string, unknown> {
   );
 }
 
+/** What the tagged videos say about games and openings. Only tagged videos are
+ * counted, and the share that carries a tag travels with the answer: a ranking
+ * built on a fifth of the window describes that fifth. */
+function byTag(byDraft: Map<number, TargetSeries[]>): Record<string, unknown> {
+  const drafts = [...byDraft.values()];
+  const summarise = (field: "game" | "hook") => {
+    const tagged = drafts.filter((targets) => targets[0]?.[field]);
+    const groups = new Map<string, number[]>();
+    for (const targets of tagged) {
+      const key = String(targets[0]?.[field]);
+      const views = targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0);
+      groups.set(key, [...(groups.get(key) ?? []), views]);
+    }
+    return {
+      taggedVideos: tagged.length,
+      taggedShare: drafts.length ? Math.round((tagged.length / drafts.length) * 100) : 0,
+      values: [...groups.entries()]
+        .map(([value, views]) => ({
+          value,
+          videos: views.length,
+          medianViews: median(views),
+          avgViews: Math.round(views.reduce((sum, view) => sum + view, 0) / views.length),
+          confidence: views.length >= CONFIDENT_SAMPLE ? "ok" : views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
+        }))
+        .sort((left, right) => right.medianViews - left.medianViews),
+    };
+  };
+  return { game: summarise("game"), hook: summarise("hook") };
+}
+
+/** Did the channel itself grow while these videos were out. Read from the daily
+ * audience snapshots, so it answers for the account and never for one video. */
+function audienceGrowth(backendDb: BackendDb, since: string): Array<Record<string, unknown>> {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      `SELECT platform, account, MIN(sampled_on) AS firstOn, MAX(sampled_on) AS lastOn, COUNT(*) AS days
+         FROM creator_profile_snapshots WHERE sampled_at >= ? GROUP BY platform, account`,
+    )
+    .all(since) as Array<{ platform: string; account: string; firstOn: string; lastOn: string; days: number }>;
+  return rows.map((row) => {
+    const edge = (day: string) =>
+      unsafeDb(backendDb)
+        .sqlite.prepare("SELECT metrics_json AS metricsJson FROM creator_profile_snapshots WHERE platform=? AND account=? AND sampled_on=?")
+        .get(row.platform, row.account, day) as { metricsJson?: string } | undefined;
+    const size = (raw?: { metricsJson?: string }) => {
+      const metrics = raw?.metricsJson ? (JSON.parse(raw.metricsJson) as Record<string, unknown>) : {};
+      return metricNumber(metrics.subscriberCount ?? metrics.followersCount);
+    };
+    const first = size(edge(row.firstOn));
+    const last = size(edge(row.lastOn));
+    return {
+      platform: row.platform,
+      account: row.account,
+      from: row.firstOn,
+      to: row.lastOn,
+      days: row.days,
+      first,
+      last,
+      gained: last - first,
+    };
+  });
+}
+
+/** What is already scheduled, so a recommendation about hours can be aimed at
+ * something instead of hanging in the air. */
+function queue(backendDb: BackendDb, timeZone: string): Array<Record<string, unknown>> {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      `SELECT t.video_draft_id AS videoDraftId, t.target, t.scheduled_at AS scheduledAt, t.status, d.label, d.game, d.hook
+         FROM video_targets t JOIN video_drafts d ON d.id = t.video_draft_id
+        WHERE t.status IN ('scheduled', 'queued', 'prepared') AND t.scheduled_at IS NOT NULL
+        ORDER BY t.scheduled_at LIMIT 20`,
+    )
+    .all() as Array<{
+    videoDraftId: number;
+    target: string;
+    scheduledAt: string;
+    status: string;
+    label: string | null;
+    game: string | null;
+    hook: string | null;
+  }>;
+  return rows.map((row) => ({
+    ref: `video:${row.videoDraftId}`,
+    platform: row.target,
+    status: row.status,
+    scheduledAt: row.scheduledAt,
+    scheduledLocal: localParts(row.scheduledAt, timeZone),
+    label: row.label,
+    game: row.game,
+    hook: row.hook,
+  }));
+}
+
 function videoList(byDraft: Map<number, TargetSeries[]>, timeZone: string, limit: number): Array<Record<string, unknown>> {
   return [...byDraft.entries()]
     .map(([draftId, targets]) => {
@@ -320,6 +421,8 @@ function videoList(byDraft: Map<number, TargetSeries[]>, timeZone: string, limit
       return {
         ref: `video:${draftId}`,
         label: targets[0]?.label || null,
+        game: targets[0]?.game ?? null,
+        hook: targets[0]?.hook ?? null,
         publishedAt: published,
         publishedLocal: published ? localParts(published, timeZone) : null,
         views,
@@ -403,7 +506,9 @@ function readingNotes(): string[] {
     "`readingAgeHours` is the age the value actually came from; where it is far from the bucket, the bucket is approximate.",
     "shares/saves/reach/follows are Instagram-only; YouTube reports averageWatchTimeMs, completionRate and subscribersGained instead.",
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",
-    "This Studio knows nothing about native audience heatmaps, traffic sources or per-second retention: those live only in YouTube Studio and Instagram Insights.",
+    "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
+    "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",
+    "`heatmaps` is what a browser copied out of a platform dashboard, with the age of the capture: it describes followers, while most Reels views come from people who follow nothing.",
   ];
 }
 

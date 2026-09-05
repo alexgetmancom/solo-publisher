@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
@@ -85,6 +86,8 @@ import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
 import { verifyPostTargets } from "./verify.js";
+import { tagVideo } from "./video-tag.js";
+import { backfillYouTubeAnalytics } from "./youtube-analytics-backfill.js";
 
 /** Config and the database are resolved on demand: `restore` operates on the
  * file itself and must not have it opened underneath it, and `guide` runs when
@@ -152,6 +155,15 @@ function ask(question: string): string {
  * shows them — so it is a spelling of the ref, not a mistake to reject. */
 const refSpelling = (value: string): string => (/^\d+$/.test(value) ? publicationRef("post", Number(value)) : value);
 const refOption = example(z.string().trim().min(1), "post:160").describe("publication ref").transform(refSpelling);
+const heatmapSlots = z
+  .array(
+    z.object({
+      weekday: z.enum(WEEKDAYS),
+      hour: z.coerce.number().int().min(0).max(23),
+      value: z.coerce.number().int().min(0),
+    }),
+  )
+  .min(1);
 const applyOption = z.boolean().default(false).describe("perform the change; omitted it reports the plan only");
 const draftOption = example(z.coerce.number().int().positive(), "232").describe("draft id");
 const scheduleAtOption = example(z.string().trim().min(1), '"06.08.2026 08:00"').describe(
@@ -264,6 +276,7 @@ const operationDefs = {
       tagline: localizedTextOption("one-line description, per language"),
       about: localizedTextOption("longer description reaching llms.txt and structured data"),
       bio: localizedTextOption("the About page text, per language; blank lines separate paragraphs"),
+      site_timezone: localizedTextOption("IANA zone the public site dates posts in, per language; blank uses the operator's timezone"),
       profiles: example(z.string(), '{"en":[{"label":"Telegram","url":"https://t.me/example"}],"ru":[]}')
         .optional()
         .describe("social profiles listed in llms.txt and as sameAs, per language")
@@ -283,6 +296,7 @@ const operationDefs = {
         tagline: input.tagline,
         about: input.about,
         bio: input.bio,
+        siteTimezone: input.site_timezone,
         profiles: input.profiles,
       }),
   }),
@@ -464,6 +478,82 @@ const operationDefs = {
       if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
       return videoPerformanceDetail(context.db(), parsed.id, context.config().TIMEZONE);
     },
+  }),
+  "video-tag": operation({
+    section: "analytics",
+    startHere: "which kind of video works, not just which hour",
+    summary: "Write what a video is about and how it opens, so results can be compared by content and not only by clock.",
+    note: "Two free-text fields, on purpose. `video-report` groups by them and reports what share of the window carries a tag; a ranking over a handful of tagged videos is not an answer, and the report says so.",
+    schema: z.object({
+      ref: refOption,
+      game: z.string().optional().describe("what is being played; empty string clears it"),
+      hook: z.string().optional().describe("how the video opens; empty string clears it"),
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => {
+      const parsed = parsePublicationRef(input.ref);
+      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
+      return tagVideo(context.db(), parsed.id, {
+        ...(input.game === undefined ? {} : { game: input.game }),
+        ...(input.hook === undefined ? {} : { hook: input.hook }),
+      });
+    },
+  }),
+  "audience-heatmap": operation({
+    section: "analytics",
+    startHere: "when is this audience actually awake",
+    summary: "Native audience activity captured from the platforms' own dashboards, with the age of each capture.",
+    note: "Nothing collects this on its own: it is read off YouTube Studio and Instagram Insights and handed over with `audience-heatmap-import`. It describes followers, so weigh it against `video-report` publishHours, which describes results.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => audienceHeatmapReport(context.db()),
+  }),
+  "audience-heatmap-import": operation({
+    section: "analytics",
+    summary: "Store one reading of a platform's native audience-activity heatmap.",
+    note: "For an agent that has just read the dashboard in a browser. Re-importing the same capture replaces its slots rather than duplicating them, so a repeated read costs nothing. `captured_at` is when the dashboard was read, never a rounded date: everything downstream ages the capture from it.",
+    schema: z.object({
+      platform: example(z.string().min(1), "youtube").describe("which platform's dashboard"),
+      account: example(z.string().min(1), "Marux_play").describe("which account it belongs to"),
+      metric: example(z.string().min(1), "when_followers_are_online").describe("what the dashboard says the numbers are"),
+      captured_at: example(isoInstant, "ISO").describe("when the dashboard was read"),
+      slots: example(z.string().min(1), '[{"weekday":"Mon","hour":18,"value":183}]').describe("JSON array of {weekday, hour, value}"),
+      time_zone: z.string().optional().describe("the zone the hours are in; defaults to this Studio's"),
+      period_start: z.string().optional().describe("first day the dashboard covers"),
+      period_end: z.string().optional().describe("last day the dashboard covers"),
+      source: z.string().optional().describe("the page it was read from"),
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) =>
+      importAudienceHeatmap(context.db(), {
+        platform: input.platform,
+        account: input.account,
+        metric: input.metric,
+        capturedAt: input.captured_at,
+        timeZone: input.time_zone ?? context.config().TIMEZONE,
+        slots: heatmapSlots.parse(JSON.parse(input.slots)),
+        ...(input.period_start ? { periodStart: input.period_start } : {}),
+        ...(input.period_end ? { periodEnd: input.period_end } : {}),
+        ...(input.source ? { source: input.source } : {}),
+      }),
+  }),
+  "youtube-analytics-backfill": operation({
+    section: "analytics",
+    startHere: "watch time, completion and traffic sources are missing from YouTube videos",
+    summary:
+      "Fill in what the owner Analytics API knows about videos already published: watch time, completion, subscribers, traffic sources and early retention.",
+    note: "Without --apply it writes nothing and makes one real report call per language, so its `reachable` line is also the answer to whether the connected token can read the Analytics API at all — publishing and reading comments do not imply reporting. Values are merged into each video's newest snapshot; the checkpoint history before it is left alone.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(365).default(60).describe("how far back to look"),
+      apply: applyOption,
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      backfillYouTubeAnalytics(context.db(), context.config(), context.fetchImpl, { days: input.days, apply: input.apply }),
   }),
   "site-traffic": operation({
     section: "analytics",

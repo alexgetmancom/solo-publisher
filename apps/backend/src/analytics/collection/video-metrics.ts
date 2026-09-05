@@ -15,6 +15,7 @@ import { nextVideoMetricCheckAt, videoMetricCheckpointAt } from "./metric-checkp
 import { MAX_METRIC_TASKS_PER_CYCLE, METRIC_LOCK_TIMEOUT_SECONDS } from "./metric-schedule.js";
 import { collectCommentsQuietly, collectInstagramComments, collectYouTubeComments, collectZernioComments } from "./video-comments.js";
 import { queryYouTubeAnalytics, youtubeAnalyticsCompletedEnd, youtubeAnalyticsDate } from "./youtube-analytics.js";
+import { deepAnalyticsBucketFor, enrichYouTubeDeepAnalytics, hasDeepAnalytics } from "./youtube-deep-analytics.js";
 
 type VideoMetricTask = {
   id: number;
@@ -132,6 +133,7 @@ export async function runVideoMetricSchedule(config: BackendConfig, backendDb: B
     if (!localizedTasks.length || !token) continue;
     try {
       await collectYouTubeVideoAnalyticsBatch(backendDb, localizedTasks, token, fetchImpl);
+      await collectYouTubeDeepAnalytics(backendDb, localizedTasks, token, fetchImpl);
       markSynced(backendDb, `youtube_video_analytics_${locale}`);
     } catch (error) {
       // Data API snapshots remain authoritative for the checkpoint. Analytics
@@ -415,6 +417,34 @@ async function collectYouTubeVideoMetrics(
     platform: "youtube",
     externalId: target.externalId,
   });
+}
+
+/** Traffic sources and the retention curve, for the videos that have just
+ * reached an age worth paying for them at. Each video is read twice in its
+ * life; `hasDeepAnalytics` is what makes that true across restarts. */
+async function collectYouTubeDeepAnalytics(
+  backendDb: BackendDb,
+  tasks: VideoMetricTask[],
+  token: string,
+  fetchImpl: typeof fetch,
+): Promise<void> {
+  for (const task of tasks) {
+    const bucket = deepAnalyticsBucketFor(task.publishedAt);
+    if (bucket == null || hasDeepAnalytics(backendDb, task.id, bucket)) continue;
+    await enrichYouTubeDeepAnalytics(
+      backendDb,
+      {
+        videoTargetId: task.id,
+        externalId: task.externalId,
+        checkpointIndex: task.checkpointIndex,
+        publishedAt: task.publishedAt,
+        videoDurationMs: targetVideoDurationMs(task),
+      },
+      bucket,
+      token,
+      fetchImpl,
+    );
+  }
 }
 
 /** Enriches the Data API snapshot with one batched owner Analytics report. */

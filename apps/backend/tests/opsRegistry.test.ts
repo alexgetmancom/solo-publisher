@@ -55,6 +55,7 @@ const OFF_THE_AGENT_SURFACE = [
   "dates-repair",
   "milestone-announce",
   "comments-backfill",
+  "youtube-analytics-backfill",
   "x-import-delete",
   "x-relink",
   "purge",
