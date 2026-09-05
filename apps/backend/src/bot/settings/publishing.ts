@@ -144,14 +144,19 @@ export function buildPublishingMenu(config: BackendConfig, backendDb: BackendDb)
       range.text(t(locale, "settings.connect-native", { platform: "YouTube", locale: channelLocale.toUpperCase() }), async (ctx) => {
         try {
           const started = await studioChannels.startConnect("youtube", channelLocale);
-          if (started.kind !== "device") throw new Error("YouTube is expected to answer with a code");
+          // Both shapes are rendered because the platform's shape is the
+          // platform's to choose: YouTube moved from a code to a link when the
+          // scope its comments need turned out to be unreachable by device
+          // flow, and a surface that knows which one to expect breaks with it.
           await showScreen(
             ctx,
-            t(locale, "settings.device-code", {
-              url: started.verificationUrl,
-              code: started.userCode,
-              minutes: Math.round(started.expiresInSeconds / 60),
-            }),
+            started.kind === "redirect"
+              ? t(locale, "settings.connect-redirect", { url: started.url, minutes: started.expiresInMinutes })
+              : t(locale, "settings.device-code", {
+                  url: started.verificationUrl,
+                  code: started.userCode,
+                  minutes: Math.round(started.expiresInSeconds / 60),
+                }),
           );
         } catch (error) {
           await ctx.answerCallbackQuery({ text: describeError(locale, error).slice(0, 190), show_alert: true });

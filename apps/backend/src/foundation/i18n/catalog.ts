@@ -373,6 +373,8 @@ const en = {
   "settings.channel-missing": "missing credentials: {count}",
   "settings.device-code":
     "Open {url}, enter the code {code} and approve access. You have {minutes} minutes; the channel connects itself once you are done.",
+  "settings.connect-redirect":
+    "Open {url} and approve access. The link is good for {minutes} minutes; the channel connects itself once you are done.",
   "settings.connect-native": "↻ {platform} {locale} · native",
   "settings.enable-target": "＋ {target}",
   "settings.channels-unsupported": "{count} account(s) hidden: their platform cannot be published to yet.",
@@ -1164,6 +1166,7 @@ const ru = {
   "settings.channel-missing": "не хватает credentials: {count}",
   "settings.device-code":
     "Откройте {url}, введите код {code} и подтвердите доступ. У вас {minutes} минут; канал подключится сам, когда закончите.",
+  "settings.connect-redirect": "Откройте {url} и подтвердите доступ. Ссылка живёт {minutes} минут; канал подключится сам, когда закончите.",
   "settings.connect-native": "↻ {platform} {locale} · native",
   "settings.enable-target": "＋ {target}",
   "settings.channels-unsupported": "Скрыто аккаунтов: {count} — в их платформу публикация пока не поддерживается.",

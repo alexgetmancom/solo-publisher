@@ -139,10 +139,11 @@ export const commandCenterRoutes: RouteModule = (app, { config, backendDb, studi
       const locale = form.get("locale");
       if (platform !== "youtube" || (locale !== "ru" && locale !== "en")) throw new Error("Unknown channel connection");
       const started = await studio.channels.startConnect("youtube", locale);
-      if (started.kind !== "device") throw new Error("YouTube did not return a device code");
       return connectionPage(
         "YouTube authorization",
-        `Open ${started.verificationUrl}, enter the code ${started.userCode}, and approve access within ${Math.round(started.expiresInSeconds / 60)} minutes. The channel will connect itself.`,
+        started.kind === "redirect"
+          ? `Open ${started.url} and approve access within ${started.expiresInMinutes} minutes. The channel will connect itself.`
+          : `Open ${started.verificationUrl}, enter the code ${started.userCode}, and approve access within ${Math.round(started.expiresInSeconds / 60)} minutes. The channel will connect itself.`,
         200,
       );
     } catch (error) {

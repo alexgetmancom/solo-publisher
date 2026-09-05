@@ -93,7 +93,7 @@ describe("post resend", () => {
         .run();
       backendDb.db
         .insert(publicationTargets)
-        .values({ publicationKey: "post:1100", target: "x", status: "failed", externalId: "1789", createdAt: now, updatedAt: now })
+        .values({ publicationKey: "post:1100", target: "x", status: "failed", externalId: "1789", updatedAt: now })
         .run();
 
       expect(() => studioPosts(backendDb).resendTarget(42, 11, "x")).toThrow("err.resend-already");
