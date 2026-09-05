@@ -73,9 +73,7 @@ export async function backfillYouTubeAnalytics(
         missingDeep: missingDeep.length,
         reachable: false,
         error: report,
-        hint: report.includes("403")
-          ? "the token cannot read the Analytics API: reconnect asking for yt-analytics.readonly alongside youtube.force-ssl"
-          : "the Analytics API refused this report",
+        hint: hintFor(report),
       };
       continue;
     }
@@ -194,6 +192,20 @@ async function readBaseReport(
   return values;
 }
 
+/** Keeps both ends of a refusal. The interesting half of these messages is the
+ * status and body at the end, and the URL in front of them is long enough to
+ * fill a naive truncation on its own. */
 function describe(error: unknown): string {
-  return (error instanceof Error ? error.message : String(error)).slice(0, 400);
+  const message = error instanceof Error ? error.message : String(error);
+  return message.length <= 400 ? message : `${message.slice(0, 120)} … ${message.slice(-280)}`;
+}
+
+/** What an operator should do about it, decided by the status the API answered
+ * with rather than by guesswork. */
+function hintFor(message: string): string {
+  const status = /failed: (\d{3})/.exec(message)?.[1];
+  if (status === "403")
+    return "the token cannot read the Analytics API: reconnect the channel asking for yt-analytics.readonly alongside youtube.force-ssl";
+  if (status === "401") return "the token expired or was revoked: reconnect the channel";
+  return `the Analytics API refused this report${status ? ` with ${status}` : ""}`;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
+import { eq } from "drizzle-orm";
 import { videoPerformanceDetail, videoPerformanceReport } from "../src/analytics/reports/video-performance.js";
-import { videoMetricSnapshots } from "../src/db/schema.js";
+import { creatorProfileSnapshots, videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
 import { tagVideo } from "../src/operations/video-tag.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
@@ -139,6 +140,61 @@ describe("video performance report", () => {
       // Two of three videos carry a game, and the ranking says it is thin evidence.
       expect(games.taggedShare).toBe(67);
       expect(games.values[0]?.confidence).toBe("anecdotal");
+    });
+  });
+
+  it("counts audience growth by when a snapshot was taken, because not every platform keys them by day", async () => {
+    await withDb(async (backendDb) => {
+      // YouTube keys its rows hourly; a naive count of rows would call this 3 days.
+      backendDb.db
+        .insert(creatorProfileSnapshots)
+        .values([
+          {
+            platform: "youtube_ru",
+            account: "Marux_play",
+            sampledOn: "2026-09-01T10",
+            metricsJson: { subscriberCount: 200 },
+            source: "test",
+            sampledAt: hoursAgo(72),
+          },
+          {
+            platform: "youtube_ru",
+            account: "Marux_play",
+            sampledOn: "2026-09-01T11",
+            metricsJson: { subscriberCount: 240 },
+            source: "test",
+            sampledAt: hoursAgo(48),
+          },
+          {
+            platform: "youtube_ru",
+            account: "Marux_play",
+            sampledOn: "2026-09-01T12",
+            metricsJson: { subscriberCount: 260 },
+            source: "test",
+            sampledAt: hoursAgo(2),
+          },
+        ])
+        .run();
+      const growth = videoPerformanceReport(backendDb, { days: 30, limit: 5, timeZone: TIME_ZONE }).audienceGrowth as Array<
+        Record<string, unknown>
+      >;
+      expect(growth[0]?.samples).toBe(3);
+      expect(growth[0]?.gained).toBe(60);
+    });
+  });
+
+  it("lists what is scheduled so an hour recommendation has something to aim at", async () => {
+    await withDb(async (backendDb) => {
+      const { draftId, targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: hoursAgo(1), label: "Next" });
+      backendDb.db
+        .update(videoTargets)
+        .set({ status: "scheduled", publishedAt: null, scheduledAt: "2026-09-09T18:00:00.000Z" })
+        .where(eq(videoTargets.id, targetId))
+        .run();
+      const queue = videoPerformanceReport(backendDb, { days: 30, limit: 5, timeZone: TIME_ZONE }).queue as Array<Record<string, unknown>>;
+      expect(queue[0]?.ref).toBe(`video:${draftId}`);
+      const scheduledLocal = queue[0]?.scheduledLocal as { hour: number };
+      expect(scheduledLocal.hour).toBe(21);
     });
   });
 });

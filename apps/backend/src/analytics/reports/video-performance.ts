@@ -346,31 +346,34 @@ function byTag(byDraft: Map<number, TargetSeries[]>): Record<string, unknown> {
 }
 
 /** Did the channel itself grow while these videos were out. Read from the daily
- * audience snapshots, so it answers for the account and never for one video. */
+ * audience snapshots, so it answers for the account and never for one video.
+ *
+ * The snapshot key is not a calendar day everywhere -- YouTube's rows are
+ * hourly -- so the window's edges are found by the moment each row was taken
+ * and the count is reported as samples rather than days. */
 function audienceGrowth(backendDb: BackendDb, since: string): Array<Record<string, unknown>> {
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
-      `SELECT platform, account, MIN(sampled_on) AS firstOn, MAX(sampled_on) AS lastOn, COUNT(*) AS days
+      `SELECT platform, account, COUNT(*) AS samples, MIN(sampled_at) AS firstAt, MAX(sampled_at) AS lastAt
          FROM creator_profile_snapshots WHERE sampled_at >= ? GROUP BY platform, account`,
     )
-    .all(since) as Array<{ platform: string; account: string; firstOn: string; lastOn: string; days: number }>;
+    .all(since) as Array<{ platform: string; account: string; samples: number; firstAt: string; lastAt: string }>;
+  const sizeAt = (platform: string, account: string, sampledAt: string) => {
+    const row = unsafeDb(backendDb)
+      .sqlite.prepare("SELECT metrics_json AS metricsJson FROM creator_profile_snapshots WHERE platform=? AND account=? AND sampled_at=?")
+      .get(platform, account, sampledAt) as { metricsJson?: string } | undefined;
+    const metrics = row?.metricsJson ? (JSON.parse(row.metricsJson) as Record<string, unknown>) : {};
+    return metricNumber(metrics.subscriberCount ?? metrics.followersCount);
+  };
   return rows.map((row) => {
-    const edge = (day: string) =>
-      unsafeDb(backendDb)
-        .sqlite.prepare("SELECT metrics_json AS metricsJson FROM creator_profile_snapshots WHERE platform=? AND account=? AND sampled_on=?")
-        .get(row.platform, row.account, day) as { metricsJson?: string } | undefined;
-    const size = (raw?: { metricsJson?: string }) => {
-      const metrics = raw?.metricsJson ? (JSON.parse(raw.metricsJson) as Record<string, unknown>) : {};
-      return metricNumber(metrics.subscriberCount ?? metrics.followersCount);
-    };
-    const first = size(edge(row.firstOn));
-    const last = size(edge(row.lastOn));
+    const first = sizeAt(row.platform, row.account, row.firstAt);
+    const last = sizeAt(row.platform, row.account, row.lastAt);
     return {
       platform: row.platform,
       account: row.account,
-      from: row.firstOn,
-      to: row.lastOn,
-      days: row.days,
+      from: row.firstAt,
+      to: row.lastAt,
+      samples: row.samples,
       first,
       last,
       gained: last - first,
