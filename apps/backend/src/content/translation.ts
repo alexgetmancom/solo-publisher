@@ -31,6 +31,14 @@ function hasCyrillic(value: string): boolean {
   return /[\u0400-\u04FF]/.test(value);
 }
 
+/** Whether this Studio would translate this text at all: it publishes English,
+ * there is a translator to ask, and the text is Russian. The queue is only
+ * written when the answer is yes, so a row waiting to be worked is exactly the
+ * drafts whose English is still coming. */
+export function translationWanted(backendDb: BackendDb, text: string, config: BackendConfig): boolean {
+  return Boolean(text.trim()) && Boolean(config.DEEPSEEK_API_KEY) && hasCyrillic(text) && postLocales(backendDb).includes("en");
+}
+
 /** The English text for a new draft, or nothing when this Studio has no English
  * to publish or the translator could not produce one.
  *

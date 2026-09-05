@@ -12,6 +12,7 @@ describe("Telegram interface workers", () => {
       const workers = startTelegramWorkers(config, backendDb, bot);
       try {
         expect(workers.map((worker) => worker.name)).toEqual([
+          "telegram-translations",
           "telegram-albums",
           "telegram-events",
           "telegram-alerts",

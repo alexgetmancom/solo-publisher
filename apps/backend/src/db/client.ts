@@ -10,6 +10,7 @@ import { installDateGuards } from "./date-guards.js";
 import { createActionableIssueStore } from "./repositories/actionable-issues.js";
 import { createChannelStore } from "./repositories/channels.js";
 import { createConversationSessionStore } from "./repositories/conversation-sessions.js";
+import { createDraftTranslationStore } from "./repositories/draft-translations.js";
 import { createDraftStore } from "./repositories/drafts.js";
 import { createEntityEnrichmentStore } from "./repositories/entity-enrichment.js";
 import { createEventStore } from "./repositories/events.js";
@@ -74,6 +75,7 @@ export function openBackendDb(path: string, timeout = 30_000): BackendDb {
     db,
     clock,
     drafts: createDraftStore(db, clock),
+    draftTranslations: createDraftTranslationStore(db, clock),
     events: createEventStore(db, clock),
     entityEnrichment: createEntityEnrichmentStore(db),
     channels: createChannelStore(db),

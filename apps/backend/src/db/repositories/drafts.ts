@@ -180,6 +180,7 @@ function updateDraft(
       updatedAt: now,
     };
     const enPatch = {
+      ...(patch.textEnMachine === undefined ? {} : { sourceText: patch.textEnMachine }),
       ...(patch.textEnApproved === undefined ? {} : { approvedText: patch.textEnApproved }),
       ...(patch.textEnEntitiesJson === undefined ? {} : { entitiesJson: patch.textEnEntitiesJson }),
       ...(patch.mediaEnJson === undefined ? {} : { mediaJson: jsonValue(patch.mediaEnJson) }),

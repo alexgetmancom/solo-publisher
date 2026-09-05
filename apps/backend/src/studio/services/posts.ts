@@ -9,6 +9,7 @@ import { draftLocaleContent } from "../../content/draft-content.js";
 import { createDraftFromMessage } from "../../content/drafts.js";
 import type { DraftMessage } from "../../content/message.js";
 import { emphasizeTitle } from "../../content/title-emphasis.js";
+import { translationWanted } from "../../content/translation.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
@@ -132,11 +133,18 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         // publish and every reader then has to learn to hide.
         if ((message.textEn || message.textEnApproved) && !postLocales(backendDb).includes("en"))
           throw new StudioError("err.post-locale-not-served", { locale: "EN" });
-        if (!configured) return createDraftFromMessage(backendDb, actorId, message);
-        return createDraftFromMessage(backendDb, actorId, message, {
-          targetsJson: JSON.stringify(exactTargets(backendDb, configured.targets)),
-          ...(configured.storyMode ? { storyPublishMode: configured.storyMode } : {}),
-        });
+        const draftId = configured
+          ? createDraftFromMessage(backendDb, actorId, message, {
+              targetsJson: JSON.stringify(exactTargets(backendDb, configured.targets)),
+              ...(configured.storyMode ? { storyPublishMode: configured.storyMode } : {}),
+            })
+          : createDraftFromMessage(backendDb, actorId, message);
+        // English the draft did not arrive with is made after it exists, never
+        // while the operator waits for the card: the queue row is the draft's
+        // English until the worker replaces it with the text.
+        if (!message.textEn && !message.textEnApproved && translationWanted(backendDb, message.text, config))
+          backendDb.draftTranslations.queue(draftId);
+        return draftId;
       });
     },
     get(actorId: number, draftId: number) {

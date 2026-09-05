@@ -159,6 +159,7 @@ const en = {
   "post.en-uses-ru-media": "EN uses RU media",
   "post.media-only": "[media only]",
   "post.not-translated": "[not translated]",
+  "post.translating": "[translating…]",
   "post.story-cards-generating": "Story cards are still being generated. Please try again in a moment.",
   "post.story-cards-question":
     "🖼 *Text Story cards are ready.*\n\nThe cards always go to the RU and EN site. Publish them to Telegram Stories RU, Instagram Stories RU and Instagram Stories EN as well?",
@@ -935,6 +936,7 @@ const ru = {
   "post.en-uses-ru-media": "EN использует RU-медиа",
   "post.media-only": "[только медиа]",
   "post.not-translated": "[не переведено]",
+  "post.translating": "[переводится…]",
   "post.story-cards-generating": "Карточки для Stories ещё создаются. Попробуйте снова через несколько секунд.",
   "post.story-cards-question":
     "🖼 *Карточки текстового поста готовы.*\n\nНа сайты RU и EN они пойдут всегда. Опубликовать их также в Telegram Stories RU, Instagram Stories RU и Instagram Stories EN?",

@@ -93,3 +93,18 @@ export const pendingAlbums = sqliteTable("pending_albums", {
   attemptCount: integer().notNull().default(0),
   updatedAt: text().notNull(),
 });
+
+/** One draft's machine translation, waiting to be made. The row is the pending
+ * state itself: it exists while the English text is being produced and is gone
+ * once the draft carries it, so the card can say which of "no English yet" and
+ * "no English at all" the operator is looking at. */
+export const draftTranslations = sqliteTable(
+  "draft_translations",
+  {
+    draftId: integer().primaryKey(),
+    status: text().notNull().default("queued"),
+    ...queueAttempts(),
+    ...timestamps(),
+  },
+  (table) => [index("idx_draft_translations_due").on(table.status, table.nextAttemptAt, table.createdAt)],
+);

@@ -10,6 +10,7 @@ const TRACKED_FEATURES = [
   "publishing.video.job",
   "publishing.site.materialize",
   "content.story_card.render",
+  "content.draft.translate",
   "analytics.metrics.collect",
   "analytics.creator_profile.sync",
   "analytics.video_metrics.collect",

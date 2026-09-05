@@ -270,8 +270,12 @@ export function draftPreview(
   const mediaLine =
     media.ru || media.en ? `\n${t(locale, "post.media")}: ${media.ru} RU${servesEn ? ` · ${media.enEffective} EN` : ""}` : "";
   const enMediaWarning = servesEn && media.ru > 0 && media.en === 0 ? `\n⚠️ ${t(locale, "post.en-uses-ru-media")}` : "";
+  // "Not translated" and "being translated" are different answers, and the card
+  // is the only place the operator can tell them apart: the draft arrives before
+  // its English, and a card that said neither read as a translation that failed.
+  const missingEn = backendDb.draftTranslations.pending(draftId) ? "post.translating" : "post.not-translated";
   const enText = servesEn
-    ? `\n\nEN:\n${escapeMarkdown(truncateUnicode(String(draft.text_en_approved || draft.text_en_machine || t(locale, "post.not-translated")), PREVIEW_TEXT_LIMIT))}`
+    ? `\n\nEN:\n${escapeMarkdown(truncateUnicode(String(draft.text_en_approved || draft.text_en_machine || t(locale, missingEn)), PREVIEW_TEXT_LIMIT))}`
     : "";
   return {
     text: `${draftHeader(draftId, targets, locale)}${mediaLine}${storyCardStatus}${enMediaWarning}\n\nRU:\n${escapeMarkdown(truncateUnicode(String(draft.text_ru || t(locale, "post.media-only")), PREVIEW_TEXT_LIMIT))}${enText}`,

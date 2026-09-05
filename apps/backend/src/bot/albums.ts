@@ -1,6 +1,5 @@
 import { and, asc, eq, lte } from "drizzle-orm";
 import type { Bot } from "grammy";
-import { translateDraftText } from "../content/translation.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { pendingAlbums } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
@@ -31,8 +30,8 @@ const ALBUM_CLAIM_LEASE_MS = 10 * 60_000;
 // would loop forever, so give up after a few tries and tell the sender instead
 // of retrying silently at ~1 Hz.
 const ALBUM_MAX_ATTEMPTS = 5;
-// One cycle imports media and translates text per album, so a backlog is worked
-// off over several ticks instead of holding claims past their lease.
+// One cycle imports media per album, so a backlog is worked off over several
+// ticks instead of holding claims past their lease.
 const ALBUM_FINALIZE_BATCH = 20;
 
 type PendingAlbumInput = {
@@ -175,10 +174,8 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
         cardDraftId = draftId;
       } else {
         const text = row.textRu;
-        const textEn = await translateDraftText(backendDb, text, config);
         cardDraftId = createStudioServices(backendDb, config).posts.create(row.actorId, {
           text,
-          textEn,
           media,
           entities: jsonRecordArray(row.textEntitiesJson),
         });

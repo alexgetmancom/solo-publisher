@@ -2,7 +2,6 @@ import type { Context } from "grammy";
 import { flowStepInput } from "../application/conversation-flow.js";
 import { mediaSizeAdvice } from "../content/media-size-advice.js";
 import type { DraftMessage } from "../content/message.js";
-import { translateDraftText } from "../content/translation.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
@@ -75,15 +74,18 @@ export async function handlePostMessage(ctx: Context, backendDb: BackendDb, conf
 
 /** Turns captured material into a post draft and its preview card. The intake
  * calls this from a button press and the post screen from the message itself;
- * one implementation, so a post made either way is the same post. */
+ * one implementation, so a post made either way is the same post.
+ *
+ * Nothing is asked of a provider on the way: the English translation is queued
+ * with the draft and lands in this same card a moment later. Waiting for it here
+ * was the difference between a card in 100ms and a card in two seconds. */
 export async function createPostFromMessage(
   backendDb: BackendDb,
   config: BackendConfig,
   actorId: number,
   message: DraftMessage,
 ): Promise<PublicationEffect[]> {
-  const textEn = await translateDraftText(backendDb, message.text, config);
-  const draftId = createStudioServices(backendDb, config).posts.create(actorId, { ...message, textEn });
+  const draftId = createStudioServices(backendDb, config).posts.create(actorId, message);
   clearConversationState(backendDb, actorId, "post");
   const preview = postPreviewCard(backendDb, config, actorId, draftId);
   // Advice ahead of the card, never after it: the card carries the buttons the

@@ -47,6 +47,7 @@ export type NewDraft = {
 
 export type DraftPatch = Partial<{
   textRu: string;
+  textEnMachine: string;
   textEnApproved: string | null;
   textRuEntitiesJson: string | null;
   textEnEntitiesJson: string | null;
@@ -451,6 +452,17 @@ type StoryCardStore = {
   setPublishMode(draftId: number, mode: StoryPublishMode): void;
 };
 
+/** A draft's machine translation as an application service uses it: queued when
+ * the draft is created without English, claimed by one worker, and settled — the
+ * row's absence is what "this draft has its English" means. */
+export type DraftTranslationStore = {
+  queue(draftId: number): void;
+  pending(draftId: number): boolean;
+  claimDue(leaseMs: number): { draftId: number; attemptCount: number; lockedBy: string } | null;
+  settle(draftId: number, lockedBy: string): void;
+  fail(draftId: number, lockedBy: string, error: string, maxAttempts: number): void;
+};
+
 /** Composition-root dependencies passed into application use cases. */
 export type ApplicationPorts = {
   clock: Clock;
@@ -466,4 +478,5 @@ export type ApplicationPorts = {
   entityEnrichment: EntityEnrichmentStore;
   channels: ChannelStore;
   storyCards: StoryCardStore;
+  draftTranslations: DraftTranslationStore;
 };

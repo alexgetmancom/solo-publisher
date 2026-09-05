@@ -1,14 +1,16 @@
 import { type Bot, InlineKeyboard } from "grammy";
 import type { BackendDb } from "../db/client.js";
+import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { log } from "../foundation/logger.js";
 import { escapeMarkdown } from "../foundation/markdown.js";
 import { truncateUnicode } from "../foundation/text.js";
-import { telegramPostProgressCard } from "../interfaces/telegram/control-cards.js";
+import { telegramPostCard, telegramPostProgressCard } from "../interfaces/telegram/control-cards.js";
 
 import { type PostProgressState, type PostProgressStatus, postProgressState } from "../studio/services/post-progress.js";
 import { settingsService } from "../studio/services/settings.js";
+import { postPreviewCard } from "./publication-renderers.js";
 import { screenCallback } from "./screen-callback.js";
 import { isUnchangedMessageEdit } from "./telegram-errors.js";
 
@@ -78,6 +80,26 @@ export async function refreshPostControlCard(backendDb: BackendDb, bot: Bot | nu
     // stays silent. Anything else means the card has quietly stopped tracking
     // the publish it is supposed to show, so it must not be swallowed.
     if (!isUnchangedMessageEdit(error)) log("warn", "post control card refresh failed", { draftId, error });
+  }
+}
+
+/** Redraws the draft's editor card in place, for a change the operator did not
+ * make themselves: the English text arriving after the card was already sent.
+ * A draft with no card on screen has nothing to redraw, which is the normal
+ * state of a draft made anywhere but Telegram. */
+export async function refreshPostPreviewCard(backendDb: BackendDb, bot: Bot | null, config: BackendConfig, draftId: number): Promise<void> {
+  if (!bot) return;
+  const card = telegramPostCard(backendDb, draftId);
+  const draft = backendDb.drafts.get(draftId);
+  if (!card || !draft) return;
+  const preview = postPreviewCard(backendDb, config, draft.actor_id, draftId);
+  try {
+    await bot.api.editMessageText(card.chatId, card.messageId, preview.text, {
+      parse_mode: "Markdown",
+      reply_markup: preview.keyboard,
+    });
+  } catch (error) {
+    if (!isUnchangedMessageEdit(error)) log("warn", "post preview card refresh failed", { draftId, error });
   }
 }
 

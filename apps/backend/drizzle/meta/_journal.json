@@ -92,6 +92,13 @@
       "when": 1788700000000,
       "tag": "0012_studio_profile_bio",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788800000000,
+      "tag": "0013_draft_translations",
+      "breakpoints": true
     }
   ]
 }

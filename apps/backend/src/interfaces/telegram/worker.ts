@@ -1,6 +1,8 @@
 import type { Bot } from "grammy";
 import { finalizePendingAlbums } from "../../bot/albums.js";
 import { refreshTelegramAnalyticsDashboards } from "../../bot/analytics-screen.js";
+import { refreshPostPreviewCard } from "../../bot/progress.js";
+import { runTranslationCycle } from "../../content/translation-worker.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
@@ -30,6 +32,13 @@ export function startTelegramWorkers(config: BackendConfig, backendDb: BackendDb
   });
   setWorkerWake("telegram-events", telegramEventLoop.wake);
   return [
+    // A draft's English is made here rather than in the tap that created it: the
+    // card is already on screen, and this puts the translation into it.
+    startInterfaceLoop("telegram-translations", 1000, async () => {
+      const translated = await runTranslationCycle(backendDb, config);
+      for (const draftId of translated) await refreshPostPreviewCard(backendDb, bot, config, draftId);
+      if (translated.length) log("info", "draft translations settled", { drafts: translated });
+    }),
     startInterfaceLoop("telegram-albums", 1000, async () => {
       const completed = await finalizePendingAlbums(bot, backendDb, config);
       if (completed) log("info", "album drafts finalized", { completed });

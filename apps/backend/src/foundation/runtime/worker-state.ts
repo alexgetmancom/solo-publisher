@@ -71,6 +71,7 @@ export const CORE_WORKER_NAMES = [
  * healthy while its whole Telegram side was dead. */
 export const TELEGRAM_WORKER_NAMES = [
   "telegram-albums",
+  "telegram-translations",
   "telegram-events",
   "telegram-alerts",
   "telegram-weekly-summary",
