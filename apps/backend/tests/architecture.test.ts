@@ -145,13 +145,20 @@ describe("architecture fitness", () => {
    * new one is not forbidden -- it is required to answer that question, and
    * adding itself here is how it says it did. */
   it("keeps the writers of a publish job's payload to the ones that reason about what it already published", () => {
-    const writers = sourceFiles("apps/backend/src")
+    // Reading the column is a different act from writing it: the orphan sweep
+    // asks which files a delivery still points at so it can refuse to delete
+    // one. Named here so it stays a reader -- the assertion below is what holds
+    // it to that.
+    const readers = ["apps/backend/src/operations/story-media-prune.ts"];
+    const files = sourceFiles("apps/backend/src")
       .filter((file) => !file.includes("/db/schema/"))
       .filter((file) => {
         const text = source(file);
         return text.includes("payloadJson") && text.includes("publishJobs");
       })
       .sort();
+    for (const reader of readers) expect(source(reader)).not.toMatch(/insert\(publishJobs|update\(publishJobs/);
+    const writers = files.filter((file) => !readers.includes(file));
     expect(writers).toEqual([
       "apps/backend/src/operations/resume-from.ts",
       "apps/backend/src/publishing/publication-writer.ts",

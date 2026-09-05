@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
@@ -15,6 +15,7 @@ import {
   videoMetricSnapshots,
   videoTargets,
 } from "../src/db/schema.js";
+import { storyVariantPaths } from "../src/delivery/story-derivatives.js";
 import { recoverVideoLocks, runVideoCycle } from "../src/delivery/video-worker.js";
 import { t } from "../src/foundation/i18n/index.js";
 import { videoPreview } from "../src/interfaces/telegram/video-preview.js";
@@ -125,9 +126,17 @@ describe("video publication queue", () => {
         .where(eq(videoDrafts.id, draftId))
         .run();
 
-      const config = { ...videoConfig(), STUDIO_MEDIA_DIR: directory };
+      const config = { ...videoConfig(), STUDIO_MEDIA_DIR: directory, DATA_DIR: directory };
+      // The Story shapes made from this source, which are readable only through
+      // the source's own content hash: left behind they are ~20 MB per video
+      // that nothing in the system can reach again.
+      const variants = Object.values(storyVariantPaths(config, source, true));
+      mkdirSync(path.dirname(String(variants[0])), { recursive: true });
+      for (const variant of variants) writeFileSync(variant, "variant");
+
       await runVideoCycle(config, backendDb);
       expect(existsSync(source)).toBe(false);
+      for (const variant of variants) expect(existsSync(variant)).toBe(false);
       expect(backendDb.db.select().from(studioMediaAssets).where(eq(studioMediaAssets.id, asset.id)).get()).toBeDefined();
     } finally {
       rmSync(directory, { recursive: true, force: true });

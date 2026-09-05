@@ -59,6 +59,7 @@ const OFF_THE_AGENT_SURFACE = [
   "purge",
   "story-card-backfill",
   "story-media-backfill",
+  "story-media-prune",
   "disk",
   "metrics-backfill",
 ];

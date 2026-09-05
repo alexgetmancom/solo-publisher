@@ -77,6 +77,7 @@ import { skipPublicationTargets } from "./skip.js";
 import { compactOperationsStatus } from "./status.js";
 import { backfillTextStoryCards } from "./story-card-backfill.js";
 import { backfillStoryMedia } from "./story-media-backfill.js";
+import { pruneOrphanedStoryMedia } from "./story-media-prune.js";
 import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
@@ -1015,6 +1016,15 @@ const operationDefs = {
     agent: false,
     note: "`missing_wanted` is the number to act on: a draft that publishes a Story points at that file, delivery only reads these files, so that publication will refuse. `missing_unused` is media no draft has asked a Story of -- normal, and left alone unless `all` is passed. Reports the plan; `apply` renders `limit` of them, one encode at a time -- a video is 8-12 seconds, so run it again until `remaining` is zero.",
     handler: (context, input) => backfillStoryMedia(context.db(), context.config(), input.apply, input.limit, input.all),
+  }),
+  "story-media-prune": operation({
+    section: "media",
+    summary: "Remove Story variants whose source file is gone.",
+    schema: z.object({ apply: applyOption }),
+    mutates: true,
+    agent: false,
+    note: "Retention takes a variant with its source, so this is for what accumulated before that and for files named by routes that no longer exist. A file a publish job's payload still names is reported under `held_by_a_publish_job` and never removed.",
+    handler: (context, input) => pruneOrphanedStoryMedia(context.db(), context.config(), input.apply),
   }),
   "story-card-backfill": operation({
     section: "delivery",

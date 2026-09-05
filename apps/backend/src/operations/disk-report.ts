@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import { postLocales, studioMediaAssets } from "../db/schema.js";
+import { postLocales, publishJobs, studioMediaAssets, videoDrafts } from "../db/schema.js";
 import { storyDirectory } from "../delivery/story-media.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
@@ -30,6 +30,7 @@ export function diskReport(backendDb: BackendDb, config: BackendConfig): Record<
     ok: true,
     database_bytes: database,
     directories: directories.map((entry) => ({ ...entry, megabytes: megabytes(entry.bytes) })),
+    studio_media: studioMediaHoldings(backendDb, config),
     story_variants: {
       files: orphans.total,
       orphaned: orphans.orphaned.length,
@@ -42,10 +43,74 @@ export function diskReport(backendDb: BackendDb, config: BackendConfig): Record<
   };
 }
 
+/**
+ * Why each stored source is still there, which is the only useful form of "will
+ * this go away". Three answers, and they are genuinely different: a post's
+ * attachment is kept for as long as the post, a video source is released a
+ * retention window after its drafts are final, and a file no draft names at all
+ * is one nothing will ever delete.
+ */
+function studioMediaHoldings(backendDb: BackendDb, config: BackendConfig): Record<string, unknown> {
+  const held = { post_attachment: group(), video_source_pending: group(), video_source_released: group(), unreferenced: group() };
+  const assets = unsafeDb(backendDb)
+    .db.select({ id: studioMediaAssets.id, localPath: studioMediaAssets.localPath })
+    .from(studioMediaAssets)
+    .all();
+  const postAssetIds = referencedPostAssetIds(backendDb);
+  const videoByAsset = new Map<number, { status: string; retentionUntil: string | null; sourcePrunedAt: string | null }[]>();
+  for (const draft of unsafeDb(backendDb)
+    .db.select({
+      studioMediaAssetId: videoDrafts.studioMediaAssetId,
+      status: videoDrafts.status,
+      retentionUntil: videoDrafts.retentionUntil,
+      sourcePrunedAt: videoDrafts.sourcePrunedAt,
+    })
+    .from(videoDrafts)
+    .all())
+    videoByAsset.set(draft.studioMediaAssetId, [...(videoByAsset.get(draft.studioMediaAssetId) ?? []), draft]);
+  for (const asset of assets) {
+    if (!fs.existsSync(asset.localPath)) continue;
+    const bytes = fileBytes(asset.localPath);
+    const drafts = videoByAsset.get(asset.id) ?? [];
+    // A post attachment is checked first because it outranks the video rule:
+    // retention refuses to reclaim a source a post still points at.
+    const bucket = postAssetIds.has(asset.id)
+      ? held.post_attachment
+      : drafts.length === 0
+        ? held.unreferenced
+        : drafts.every((draft) => draft.sourcePrunedAt !== null)
+          ? held.video_source_released
+          : held.video_source_pending;
+    bucket.files += 1;
+    bucket.bytes += bytes;
+    if (bucket.oldest.length < 10) bucket.oldest.push({ path: asset.localPath, megabytes: megabytes(bytes) });
+  }
+  return {
+    note: "post_attachment is kept for as long as the post; video_source_pending is released a retention window after its drafts are final; unreferenced is named by no draft at all and nothing will delete it.",
+    ...Object.fromEntries(Object.entries(held).map(([name, value]) => [name, { ...value, megabytes: megabytes(value.bytes) }])),
+  };
+}
+
+function group(): { files: number; bytes: number; oldest: Array<{ path: string; megabytes: number }> } {
+  return { files: 0, bytes: 0, oldest: [] };
+}
+
+/** Post media names its asset by id, by path, or by both, depending on when the
+ * draft was written; retention reads the same JSON, so this reads it the same way. */
+function referencedPostAssetIds(backendDb: BackendDb): Set<number> {
+  const ids = new Set<number>();
+  for (const locale of unsafeDb(backendDb).db.select({ mediaJson: postLocales.mediaJson }).from(postLocales).all())
+    for (const item of jsonRecordArray(locale.mediaJson)) {
+      const assetId = Number(item.asset_id);
+      if (Number.isSafeInteger(assetId) && assetId > 0) ids.add(assetId);
+    }
+  return ids;
+}
+
 /** A Story variant whose source is no longer on disk. The variant's name starts
  * with the source's content-addressed stem, which is the only link between the
  * two -- there is no table, on purpose. */
-function orphanedStoryVariants(backendDb: BackendDb, config: BackendConfig): { total: number; orphaned: string[]; bytes: number } {
+export function orphanedStoryVariants(backendDb: BackendDb, config: BackendConfig): { total: number; orphaned: string[]; bytes: number } {
   const live = new Set<string>();
   for (const source of knownSources(backendDb)) if (fs.existsSync(source)) live.add(path.basename(source).replace(/\.[^.]+$/, ""));
   const directory = storyDirectory(config);

@@ -5,6 +5,7 @@ import { type BackendDb, unsafeDb } from "../db/client.js";
 import { postLocales, studioMediaAssets, videoDrafts } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { jsonRecordArray } from "../json.js";
+import { storyVariantPaths } from "./story-derivatives.js";
 
 /** Reclaims video source files whose drafts are final and past their
  * retention window. Runs at the tail of every video cycle; deliberately
@@ -96,12 +97,18 @@ function pruneStudioAssetSource(config: BackendConfig, backendDb: BackendDb, ass
   // Never remove a shared source merely because the video side became final.
   if (postDraftReferencesAsset(backendDb, assetId)) return;
   const asset = unsafeDb(backendDb)
-    .db.select({ localPath: studioMediaAssets.localPath })
+    .db.select({ localPath: studioMediaAssets.localPath, kind: studioMediaAssets.kind })
     .from(studioMediaAssets)
     .where(eq(studioMediaAssets.id, assetId))
     .get();
   if (!asset || !isManagedVideoSource(config, asset.localPath)) return;
   fs.rmSync(asset.localPath, { force: true });
+  // A Story variant is kept for exactly as long as the source it was made from:
+  // it is named after that source's content hash and nothing else will ever look
+  // for it again. Left behind, it is a file no path in the system can reach --
+  // 20 MB per video, forever.
+  for (const variant of Object.values(storyVariantPaths(config, asset.localPath, asset.kind === "video")))
+    fs.rmSync(variant, { force: true });
 }
 
 /** Post attachments still use durable JSON rather than a foreign key, so the
