@@ -1,6 +1,7 @@
 import { exchangeYouTubeCode, youtubeOauthAuthorizeUrl } from "../../channels/youtube-oauth.js";
 import { escapeHtml } from "../../foundation/html.js";
 import { commandAllowed } from "../../foundation/http-auth.js";
+import { log } from "../../foundation/logger.js";
 import type { RouteModule } from "./context.js";
 
 export const youtubeOauthRoutes: RouteModule = (app, { config, backendDb, studio }) => {
@@ -25,6 +26,10 @@ export const youtubeOauthRoutes: RouteModule = (app, { config, backendDb, studio
       if (!code || !state) throw new Error("YouTube OAuth callback has no code or state");
       const { locale } = await exchangeYouTubeCode(config, backendDb, code, state);
       studio.channels.connect({ platform: "youtube", locale, provider: "native" });
+      // The same line the device flow wrote before this replaced it. Connecting
+      // is the act every later question about a credential is dated from, and a
+      // journal that stops recording it leaves the reconnection invisible.
+      log("info", "channel connected", { target: `youtube_${locale}`, account: `YouTube ${locale.toUpperCase()}` });
       return page(`YouTube ${locale.toUpperCase()} connected`, "The channel is ready for publishing and comment collection.", 200);
     } catch (error) {
       return page("YouTube connection failed", String(error), 400);
