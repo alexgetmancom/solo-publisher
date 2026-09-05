@@ -75,6 +75,7 @@ import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
 import { skipPublicationTargets } from "./skip.js";
 import { compactOperationsStatus } from "./status.js";
 import { backfillTextStoryCards } from "./story-card-backfill.js";
+import { backfillStoryMedia } from "./story-media-backfill.js";
 import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
@@ -986,6 +987,21 @@ const operationDefs = {
     mutates: true,
     agent: true,
     handler: (context, input) => reprocessPostMedia(context.db(), context.config(), input.ref, input.apply),
+  }),
+  "story-media-backfill": operation({
+    section: "media",
+    startHere: "a Story is slow to publish, or refuses for want of prepared media",
+    summary: "Render the Story shapes missing from the media this Studio can still publish.",
+    schema: z.object({
+      apply: applyOption,
+      limit: z.coerce.number().int().positive().default(25).describe("how many sources to render in this run"),
+    }),
+    mutates: true,
+    // Renders on the host and reads host paths, which is where the agent line
+    // is drawn regardless of how routine the work is.
+    agent: false,
+    note: "Publishing reads these files and never makes them, so a source listed as missing here is a publication that will refuse. Reports the plan; `apply` renders `limit` of them, one encode at a time -- a video is 8-12 seconds, so run it again until `remaining` is zero.",
+    handler: (context, input) => backfillStoryMedia(context.db(), context.config(), input.apply, input.limit),
   }),
   "story-card-backfill": operation({
     section: "delivery",

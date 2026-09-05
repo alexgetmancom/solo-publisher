@@ -58,6 +58,7 @@ const OFF_THE_AGENT_SURFACE = [
   "x-relink",
   "purge",
   "story-card-backfill",
+  "story-media-backfill",
   "metrics-backfill",
 ];
 

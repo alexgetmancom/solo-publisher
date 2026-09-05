@@ -1,6 +1,6 @@
 import type { StudioMediaAssetRecord } from "../../application/ports.js";
-import { storyTargetsEnabled, targetsRecord } from "../../botTargets.js";
-import { effectivePostTargets } from "../../channels/registry.js";
+import { storyTargetsEnabled } from "../../botTargets.js";
+import { registeredPostTargetIds } from "../../channels/registry.js";
 import type { BackendDb } from "../../db/client.js";
 import { prepareStoryDerivative } from "../../delivery/story-derivatives.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -37,15 +37,17 @@ export async function importTelegramMedia(
  *
  * This is post media: the only media a Story is ever made of. A video uploaded
  * for YouTube goes through Content the same way and must not pay for an encode
- * nothing reads. Publishing renders whatever this did not finish, so a failure
- * here costs the operator nothing but the head start.
+ * nothing reads. A failure here leaves the asset unprepared, which the draft's
+ * own Story choice and `story-media-backfill` are what recover it.
  */
 function prepareStoryDerivatives(backendDb: BackendDb, config: BackendConfig, assets: StudioMediaAssetRecord[]): void {
-  // Through the registry, because the stored selection is not the answer on its
-  // own: a profile nobody has curated still ticks Story targets with no channel
-  // connected for them, and those cannot publish anything.
-  const selected = effectivePostTargets(backendDb, targetsRecord(backendDb.studioSettings.profile().defaultTargetsJson));
-  if (!storyTargetsEnabled(selected)) return;
+  // The question is what this Studio *can* publish a Story to, not what its
+  // default profile happens to tick: a draft may turn a Story target on that the
+  // profile has off, and that draft's media has to be ready too. Through the
+  // registry, because a profile nobody has curated ticks Story targets with no
+  // channel connected for them, and those cannot publish anything.
+  const connected = Object.fromEntries([...registeredPostTargetIds(backendDb)].map((target) => [target, true]));
+  if (!storyTargetsEnabled(connected)) return;
   for (const asset of assets) {
     void prepareStoryDerivative(config, asset).catch((error: unknown) => {
       log("warn", "story derivative not prepared at ingress", {

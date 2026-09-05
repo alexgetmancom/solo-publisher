@@ -103,6 +103,13 @@ export async function ensurePreparedStoryMedia(config: BackendConfig, item: Publ
   return preparedStoryMedia(config, item);
 }
 
+/** Whether the Story shapes of this source are already on disk. The operator's
+ * backfill asks it of every asset the Studio holds, so it stays beside the
+ * function that names those files rather than restating the naming rule. */
+export function storyDerivativePresent(config: BackendConfig, source: string, video: boolean): boolean {
+  return variantsPresent(storyVariantPaths(config, source, video));
+}
+
 function variantsPresent(paths: { standard: string; telegram?: string }): boolean {
   return fs.existsSync(paths.standard) && (!paths.telegram || fs.existsSync(paths.telegram));
 }
