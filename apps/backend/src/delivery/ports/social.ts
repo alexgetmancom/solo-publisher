@@ -9,7 +9,7 @@ import { prepareMediaItems } from "../media-prepare.js";
 import { createPlatformAdapters, type TargetRouting } from "../platform-adapters.js";
 import type { DeliveryPorts } from "../ports.js";
 import { payloadMedia } from "../social/payload.js";
-import { preparedStoryMedia } from "../story-derivatives.js";
+import { awaitPreparedStoryMedia } from "../story-derivatives.js";
 
 type PreparedMedia = Awaited<ReturnType<typeof prepareMediaItems>>;
 const MAX_PREPARATION_CACHE_ENTRIES = 32;
@@ -45,7 +45,7 @@ async function withPreparedMedia(
   // before it ever reaches the Media Processing Port.
   const storySource = selectMediaForTarget(job.target, media);
   if (isStoryTarget(job.target)) log("info", "story delivery preparation started", { jobId: job.jobId, target: job.target });
-  const sourceMedia = isStoryTarget(job.target) ? requireStoryMedia(config, storySource) : storySource;
+  const sourceMedia = isStoryTarget(job.target) ? await requireStoryMedia(config, storySource) : storySource;
   const key = mediaCacheKey(job, sourceMedia, config);
   // One preparation per (post, target, media) within a delivery cycle. The
   // staged public copy is a cache; the Story derivative itself belongs to the
@@ -65,15 +65,16 @@ async function withPreparedMedia(
   return { ...job, payload: { ...job.payload, media: items } };
 }
 
-function requireStoryMedia(config: BackendConfig, media: ReturnType<typeof payloadMedia>): ReturnType<typeof payloadMedia> {
+async function requireStoryMedia(config: BackendConfig, media: ReturnType<typeof payloadMedia>): Promise<ReturnType<typeof payloadMedia>> {
   const [source] = media;
   if (!source) return media;
-  // A read, and only a read. Publishing used to render a missing variant here,
-  // which put an 8-12 second encode inside the tap that sends the post: the
-  // variant is made at ingress, and `story-media-backfill` makes what predates
-  // that. A publication that finds none refuses now rather than paying for one
-  // with the audience already waiting.
-  const prepared = preparedStoryMedia(config, source);
+  // A read, and a wait for a render already running -- never a render of its
+  // own. Publishing used to make a missing variant here, which put an 8-12
+  // second encode inside the tap that sends the post. The variant is made when
+  // the draft says it publishes a Story, and `story-media-backfill` makes what
+  // predates that; a publication that finds none refuses rather than paying for
+  // one with the audience already waiting.
+  const prepared = await awaitPreparedStoryMedia(config, source);
   if (prepared) return [prepared];
   throw new Error(
     `story_media_unprepared: no Story variant for ${source.localPath ?? "media with no local file"} -- run \`ops story-media-backfill --apply\``,

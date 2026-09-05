@@ -3,7 +3,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { Bot } from "grammy";
-import { ensureStoryDerivative } from "../src/delivery/story-derivatives.js";
 import type { BackendConfig } from "../src/foundation/config.js";
 import { importTelegramMedia } from "../src/interfaces/telegram/media-ingress.js";
 import { openBackendDb } from "./helpers/open-db.js";
@@ -96,40 +95,6 @@ describe("importTelegramMedia", () => {
       }
       expect(result[0]?.mime_type).toBe("image/jpeg");
       expect(result[1]?.mime_type).toBe("video/mp4");
-    });
-  });
-
-  it("starts the Story derivative for post media only where Stories are published", async () => {
-    await withIngress(async ({ dir, backendDb, config }) => {
-      const photoSource = path.join(dir, "story-photo.jpg");
-      fs.writeFileSync(photoSource, PNG_BYTES);
-      const bot = botWith(async () => ({ file_path: photoSource }));
-      const variant = (item: Record<string, unknown>) =>
-        path.join(dir, "story-media", `${path.parse(String(item.local_path)).name}-story-standard.jpg`);
-
-      // Nothing this Studio publishes to carries a Story yet.
-      const [skipped] = await importTelegramMedia(bot.api, backendDb, config, 9, [{ type: "photo", file_id: "photo-1" }]);
-      expect(fs.existsSync(variant(skipped ?? {}))).toBe(false);
-
-      backendDb.channels.upsert(
-        {
-          id: "telegram_stories",
-          platform: "telegram",
-          locale: "ru",
-          targetId: "telegram_stories",
-          label: "Telegram Stories",
-          provider: "native",
-          providerAccountId: null,
-          enabled: 1,
-          source: "fixture",
-        },
-        new Date().toISOString(),
-      );
-      fs.writeFileSync(photoSource, Buffer.concat([PNG_BYTES, Buffer.from("b")]));
-      const [prepared] = await importTelegramMedia(bot.api, backendDb, config, 9, [{ type: "photo", file_id: "photo-2" }]);
-      // The import does not wait for the encode; this joins the render it started.
-      await ensureStoryDerivative(config, String(prepared?.local_path), false);
-      expect(fs.existsSync(variant(prepared ?? {}))).toBe(true);
     });
   });
 

@@ -34,7 +34,7 @@ const real = {
   publishInstagramStory: (await import("../src/delivery/social/instagram.js")).publishInstagramStory,
   publishTelegramStory: (await import("../src/delivery/social/telegramStories.js")).publishTelegramStory,
   prepareMediaItems: (await import("../src/delivery/media-prepare.js")).prepareMediaItems,
-  preparedStoryMedia: (await import("../src/delivery/story-derivatives.js")).preparedStoryMedia,
+  awaitPreparedStoryMedia: (await import("../src/delivery/story-derivatives.js")).awaitPreparedStoryMedia,
 };
 
 mock.module("../src/delivery/social/telegram.js", () => ({
@@ -85,8 +85,8 @@ mock.module("../src/delivery/media-prepare.js", () => ({
   },
 }));
 mock.module("../src/delivery/story-derivatives.js", () => ({
-  preparedStoryMedia: (...args: Parameters<typeof real.preparedStoryMedia>) => {
-    if (!intercepting) return real.preparedStoryMedia(...args);
+  awaitPreparedStoryMedia: async (...args: Parameters<typeof real.awaitPreparedStoryMedia>) => {
+    if (!intercepting) return real.awaitPreparedStoryMedia(...args);
     const item = args[1];
     storyReadCount += 1;
     return item.localPath ? { ...item, storyLocalPath: `/story/${item.fileId}.mp4` } : null;

@@ -1,7 +1,8 @@
 import type { ChannelConnectionRecord } from "../application/ports.js";
-import { TARGETS, type TargetId, targetConnection, targetDefinition } from "../botTargets.js";
+import { storyTargetsEnabled, TARGETS, type TargetId, targetConnection, targetDefinition } from "../botTargets.js";
 import type { BackendDb } from "../db/client.js";
 import type { VideoLocale } from "../foundation/external/youtube.js";
+import { parseTargets } from "../publishing/targets.js";
 import { ACCOUNT_PLATFORMS, VIDEO_TARGET_PLATFORM, type VideoTarget } from "../publishing/video-types.js";
 import { channelIdentity } from "./identity.js";
 
@@ -101,6 +102,24 @@ export function registeredPostTargetIds(backendDb: BackendDb): Set<string> {
   // serves both the post target and the Article target; it is not connected
   // twice to say so.
   return new Set(TARGETS.map(({ id }) => String(id)).filter((target) => connections.has(targetConnection(target))));
+}
+
+/**
+ * Whether this publication goes to a Story, which is the one question every
+ * piece of Story work keys off: whether the operator is asked about Story
+ * publishing, and whether the media needs its 9:16 shapes made.
+ *
+ * It is asked of the publication's own targets, narrowed by the registry -- not
+ * of the Studio's default profile, and not of what it merely has connected. A
+ * profile nobody has curated ticks targets with no channel behind them, and a
+ * draft turns on targets the profile has off. Both of those were answered
+ * separately once, and each answer was wrong somewhere: media ingress read the
+ * profile and prepared nothing for a Studio whose Story target lives on the
+ * draft, then read the connections and prepared an encode for every import.
+ * There is one answer, and callers take it from here.
+ */
+export function publishesStory(backendDb: BackendDb, targetsJson: unknown): boolean {
+  return storyTargetsEnabled(effectivePostTargets(backendDb, parseTargets(targetsJson)));
 }
 
 /** The registry is the only source of enabled publication targets. */

@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createSerialQueue } from "../../../../shared/serial-queue.js";
-import type { StudioMediaAssetRecord } from "../application/ports.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import type { PublishMediaItem } from "./social/payload.js";
@@ -33,6 +32,24 @@ export function storyVariantPaths(config: BackendConfig, sourcePath: string, vid
     standard: path.join(directory, `${stem}-story-standard.${video ? "mp4" : "jpg"}`),
     ...(video ? { telegram: path.join(directory, `${stem}-story-telegram.mp4`) } : {}),
   };
+}
+
+/**
+ * The prepared variant for one media item once any render already running for it
+ * has finished, or nothing if none was ever started.
+ *
+ * Delivery reads through here rather than through `preparedStoryMedia` alone,
+ * because the two can race by a second: a draft that turns a Story target on and
+ * publishes immediately has its encode in flight, and refusing that publication
+ * would be refusing work that is already being done. Waiting is not starting --
+ * an encode is never begun on the way to the audience.
+ */
+export async function awaitPreparedStoryMedia(config: BackendConfig, item: PublishMediaItem): Promise<PublishMediaItem | null> {
+  const source = typeof item.localPath === "string" ? item.localPath : null;
+  if (!source) return null;
+  const inFlight = renders.get(storyVariantPaths(config, source, storyItemIsVideo(item)).standard);
+  if (inFlight) await inFlight.catch(() => false);
+  return preparedStoryMedia(config, item);
 }
 
 /** The prepared variant for one media item, or nothing if it was never made. */
@@ -87,12 +104,6 @@ export async function ensureStoryDerivative(
     });
   renders.set(paths.standard, render);
   return render;
-}
-
-/** Completes the representation an imported asset needs before it can enter a
- * post draft. Publishing recovers what this could not finish. */
-export async function prepareStoryDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
-  return ensureStoryDerivative(config, asset.localPath, asset.kind === "video", { assetId: asset.id, kind: asset.kind });
 }
 
 /** Whether the Story shapes of this source are already on disk. The operator's

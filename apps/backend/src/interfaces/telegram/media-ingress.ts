@@ -1,8 +1,5 @@
 import type { StudioMediaAssetRecord } from "../../application/ports.js";
-import { storyTargetsEnabled } from "../../botTargets.js";
-import { registeredPostTargetIds } from "../../channels/registry.js";
 import type { BackendDb } from "../../db/client.js";
-import { prepareStoryDerivative } from "../../delivery/story-derivatives.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
 import { createStudioServices, type StudioServices } from "../../studio/services/index.js";
@@ -12,7 +9,13 @@ type TelegramFileApi = {
   getFile(fileId: string): Promise<{ file_path?: string }>;
 };
 
-/** Converts Telegram transport file ids into Content-owned assets before a draft is written. */
+/** Converts Telegram transport file ids into Content-owned assets before a draft
+ * is written.
+ *
+ * Nothing about publication targets is decided here. What a file is *for* is the
+ * draft's business, and the Story shapes are made when a draft says it publishes
+ * one -- this used to guess from the Studio's profile, then from its connections,
+ * and both guesses were wrong for a Studio somewhere. */
 export async function importTelegramMedia(
   api: TelegramFileApi,
   backendDb: BackendDb,
@@ -22,40 +25,8 @@ export async function importTelegramMedia(
 ): Promise<Record<string, unknown>[]> {
   const studioMedia = createStudioServices(backendDb, config).media;
   const imported: Record<string, unknown>[] = [];
-  const assets: StudioMediaAssetRecord[] = [];
-  for (const item of media) {
-    const result = await importTelegramMediaItem(api, studioMedia, config, actorId, item);
-    imported.push(result.item);
-    if (result.asset) assets.push(result.asset);
-  }
-  prepareStoryDerivatives(backendDb, config, assets);
+  for (const item of media) imported.push((await importTelegramMediaItem(api, studioMedia, config, actorId, item)).item);
   return imported;
-}
-
-/**
- * The Story shapes of what just arrived, started where nobody waits for them.
- *
- * This is post media: the only media a Story is ever made of. A video uploaded
- * for YouTube goes through Content the same way and must not pay for an encode
- * nothing reads. A failure here leaves the asset unprepared, which the draft's
- * own Story choice and `story-media-backfill` are what recover it.
- */
-function prepareStoryDerivatives(backendDb: BackendDb, config: BackendConfig, assets: StudioMediaAssetRecord[]): void {
-  // The question is what this Studio *can* publish a Story to, not what its
-  // default profile happens to tick: a draft may turn a Story target on that the
-  // profile has off, and that draft's media has to be ready too. Through the
-  // registry, because a profile nobody has curated ticks Story targets with no
-  // channel connected for them, and those cannot publish anything.
-  const connected = Object.fromEntries([...registeredPostTargetIds(backendDb)].map((target) => [target, true]));
-  if (!storyTargetsEnabled(connected)) return;
-  for (const asset of assets) {
-    void prepareStoryDerivative(config, asset).catch((error: unknown) => {
-      log("warn", "story derivative not prepared at ingress", {
-        assetId: asset.id,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    });
-  }
 }
 
 async function importTelegramMediaItem(

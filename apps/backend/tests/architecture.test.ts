@@ -91,6 +91,29 @@ describe("architecture fitness", () => {
     expect(text).toContain("conversationSessions");
   });
 
+  it("keeps one answer to whether a publication goes to a Story", () => {
+    /* Three files derived it separately once, and each derivation was wrong for
+     * a Studio somewhere: ingress read the default profile and prepared nothing
+     * for a Studio whose Story target lives on the draft, the post screen read
+     * the draft, and the backfill reads the connections. The draft's own
+     * targets, narrowed by the registry, are the answer, and `publishesStory`
+     * is where it is spelled out.
+     *
+     * `botTargets.ts` owns the primitive; the registry builds the answer on it;
+     * the Story-card store asks a wider question (a card also illustrates the
+     * site) and cannot reach the registry without a cycle; the backfill asks the
+     * Studio-wide one on purpose, because a repair prepares what any draft could
+     * still turn on. Everything else calls `publishesStory`. */
+    const owners = sourceFiles("apps/backend/src")
+      .filter((file) => /\bstoryTargetsEnabled\b/.test(source(file)))
+      .sort();
+    expect(owners).toEqual([
+      "apps/backend/src/botTargets.ts",
+      "apps/backend/src/channels/registry.ts",
+      "apps/backend/src/operations/story-media-backfill.ts",
+    ]);
+  });
+
   it("routes domain events through the durable event port", () => {
     const producerFiles = [
       "apps/backend/src/content/assets.ts",
