@@ -499,7 +499,11 @@ const operationDefs = {
       limit: z.coerce.number().int().min(1).max(1000).default(1000).describe("newest published videos to sweep"),
     }),
     mutates: true,
-    agent: false,
+    // On the agent surface despite being a mutation: what it writes is a copy
+    // of what the platforms already hold, it is answering the same question the
+    // read beside it asks, and an agent that can see the gap should be able to
+    // close it rather than hand back a command to paste.
+    agent: true,
     handler: (context, input) =>
       backfillVideoComments(context.config(), context.db(), context.fetchImpl, {
         platforms: splitList(input.platforms) ?? ["youtube_shorts", "instagram_reels"],

@@ -54,7 +54,6 @@ const OFF_THE_AGENT_SURFACE = [
   "live-say",
   "dates-repair",
   "milestone-announce",
-  "comments-backfill",
   "x-import-delete",
   "x-relink",
   "purge",
