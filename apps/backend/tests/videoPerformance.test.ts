@@ -197,4 +197,42 @@ describe("video performance report", () => {
       expect(scheduledLocal.hour).toBe(21);
     });
   });
+
+  it("adds up where the views came from, over the videos that carry a reading", async () => {
+    await withDb(async (backendDb) => {
+      for (const sources of [
+        { SHORTS: 900, YT_SEARCH: 100 },
+        { SHORTS: 500, SUBSCRIBER: 500 },
+      ]) {
+        const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: hoursAgo(50), label: "Short" });
+        backendDb.db
+          .insert(videoMetricSnapshots)
+          .values([
+            {
+              videoTargetId: targetId,
+              platform: "youtube_shorts",
+              checkpointIndex: 0,
+              sampledAt: hoursAgo(49),
+              metricsJson: { views: 100 },
+            },
+            {
+              videoTargetId: targetId,
+              platform: "youtube_shorts",
+              checkpointIndex: 1,
+              sampledAt: hoursAgo(1),
+              metricsJson: { views: 1000, trafficSources: sources, deepAnalyticsBucketHours: 24 },
+            },
+          ])
+          .run();
+      }
+      const traffic = (
+        videoPerformanceReport(backendDb, { days: 30, limit: 5, timeZone: TIME_ZONE }).trafficSources as Record<
+          string,
+          { videos: number; views: number; sources: Array<{ source: string; views: number; share: number }> }
+        >
+      ).youtube_shorts;
+      expect(traffic?.videos).toBe(2);
+      expect(traffic?.sources[0]).toEqual({ source: "SHORTS", views: 1400, share: 70 });
+    });
+  });
 });

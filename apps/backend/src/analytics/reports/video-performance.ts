@@ -62,6 +62,7 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
     totals: totals(series),
     publishHours: publishHours(series, options.timeZone),
     ageCurve: ageCurve(series),
+    trafficSources: trafficSources(series),
     byTag: byTag(byDraft),
     audienceGrowth: audienceGrowth(backendDb, from.toISOString()),
     queue: queue(backendDb, options.timeZone),
@@ -412,6 +413,32 @@ function queue(backendDb: BackendDb, timeZone: string): Array<Record<string, unk
   }));
 }
 
+/** Where the window's YouTube views came from, summed over the videos that
+ * have a reading. Shorts land in SHORTS; the rest is the long tail that tells
+ * you whether anything but the feed is working. */
+function trafficSources(series: TargetSeries[]): Record<string, unknown> {
+  const totals = new Map<string, number>();
+  let videos = 0;
+  for (const target of series) {
+    if (target.target !== "youtube_shorts") continue;
+    const reading = [...target.readings].reverse().find((entry) => entry.metrics.trafficSources);
+    const sources = reading?.metrics.trafficSources as Record<string, unknown> | undefined;
+    if (!sources) continue;
+    videos += 1;
+    for (const [source, value] of Object.entries(sources)) totals.set(source, (totals.get(source) ?? 0) + metricNumber(value));
+  }
+  const views = [...totals.values()].reduce((sum, value) => sum + value, 0);
+  return {
+    youtube_shorts: {
+      videos,
+      views,
+      sources: [...totals.entries()]
+        .sort(([, left], [, right]) => right - left)
+        .map(([source, value]) => ({ source, views: value, share: views ? Math.round((value / views) * 1000) / 10 : 0 })),
+    },
+  };
+}
+
 function videoList(byDraft: Map<number, TargetSeries[]>, timeZone: string, limit: number): Array<Record<string, unknown>> {
   return [...byDraft.entries()]
     .map(([draftId, targets]) => {
@@ -511,6 +538,7 @@ function readingNotes(): string[] {
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",
     "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
     "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",
+    "Retention above 100% is not an error: YouTube counts a rewatched second more than once, so a looping Short really does hold more than one view per viewer there.",
     "`heatmaps` is what a browser copied out of a platform dashboard, with the age of the capture: it describes followers, while most Reels views come from people who follow nothing.",
   ];
 }
