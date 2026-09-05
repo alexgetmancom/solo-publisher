@@ -9,6 +9,7 @@ import { youtubeAccessToken } from "../../foundation/external/youtube.js";
 import { zernioRequest } from "../../foundation/external/zernio.js";
 import { requestJson } from "../../foundation/http.js";
 import { t } from "../../foundation/i18n/index.js";
+import { log } from "../../foundation/logger.js";
 import { markSynced, mergeVideoSnapshot, metricNumber, upsertComment, upsertVideoSnapshot } from "../snapshots/creator-store.js";
 import { describeMetricFreeze, isTerminalMetricError, terminalIfMissingRemoteObject } from "./collectors/errors.js";
 import { nextVideoMetricCheckAt, videoMetricCheckpointAt } from "./metric-checkpoints.js";
@@ -438,8 +439,11 @@ async function collectYouTubeVideoMetrics(
   } catch (error) {
     // Comments are optional enrichment. A token without youtube.force-ssl,
     // a disabled comments endpoint, or a deleted video must not discard the
-    // Data API snapshot that was already collected above.
+    // Data API snapshot that was already collected above. It is logged rather
+    // than swallowed: a snapshot that keeps counting comments while storing
+    // none of them is otherwise indistinguishable from a video nobody wrote on.
     if (!isOptionalYouTubeCommentError(error)) throw error;
+    log("warn", "youtube comment threads unavailable", { videoTargetId: target.id, externalId: target.externalId, error });
   }
   for (const comment of comments?.items ?? []) {
     const details = comment.snippet?.topLevelComment?.snippet;
@@ -580,10 +584,12 @@ async function collectInstagramVideoMetrics(
       fetchImpl,
       `${base}/comments?fields=id,text,username,timestamp,like_count&limit=50&access_token=${encodeURIComponent(token)}`,
     );
-  } catch {
+  } catch (error) {
     // Comment access is optional enrichment just like the Reels play insight.
     // A connected publishing account may publish video without comment-read
-    // access, and that must not poison its metrics schedule.
+    // access, and that must not poison its metrics schedule. Logged for the
+    // same reason the YouTube one is: a silent gap reads as an empty audience.
+    log("warn", "instagram comments unavailable", { videoTargetId: target.id, externalId: target.externalId, error });
   }
   for (const comment of comments?.data ?? [])
     if (comment.id && comment.text)

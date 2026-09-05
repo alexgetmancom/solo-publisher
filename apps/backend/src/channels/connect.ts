@@ -19,9 +19,11 @@ import { installYouTubeToken, youtubeTokenTarget } from "./youtube-tokens.js";
 const LINK_TTL_MINUTES = 10;
 const DEVICE_CODE_URL = "https://oauth2.googleapis.com/device/code";
 const YOUTUBE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-/** Device flow supports `auth/youtube` but not `auth/youtube.upload`, and the
- * general scope is one of the four `videos.insert` accepts. */
-const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube";
+/** Device flow supports `auth/youtube.force-ssl` but not `auth/youtube.upload`,
+ * and force-ssl is one of the four scopes `videos.insert` accepts. It is asked
+ * for rather than the plain `auth/youtube` because `commentThreads.list` reads
+ * nothing without it, and one token does both jobs. */
+const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
 
 export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube", "twitch"] as const;
 export type ConnectPlatform = (typeof CONNECT_PLATFORMS)[number];
