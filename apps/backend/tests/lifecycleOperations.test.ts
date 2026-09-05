@@ -39,6 +39,23 @@ async function draftReadyToPublish(db: UnsafeBackendDb, draftId: number): Promis
   seedTextPost(db, { draftId, postId: null, actorId: 42, status: "draft", targets: { threads_ru: true }, ru: "Готовый черновик" });
 }
 
+/** A wall clock these tests can keep asserting on.
+ *
+ * They carried the literal "05.09.2026 08:00", which stopped being in the
+ * future on the morning of the fifth: scheduling refuses a past instant, so
+ * both tests began failing on a date rather than on a change. Built from parts
+ * in UTC, and tomorrow, so the moment is always ahead of the run. */
+function studioWallClock(): { at: string; instant: string } {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const [year, month, day] = [tomorrow.getUTCFullYear(), tomorrow.getUTCMonth() + 1, tomorrow.getUTCDate()];
+  return {
+    at: `${pad(day)}.${pad(month)}.${year} 08:00`,
+    // The test Studio keeps Europe/Moscow, which is UTC+3 the year round.
+    instant: `${year}-${pad(month)}-${pad(day)}T05:00:00.000Z`,
+  };
+}
+
 describe("draft lifecycle operations", () => {
   /** The mutation journal is what says a command ran at all, and it is written
    * from the same `mutates` every surface repeats back to its caller. The flag
@@ -53,7 +70,7 @@ describe("draft lifecycle operations", () => {
     await runOperation("guide", context(backendDb), {});
     expect(commandJournal(backendDb)).toHaveLength(before);
 
-    await runOperation("draft-schedule", context(backendDb), { draft: 31, at: "05.09.2026 08:00", apply: true });
+    await runOperation("draft-schedule", context(backendDb), { draft: 31, at: studioWallClock().at, apply: true });
     const journalled = commandJournal(backendDb).at(-1);
 
     expect(journalled?.message).toBe("Operations draft-schedule executed");
@@ -64,17 +81,18 @@ describe("draft lifecycle operations", () => {
     backendDb = openBackendDb(":memory:");
     await draftReadyToPublish(backendDb, 21);
 
-    const plan = await runOperation("draft-schedule", context(backendDb), { draft: 21, at: "05.09.2026 08:00" });
-    expect(plan).toMatchObject({ applied: false, at: "2026-09-05T05:00:00.000Z" });
+    const wallClock = studioWallClock();
+    const plan = await runOperation("draft-schedule", context(backendDb), { draft: 21, at: wallClock.at });
+    expect(plan).toMatchObject({ applied: false, at: wallClock.instant });
     expect(backendDb.db.select({ status: drafts.status }).from(drafts).get()).toEqual({ status: "draft" });
 
-    expect(await runOperation("draft-schedule", context(backendDb), { draft: 21, at: "05.09.2026 08:00", apply: true })).toMatchObject({
+    expect(await runOperation("draft-schedule", context(backendDb), { draft: 21, at: wallClock.at, apply: true })).toMatchObject({
       applied: true,
-      ru_at: "2026-09-05T05:00:00.000Z",
+      ru_at: wallClock.instant,
     });
     expect(backendDb.db.select({ status: publishJobs.status, publishAt: publishJobs.publishAt }).from(publishJobs).get()).toEqual({
       status: "queued",
-      publishAt: "2026-09-05T05:00:00.000Z",
+      publishAt: wallClock.instant,
     });
 
     expect(await runOperation("draft-cancel", context(backendDb), { draft: 21, apply: true })).toMatchObject({ applied: true });

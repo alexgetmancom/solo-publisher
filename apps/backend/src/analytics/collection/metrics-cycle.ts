@@ -1,9 +1,11 @@
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../../db/client.js";
+import { recordEvent } from "../../db/repositories/events.js";
 import type { JsonValue } from "../../db/schema.js";
 import { recordObservedPublicationUrl } from "../../delivery/observed-publication.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
 import { recordWorkerState } from "../../foundation/runtime/worker-state.js";
+import { ALERT_COOLDOWN_SECONDS } from "../../observability/alerts.js";
 import { trackUsageAsync } from "../../observability/usage.js";
 import { platformAnalyticsProfile } from "../../publishing/platform-profiles.js";
 import { upsertMetricError, upsertMetrics } from "../snapshots/metric-repository.js";
@@ -91,6 +93,7 @@ export async function runMetricsCycle(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const terminal = isTerminalMetricError(error);
       unsafeDb(backendDb).db.transaction((transactionDb) => {
         upsertMetricError(
           backendDb,
@@ -103,7 +106,27 @@ export async function runMetricsCycle(
           } as JsonValue,
           transactionDb as UnsafeBackendDb["db"],
         );
-        finishMetricTask(backendDb, task, message, isTerminalMetricError(error), transactionDb as UnsafeBackendDb["db"]);
+        finishMetricTask(backendDb, task, message, terminal, transactionDb as UnsafeBackendDb["db"]);
+        // Journalled in the transaction that records the failure, the way a
+        // social job records its own `publish.job.failed`. Both places this
+        // failure was written are erased by the next success -- the schedule's
+        // `last_error` is cleared and the metric row is overwritten -- so an
+        // intermittent collector left the counters showing a failure rate and
+        // nothing anywhere saying what had failed.
+        //
+        // Carried against the target rather than the publication, unlike a
+        // publish failure: a target that stops answering fails every task it
+        // has, and one event per publication per cooldown is hundreds of rows
+        // for one outage. The publication that hit it is in the details.
+        recordEvent(transactionDb as UnsafeBackendDb["db"], backendDb.clock, {
+          ref: null,
+          type: "analytics.metrics.failed",
+          severity: terminal ? "error" : "warn",
+          target: task.target,
+          message: `${task.target} metrics collection failed: ${message}`,
+          details: { target: task.target, terminal, publicationKey: task.publicationKey, externalId: task.externalId },
+          cooldownSeconds: ALERT_COOLDOWN_SECONDS,
+        });
       });
     }
   }

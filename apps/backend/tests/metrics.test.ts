@@ -4,7 +4,7 @@ import { TerminalMetricError } from "../src/analytics/collection/collectors/erro
 import { createMetricCollectors, SUPPORTED_METRIC_TARGETS } from "../src/analytics/collection/collectors/index.js";
 import { claimDueMetricTasks, type MetricTask } from "../src/analytics/collection/metric-schedule.js";
 import { runMetricsCycle } from "../src/analytics/collection/metrics-cycle.js";
-import { metricSamples, metricSchedule, postMetrics, publicationTargets, workerState } from "../src/db/schema.js";
+import { metricSamples, metricSchedule, postMetrics, publicationEvents, publicationTargets, workerState } from "../src/db/schema.js";
 import { withDb } from "./helpers/db.js";
 import type { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
@@ -72,6 +72,51 @@ describe("metrics cycle", () => {
       expect(
         backendDb.db.select({ checkCount: metricSchedule.checkCount, lastError: metricSchedule.lastError }).from(metricSchedule).get(),
       ).toEqual({ checkCount: 0, lastError: "upstream unavailable" });
+    }));
+
+  /** Both places a failure was written are erased by the next success: the
+   * schedule's `last_error` is cleared and the metric row is overwritten. An
+   * intermittent collector therefore showed a failure rate in the usage
+   * counters and left nothing anywhere saying what had failed. */
+  it("journals a collector failure, and survives the success that clears the rest", () =>
+    withDb(async (backendDb) => {
+      seedPublishedPost(backendDb, "post:9", "threads_ru");
+      await runMetricsCycle(loadTestConfig({}), backendDb, {
+        threads_ru: async () => {
+          throw new Error("upstream unavailable");
+        },
+      });
+
+      const journalled = backendDb.db
+        .select({
+          eventType: publicationEvents.eventType,
+          severity: publicationEvents.severity,
+          target: publicationEvents.target,
+          message: publicationEvents.message,
+        })
+        .from(publicationEvents)
+        .all();
+      expect(journalled).toEqual([
+        {
+          eventType: "analytics.metrics.failed",
+          // A collector that will be retried is not an error; a terminal one is.
+          severity: "warn",
+          target: "threads_ru",
+          message: "threads_ru metrics collection failed: upstream unavailable",
+        },
+      ]);
+
+      backendDb.db.update(metricSchedule).set({ nextCheckAt: null }).run();
+      await runMetricsCycle(loadTestConfig({}), backendDb, {
+        threads_ru: async () => ({ metrics: { views: 5 }, source: "test_api", raw: {} }),
+      });
+
+      expect(backendDb.db.select({ lastError: metricSchedule.lastError }).from(metricSchedule).get()).toEqual({ lastError: null });
+      expect(backendDb.db.select({ error: postMetrics.error }).from(postMetrics).get()).toEqual({ error: null });
+      // The counters know it happened; without this row nothing says what did.
+      expect(backendDb.db.select({ eventType: publicationEvents.eventType }).from(publicationEvents).all()).toEqual([
+        { eventType: "analytics.metrics.failed" },
+      ]);
     }));
 
   it("does not schedule or run X metrics unless explicitly enabled", () =>
