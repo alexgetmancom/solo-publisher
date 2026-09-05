@@ -60,8 +60,15 @@ function feedModesFor(post: HomePost, fullBody: string[], watchedCutoff: number)
   return modes;
 }
 
-export function toPlayerPosts(posts: HomePost[]): PlayerPost[] {
-  const watchedCutoff = posts.map((post) => post.views || 0).sort((a, b) => b - a)[Math.min(7, Math.max(0, posts.length - 1))] || 0;
+/** The view count that makes a post one of the ~8 most watched. It is a property
+ * of the whole feed, not of the page being serialized: the home page sends the
+ * player one page at a time, and a cutoff taken from a page would call the most
+ * watched of the first twelve posts "watched". */
+export function watchedCutoffFor(posts: HomePost[]): number {
+  return posts.map((post) => post.views || 0).sort((a, b) => b - a)[Math.min(7, Math.max(0, posts.length - 1))] || 0;
+}
+
+export function toPlayerPosts(posts: HomePost[], watchedCutoff = watchedCutoffFor(posts)): PlayerPost[] {
   return posts.map((post) => {
     const fullBody = fullTextFor(post);
     return {

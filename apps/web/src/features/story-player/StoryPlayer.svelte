@@ -30,7 +30,7 @@ import { readSwipe } from "../../scripts/story-player/gestures";
 import { preloadAdjacentMedia } from "../../scripts/story-player/media";
 import { hasMutedPreference, readMutedPreference, writeMutedPreference } from "../../scripts/story-player/preferences";
 import { createStoryProgressController } from "../../scripts/story-player/progress";
-import { storyIntervalMs, swipeThresholdPx, wheelCooldownMs } from "./config";
+import { homePagePrefetch, homePageSize, storyIntervalMs, swipeThresholdPx, wheelCooldownMs } from "./config";
 /* Shared styles for the action bar: both the stage and the context panel draw
    it, so the block lives outside either scoped style (see the file itself). */
 import "./story-actions.css";
@@ -42,13 +42,20 @@ import StoryRail from "./StoryRail.svelte";
 import StoryVisual from "./StoryVisual.svelte";
 
 let {
-  posts,
+  posts: firstPage,
+  total,
   ui,
   locale,
   initialPaused = false,
-}: { posts: PlayerPost[]; ui: StoryUi; locale: "en" | "ru"; initialPaused?: boolean } = $props();
+}: { posts: PlayerPost[]; total: number; ui: StoryUi; locale: "en" | "ru"; initialPaused?: boolean } = $props();
 
 /* --------------------------------- State --------------------------------- */
+/* The page sends the first slice of the feed and `total` says how much more
+   there is; the rest is fetched a page at a time as the reader approaches the
+   end of what is loaded. The prop is a starting value, never reassigned by the
+   page, so this list owns the feed from here on. */
+// svelte-ignore state_referenced_locally
+let posts = $state(firstPage);
 /* The initialPaused prop is read exactly once: it is a starting value, after
      which the user owns the pause, so prop reactivity is not wanted. */
 // svelte-ignore state_referenced_locally
@@ -111,6 +118,32 @@ function nextVisibleIndex(direction: number): number {
   return visibleIndexes[(currentPosition + direction + visibleIndexes.length) % visibleIndexes.length] ?? active;
 }
 
+/* ------------------------------ Feed paging ------------------------------- */
+/* One request at a time and never past the end: a reader who holds the down
+   arrow asks for the next page once, not once per post they pass. */
+let loading = false;
+
+async function loadMorePosts(): Promise<void> {
+  if (loading || posts.length >= total) return;
+  loading = true;
+  try {
+    const response = await fetch(`/home-posts.json?locale=${locale}&offset=${posts.length}&limit=${homePageSize}`);
+    if (!response.ok) return;
+    const page = (await response.json()) as { posts: PlayerPost[] };
+    /* The post page opens the player on one post and pages in the feed around
+       it, so a page can contain a post that is already loaded. Ids, not
+       positions, decide what is new. */
+    const known = new Set(posts.map((post) => post.id));
+    const added = (page.posts || []).filter((post) => !known.has(post.id));
+    if (added.length) posts = [...posts, ...added];
+  } catch {
+    /* An unreachable next page leaves the reader with the posts they have and
+       the next move asks again; there is nothing to say on screen about it. */
+  } finally {
+    loading = false;
+  }
+}
+
 /** The old render() equivalent: change the active post and every reset it implies. */
 function goTo(index: number, options: { keepProgressIdle?: boolean } = {}): void {
   active = ((index % posts.length) + posts.length) % posts.length;
@@ -122,6 +155,7 @@ function goTo(index: number, options: { keepProgressIdle?: boolean } = {}): void
   progress?.resetForStory(options);
   viewTracker?.scheduleStoryView(activePost);
   preloadAdjacentMedia({ active, posts, toPublicSrc: (value) => value ?? "" });
+  if (active >= posts.length - homePagePrefetch) void loadMorePosts();
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => (updating = false));
   });

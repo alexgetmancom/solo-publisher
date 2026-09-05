@@ -26,13 +26,18 @@ interface Props {
   locale: "en" | "ru";
   initialPostId?: number | string;
   initialPaused?: boolean;
+  /** How many posts the feed has in total, when this page sends the player only
+   * the first of them. Absent means these are all there are. */
+  total?: number;
+  /** The whole feed's "watched" cutoff, for the same reason. */
+  watchedCutoff?: number;
 }
 
-const { posts, labels, locale, initialPostId, initialPaused = false } = Astro.props;
+const { posts, labels, locale, initialPostId, initialPaused = false, total, watchedCutoff } = Astro.props;
 
 const selectedPost = initialPostId ? posts.find((post) => String(post.id) === String(initialPostId)) : null;
 const storyPosts = selectedPost ? [selectedPost, ...posts.filter((post) => String(post.id) !== String(selectedPost.id))] : posts;
-const playerPosts = toPlayerPosts(storyPosts);
+const playerPosts = toPlayerPosts(storyPosts, watchedCutoff);
 const activePost = playerPosts[0] || null;
 const ui = storyUi(locale);
 ---
@@ -46,7 +51,7 @@ const ui = storyUi(locale);
       {activePost.mediaType === 'video' && (activePost.posterSrc || activePost.fallbackImage) && (
         <link rel="preload" as="image" href={activePost.posterSrc || activePost.fallbackImage} fetchpriority="high" />
       )}
-      <StoryPlayer client:load posts={playerPosts} ui={ui} locale={locale} initialPaused={initialPaused} />
+      <StoryPlayer client:load posts={playerPosts} total={total ?? playerPosts.length} ui={ui} locale={locale} initialPaused={initialPaused} />
       <noscript>
         <article class="story-seo-content">
           <p class="story-seo-title">{activePost.title}</p>

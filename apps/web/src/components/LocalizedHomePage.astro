@@ -1,4 +1,6 @@
 ---
+import { homePageSize } from "../features/story-player/config";
+import { watchedCutoffFor } from "../features/story-player/payload";
 import Layout from "../layouts/Layout.astro";
 import { loadFeedItems } from "../server/public-site";
 import { siteCopy } from "../server/site-copy";
@@ -12,7 +14,11 @@ import { siteUrlFromContext } from "../utils/site";
 const siteOrigin = siteUrlFromContext(Astro);
 const { locale } = Astro.props;
 const russian = locale === "ru";
-const posts = sortedHomePosts(loadFeedItems(), locale);
+const allPosts = sortedHomePosts(loadFeedItems(), locale);
+/* Only the first page is serialized into the island's props -- the whole feed
+   was most of this page's HTML. The player fetches the rest from
+   /home-posts.json as the reader approaches the end of what it has. */
+const posts = allPosts.slice(0, homePageSize);
 const title = russian ? "Алекс Гетман — новости ИИ, моделей и AI-продуктов" : "Alex Getman — AI news, models and product updates";
 const description = russian
   ? "Свежие новости ИИ: новые модели, продукты и обновления OpenAI, ChatGPT Codex, Claude, Gemini и других. Релизы, тесты, цены, лимиты и комментарии."
@@ -71,5 +77,5 @@ const schema = JSON.stringify({
   ]}
   immersiveHome
 >
-  <HomeNewsPage posts={posts} labels={{ empty: russian ? "Русские посты появятся здесь после публикации." : "English posts will appear here after publication approval." }} locale={locale} />
+  <HomeNewsPage posts={posts} total={allPosts.length} watchedCutoff={watchedCutoffFor(allPosts)} labels={{ empty: russian ? "Русские посты появятся здесь после публикации." : "English posts will appear here after publication approval." }} locale={locale} />
 </Layout>
