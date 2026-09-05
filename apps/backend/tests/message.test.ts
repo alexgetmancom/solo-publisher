@@ -36,6 +36,19 @@ describe("extractMessage", () => {
     ]);
   });
 
+  it("takes a soundless video once when the Bot API sets both animation and document", () => {
+    const result = extractMessage(
+      messageContext({
+        caption: "One attached file",
+        animation: { file_id: "animation-1", width: 1920, height: 1080, duration: 14, file_name: "clip.mp4", mime_type: "video/mp4" },
+        document: { file_id: "document-twin-1", file_name: "clip.mp4", mime_type: "video/mp4" },
+      }),
+    );
+
+    expect(result.media).toHaveLength(1);
+    expect(result.media[0]?.file_id).toBe("animation-1");
+  });
+
   it("keeps video files sent as Telegram documents as video media", () => {
     const result = extractMessage(
       messageContext({
