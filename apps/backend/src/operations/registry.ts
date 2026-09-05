@@ -276,7 +276,6 @@ const operationDefs = {
       tagline: localizedTextOption("one-line description, per language"),
       about: localizedTextOption("longer description reaching llms.txt and structured data"),
       bio: localizedTextOption("the About page text, per language; blank lines separate paragraphs"),
-      site_timezone: localizedTextOption("IANA zone the public site dates posts in, per language; blank uses the operator's timezone"),
       profiles: example(z.string(), '{"en":[{"label":"Telegram","url":"https://t.me/example"}],"ru":[]}')
         .optional()
         .describe("social profiles listed in llms.txt and as sameAs, per language")
@@ -296,7 +295,6 @@ const operationDefs = {
         tagline: input.tagline,
         about: input.about,
         bio: input.bio,
-        siteTimezone: input.site_timezone,
         profiles: input.profiles,
       }),
   }),
