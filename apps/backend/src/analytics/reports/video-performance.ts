@@ -276,19 +276,30 @@ function ageCurve(series: TargetSeries[]): Record<string, unknown> {
         platform,
         AGE_BUCKETS_HOURS.map((bucket) => {
           const samples = rows
-            .map((target) => ({ reading: readingAt(target, bucket), final: metricNumber(latest(target)?.metrics.views) }))
-            .filter((sample): sample is { reading: Reading; final: number } => sample.reading != null && sample.reading.ageHours > 0);
-          const views = samples.map((sample) => metricNumber(sample.reading.metrics.views));
+            .map((target) => ({ reading: readingAt(target, bucket), final: latest(target)?.metrics ?? {} }))
+            .filter(
+              (sample): sample is { reading: Reading; final: Record<string, unknown> } =>
+                sample.reading != null && sample.reading.ageHours > 0,
+            );
+          const at = (key: string) => samples.map((sample) => metricNumber(sample.reading.metrics[key]));
+          // The share of the final figure that was already in, per metric: it is
+          // the only form in which videos of different sizes are comparable, and
+          // it is what answers when an audience arrives versus when it writes.
+          const shareOfCurrent = (key: string) =>
+            median(
+              samples
+                .filter((sample) => metricNumber(sample.final[key]) > 0)
+                .map((sample) => Math.round((metricNumber(sample.reading.metrics[key]) / metricNumber(sample.final[key])) * 1000) / 10),
+            );
+          const views = at("views");
           return {
             ageHours: bucket,
             samples: samples.length,
             medianViews: median(views),
             avgViews: samples.length ? Math.round(views.reduce((sum, value) => sum + value, 0) / samples.length) : 0,
-            medianShareOfCurrent: median(
-              samples
-                .filter((sample) => sample.final > 0)
-                .map((sample) => Math.round((metricNumber(sample.reading.metrics.views) / sample.final) * 1000) / 10),
-            ),
+            medianShareOfCurrent: shareOfCurrent("views"),
+            medianComments: median(at("comments")),
+            medianCommentShareOfCurrent: shareOfCurrent("comments"),
             medianReadingAgeHours: median(samples.map((sample) => sample.reading.ageHours)),
           };
         }),

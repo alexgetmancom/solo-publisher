@@ -19,11 +19,18 @@ import { installYouTubeToken, youtubeTokenTarget } from "./youtube-tokens.js";
 const LINK_TTL_MINUTES = 10;
 const DEVICE_CODE_URL = "https://oauth2.googleapis.com/device/code";
 const YOUTUBE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-/** Device flow supports `auth/youtube.force-ssl` but not `auth/youtube.upload`,
- * and force-ssl is one of the four scopes `videos.insert` accepts. It is asked
- * for rather than the plain `auth/youtube` because `commentThreads.list` reads
- * nothing without it, and one token does both jobs. */
-const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
+/**
+ * Device flow accepts exactly two YouTube scopes -- `auth/youtube` and
+ * `auth/youtube.readonly` -- and rejects every other one outright with
+ * `invalid_scope`. The general scope is the one of the two that `videos.insert`
+ * accepts, so it is what publishing runs on.
+ *
+ * It also puts comment texts out of reach: `commentThreads.list` names
+ * `auth/youtube.force-ssl` as its only scope, and `readonly` does not stand in
+ * for it. Reading comments is not a scope this connection can ask for -- it
+ * needs a redirect OAuth client, which is a different connection entirely.
+ */
+const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube";
 
 export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube", "twitch"] as const;
 export type ConnectPlatform = (typeof CONNECT_PLATFORMS)[number];
