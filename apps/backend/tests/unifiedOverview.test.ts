@@ -799,6 +799,7 @@ describe("unified overview rendering", () => {
       reactions: 147,
       replies: 23,
       reposts: 9,
+      conversationViews: 0,
       engagementRate: 3.6,
       countLabel: "3 поста сегодня",
       normLabel: "норма дня",

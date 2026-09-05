@@ -33,6 +33,7 @@ import { streamService } from "../studio/services/streams.js";
 import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
+import { diskReport } from "./disk-report.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
 import {
@@ -979,6 +980,17 @@ const operationDefs = {
         after: repaired ? publicationConsistencyReport(backendDb, options) : null,
       };
     },
+  }),
+  disk: operation({
+    section: "media",
+    startHere: "the data volume is filling up",
+    summary: "What the data volume holds, and how much of it nothing points at.",
+    schema: z.object({}),
+    mutates: false,
+    // A read, but of host paths, which is the line the agent surface stops at.
+    agent: false,
+    note: "Media caches are supposed to hold something -- they age out on a TTL. Story variants are not a cache: one whose source is gone is a file nothing will read or delete, and `orphaned` counts exactly those.",
+    handler: (context) => diskReport(context.db(), context.config()),
   }),
   "media-reprocess": operation({
     section: "media",

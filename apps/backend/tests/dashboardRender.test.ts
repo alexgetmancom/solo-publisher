@@ -32,6 +32,7 @@ describe("dashboard formatting", () => {
       reactions: 0,
       replies: 0,
       reposts: 0,
+      conversationViews: 0,
       engagementRate: null,
       countLabel: "0 постов сегодня",
       normLabel: "норма дня",

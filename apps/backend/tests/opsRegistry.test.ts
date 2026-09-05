@@ -59,6 +59,7 @@ const OFF_THE_AGENT_SURFACE = [
   "purge",
   "story-card-backfill",
   "story-media-backfill",
+  "disk",
   "metrics-backfill",
 ];
 
@@ -112,14 +113,15 @@ describe("operations registry", () => {
     expect(catalog.get("retry")?.agent).toBe(true);
     // Diagnosis is the whole point of the agent surface, so a read leaves it
     // only by being unable to mean anything remotely: `guide` probes a host
-    // path, `backup-stream` writes an archive to stdout, and
-    // `threads-authorize` asks a terminal for the address it was redirected to.
+    // path, `disk` measures them, `backup-stream` writes an archive to stdout,
+    // and `threads-authorize` asks a terminal for the address it was
+    // redirected to.
     expect(
       [...catalog.values()]
         .filter((entry) => !entry.mutates && !entry.agent)
         .map((entry) => entry.name)
         .sort(),
-    ).toEqual(["backup-stream", "guide", "threads-authorize"]);
+    ).toEqual(["backup-stream", "disk", "guide", "threads-authorize"]);
   });
 
   it("refuses input the schema does not define, on every surface", async () => {

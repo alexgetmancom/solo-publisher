@@ -1,6 +1,7 @@
 import type { PipelineData, PipelinePost } from "../../../analytics/pipeline-payload.js";
 import { type DailyReach, emptyReachCounters, type ReachCounters } from "../../../analytics/reach/daily-reach.js";
 import { type TextOverview, textDailyReach } from "../../../analytics/reach/text-overview.js";
+import { X_CONVERSATION_TARGET } from "../../../analytics/reach/text-reach.js";
 import type { XActivityDashboardItem } from "../../../analytics/x-activity-dashboard.js";
 import { targetLocale } from "../../../botTargets.js";
 import { type Html, html } from "../../../foundation/html.js";
@@ -450,8 +451,13 @@ function medianDailyViews(daily: Record<string, DailyReach>, input: CombinedSect
 }
 
 function textHeroMetrics(input: CombinedSectionInput, postCount: number, locale: StudioLocale): HeroMetrics {
+  const days = dayKeys(input.rangeEnd, input.periodDays);
   const daily = textDailyReach(input.textReach, selectedTextTargetIds(input));
-  const period = sumDays(daily, dayKeys(input.rangeEnd, input.periodDays));
+  const period = sumDays(daily, days);
+  // Threads earn views without being published, so they are reported beside the
+  // figure rather than inside it: everything above is divided by a count of
+  // editorial posts, and a reply was never one of them.
+  const conversation = sumDays(textDailyReach(input.textReach, [X_CONVERSATION_TARGET]), days);
   const median = medianDailyViews(daily, input);
   // A repost is a reaction that also travels, and the overview has always
   // counted it as both.
@@ -459,11 +465,12 @@ function textHeroMetrics(input: CombinedSectionInput, postCount: number, locale:
   return {
     kind: "text",
     views: period.views,
-    freshViews: dayKeys(input.rangeEnd, input.periodDays).reduce((total, key) => total + (daily[key]?.freshViews ?? 0), 0),
+    freshViews: days.reduce((total, key) => total + (daily[key]?.freshViews ?? 0), 0),
     medianViews: median,
     reactions,
     replies: period.replies,
     reposts: period.reposts,
+    conversationViews: conversation.views,
     engagementRate: period.views > 0 ? (reactions / period.views) * 100 : null,
     countLabel: periodCountLabel(postCount, "post", input.periodDays, locale),
     normLabel: periodNormLabel(input.periodDays, locale),

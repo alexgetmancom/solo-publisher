@@ -69,6 +69,12 @@ export function textReachSeries(
   return series;
 }
 
+/** Where a reply or a repost lands, kept apart from `x` itself. A thread earns
+ * real views and they belong on the account's account of itself, but they are
+ * not something that was published: folded into `x` they would be divided by a
+ * count of editorial posts that never included them. */
+export const X_CONVERSATION_TARGET = "x_conversation";
+
 /** Every tweet in the window, standalone or crossposted, with its link back to
  * the publication it came from. */
 export function xActivityReachSeries(
@@ -101,7 +107,7 @@ export function xActivityReachSeries(
   return wanted.map((item) => ({
     publishedAt: item.publishedAt,
     linkedPublicationKey: item.linkedPublicationKey,
-    target: "x",
+    target: item.kind === "standalone" ? "x" : X_CONVERSATION_TARGET,
     samples: alignSamples(byItem.get(item.xPostId) ?? new Map(), item.publishedAt, { views: 0, reactions: 0, replies: 0, reposts: 0 }),
   }));
 }

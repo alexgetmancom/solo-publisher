@@ -28,6 +28,8 @@ export type HeroMetrics =
       reactions: number;
       replies: number;
       reposts: number;
+      /** Views earned by replies and reposts — beside the figure, never in it. */
+      conversationViews: number;
       engagementRate: number | null;
     })
   | (HeroCommon & {
@@ -67,6 +69,7 @@ export function renderHeroMicroMetrics(metrics: HeroMetrics, locale: StudioLocal
           { value: formatMetricValue(metrics.replies), label: t(locale, "cc.hero.replies") },
           { value: formatMetricValue(metrics.reposts), label: t(locale, "cc.hero.reposts") },
           { value: formatRate(metrics.engagementRate), label: t(locale, "cc.hero.engagement") },
+          { value: formatMetricValue(metrics.conversationViews), label: t(locale, "cc.hero.conversation") },
         ]
       : [
           { value: formatCompletionRate(metrics.completionRate), label: t(locale, "cc.hero.completions") },
