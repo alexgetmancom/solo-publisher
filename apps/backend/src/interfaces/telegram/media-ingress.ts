@@ -1,7 +1,6 @@
 import type { StudioMediaAssetRecord } from "../../application/ports.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
-import { log } from "../../foundation/logger.js";
 import { createStudioServices, type StudioServices } from "../../studio/services/index.js";
 import { importTelegramAsset } from "./media-import.js";
 
