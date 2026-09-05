@@ -121,10 +121,14 @@ project would put it through Google's verification.
    refresh tokens that [expire in 7 days](https://developers.google.com/identity/protocols/oauth2),
    so publishing works, and then silently stops a week later. Your own channel
    does not need Google's verification; the "unverified app" notice is expected.
-3. On the consent screen, add the scope
-   `https://www.googleapis.com/auth/youtube.force-ssl`. It is the one scope
+3. On the consent screen, add two scopes:
+   `https://www.googleapis.com/auth/youtube.force-ssl`, the one scope
    `videos.insert` and `commentThreads.list` both accept, so one grant both
-   publishes and reads the comments on what it published.
+   publishes and reads the comments on what it published; and
+   `https://www.googleapis.com/auth/yt-analytics.readonly`, because reporting
+   is a separate API — with force-ssl alone, watch time, completion, traffic
+   sources and retention come back `ACCESS_TOKEN_SCOPE_INSUFFICIENT` while
+   publishing keeps working.
 4. Credentials → OAuth client ID → type **Web application**, with
    `https://<your domain>/oauth/youtube` as an authorized redirect URI — the
    same `PUBLIC_BASE_URL` the Studio serves on. The *TVs and Limited Input

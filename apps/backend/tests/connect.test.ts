@@ -58,7 +58,11 @@ describe("connecting an account", () => {
       expect(link.origin + link.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
       // force-ssl is the only scope `commentThreads.list` accepts, and the only
       // reason this platform stopped using the device flow, which refuses it.
-      expect(link.searchParams.get("scope")).toBe("https://www.googleapis.com/auth/youtube.force-ssl");
+      // yt-analytics.readonly rides along because reporting is a separate API:
+      // force-ssl alone publishes and reads comments, then refuses every report.
+      expect(link.searchParams.get("scope")).toBe(
+        "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly",
+      );
       expect(link.searchParams.get("redirect_uri")).toBe("https://publisher.example.com/oauth/youtube");
       // Without both of these Google answers a reconnection with no refresh
       // token at all, and the connection silently stores nothing.
@@ -71,7 +75,10 @@ describe("connecting an account", () => {
       const link = await startConnect(config, backendDb, "youtube", "ru", fetch, now);
       if (link.kind !== "redirect") throw new Error("expected a link");
       const state = new URL(link.url).searchParams.get("state") ?? "";
-      const granted = transport({ refresh_token: "1//refresh", scope: "https://www.googleapis.com/auth/youtube.force-ssl" });
+      const granted = transport({
+        refresh_token: "1//refresh",
+        scope: "https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/yt-analytics.readonly",
+      });
 
       expect(await exchangeYouTubeCode(config, backendDb, "google-code", state, granted.fetchImpl, now)).toEqual({ locale: "ru" });
 
@@ -81,17 +88,18 @@ describe("connecting an account", () => {
       expect(config.YOUTUBE_RU_REFRESH_TOKEN).toBe("1//refresh");
     }));
 
-  it("refuses a grant that came back without the scope, instead of storing it", () =>
+  it("refuses a grant that came back short of a scope, instead of storing it", () =>
     withDb(async (backendDb) => {
       const link = await startConnect(config, backendDb, "youtube", "ru", fetch, now);
       if (link.kind !== "redirect") throw new Error("expected a link");
       const state = new URL(link.url).searchParams.get("state") ?? "";
-      // A token that publishes but cannot read comments is the exact failure
-      // this flow replaced, and it is invisible for months once it is stored.
-      const narrowed = transport({ refresh_token: "1//refresh", scope: "https://www.googleapis.com/auth/youtube" });
+      // A token that publishes but cannot read comments, or reads comments but
+      // cannot report, is the exact failure this flow replaced -- and it is
+      // invisible for months once it is stored.
+      const narrowed = transport({ refresh_token: "1//refresh", scope: "https://www.googleapis.com/auth/youtube.force-ssl" });
 
       await expect(exchangeYouTubeCode(config, backendDb, "google-code", state, narrowed.fetchImpl, now)).rejects.toThrow(
-        "cannot read comments",
+        "yt-analytics.readonly",
       );
       expect(backendDb.db.select().from(platformTokens).all()).toEqual([]);
     }));

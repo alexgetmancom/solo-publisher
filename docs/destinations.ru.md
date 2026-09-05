@@ -122,10 +122,14 @@ Cloud, а не на пользователя: общий клиент дал б�
    refresh-токены, [истекающие через 7 дней](https://developers.google.com/identity/protocols/oauth2),
    то есть публикация заработает и молча встанет неделю спустя. Для собственного
    канала верификация Google не нужна, предупреждение «unverified app» ожидаемо.
-3. На consent screen добавьте скоуп
-   `https://www.googleapis.com/auth/youtube.force-ssl`. Это единственный скоуп,
-   который принимают и `videos.insert`, и `commentThreads.list`, — одно
-   разрешение и публикует, и читает комментарии к опубликованному.
+3. На consent screen добавьте два скоупа:
+   `https://www.googleapis.com/auth/youtube.force-ssl` — единственный, который
+   принимают и `videos.insert`, и `commentThreads.list`, то есть одно
+   разрешение и публикует, и читает комментарии к опубликованному; и
+   `https://www.googleapis.com/auth/yt-analytics.readonly`, потому что отчёты —
+   отдельный API: с одним force-ssl время просмотра, досматриваемость,
+   источники трафика и удержание возвращают
+   `ACCESS_TOKEN_SCOPE_INSUFFICIENT`, а публикация при этом работает.
 4. Credentials → OAuth client ID → тип **Web application**, в authorized
    redirect URI — `https://<ваш домен>/oauth/youtube`, тот же `PUBLIC_BASE_URL`,
    на котором работает Studio. Тип *TVs and Limited Input devices* не подойдёт:

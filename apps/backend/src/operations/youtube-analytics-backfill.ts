@@ -8,6 +8,7 @@ import {
 import { mergeVideoSnapshot } from "../analytics/snapshots/creator-store.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { channelForVideo } from "../channels/registry.js";
 import { youtubeAccessToken } from "../foundation/external/youtube.js";
 
 /** What the owner Analytics report adds on top of the Data API snapshot. A
@@ -48,6 +49,12 @@ export async function backfillYouTubeAnalytics(
   for (const locale of ["ru", "en"] as const) {
     const localized = byLocale[locale];
     if (!localized.length) continue;
+    // A disabled channel is a decision, not a fault: reporting it as an
+    // unreachable token would put a permanent red line in a health report.
+    if (!channelForVideo(backendDb, "youtube_shorts", locale)?.enabled) {
+      result[locale] = { videos: localized.length, skipped: "channel disabled" };
+      continue;
+    }
     const missingBase = localized.filter((candidate) => ENRICHED_KEYS.every((key) => candidate.metrics[key] == null));
     const missingDeep = localized.filter((candidate) => {
       const bucket = deepAnalyticsBucketFor(candidate.publishedAt);
@@ -60,19 +67,19 @@ export async function backfillYouTubeAnalytics(
       result[locale] = {
         videos: localized.length,
         reachable: false,
-        error: describe(error),
+        error: describe(full(error)),
         hint: "the stored refresh token could not be exchanged; reconnect the channel",
       };
       continue;
     }
-    const report = await readBaseReport(fetchImpl, token, localized).catch((error: unknown) => describe(error));
+    const report = await readBaseReport(fetchImpl, token, localized).catch((error: unknown) => full(error));
     if (typeof report === "string") {
       result[locale] = {
         videos: localized.length,
         missingBase: missingBase.length,
         missingDeep: missingDeep.length,
         reachable: false,
-        error: report,
+        error: describe(report),
         hint: hintFor(report),
       };
       continue;
@@ -192,17 +199,23 @@ async function readBaseReport(
   return values;
 }
 
+function full(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /** Keeps both ends of a refusal. The interesting half of these messages is the
  * status and body at the end, and the URL in front of them is long enough to
  * fill a naive truncation on its own. */
-function describe(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+function describe(message: string): string {
   return message.length <= 400 ? message : `${message.slice(0, 120)} … ${message.slice(-280)}`;
 }
 
-/** What an operator should do about it, decided by the status the API answered
- * with rather than by guesswork. */
+/** What an operator should do about it, decided by what the API answered
+ * rather than by guesswork. Read from the whole message: the part that names
+ * the reason sits at the end, past a URL long enough to hide it. */
 function hintFor(message: string): string {
+  if (message.includes("ACCESS_TOKEN_SCOPE_INSUFFICIENT"))
+    return "the token cannot read the Analytics API: reconnect the channel so it also carries yt-analytics.readonly";
   const status = /failed: (\d{3})/.exec(message)?.[1];
   if (status === "403")
     return "the token cannot read the Analytics API: reconnect the channel asking for yt-analytics.readonly alongside youtube.force-ssl";

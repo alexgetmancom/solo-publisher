@@ -12,15 +12,25 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const STATE_TTL_MS = 10 * 60 * 1000;
 
 /**
- * One scope, because one is enough and one is all that works.
+ * Two scopes, because the three things this Studio asks YouTube for do not fit
+ * under one.
  *
  * `videos.insert` accepts `force-ssl` alongside the general scope, and
- * `commentThreads.list` accepts nothing else -- so the publishing token and the
- * token that can read a video's comments are the same token. This is also why
+ * `commentThreads.list` accepts nothing else -- so publishing and reading a
+ * video's comments are the same token. Reporting is a different API and a
+ * different grant: with force-ssl alone, youtubeanalytics answers
+ * ACCESS_TOKEN_SCOPE_INSUFFICIENT, which is how watch time, completion and
+ * traffic sources went missing while publishing kept working. This is also why
  * connecting is a redirect and not a device code: Google's device flow accepts
- * only `auth/youtube` and `auth/youtube.readonly` and refuses this one outright.
+ * only `auth/youtube` and `auth/youtube.readonly` and refuses force-ssl
+ * outright.
+ *
+ * A channel connected before this line grew its second scope keeps a token
+ * that cannot report. Reconnecting is what fixes it -- Google does not widen a
+ * grant already given.
  */
-const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
+const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl", "https://www.googleapis.com/auth/yt-analytics.readonly"];
+const YOUTUBE_SCOPE = YOUTUBE_SCOPES.join(" ");
 
 type YouTubeState = { locale: VideoLocale; verifier: string; expiresAt: number; nonce: string };
 
@@ -87,11 +97,13 @@ export async function exchangeYouTubeCode(
   });
   if (!answer.refresh_token)
     throw new Error("Google returned no refresh token. Re-run the connection so the consent screen is shown again.");
-  // A grant that came back without the scope is the failure this whole flow
+  // A grant that came back short of a scope is the failure this whole flow
   // exists to end, and it is silent everywhere else: publishing keeps working
-  // and only comments come back empty, months later.
-  if (answer.scope && !answer.scope.split(" ").includes(YOUTUBE_SCOPE))
-    throw new Error(`Google granted ${answer.scope}, which cannot read comments. ${YOUTUBE_SCOPE} has to be granted.`);
+  // while comments come back empty and reports refuse, months later.
+  const granted = answer.scope ? answer.scope.split(" ") : [];
+  const missing = answer.scope ? YOUTUBE_SCOPES.filter((scope) => !granted.includes(scope)) : [];
+  if (missing.length)
+    throw new Error(`Google granted ${answer.scope}, which is missing ${missing.join(" ")}. All of ${YOUTUBE_SCOPE} has to be granted.`);
   installYouTubeToken(config, backendDb, parsed.locale, answer.refresh_token, now);
   return { locale: parsed.locale };
 }
