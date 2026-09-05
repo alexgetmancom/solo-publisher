@@ -153,31 +153,39 @@ export function mergeVideoSnapshot(
   upsertVideoSnapshot(backendDb, videoTargetId, platform, checkpointIndex, { ...current, ...metrics });
 }
 
-export function upsertComment(
-  backendDb: BackendDb,
-  platform: "youtube" | "instagram",
-  commentId: string,
-  videoTargetId: number,
-  text: string,
-  author: string | undefined,
-  likeCount: number,
-  publishedAt: string | undefined,
-): void {
+/** One comment as any platform's collector hands it over. */
+export type CollectedComment = {
+  platform: "youtube" | "instagram";
+  commentId: string;
+  videoTargetId: number;
+  text: string;
+  author?: string | undefined;
+  likeCount: number;
+  publishedAt?: string | undefined;
+  /** The comment this answers, or absent for a thread's own root. */
+  parentCommentId?: string | undefined;
+};
+
+export function upsertComment(backendDb: BackendDb, comment: CollectedComment): void {
+  const fetchedAt = new Date().toISOString();
   unsafeDb(backendDb)
     .db.insert(socialComments)
     .values({
-      platform,
-      commentId,
-      videoTargetId,
-      author: author ?? null,
-      text,
-      likeCount,
-      publishedAt: publishedAt ?? null,
-      fetchedAt: new Date().toISOString(),
+      platform: comment.platform,
+      commentId: comment.commentId,
+      videoTargetId: comment.videoTargetId,
+      author: comment.author ?? null,
+      text: comment.text,
+      likeCount: comment.likeCount,
+      publishedAt: comment.publishedAt ?? null,
+      parentCommentId: comment.parentCommentId ?? null,
+      fetchedAt,
     })
     .onConflictDoUpdate({
       target: [socialComments.platform, socialComments.commentId],
-      set: { text, likeCount, fetchedAt: new Date().toISOString() },
+      // The parent is re-stated because a comment first seen as a thread root
+      // can be met again as a reply once the thread above it is read.
+      set: { text: comment.text, likeCount: comment.likeCount, parentCommentId: comment.parentCommentId ?? null, fetchedAt },
     })
     .run();
 }

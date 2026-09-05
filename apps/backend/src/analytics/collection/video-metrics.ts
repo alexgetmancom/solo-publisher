@@ -9,11 +9,11 @@ import { youtubeAccessToken } from "../../foundation/external/youtube.js";
 import { zernioRequest } from "../../foundation/external/zernio.js";
 import { requestJson } from "../../foundation/http.js";
 import { t } from "../../foundation/i18n/index.js";
-import { log } from "../../foundation/logger.js";
-import { markSynced, mergeVideoSnapshot, metricNumber, upsertComment, upsertVideoSnapshot } from "../snapshots/creator-store.js";
+import { markSynced, mergeVideoSnapshot, metricNumber, upsertVideoSnapshot } from "../snapshots/creator-store.js";
 import { describeMetricFreeze, isTerminalMetricError, terminalIfMissingRemoteObject } from "./collectors/errors.js";
 import { nextVideoMetricCheckAt, videoMetricCheckpointAt } from "./metric-checkpoints.js";
 import { MAX_METRIC_TASKS_PER_CYCLE, METRIC_LOCK_TIMEOUT_SECONDS } from "./metric-schedule.js";
+import { collectCommentsQuietly, collectInstagramComments, collectYouTubeComments, collectZernioComments } from "./video-comments.js";
 import { queryYouTubeAnalytics, youtubeAnalyticsCompletedEnd, youtubeAnalyticsDate } from "./youtube-analytics.js";
 
 type VideoMetricTask = {
@@ -40,37 +40,6 @@ type YouTubeVideo = {
     contentDetails?: { duration?: string };
   }>;
 };
-type YouTubeComments = {
-  items?: Array<{
-    id?: string;
-    snippet?: {
-      topLevelComment?: {
-        snippet?: {
-          textDisplay?: string;
-          authorDisplayName?: string;
-          publishedAt?: string;
-          likeCount?: number;
-        };
-      };
-    };
-  }>;
-};
-type InstagramMedia = {
-  like_count?: number;
-  comments_count?: number;
-  permalink?: string;
-  timestamp?: string;
-};
-type InstagramInsights = { data?: Array<{ values?: Array<{ value?: number }> }> };
-type InstagramComments = {
-  data?: Array<{
-    id?: string;
-    text?: string;
-    username?: string;
-    timestamp?: string;
-    like_count?: number;
-  }>;
-};
 type ZernioPostAnalytics = {
   status?: string;
   publishedAt?: string;
@@ -84,15 +53,13 @@ type ZernioPostAnalytics = {
   }>;
 };
 
-type ZernioComments = {
-  comments?: Array<{
-    id?: string;
-    message?: string;
-    createdTime?: string;
-    likeCount?: number;
-    from?: { username?: string; name?: string };
-  }>;
+type InstagramMedia = {
+  like_count?: number;
+  comments_count?: number;
+  permalink?: string;
+  timestamp?: string;
 };
+type InstagramInsights = { data?: Array<{ values?: Array<{ value?: number }> }> };
 
 /** Uses the same fixed-from-publication checkpoints as text-post metrics. */
 export async function runVideoMetricSchedule(config: BackendConfig, backendDb: BackendDb, fetchImpl: typeof fetch): Promise<number> {
@@ -344,54 +311,11 @@ async function collectZernioInstagramVideoMetrics(
     ...(videoDurationMs === null ? {} : { videoDurationMs }),
     ...(completionRate === null ? {} : { completionRate }),
   });
-  await collectZernioComments(config, backendDb, target, fetchImpl);
-}
-
-/**
- * Comment texts for a Reel published through the provider.
- *
- * The analytics endpoint answers with a flat map of numbers, so a Reel routed
- * this way had a comment count and no comments. They come from the provider's
- * engagement endpoint instead, which takes the same provider post id and
- * resolves it itself, and returns what the snapshot store already keeps:
- * an id, the text, an author, a like count and a published time.
- */
-async function collectZernioComments(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  target: VideoMetricTask,
-  fetchImpl: typeof fetch,
-): Promise<void> {
-  if (!target.providerAccountId) return;
-  let page: ZernioComments;
-  try {
-    page = await zernioRequest<ZernioComments>(
-      config,
-      `inbox/comments/${encodeURIComponent(target.providerPostId as string)}?${new URLSearchParams({
-        accountId: target.providerAccountId,
-        limit: "100",
-      })}`,
-      fetchImpl,
-    );
-  } catch (error) {
-    // Enrichment, exactly like the native Instagram and YouTube reads: a
-    // provider that will not hand over comments must not discard the snapshot
-    // collected above, and must not stay invisible either.
-    log("warn", "zernio comments unavailable", { videoTargetId: target.id, providerPostId: target.providerPostId, error });
-    return;
-  }
-  for (const comment of page.comments ?? [])
-    if (comment.id && comment.message)
-      upsertComment(
-        backendDb,
-        "instagram",
-        comment.id,
-        target.id,
-        comment.message,
-        comment.from?.username ?? comment.from?.name,
-        metricNumber(comment.likeCount),
-        comment.createdTime,
-      );
+  await collectCommentsQuietly(() => collectZernioComments(config, backendDb, target, fetchImpl), {
+    videoTargetId: target.id,
+    platform: "instagram",
+    providerPostId: target.providerPostId,
+  });
 }
 
 function targetVideoDurationMs(target: VideoMetricTask): number | null {
@@ -486,39 +410,11 @@ async function collectYouTubeVideoMetrics(
     comments: metricNumber(item?.statistics?.commentCount),
     videoDurationMs: parseYouTubeDurationMs(item?.contentDetails?.duration),
   });
-  // The basic video read works with the publishing token. Comment threads
-  // additionally require youtube.force-ssl; comments are enrichment and must
-  // never make the entire video metrics checkpoint fail or retry noisily.
-  let comments: YouTubeComments | null = null;
-  try {
-    comments = await requestJson<YouTubeComments>(
-      fetchImpl,
-      `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${encodeURIComponent(target.externalId)}&maxResults=50&order=time`,
-      { headers: auth },
-    );
-  } catch (error) {
-    // Comments are optional enrichment. A token without youtube.force-ssl,
-    // a disabled comments endpoint, or a deleted video must not discard the
-    // Data API snapshot that was already collected above. It is logged rather
-    // than swallowed: a snapshot that keeps counting comments while storing
-    // none of them is otherwise indistinguishable from a video nobody wrote on.
-    if (!isOptionalYouTubeCommentError(error)) throw error;
-    log("warn", "youtube comment threads unavailable", { videoTargetId: target.id, externalId: target.externalId, error });
-  }
-  for (const comment of comments?.items ?? []) {
-    const details = comment.snippet?.topLevelComment?.snippet;
-    if (comment.id && details?.textDisplay)
-      upsertComment(
-        backendDb,
-        "youtube",
-        comment.id,
-        target.id,
-        details.textDisplay,
-        details.authorDisplayName,
-        metricNumber(details.likeCount),
-        details.publishedAt,
-      );
-  }
+  await collectCommentsQuietly(() => collectYouTubeComments(backendDb, target, token, fetchImpl), {
+    videoTargetId: target.id,
+    platform: "youtube",
+    externalId: target.externalId,
+  });
 }
 
 /** Enriches the Data API snapshot with one batched owner Analytics report. */
@@ -638,31 +534,11 @@ async function collectInstagramVideoMetrics(
     comments: metricNumber(media.comments_count),
     ...(videoDurationMs === null ? {} : { videoDurationMs }),
   });
-  let comments: InstagramComments | null = null;
-  try {
-    comments = await requestJson<InstagramComments>(
-      fetchImpl,
-      `${base}/comments?fields=id,text,username,timestamp,like_count&limit=50&access_token=${encodeURIComponent(token)}`,
-    );
-  } catch (error) {
-    // Comment access is optional enrichment just like the Reels play insight.
-    // A connected publishing account may publish video without comment-read
-    // access, and that must not poison its metrics schedule. Logged for the
-    // same reason the YouTube one is: a silent gap reads as an empty audience.
-    log("warn", "instagram comments unavailable", { videoTargetId: target.id, externalId: target.externalId, error });
-  }
-  for (const comment of comments?.data ?? [])
-    if (comment.id && comment.text)
-      upsertComment(
-        backendDb,
-        "instagram",
-        comment.id,
-        target.id,
-        comment.text,
-        comment.username,
-        metricNumber(comment.like_count),
-        comment.timestamp,
-      );
+  await collectCommentsQuietly(() => collectInstagramComments(config, backendDb, target, fetchImpl), {
+    videoTargetId: target.id,
+    platform: "instagram",
+    externalId: target.externalId,
+  });
 }
 
 async function instagramReelViews(fetchImpl: typeof fetch, base: string, token: string): Promise<number> {
@@ -678,13 +554,4 @@ async function instagramReelViews(fetchImpl: typeof fetch, base: string, token: 
     // connected account does not grant this insight.
     return 0;
   }
-}
-
-function isOptionalYouTubeCommentError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return (
-    /(?:commentThreads|comment thread)/i.test(message) &&
-    (/(?:\b403\b|\b404\b)/.test(message) ||
-      /insufficient(?: authentication)? permissions?|insufficientpermissions|access_token_scope_insufficient/i.test(message))
-  );
 }

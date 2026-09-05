@@ -99,6 +99,13 @@
       "when": 1788800000000,
       "tag": "0013_draft_translations",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1788900000000,
+      "tag": "0014_social_comment_replies",
+      "breakpoints": true
     }
   ]
 }

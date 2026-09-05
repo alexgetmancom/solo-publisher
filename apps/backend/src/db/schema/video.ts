@@ -139,6 +139,10 @@ export const socialComments = sqliteTable(
     likeCount: integer().notNull().default(0),
     publishedAt: text(),
     fetchedAt: text().notNull(),
+    /** The thread this is an answer inside, or null for a thread's own root.
+     * A platform counts an answer as a comment, so a store that kept only
+     * roots could never reconcile with the counter it is read beside. */
+    parentCommentId: text(),
   },
   (table) => [
     primaryKey({ columns: [table.platform, table.commentId] }),

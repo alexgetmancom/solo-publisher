@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
+import { backfillVideoComments } from "../analytics/collection/video-comments.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
 import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
 import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
@@ -476,7 +477,7 @@ const operationDefs = {
   comments: operation({
     section: "analytics",
     summary: "What the audience wrote back: the channel's discussion group under posts, and the video platforms under videos.",
-    note: "Telegram comments only from after the bot joined the group -- a group's history is delivered to nobody -- and only on threads whose forwarded post the bot has seen. YouTube and Instagram comments ride along on the video metrics checkpoint rather than a schedule of their own, so an empty list there means either nothing was said or the checkpoint never reached the comment call.",
+    note: "Telegram comments only from after the bot joined the group -- a group's history is delivered to nobody -- and only on threads whose forwarded post the bot has seen. YouTube and Instagram comments ride along on the video metrics checkpoint rather than a schedule of their own, so a video a month old is read about once a week; `comments-backfill` catches every video up at once. Replies are stored beside the comments they answer, which is why a total here can exceed the number of threads.",
     startHere: "what is the audience saying about a post or a video",
     schema: z.object({
       limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many discussed publications to list per source"),
@@ -487,6 +488,23 @@ const operationDefs = {
       telegram: recentDiscussions(context.db(), input.limit),
       video: recentSocialComments(context.db(), input.limit),
     }),
+  }),
+  "comments-backfill": operation({
+    section: "analytics",
+    summary: "Sweep every published video and store all of its comments and replies, without touching metric snapshots.",
+    note: "Comments otherwise arrive at each video's own metric cadence, which is up to a week apart once a video is a month old. This catches up instead: one call per video plus one per thread deeper than the listing carries, against a YouTube quota of 10000 a day.",
+    startHere: "the comment history is thinner than the platform's own counter",
+    schema: z.object({
+      platforms: commaList("video platforms").describe("comma-separated video targets (default: youtube_shorts,instagram_reels)"),
+      limit: z.coerce.number().int().min(1).max(1000).default(1000).describe("newest published videos to sweep"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      backfillVideoComments(context.config(), context.db(), context.fetchImpl, {
+        platforms: splitList(input.platforms) ?? ["youtube_shorts", "instagram_reels"],
+        limit: input.limit,
+      }),
   }),
   milestones: operation({
     section: "analytics",
