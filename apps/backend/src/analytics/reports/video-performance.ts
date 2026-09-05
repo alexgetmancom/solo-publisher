@@ -199,7 +199,7 @@ function totals(series: TargetSeries[]): Record<string, unknown> {
     PLATFORMS.map((platform) => {
       const rows = series.filter((target) => target.target === platform && latest(target));
       const sum = (key: string) => rows.reduce((total, target) => total + metricNumber(latest(target)?.metrics[key]), 0);
-      const averages = averaged(rows, ["averageWatchTimeMs", "completionRate"]);
+      const averages = averaged(rows, ["averageWatchTimeMs", "completionRate", "skipRate"]);
       return [
         platform,
         {
@@ -538,6 +538,7 @@ function readingNotes(): string[] {
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",
     "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
     "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",
+    "`skipRate` is Instagram's own answer to the first three seconds: the share of viewers who left inside them. It is the closest thing Reels has to YouTube's retention curve, and Instagram publishes nothing finer.",
     "Retention above 100% is not an error: YouTube counts a rewatched second more than once, so a looping Short really does hold more than one view per viewer there.",
     "`heatmaps` is what a browser copied out of a platform dashboard, with the age of the capture: it describes followers, while most Reels views come from people who follow nothing.",
   ];

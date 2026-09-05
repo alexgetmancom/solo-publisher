@@ -295,6 +295,12 @@ async function collectZernioInstagramVideoMetrics(
   const videoDurationMs = analyticsVideoDurationMs(metrics) ?? targetVideoDurationMs(target);
   const completionRate =
     providerCompletionRate(metrics) ?? derivedCompletionRate(views, averageWatchTimeMs, totalWatchTimeMs, videoDurationMs);
+  // The share of viewers who left inside the first three seconds. It is the
+  // only early-retention signal Instagram publishes at all -- there is no
+  // curve and no per-second figure the way YouTube has -- so it is what a
+  // Reel's opening gets judged by.
+  const skipRate = optionalProviderMetric(firstMetric(metrics, ["reelsSkipRate", "reels_skip_rate"]));
+  const reposts = optionalProviderMetric(metrics.reposts);
   upsertVideoSnapshot(backendDb, target.id, "instagram_reels", target.checkpointIndex, {
     title: target.label ?? t(target.locale, "common.untitled"),
     url: platform?.platformPostUrl ?? data.platformPostUrl ?? target.externalUrl,
@@ -312,6 +318,8 @@ async function collectZernioInstagramVideoMetrics(
     ...(totalWatchTimeMs === null ? {} : { totalWatchTimeMs }),
     ...(videoDurationMs === null ? {} : { videoDurationMs }),
     ...(completionRate === null ? {} : { completionRate }),
+    ...(skipRate === null ? {} : { skipRate }),
+    ...(reposts === null ? {} : { reposts }),
   });
   await collectCommentsQuietly(() => collectZernioComments(config, backendDb, target, fetchImpl), {
     videoTargetId: target.id,

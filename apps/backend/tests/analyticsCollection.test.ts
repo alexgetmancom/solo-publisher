@@ -583,6 +583,8 @@ describe("creator analytics collection", () => {
                 follows: 2,
                 igReelsAvgWatchTime: 7000,
                 igReelsVideoDuration: 12,
+                reelsSkipRate: 41.5,
+                reposts: 4,
               },
             }),
           );
@@ -599,6 +601,9 @@ describe("creator analytics collection", () => {
         saves: 5,
         averageWatchTimeMs: 7000,
         videoDurationMs: 12_000,
+        // The only early-retention signal Instagram publishes at all.
+        skipRate: 41.5,
+        reposts: 4,
       });
       expect(
         backendDb.db.select().from(videoMetricSnapshots).where(eq(videoMetricSnapshots.videoTargetId, targetId)).get()?.metricsJson,
