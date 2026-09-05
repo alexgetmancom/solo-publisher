@@ -18,6 +18,10 @@ export const studioProfile = sqliteTable("studio_profile", {
   nameJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.nameJson),
   taglineJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.taglineJson),
   aboutJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.aboutJson),
+  /** The long-form self-description the public About page renders. `aboutJson`
+   * is the one-paragraph summary feeds, meta descriptions and structured data
+   * carry; a page-length text in that field would wreck every one of them. */
+  bioJson: json<LocalizedText>().notNull().default(DEFAULT_STUDIO_PROFILE.bioJson),
   profilesJson: json<LocalizedProfiles>().notNull().default(DEFAULT_STUDIO_PROFILE.profilesJson),
   /** Which platforms a new draft starts with, as target ids. Every Studio
    * publishes to its own subset of what it has connected — the hand-driven

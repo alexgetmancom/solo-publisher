@@ -18,9 +18,10 @@ license: MIT
 This skill lets agents fetch, digest, and search posts published on ${host}.
 
 ## How to use
-1. Fetch the JSON feed array from \`${site}/feed.json\`.
-2. To read posts in a structured format, iterate through the \`items\` array.
-3. Present the relevant posts to the user.
+1. Fetch the JSON Feed 1.1 document from \`${site}/feed.json\`.
+2. Iterate \`items\`; each carries \`title\`, \`url\`, \`content_text\`, \`date_published\` and \`tags\`.
+3. For a compact digest with entities already extracted, fetch \`${site}/feed-ai.json\` instead.
+4. Present the relevant posts to the user.
 `;
 }
 

@@ -31,6 +31,7 @@ let {
     </button>
     <div class="rail-avatar-menu__panel">
       <a href={locale === "ru" ? "/ru/" : "/"}>Alex Getman</a>
+      <a href={locale === "ru" ? "/ru/about/" : "/about/"}>{ui.about}</a>
       <a class="notranslate" href={locale === "ru" ? "/" : "/ru/"}>{ui.language}</a>
       <a href="https://t.me/alexgetmancom" target="_blank" rel="noopener noreferrer">{ui.telegram}</a>
     </div>

@@ -85,6 +85,13 @@
       "when": 1788600000000,
       "tag": "0011_telegram_discussion_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788700000000,
+      "tag": "0012_studio_profile_bio",
+      "breakpoints": true
     }
   ]
 }

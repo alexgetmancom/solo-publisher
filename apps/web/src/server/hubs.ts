@@ -30,14 +30,6 @@ const HUBS: Record<string, HubDefinition> = {
       ru: "Линейка моделей Anthropic. Здесь собраны релизы, доступ, лимиты, Claude Code, Cowork и важные изменения.",
     },
   },
-  kimi: {
-    entities: [{ kind: "model", slug: "kimi-k3" }],
-    title: "Kimi",
-    intro: {
-      en: "Kimi K3 and the Moonshot AI model line: releases, API pricing, benchmarks, access, and the real-world response.",
-      ru: "Kimi K3 и линейка Moonshot AI: релизы, цены API, бенчмарки, доступ и реальная реакция рынка.",
-    },
-  },
 };
 
 export function hubDefinition(hub: string | undefined): HubDefinition | null {
@@ -78,4 +70,9 @@ export function hubPosts(items: FeedItem[], definition: HubDefinition, locale: "
           definition.entities.some((candidate) => candidate.kind === entity.kind && candidate.slug === entity.slug),
       ),
   );
+}
+
+/** Every hub as [title, path], for pages that link the site's own topics. */
+export function hubTitles(locale: "en" | "ru"): Array<[string, string]> {
+  return Object.entries(HUBS).map(([hub, definition]) => [definition.title, `${locale === "ru" ? "/ru" : ""}/${hub}/`]);
 }

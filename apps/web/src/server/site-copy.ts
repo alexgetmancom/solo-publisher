@@ -29,6 +29,12 @@ type SiteChrome = {
   labelSitemap: string;
   labelMarkdownIndex: string;
   noPosts: string;
+  /** About page chrome. The page's body is `bio`, which is configuration. */
+  aboutTitle: string;
+  headingElsewhere: string;
+  headingTopics: string;
+  headingMachine: string;
+  aboutPending: string;
 };
 
 /** Who this Studio publishes as, from its profile row. An install that has not
@@ -42,6 +48,7 @@ function identity(locale: SiteLocale) {
     name: site.name || host,
     tagline: site.tagline,
     about: site.about,
+    bio: site.bio,
     social: site.profiles.map((profile): [string, string] => [profile.label, profile.url]),
   };
 }
@@ -62,6 +69,11 @@ const en: SiteChrome = {
   labelSitemap: "Sitemap",
   labelMarkdownIndex: "Markdown overview",
   noPosts: "No posts yet.",
+  aboutTitle: "About",
+  headingElsewhere: "Where else to read",
+  headingTopics: "Topics",
+  headingMachine: "Machine-readable",
+  aboutPending: "This Studio has not written its About text yet.",
 };
 
 const ru: SiteChrome = {
@@ -80,6 +92,11 @@ const ru: SiteChrome = {
   labelSitemap: "Карта сайта",
   labelMarkdownIndex: "Обзор в Markdown",
   noPosts: "Пока постов нет.",
+  aboutTitle: "Об авторе",
+  headingElsewhere: "Где ещё читать",
+  headingTopics: "Темы",
+  headingMachine: "Для машин",
+  aboutPending: "Эта Студия ещё не написала текст о себе.",
 } satisfies SiteChrome;
 
 const catalog: Record<SiteLocale, SiteChrome> = { en, ru };
@@ -93,11 +110,13 @@ export type SiteCopy = SiteChrome & {
   llmsTitle: string;
   llmsTagline: string;
   llmsAbout: string;
+  /** The About page body, paragraph-separated by blank lines. */
+  bio: string;
   social: [label: string, url: string][];
 };
 
 export function siteCopy(locale: SiteLocale): SiteCopy {
-  const { name, tagline, about, social } = identity(locale);
+  const { name, tagline, about, bio, social } = identity(locale);
   return {
     ...catalog[locale],
     feedTitle: tagline ? `${name} | ${tagline}` : name,
@@ -105,6 +124,7 @@ export function siteCopy(locale: SiteLocale): SiteCopy {
     llmsTitle: name,
     llmsTagline: tagline,
     llmsAbout: about,
+    bio,
     social,
   };
 }

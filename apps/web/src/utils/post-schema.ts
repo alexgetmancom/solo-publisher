@@ -1,4 +1,5 @@
 import type { FeedItem } from "../server/public-site";
+import { siteCopy } from "../server/site-copy";
 import { entityUrl } from "./entity-url";
 import { postSocialImagePath, postVisualMedia } from "./media";
 import { siteUrlFromContext } from "./site";
@@ -28,11 +29,24 @@ export function buildPostSchema({ item, locale, pageTitle, description, canonica
     name: locale === "ru" ? entity.title_ru : entity.title_en || entity.title_ru,
     url: `${siteUrlFromContext()}${entityUrl(entity.kind, entity.slug, locale)}`,
   }));
-  const person = { "@type": "Person", name: author, url: authorUrl };
+  // One `@id` for the author across every page. A bare inline Person on each
+  // of the site's several hundred story pages is several hundred unconnected
+  // people to a consumer building an entity graph, which is the opposite of
+  // what naming the author is for.
+  const personId = `${siteUrlFromContext()}/#person`;
+  const person = { "@id": personId };
 
   return JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
+      {
+        "@type": "Person",
+        "@id": personId,
+        name: author,
+        url: authorUrl,
+        image: `${siteUrlFromContext()}/avatar.png`,
+        sameAs: siteCopy(locale).social.map(([, profileUrl]) => profileUrl),
+      },
       {
         "@type": "NewsArticle",
         headline: pageTitle,

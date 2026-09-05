@@ -30,6 +30,7 @@ export interface StoryUi {
   menu: string;
   language: string;
   telegram: string;
+  about: string;
 }
 
 const en: StoryUi = {
@@ -51,6 +52,7 @@ const en: StoryUi = {
   menu: "Menu",
   language: "Русский",
   telegram: "Telegram",
+  about: "About",
 };
 
 const ru = {
@@ -72,6 +74,7 @@ const ru = {
   menu: "Меню",
   language: "English",
   telegram: "Telegram",
+  about: "Об авторе",
 } satisfies StoryUi;
 
 const catalog: Record<SiteLocale, StoryUi> = { en, ru };

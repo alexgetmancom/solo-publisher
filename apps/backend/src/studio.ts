@@ -17,6 +17,7 @@ export const DEFAULT_STUDIO_PROFILE = {
   nameJson: { en: "", ru: "" },
   taglineJson: { en: "", ru: "" },
   aboutJson: { en: "", ru: "" },
+  bioJson: { en: "", ru: "" },
   profilesJson: { en: [], ru: [] },
   // X and Discord are published by hand, so a fresh install starts without
   // them; every other target is on until an operator says otherwise.
@@ -36,7 +37,7 @@ export type StudioConfig = {
   timezoneLabel: string;
   siteEnabled: boolean;
   /** What this Studio says it is, resolved per language. */
-  site: (locale: "en" | "ru") => { name: string; tagline: string; about: string; profiles: StudioSocialProfile[] };
+  site: (locale: "en" | "ru") => { name: string; tagline: string; about: string; bio: string; profiles: StudioSocialProfile[] };
   video: { prepare_lead_minutes: number; retention_hours: number };
 };
 
@@ -65,6 +66,7 @@ export function studioConfig(ports: Pick<ApplicationPorts, "studioSettings">): S
         name: row.nameJson[locale],
         tagline: row.taglineJson[locale],
         about: row.aboutJson[locale],
+        bio: row.bioJson[locale],
         profiles: row.profilesJson[locale],
       };
     },

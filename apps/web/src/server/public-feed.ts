@@ -43,23 +43,49 @@ export async function publicRssResponse(context: APIContext, locale: SiteLocale)
   });
 }
 
-export function publicJsonFeedResponse(locale: SiteLocale): Response {
+/**
+ * JSON Feed 1.1. The endpoint used to serve the site's internal row shape under
+ * this name, which no feed reader and no generic agent can parse — `/feed-ai.json`
+ * is where this site's own vocabulary belongs, and this address answers in the
+ * spec every reader already implements.
+ */
+export function publicJsonFeedResponse(context: APIContext, locale: SiteLocale): Response {
+  const siteUrl = siteUrlFromContext(context);
+  const copy = siteCopy(locale);
   const items = sortedPublishedItems(loadFeedItems(), locale, 50).map((item) => {
-    if (locale === "ru") return item;
+    const slug = localizedSlug(item, locale) ?? "";
+    const url = postUrl(item, slug, locale, siteUrl);
+    const text = localizedText(item, locale);
+    const image = locale === "ru" ? item.image : item.image_en || item.image;
     return {
-      ...item,
-      text: item.text_en,
-      html: item.html_en || item.text_en,
-      media: Array.isArray(item.media_en) && item.media_en.length > 0 ? item.media_en : item.media,
-      image: item.image_en || item.image,
-      canonical_url: postUrl(item, item.slug_en ?? "", "en"),
-      ru_url: hasPublishedLocale(item, "ru") ? postUrl(item, item.slug_ru ?? "", "ru") : null,
+      id: url,
+      url,
+      title: postTitle(text, item.post_id, locale),
+      content_html: localizedHtml(item, locale),
+      content_text: compactText(text),
+      date_published: new Date(item.date).toISOString(),
+      language: locale,
+      ...(image ? { image: `${siteUrl}/${String(image).replace(/^\//, "")}` } : {}),
+      ...(item.entities.length > 0
+        ? { tags: item.entities.map((entity) => (locale === "ru" ? entity.title_ru : entity.title_en || entity.title_ru)).filter(Boolean) }
+        : {}),
     };
   });
 
-  return new Response(JSON.stringify({ items }, null, 2), {
+  const body = {
+    version: "https://jsonfeed.org/version/1.1",
+    title: copy.feedTitle,
+    home_page_url: `${siteUrl}${localePath(locale)}`,
+    feed_url: `${siteUrl}${localePath(locale, "/feed.json")}`,
+    description: copy.feedDescription,
+    language: locale,
+    authors: [{ name: copy.llmsTitle, url: `${siteUrl}${localePath(locale)}`, avatar: `${siteUrl}/avatar.png` }],
+    items,
+  };
+
+  return new Response(JSON.stringify(body, null, 2), {
     headers: {
-      "Content-Type": "application/json; charset=utf-8",
+      "Content-Type": "application/feed+json; charset=utf-8",
       "Cache-Control": "public, max-age=60",
       "X-Robots-Tag": "noindex, follow",
     },
@@ -151,6 +177,7 @@ export async function publicLlmsResponse(context: APIContext, locale: SiteLocale
     `## ${copy.headingLinks}`,
     "",
     `- ${copy.labelWebsite}: ${siteUrl}${localePath(locale)}`,
+    `- ${copy.aboutTitle}: ${siteUrl}${localePath(locale, "/about/")}`,
     `- ${copy.labelJsonFeed}: ${siteUrl}${localePath(locale, "/feed.json")}`,
     `- ${copy.labelRss}: ${siteUrl}${localePath(locale, "/feed.xml")}`,
     `- ${copy.labelMarkdownIndex}: ${siteUrl}${localePath(locale, "/index.md")}`,

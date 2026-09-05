@@ -53,6 +53,17 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   const response = await next();
   if (LINKED_PAGES.has(pathname)) response.headers.set("Link", LINK_HEADER);
-  if (UNINDEXED.test(pathname)) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  if (UNINDEXED.test(pathname)) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    // An operator surface is answered per token holder. A shared cache that
+    // kept one of these would serve one operator's screen to the next caller.
+    response.headers.set("Cache-Control", "no-store");
+  } else if (!response.headers.has("Cache-Control") && response.headers.get("Content-Type")?.startsWith("text/html")) {
+    // Public pages carried no caching directive at all, so no CDN in front of
+    // this Studio could hold one. The browser still revalidates every time;
+    // what changes is that a shared cache may serve a page for five minutes
+    // and a stale one for a day while it refreshes behind the reader.
+    response.headers.set("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=86400");
+  }
   return response;
 };

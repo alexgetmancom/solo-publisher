@@ -257,6 +257,7 @@ const operationDefs = {
       name: localizedTextOption("this Studio's name, per language"),
       tagline: localizedTextOption("one-line description, per language"),
       about: localizedTextOption("longer description reaching llms.txt and structured data"),
+      bio: localizedTextOption("the About page text, per language; blank lines separate paragraphs"),
       profiles: example(z.string(), '{"en":[{"label":"Telegram","url":"https://t.me/example"}],"ru":[]}')
         .optional()
         .describe("social profiles listed in llms.txt and as sameAs, per language")
@@ -275,6 +276,7 @@ const operationDefs = {
         name: input.name,
         tagline: input.tagline,
         about: input.about,
+        bio: input.bio,
         profiles: input.profiles,
       }),
   }),

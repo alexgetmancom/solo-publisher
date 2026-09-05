@@ -88,6 +88,7 @@ function readProfile(backendDb: SettingsDependencies) {
     name: row.nameJson,
     tagline: row.taglineJson,
     about: row.aboutJson,
+    bio: row.bioJson,
     profiles: row.profilesJson,
   };
 }
@@ -101,6 +102,7 @@ export type StudioProfileInput = {
   name?: LocalizedText | undefined;
   tagline?: LocalizedText | undefined;
   about?: LocalizedText | undefined;
+  bio?: LocalizedText | undefined;
   profiles?: LocalizedProfiles | undefined;
 };
 
@@ -131,6 +133,7 @@ export function settingsService(backendDb: SettingsDependencies) {
         ...(input.name != null ? { nameJson: input.name } : {}),
         ...(input.tagline != null ? { taglineJson: input.tagline } : {}),
         ...(input.about != null ? { aboutJson: input.about } : {}),
+        ...(input.bio != null ? { bioJson: input.bio } : {}),
         ...(input.profiles != null ? { profilesJson: input.profiles } : {}),
         updatedAt: backendDb.clock.now().toISOString(),
       });

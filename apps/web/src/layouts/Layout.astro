@@ -55,6 +55,40 @@ const socialImage = socialImageProp
     : `${publicBaseUrl}${socialImageProp.startsWith("/") ? socialImageProp : `/${socialImageProp}`}`
   : `${publicBaseUrl}/social-image.jpg`;
 const twitterCard = socialImageWidth >= 1000 ? "summary_large_image" : "summary";
+// The page's own WebMCP tool. Its wording used to name one install's domain,
+// which every other Studio then served as its own. The compact agent feed is
+// what it reads: `/feed.json` is JSON Feed for readers, `/feed-ai.json` is the
+// digest shape with entities already pulled out.
+const agentFeedPath = lang === "ru" ? "/ru/feed-ai.json" : "/feed-ai.json";
+const webMcpScript = `
+(() => {
+  const registerWebMCP = async () => {
+    if (!navigator.modelContext) return;
+    try {
+      const provideContext = navigator.modelContext.provideContext || navigator.modelContext.registerTool;
+      if (typeof provideContext !== "function") return;
+      const tool = {
+        name: "read_feed",
+        description: ${JSON.stringify(`Get the latest posts from ${new URL(publicBaseUrl).host}.`)},
+        inputSchema: { type: "object", properties: { limit: { type: "number", description: "Number of posts to return (default 5, max 12)" } } },
+        execute: async (args) => {
+          try {
+            const response = await fetch(${JSON.stringify(agentFeedPath)});
+            const data = await response.json();
+            const limit = Math.min(Math.max(Number(args?.limit) || 5, 1), 12);
+            return { result: (data.items || []).slice(0, limit) };
+          } catch (error) {
+            return { error: error instanceof Error ? error.message : String(error) };
+          }
+        },
+      };
+      if (navigator.modelContext.provideContext) await navigator.modelContext.provideContext({ tools: [tool] });
+      else await navigator.modelContext.registerTool(tool, tool.execute);
+    } catch {}
+  };
+  registerWebMCP();
+})();
+`;
 const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
 ---
 <!DOCTYPE html>
@@ -102,34 +136,7 @@ const safeSchema = schema?.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").rep
     <meta name="twitter:description" content={cleanDescription} />
     <meta name="twitter:image" content={socialImage} />
     {safeSchema && <script type="application/ld+json" set:html={safeSchema}></script>}
-    <script is:inline>
-      (() => {
-        const registerWebMCP = async () => {
-          if (!navigator.modelContext) return;
-          try {
-            const provideContext = navigator.modelContext.provideContext || navigator.modelContext.registerTool;
-            if (typeof provideContext !== "function") return;
-            const tool = {
-              name: "read_feed",
-              description: "Get the latest AI news, automation notes and developer updates from alexgetman.com.",
-              inputSchema: { type: "object", properties: { limit: { type: "number", description: "Number of posts to return (default 5, max 12)" } } },
-              execute: async (args) => {
-                try {
-                  const response = await fetch("/feed.json");
-                  const data = await response.json();
-                  return { result: (data.items || data).slice(0, args.limit || 5) };
-                } catch (error) {
-                  return { error: error instanceof Error ? error.message : String(error) };
-                }
-              },
-            };
-            if (navigator.modelContext.provideContext) await navigator.modelContext.provideContext({ tools: [tool] });
-            else await navigator.modelContext.registerTool(tool, tool.execute);
-          } catch {}
-        };
-        registerWebMCP();
-      })();
-    </script>
+    <script is:inline set:html={webMcpScript}></script>
   </head>
   <body class={immersiveHome ? "immersive-home" : undefined}>
     <a class="skip-link" href="#main-content">{lang === "ru" ? "К содержанию" : "Skip to content"}</a>

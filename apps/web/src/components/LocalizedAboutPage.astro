@@ -1,0 +1,116 @@
+---
+/* The page that answers "who is this". Its body is the Studio's own `bio`,
+ * because the identity of an install is configuration and never ships in the
+ * image; everything around it — profiles, hubs, machine-readable addresses —
+ * is derived, so this page cannot drift from what the rest of the site says. */
+import Layout from "../layouts/Layout.astro";
+import { hubTitles } from "../server/hubs";
+import { siteCopy } from "../server/site-copy";
+import { localePath, SITE_LOCALES } from "../utils/locale";
+import { siteUrlFromContext } from "../utils/site";
+
+type Props = { locale: "en" | "ru" };
+
+const { locale } = Astro.props;
+const copy = siteCopy(locale);
+const siteOrigin = siteUrlFromContext(Astro);
+const url = `${siteOrigin}${localePath(locale, "/about/")}`;
+const englishUrl = `${siteOrigin}/about/`;
+
+// Blank lines separate paragraphs. A single-paragraph bio renders as one.
+const paragraphs = copy.bio
+  .split(/\n\s*\n/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean);
+
+// The Person node carries the same `@id` the home page mints, so every page
+// that names the author points at one entity instead of minting its own.
+const schema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": `${siteOrigin}/#person`,
+      name: copy.llmsTitle,
+      description: copy.llmsAbout,
+      url: `${siteOrigin}${localePath(locale)}`,
+      image: `${siteOrigin}/avatar.png`,
+      sameAs: copy.social.map(([, profileUrl]) => profileUrl),
+      mainEntityOfPage: url,
+    },
+    {
+      "@type": "AboutPage",
+      "@id": `${url}#about`,
+      url,
+      name: `${copy.aboutTitle} — ${copy.llmsTitle}`,
+      description: copy.llmsAbout,
+      inLanguage: locale === "ru" ? "ru-RU" : "en-US",
+      mainEntity: { "@id": `${siteOrigin}/#person` },
+      isPartOf: { "@id": `${siteOrigin}/#website` },
+    },
+  ],
+});
+
+const machineLinks: Array<[string, string]> = [
+  [copy.labelRss, localePath(locale, "/feed.xml")],
+  [copy.labelJsonFeed, localePath(locale, "/feed.json")],
+  [copy.labelMarkdownIndex, localePath(locale, "/index.md")],
+  ["llms.txt", localePath(locale, "/llms.txt")],
+  [copy.labelSitemap, "/sitemap.xml"],
+];
+---
+
+<Layout
+  title={`${copy.aboutTitle} — ${copy.llmsTitle}`}
+  description={copy.llmsAbout}
+  canonicalUrl={url}
+  lang={locale}
+  siteName={copy.llmsTitle}
+  schema={schema}
+  rssHref={localePath(locale, "/feed.xml")}
+  alternateLinks={[
+    ...SITE_LOCALES.map((other) => ({ hreflang: other, href: `${siteOrigin}${localePath(other, "/about/")}` })),
+    { hreflang: "x-default", href: englishUrl },
+  ]}
+>
+  <article class="about">
+    <h1>{copy.llmsTitle}</h1>
+    {copy.llmsTagline && <p class="about__tagline">{copy.llmsTagline}</p>}
+
+    {paragraphs.length > 0 ? paragraphs.map((paragraph) => <p>{paragraph}</p>) : <p>{copy.aboutPending}</p>}
+
+    {
+      hubTitles(locale).length > 0 && (
+        <>
+          <h2>{copy.headingTopics}</h2>
+          <ul>{hubTitles(locale).map(([title, href]) => <li><a href={href}>{title}</a></li>)}</ul>
+        </>
+      )
+    }
+
+    {
+      copy.social.length > 0 && (
+        <>
+          <h2>{copy.headingElsewhere}</h2>
+          <ul>
+            {copy.social.map(([label, profileUrl]) => (
+              <li><a href={profileUrl} rel="me noopener noreferrer" target="_blank">{label}</a></li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+
+    <h2>{copy.headingMachine}</h2>
+    <ul>{machineLinks.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+  </article>
+</Layout>
+
+<style>
+  .about { max-width: 720px; margin: 0 auto; padding: 5rem 1.5rem; line-height: 1.65; }
+  .about h1 { margin-top: 0; }
+  .about__tagline { font-size: 1.15rem; opacity: 0.8; }
+  .about h2 { margin-top: 2.5rem; }
+  .about ul { padding-left: 1.2rem; }
+  .about a { color: var(--accent); }
+</style>
