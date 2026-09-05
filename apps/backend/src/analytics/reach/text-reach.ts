@@ -11,24 +11,18 @@ import type { ReachCounters, ReachSample, ReachSeries } from "./daily-reach.js";
  * the overview is computed by exactly the code that computes the video half.
  */
 
-/** Counter names as the collectors write them, mapped onto the shared four. */
-const TEXT_COUNTERS: Record<string, keyof ReachCounters> = {
+/** Counter names as the collectors write them, mapped onto the shared four.
+ * One map for both feeds: an X export's `likes` column and a collector's
+ * `likes` are the same count, and reading the export's `interactions` here
+ * instead put engagements — clicks, profile visits, expands — on the line the
+ * publications spell out in likes. */
+const COUNTER_OF: Record<string, keyof ReachCounters> = {
   views: "views",
   bot_views: "views",
   likes: "reactions",
   replies: "replies",
   reposts: "reposts",
 };
-
-const X_COUNTERS: Record<string, keyof ReachCounters> = {
-  views: "views",
-  interactions: "reactions",
-  replies: "replies",
-  reposts: "reposts",
-};
-
-/** Both feeds resolved into one lookup, since a series is folded by source name. */
-const COUNTER_OF: Record<string, keyof ReachCounters | undefined> = { ...TEXT_COUNTERS, ...X_COUNTERS };
 
 type RawSample = { at: number; value: number };
 
@@ -53,7 +47,7 @@ export function textReachSeries(
       if (!metrics) continue;
       const observed = new Map<string, RawSample[]>();
       const lifetime: ReachCounters = { views: 0, reactions: 0, replies: 0, reposts: 0 };
-      for (const [name, counter] of Object.entries(TEXT_COUNTERS)) {
+      for (const [name, counter] of Object.entries(COUNTER_OF)) {
         const metric = metrics[name];
         if (!metric) continue;
         lifetime[counter] += numeric(metric.value);
@@ -94,7 +88,7 @@ export function xActivityReachSeries(
   const byItem = new Map<string, Map<string, RawSample[]>>();
   for (const snapshot of snapshots) {
     if (!wantedIds.has(snapshot.xPostId)) continue;
-    if (!X_COUNTERS[snapshot.metricName]) continue;
+    if (!COUNTER_OF[snapshot.metricName]) continue;
     const at = Date.parse(snapshot.sampledAt);
     if (Number.isNaN(at) || at > endMs) continue;
     const observed = byItem.get(snapshot.xPostId) ?? new Map<string, RawSample[]>();

@@ -359,7 +359,7 @@ describe("X Activity", () => {
         text: "Editorial post",
         url: "https://x.com/test/status/100",
         linkedPublicationKey: "post:1",
-        metrics: { views: 50, interactions: 8, replies: 1 },
+        metrics: { views: 50, likes: 8, replies: 1 },
       },
       {
         xPostId: "101",
@@ -368,7 +368,7 @@ describe("X Activity", () => {
         text: "@friend Useful answer",
         url: "https://x.com/test/status/101",
         linkedPublicationKey: null,
-        metrics: { views: 500, interactions: 40, replies: 3 },
+        metrics: { views: 500, likes: 40, replies: 3 },
       },
     ];
 

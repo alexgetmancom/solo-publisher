@@ -17,7 +17,7 @@ export function xActivityPost(item: XActivityDashboardItem): PipelinePost {
     metrics: {
       x: {
         views: { value: Number(item.metrics.views ?? 0) },
-        likes: { value: Number(item.metrics.interactions ?? 0) },
+        likes: { value: Number(item.metrics.likes ?? 0) },
         replies: { value: Number(item.metrics.replies ?? 0) },
       },
     },

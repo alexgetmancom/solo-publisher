@@ -482,6 +482,7 @@ export function seedDashboardFixture(options: DashboardFixtureOptions): SeededDa
         .run();
       for (const [metricName, value] of [
         ["views", 5_000 - index * 430],
+        ["likes", 24 - index * 2],
         ["interactions", 120 - index * 8],
         ["replies", reply ? 18 - index : 4 + index],
       ] as const)
