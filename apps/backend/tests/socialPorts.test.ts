@@ -17,7 +17,7 @@ import type { ClaimedPublishJob } from "../src/publishing/queue.js";
 
 const calls: { target: string; payload: Record<string, unknown>; token?: string | undefined; userId?: string | undefined }[] = [];
 let prepareCount = 0;
-let storyRenderCount = 0;
+let storyReadCount = 0;
 let failPreparation = false;
 /**
  * bun's `mock.module` replaces a module for the whole process, not for this
@@ -34,7 +34,7 @@ const real = {
   publishInstagramStory: (await import("../src/delivery/social/instagram.js")).publishInstagramStory,
   publishTelegramStory: (await import("../src/delivery/social/telegramStories.js")).publishTelegramStory,
   prepareMediaItems: (await import("../src/delivery/media-prepare.js")).prepareMediaItems,
-  ensurePreparedStoryMedia: (await import("../src/delivery/story-derivatives.js")).ensurePreparedStoryMedia,
+  preparedStoryMedia: (await import("../src/delivery/story-derivatives.js")).preparedStoryMedia,
 };
 
 mock.module("../src/delivery/social/telegram.js", () => ({
@@ -85,10 +85,10 @@ mock.module("../src/delivery/media-prepare.js", () => ({
   },
 }));
 mock.module("../src/delivery/story-derivatives.js", () => ({
-  ensurePreparedStoryMedia: async (...args: Parameters<typeof real.ensurePreparedStoryMedia>) => {
-    if (!intercepting) return real.ensurePreparedStoryMedia(...args);
+  preparedStoryMedia: (...args: Parameters<typeof real.preparedStoryMedia>) => {
+    if (!intercepting) return real.preparedStoryMedia(...args);
     const item = args[1];
-    storyRenderCount += 1;
+    storyReadCount += 1;
     return item.localPath ? { ...item, storyLocalPath: `/story/${item.fileId}.mp4` } : null;
   },
 }));
@@ -124,7 +124,7 @@ function job(target: string, payload: Record<string, unknown> = {}, overrides: P
 function reset(): void {
   calls.length = 0;
   prepareCount = 0;
-  storyRenderCount = 0;
+  storyReadCount = 0;
   failPreparation = false;
 }
 
@@ -241,7 +241,7 @@ describe("createPlatformPorts", () => {
     ]);
     // Both targets ask for the same derivative; the encode itself is shared by
     // path inside the derivative module, not by a cache in the publisher.
-    expect(storyRenderCount).toBe(2);
+    expect(storyReadCount).toBe(2);
   });
 
   it("keeps Story media out of the feed target's staging entry", async () => {
@@ -263,12 +263,14 @@ describe("createPlatformPorts", () => {
     expect(calls[0]?.payload.media).toEqual([{ type: "IMAGE", fileId: "a", storyLocalPath: "/story/a.mp4", localPath: "/prepared/a" }]);
   });
 
-  it("refuses Story delivery when the post carries nothing to render from", async () => {
+  it("refuses Story delivery when no Story variant was prepared, instead of rendering one", async () => {
     reset();
     const ports = createPlatformPorts(config);
+    // Publishing reads the variant and never makes it: an encode belongs to
+    // ingress or the backfill, not to the moment the post goes out.
     await expect(
       deliver(ports.telegram_stories, job("telegram_stories", { text: "hi", media: [{ type: "IMAGE", fileId: "a" }] })),
-    ).rejects.toThrow("story_media_unavailable");
+    ).rejects.toThrow("story_media_unprepared");
     expect(prepareCount).toBe(0);
   });
 });

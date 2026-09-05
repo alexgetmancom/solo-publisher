@@ -3,12 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { PublishMediaItem } from "../src/delivery/social/payload.js";
-import {
-  ensurePreparedStoryMedia,
-  ensureStoryDerivative,
-  preparedStoryMedia,
-  storyVariantPaths,
-} from "../src/delivery/story-derivatives.js";
+import { ensureStoryDerivative, preparedStoryMedia, storyVariantPaths } from "../src/delivery/story-derivatives.js";
 import type { BackendConfig } from "../src/foundation/config.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
@@ -94,14 +89,17 @@ describe("story derivatives", () => {
     expect(fs.statSync(paths.standard).mtimeMs).toBe(renderedAt);
   });
 
-  it("recovers at publish time for a file imported before preparation existed", async () => {
+  it("prepares a file that never went through ingress, for the backfill to publish", async () => {
     const config = loadTestConfig({ DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "story-recover-")) });
     const source = path.join(config.DATA_DIR, "abcdef0123456789abcdef05.jpg");
     await fs.promises.writeFile(source, PNG_BYTES);
     const item: PublishMediaItem = { type: "IMAGE", localPath: source };
     expect(preparedStoryMedia(config, item)).toBeNull();
 
-    const prepared = await ensurePreparedStoryMedia(config, item);
+    // Publishing itself never renders: it reads what ingress or the backfill
+    // left, and this is the render the backfill performs.
+    await ensureStoryDerivative(config, source, false);
+    const prepared = preparedStoryMedia(config, item);
     expect(prepared?.storyLocalPath).toBe(storyVariantPaths(config, source, false).standard);
     expect(fs.existsSync(String(prepared?.storyLocalPath))).toBe(true);
   });

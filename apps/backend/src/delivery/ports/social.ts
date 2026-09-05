@@ -9,7 +9,7 @@ import { prepareMediaItems } from "../media-prepare.js";
 import { createPlatformAdapters, type TargetRouting } from "../platform-adapters.js";
 import type { DeliveryPorts } from "../ports.js";
 import { payloadMedia } from "../social/payload.js";
-import { ensurePreparedStoryMedia } from "../story-derivatives.js";
+import { preparedStoryMedia } from "../story-derivatives.js";
 
 type PreparedMedia = Awaited<ReturnType<typeof prepareMediaItems>>;
 const MAX_PREPARATION_CACHE_ENTRIES = 32;
@@ -45,7 +45,7 @@ async function withPreparedMedia(
   // before it ever reaches the Media Processing Port.
   const storySource = selectMediaForTarget(job.target, media);
   if (isStoryTarget(job.target)) log("info", "story delivery preparation started", { jobId: job.jobId, target: job.target });
-  const sourceMedia = isStoryTarget(job.target) ? await requireStoryMedia(config, storySource) : storySource;
+  const sourceMedia = isStoryTarget(job.target) ? requireStoryMedia(config, storySource) : storySource;
   const key = mediaCacheKey(job, sourceMedia, config);
   // One preparation per (post, target, media) within a delivery cycle. The
   // staged public copy is a cache; the Story derivative itself belongs to the
@@ -65,15 +65,19 @@ async function withPreparedMedia(
   return { ...job, payload: { ...job.payload, media: items } };
 }
 
-async function requireStoryMedia(config: BackendConfig, media: ReturnType<typeof payloadMedia>): Promise<ReturnType<typeof payloadMedia>> {
+function requireStoryMedia(config: BackendConfig, media: ReturnType<typeof payloadMedia>): ReturnType<typeof payloadMedia> {
   const [source] = media;
   if (!source) return media;
-  // Normally a read: ingress made the variant. It is still rendered here for an
-  // asset older than that path, or one whose derivative did not survive the
-  // disk, because a publication must not depend on when its file was imported.
-  const prepared = await ensurePreparedStoryMedia(config, source);
+  // A read, and only a read. Publishing used to render a missing variant here,
+  // which put an 8-12 second encode inside the tap that sends the post: the
+  // variant is made at ingress, and `story-media-backfill` makes what predates
+  // that. A publication that finds none refuses now rather than paying for one
+  // with the audience already waiting.
+  const prepared = preparedStoryMedia(config, source);
   if (prepared) return [prepared];
-  throw new Error("story_media_unavailable: the post carries no local media to render a Story from");
+  throw new Error(
+    `story_media_unprepared: no Story variant for ${source.localPath ?? "media with no local file"} -- run \`ops story-media-backfill --apply\``,
+  );
 }
 
 function mediaCacheKey(job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>, config: BackendConfig): string {

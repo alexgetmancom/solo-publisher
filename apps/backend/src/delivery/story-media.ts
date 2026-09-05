@@ -25,8 +25,9 @@ export function storyDirectory(config: BackendConfig): string {
 /**
  * One source file into the Story shapes, wherever the caller wants them.
  *
- * Ingress, publish-time recovery and the operator's repair all reach the recipe
- * through here: the same transform, the same timeout, the same permissions.
+ * Ingress, the operator's backfill and the operator's repair all reach the
+ * recipe through here: the same transform, the same timeout, the same
+ * permissions.
  */
 export async function renderStoryVariants(
   source: string,

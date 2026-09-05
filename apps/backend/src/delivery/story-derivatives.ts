@@ -15,8 +15,8 @@ const renders = new Map<string, Promise<boolean>>();
  *
  * A Story variant is a pure function of the source, and making it cost 8.5-12
  * seconds inside the operator's "Publish" tap. It is made at media ingress,
- * before a draft can point at the asset, and rendered on demand at publish time
- * for an asset that never went through it.
+ * before a draft can point at the asset; publishing only ever reads it, and
+ * `story-media-backfill` is what makes the ones ingress never saw.
  *
  * There is no table. An imported asset is already stored under its own content
  * hash, so the variant's path is a function of the source's path, and the file
@@ -54,10 +54,10 @@ export function preparedStoryMedia(config: BackendConfig, item: PublishMediaItem
 /**
  * The Story shapes for one source file, made if they are not already there.
  *
- * Ingress calls this so the operator's "Publish" tap finds the files ready;
- * publishing calls the same function so a file that was never prepared -- an
- * asset older than this path, or one whose derivative was lost with the disk --
- * still publishes. One recipe, one content-addressed destination, so the two
+ * Ingress calls this so the operator's "Publish" tap finds the files ready, and
+ * the operator's backfill and repair call it for a file that never went through
+ * ingress -- an asset older than this path, or one whose derivative was lost
+ * with the disk. One recipe, one content-addressed destination, so the
  * callers cannot disagree about where the variant lives or how it was made.
  *
  * Renders run one at a time: the transform is the heaviest thing this process
@@ -93,14 +93,6 @@ export async function ensureStoryDerivative(
  * post draft. Publishing recovers what this could not finish. */
 export async function prepareStoryDerivative(config: BackendConfig, asset: StudioMediaAssetRecord): Promise<boolean> {
   return ensureStoryDerivative(config, asset.localPath, asset.kind === "video", { assetId: asset.id, kind: asset.kind });
-}
-
-/** The Story variant of one publish item, rendering it first if it is missing. */
-export async function ensurePreparedStoryMedia(config: BackendConfig, item: PublishMediaItem): Promise<PublishMediaItem | null> {
-  const source = typeof item.localPath === "string" ? item.localPath : null;
-  if (!source) return null;
-  await ensureStoryDerivative(config, source, storyItemIsVideo(item), { source: "publish" });
-  return preparedStoryMedia(config, item);
 }
 
 /** Whether the Story shapes of this source are already on disk. The operator's
