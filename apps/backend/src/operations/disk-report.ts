@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import { postLocales, publishJobs, studioMediaAssets, videoDrafts } from "../db/schema.js";
+import { postLocales, studioMediaAssets, videoDrafts } from "../db/schema.js";
 import { storyDirectory } from "../delivery/story-media.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
@@ -30,7 +30,7 @@ export function diskReport(backendDb: BackendDb, config: BackendConfig): Record<
     ok: true,
     database_bytes: database,
     directories: directories.map((entry) => ({ ...entry, megabytes: megabytes(entry.bytes) })),
-    studio_media: studioMediaHoldings(backendDb, config),
+    studio_media: studioMediaHoldings(backendDb),
     story_variants: {
       files: orphans.total,
       orphaned: orphans.orphaned.length,
@@ -50,7 +50,7 @@ export function diskReport(backendDb: BackendDb, config: BackendConfig): Record<
  * retention window after its drafts are final, and a file no draft names at all
  * is one nothing will ever delete.
  */
-function studioMediaHoldings(backendDb: BackendDb, config: BackendConfig): Record<string, unknown> {
+function studioMediaHoldings(backendDb: BackendDb): Record<string, unknown> {
   const held = { post_attachment: group(), video_source_pending: group(), video_source_released: group(), unreferenced: group() };
   const assets = unsafeDb(backendDb)
     .db.select({ id: studioMediaAssets.id, localPath: studioMediaAssets.localPath })
