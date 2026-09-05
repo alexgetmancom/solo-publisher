@@ -9,7 +9,7 @@ import { platformToken, storePlatformToken } from "./platform-token-store.js";
 /** Where a connected YouTube channel's renewal credential lives, by language.
  * The name matches the registry's channel id, which is how every other surface
  * already speaks about the same account. */
-export function youtubeTokenTarget(locale: VideoLocale): string {
+function youtubeTokenTarget(locale: VideoLocale): string {
   return channelIdentity("youtube", locale);
 }
 

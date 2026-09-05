@@ -121,18 +121,25 @@ project would put it through Google's verification.
    refresh tokens that [expire in 7 days](https://developers.google.com/identity/protocols/oauth2),
    so publishing works, and then silently stops a week later. Your own channel
    does not need Google's verification; the "unverified app" notice is expected.
-3. Credentials → OAuth client ID → type **TVs and Limited Input devices**. A
-   Studio runs on a server with no browser, and this is the only client type
-   whose flow does not need a redirect back to a reachable address.
-4. Put the client id and secret in `.env` as `YOUTUBE_RU_CLIENT_ID` and
+3. On the consent screen, add the scope
+   `https://www.googleapis.com/auth/youtube.force-ssl`. It is the one scope
+   `videos.insert` and `commentThreads.list` both accept, so one grant both
+   publishes and reads the comments on what it published.
+4. Credentials → OAuth client ID → type **Web application**, with
+   `https://<your domain>/oauth/youtube` as an authorized redirect URI — the
+   same `PUBLIC_BASE_URL` the Studio serves on. The *TVs and Limited Input
+   devices* type cannot be used: its flow accepts only `auth/youtube` and
+   `auth/youtube.readonly` and refuses `force-ssl` outright, which leaves a
+   channel that uploads fine and never collects a single comment.
+5. Put the client id and secret in `.env` as `YOUTUBE_RU_CLIENT_ID` and
    `YOUTUBE_RU_CLIENT_SECRET` (or `YOUTUBE_EN_*`).
 
 ```bash
 docker compose exec app bun /app/ops/cli.js connect-link --platform youtube --locale ru
 ```
 
-It answers with a short code and a URL. Approve on any device with a browser and
-the Studio finishes on its own within a minute: the refresh token is stored
+It answers with a link to Google's consent screen. Approve there and Google
+returns to the Studio, which finishes on its own: the refresh token is stored
 sealed in its database, the channel appears in the registry, and nothing has to
 be pasted into `.env` or restarted. The same connection can be started from
 Studio → Channels or from the Telegram bot — one flow, three surfaces. That

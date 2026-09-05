@@ -122,20 +122,27 @@ Cloud, а не на пользователя: общий клиент дал б�
    refresh-токены, [истекающие через 7 дней](https://developers.google.com/identity/protocols/oauth2),
    то есть публикация заработает и молча встанет неделю спустя. Для собственного
    канала верификация Google не нужна, предупреждение «unverified app» ожидаемо.
-3. Credentials → OAuth client ID → тип **TVs and Limited Input devices**. Studio
-   работает на сервере без браузера, и это единственный тип клиента, чей поток
-   не требует обратного редиректа на достижимый адрес.
-4. Впишите id и secret в `.env` как `YOUTUBE_RU_CLIENT_ID` и
+3. На consent screen добавьте скоуп
+   `https://www.googleapis.com/auth/youtube.force-ssl`. Это единственный скоуп,
+   который принимают и `videos.insert`, и `commentThreads.list`, — одно
+   разрешение и публикует, и читает комментарии к опубликованному.
+4. Credentials → OAuth client ID → тип **Web application**, в authorized
+   redirect URI — `https://<ваш домен>/oauth/youtube`, тот же `PUBLIC_BASE_URL`,
+   на котором работает Studio. Тип *TVs and Limited Input devices* не подойдёт:
+   его поток принимает только `auth/youtube` и `auth/youtube.readonly`, а
+   `force-ssl` отвергает — и канал будет исправно загружать видео, не собрав ни
+   одного комментария.
+5. Впишите id и secret в `.env` как `YOUTUBE_RU_CLIENT_ID` и
    `YOUTUBE_RU_CLIENT_SECRET` (либо `YOUTUBE_EN_*`).
 
 ```bash
 docker compose exec app bun /app/ops/cli.js connect-link --platform youtube --locale ru
 ```
 
-Команда отвечает коротким кодом и адресом. Подтвердите на любом устройстве с
-браузером — Studio закончит сама в течение минуты: refresh-токен ляжет
-запечатанным в её базу, канал появится в реестре, ничего не нужно вписывать в
-`.env` и перезапускать. Ту же операцию можно начать в Studio → Каналы и в
+Команда отвечает ссылкой на consent screen Google. Подтвердите там — Google
+вернёт браузер в Studio, и она закончит сама: refresh-токен ляжет запечатанным
+в её базу, канал появится в реестре, ничего не нужно вписывать в `.env` и
+перезапускать. Ту же операцию можно начать в Studio → Каналы и в
 Telegram-боте: один поток, три поверхности. Это подтверждение —
 единственный ручной шаг, и он делается один раз: дальше Studio сама меняет
 refresh-токен на короткоживущий access-токен перед каждой загрузкой, а сам

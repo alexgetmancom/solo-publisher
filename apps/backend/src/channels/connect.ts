@@ -3,7 +3,6 @@ import { type BackendDb, unsafeDb } from "../db/client.js";
 import { deviceAuthorizations } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { youtubeCredentials } from "../foundation/external/youtube.js";
-import { formBody, isInconclusiveExternalFailure, requestJson } from "../foundation/http.js";
 import { log } from "../foundation/logger.js";
 import { encryptionKey, open, seal } from "../foundation/secret-box.js";
 import type { VideoLocale } from "../publishing/video-types.js";
@@ -12,26 +11,11 @@ import { META_PROVIDERS, type MetaOauthPlatform } from "./meta-providers.js";
 import { registerChannel } from "./registry.js";
 import { redeemTwitchDevice, startTwitchDevice, TWITCH_TOKEN_TARGET } from "./twitch-oauth.js";
 import { xOauthAuthorizeUrl } from "./x-oauth.js";
-import { installYouTubeToken, youtubeTokenTarget } from "./youtube-tokens.js";
+import { youtubeOauthAuthorizeUrl } from "./youtube-oauth.js";
 
 /** Ten minutes, the life of the signed state a redirect link carries. Stated
  * with the link because a link handed over in a chat is read later than made. */
 const LINK_TTL_MINUTES = 10;
-const DEVICE_CODE_URL = "https://oauth2.googleapis.com/device/code";
-const YOUTUBE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-/**
- * Device flow accepts exactly two YouTube scopes -- `auth/youtube` and
- * `auth/youtube.readonly` -- and rejects every other one outright with
- * `invalid_scope`. The general scope is the one of the two that `videos.insert`
- * accepts, so it is what publishing runs on.
- *
- * It also puts comment texts out of reach: `commentThreads.list` names
- * `auth/youtube.force-ssl` as its only scope, and `readonly` does not stand in
- * for it. Reading comments is not a scope this connection can ask for -- it
- * needs a redirect OAuth client, which is a different connection entirely.
- */
-const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube";
-
 export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube", "twitch"] as const;
 export type ConnectPlatform = (typeof CONNECT_PLATFORMS)[number];
 
@@ -39,10 +23,10 @@ export type ConnectPlatform = (typeof CONNECT_PLATFORMS)[number];
  * How one platform is connected, as data.
  *
  * Two shapes, not one: most platforms send the operator to a consent screen and
- * come back to a route, while YouTube hands out a code to type on another
- * screen and answers by polling. That is a real difference in what a connection
- * is, so it is an explicit kind rather than a branch inside a flow pretending
- * they are the same. Everything else — who can be connected, what it needs,
+ * come back to a route, while Twitch hands out a code to type on another screen
+ * and answers by polling. That is a real difference in what a connection is, so
+ * it is an explicit kind rather than a branch inside a flow pretending they are
+ * the same. Everything else — who can be connected, what it needs,
  * whether this Studio keeps one account per language — is shared, which is why
  * every surface asks this table and none of them knows a platform by name.
  */
@@ -95,7 +79,7 @@ const CONNECT_PROVIDERS: Record<ConnectPlatform, ConnectProvider> = {
     start: startTwitchConnect,
   },
   youtube: {
-    kind: "device",
+    kind: "redirect",
     label: "YouTube",
     perLocale: true,
     missing: (config, locale) => {
@@ -107,7 +91,7 @@ const CONNECT_PROVIDERS: Record<ConnectPlatform, ConnectProvider> = {
         config.TOKEN_ENCRYPTION_KEY ? null : "TOKEN_ENCRYPTION_KEY",
       ].filter((name): name is string => name !== null);
     },
-    start: startYouTubeDevice,
+    link: (config, locale, now) => youtubeOauthAuthorizeUrl(config, locale, now),
   },
 };
 
@@ -156,56 +140,6 @@ function missingSettings(config: BackendConfig, names: readonly string[]): strin
   return names.filter((name) => !values[name]);
 }
 
-/** Asks Google for the code the operator types, and keeps the half that
- * redeems it until the credentials worker sees the approval. */
-async function startYouTubeDevice(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  locale: VideoLocale,
-  fetchImpl: typeof fetch,
-  now: Date,
-): Promise<DeviceStart> {
-  const key = encryptionKey(config.TOKEN_ENCRYPTION_KEY);
-  if (!key) throw new Error("TOKEN_ENCRYPTION_KEY is required to connect an account");
-  const { clientId } = youtubeCredentials(config, locale);
-  const device = await requestJson<{
-    device_code?: string;
-    user_code?: string;
-    verification_url?: string;
-    interval?: number;
-    expires_in?: number;
-  }>(fetchImpl, DEVICE_CODE_URL, { method: "POST", body: formBody({ client_id: clientId ?? "", scope: YOUTUBE_SCOPE }) }).catch(
-    (error: unknown) => {
-      // Google says only "Invalid client type", which reads as a broken id
-      // rather than the one thing it means: this project's OAuth client cannot
-      // do the device flow, and a Studio has no browser to redirect back into.
-      if (String(error).includes("invalid_client"))
-        throw new Error(
-          `Google refused the device flow for this client. YOUTUBE_${locale === "en" ? "EN" : "RU"}_CLIENT_ID must belong to an OAuth client of type "TVs and Limited Input devices"; a Web or Desktop client cannot start it.`,
-        );
-      throw error;
-    },
-  );
-  if (!device.device_code || !device.user_code || !device.verification_url) throw new Error("Google returned no device code");
-  const expiresInSeconds = device.expires_in ?? 1800;
-  const row = {
-    sealedDeviceCode: seal(device.device_code, key),
-    userCode: device.user_code,
-    verificationUrl: device.verification_url,
-    intervalSeconds: device.interval ?? 5,
-    expiresAt: new Date(now.getTime() + expiresInSeconds * 1000).toISOString(),
-    updatedAt: now.toISOString(),
-  };
-  unsafeDb(backendDb)
-    .db.insert(deviceAuthorizations)
-    .values({ target: youtubeTokenTarget(locale), ...row, createdAt: now.toISOString() })
-    .onConflictDoUpdate({ target: deviceAuthorizations.target, set: row })
-    .run();
-  return { verificationUrl: device.verification_url, userCode: device.user_code, expiresInSeconds };
-}
-
-/** Asks Twitch for the code the operator types on twitch.tv/activate, and keeps
- * the half that redeems it until the credentials worker sees the approval. */
 async function startTwitchConnect(
   config: BackendConfig,
   backendDb: BackendDb,
@@ -268,11 +202,7 @@ export async function redeemDeviceAuthorizations(
       log("warn", "device authorization expired before it was approved", { target: pending.target });
       continue;
     }
-    const deviceCode = open(pending.sealedDeviceCode, key);
-    const outcome =
-      pending.target === TWITCH_TOKEN_TARGET
-        ? await redeemTwitch(config, backendDb, deviceCode, fetchImpl, now)
-        : await redeemYouTube(config, backendDb, pending.target, deviceCode, fetchImpl, now);
+    const outcome = await redeemTwitch(config, backendDb, open(pending.sealedDeviceCode, key), fetchImpl, now);
     if (outcome.status === "pending") continue;
     forgetDeviceAuthorization(backendDb, pending.target);
     if (outcome.status === "refused") {
@@ -308,42 +238,4 @@ async function redeemTwitch(
     label: `Twitch · ${answer.login}`,
   });
   return { status: "connected", account: answer.login };
-}
-
-async function redeemYouTube(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  target: string,
-  deviceCode: string,
-  fetchImpl: typeof fetch,
-  now: Date,
-): Promise<RedeemOutcome> {
-  const locale: VideoLocale = target.endsWith("_en") ? "en" : "ru";
-  const { clientId, clientSecret } = youtubeCredentials(config, locale);
-  let answer: { refresh_token?: string; error?: string };
-  try {
-    answer = await requestJson<{ refresh_token?: string; error?: string }>(fetchImpl, YOUTUBE_TOKEN_URL, {
-      method: "POST",
-      body: formBody({
-        client_id: clientId ?? "",
-        client_secret: clientSecret ?? "",
-        device_code: deviceCode,
-        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-      }),
-    });
-  } catch (error) {
-    // A timeout, a reset or a fault on Google's side is not Google refusing the
-    // grant, and the caller answers "refused" by deleting the authorization.
-    // One blip during the minutes the operator spends typing the code used to
-    // kill the code they were typing. Staying pending asks again next poll, and
-    // `expiresAt` still bounds how long that can go on.
-    if (isInconclusiveExternalFailure(error)) return { status: "pending" };
-    answer = { error: String(error) };
-  }
-  // Still waiting for the operator to approve, which is the ordinary answer.
-  if (answer.error && (answer.error.includes("authorization_pending") || answer.error.includes("slow_down"))) return { status: "pending" };
-  if (!answer.refresh_token) return { status: "refused", reason: answer.error ?? "no refresh token" };
-  installYouTubeToken(config, backendDb, locale, answer.refresh_token, now);
-  registerChannel(backendDb, { platform: "youtube", locale, provider: "native", source: "interface" });
-  return { status: "connected", account: `YouTube ${locale.toUpperCase()}` };
 }
