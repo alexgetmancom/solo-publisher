@@ -63,7 +63,7 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
     publishHours: publishHours(series, options.timeZone),
     ageCurve: ageCurve(series),
     trafficSources: trafficSources(series),
-    byTag: byTag(byDraft),
+    byTag: byTag(backendDb, byDraft),
     audienceGrowth: audienceGrowth(backendDb, from.toISOString()),
     queue: queue(backendDb, options.timeZone),
     heatmaps: heatmapCoverage(backendDb, now),
@@ -319,7 +319,7 @@ function ageCurve(series: TargetSeries[]): Record<string, unknown> {
 /** What the tagged videos say about games and openings. Only tagged videos are
  * counted, and the share that carries a tag travels with the answer: a ranking
  * built on a fifth of the window describes that fifth. */
-function byTag(byDraft: Map<number, TargetSeries[]>): Record<string, unknown> {
+function byTag(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): Record<string, unknown> {
   const drafts = [...byDraft.values()];
   const summarise = (field: "game" | "hook") => {
     const tagged = drafts.filter((targets) => targets[0]?.[field]);
@@ -343,7 +343,56 @@ function byTag(byDraft: Map<number, TargetSeries[]>): Record<string, unknown> {
         .sort((left, right) => right.medianViews - left.medianViews),
     };
   };
-  return { game: summarise("game"), hook: summarise("hook") };
+  const described = gameFacets(backendDb);
+  const byFacet = (facet: "genres" | "playerModes") => {
+    const groups = new Map<string, number[]>();
+    let tagged = 0;
+    for (const targets of drafts) {
+      const game = targets[0]?.game;
+      const values = game ? (described.get(game)?.[facet] ?? []) : [];
+      if (!values.length) continue;
+      tagged += 1;
+      const views = targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0);
+      // A game carries several genres at once, so a video counts under each of
+      // them; the shares below are shares of videos, never of one another.
+      for (const value of values) groups.set(value, [...(groups.get(value) ?? []), views]);
+    }
+    return {
+      taggedVideos: tagged,
+      taggedShare: drafts.length ? Math.round((tagged / drafts.length) * 100) : 0,
+      values: [...groups.entries()]
+        .map(([value, views]) => ({
+          value,
+          videos: views.length,
+          medianViews: median(views),
+          avgViews: Math.round(views.reduce((sum, view) => sum + view, 0) / views.length),
+          confidence: views.length >= CONFIDENT_SAMPLE ? "ok" : views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
+        }))
+        .sort((left, right) => right.medianViews - left.medianViews),
+    };
+  };
+  return { game: summarise("game"), hook: summarise("hook"), genre: byFacet("genres"), playerMode: byFacet("playerModes") };
+}
+
+/** What is known about each tagged game, for the groupings that are worth more
+ * than the game itself: 152 games behind 166 videos cannot group anything, and
+ * the handful of genres behind them can. */
+function gameFacets(backendDb: BackendDb): Map<string, { genres: string[]; playerModes: string[] }> {
+  const rows = unsafeDb(backendDb).sqlite.prepare("SELECT name, genres, player_modes AS playerModes FROM games").all() as Array<{
+    name: string;
+    genres: string | null;
+    playerModes: string | null;
+  }>;
+  const parse = (value: string | null): string[] => {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  };
+  return new Map(rows.map((row) => [row.name, { genres: parse(row.genres), playerModes: parse(row.playerModes) }]));
 }
 
 /** Did the channel itself grow while these videos were out. Read from the daily
@@ -536,6 +585,7 @@ function readingNotes(): string[] {
     "`readingAgeHours` is the age the value actually came from; where it is far from the bucket, the bucket is approximate.",
     "shares/saves/reach/follows are Instagram-only; YouTube reports averageWatchTimeMs, completionRate and subscribersGained instead.",
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",
+    "`byTag.genre` and `byTag.playerMode` come from the game each video is tagged with, so they group 150 one-off games into a handful of axes; a video whose game has several genres is counted under each.",
     "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
     "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",
     "`skipRate` is Instagram's own answer to the first three seconds: the share of viewers who left inside them. It is the closest thing Reels has to YouTube's retention curve, and Instagram publishes nothing finer.",

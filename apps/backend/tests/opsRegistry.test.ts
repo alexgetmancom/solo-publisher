@@ -57,6 +57,7 @@ const OFF_THE_AGENT_SURFACE = [
   "comments-backfill",
   "youtube-analytics-backfill",
   "video-tag-backfill",
+  "games-enrich",
   "x-import-delete",
   "x-relink",
   "purge",

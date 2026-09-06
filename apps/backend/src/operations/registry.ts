@@ -1,6 +1,8 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
+import { enrichGames, gamesReport } from "../analytics/games.js";
+import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
@@ -523,6 +525,44 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => audienceHeatmapReport(context.db()),
+  }),
+  keywords: operation({
+    section: "analytics",
+    startHere: "which tags and hashtags are worth publishing with",
+    summary:
+      "What the words published with a video are worth: YouTube's hidden tags and Instagram's caption hashtags, each against its own platform's median.",
+    note: "`lift` is a keyword's median views against the platform median, so 2.0 means twice the typical video. A word that sits on every video has a lift of 1.0 by construction and is marked; the informative ones are used on some videos and not others. Correlation only, and the two surfaces are different systems: YouTube tags are metadata nobody sees, hashtags are text in the caption.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days"),
+      limit: z.coerce.number().int().min(1).max(40).default(15).describe("how many keywords to list per surface"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => videoKeywordReport(context.db(), { days: input.days, limit: input.limit }),
+  }),
+  games: operation({
+    section: "analytics",
+    startHere: "what kind of game is this Studio actually publishing",
+    summary: "Every game the Studio has published about, with the genre, player modes, release date and developer known for it.",
+    note: "Filled by `games-enrich` from the store page the publishing copy links to. A game with no genre had no link to read.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => gamesReport(context.db()),
+  }),
+  "games-enrich": operation({
+    section: "analytics",
+    summary: "Look up each tagged game on Steam and store its genre, player modes, release date and developer.",
+    note: "Reads the store link the video's own copy carries, so the genre is the store's word and not a guess; the app id it came from is kept as the source. Without --apply it writes nothing and shows what it would look up.",
+    schema: z.object({
+      apply: applyOption,
+      refresh: z.boolean().default(false).describe("look up games that are already described"),
+      limit: z.coerce.number().int().min(1).max(500).default(200).describe("how many games to look up in one run"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      enrichGames(context.db(), context.fetchImpl, { apply: input.apply, refresh: input.refresh, limit: input.limit }),
   }),
   "audience-demographics": operation({
     section: "analytics",

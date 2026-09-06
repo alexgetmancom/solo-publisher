@@ -241,3 +241,24 @@ export const audienceDemographics = sqliteTable(
     index("idx_audience_demographics_captured_at").on(table.capturedAt),
   ],
 );
+
+/** What a game is, looked up once and shared by every video about it.
+ *
+ * The tag on a video is the game's name; this is everything else worth knowing
+ * about it. It is a dimension, not an observation: 152 games behind 166 videos
+ * means a per-video copy would be 166 lookups of the same handful of facts,
+ * and a genre does not change between two videos about the same game. */
+export const games = sqliteTable(
+  "games",
+  {
+    name: text().primaryKey(),
+    steamAppId: text(),
+    genres: json<string[]>(),
+    playerModes: json<string[]>(),
+    releaseDate: text(),
+    developer: text(),
+    source: text().notNull(),
+    capturedAt: text().notNull(),
+  },
+  (table) => [index("idx_games_captured_at").on(table.capturedAt)],
+);
