@@ -88,8 +88,14 @@ export async function syncInstagramDemographics(
       })),
     ),
   );
-  if (!rows.length)
-    return { stored: 0, unavailable: `the provider returned no breakdown (${empty.join("; ").slice(0, 300) || "no dimensions asked"})` };
+  if (!rows.length) {
+    // An answer that arrived and produced nothing is a shape this code does
+    // not know, not an absence -- so it hands back what it actually received
+    // rather than a verdict it cannot support.
+    const received = responses.map(({ dimension, data }) => `${dimension}=${JSON.stringify(data.demographics ?? {})}`).join(" ");
+    const reason = received ? `unreadable shape: ${received.slice(0, 300)}` : empty.join("; ").slice(0, 300) || "no dimensions asked";
+    return { stored: 0, unavailable: `the provider returned no breakdown (${reason})` };
+  }
   unsafeDb(backendDb).db.transaction((tx) => {
     for (const row of rows)
       tx.insert(audienceDemographics)
