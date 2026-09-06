@@ -1,9 +1,11 @@
+import { unlink } from "node:fs/promises";
 import { type Context, InlineKeyboard } from "grammy";
 import { flowStepInput } from "../application/conversation-flow.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { StudioError } from "../foundation/errors.js";
 import { describeError, t } from "../foundation/i18n/index.js";
+import { materializeTelegramFile } from "../foundation/external/telegram-files.js";
 import { log } from "../foundation/logger.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
 import { VIDEO_LENGTH_WARNING_SECONDS, type VideoTarget } from "../publishing/video-types.js";
@@ -28,6 +30,10 @@ import {
   videoErrorEffects,
   videoStepEffects,
 } from "./video-ui.js";
+
+/** A script is a page of text; anything larger is not one, and reading it
+ * into memory should not depend on trusting that. */
+const SCRIPT_FILE_LIMIT_BYTES = 256 * 1024;
 
 type VideoMessageArgs = {
   ctx: Context;
@@ -101,6 +107,7 @@ async function acceptVideoMessage(args: VideoMessageArgs): Promise<PublicationEf
   const { step } = args.session;
   if (step === "asset") return args.session.data.is_single_edit ? replaceVideoAsset(args) : acceptVideoAsset(args);
   if (step === "label") return acceptVideoLabel(args);
+  if (step === "script") return acceptVideoScript(args);
   if (step === "schedule_common" || step === "schedule_target") return acceptVideoScheduleDate(args);
   if (!isVideoWizardStep(step)) throw new StudioError("err.video-restart");
   return acceptVideoMetadata(args);
@@ -208,6 +215,42 @@ async function acceptVideoLabel({ backendDb, config, actorId, session, text, ser
   if (session.draftId == null) throw new StudioError("err.video-missing");
   services.videos.rename(actorId, session.draftId, text);
   return videoCardEffects(backendDb, config, actorId, session.draftId, services);
+}
+
+/** Stores the script behind a video, typed into the chat or attached as the
+ * .txt or .md file it was written in. */
+async function acceptVideoScript({
+  backendDb,
+  config,
+  actorId,
+  session,
+  text,
+  ctx,
+  services,
+}: VideoMessageArgs): Promise<PublicationEffect[]> {
+  if (session.draftId == null) throw new StudioError("err.video-missing");
+  const script = (await attachedText(ctx, config)) ?? text;
+  if (!script.trim()) throw new StudioError("video.await-text");
+  services.videos.setScript(actorId, session.draftId, script);
+  return videoCardEffects(backendDb, config, actorId, session.draftId, services);
+}
+
+/** The text of an attached document, when the answer arrived as a file.
+ * Scripts are written in an editor on another machine, so the natural way to
+ * hand one over is the file it already lives in. */
+async function attachedText(ctx: Context, config: BackendConfig): Promise<string | null> {
+  const document = ctx.message && "document" in ctx.message ? ctx.message.document : undefined;
+  if (!document?.file_id) return null;
+  const name = document.file_name ?? "";
+  const mime = document.mime_type ?? "";
+  if (!/\.(txt|md|markdown)$/i.test(name) && !mime.startsWith("text/")) throw new StudioError("video.script-file-type");
+  if ((document.file_size ?? 0) > SCRIPT_FILE_LIMIT_BYTES) throw new StudioError("video.script-file-large");
+  const file = await materializeTelegramFile(config, { fileId: document.file_id }, { extension: ".txt" });
+  try {
+    return await Bun.file(file.path).text();
+  } finally {
+    if (file.temporary) await unlink(file.path).catch(() => undefined);
+  }
 }
 
 /** One case for every metadata field. A platform's collected fields are handed

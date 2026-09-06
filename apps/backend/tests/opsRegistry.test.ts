@@ -60,6 +60,7 @@ const OFF_THE_AGENT_SURFACE = [
   "games-enrich",
   "demographics-sync",
   "frames-backfill",
+  "video-script",
   "x-import-delete",
   "x-relink",
   "purge",

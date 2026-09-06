@@ -20,6 +20,7 @@ import {
   saveVideoMetadata,
   scheduleVideo,
   updateVideoLabel,
+  updateVideoScript,
   validateVideoDraft,
   validateVideoSource,
 } from "../../publishing/video-service.js";
@@ -222,6 +223,15 @@ export function videoService(backendDb: BackendDb, config: BackendConfig) {
       trackUsageSync(backendDb, "studio.video.edit", () => {
         requireOwnedVideo(backendDb, config, actorId, publicationId);
         updateVideoLabel(backendDb, publicationId, label);
+      });
+    },
+    /** Stores the script a video was written from. The hook is its opening,
+     * and everything downstream reads it from here rather than asking the
+     * operator to classify their own work. */
+    setScript(actorId: number, publicationId: number, script: string): void {
+      trackUsageSync(backendDb, "studio.video.edit", () => {
+        requireOwnedVideo(backendDb, config, actorId, publicationId);
+        updateVideoScript(backendDb, publicationId, script);
       });
     },
     replaceTargets(actorId: number, publicationId: number, targets: VideoTarget[]): void {

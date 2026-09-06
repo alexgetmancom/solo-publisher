@@ -40,6 +40,7 @@ const SCHEDULE_SESSION_STEPS = ["schedule_common", "schedule_target"] as const;
 
 const EDIT_FIELDS = {
   label: { label: "video.edit-card-name", prompt: "video.edit-label-prompt" },
+  script: { label: "video.edit-script", prompt: "video.edit-script-prompt" },
   youtube_title: { label: "video.edit-yt-title", prompt: "video.edit-yt-title-prompt", target: "youtube_shorts" },
   youtube_description: { label: "video.edit-yt-desc", prompt: "video.edit-yt-desc-prompt", target: "youtube_shorts" },
   youtube_game_url: { label: "video.edit-game-url", prompt: "video.edit-game-url-prompt", target: "youtube_shorts" },

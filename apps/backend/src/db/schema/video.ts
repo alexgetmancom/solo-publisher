@@ -29,6 +29,10 @@ export const videoDrafts = sqliteTable(
      * and a field nobody fills in describes nothing. */
     game: text(),
     hook: text(),
+    /** What was written to be said in the video, as its author wrote it.
+     * The opening lines of this are the hook, which is the one thing that
+     * decides a Short and the one thing no API reports. */
+    script: text(),
     ...timestamps(),
   },
   (table) => [

@@ -36,7 +36,7 @@ import { capabilityReport } from "../observability/capabilities.js";
 import { repairStoredDates } from "../observability/date-repair.js";
 import { recordUsage, usageReport } from "../observability/usage.js";
 import { publishArticle } from "../publishing/article-publish.js";
-import { retryVideoTarget } from "../publishing/video-service.js";
+import { retryVideoTarget, updateVideoScript } from "../publishing/video-service.js";
 import { settleVideoTarget } from "../publishing/video-settle.js";
 import type { VideoTarget } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
@@ -488,6 +488,26 @@ const operationDefs = {
       const parsed = parsePublicationRef(input.ref);
       if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
       return videoPerformanceDetail(context.db(), parsed.id, context.config().TIMEZONE);
+    },
+  }),
+  "video-script": operation({
+    section: "analytics",
+    summary: "Store the script a video was written from, from a file on this host or from text.",
+    note: "The bot is where Maru attaches one at publishing time; this is the same store, for scripts that already exist somewhere else. The opening lines are the hook, which is what `video-report` groups by.",
+    schema: z.object({
+      ref: refOption,
+      file: example(z.string().optional(), "PATH").describe("a .txt or .md file on this host"),
+      text: z.string().optional().describe("the script itself, when it is not in a file"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: async (context, input) => {
+      const parsed = parsePublicationRef(input.ref);
+      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
+      const script = input.file ? await Bun.file(input.file).text() : (input.text ?? "");
+      if (!script.trim()) throw new Error("Pass --file with a path on this host, or --text with the script itself.");
+      updateVideoScript(context.db(), parsed.id, script);
+      return { ref: `video:${parsed.id}`, characters: script.trim().length, lines: script.trim().split("\n").length };
     },
   }),
   "video-tag": operation({

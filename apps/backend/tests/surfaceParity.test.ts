@@ -84,6 +84,7 @@ const VIDEOS: Record<string, string> = {
   editMetadataField: "bot-only: one field of updateMetadata",
   completeWizardTarget: "bot-only: a step of the upload conversation",
   rename: "bot-only: the name a card carries for its author",
+  setScript: "video-script",
   replaceTargets: "bot-only: choosing where a video goes, on the card that shows where it goes",
   removeTarget: "bot-only: the other half of replaceTargets",
   toggleTarget: "bot-only: the other half of replaceTargets",

@@ -40,6 +40,22 @@ const PAUSE_BETWEEN_DOWNLOADS_MS = 4_000;
  * throttle into a hundred failures in the report. */
 const REFUSALS_BEFORE_STOPPING = 5;
 
+/** The frames wanted are in the first seconds, and Instagram's progressive mp4
+ * carries its index at the front, so the first few megabytes are enough. A
+ * ranged read is also what a player does, which matters: the CDN answers a
+ * plain full-file fetch from a datacenter with 403 while serving the same
+ * range to a browser. */
+const RANGE_BYTES = 3_000_000;
+
+/** A CDN that serves people rather than scripts wants to see a browser. This
+ * is our own media on our own account; the header is about being served, not
+ * about pretending to be someone else. */
+const DOWNLOAD_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  Accept: "video/mp4,video/*;q=0.9,*/*;q=0.8",
+  Range: `bytes=0-${RANGE_BYTES}`,
+} as const;
+
 type Candidate = {
   videoDraftId: number;
   label: string | null;
@@ -184,8 +200,8 @@ async function downloadReel(
 ): Promise<string | null> {
   const url = candidate.providerPostId ? media.get(candidate.providerPostId) : null;
   if (!url) return null;
-  const response = await fetchImpl(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
-  if (!response.ok) throw new Error(`media_download_failed: ${response.status}`);
+  const response = await fetchImpl(url, { headers: { ...DOWNLOAD_HEADERS }, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
+  if (!response.ok && response.status !== 206) throw new Error(`media_download_failed: ${response.status}`);
   const target = path.join(config.MEDIA_CACHE_DIR, `frame-source-${candidate.videoDraftId}.mp4`);
   await Bun.write(target, await response.arrayBuffer());
   return target;

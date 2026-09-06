@@ -148,6 +148,13 @@
       "when": 1789600000000,
       "tag": "0020_video_frame_features",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1789700000000,
+      "tag": "0021_video_script",
+      "breakpoints": true
     }
   ]
 }

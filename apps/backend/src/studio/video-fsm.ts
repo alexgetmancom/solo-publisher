@@ -73,6 +73,11 @@ const VIDEO_STEPS = defineVideoSteps({
   // connected platform and goes straight from the upload to its metadata, so
   // this step is only ever entered from "✏️ Edit" and nothing follows it.
   label: { name: "label" as const, input: "text", next: () => null, accept: (input, data) => ({ ...data, label: input }) },
+  // Attached to a finished draft, like the rename above and unlike the wizard:
+  // a script is written before the video is filmed, and asking for it inside
+  // the publishing chain would put a step nobody can answer between the file
+  // and the schedule.
+  script: { name: "script" as const, input: "text", next: () => null, accept: (input, data) => ({ ...data, script: input }) },
   schedule_choice: {
     name: "schedule_choice" as const,
     next: (data) => (data.scheduleMode === "common" ? "schedule_common" : "schedule_target"),
