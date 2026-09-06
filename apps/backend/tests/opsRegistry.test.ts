@@ -36,6 +36,8 @@ afterEach(() => {
  * the note and the dry-run in front of them. */
 const OFF_THE_AGENT_SURFACE = [
   "guide",
+  "hooks-classify",
+  "archive-import",
   "backup",
   "backup-stream",
   "restore",

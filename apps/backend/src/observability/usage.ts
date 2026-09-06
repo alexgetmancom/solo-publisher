@@ -14,6 +14,7 @@ const TRACKED_FEATURES = [
   "analytics.metrics.collect",
   "analytics.creator_profile.sync",
   "analytics.video_metrics.collect",
+  "analytics.video_captions.collect",
   "analytics.audience_demographics.sync",
   "engagement.pageview.record",
   // The dashboard is three operations with three cost profiles: a full HTML

@@ -38,6 +38,11 @@ export const videoDrafts = sqliteTable(
      * says which: one is the plan, the other is the record, and they are worth
      * different amounts. */
     scriptSource: text(),
+    /** The words the video opens with: the first paragraph of a script, or the
+     * first sentence of a transcript. Stored rather than derived on read
+     * because where the opening ends is only knowable from the shape of the
+     * text it arrived in, and that shape is gone once it is one column. */
+    openingLine: text(),
     ...timestamps(),
   },
   (table) => [

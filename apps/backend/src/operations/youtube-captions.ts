@@ -22,13 +22,48 @@ type Candidate = { videoDraftId: number; externalId: string; locale: "ru" | "en"
  * stores what it gets marked as a transcript rather than as a script: one is
  * what was planned, the other is what a machine heard.
  */
+/** How long after publishing YouTube has finished listening to a video. It
+ * generates the track itself, some hours in, and asking earlier gets an empty
+ * list that costs the same quota as a real answer. */
+const HEARD_AFTER_HOURS = 24;
+
+/** How far back the automatic pass looks. Beyond this is the archive, which is
+ * a different job with a different budget: a hundred and forty videos at two
+ * hundred and fifty quota units each cannot ride along behind every metrics
+ * cycle without starving the collection it shares that budget with. */
+const KEEPING_UP_DAYS = 14;
+
+/**
+ * Reads the captions of videos published recently enough that YouTube has
+ * finished generating them and not so long ago that this is history.
+ *
+ * Runs behind the metrics cycle, because a text nobody remembers to fetch is
+ * how the archive came to be a hundred and forty videos with nothing to say.
+ */
+export async function collectNewCaptions(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  fetchImpl: typeof fetch,
+): Promise<Record<string, unknown>> {
+  return read(backendDb, config, fetchImpl, { apply: true, limit: 5, refresh: false, sinceDays: KEEPING_UP_DAYS });
+}
+
 export async function backfillYouTubeCaptions(
   backendDb: BackendDb,
   config: BackendConfig,
   fetchImpl: typeof fetch,
   input: { apply: boolean; limit: number; refresh: boolean },
 ): Promise<Record<string, unknown>> {
-  const candidates = loadCandidates(backendDb, input.refresh).slice(0, input.limit);
+  return read(backendDb, config, fetchImpl, { ...input, sinceDays: null });
+}
+
+async function read(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  fetchImpl: typeof fetch,
+  input: { apply: boolean; limit: number; refresh: boolean; sinceDays: number | null },
+): Promise<Record<string, unknown>> {
+  const candidates = loadCandidates(backendDb, input.refresh, input.sinceDays).slice(0, input.limit);
   const tokens = new Map<string, string>();
   const results: Array<Record<string, unknown>> = [];
   let stored = 0;
@@ -112,7 +147,7 @@ export async function backfillYouTubeCaptions(
  * chosen, and a transcript of what was said is a worse copy of it. Text this
  * command already stored is not one either — re-reading it costs the same API
  * quota as a video that has nothing. */
-function loadCandidates(backendDb: BackendDb, refresh: boolean): Candidate[] {
+function loadCandidates(backendDb: BackendDb, refresh: boolean, sinceDays: number | null): Candidate[] {
   return (
     unsafeDb(backendDb)
       .sqlite.prepare(
@@ -120,6 +155,8 @@ function loadCandidates(backendDb: BackendDb, refresh: boolean): Candidate[] {
          FROM video_drafts d
          JOIN video_targets t ON t.video_draft_id = d.id AND t.target = 'youtube_shorts' AND t.status = 'published'
         WHERE t.external_id IS NOT NULL
+          AND t.published_at <= datetime('now', '-${HEARD_AFTER_HOURS} hours')
+          ${sinceDays ? `AND t.published_at >= datetime('now', '-${sinceDays} days')` : ""}
           AND (d.script IS NULL ${refresh ? "OR d.script_source NOT IN ('operator', 'youtube_captions')" : ""})
         ORDER BY d.id DESC`,
       )

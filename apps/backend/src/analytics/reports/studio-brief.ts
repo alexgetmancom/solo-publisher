@@ -54,6 +54,11 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
       },
       source: "video-report → byTag, games",
     },
+    whatHeldThem: {
+      byKind: topOpenings(performance, "byKind"),
+      byShape: topOpenings(performance, "byShape"),
+      source: "video-report → openings",
+    },
     whatTheyWrote: {
       comments: (comments.totals as Record<string, number>).comments,
       questions: (comments.totals as Record<string, number>).questions,
@@ -90,6 +95,13 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
       "Nothing in here is a cause: these are the numbers of what was published, not an experiment.",
     ],
   };
+}
+
+/** The opening slots worth saying out loud: enough videos behind them, and a
+ * retention figure to say anything with. */
+function topOpenings(performance: Record<string, unknown>, facet: "byKind" | "byShape"): Array<Record<string, unknown>> {
+  const rows = ((performance.openings as Record<string, unknown>)[facet] ?? []) as Array<Record<string, unknown>>;
+  return rows.filter((row) => Number(row.videos) >= MIN_SAMPLE && row.medianRetentionAt3s !== null).slice(0, TOP);
 }
 
 function bestSlots(performance: Record<string, unknown>, mode: "weekday" | "weekend"): Array<Record<string, unknown>> {
@@ -139,8 +151,11 @@ function nextSteps(
   scripts: Record<string, number>,
 ): string[] {
   const steps: string[] = [];
-  if ((byTag.hook?.taggedShare ?? 0) < 20)
-    steps.push("Hooks are not tagged, so nothing here can answer which opening holds viewers. `video-tag --ref video:N --hook …`");
+  const openings = performance.openings as { coverage?: { kind?: number; shape?: number; videos?: number } };
+  if ((openings.coverage?.kind ?? 0) < (openings.coverage?.videos ?? 0) / 2)
+    steps.push(
+      `${openings.coverage?.kind ?? 0} of ${openings.coverage?.videos ?? 0} videos have their opening named. It is derived from the words the video opens with — \`hooks-classify\` fills it in, and a video with no script or transcript cannot be judged at all.`,
+    );
   if ((byTag.game?.taggedShare ?? 0) < 80) steps.push("Some videos carry no game, so genre grouping covers less than the window.");
   if (!(performance.heatmaps as unknown[])?.length)
     steps.push(

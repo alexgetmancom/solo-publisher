@@ -58,9 +58,35 @@ export function updateVideoScript(backendDb: BackendDb, id: number, script: stri
   const text = script.trim();
   unsafeDb(backendDb)
     .db.update(videoDrafts)
-    .set({ script: text || null, scriptSource: text ? source : null, updatedAt: new Date().toISOString() })
+    .set({
+      script: text || null,
+      scriptSource: text ? source : null,
+      openingLine: text ? openingLine(text, source) : null,
+      updatedAt: new Date().toISOString(),
+    })
     .where(eq(videoDrafts.id, id))
     .run();
+}
+
+/** Pronunciation written for whoever reads the script aloud -- "Capcom
+ * (Кáпком)" -- and never said. Left in, it would be counted as words the
+ * viewer heard. */
+const SAID_ALOUD = /\s*[([][^)\]]*[)\]]/gu;
+
+/** The words a video opens with.
+ *
+ * A written script separates it for us: its author puts the hook in its own
+ * first paragraph, every time. A transcript has no paragraphs at all, so the
+ * first sentence is the closest thing to the same words -- and it is only a
+ * proxy, which is why the two are stored beside the source that produced them. */
+export function openingLine(text: string, source: string): string {
+  const cleaned = text.replace(SAID_ALOUD, "").replace(/[ \t]+/gu, " ");
+  if (source === "operator") {
+    const paragraph = cleaned.split(/\n\s*\n/u)[0]?.trim();
+    if (paragraph) return paragraph;
+  }
+  const sentence = cleaned.trim().match(/^[^.!?]{10,}?[.!?]/u)?.[0];
+  return (sentence ?? cleaned.trim().slice(0, 160)).trim();
 }
 
 export function updateVideoLabel(backendDb: BackendDb, id: number, label: string): void {

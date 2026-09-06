@@ -1,7 +1,9 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
+import { classifyHooks } from "../analytics/collection/hook-types.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
+import { importVideoArchive } from "./archive-import.js";
 import { commentQuality } from "../analytics/reports/comment-quality.js";
 import { editorialReview } from "../analytics/reports/editorial-review.js";
 import { studioBrief } from "../analytics/reports/studio-brief.js";
@@ -616,6 +618,38 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context, input) => editorialReview(context.db(), context.config(), input.locale, context.fetchImpl),
+  }),
+  "hooks-classify": operation({
+    section: "analytics",
+    startHere: "what kind of opening does each video use",
+    summary: "Name the kind of opening each video used — question, shock, address, announcement or callback — from the words it opens with.",
+    note: "Reads `opening_line`, which is the first paragraph of a script its author wrote or the first sentence of a transcript. The label is a model's judgement about ten words, not a measurement: without --apply it prints the openings it would judge, and with it the label sits beside the words so a grouping can be checked by reading four of them.",
+    schema: z.object({
+      apply: applyOption,
+      limit: z.coerce.number().int().min(1).max(200).default(60).describe("how many videos to judge in one run"),
+      overwrite: z.boolean().default(false).describe("judge videos that already carry a kind"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      classifyHooks(context.db(), context.config(), context.fetchImpl, {
+        apply: input.apply,
+        limit: input.limit,
+        overwrite: input.overwrite,
+      }),
+  }),
+  "archive-import": operation({
+    section: "media",
+    startHere: "the old videos are only on my own machine now",
+    summary: "Take in opening frames and caption files captured off published videos elsewhere, matched by the id YouTube gave each one.",
+    note: "A tar of files whose names carry the YouTube id — `.jpg` is an opening frame, `.vtt` a caption track. Instagram serves a published Reel for about a week and retention deletes the source, so for anything older this is the only way the opening gets in. A frame is stored only for a video whose opening is not measured yet, and a transcript only for one whose author never wrote a script.",
+    schema: z.object({
+      apply: applyOption,
+      file: example(z.string(), "PATH").describe("a .tar of frames and caption files"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) => importVideoArchive(context.db(), context.config(), { apply: input.apply, file: input.file }),
   }),
   "frames-backfill": operation({
     section: "media",

@@ -31,7 +31,7 @@ describe("studio brief", () => {
       // Four videos in the slot, so the brief says nothing about the hour.
       expect((brief.whenToPublish as { weekday: unknown[] }).weekday).toEqual([]);
       const steps = brief.nextSteps as string[];
-      expect(steps.some((step) => step.includes("Hooks are not tagged"))).toBe(true);
+      expect(steps.some((step) => step.includes("have their opening named"))).toBe(true);
       expect(steps.some((step) => step.includes("heatmap"))).toBe(true);
       // Every section points at the report that shows its working.
       expect((brief.words as { source: string }).source).toBe("keywords");

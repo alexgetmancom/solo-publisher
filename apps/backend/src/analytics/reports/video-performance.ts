@@ -69,6 +69,7 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
     audienceGrowth: audienceGrowth(backendDb, from.toISOString()),
     queue: queue(backendDb, options.timeZone),
     heatmaps: heatmapCoverage(backendDb, now),
+    openings: openings(backendDb, byDraft),
     videos: videoList(byDraft, options.timeZone, options.limit),
     collection: collectionHealth(backendDb, series),
     reading: readingNotes(),
@@ -592,7 +593,7 @@ function videoList(byDraft: Map<number, TargetSeries[]>, timeZone: string, limit
               url: target.external_url,
               comments: target.comments,
               readings: target.readings.length,
-              latest: latest(target)?.metrics ?? null,
+              latest: summarised(latest(target)?.metrics ?? null),
               latestAt: latest(target)?.sampledAt ?? null,
             },
           ]),
@@ -620,6 +621,92 @@ function disabledChannels(backendDb: BackendDb): Set<string> {
     .sqlite.prepare("SELECT platform, locale FROM channel_connections WHERE enabled = 0")
     .all() as Array<{ platform: string; locale: string }>;
   return new Set(rows.map((row) => `${row.platform}:${row.locale}`));
+}
+
+/** Readings that answer about one video and swamp a list of them.
+ *
+ * The per-second retention curve is a hundred points, and the search terms and
+ * viewer breakdown are a paragraph each. Repeated across a hundred videos they
+ * were most of a quarter-megabyte answer -- large enough that it arrived
+ * truncated, which is worse than large: the JSON no longer parsed at all.
+ * `video-metrics` is where one video is read in full. */
+const READ_ONE_VIDEO_FOR = ["retentionCurve", "searchTerms", "viewers", "trafficSources"] as const;
+
+function summarised(metrics: Metrics | null): Metrics | null {
+  if (!metrics) return null;
+  const kept: Metrics = {};
+  const elsewhere: string[] = [];
+  for (const [key, value] of Object.entries(metrics)) {
+    if ((READ_ONE_VIDEO_FOR as readonly string[]).includes(key)) elsewhere.push(key);
+    else kept[key] = value;
+  }
+  return elsewhere.length ? { ...kept, inVideoMetrics: elsewhere } : kept;
+}
+
+/** What each opening did to the first seconds.
+ *
+ * Views say whether a video was shown. Retention at three seconds and
+ * Instagram's skip rate say whether the opening held anyone once it was, and
+ * that is the only part of a video its author chooses twice. Grouped by the
+ * kind of opening -- what was said -- and by its shape -- what was on screen --
+ * because they are different choices and a video makes both.
+ */
+function openings(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): Record<string, unknown> {
+  const shapes = frameShapes(backendDb);
+  const said = spokenOpenings(backendDb);
+  const group = (of: (draftId: number) => string | undefined) => {
+    const rows = new Map<string, { retention: number[]; skip: number[]; views: number[] }>();
+    for (const [draftId, targets] of byDraft) {
+      const key = of(draftId);
+      if (!key) continue;
+      const slot = rows.get(key) ?? { retention: [], skip: [], views: [] };
+      for (const target of targets) {
+        const metrics = latest(target)?.metrics;
+        if (!metrics) continue;
+        const retention = metricNumber(metrics.retentionAt3s);
+        const skip = metricNumber(metrics.skipRate);
+        if (retention) slot.retention.push(retention);
+        if (skip) slot.skip.push(skip);
+      }
+      slot.views.push(targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0));
+      rows.set(key, slot);
+    }
+    return [...rows.entries()]
+      .map(([value, slot]) => ({
+        value,
+        videos: slot.views.length,
+        medianViews: median(slot.views),
+        // The two figures the opening is actually answerable by: how many were
+        // still there at three seconds, and how many left inside them.
+        medianRetentionAt3s: slot.retention.length ? median(slot.retention) : null,
+        medianSkipRate: slot.skip.length ? median(slot.skip) : null,
+        confidence: slot.views.length >= CONFIDENT_SAMPLE ? "ok" : slot.views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
+      }))
+      .sort((left, right) => (right.medianRetentionAt3s ?? 0) - (left.medianRetentionAt3s ?? 0));
+  };
+  return {
+    byKind: group((draftId) => said.get(draftId)?.hook),
+    byShape: group((draftId) => shapes.get(draftId)),
+    coverage: {
+      kind: said.size,
+      shape: shapes.size,
+      videos: byDraft.size,
+    },
+    examples: [...byDraft.keys()]
+      .map((draftId) => ({ ref: `video:${draftId}`, ...said.get(draftId), shape: shapes.get(draftId) }))
+      .filter((row) => row.hook && row.shape)
+      .slice(0, 6),
+  };
+}
+
+/** The words each video opens with, and what kind of opening they are. */
+function spokenOpenings(backendDb: BackendDb): Map<number, { hook: string; opening: string }> {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      "SELECT id AS videoDraftId, hook, substr(opening_line, 1, 120) AS opening FROM video_drafts WHERE hook IS NOT NULL AND opening_line IS NOT NULL",
+    )
+    .all() as Array<{ videoDraftId: number; hook: string; opening: string }>;
+  return new Map(rows.map((row) => [row.videoDraftId, { hook: row.hook, opening: row.opening }]));
 }
 
 function collectionHealth(backendDb: BackendDb, series: TargetSeries[]): Record<string, unknown> {
@@ -701,6 +788,8 @@ function readingNotes(): string[] {
     "`byTag.opening` is measured from the video's own first frame — face, split screen or plain gameplay — and is the axis to read beside retention at 1 and 3 seconds and Instagram's skip rate.",
     "`byTag.genre` and `byTag.playerMode` come from the game each video is tagged with, so they group 150 one-off games into a handful of axes; a video whose game has several genres is counted under each.",
     "`byTag.playerMode` is one answer per video, not several: Steam marks a co-op game as multi-player and co-op at once, and the most specific of those is the one reported.",
+    "`openings` is the one block about a choice rather than an outcome: what was said in the first line and what was on screen at two seconds, against how many viewers were still there at three. Views belong to the feed, the opening belongs to whoever made the video.",
+    "An opening's kind is a model's judgement about ten words, not a measurement — `hooks-classify` prints the words beside the label so a grouping can be checked before it is believed.",
     "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
     "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",
     "`skipRate` is Instagram's own answer to the first three seconds: the share of viewers who left inside them. It is the closest thing Reels has to YouTube's retention curve, and Instagram publishes nothing finer.",

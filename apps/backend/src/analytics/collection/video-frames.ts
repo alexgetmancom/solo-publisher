@@ -149,33 +149,82 @@ function round(value: number): number {
 }
 
 /**
- * Measures and stores the opening of a video from the file being published.
+ * Measures and stores the opening of a video from the file itself.
  *
- * The opening is only readable while the file exists: Instagram serves a
- * published Reel for about a week and refuses it after that, and the source
- * file is deleted by retention. Reading it at publishing time is the only
- * moment both are guaranteed, and it is why the archive has holes this cannot
- * fill.
+ * The opening is only readable while that file exists: Instagram serves a
+ * published Reel for about a week and refuses it after that, and the source is
+ * deleted by retention. Publishing is the one moment both are guaranteed,
+ * which is why the archive has holes this cannot fill.
  *
- * A failed measurement is not a failed publication, so nothing here throws:
- * the video goes out, and the opening is simply unknown.
+ * The frame is kept beside the numbers. The numbers answer what is in it
+ * today; the image answers what nobody has asked yet, and it is the half that
+ * cannot be recomputed.
  */
-export async function recordOpeningFrames(
+export async function recordOpeningFromVideo(
   backendDb: BackendDb,
   config: BackendConfig,
   videoDraftId: number,
-  filePath: string,
+  videoPath: string,
   source = "local_file",
-): Promise<void> {
+): Promise<boolean> {
+  return store(backendDb, videoDraftId, source, async () => {
+    const features = await frameFeatures(videoPath, OPENING_SECONDS);
+    await mkdir(config.VIDEO_FRAME_DIR, { recursive: true });
+    const kept = framePath(config, videoDraftId);
+    await runFfmpeg(["-ss", String(OPENING_SECONDS), "-i", videoPath, "-frames:v", "1", "-q:v", "2", "-y", kept]);
+    return { features, imagePath: kept };
+  });
+}
+
+/**
+ * Same reading, from a frame someone already cut off the video.
+ *
+ * The archive's videos are gone from every place this Studio can reach, and
+ * the only copies left are on the machine they were downloaded to. A frame
+ * carried in from there answers exactly what a frame cut here would: it is the
+ * same pixels at the same second, and the arithmetic does not care which
+ * program did the seeking.
+ */
+export async function recordOpeningFromFrame(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  videoDraftId: number,
+  imagePath: string,
+  source = "operator_file",
+): Promise<boolean> {
+  return store(backendDb, videoDraftId, source, async () => {
+    // A still has no timeline to seek in, and the second it came from is the
+    // caller's promise, not something the file can be asked.
+    const features = await frameFeatures(imagePath, 0);
+    await mkdir(config.VIDEO_FRAME_DIR, { recursive: true });
+    const kept = framePath(config, videoDraftId);
+    await Bun.write(kept, Bun.file(imagePath));
+    return { features, imagePath: kept };
+  });
+}
+
+function framePath(config: BackendConfig, videoDraftId: number): string {
+  return path.join(config.VIDEO_FRAME_DIR, `video-${videoDraftId}-${OPENING_SECONDS}s.jpg`);
+}
+
+/** Writes one reading, and keeps a failure to itself.
+ *
+ * Measuring an opening is never worth failing a publication over, so nothing
+ * here throws: the video goes out and the opening is simply unknown. */
+async function store(
+  backendDb: BackendDb,
+  videoDraftId: number,
+  source: string,
+  read: () => Promise<{ features: FrameFeatures; imagePath: string }>,
+): Promise<boolean> {
   const already = unsafeDb(backendDb)
     .db.select({ atSeconds: videoFrameFeatures.atSeconds })
     .from(videoFrameFeatures)
     .where(eq(videoFrameFeatures.videoDraftId, videoDraftId))
     .all();
-  if (already.length) return;
+  if (already.length) return false;
   try {
-    const features = await frameFeatures(filePath, OPENING_SECONDS);
-    const imagePath = await keepFrame(config, filePath, videoDraftId);
+    const { features, imagePath } = await read();
     unsafeDb(backendDb)
       .db.insert(videoFrameFeatures)
       .values({
@@ -188,24 +237,12 @@ export async function recordOpeningFrames(
       })
       .onConflictDoNothing()
       .run();
+    return true;
   } catch (error) {
     log("warn", "opening frame could not be measured", {
       videoDraftId,
       error: error instanceof Error ? error.message : String(error),
     });
+    return false;
   }
-}
-
-/** Writes the frame out at the size it was published at.
- *
- * The arithmetic above answers what is in the frame today. The image answers
- * questions nobody has asked yet, and it is the half that cannot be recovered:
- * the source file is deleted by retention and the platform stops serving the
- * published copy about a week later, while the numbers can be recomputed from
- * this file forever. */
-async function keepFrame(config: BackendConfig, filePath: string, videoDraftId: number): Promise<string> {
-  await mkdir(config.VIDEO_FRAME_DIR, { recursive: true });
-  const target = path.join(config.VIDEO_FRAME_DIR, `video-${videoDraftId}-${OPENING_SECONDS}s.jpg`);
-  await runFfmpeg(["-ss", String(OPENING_SECONDS), "-i", filePath, "-frames:v", "1", "-q:v", "2", "-y", target]);
-  return target;
 }

@@ -176,6 +176,13 @@
       "when": 1790000000000,
       "tag": "0024_video_frame_image",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1790100000000,
+      "tag": "0025_video_opening_line",
+      "breakpoints": true
     }
   ]
 }

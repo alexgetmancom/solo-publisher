@@ -1,6 +1,6 @@
 import { unlink } from "node:fs/promises";
 import path from "node:path";
-import { recordOpeningFrames } from "../analytics/collection/video-frames.js";
+import { recordOpeningFromVideo } from "../analytics/collection/video-frames.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { zernioRequest } from "../foundation/external/zernio.js";
@@ -100,7 +100,7 @@ export async function backfillVideoFrames(
         }
         temporary = candidate.localPath ? null : source;
         const from = candidate.localPath ? "local_file" : "instagram_media";
-        await recordOpeningFrames(backendDb, config, candidate.videoDraftId, source, from);
+        await recordOpeningFromVideo(backendDb, config, candidate.videoDraftId, source, from);
         measured.push({ ref, label: candidate.label, from });
       } catch (error) {
         failed.push({ ref, reason: (error instanceof Error ? error.message : String(error)).slice(0, 200) });

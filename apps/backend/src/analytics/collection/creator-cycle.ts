@@ -10,6 +10,7 @@ import { claimSync, markSyncRetry, markSynced } from "../snapshots/creator-store
 import { DEMOGRAPHICS_INTERVAL_SECONDS, syncInstagramDemographics } from "./instagram-demographics.js";
 import { syncYouTubeDemographics, YOUTUBE_DEMOGRAPHICS_INTERVAL_SECONDS } from "./youtube-demographics.js";
 import { syncCommunityProfiles, syncInstagramProfile, syncXProfile, syncYouTubeProfile, syncZernioChannelProfile } from "./profile-sync.js";
+import { collectNewCaptions } from "../../operations/youtube-captions.js";
 import { runVideoMetricSchedule } from "./video-metrics.js";
 
 /** One step of the cycle. A provider that is permanently broken (an expired
@@ -118,6 +119,13 @@ export async function runAnalyticsCycle(config: BackendConfig, backendDb: Backen
   profiles += await step(backendDb, "video_metrics", "analytics.video_metrics.collect", () =>
     runVideoMetricSchedule(config, backendDb, fetchImpl),
   );
+  // What was said in a video is collected like everything else said about it.
+  // Left to a command someone remembers to run, it was not collected at all:
+  // a hundred and forty videos went to the archive with no text.
+  // Not counted with the profiles: the number this cycle returns is how many
+  // audiences it read, and a caption track is not an audience.
+  if (config.YOUTUBE_RU_REFRESH_TOKEN)
+    await step(backendDb, "video_captions", "analytics.video_captions.collect", () => collectNewCaptions(backendDb, config, fetchImpl));
   // A successful collection is worker telemetry, not a creator notification.
   // Keeping it out of the domain event journal prevents every metrics cycle
   // from becoming an unread Inbox item in every Studio interface.
