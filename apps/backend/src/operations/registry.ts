@@ -41,6 +41,7 @@ import { streamService } from "../studio/services/streams.js";
 import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
+import { syncAudienceDemographics } from "./demographics-sync.js";
 import { diskReport } from "./disk-report.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
@@ -517,6 +518,15 @@ const operationDefs = {
     mutates: true,
     agent: false,
     handler: (context, input) => backfillVideoGames(context.db(), { apply: input.apply, overwrite: input.overwrite }),
+  }),
+  "demographics-sync": operation({
+    section: "analytics",
+    summary: "Read every account's audience breakdown now instead of waiting for the daily schedule.",
+    note: "For the hour after something changes. The collector runs once a day because the data moves monthly; this is how a fix is checked without waiting until tomorrow. Reports what each account answered, including the ones that answered nothing.",
+    schema: z.object({ apply: applyOption }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) => syncAudienceDemographics(context.db(), context.config(), context.fetchImpl, { apply: input.apply }),
   }),
   "audience-heatmap": operation({
     section: "analytics",
