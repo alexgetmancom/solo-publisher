@@ -86,6 +86,7 @@ import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
 import { verifyPostTargets } from "./verify.js";
+import { backfillVideoGames } from "./video-tag-backfill.js";
 import { tagVideo } from "./video-tag.js";
 import { backfillYouTubeAnalytics } from "./youtube-analytics-backfill.js";
 
@@ -499,6 +500,18 @@ const operationDefs = {
         ...(input.hook === undefined ? {} : { hook: input.hook }),
       });
     },
+  }),
+  "video-tag-backfill": operation({
+    section: "analytics",
+    summary: "Read the game out of the copy each video was published with, and write it into its tag.",
+    note: "Evidence only: the `Название игры` line the captions and descriptions carry, or the title's tail after the last pipe. A video whose copy names no game is listed under leftAlone and left untagged -- `video-report` can tell a missing tag from a wrong one, but not from a guessed one. Without --apply it writes nothing and shows the plan.",
+    schema: z.object({
+      apply: applyOption,
+      overwrite: z.boolean().default(false).describe("re-read videos that already carry a game"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) => backfillVideoGames(context.db(), { apply: input.apply, overwrite: input.overwrite }),
   }),
   "audience-heatmap": operation({
     section: "analytics",

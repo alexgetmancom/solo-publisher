@@ -56,6 +56,7 @@ const OFF_THE_AGENT_SURFACE = [
   "milestone-announce",
   "comments-backfill",
   "youtube-analytics-backfill",
+  "video-tag-backfill",
   "x-import-delete",
   "x-relink",
   "purge",
