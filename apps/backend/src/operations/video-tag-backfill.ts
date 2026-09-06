@@ -103,7 +103,8 @@ function clean(value: string): string | null {
     .split("\n")[0]
     ?.replace(/["}\\].*$/u, "")
     .replace(/#\S+/gu, "")
-    .replace(/[\p{Extended_Pictographic}️‍]/gu, "")
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/[\u200d\ufe0f]/gu, "")
     .replace(/\s+/gu, " ")
     .trim();
   return trimmed && trimmed.length > 1 && trimmed.length <= 80 ? trimmed : null;
