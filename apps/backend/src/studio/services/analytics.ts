@@ -1,5 +1,5 @@
 import { analyticsDataVersion } from "../../analytics/data-version.js";
-import { audienceAnalysis } from "../../analytics/reports/audience.js";
+import { editorialReview } from "../../analytics/reports/editorial-review.js";
 import { creatorMilestoneHistory } from "../../analytics/reports/milestone-history.js";
 import { creatorArchiveSummary, creatorPostArchive, creatorPostMedia, creatorPostMetrics } from "../../analytics/reports/post-archive.js";
 import { studioAnalyticsDashboard } from "../../analytics/reports/studio-dashboard.js";
@@ -87,8 +87,8 @@ export function analyticsService(backendDb: BackendDb, config: BackendConfig) {
         creatorVideoMetrics(backendDb, publicationId, locale, config.TIMEZONE),
       );
     },
-    audienceAnalysis(locale: StudioLocale) {
-      return trackUsageAsync(backendDb, "studio.analytics.audience.read", () => audienceAnalysis(backendDb, config, locale));
+    editorialReview(locale: StudioLocale) {
+      return trackUsageAsync(backendDb, "studio.analytics.audience.read", () => editorialReview(backendDb, config, locale));
     },
   };
 }

@@ -2,6 +2,8 @@ import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
+import { commentQuality } from "../analytics/reports/comment-quality.js";
+import { editorialReview } from "../analytics/reports/editorial-review.js";
 import { studioBrief } from "../analytics/reports/studio-brief.js";
 import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
 import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
@@ -538,6 +540,30 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => audienceHeatmapReport(context.db()),
+  }),
+  review: operation({
+    section: "analytics",
+    startHere: "what do the numbers and the comments say together",
+    summary: "The channel's own figures and its audience's own words, read together by a model that is only allowed to use them.",
+    note: "Costs a model call and takes up to a minute. It is handed `brief` and the comment breakdown as facts, and told to name the sample behind every claim and to say when there is not enough data — read it as an opinion grounded in the numbers, not as a measurement. `brief` and `comments-quality` are the measurements.",
+    schema: z.object({ locale: z.enum(["ru", "en"]).default("ru").describe("language of the report") }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => editorialReview(context.db(), context.config(), input.locale, context.fetchImpl),
+  }),
+  "comments-quality": operation({
+    section: "analytics",
+    startHere: "what are the comments worth, not just how many",
+    summary:
+      "Comment signals per video: how many per thousand views, how many are questions, how many ask what the game was, how deep the threads go — and every request the audience wrote.",
+    note: "Counted, not judged: a video with fewer than ten comments carries `ratiosMeaningful: false`. `askedWhichGame` is the sharpest one — someone asking what the game is means the video never said it clearly.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days"),
+      limit: z.coerce.number().int().min(1).max(50).default(15).describe("how many videos to list"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => commentQuality(context.db(), { days: input.days, limit: input.limit }),
   }),
   brief: operation({
     section: "analytics",

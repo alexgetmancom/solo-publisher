@@ -526,7 +526,7 @@ const en = {
   // AI audience analysis + bot start
   "audience.unavailable": "AI analysis is unavailable: add DEEPSEEK_API_KEY to secrets.env.",
   "audience.no-comments": "There are no cached comments yet. They will appear after the next daily metrics collection.",
-  "audience.title": "AI audience analysis",
+  "audience.title": "Channel review",
   "audience.no-report": "I couldn't prepare a report.",
   "start.menu-hint": "The menu button stays at the bottom of this chat.",
   // Notifications, delivery previews, bot commands, weekly digest
@@ -1318,7 +1318,7 @@ const ru = {
   // AI audience analysis + bot start
   "audience.unavailable": "ИИ-анализ недоступен: добавьте DEEPSEEK_API_KEY в secrets.env.",
   "audience.no-comments": "Пока нет закэшированных комментариев. Они появятся после следующего ежедневного сбора статистики.",
-  "audience.title": "ИИ-анализ аудитории",
+  "audience.title": "Разбор канала",
   "audience.no-report": "Не удалось подготовить отчёт.",
   "start.menu-hint": "Кнопка меню всегда останется внизу чата.",
   // Notifications, delivery previews, bot commands, weekly digest

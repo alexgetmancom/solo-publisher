@@ -547,10 +547,10 @@ const studioToolDefs = {
     schema: z.object({ video_draft_id: positiveInt, locale: localeSchema.optional() }),
     handler: (studio, _actorId, input) => studio.analytics.videoMetrics(input.video_draft_id, input.locale ?? "ru"),
   }),
-  studio_analytics_audience: tool({
-    description: "Read the creator audience analysis.",
+  studio_analytics_editorial: tool({
+    description: "Read the channel review: its own numbers and its audience's own words, read together.",
     schema: z.object({ locale: localeSchema.optional() }),
-    handler: (studio, _actorId, input) => studio.analytics.audienceAnalysis(input.locale ?? "ru"),
+    handler: (studio, _actorId, input) => studio.analytics.editorialReview(input.locale ?? "ru"),
   }),
 };
 

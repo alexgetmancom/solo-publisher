@@ -102,6 +102,6 @@ describe("Studio service boundaries", () => {
       expect(analytics.archiveSummary("en").posts).toBe(0);
       expect(analytics.videoArchive(0, "en").total).toBe(0);
       expect(typeof analytics.videoMetrics(999, "en")).toBe("string");
-      expect(await analytics.audienceAnalysis("en")).toContain("🤖");
+      expect(await analytics.editorialReview("en")).toContain("🤖");
     }));
 });

@@ -1,11 +1,9 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { audienceAnalysis } from "../src/analytics/reports/audience.js";
 import { creatorVideoArchive, creatorVideoMetrics } from "../src/analytics/reports/video-archive.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
-import { socialComments, videoMetricSnapshots } from "../src/db/schema.js";
+import { videoMetricSnapshots } from "../src/db/schema.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
-import { loadTestConfig } from "./helpers/studio-config.js";
 
 const sampledAt = "2026-07-27T09:00:00.000Z";
 const realFetch = globalThis.fetch;
@@ -163,106 +161,6 @@ describe("creatorVideoMetrics", () => {
       const text = creatorVideoMetrics(backendDb, draftId, "ru");
       expect(text).toContain("охват: 8");
       expect(text).toContain("среднее: 2.0 с");
-    });
-  });
-});
-
-describe("audienceAnalysis", () => {
-  const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42", CONTROLLER_BOT_TOKEN: "t", DEEPSEEK_API_KEY: "sk-test" });
-
-  function comment(backendDb: UnsafeBackendDb, targetId: number, text: string, publishedAt: string): void {
-    backendDb.db
-      .insert(socialComments)
-      .values({
-        platform: "youtube",
-        commentId: `${text}-${publishedAt}`,
-        videoTargetId: targetId,
-        text,
-        publishedAt,
-        fetchedAt: sampledAt,
-      })
-      .run();
-  }
-
-  it("returns the model's report under a localized title", async () => {
-    await withDb(async (backendDb) => {
-      const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: sampledAt });
-      comment(backendDb, targetId, "more roguelikes please", sampledAt);
-      const impl = (async () =>
-        new Response(JSON.stringify({ choices: [{ message: { content: "  - players want roguelikes  " } }] }))) as unknown as typeof fetch;
-
-      const report = await audienceAnalysis(backendDb, config, "en", impl);
-      expect(report).toContain("AI audience analysis");
-      expect(report).toContain("- players want roguelikes");
-      expect(report).not.toContain("  - players");
-    });
-  });
-
-  it("sends the newest hundred comments, labelled by platform, and never the author", async () => {
-    await withDb(async (backendDb) => {
-      const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: sampledAt });
-      for (let index = 0; index < 120; index += 1) {
-        comment(backendDb, targetId, `comment ${index}`, `2026-07-27T${String(index % 24).padStart(2, "0")}:00:00.000Z`);
-      }
-      let sentBody = "";
-      const impl = (async (_url: string, init?: RequestInit) => {
-        sentBody = String(init?.body ?? "");
-        return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }));
-      }) as unknown as typeof fetch;
-
-      await audienceAnalysis(backendDb, config, "en", impl);
-      const payload = JSON.parse(sentBody) as { messages: Array<{ role: string; content: string }> };
-      const userContent = payload.messages.find((message) => message.role === "user")?.content ?? "";
-      expect(userContent.split("\n")).toHaveLength(100);
-      expect(userContent).toStartWith("[youtube] ");
-      expect(payload.messages[0]?.content).toContain("do not invent facts");
-    });
-  });
-
-  it("says the feature is unavailable without an API key, and does not call out", async () => {
-    await withDb(async (backendDb) => {
-      let called = false;
-      const impl = (async () => {
-        called = true;
-        return new Response("{}");
-      }) as unknown as typeof fetch;
-
-      const noKey = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42", CONTROLLER_BOT_TOKEN: "t" });
-      expect(await audienceAnalysis(backendDb, noKey, "en", impl)).toContain("add DEEPSEEK_API_KEY");
-      expect(called).toBe(false);
-    });
-  });
-
-  it("says there is nothing to analyse when no comments are cached, and does not call out", async () => {
-    await withDb(async (backendDb) => {
-      let called = false;
-      const impl = (async () => {
-        called = true;
-        return new Response("{}");
-      }) as unknown as typeof fetch;
-
-      expect(await audienceAnalysis(backendDb, config, "en", impl)).toContain("no cached comments yet");
-      expect(called).toBe(false);
-    });
-  });
-
-  it("falls back to a placeholder when the model returns an empty choice", async () => {
-    await withDb(async (backendDb) => {
-      const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: sampledAt });
-      comment(backendDb, targetId, "hi", sampledAt);
-      const impl = (async () => new Response(JSON.stringify({ choices: [{ message: { content: "   " } }] }))) as unknown as typeof fetch;
-
-      expect(await audienceAnalysis(backendDb, config, "en", impl)).toContain("couldn't prepare a report");
-    });
-  });
-
-  it("propagates a provider failure rather than reporting a made-up analysis", async () => {
-    await withDb(async (backendDb) => {
-      const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: sampledAt });
-      comment(backendDb, targetId, "hi", sampledAt);
-      const impl = (async () => new Response('{"error":"quota"}', { status: 402 })) as unknown as typeof fetch;
-
-      await expect(audienceAnalysis(backendDb, config, "en", impl)).rejects.toThrow("402");
     });
   });
 });
