@@ -11,15 +11,31 @@ import { zernioRequest } from "../foundation/external/zernio.js";
  * carries a direct media URL for every Reel it published, which is the only
  * copy of a months-old video anyone here can still read frames from. */
 type ZernioPostAnalytics = {
-  platforms?: Array<{ platform?: string; mediaItems?: Array<{ type?: string; url?: string }> }>;
+  platforms?: Array<{ platform?: string; platformPostId?: string; mediaItems?: Array<{ type?: string; url?: string }> }>;
+  platformPostId?: string;
   mediaItems?: Array<{ type?: string; url?: string }>;
+};
+
+/** The live read of what is actually on the account right now. Instagram signs
+ * its media links with an expiry, and the analytics answer is served from the
+ * provider's own cache -- so for anything older than the last sync its links
+ * are already dead, while this endpoint mints new ones. It only reaches the
+ * 25 most recent posts, which is why it is tried first and not alone. */
+type ZernioPlatformPosts = {
+  posts?: Array<{ id?: string; mediaUrl?: string; videoUrl?: string; mediaItems?: Array<{ type?: string; url?: string }> }>;
 };
 
 /** Those URLs are signed and short-lived, so the file is fetched and read in
  * one pass and never stored. */
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
-type Candidate = { videoDraftId: number; label: string | null; providerPostId: string | null; localPath: string | null };
+type Candidate = {
+  videoDraftId: number;
+  label: string | null;
+  providerPostId: string | null;
+  providerAccountId: string | null;
+  localPath: string | null;
+};
 
 /**
  * Measures the first seconds of videos that have already been published.
@@ -92,6 +108,8 @@ function loadCandidates(backendDb: BackendDb): Candidate[] {
       `SELECT d.id AS videoDraftId, d.label AS label,
               (SELECT t.provider_post_id FROM video_targets t
                 WHERE t.video_draft_id = d.id AND t.target = 'instagram_reels' AND t.provider_post_id IS NOT NULL LIMIT 1) AS providerPostId,
+              (SELECT t.provider_account_id FROM video_targets t
+                WHERE t.video_draft_id = d.id AND t.target = 'instagram_reels' AND t.provider_account_id IS NOT NULL LIMIT 1) AS providerAccountId,
               (SELECT a.local_path FROM studio_media_assets a WHERE a.id = d.studio_media_asset_id AND d.source_pruned_at IS NULL) AS localPath
          FROM video_drafts d
         WHERE EXISTS (SELECT 1 FROM video_targets t WHERE t.video_draft_id = d.id AND t.status = 'published')
@@ -99,6 +117,24 @@ function loadCandidates(backendDb: BackendDb): Candidate[] {
         ORDER BY d.id DESC`,
     )
     .all() as Candidate[];
+}
+
+/** A media link minted now, for one of the account's most recent posts. */
+async function liveMediaUrl(
+  config: BackendConfig,
+  fetchImpl: typeof fetch,
+  accountId: string,
+  platformPostId: string,
+): Promise<string | null> {
+  try {
+    const live = await zernioRequest<ZernioPlatformPosts>(config, `accounts/${accountId}/posts`, fetchImpl);
+    const post = (live.posts ?? []).find((entry) => entry.id === platformPostId);
+    return post?.videoUrl ?? post?.mediaUrl ?? post?.mediaItems?.find((item) => item.type === "video" && item.url)?.url ?? null;
+  } catch {
+    // The archive is the point of this command; a live read that refuses must
+    // not stop the videos whose links are still good.
+    return null;
+  }
 }
 
 /** Fetches the published Reel into a temporary file and returns its path. */
@@ -109,8 +145,13 @@ async function downloadReel(config: BackendConfig, fetchImpl: typeof fetch, cand
     `analytics?${new URLSearchParams({ postId: candidate.providerPostId })}`,
     fetchImpl,
   );
-  const items = data.platforms?.find((platform) => platform.platform === "instagram")?.mediaItems ?? data.mediaItems ?? [];
-  const url = items.find((item) => item.type === "video" && item.url)?.url;
+  const instagram = data.platforms?.find((platform) => platform.platform === "instagram");
+  const platformPostId = instagram?.platformPostId ?? data.platformPostId ?? null;
+  const items = instagram?.mediaItems ?? data.mediaItems ?? [];
+  const url =
+    (candidate.providerAccountId && platformPostId
+      ? await liveMediaUrl(config, fetchImpl, candidate.providerAccountId, platformPostId)
+      : null) ?? items.find((item) => item.type === "video" && item.url)?.url;
   if (!url) return null;
   const response = await fetchImpl(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`media_download_failed: ${response.status}`);
