@@ -106,7 +106,7 @@ function publishedVideos(backendDb: BackendDb): Known[] {
  * word with the moment it lands. Both are dropped: the words are what is
  * being stored, and a line that is a prefix of the previous one is the same
  * words arriving again. */
-export function spokenText(vtt: string): string {
+function spokenText(vtt: string): string {
   const seen = new Set<string>();
   const lines: string[] = [];
   for (const raw of vtt.split("\n")) {

@@ -79,7 +79,7 @@ const SAID_ALOUD = /\s*[([][^)\]]*[)\]]/gu;
  * first paragraph, every time. A transcript has no paragraphs at all, so the
  * first sentence is the closest thing to the same words -- and it is only a
  * proxy, which is why the two are stored beside the source that produced them. */
-export function openingLine(text: string, source: string): string {
+function openingLine(text: string, source: string): string {
   const cleaned = text.replace(SAID_ALOUD, "").replace(/[ \t]+/gu, " ");
   if (source === "operator") {
     const paragraph = cleaned.split(/\n\s*\n/u)[0]?.trim();

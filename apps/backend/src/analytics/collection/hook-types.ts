@@ -10,7 +10,7 @@ import type { BackendConfig } from "../../foundation/config.js";
  * end up where the tags were, nine hundred words across ninety videos with
  * nothing to compare. Each of these has to be recognisable from ten words and
  * has to be a choice its author could make differently next time. */
-export const HOOK_TYPES = ["question", "shock", "address", "announcement", "callback"] as const;
+const HOOK_TYPES = ["question", "shock", "address", "announcement", "callback"] as const;
 
 /** How many openings go into one request. Enough that the model sees them as a
  * set and answers consistently, small enough that one bad answer costs little
