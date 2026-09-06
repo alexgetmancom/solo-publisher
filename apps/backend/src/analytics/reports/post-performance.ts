@@ -13,8 +13,9 @@ const OUTLIER_MULTIPLE = 5;
  * everyone else already in the thread. */
 const ANSWERS = /^@([A-Za-z0-9_]{1,15})/u;
 
-/** A link X shortened, a hashtag, a mention — the three things a post carries
- * besides its words. */
+/** What X shortens into a t.co. Not only a link: an attached image, a video and
+ * a quoted post are shortened the same way and are indistinguishable here, so
+ * this asks whether the post carries anything besides words. */
 const SHORTENED_LINK = /https:\/\/t\.co\/\w+/u;
 const HASHTAG = /(^|\s)#\w/u;
 
@@ -78,8 +79,8 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
     howItWasBuilt: {
       length: [...group(standalone, (row) => lengthOf(row.text)).values()].map((slot) => describeSlot(slot.value, slot.rows)),
       carries: [
-        describeSlot("with a link", standalone.filter((row) => SHORTENED_LINK.test(row.text))),
-        describeSlot("no link", standalone.filter((row) => !SHORTENED_LINK.test(row.text))),
+        describeSlot("carries a t.co (media, quote or link)", standalone.filter((row) => SHORTENED_LINK.test(row.text))),
+        describeSlot("words only", standalone.filter((row) => !SHORTENED_LINK.test(row.text))),
         describeSlot("with a hashtag", standalone.filter((row) => HASHTAG.test(row.text))),
       ],
     },
@@ -120,7 +121,7 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       "`howItWasWritten` compares a reply with a post of its own. A reply borrows the audience of whatever it answers, so its views say more about that post than about this one.",
       "`openings` covers standalone posts only: the first line of a reply was not written to stop a scroll.",
     "`repliedTo` groups replies by the account they were written under, ordered by the followers they brought. A reply's views belong to the post above it, so read this as which rooms are worth standing in, never as which reply was better written.",
-    "`howItWasBuilt` groups by what a post is made of rather than what it says: how long it is and whether it carries a link. A link sends the reader away, and a platform that ranks by time spent sees that.",
+    "`howItWasBuilt` groups by what a post is made of rather than what it says: how long it is, and whether it carries a t.co. X shortens an attached image, video or quoted post into a t.co exactly as it does a link, so that group is \"carries something besides words\" and not \"links out\" — do not read it as advice about linking.",
     "How many lines a post was written in is not here, and cannot be: X's own export flattens every post into one line, so the newlines the author typed are gone. `openingLine` falls back to the first sentence for those, which is a proxy and is why the kind on them is a judgement about a sentence rather than a line.",
     "`followsPerPost` is the one figure that says what a kind is for: views are the room a post reached, and this is how many stayed. A kind can lead on one and trail on the other.",
       "An opening's kind is a model's judgement about one line, not a measurement — `post-openings-classify` prints the line beside the label.",
