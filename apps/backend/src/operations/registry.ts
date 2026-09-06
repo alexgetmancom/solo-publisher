@@ -621,7 +621,7 @@ const operationDefs = {
     section: "media",
     summary:
       "Measure the opening seconds of published videos: face, split screen or plain gameplay, plus brightness, contrast and how busy the frame is.",
-    note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Instagram refuses the file for anything older than about a week, so those are read once from the post's cover instead and marked `from: instagram_cover`: that is the cover, not the frame at zero seconds. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
+    note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Instagram serves the file for about a week after publishing and refuses it from any address after that, so an older video is measurable only from a copy of the file placed on this host. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
     schema: z.object({
       apply: applyOption,
       limit: z.coerce.number().int().min(1).max(500).default(25).describe("how many videos to read in one run"),

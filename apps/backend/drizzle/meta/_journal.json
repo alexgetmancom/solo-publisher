@@ -162,6 +162,13 @@
       "when": 1789800000000,
       "tag": "0022_video_script_source",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1789900000000,
+      "tag": "0023_drop_cover_frame_readings",
+      "breakpoints": true
     }
   ]
 }
