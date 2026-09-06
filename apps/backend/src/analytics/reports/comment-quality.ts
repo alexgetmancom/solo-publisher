@@ -6,14 +6,19 @@ const MIN_COMMENTS_FOR_RATIOS = 10;
 
 /** A comment that asks something. Russian and English question words plus the
  * mark itself: a Reels audience often drops the punctuation. */
-const QUESTION = /[?？]|\b(как|что|где|когда|почему|зачем|какая|какой|сколько|кто|what|where|how|when|why|which)\b/iu;
+const QUESTION = /[?？]|(?<!\p{L})(как|что|где|когда|почему|зачем|какая|какой|сколько|кто|what|where|how|when|why|which)(?!\p{L})/iu;
 
 /** The question that means the video failed to say what it was about. */
-const WHICH_GAME = /(как|что)\s+(называется|за)\s+(игра|игру)|название\s+игры|what.{0,12}game|game\s+name/iu;
+const WHICH_GAME =
+  /(как|что)\s+(называется|за)\s+(игра|игру|игры)|назван\p{L}*\s+игр\p{L}*|что\s+за\s+игр\p{L}*|what.{0,12}game|game\s+name/iu;
 
 /** Someone asking for the next video. This is a content plan written by the
  * audience, and it was previously buried in a wall of comments nobody read. */
-const REQUEST = /\b(сделай|снимай|сними|поиграй|обзор на|хочу|давай|попробуй|запили)\b/iu;
+/** `\b` is defined by ASCII word characters, so a Cyrillic word sitting
+ * between two spaces has no boundary around it and never matched: the request
+ * list came back empty against four hundred comments that plainly contain
+ * these words. */
+const REQUEST = /(?<!\p{L})(сделай|снимай|сними|поиграй|обзор на|хочу|давай|попробуй|запили|жду|advise|please make)(?!\p{L})/iu;
 
 type CommentRow = {
   videoDraftId: number;

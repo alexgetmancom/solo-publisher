@@ -1,7 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
+import { commentQuality } from "../src/analytics/reports/comment-quality.js";
 import { videoKeywordReport } from "../src/analytics/reports/video-keywords.js";
-import { videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
+import { socialComments, videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
 
@@ -64,6 +65,34 @@ describe("video keywords", () => {
         youtube: { videos: 2 },
         instagram: { videos: 2 },
       });
+    });
+  });
+});
+
+describe("comment signals", () => {
+  it("matches Russian words that an ASCII word boundary walks straight past", async () => {
+    await withDb(async (backendDb) => {
+      const { targetId } = insertPublishedVideo(backendDb, {
+        target: "youtube_shorts",
+        publishedAt: new Date(Date.now() - 3_600_000).toISOString(),
+      });
+      for (const [id, text] of [
+        ["a", "сделай обзор на Lethal Company"],
+        ["b", "а что за игра тут?"],
+        ["c", "огонь"],
+      ] as const)
+        backendDb.db
+          .insert(socialComments)
+          .values({ platform: "youtube", commentId: id, videoTargetId: targetId, text, fetchedAt: new Date().toISOString() })
+          .run();
+
+      const report = commentQuality(backendDb, { days: 30, limit: 5 });
+      const totals = report.totals as { comments: number; questions: number; askedWhichGame: number };
+      expect(totals.comments).toBe(3);
+      // Only the second comment asks anything; the first is a request.
+      expect(totals.questions).toBe(1);
+      expect(totals.askedWhichGame).toBe(1);
+      expect((report.requests as unknown[]).length).toBe(1);
     });
   });
 });
