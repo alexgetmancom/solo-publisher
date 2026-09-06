@@ -1,5 +1,6 @@
 import type { BackendDb } from "../../db/client.js";
 import { audienceDemographicsReport } from "../collection/instagram-demographics.js";
+import { commentQuality } from "./comment-quality.js";
 import { videoDigest } from "./video-digest.js";
 import { videoKeywordReport } from "./video-keywords.js";
 import { videoPerformanceReport } from "./video-performance.js";
@@ -29,7 +30,9 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
   const keywords = videoKeywordReport(backendDb, { days: 30, limit: 40 });
   const demographics = audienceDemographicsReport(backendDb);
   const comparison = platformComparison(backendDb, { days: 30 });
+  const comments = commentQuality(backendDb, { days: options.days, limit: 3 });
   const byTag = performance.byTag as Record<string, Facet>;
+  const scripts = (performance.coverage as { scripts?: Record<string, number> }).scripts ?? {};
   return {
     window: { digestDays: options.days, analysisDays: 30, timeZone: options.timeZone },
     week: { platforms: digest.platforms, best: digest.best, breakingOut: digest.breakingOut, source: "digest" },
@@ -42,8 +45,23 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
     whatToPublish: {
       genre: topValues(byTag.genre),
       playerMode: topValues(byTag.playerMode),
-      taggedShare: { game: byTag.game?.taggedShare ?? 0, genre: byTag.genre?.taggedShare ?? 0, hook: byTag.hook?.taggedShare ?? 0 },
+      opening: topValues(byTag.opening),
+      taggedShare: {
+        game: byTag.game?.taggedShare ?? 0,
+        genre: byTag.genre?.taggedShare ?? 0,
+        hook: byTag.hook?.taggedShare ?? 0,
+        opening: byTag.opening?.taggedShare ?? 0,
+      },
       source: "video-report → byTag, games",
+    },
+    whatTheyWrote: {
+      comments: (comments.totals as Record<string, number>).comments,
+      questions: (comments.totals as Record<string, number>).questions,
+      // Someone asking what the game is means the video never said it clearly,
+      // whatever the views did. It is the one comment signal that names a fix.
+      askedWhichGame: (comments.totals as Record<string, number>).askedWhichGame,
+      requests: (comments.requests as Array<Record<string, unknown>>).slice(0, TOP),
+      source: "comments-quality",
     },
     words: {
       youtube: topKeywords(keywords, "youtube_tags"),
@@ -64,8 +82,8 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
       top: topDimensions(capture.dimensions as Record<string, Array<{ label: string; value: number; share: number }>>),
       source: "audience-demographics",
     })),
-    collection: performance.collection,
-    nextSteps: nextSteps(byTag, performance, demographics),
+    collection: { ...(performance.collection as Record<string, unknown>), scripts },
+    nextSteps: nextSteps(byTag, performance, demographics, scripts),
     reading: [
       "A summary of the reports underneath it: each section names the command that shows its full working.",
       "Anything thin has already been dropped here rather than shown with a warning — for the whole picture, including the uncertain parts, read the named report.",
@@ -114,7 +132,12 @@ function topDimensions(
 
 /** What is missing rather than what is known. A weekly reader cannot see that
  * a field is empty; the brief has to say it. */
-function nextSteps(byTag: Record<string, Facet>, performance: Record<string, unknown>, demographics: Record<string, unknown>): string[] {
+function nextSteps(
+  byTag: Record<string, Facet>,
+  performance: Record<string, unknown>,
+  demographics: Record<string, unknown>,
+  scripts: Record<string, number>,
+): string[] {
   const steps: string[] = [];
   if ((byTag.hook?.taggedShare ?? 0) < 20)
     steps.push("Hooks are not tagged, so nothing here can answer which opening holds viewers. `video-tag --ref video:N --hook …`");
@@ -124,7 +147,19 @@ function nextSteps(byTag: Record<string, Facet>, performance: Record<string, unk
       "No audience heatmap has been captured: read one in YouTube Studio or Instagram Insights and store it with `audience-heatmap-import`.",
     );
   if (!(demographics.captures as unknown[])?.length) steps.push("No audience breakdown has been collected yet.");
+  if ((byTag.opening?.taggedShare ?? 0) < 50)
+    steps.push(
+      `The opening is measured on ${byTag.opening?.taggedShare ?? 0}% of videos. Instagram serves the file for about a week after publishing, so only the recent ones can still be read.`,
+    );
+  if ((scripts.written ?? 0) < (scripts.videos ?? 0) / 2)
+    steps.push(
+      `${scripts.written ?? 0} of ${scripts.videos ?? 0} videos carry a script their author wrote (${scripts.heard ?? 0} more carry a transcript). Attaching the script in the bot is what makes the opening answerable in words rather than pixels.`,
+    );
   const failing = (performance.collection as { failing?: number } | undefined)?.failing ?? 0;
-  if (failing > 0) steps.push(`${failing} targets are failing metric collection — see \`video-report\` → collection.`);
+  const causes = ((performance.collection as { errors?: string[] } | undefined)?.errors ?? []).join(" ");
+  // A spent daily quota resumes by itself, so saying it here as work to do
+  // would be wrong: it is a thing to know, not a thing to fix.
+  if (failing > 0 && !/daily quota/.test(causes))
+    steps.push(`${failing} targets are failing metric collection — see \`video-report\` → collection.`);
   return steps;
 }

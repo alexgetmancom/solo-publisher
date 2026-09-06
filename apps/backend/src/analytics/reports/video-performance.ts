@@ -1,6 +1,7 @@
 import type { BackendDb } from "../../db/client.js";
 import { unsafeDb } from "../../db/client.js";
 import { heatmapCoverage } from "../audience-heatmap.js";
+import { metricFailureCause } from "../collection/collectors/errors.js";
 import { metricNumber } from "../snapshots/creator-store.js";
 
 /** Ages, in hours since publication, a video is compared at. They mirror the
@@ -590,7 +591,10 @@ function collectionHealth(series: TargetSeries[]): Record<string, unknown> {
       .map((target) => ({ ref: `video:${target.video_draft_id}`, platform: target.target })),
     frozen: frozen.length,
     failing: failing.length,
-    errors: [...new Set(failing.map((target) => `${target.target}: ${String(target.last_error).slice(0, 200)}`))].slice(0, 5),
+    // A raw 403 body is a request URL and a page of JSON, and the reader of
+    // this report is an agent answering a creator's question. What stopped
+    // collection is a sentence, and the same sentence usually covers every row.
+    errors: [...new Set(failing.map((target) => `${target.target}: ${metricFailureCause(String(target.last_error))}`))].slice(0, 5),
   };
 }
 

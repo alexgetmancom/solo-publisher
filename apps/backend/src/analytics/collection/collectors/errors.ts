@@ -30,6 +30,12 @@ export function describeMetricFreeze(ref: string, target: string, raw: string): 
   return `${target} metrics stopped for ${ref}: ${freezeCause(raw)}`;
 }
 
+/** The same sentence without a video attached, for a report that groups many
+ * rows by the one thing that stopped them. */
+export function metricFailureCause(raw: string): string {
+  return freezeCause(raw);
+}
+
 function freezeCause(raw: string): string {
   if (QUOTA_SPENT.test(raw)) return "the platform's daily quota for this account is spent; collection resumes when it resets";
   if (/does not exist|error_subcode\D*33|\b404\b|deleted/i.test(raw))
