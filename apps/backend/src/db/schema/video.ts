@@ -33,6 +33,11 @@ export const videoDrafts = sqliteTable(
      * The opening lines of this are the hook, which is the one thing that
      * decides a Short and the one thing no API reports. */
     script: text(),
+    /** Where the script came from. What was written to be said and what a
+     * machine heard afterwards are both text in one column, and only this
+     * says which: one is the plan, the other is the record, and they are worth
+     * different amounts. */
+    scriptSource: text(),
     ...timestamps(),
   },
   (table) => [

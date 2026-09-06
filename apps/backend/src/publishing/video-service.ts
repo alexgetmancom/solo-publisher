@@ -53,11 +53,12 @@ export function createVideoDraft(
  * Unlike the label this is accepted at any stage: the text is a record of what
  * was said, and a video that has already gone out is exactly the one whose
  * opening is worth knowing. */
-export function updateVideoScript(backendDb: BackendDb, id: number, script: string): void {
+export function updateVideoScript(backendDb: BackendDb, id: number, script: string, source = "operator"): void {
   getVideoDraft(backendDb, id);
+  const text = script.trim();
   unsafeDb(backendDb)
     .db.update(videoDrafts)
-    .set({ script: script.trim() || null, updatedAt: new Date().toISOString() })
+    .set({ script: text || null, scriptSource: text ? source : null, updatedAt: new Date().toISOString() })
     .where(eq(videoDrafts.id, id))
     .run();
 }

@@ -61,6 +61,7 @@ const OFF_THE_AGENT_SURFACE = [
   "demographics-sync",
   "frames-backfill",
   "video-script",
+  "captions-backfill",
   "x-import-delete",
   "x-relink",
   "purge",

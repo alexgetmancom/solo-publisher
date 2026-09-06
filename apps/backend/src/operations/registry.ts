@@ -47,6 +47,7 @@ import { runOperationCommand } from "./commands.js";
 import { syncAudienceDemographics } from "./demographics-sync.js";
 import { diskReport } from "./disk-report.js";
 import { backfillVideoFrames } from "./frames-backfill.js";
+import { backfillYouTubeCaptions } from "./youtube-captions.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
 import {
@@ -489,6 +490,20 @@ const operationDefs = {
       if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
       return videoPerformanceDetail(context.db(), parsed.id, context.config().TIMEZONE);
     },
+  }),
+  "captions-backfill": operation({
+    section: "analytics",
+    startHere: "can the old videos say what was said in them",
+    summary: "Read YouTube's caption tracks for published videos that have no script, and store what they say.",
+    note: "Without --apply it only lists the tracks each video has, which is the answer to whether this is possible at all: YouTube owns the captions it generated itself and refuses to hand them to the API, so a channel with no uploaded captions gets nothing. What is stored is marked as heard rather than written, and a script from its author is never overwritten.",
+    schema: z.object({
+      apply: applyOption,
+      limit: z.coerce.number().int().min(1).max(200).default(10).describe("how many videos to try in one run"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      backfillYouTubeCaptions(context.db(), context.config(), context.fetchImpl, { apply: input.apply, limit: input.limit }),
   }),
   "video-script": operation({
     section: "analytics",
