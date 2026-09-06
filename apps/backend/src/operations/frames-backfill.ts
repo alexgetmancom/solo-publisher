@@ -29,6 +29,17 @@ const PAGE_SIZE = 50;
  * one pass and never stored. */
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
+/** Instagram serves its own media to its own account, but not at whatever rate
+ * a script asks for: a run that pulled two dozen files back to back was
+ * answered with 403 on everything after it. This is a catch-up sweep with no
+ * deadline, so it waits. */
+const PAUSE_BETWEEN_DOWNLOADS_MS = 4_000;
+
+/** Once the platform starts refusing, it keeps refusing for a while. Stopping
+ * says so plainly and leaves the rest for the next run, instead of turning one
+ * throttle into a hundred failures in the report. */
+const REFUSALS_BEFORE_STOPPING = 5;
+
 type Candidate = {
   videoDraftId: number;
   label: string | null;
@@ -59,8 +70,14 @@ export async function backfillVideoFrames(
     input.apply && accountId && candidates.some((candidate) => !candidate.localPath)
       ? await mediaIndex(config, fetchImpl, accountId, Math.ceil(candidates.length / PAGE_SIZE) + 1)
       : new Map<string, string>();
+  let refusals = 0;
+  let stopped: string | null = null;
   if (input.apply)
     for (const candidate of candidates) {
+      if (refusals >= REFUSALS_BEFORE_STOPPING) {
+        stopped = `the platform refused ${refusals} downloads in a row; the rest is left for a later run`;
+        break;
+      }
       const ref = `video:${candidate.videoDraftId}`;
       let temporary: string | null = null;
       try {
@@ -91,10 +108,16 @@ export async function backfillVideoFrames(
             .run();
         }
         measured.push({ ref, label: candidate.label, shapes });
+        refusals = 0;
       } catch (error) {
-        failed.push({ ref, reason: (error instanceof Error ? error.message : String(error)).slice(0, 200) });
+        const reason = (error instanceof Error ? error.message : String(error)).slice(0, 200);
+        refusals = /media_download_failed: (403|429)/.test(reason) ? refusals + 1 : 0;
+        failed.push({ ref, reason });
       } finally {
-        if (temporary) await unlink(temporary).catch(() => undefined);
+        if (temporary) {
+          await unlink(temporary).catch(() => undefined);
+          await new Promise((resolve) => setTimeout(resolve, PAUSE_BETWEEN_DOWNLOADS_MS));
+        }
       }
     }
   return {
@@ -102,6 +125,7 @@ export async function backfillVideoFrames(
     candidates: candidates.length,
     mediaLinks: media.size,
     measured: measured.length,
+    ...(stopped ? { stopped } : {}),
     failed,
     sample: input.apply ? measured.slice(0, 5) : candidates.slice(0, 5).map((candidate) => `video:${candidate.videoDraftId}`),
   };

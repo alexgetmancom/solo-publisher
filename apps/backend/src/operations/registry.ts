@@ -559,7 +559,7 @@ const operationDefs = {
     note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
     schema: z.object({
       apply: applyOption,
-      limit: z.coerce.number().int().min(1).max(500).default(50).describe("how many videos to read in one run"),
+      limit: z.coerce.number().int().min(1).max(500).default(25).describe("how many videos to read in one run"),
     }),
     mutates: true,
     agent: false,
