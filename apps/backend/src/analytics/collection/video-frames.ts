@@ -42,23 +42,21 @@ export type FrameFeatures = {
  * plain gameplay -- and it answers it for a hundred and seventy videos without
  * a vision model or a per-frame bill.
  */
-export async function frameFeatures(input: string, atSeconds: number): Promise<FrameFeatures> {
-  const pixels = await runFfmpegCapture([
-    "-ss",
-    String(atSeconds),
-    "-i",
-    input,
-    "-frames:v",
-    "1",
-    "-vf",
-    `scale=${WIDTH}:${HEIGHT}`,
-    "-f",
-    "rawvideo",
-    "-pix_fmt",
-    "rgb24",
-    "-",
-  ]);
-  if (pixels.length < WIDTH * HEIGHT * 3) throw new Error(`frame_unavailable: ffmpeg returned ${pixels.length} bytes at ${atSeconds}s`);
+export async function frameFeatures(videoPath: string, atSeconds: number): Promise<FrameFeatures> {
+  return measure(["-ss", String(atSeconds), "-i", videoPath], `at ${atSeconds}s`);
+}
+
+/** The same measurement of a frame that is already a picture.
+ *
+ * A still has no timeline to seek in, and asking ffmpeg to seek one anyway --
+ * even to zero -- returns nothing at all, which read as an unreadable file. */
+async function stillFeatures(imagePath: string): Promise<FrameFeatures> {
+  return measure(["-i", imagePath], "in this image");
+}
+
+async function measure(input: string[], where: string): Promise<FrameFeatures> {
+  const pixels = await runFfmpegCapture([...input, "-frames:v", "1", "-vf", `scale=${WIDTH}:${HEIGHT}`, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]);
+  if (pixels.length < WIDTH * HEIGHT * 3) throw new Error(`frame_unavailable: ffmpeg returned ${pixels.length} bytes ${where}`);
   return describe(pixels);
 }
 
@@ -193,9 +191,9 @@ export async function recordOpeningFromFrame(
   source = "operator_file",
 ): Promise<boolean> {
   return store(backendDb, videoDraftId, source, async () => {
-    // A still has no timeline to seek in, and the second it came from is the
-    // caller's promise, not something the file can be asked.
-    const features = await frameFeatures(imagePath, 0);
+    // The second it came from is the caller's promise, not something a still
+    // can be asked.
+    const features = await stillFeatures(imagePath);
     await mkdir(config.VIDEO_FRAME_DIR, { recursive: true });
     const kept = framePath(config, videoDraftId);
     await Bun.write(kept, Bun.file(imagePath));

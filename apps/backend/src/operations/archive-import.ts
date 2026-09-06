@@ -44,6 +44,9 @@ export async function importVideoArchive(
     const [code, complaint] = await Promise.all([untar.exited, new Response(untar.stderr).text()]);
     if (code !== 0) throw new Error(`the archive could not be unpacked: ${complaint.trim().slice(0, 200)}`);
     for (const name of await readdir(unpacked, { recursive: true })) {
+      // A tar made on a Mac carries a ._name sidecar for every file, holding
+      // the extended attributes rather than the picture.
+      if (path.basename(name).startsWith("._")) continue;
       const kind = name.endsWith(".jpg") ? "frame" : name.endsWith(".vtt") ? "transcript" : null;
       if (!kind) continue;
       const id = path.basename(name).match(YOUTUBE_ID)?.[1];
