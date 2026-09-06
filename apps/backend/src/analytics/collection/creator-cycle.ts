@@ -6,7 +6,7 @@ import { log } from "../../foundation/logger.js";
 import { recordUsage, type UsageFeatureKey } from "../../observability/usage.js";
 import { uniqueAudienceConnections } from "../audience-groups.js";
 import { evaluateAudienceMilestones } from "../audience-milestones.js";
-import { claimSync, markSynced } from "../snapshots/creator-store.js";
+import { claimSync, markSyncRetry, markSynced } from "../snapshots/creator-store.js";
 import { DEMOGRAPHICS_INTERVAL_SECONDS, syncInstagramDemographics } from "./instagram-demographics.js";
 import { syncYouTubeDemographics, YOUTUBE_DEMOGRAPHICS_INTERVAL_SECONDS } from "./youtube-demographics.js";
 import { syncCommunityProfiles, syncInstagramProfile, syncXProfile, syncYouTubeProfile, syncZernioChannelProfile } from "./profile-sync.js";
@@ -42,6 +42,9 @@ async function step(backendDb: BackendDb, name: string, featureKey: UsageFeature
     return 0;
   }
 }
+
+/** How soon a demographics read that answered nothing is tried again. */
+const DEMOGRAPHICS_RETRY_SECONDS = 60 * 60;
 
 /** Runs the transport-neutral analytics collection cycle. */
 export async function runAnalyticsCycle(config: BackendConfig, backendDb: BackendDb, fetchImpl: typeof fetch = fetch): Promise<number> {
@@ -85,7 +88,8 @@ export async function runAnalyticsCycle(config: BackendConfig, backendDb: Backen
     if (!claimSync(backendDb, source, { intervalSeconds: interval, owner })) continue;
     await step(backendDb, source, "analytics.audience_demographics.sync", async () => {
       const result = await read();
-      markSynced(backendDb, source, result.unavailable ?? null);
+      if (result.stored === 0 && result.unavailable) markSyncRetry(backendDb, source, result.unavailable, DEMOGRAPHICS_RETRY_SECONDS);
+      else markSynced(backendDb, source, result.unavailable ?? null);
       return result.stored;
     });
   }

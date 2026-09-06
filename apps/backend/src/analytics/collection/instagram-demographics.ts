@@ -11,6 +11,9 @@ import { shortenRequestFailure } from "../../foundation/http.js";
  * to two days, so a daily read is already more often than the data changes. */
 export const DEMOGRAPHICS_INTERVAL_SECONDS = 24 * 60 * 60;
 
+/** Asked one at a time. Meta answers an empty set rather than an error when a
+ * breakdown it dislikes is bundled with the others, so a single call for all
+ * four could come back blank with nothing to say about which one it choked on. */
 const DIMENSIONS = ["age", "city", "country", "gender"] as const;
 const METRIC = "follower_demographics";
 const TIMEFRAME = "this_month";
@@ -25,6 +28,7 @@ type DemographicsResponse = {
   metric?: string;
   timeframe?: string;
   demographics?: Record<string, unknown>;
+  note?: string;
 };
 
 export type DemographicsResult = { stored: number; unavailable?: string };
@@ -39,40 +43,53 @@ export async function syncInstagramDemographics(
   now = new Date(),
 ): Promise<DemographicsResult> {
   if (!connection.providerAccountId) return { stored: 0, unavailable: "the channel carries no provider account id" };
-  let data: DemographicsResponse;
-  try {
-    data = await zernioRequest<DemographicsResponse>(
-      config,
-      `analytics/instagram/demographics?${new URLSearchParams({
-        accountId: connection.providerAccountId,
-        metric: METRIC,
-        breakdown: DIMENSIONS.join(","),
-        timeframe: TIMEFRAME,
-      })}`,
-      fetchImpl,
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (UNAVAILABLE.some((pattern) => pattern.test(message))) return { stored: 0, unavailable: shortenRequestFailure(message, 200) };
-    throw error;
-  }
   const capturedAt = now.toISOString();
+  const responses: Array<{ dimension: string; data: DemographicsResponse }> = [];
+  const empty: string[] = [];
+  for (const dimension of DIMENSIONS) {
+    let data: DemographicsResponse;
+    try {
+      data = await zernioRequest<DemographicsResponse>(
+        config,
+        `analytics/instagram/demographics?${new URLSearchParams({
+          accountId: connection.providerAccountId,
+          metric: METRIC,
+          breakdown: dimension,
+          timeframe: TIMEFRAME,
+        })}`,
+        fetchImpl,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (UNAVAILABLE.some((pattern) => pattern.test(message))) return { stored: 0, unavailable: shortenRequestFailure(message, 200) };
+      throw error;
+    }
+    if (Object.keys(data.demographics ?? {}).length === 0) {
+      // The provider's own note says why far better than a guess would.
+      empty.push(data.note ? `${dimension}: ${data.note}` : dimension);
+      continue;
+    }
+    responses.push({ dimension, data });
+  }
   const capturedOn = capturedAt.slice(0, 10);
-  const rows = Object.entries(data.demographics ?? {}).flatMap(([dimension, breakdown]) =>
-    entries(breakdown).map(([label, value]) => ({
-      platform: connection.id,
-      account: connection.label,
-      metric: data.metric ?? METRIC,
-      dimension,
-      label,
-      value,
-      timeframe: data.timeframe ?? TIMEFRAME,
-      capturedOn,
-      capturedAt,
-      source: "zernio_instagram_demographics",
-    })),
+  const rows = responses.flatMap(({ data }) =>
+    Object.entries(data.demographics ?? {}).flatMap(([dimension, breakdown]) =>
+      entries(breakdown).map(([label, value]) => ({
+        platform: connection.id,
+        account: connection.label,
+        metric: data.metric ?? METRIC,
+        dimension,
+        label,
+        value,
+        timeframe: data.timeframe ?? TIMEFRAME,
+        capturedOn,
+        capturedAt,
+        source: "zernio_instagram_demographics",
+      })),
+    ),
   );
-  if (!rows.length) return { stored: 0, unavailable: "the provider returned no breakdown" };
+  if (!rows.length)
+    return { stored: 0, unavailable: `the provider returned no breakdown (${empty.join("; ").slice(0, 300) || "no dimensions asked"})` };
   unsafeDb(backendDb).db.transaction((tx) => {
     for (const row of rows)
       tx.insert(audienceDemographics)
@@ -90,7 +107,7 @@ export async function syncInstagramDemographics(
         })
         .run();
   });
-  return { stored: rows.length };
+  return { stored: rows.length, ...(empty.length ? { unavailable: `empty dimensions — ${empty.join("; ").slice(0, 200)}` } : {}) };
 }
 
 /** The provider states a breakdown either as a map or as a list of rows, and

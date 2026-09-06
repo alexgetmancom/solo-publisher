@@ -9,6 +9,10 @@ type SyncClaim = {
   leaseSeconds?: number;
 };
 
+/** The interval every retry is expressed against: a daily read asking for an
+ * hour is `now + 1h - 24h`, which the daily claim then sees as due in an hour. */
+const DEFAULT_RETRY_BASIS_MS = 24 * 60 * 60 * 1000;
+
 const DEFAULT_SYNC_LEASE_SECONDS = 15 * 60;
 
 /** Atomically reserves a due sync for one worker instance. Refresh cadence and
@@ -36,6 +40,28 @@ export function claimSync(backendDb: BackendDb, source: string, claim: SyncClaim
       .returning({ source: analyticsSync.source })
       .get(),
   );
+}
+
+/** Records a read that answered nothing and schedules the next attempt sooner
+ * than the normal cadence.
+ *
+ * A daily read that fails must not wait a day to try again -- an empty answer
+ * is usually the provider still processing -- but it must not retry on every
+ * cycle either, which would be a hundred calls for a question that will keep
+ * having no answer. */
+export function markSyncRetry(backendDb: BackendDb, source: string, error: string, retryAfterSeconds: number): void {
+  unsafeDb(backendDb)
+    .db.update(analyticsSync)
+    .set({
+      // Dated so that `retryAfterSeconds` from now the row is due again,
+      // whatever the caller's own interval is.
+      lastSyncedAt: new Date(Date.now() + retryAfterSeconds * 1000 - DEFAULT_RETRY_BASIS_MS).toISOString(),
+      lastError: error,
+      lockedBy: null,
+      lockedAt: null,
+    })
+    .where(eq(analyticsSync.source, source))
+    .run();
 }
 
 export function markSynced(backendDb: BackendDb, source: string, error: string | null = null, owner?: string): void {
