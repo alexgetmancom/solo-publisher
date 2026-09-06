@@ -57,7 +57,16 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       describe("reply", replies),
     ],
     openings: [...group(standalone, (row) => row.openingKind ?? undefined).values()]
-      .map((slot) => describeSlot(slot.value, slot.rows))
+      .map((slot): Record<string, unknown> => ({
+        ...describeSlot(slot.value, slot.rows),
+        // A kind is a label until you read the lines under it. These are the
+        // ones that brought the most followers, which is the question a kind
+        // is usually being asked.
+        broughtMost: [...slot.rows]
+          .sort((left, right) => right.follows - left.follows)
+          .slice(0, 3)
+          .map((row) => ({ post: row.xPostId, opening: row.openingLine?.slice(0, 100) ?? null, views: row.views, follows: row.follows })),
+      }))
       .sort((left, right) => Number(right.medianViews ?? 0) - Number(left.medianViews ?? 0)),
     outliers: outliers(standalone).slice(0, options.limit),
     top: [...standalone]
@@ -78,6 +87,7 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       "A post keeps gaining views for days, so a young post and an old one are not comparable by total views — `ageDays` is on every row for that reason.",
       "`howItWasWritten` compares a reply with a post of its own. A reply borrows the audience of whatever it answers, so its views say more about that post than about this one.",
       "`openings` covers standalone posts only: the first line of a reply was not written to stop a scroll.",
+    "`followsPerPost` is the one figure that says what a kind is for: views are the room a post reached, and this is how many stayed. A kind can lead on one and trail on the other.",
       "An opening's kind is a model's judgement about one line, not a measurement — `post-openings-classify` prints the line beside the label.",
       `A post above ${OUTLIER_MULTIPLE}× the window's median is reported as an outlier rather than as a better post: it reached a room the others were not in, and averaging it back in describes nothing.`,
     ],
@@ -99,6 +109,7 @@ function describeSlot(value: string, rows: Row[]): Record<string, unknown> {
     // in front of the profile, and how many stayed.
     medianProfileVisits: rows.length ? median(rows.map((row) => row.profileVisits)) : null,
     follows: rows.reduce((total, row) => total + row.follows, 0),
+    followsPerPost: rows.length ? Math.round((rows.reduce((total, row) => total + row.follows, 0) / rows.length) * 100) / 100 : null,
     confidence: rows.length >= CONFIDENT_SAMPLE ? "ok" : rows.length >= WEAK_SAMPLE ? "low" : "anecdotal",
   };
 }
