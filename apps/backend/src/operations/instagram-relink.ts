@@ -7,12 +7,10 @@ import { IMPORTED_HISTORY } from "./archive-import.js";
 /** How far apart the two copies of one video may be published. They go out
  * together, but a post crossing midnight in one timezone and not the other is
  * ordinary. */
-const SAME_RELEASE_DAYS = 2;
+const SAME_RELEASE_DAYS = 1;
 
-/** How far two durations of the same file may read. One is Instagram's whole
- * seconds and the other is a container's own answer, so they disagree by
- * rounding and by nothing else. */
-const SAME_LENGTH_SECONDS = 1.5;
+/** Words short enough to appear in any caption decide nothing. */
+const TELLING_WORD = 4;
 
 const PAGE_SIZE = 50;
 
@@ -71,8 +69,16 @@ export async function relinkInstagramPosts(
       const length = post.analytics?.videoDurationSeconds ?? post.platforms?.[0]?.analytics?.videoDurationSeconds;
       if (!post.publishedAt || !length) return false;
       const apart = Math.abs(Date.parse(post.publishedAt) - Date.parse(candidate.publishedAt)) / 86_400_000;
-      return apart <= SAME_RELEASE_DAYS && Math.abs(length - seconds) <= SAME_LENGTH_SECONDS;
+      // Instagram reports whole seconds of the same file, so they agree
+      // exactly or they are different files. A tolerance of a second and a
+      // half put four posts of one day against one video: every Short on this
+      // channel runs about half a minute.
+      return apart <= SAME_RELEASE_DAYS && Math.round(length) === Math.round(seconds);
     });
+    // A day and a length can still fit twice. What the video is about does not:
+    // the game is named in the title and in the caption's own hashtags.
+    const narrowed = fits.length > 1 ? fits.filter((post) => sharesAWord(candidate.label, post.content ?? "")) : fits;
+    if (narrowed.length === 1) fits.splice(0, fits.length, ...narrowed);
     if (fits.length !== 1) {
       const entry = {
         ref: `video:${candidate.videoDraftId}`,
@@ -121,6 +127,22 @@ export async function relinkInstagramPosts(
     sample: linked.slice(0, 5),
     note: "A video is linked only where exactly one post shares its day and its length. Anything else is listed rather than guessed: a skip rate attached to the wrong video is worse than none, because a missing figure is visible and a wrong one is not.",
   };
+}
+
+/** Whether two texts name the same thing. A game's name survives being written
+ * as a title and as a hashtag; nothing else in either text does. */
+function sharesAWord(title: string, caption: string): boolean {
+  const words = (text: string) =>
+    new Set(
+      text
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .split(" ")
+        .filter((word) => word.length >= TELLING_WORD),
+    );
+  const inTitle = words(title);
+  for (const word of words(caption)) if (inTitle.has(word)) return true;
+  return false;
 }
 
 /** Videos published on YouTube that have no Instagram copy recorded. */
