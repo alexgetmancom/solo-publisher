@@ -368,7 +368,8 @@ function byTag(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): Reco
     let tagged = 0;
     for (const targets of drafts) {
       const game = targets[0]?.game;
-      const values = game ? (described.get(game)?.[facet] ?? []) : [];
+      const raw = game ? (described.get(game)?.[facet] ?? []) : [];
+      const values = facet === "playerModes" ? howItIsPlayed(raw) : raw;
       if (!values.length) continue;
       tagged += 1;
       const views = targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0);
@@ -434,6 +435,26 @@ function frameShapes(backendDb: BackendDb): Map<number, string> {
 /** What is known about each tagged game, for the groupings that are worth more
  * than the game itself: 152 games behind 166 videos cannot group anything, and
  * the handful of genres behind them can. */
+/** How a game is played, as one answer.
+ *
+ * Steam does not choose: a co-op game carries Multi-player, Co-op and Online
+ * Co-op at once, so counting every category put the same fifty-one videos in
+ * three rows with one median between them, and three rows that move together
+ * read as three facts. The order below is what this channel is about -- a game
+ * played with friends is a co-op game whatever else it also supports, and only
+ * a game with nothing else is single-player. */
+const PLAY_ORDER: Array<[string, RegExp]> = [
+  ["Co-op", /co-op/iu],
+  ["PvP", /pvp/iu],
+  ["Multi-player", /multi-player/iu],
+  ["Single-player", /single-player/iu],
+];
+
+function howItIsPlayed(categories: string[]): string[] {
+  for (const [mode, pattern] of PLAY_ORDER) if (categories.some((category) => pattern.test(category))) return [mode];
+  return [];
+}
+
 function gameFacets(backendDb: BackendDb): Map<string, { genres: string[]; playerModes: string[] }> {
   const rows = unsafeDb(backendDb).sqlite.prepare("SELECT name, genres, player_modes AS playerModes FROM games").all() as Array<{
     name: string;
@@ -583,18 +604,28 @@ function videoList(byDraft: Map<number, TargetSeries[]>, timeZone: string, limit
 /** Why a number may be missing, said once and in the report that shows it: a
  * frozen schedule and a scope error both look like an empty column. */
 function collectionHealth(series: TargetSeries[]): Record<string, unknown> {
-  const frozen = series.filter((target) => target.frozen_at);
   const failing = series.filter((target) => target.last_error);
+  // A raw 403 body is a request URL and a page of JSON, and the reader of this
+  // report is an agent answering a creator's question. What stopped collection
+  // is a sentence -- and how many rows it stopped, because "the quota is spent"
+  // and "the credential is gone" are different news at nineteen rows and one.
+  const causes = new Map<string, { targets: number; frozen: number; platform: string }>();
+  for (const target of failing) {
+    const cause = metricFailureCause(String(target.last_error));
+    const key = `${target.target}: ${cause}`;
+    const seen = causes.get(key) ?? { targets: 0, frozen: 0, platform: target.target };
+    causes.set(key, { ...seen, targets: seen.targets + 1, frozen: seen.frozen + (target.frozen_at ? 1 : 0) });
+  }
   return {
     targetsWithoutReadings: series
       .filter((target) => !target.readings.length)
       .map((target) => ({ ref: `video:${target.video_draft_id}`, platform: target.target })),
-    frozen: frozen.length,
+    frozen: series.filter((target) => target.frozen_at).length,
     failing: failing.length,
-    // A raw 403 body is a request URL and a page of JSON, and the reader of
-    // this report is an agent answering a creator's question. What stopped
-    // collection is a sentence, and the same sentence usually covers every row.
-    errors: [...new Set(failing.map((target) => `${target.target}: ${metricFailureCause(String(target.last_error))}`))].slice(0, 5),
+    stopped: [...causes.entries()]
+      .map(([cause, counts]) => ({ cause, targets: counts.targets, frozen: counts.frozen }))
+      .sort((left, right) => right.targets - left.targets)
+      .slice(0, 5),
   };
 }
 
@@ -647,6 +678,7 @@ function readingNotes(): string[] {
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",
     "`byTag.opening` is measured from the video's own first frame — face, split screen or plain gameplay — and is the axis to read beside retention at 1 and 3 seconds and Instagram's skip rate.",
     "`byTag.genre` and `byTag.playerMode` come from the game each video is tagged with, so they group 150 one-off games into a handful of axes; a video whose game has several genres is counted under each.",
+    "`byTag.playerMode` is one answer per video, not several: Steam marks a co-op game as multi-player and co-op at once, and the most specific of those is the one reported.",
     "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
     "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",
     "`skipRate` is Instagram's own answer to the first three seconds: the share of viewers who left inside them. It is the closest thing Reels has to YouTube's retention curve, and Instagram publishes nothing finer.",

@@ -12,13 +12,22 @@ const QUESTION = /[?？]|(?<!\p{L})(как|что|где|когда|почему
 const WHICH_GAME =
   /(как|что)\s+(называется|за)\s+(игра|игру|игры)|назван\p{L}*\s+игр\p{L}*|что\s+за\s+игр\p{L}*|what.{0,12}game|game\s+name/iu;
 
-/** Someone asking for the next video. This is a content plan written by the
- * audience, and it was previously buried in a wall of comments nobody read. */
-/** `\b` is defined by ASCII word characters, so a Cyrillic word sitting
- * between two spaces has no boundary around it and never matched: the request
- * list came back empty against four hundred comments that plainly contain
- * these words. */
-const REQUEST = /(?<!\p{L})(сделай|снимай|сними|поиграй|обзор на|хочу|давай|попробуй|запили|жду|advise|please make)(?!\p{L})/iu;
+/** Someone asking the channel for something: the next video, a different game,
+ * a louder microphone. This is a content plan written by the audience, and it
+ * was previously buried in a wall of comments nobody read.
+ *
+ * `\b` is defined by ASCII word characters, so a Cyrillic word sitting between
+ * two spaces has no boundary around it and never matched: the request list
+ * came back empty against four hundred comments that plainly contain these
+ * words. */
+const REQUEST = /(?<!\p{L})(сделай|сделайте|снимай|сними|поиграй|сыграй|попробуй|запили|покажи|обзор на|advise|please make)(?!\p{L})/iu;
+
+/** Someone saying they want the game, not asking the channel for anything.
+ * "Хочу!!!" and "жду релиза два года" were counted as requests, and a wish
+ * about a game read as a request to the channel is a content plan nobody
+ * wrote. It is worth its own line: it says the video landed on a game people
+ * are waiting for, which is a different kind of hit from a big view count. */
+const WANTED = /(?<!\p{L})(хочу|хочется|жду|ждём|ждем|ждать|куплю|качаю|when.{0,10}release)(?!\p{L})/iu;
 
 type CommentRow = {
   videoDraftId: number;
@@ -88,6 +97,8 @@ export function commentQuality(backendDb: BackendDb, options: { days: number; li
       replies: rows.filter((row) => row.parentCommentId).length,
       questions: rows.filter((row) => QUESTION.test(row.text)).length,
       askedWhichGame: rows.filter((row) => WHICH_GAME.test(row.text)).length,
+      requests: rows.filter((row) => REQUEST.test(row.text)).length,
+      wantedTheGame: rows.filter((row) => WANTED.test(row.text) && !REQUEST.test(row.text)).length,
       byPlatform: Object.fromEntries(
         ["youtube", "instagram"].map((platform) => [platform, rows.filter((row) => row.platform === platform).length]),
       ),
@@ -97,10 +108,15 @@ export function commentQuality(backendDb: BackendDb, options: { days: number; li
       .filter((row) => REQUEST.test(row.text))
       .slice(0, 40)
       .map((row) => ({ ref: `video:${row.videoDraftId}`, platform: row.platform, text: row.text.slice(0, 200) })),
+    wantedTheGame: rows
+      .filter((row) => WANTED.test(row.text) && !REQUEST.test(row.text))
+      .slice(0, 20)
+      .map((row) => ({ ref: `video:${row.videoDraftId}`, platform: row.platform, text: row.text.slice(0, 200) })),
     reading: [
       `A video with fewer than ${MIN_COMMENTS_FOR_RATIOS} comments carries \`ratiosMeaningful: false\`: its counts are real, its ratios are not.`,
       "`askedWhichGame` is the useful one: someone asking what the game is means the video did not say it clearly, whatever the views did.",
-      "`requests` is what the audience asked for in its own words — a content plan written by the people who watched.",
+      "`requests` is what the audience asked the channel for in its own words — a content plan written by the people who watched.",
+      "`wantedTheGame` is not a request: it is someone saying they want the game. It says the video landed on something people are waiting for, which is a different kind of hit from a large view count.",
       "Comments are a fraction of a percent of viewers everywhere; they say what a few people thought, never what the audience thought.",
     ],
   };

@@ -155,11 +155,11 @@ function nextSteps(
     steps.push(
       `${scripts.written ?? 0} of ${scripts.videos ?? 0} videos carry a script their author wrote (${scripts.heard ?? 0} more carry a transcript). Attaching the script in the bot is what makes the opening answerable in words rather than pixels.`,
     );
-  const failing = (performance.collection as { failing?: number } | undefined)?.failing ?? 0;
-  const causes = ((performance.collection as { errors?: string[] } | undefined)?.errors ?? []).join(" ");
-  // A spent daily quota resumes by itself, so saying it here as work to do
-  // would be wrong: it is a thing to know, not a thing to fix.
-  if (failing > 0 && !/daily quota/.test(causes))
-    steps.push(`${failing} targets are failing metric collection — see \`video-report\` → collection.`);
+  // A spent daily quota resumes by itself, so listing it here as work to do
+  // would be wrong: it is a thing to know, not a thing to fix. Anything else
+  // is named with the number of videos behind it.
+  const stopped = (performance.collection as { stopped?: Array<{ cause: string; targets: number }> } | undefined)?.stopped ?? [];
+  for (const entry of stopped.filter((entry) => !/daily quota/.test(entry.cause)))
+    steps.push(`${entry.targets} targets stopped collecting: ${entry.cause}`);
   return steps;
 }

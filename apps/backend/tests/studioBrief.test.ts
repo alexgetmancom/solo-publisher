@@ -64,10 +64,12 @@ describe("studio brief", () => {
         .run();
 
       const brief = studioBrief(backendDb, { days: 3650, timeZone: "Europe/Moscow" });
-      const errors = (brief.collection as { errors: string[] }).errors;
-      expect(errors[0]).toContain("daily quota");
+      const stopped = (brief.collection as { stopped: Array<{ cause: string; targets: number }> }).stopped;
+      expect(stopped[0]?.cause).toContain("daily quota");
       // The reader is answering a creator's question, not reading a request log.
-      expect(errors[0]).not.toContain("googleapis.com");
+      expect(stopped[0]?.cause).not.toContain("googleapis.com");
+      // How many rows one cause stopped is the difference between news and noise.
+      expect(stopped[0]?.targets).toBe(1);
       // A quota comes back on its own, so it is not a step for anyone to take.
       expect((brief.nextSteps as string[]).some((step) => step.includes("failing metric collection"))).toBe(false);
     });
