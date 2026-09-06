@@ -495,15 +495,23 @@ const operationDefs = {
     section: "analytics",
     startHere: "can the old videos say what was said in them",
     summary: "Read YouTube's caption tracks for published videos that have no script, and store what they say.",
-    note: "Without --apply it only lists the tracks each video has, which is the answer to whether this is possible at all: YouTube owns the captions it generated itself and refuses to hand them to the API, so a channel with no uploaded captions gets nothing. What is stored is marked as heard rather than written, and a script from its author is never overwritten.",
+    note: "Without --apply it only lists the tracks each video has. What is stored is marked as heard rather than written, and a script from its author is never overwritten — `refresh` re-reads only the texts a machine produced.",
     schema: z.object({
       apply: applyOption,
       limit: z.coerce.number().int().min(1).max(200).default(10).describe("how many videos to try in one run"),
+      refresh: z
+        .boolean()
+        .default(false)
+        .describe("re-read videos whose text a machine produced; a script its author wrote is never touched"),
     }),
     mutates: true,
     agent: false,
     handler: (context, input) =>
-      backfillYouTubeCaptions(context.db(), context.config(), context.fetchImpl, { apply: input.apply, limit: input.limit }),
+      backfillYouTubeCaptions(context.db(), context.config(), context.fetchImpl, {
+        apply: input.apply,
+        limit: input.limit,
+        refresh: input.refresh,
+      }),
   }),
   "video-script": operation({
     section: "analytics",
