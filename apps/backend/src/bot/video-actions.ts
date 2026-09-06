@@ -60,6 +60,7 @@ export function defineVideoActionHandlers(define: typeof action): Record<string,
     cancel_dialog: define(handleCancelDialog, { entity: "session", sessionRevision: true, args: [] }),
     length_ok: define(handleLengthConfirm, { entity: "session", sessionRevision: true, args: [] }),
     game_skip: define(handleGameSkip, { entity: "session", sessionRevision: true, args: [] }),
+    script_skip: define(handleScriptSkip, { entity: "session", sessionRevision: true, args: [] }),
     meta_back: define(handleMetaBack, { entity: "session", sessionRevision: true, args: [] }),
     schedule: define(handleScheduleStart, { entity: "draft", freshCard: true, args: [] }),
     common: define(handleScheduleMode, { entity: "draft", freshCard: true, sessionRevision: true, args: [] }),
@@ -178,6 +179,24 @@ async function handleGameSkip({ backendDb, config, actorId, locale }: VideoActio
     "err.video-reopen-create",
   );
   return [{ type: "screen", text: t(locale, "video.game-skipped") }, ...videoStepEffects(backendDb, config, actorId, next)];
+}
+
+/** Moves past the script without one. Nothing is stored: a video with no
+ * script is the ordinary case, not an empty script. */
+async function handleScriptSkip({ backendDb, config, actorId, locale }: VideoActionArgs): Promise<VideoActionResult> {
+  const session = getVideoState(backendDb, actorId);
+  requireFlowStep(session?.step, ["script"], "err.video-reopen-create");
+  if (!session?.draftId) throw new StudioError("err.video-reopen-create");
+  const next = await advancePublicationFlow(
+    backendDb,
+    actorId,
+    VIDEO_FLOW,
+    session,
+    "",
+    { ...session.data, selectedTargets: session.selected },
+    "err.video-reopen-create",
+  );
+  return [{ type: "screen", text: t(locale, "video.script-skipped") }, ...videoStepEffects(backendDb, config, actorId, next)];
 }
 
 async function handleMetaBack({ backendDb, config, actorId }: VideoActionArgs): Promise<VideoActionResult> {

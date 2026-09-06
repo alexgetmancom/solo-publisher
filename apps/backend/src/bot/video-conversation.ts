@@ -232,7 +232,19 @@ async function acceptVideoScript({
   const script = (await attachedText(ctx, config)) ?? text;
   if (!script.trim()) throw new StudioError("video.await-text");
   services.videos.setScript(actorId, session.draftId, script);
-  return videoCardEffects(backendDb, config, actorId, session.draftId, services);
+  // Asked from the card, this is one field and the card is the answer. Asked
+  // by the wizard, it is the step after the upload and the wizard goes on.
+  if (session.data.is_single_edit) return videoCardEffects(backendDb, config, actorId, session.draftId, services);
+  const next = await advancePublicationFlow(
+    backendDb,
+    actorId,
+    VIDEO_FLOW,
+    session,
+    script,
+    { ...session.data, selectedTargets: session.selected },
+    "err.video-restart",
+  );
+  return videoStepEffects(backendDb, config, actorId, next);
 }
 
 /** The text of an attached document, when the answer arrived as a file.

@@ -108,7 +108,17 @@ export function videoStepEffects(
       }),
     );
   }
+  if (step === "script") return scriptPromptEffects(locale, session);
   throw new StudioError("err.video-restart");
+}
+
+/** The one question of the wizard that is allowed to go unanswered: a video
+ * can be published without its script, and most of the archive was. */
+function scriptPromptEffects(locale: StudioLocale, session: VideoConversationState): PublicationEffect[] {
+  const keyboard = new InlineKeyboard();
+  keyboard.text(t(locale, "video.skip"), publicationCallback("video", "script_skip", [], session.revision));
+  appendCancelButton(keyboard, locale, publicationCallback("video", "cancel_dialog"), session.revision);
+  return [{ type: "screen", text: t(locale, "video.prompt-script"), options: { reply_markup: keyboard } }];
 }
 
 /** What an unusable value is answered with: the same question, carrying the

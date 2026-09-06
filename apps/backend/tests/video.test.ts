@@ -658,7 +658,11 @@ describe("video publication queue", () => {
 
     const effects = await startVideoDraft(backendDb, config, 42, session, assetId);
 
-    expect(effects[0]).toMatchObject({ text: expect.stringContaining("Instagram Reels") });
+    // The upload is followed by the one question every video is asked.
+    expect(effects[0]).toMatchObject({ text: expect.stringContaining(t("en", "video.prompt-script")) });
+    expect(getVideoState(backendDb, 42)?.step).toBe("script");
+    const asked = await handleVideoConversationMessage(videoContext({ text: "Один укус, и всё." }).context, backendDb, config);
+    expect((asked.effects[0] as { text: string }).text).toContain("Instagram Reels");
     expect(getVideoState(backendDb, 42)?.step).toBe("instagram_caption");
     expect(
       backendDb.db
@@ -683,6 +687,7 @@ describe("video publication queue", () => {
       data: { videoLocale: "ru" },
     });
     await startVideoDraft(backendDb, config, 42, session, assetId);
+    await handleVideoConversationMessage(videoContext({ text: "The opening line." }).context, backendDb, config);
     await handleVideoConversationMessage(videoContext({ text: "A usable title" }).context, backendDb, config);
     expect(getVideoState(backendDb, 42)?.step).toBe("youtube_description");
 

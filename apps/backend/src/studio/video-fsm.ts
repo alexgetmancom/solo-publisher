@@ -66,18 +66,27 @@ const VIDEO_STEPS = defineVideoSteps({
   asset: {
     name: "asset" as const,
     input: "media",
-    next: (data) => firstVideoMetadataStep(data.selectedTargets ?? []),
+    next: () => "script" as const,
     accept: (input, data) => ({ ...data, assetId: input }),
   },
   // Renaming a finished draft, and nothing else: the wizard takes every
   // connected platform and goes straight from the upload to its metadata, so
   // this step is only ever entered from "✏️ Edit" and nothing follows it.
   label: { name: "label" as const, input: "text", next: () => null, accept: (input, data) => ({ ...data, label: input }) },
-  // Attached to a finished draft, like the rename above and unlike the wizard:
-  // a script is written before the video is filmed, and asking for it inside
-  // the publishing chain would put a step nobody can answer between the file
-  // and the schedule.
-  script: { name: "script" as const, input: "text", next: () => null, accept: (input, data) => ({ ...data, script: input }) },
+  // Asked once, right after the upload, and skippable in one tap.
+  //
+  // It lived in the edit menu on the reasoning that a script is written before
+  // filming and might not be at hand while publishing. For this Studio that is
+  // wrong twice over: the script is written in a file beside the video, so it
+  // is at hand exactly here -- and a field reachable only from an edit menu is
+  // a field nobody fills. It arrived on one video out of three hundred that
+  // way. It stays in the edit menu too, for writing one in afterwards.
+  script: {
+    name: "script" as const,
+    input: "text",
+    next: (data) => firstVideoMetadataStep(data.selectedTargets ?? []),
+    accept: (input, data) => ({ ...data, script: input }),
+  },
   schedule_choice: {
     name: "schedule_choice" as const,
     next: (data) => (data.scheduleMode === "common" ? "schedule_common" : "schedule_target"),

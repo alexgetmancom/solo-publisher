@@ -7,12 +7,15 @@ import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
 
 describe("video script", () => {
-  it("is a step that ends on the card, like the rename and unlike the wizard", () => {
+  it("is asked right after the upload, and the wizard goes on from it", () => {
     const step = VIDEO_FLOW.steps.script;
     expect(step?.input).toBe("text");
-    // Nothing follows it: a script is attached to a finished draft, never
-    // asked for between the upload and the schedule.
-    expect(step?.next({})).toBeNull();
+    // The upload leads into it, and it leads into the metadata: a field
+    // reachable only from an edit menu was filled on one video in three
+    // hundred.
+    expect(VIDEO_FLOW.steps.asset?.next({})).toBe("script");
+    expect(step?.next({ selectedTargets: ["youtube_shorts"] })).toBe("youtube_title");
+    expect(step?.next({ selectedTargets: ["instagram_reels"] })).toBe("instagram_caption");
   });
 
   it("stores a script for a video that has already been published", async () => {
