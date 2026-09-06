@@ -508,11 +508,15 @@ const operationDefs = {
   "video-script": operation({
     section: "analytics",
     summary: "Store the script a video was written from, from a file on this host or from text.",
-    note: "The bot is where Maru attaches one at publishing time; this is the same store, for scripts that already exist somewhere else. The opening lines are the hook, which is what `video-report` groups by.",
+    note: "The bot is where Maru attaches one at publishing time; this is the same store, for scripts that already exist somewhere else. Say which it is with `source`: a transcript is what was heard, a script is what was planned, and only one of them is evidence about the words that were chosen. The opening lines are the hook, which is what `video-report` groups by.",
     schema: z.object({
       ref: refOption,
       file: example(z.string().optional(), "PATH").describe("a .txt or .md file on this host"),
       text: z.string().optional().describe("the script itself, when it is not in a file"),
+      source: z
+        .enum(["operator", "transcript"])
+        .default("operator")
+        .describe("what this text is: what was written to be said, or what a machine heard afterwards"),
     }),
     mutates: true,
     agent: false,
@@ -521,7 +525,7 @@ const operationDefs = {
       if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
       const script = input.file ? await Bun.file(input.file).text() : (input.text ?? "");
       if (!script.trim()) throw new Error("Pass --file with a path on this host, or --text with the script itself.");
-      updateVideoScript(context.db(), parsed.id, script);
+      updateVideoScript(context.db(), parsed.id, script, input.source);
       return { ref: `video:${parsed.id}`, characters: script.trim().length, lines: script.trim().split("\n").length };
     },
   }),
