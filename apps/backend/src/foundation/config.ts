@@ -234,6 +234,10 @@ export type EnvConfig = z.infer<typeof envSchema> & {
    * uploads, and the video files delivery reads. One directory, one name. */
   STUDIO_MEDIA_DIR: string;
   MEDIA_CACHE_DIR: string;
+  /** The opening frame of every published video, kept full size. The video it
+   * came from is deleted by retention and the platform stops serving the
+   * published copy, so this is the only copy that outlives the week. */
+  VIDEO_FRAME_DIR: string;
   STORY_CARD_DIR: string;
   SITE_PUBLIC_DIR: string;
   /** Temporary public staging for platforms that fetch media by URL. */
@@ -326,6 +330,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv = process.env): EnvConfig {
     PIPELINE_DB: path.join(dataDir, "pipeline.db"),
     STUDIO_MEDIA_DIR: path.join(dataDir, "video-media"),
     MEDIA_CACHE_DIR: path.join(dataDir, "media-cache"),
+    VIDEO_FRAME_DIR: path.join(dataDir, "video-frames"),
     STORY_CARD_DIR: path.join(dataDir, "story-cards"),
     SITE_PUBLIC_DIR: path.join(dataDir, "site"),
     REMOTE_MEDIA_PATH: path.join(dataDir, "media"),

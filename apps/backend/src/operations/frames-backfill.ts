@@ -1,8 +1,7 @@
 import { unlink } from "node:fs/promises";
 import path from "node:path";
-import { FRAME_SECONDS, frameFeatures } from "../analytics/collection/video-frames.js";
+import { recordOpeningFrames } from "../analytics/collection/video-frames.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import { videoFrameFeatures } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { zernioRequest } from "../foundation/external/zernio.js";
 
@@ -101,21 +100,8 @@ export async function backfillVideoFrames(
         }
         temporary = candidate.localPath ? null : source;
         const from = candidate.localPath ? "local_file" : "instagram_media";
-        const capturedAt = new Date().toISOString();
-        const shapes: string[] = [];
-        for (const atSeconds of FRAME_SECONDS) {
-          const features = await frameFeatures(source, atSeconds);
-          shapes.push(features.shape);
-          unsafeDb(backendDb)
-            .db.insert(videoFrameFeatures)
-            .values({ videoDraftId: candidate.videoDraftId, atSeconds, featuresJson: { ...features }, source: from, capturedAt })
-            .onConflictDoUpdate({
-              target: [videoFrameFeatures.videoDraftId, videoFrameFeatures.atSeconds],
-              set: { featuresJson: { ...features }, capturedAt },
-            })
-            .run();
-        }
-        measured.push({ ref, label: candidate.label, from, shapes });
+        await recordOpeningFrames(backendDb, config, candidate.videoDraftId, source, from);
+        measured.push({ ref, label: candidate.label, from });
       } catch (error) {
         failed.push({ ref, reason: (error instanceof Error ? error.message : String(error)).slice(0, 200) });
       } finally {

@@ -1,6 +1,7 @@
 import type { BackendDb } from "../../db/client.js";
 import { unsafeDb } from "../../db/client.js";
 import { heatmapCoverage } from "../audience-heatmap.js";
+import { OPENING_SECONDS } from "../collection/video-frames.js";
 import { metricFailureCause } from "../collection/collectors/errors.js";
 import { metricNumber } from "../snapshots/creator-store.js";
 
@@ -426,7 +427,8 @@ function byTag(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): Reco
 function frameShapes(backendDb: BackendDb): Map<number, string> {
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
-      "SELECT video_draft_id AS videoDraftId, json_extract(features_json, '$.shape') AS shape FROM video_frame_features WHERE at_seconds = 0",
+      `SELECT video_draft_id AS videoDraftId, json_extract(features_json, '$.shape') AS shape
+         FROM video_frame_features WHERE at_seconds = ${OPENING_SECONDS}`,
     )
     .all() as Array<{ videoDraftId: number; shape: string | null }>;
   return new Map(rows.filter((row) => row.shape).map((row) => [row.videoDraftId, String(row.shape)]));

@@ -179,6 +179,8 @@ export const videoFrameFeatures = sqliteTable(
       .references(() => videoDrafts.id, { onDelete: "cascade" }),
     atSeconds: integer().notNull(),
     featuresJson: json<JsonObject>().notNull(),
+    /** The frame itself, kept at the size it was published at. */
+    imagePath: text(),
     source: text().notNull(),
     capturedAt: text().notNull(),
   },

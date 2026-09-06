@@ -1,8 +1,11 @@
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 import { eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { videoFrameFeatures } from "../../db/schema.js";
+import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
-import { runFfmpegCapture } from "../../foundation/runtime/ffmpeg.js";
+import { runFfmpeg, runFfmpegCapture } from "../../foundation/runtime/ffmpeg.js";
 
 /** The frame is measured, not viewed, so it is decoded small: 64 by 114 keeps
  * a vertical video's proportions and is enough for every figure below while
@@ -10,9 +13,14 @@ import { runFfmpegCapture } from "../../foundation/runtime/ffmpeg.js";
 const WIDTH = 64;
 const HEIGHT = 114;
 
-/** The moments worth looking at. Zero is what a viewer sees before deciding,
- * one and three are where the retention figures already are. */
-export const FRAME_SECONDS = [0, 1, 3] as const;
+/** The moment the opening is judged at.
+ *
+ * One moment rather than several: two seconds is past whatever intro animation
+ * the video starts with -- a fade or a title card at zero seconds describes the
+ * animation, not the video -- and before the first cut, so the frame still
+ * shows what the viewer was deciding about. An axis built from several moments
+ * would be several different questions sharing one name. */
+export const OPENING_SECONDS = 2;
 
 export type FrameFeatures = {
   brightness: number;
@@ -152,31 +160,52 @@ function round(value: number): number {
  * A failed measurement is not a failed publication, so nothing here throws:
  * the video goes out, and the opening is simply unknown.
  */
-export async function recordOpeningFrames(backendDb: BackendDb, videoDraftId: number, filePath: string): Promise<void> {
+export async function recordOpeningFrames(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  videoDraftId: number,
+  filePath: string,
+  source = "local_file",
+): Promise<void> {
   const already = unsafeDb(backendDb)
     .db.select({ atSeconds: videoFrameFeatures.atSeconds })
     .from(videoFrameFeatures)
     .where(eq(videoFrameFeatures.videoDraftId, videoDraftId))
     .all();
-  if (already.length >= FRAME_SECONDS.length) return;
-  const capturedAt = new Date().toISOString();
-  for (const atSeconds of FRAME_SECONDS)
-    try {
-      const features = await frameFeatures(filePath, atSeconds);
-      unsafeDb(backendDb)
-        .db.insert(videoFrameFeatures)
-        .values({ videoDraftId, atSeconds, featuresJson: { ...features }, source: "local_file", capturedAt })
-        .onConflictDoUpdate({
-          target: [videoFrameFeatures.videoDraftId, videoFrameFeatures.atSeconds],
-          set: { featuresJson: { ...features }, capturedAt },
-        })
-        .run();
-    } catch (error) {
-      log("warn", "opening frame could not be measured", {
+  if (already.length) return;
+  try {
+    const features = await frameFeatures(filePath, OPENING_SECONDS);
+    const imagePath = await keepFrame(config, filePath, videoDraftId);
+    unsafeDb(backendDb)
+      .db.insert(videoFrameFeatures)
+      .values({
         videoDraftId,
-        atSeconds,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return;
-    }
+        atSeconds: OPENING_SECONDS,
+        featuresJson: { ...features },
+        imagePath,
+        source,
+        capturedAt: new Date().toISOString(),
+      })
+      .onConflictDoNothing()
+      .run();
+  } catch (error) {
+    log("warn", "opening frame could not be measured", {
+      videoDraftId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/** Writes the frame out at the size it was published at.
+ *
+ * The arithmetic above answers what is in the frame today. The image answers
+ * questions nobody has asked yet, and it is the half that cannot be recovered:
+ * the source file is deleted by retention and the platform stops serving the
+ * published copy about a week later, while the numbers can be recomputed from
+ * this file forever. */
+async function keepFrame(config: BackendConfig, filePath: string, videoDraftId: number): Promise<string> {
+  await mkdir(config.VIDEO_FRAME_DIR, { recursive: true });
+  const target = path.join(config.VIDEO_FRAME_DIR, `video-${videoDraftId}-${OPENING_SECONDS}s.jpg`);
+  await runFfmpeg(["-ss", String(OPENING_SECONDS), "-i", filePath, "-frames:v", "1", "-q:v", "2", "-y", target]);
+  return target;
 }

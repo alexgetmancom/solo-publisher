@@ -169,6 +169,13 @@
       "when": 1789900000000,
       "tag": "0023_drop_cover_frame_readings",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1790000000000,
+      "tag": "0024_video_frame_image",
+      "breakpoints": true
     }
   ]
 }
