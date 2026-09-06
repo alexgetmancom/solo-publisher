@@ -58,8 +58,13 @@ is data. Convert Russian comments in lines already being edited; do not open fil
 # Workflow
 
 Work on `main`. Typecheck, tests, and a production build before every push. CI/CD deploys the
-primary production revision from `main`; secondary container revisions are deployed by hand and must
-not be deployed unless asked.
+primary production revision (alex) from `main`.
+
+Work that belongs to Maru carries a `Deploy-Maru: yes` trailer in the commit body. CI then promotes
+the release alex proved healthy to Maru in the same run — commit, push, and say it will land there;
+never stop to ask for a button press. Without the trailer nothing reaches Maru automatically, and
+the promotion button on alex's deployment notification stays the manual route. A trailer on a push
+that deploys nothing fails CI rather than passing green with the change unshipped.
 
 # Persistence boundaries
 

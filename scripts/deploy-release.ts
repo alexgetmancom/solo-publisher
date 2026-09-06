@@ -27,6 +27,7 @@ export type DeployInputs = {
   deployAgentChanged: boolean;
   caddyConfigChanged: boolean;
   maruDeployEnabled: boolean;
+  promoteMaru: boolean;
   publicReadyUrl: string;
   controlPath: string;
 };
@@ -36,6 +37,7 @@ const MARU_RUNTIME = "/home/deploy/maru";
 const CADDY_RUNTIME = "/home/deploy/caddy";
 const STATE_DIR = "/var/lib/alexgetman-deploy";
 const AGENT = "http://127.0.0.1:9899";
+const MARU_READY_URL = "http://127.0.0.1:8789/readyz";
 const IMAGE_PATTERN = "^ghcr.io/alexgetmancom/solo-publisher@sha256:[0-9a-fA-F]{64}$";
 
 /** Configuration travels with every deployment, never only when a diff named
@@ -52,6 +54,9 @@ export async function deployRelease(inputs: DeployInputs, run: Runner, log: (mes
     ["IMAGE", inputs.image],
   ] as const)
     if (!value) throw new Error(`${name} is required`);
+  // Promoting into a runtime this run never configured would activate an image
+  // against whatever compose file and env the host happens to still carry.
+  if (inputs.promoteMaru && !inputs.maruDeployEnabled) throw new Error("PROMOTE_MARU requires MARU_DEPLOY_ENABLED");
 
   const remote = `${inputs.user}@${inputs.host}`;
   const sshOptions = [
@@ -162,28 +167,44 @@ export async function deployRelease(inputs: DeployInputs, run: Runner, log: (mes
       argv: ["curl", "--fail", "--silent", "--show-error", "--retry", "3", "--retry-all-errors", inputs.publicReadyUrl],
     }),
     run({
-      argv: ["ssh", ...sshOptions, remote, `curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8789/readyz`],
+      argv: ["ssh", ...sshOptions, remote, `curl --fail --silent --show-error --retry 3 --retry-all-errors ${MARU_READY_URL}`],
     }),
   ]);
   if (readiness.some((result) => result.code !== 0)) throw new Error("a Studio did not become ready after activation");
   phase("readiness");
 
+  // Promotion, not a second deployment: the agent activates on Maru the exact
+  // image alex has just proved healthy, through the same endpoint the
+  // notification button calls. Only after alex is ready, so a broken release
+  // never reaches the second audience. The agent waits on Maru's own /readyz
+  // and rolls back before it answers, so a failed promotion fails this step.
+  if (inputs.promoteMaru) {
+    await ssh(
+      `curl --fail-with-body --silent --show-error --max-time 180 -H 'Authorization: Bearer ${inputs.agentToken}' ` +
+        `-H 'Content-Type: application/json' --data '${JSON.stringify({ release: inputs.release })}' ${AGENT}/v1/promote/maru`,
+    );
+    phase("maru-promotion");
+  }
+
   // Reconcile deploy-image.env with what is now actually running, so a manual
-  // `docker compose up` starts the release that was just verified. It reads the
-  // default target's own state file, which is the one the agent writes, and
-  // requires it to name this run's image rather than merely look like a digest.
-  await ssh(
-    `set -e; image=$(bun -e 'const state=JSON.parse(await Bun.file("${STATE_DIR}/alex.json").text()); process.stdout.write(state.current?.image ?? "")'); ` +
-      `printf '%s\\n' "$image" | grep -Eq '${IMAGE_PATTERN}' || exit 1; ` +
-      `test "$image" = '${inputs.image}'; ` +
-      `if ! grep -Eq "^BACKEND_IMAGE=$image\\$" "${RUNTIME}/deploy-image.env"; then ` +
-      `tmp="${RUNTIME}/deploy-image.env.next"; ` +
-      `{ grep -v '^BACKEND_IMAGE=' "${RUNTIME}/deploy-image.env" || true; printf 'BACKEND_IMAGE=%s\\n' "$image"; } > "$tmp"; ` +
-      `mv "$tmp" "${RUNTIME}/deploy-image.env"; fi`,
-  );
-  // Only the primary revision. The second Studio is promoted by hand from the
-  // agent's notification, so reconciling its image here would assert something
-  // this workflow never performed.
+  // `docker compose up` starts the release that was just verified. It reads each
+  // target's own state file, which is the one the agent writes, and requires it
+  // to name this run's image rather than merely look like a digest. Maru is
+  // reconciled only when this run promoted it; otherwise it is running whatever
+  // an earlier button press left there, and rewriting its env would assert
+  // something this workflow never performed.
+  const reconcile = async (runtime: string, deployment: "alex" | "maru"): Promise<void> =>
+    ssh(
+      `set -e; image=$(bun -e 'const state=JSON.parse(await Bun.file("${STATE_DIR}/${deployment}.json").text()); process.stdout.write(state.current?.image ?? "")'); ` +
+        `printf '%s\\n' "$image" | grep -Eq '${IMAGE_PATTERN}' || exit 1; ` +
+        `test "$image" = '${inputs.image}'; ` +
+        `if ! grep -Eq "^BACKEND_IMAGE=$image\\$" "${runtime}/deploy-image.env"; then ` +
+        `tmp="${runtime}/deploy-image.env.next"; ` +
+        `{ grep -v '^BACKEND_IMAGE=' "${runtime}/deploy-image.env" || true; printf 'BACKEND_IMAGE=%s\\n' "$image"; } > "$tmp"; ` +
+        `mv "$tmp" "${runtime}/deploy-image.env"; fi`,
+    );
+  await reconcile(RUNTIME, "alex");
+  if (inputs.promoteMaru) await reconcile(MARU_RUNTIME, "maru");
   phase("image-reconciliation");
 
   await ssh(`rm -rf '${releaseFiles}'`);
@@ -213,6 +234,7 @@ async function main(): Promise<void> {
       deployAgentChanged: env.DEPLOY_AGENT_CHANGED === "true",
       caddyConfigChanged: env.CADDY_CONFIG_CHANGED === "true",
       maruDeployEnabled: env.MARU_DEPLOY_ENABLED === "true",
+      promoteMaru: env.PROMOTE_MARU === "true",
       publicReadyUrl: env.PUBLIC_READY_URL ?? "https://alexgetman.com/readyz",
       controlPath: `${env.RUNNER_TEMP ?? "/tmp"}/deploy-ssh-%C`,
     },

@@ -11,6 +11,7 @@ const inputs: DeployInputs = {
   deployAgentChanged: false,
   caddyConfigChanged: false,
   maruDeployEnabled: false,
+  promoteMaru: false,
   publicReadyUrl: "https://studio.example/readyz",
   controlPath: "/tmp/deploy-ssh-%C",
 };
@@ -50,6 +51,36 @@ describe("production deployment", () => {
     expect(scripts().some((script) => script.includes("deploy/alex.env' > /home/deploy/alexgetman-runtime/deploy-image.env.next"))).toBe(
       true,
     );
+  });
+
+  it("leaves Maru alone unless the release asked to be promoted", async () => {
+    const { run, scripts } = recorder();
+    await deployRelease({ ...inputs, maruDeployEnabled: true }, run, () => {});
+
+    expect(scripts().some((script) => script.includes("/v1/promote/maru"))).toBe(false);
+    // Maru is running whatever an earlier promotion left there; reconciling its
+    // env against this run's image would claim an activation that never happened.
+    expect(scripts().some((script) => script.includes('Bun.file("/var/lib/alexgetman-deploy/maru.json")'))).toBe(false);
+  });
+
+  it("promotes the image alex proved healthy, and only after it did", async () => {
+    // A `Deploy-Maru:` trailer reaches the second audience through the same
+    // agent endpoint the notification button calls, never through a second
+    // deployment of its own.
+    const { run, scripts } = recorder();
+    await deployRelease({ ...inputs, maruDeployEnabled: true, promoteMaru: true }, run, () => {});
+
+    const promote = scripts().findIndex((script) => script.includes("/v1/promote/maru"));
+    const ready = scripts().findIndex((script) => script.includes(inputs.publicReadyUrl));
+    expect(promote).toBeGreaterThan(ready);
+    expect(scripts()[promote]).toContain('{"release":"abc1234"}');
+    expect(scripts().some((script) => script.includes('Bun.file("/var/lib/alexgetman-deploy/maru.json")'))).toBe(true);
+  });
+
+  it("refuses to promote into a runtime this run never configured", async () => {
+    const { run, scripts } = recorder();
+    await expect(deployRelease({ ...inputs, promoteMaru: true }, run, () => {})).rejects.toThrow("MARU_DEPLOY_ENABLED");
+    expect(scripts()).toEqual([]);
   });
 
   it("installs Maru's own committed environment when Maru is enabled", async () => {

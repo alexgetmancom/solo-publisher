@@ -30,6 +30,7 @@ jobs:
       deploy_agent_changed: ${{ steps.filter.outputs.deploy_agent }}
       caddy_config_changed: ${{ steps.filter.outputs.caddy_config }}
       deployment_required: ${{ steps.filter.outputs.deployment }}
+      maru_promote: ${{ steps.filter.outputs.maru_promote }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -105,7 +106,27 @@ jobs:
             echo "deployment=$deployment"
           } >> "$GITHUB_OUTPUT"
 
-          echo "Changed areas: media=$media dependencies=$dependencies backend_image=$backend_image caddy_config=$caddy_config deployment=$deployment"
+          # A `Deploy-Maru: yes` trailer on any commit in the push promotes the
+          # release to the second Studio in the same run. Read as a trailer, not
+          # as a substring of the message: a subject that merely mentions Maru,
+          # or a quoted trailer inside a body, must not deploy to an audience.
+          maru_promote=false
+          while IFS= read -r sha; do
+            if git log -1 --format=%B "$sha" | git interpret-trailers --parse | grep -qiE '^Deploy-Maru:[[:space:]]*(yes|true)$'; then
+              maru_promote=true
+            fi
+          done < <(git rev-list "$base_sha".."$HEAD_SHA")
+
+          # The trailer asks for a promotion of this run's release. Without a
+          # deployment there is no release to promote, and silently ignoring the
+          # request is how a Maru change sits unshipped while the push is green.
+          if [ "$maru_promote" = "true" ] && [ "$deployment" != "true" ]; then
+            echo "Deploy-Maru was requested but nothing in this push deploys." >&2
+            exit 1
+          fi
+          echo "maru_promote=$maru_promote" >> "$GITHUB_OUTPUT"
+
+          echo "Changed areas: media=$media dependencies=$dependencies backend_image=$backend_image caddy_config=$caddy_config deployment=$deployment maru_promote=$maru_promote"
 
   deployment-status-pending:
     name: Production deployment
@@ -597,6 +618,7 @@ jobs:
           MEDIA_PROCESSOR_IMAGE: ghcr.io/${{ github.repository_owner }}/alexgetman-media-processor@${{ needs.media-processor-image.outputs.image_digest }}
           RELEASE: ${{ github.sha }}
           MARU_DEPLOY_ENABLED: ${{ vars.MARU_DEPLOY_ENABLED }}
+          PROMOTE_MARU: ${{ needs.scope.outputs.maru_promote }}
           DEPLOY_AGENT_CHANGED: ${{ needs.scope.outputs.deploy_agent_changed }}
           CADDY_CONFIG_CHANGED: ${{ needs.scope.outputs.caddy_config_changed }}
         run: |
