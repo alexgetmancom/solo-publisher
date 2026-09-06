@@ -123,7 +123,10 @@ function entries(breakdown: unknown): Array<[string, number]> {
     return breakdown
       .map((item) => {
         const row = item as Record<string, unknown>;
-        const label = row.label ?? row.name ?? row.dimension_value ?? row.key;
+        // The provider names the label `dimension`, which reads like the name
+        // of the breakdown rather than a value inside it; the other spellings
+        // are what its sibling endpoints use.
+        const label = row.dimension ?? row.label ?? row.name ?? row.dimension_value ?? row.key;
         const value = row.value ?? row.count ?? row.total;
         return [String(label ?? ""), Math.round(Number(value ?? 0))] as [string, number];
       })

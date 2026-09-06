@@ -7,9 +7,10 @@ import { withDb } from "./helpers/db.js";
 /** The provider answers one breakdown per call, so the fake does too. */
 const BREAKDOWNS: Record<string, unknown> = {
   age: { "18-24": 210, "25-34": 300, "35-44": 90 },
+  // The live spelling: the label arrives under `dimension`.
   country: [
-    { label: "RU", value: 400 },
-    { label: "KZ", value: 100 },
+    { dimension: "RU", value: 400 },
+    { dimension: "KZ", value: 100 },
   ],
   city: {},
   gender: {},
