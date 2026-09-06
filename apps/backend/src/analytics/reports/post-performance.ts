@@ -82,7 +82,6 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
         describeSlot("no link", standalone.filter((row) => !SHORTENED_LINK.test(row.text))),
         describeSlot("with a hashtag", standalone.filter((row) => HASHTAG.test(row.text))),
       ],
-      lines: [...group(standalone, (row) => linesOf(row.text)).values()].map((slot) => describeSlot(slot.value, slot.rows)),
     },
     // A reply is written under someone, and under whom is the whole choice.
     repliedTo: [...group(replies, (row) => row.text.match(ANSWERS)?.[1]).values()]
@@ -121,7 +120,8 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       "`howItWasWritten` compares a reply with a post of its own. A reply borrows the audience of whatever it answers, so its views say more about that post than about this one.",
       "`openings` covers standalone posts only: the first line of a reply was not written to stop a scroll.",
     "`repliedTo` groups replies by the account they were written under, ordered by the followers they brought. A reply's views belong to the post above it, so read this as which rooms are worth standing in, never as which reply was better written.",
-    "`howItWasBuilt` groups by what a post is made of rather than what it says: how long it is, how many lines, whether it carries a link. A link sends the reader away, and a platform that ranks by time spent sees that.",
+    "`howItWasBuilt` groups by what a post is made of rather than what it says: how long it is and whether it carries a link. A link sends the reader away, and a platform that ranks by time spent sees that.",
+    "How many lines a post was written in is not here, and cannot be: X's own export flattens every post into one line, so the newlines the author typed are gone. `openingLine` falls back to the first sentence for those, which is a proxy and is why the kind on them is a judgement about a sentence rather than a line.",
     "`followsPerPost` is the one figure that says what a kind is for: views are the room a post reached, and this is how many stayed. A kind can lead on one and trail on the other.",
       "An opening's kind is a model's judgement about one line, not a measurement — `post-openings-classify` prints the line beside the label.",
       `A post above ${OUTLIER_MULTIPLE}× the window's median is reported as an outlier rather than as a better post: it reached a room the others were not in, and averaging it back in describes nothing.`,
@@ -139,11 +139,6 @@ function lengthOf(text: string): string {
   if (text.length <= ONE_LINER_CHARS) return `a line (≤${ONE_LINER_CHARS} chars)`;
   if (text.length <= PARAGRAPH_CHARS) return `a paragraph (≤${PARAGRAPH_CHARS} chars)`;
   return `longer than a paragraph`;
-}
-
-function linesOf(text: string): string {
-  const lines = text.split("\n").filter((line) => line.trim()).length;
-  return lines <= 1 ? "one line" : lines <= 3 ? "two or three lines" : "four lines or more";
 }
 
 function describeSlot(value: string, rows: Row[]): Record<string, unknown> {

@@ -104,18 +104,36 @@ export async function classifyPostOpenings(
   };
 }
 
-/** The first line of every standalone post that has words in it.
+/** What a post opens with: its first line where there is one, and its first
+ * sentence where there is not.
+ *
+ * X's own export flattens a post into one line, so for everything that arrived
+ * that way the newline the author typed is gone and cannot be recovered. A
+ * sentence is the closest thing left to the line a reader's eye stops on —
+ * and taking the whole post instead would have judged the post rather than its
+ * opening, which is a different question wearing the same name.
  *
  * Replies are left alone: the line that opens an answer to someone else was
  * not chosen to stop a scroll, and grouping it beside one that was would put
  * two different acts under one name. */
 function storeOpeningLines(backendDb: BackendDb): void {
-  unsafeDb(backendDb).sqlite.exec(
-    `UPDATE x_activity_items
-        SET opening_line = TRIM(
-              CASE WHEN INSTR(text, char(10)) > 0 THEN SUBSTR(text, 1, INSTR(text, char(10)) - 1) ELSE text END)
-      WHERE kind = 'standalone' AND opening_line IS NULL AND TRIM(text) <> ''`,
-  );
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare("SELECT x_post_id AS xPostId, text FROM x_activity_items WHERE kind = 'standalone' AND TRIM(text) <> ''")
+    .all() as Array<{ xPostId: string; text: string }>;
+  const write = unsafeDb(backendDb).sqlite.prepare("UPDATE x_activity_items SET opening_line = ? WHERE x_post_id = ?");
+  for (const row of rows) write.run(opening(row.text), row.xPostId);
+}
+
+/** A shortened link is not words: a post whose first sentence ends in one opens
+ * with whatever came before it. */
+const TRAILING_LINK = /\s*https:\/\/t\.co\/\w+\s*$/u;
+
+function opening(text: string): string {
+  const firstLine = text.split("\n").find((line) => line.trim());
+  const line = (firstLine ?? text).trim();
+  if (firstLine && firstLine.trim() !== text.trim()) return line.replace(TRAILING_LINK, "").trim() || line;
+  const sentence = line.match(/^.{15,}?[.!?](?=\s|$)/u)?.[0];
+  return (sentence ?? line.slice(0, 160)).replace(TRAILING_LINK, "").trim();
 }
 
 function loadCandidates(backendDb: BackendDb, overwrite: boolean): Candidate[] {
