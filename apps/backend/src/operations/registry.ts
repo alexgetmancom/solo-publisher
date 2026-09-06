@@ -2,6 +2,7 @@ import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
+import { studioBrief } from "../analytics/reports/studio-brief.js";
 import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
 import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
 import { platformComparison } from "../analytics/reports/video-platform-compare.js";
@@ -537,6 +538,19 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => audienceHeatmapReport(context.db()),
+  }),
+  brief: operation({
+    section: "analytics",
+    startHere: "tell me everything worth knowing about the channel",
+    summary:
+      "The whole picture in one call: the week, when and what to publish, which words paid, which platform carried further, who the audience is, and what is still missing.",
+    note: "Built for someone who asks once a week. It is a summary of the reports underneath it and names the command behind each section, so a question that starts here can be finished there. Findings on fewer than five videos are left out entirely rather than shown with a warning.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(90).default(7).describe("length of the week-against-week comparison"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => studioBrief(context.db(), { days: input.days, timeZone: context.config().TIMEZONE }),
   }),
   digest: operation({
     section: "analytics",
