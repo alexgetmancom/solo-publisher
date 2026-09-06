@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { ChannelConnection } from "../../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { audienceDemographics } from "../../db/schema.js";
+import { syncStateFor } from "../snapshots/creator-store.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { zernioRequest } from "../../foundation/external/zernio.js";
 import { shortenRequestFailure } from "../../foundation/http.js";
@@ -119,6 +120,10 @@ export function audienceDemographicsReport(backendDb: BackendDb): Record<string,
     )
     .all() as Array<{ platform: string; account: string; metric: string; capturedOn: string }>;
   return {
+    // What the collector last said about each account, including the accounts
+    // it could not read: an empty report with no explanation is the same
+    // silence this whole surface exists to end.
+    collection: syncStateFor(backendDb, "demographics:"),
     captures: captures.map((capture) => {
       const rows = unsafeDb(backendDb)
         .db.select()
