@@ -10,9 +10,10 @@ export const videoDrafts = sqliteTable(
     actorId: integer().notNull(),
     locale: text().notNull().default("ru"),
     label: text().notNull().default(""),
-    studioMediaAssetId: integer()
-      .notNull()
-      .references(() => studioMediaAssets.id),
+    /** The file this Studio published, while it still has it. Null for a video
+     * imported from the channel's own back catalogue: it was published before
+     * this Studio existed and its source was never here. */
+    studioMediaAssetId: integer().references(() => studioMediaAssets.id),
     status: text().notNull().default("draft"),
     scheduledAt: text(),
     retentionUntil: text(),

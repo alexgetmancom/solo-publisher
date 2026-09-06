@@ -74,7 +74,7 @@ export function pruneExpiredVideos(config: BackendConfig, backendDb: BackendDb):
       .returning({ id: videoDrafts.id })
       .get();
     if (!claimed) continue;
-    pruneStudioAssetSource(config, backendDb, row.studioMediaAssetId, now);
+    if (row.studioMediaAssetId !== null) pruneStudioAssetSource(config, backendDb, row.studioMediaAssetId, now);
   }
 }
 

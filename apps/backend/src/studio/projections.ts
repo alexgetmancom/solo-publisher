@@ -90,7 +90,7 @@ export function postDeliveryProjections(
 export function videoDeliveryProjections(backendDb: BackendDb, publicationId: number) {
   const draft = backendDb.studioVideos.get(publicationId);
   if (!draft) throw new Error("Video publication was not found.");
-  const asset = backendDb.studioMediaAssets.get(draft.studioMediaAssetId);
+  const asset = draft.studioMediaAssetId === null ? null : backendDb.studioMediaAssets.get(draft.studioMediaAssetId);
   const media = asset
     ? [{ type: "video", asset_id: asset.id, local_path: asset.localPath, filename: asset.filename, mime_type: asset.mimeType }]
     : [];

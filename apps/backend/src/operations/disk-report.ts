@@ -67,7 +67,8 @@ function studioMediaHoldings(backendDb: BackendDb): Record<string, unknown> {
     })
     .from(videoDrafts)
     .all())
-    videoByAsset.set(draft.studioMediaAssetId, [...(videoByAsset.get(draft.studioMediaAssetId) ?? []), draft]);
+    if (draft.studioMediaAssetId !== null)
+      videoByAsset.set(draft.studioMediaAssetId, [...(videoByAsset.get(draft.studioMediaAssetId) ?? []), draft]);
   for (const asset of assets) {
     if (!fs.existsSync(asset.localPath)) continue;
     const bytes = fileBytes(asset.localPath);

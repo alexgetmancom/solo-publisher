@@ -2,6 +2,7 @@ import type { BackendDb } from "../../db/client.js";
 import { unsafeDb } from "../../db/client.js";
 import { heatmapCoverage } from "../audience-heatmap.js";
 import { OPENING_SECONDS } from "../collection/video-frames.js";
+import { IMPORTED_HISTORY } from "../../operations/youtube-history-import.js";
 import { metricFailureCause } from "../collection/collectors/errors.js";
 import { metricNumber } from "../snapshots/creator-store.js";
 
@@ -31,6 +32,7 @@ type TargetRow = {
   target: string;
   published_at: string | null;
   external_url: string | null;
+  confirmation_source: string | null;
   label: string | null;
   locale: string;
   game: string | null;
@@ -56,14 +58,19 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
   const now = new Date();
   const from = new Date(now.getTime() - options.days * 86_400_000);
   const series = loadSeries(backendDb, from.toISOString());
+  const watchedFromTheStart = series.filter((target) => target.confirmation_source !== IMPORTED_HISTORY);
   const byDraft = new Map<number, TargetSeries[]>();
   for (const target of series) byDraft.set(target.video_draft_id, [...(byDraft.get(target.video_draft_id) ?? []), target]);
   return {
     window: { days: options.days, from: from.toISOString(), to: now.toISOString(), timeZone: options.timeZone },
     coverage: { ...coverage(series, byDraft), scripts: scriptCoverage(backendDb, [...byDraft.keys()]) },
     totals: totals(series),
-    publishHours: publishHours(series, options.timeZone),
-    ageCurve: ageCurve(series),
+    // A video imported from the channel's back catalogue has one reading,
+    // taken years after it went out. Its retention and its opening are as good
+    // as any other video's; its "views at 24 hours" does not exist, and a
+    // lifetime total standing in for one would make both blocks lie.
+    publishHours: publishHours(watchedFromTheStart, options.timeZone),
+    ageCurve: ageCurve(watchedFromTheStart),
     trafficSources: trafficSources(series),
     byTag: byTag(backendDb, byDraft),
     audienceGrowth: audienceGrowth(backendDb, from.toISOString()),
@@ -117,7 +124,7 @@ function loadSeries(backendDb: BackendDb, publishedFrom: string | null, videoDra
   const where = videoDraftId ? "t.video_draft_id = ?" : "t.published_at >= ?";
   const targets = sqlite
     .prepare(
-      `SELECT t.id, t.video_draft_id, t.target, t.published_at, t.external_url, d.label, d.locale, d.game, d.hook,
+      `SELECT t.id, t.video_draft_id, t.target, t.published_at, t.external_url, t.confirmation_source, d.label, d.locale, d.game, d.hook,
               s.frozen_at, s.last_error, s.last_checked_at, s.checkpoint_index
          FROM video_targets t
          JOIN video_drafts d ON d.id = t.video_draft_id
@@ -782,6 +789,7 @@ function atAges(target: TargetSeries): Array<Record<string, unknown>> {
 function readingNotes(): string[] {
   return [
     "Every figure is a reading taken at a moment, not a lifetime total: videos in one window have different ages, so compare `atAges`/`ageCurve` rather than latest values.",
+    "Videos imported from the channel's own back catalogue have no age series — nobody was reading them at one hour old — so `publishHours` and `ageCurve` leave them out. Their retention, opening and text count everywhere else.",
     "`readingAgeHours` is the age the value actually came from; where it is far from the bucket, the bucket is approximate.",
     "shares/saves/reach/follows are Instagram-only; YouTube reports averageWatchTimeMs, completionRate and subscribersGained instead.",
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",

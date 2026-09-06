@@ -341,7 +341,7 @@ type StudioVideoDraftRecord = {
   actorId: number;
   locale: string;
   label: string;
-  studioMediaAssetId: number;
+  studioMediaAssetId: number | null;
   status: string;
   scheduledAt: string | null;
   retentionUntil: string | null;
