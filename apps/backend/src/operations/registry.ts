@@ -495,14 +495,14 @@ const operationDefs = {
     section: "analytics",
     startHere: "can the old videos say what was said in them",
     summary: "Read YouTube's caption tracks for published videos that have no script, and store what they say.",
-    note: "Without --apply it only lists the tracks each video has. What is stored is marked as heard rather than written, and a script from its author is never overwritten — `refresh` re-reads only the texts a machine produced.",
+    note: "Without --apply it only lists the tracks each video has. What is stored is marked as heard rather than written, and a script from its author is never overwritten — `refresh` re-reads only machine text this command did not store, so a run does not pay again for what it already read.",
     schema: z.object({
       apply: applyOption,
       limit: z.coerce.number().int().min(1).max(200).default(10).describe("how many videos to try in one run"),
       refresh: z
         .boolean()
         .default(false)
-        .describe("re-read videos whose text a machine produced; a script its author wrote is never touched"),
+        .describe("re-read videos carrying machine text this command did not store; a script its author wrote is never touched"),
     }),
     mutates: true,
     agent: false,

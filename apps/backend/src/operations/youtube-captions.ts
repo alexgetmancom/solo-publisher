@@ -32,6 +32,7 @@ export async function backfillYouTubeCaptions(
   const tokens = new Map<string, string>();
   const results: Array<Record<string, unknown>> = [];
   let stored = 0;
+  let exhausted = false;
   for (const candidate of candidates) {
     try {
       let token = tokens.get(candidate.locale);
@@ -84,26 +85,33 @@ export async function backfillYouTubeCaptions(
       stored += 1;
       results.push({ ref: `video:${candidate.videoDraftId}`, trackKind: chosen.trackKind, characters: text.length, outcome: "stored" });
     } catch (error) {
-      results.push({
-        ref: `video:${candidate.videoDraftId}`,
-        outcome: shortenRequestFailure(error instanceof Error ? error.message : String(error), 240),
-      });
+      const message = error instanceof Error ? error.message : String(error);
+      results.push({ ref: `video:${candidate.videoDraftId}`, outcome: shortenRequestFailure(message, 240) });
+      // The daily quota is the channel's, not this run's: every further video
+      // would fail the same way and the answer would be a page of one error.
+      if (message.includes("quotaExceeded")) {
+        exhausted = true;
+        break;
+      }
     }
   }
   return {
     applied: input.apply,
     candidates: candidates.length,
     stored,
+    ...(exhausted ? { stoppedAt: "YouTube's daily quota for this channel is spent; the rest waits for it to reset" } : {}),
     results,
     note: "Stored text is marked `youtube_captions`: it is what was heard, not what was written. A video whose script came from its author is never overwritten.",
   };
 }
 
 /** Published YouTube videos whose script is missing, and with `refresh` the
- * ones whose text a machine produced.
+ * ones carrying machine text this command did not put there.
  *
  * A script its author wrote is never a candidate: it is the words that were
- * chosen, and a transcript of what was said is a worse copy of it. */
+ * chosen, and a transcript of what was said is a worse copy of it. Text this
+ * command already stored is not one either — re-reading it costs the same API
+ * quota as a video that has nothing. */
 function loadCandidates(backendDb: BackendDb, refresh: boolean): Candidate[] {
   return (
     unsafeDb(backendDb)
@@ -112,7 +120,7 @@ function loadCandidates(backendDb: BackendDb, refresh: boolean): Candidate[] {
          FROM video_drafts d
          JOIN video_targets t ON t.video_draft_id = d.id AND t.target = 'youtube_shorts' AND t.status = 'published'
         WHERE t.external_id IS NOT NULL
-          AND (d.script IS NULL ${refresh ? "OR d.script_source <> 'operator'" : ""})
+          AND (d.script IS NULL ${refresh ? "OR d.script_source NOT IN ('operator', 'youtube_captions')" : ""})
         ORDER BY d.id DESC`,
       )
       .all() as Candidate[]
