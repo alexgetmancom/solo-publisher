@@ -2,7 +2,9 @@ import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
+import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
 import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
+import { platformComparison } from "../analytics/reports/video-platform-compare.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
@@ -525,6 +527,39 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => audienceHeatmapReport(context.db()),
+  }),
+  digest: operation({
+    section: "analytics",
+    startHere: "what changed since last week",
+    summary: "The week against the week before it, the videos that led it, and anything running far above its age right now.",
+    note: "For someone who did not ask a question. It is a summary, not evidence: a decision belongs to `video-report`, where every figure carries its sample size.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(90).default(7).describe("length of each of the two windows compared"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => videoDigest(context.db(), { days: input.days, timeZone: context.config().TIMEZONE }),
+  }),
+  outliers: operation({
+    section: "analytics",
+    startHere: "is anything taking off right now",
+    summary:
+      "Videos published in the last two days running at least three times the views a typical video of this Studio had at the same age.",
+    note: "Compared like with like: a two-hour-old video is judged against what the median video had at two hours, not against a lifetime total. A signal to act on today, not a conclusion.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => ({ breakingOut: outliers(context.db()) }),
+  }),
+  "platform-compare": operation({
+    section: "analytics",
+    startHere: "which platform carries this kind of video further",
+    summary: "The same video on both platforms: how far the Shorts feed took it against the Reels feed, per video and by genre.",
+    note: "Only videos published to both, so the content, the topic and the hour are held still and the platform is what differs. The median of per-video ratios, never one platform's total against the other's — that would only compare audience sizes.",
+    schema: z.object({ days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days") }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => platformComparison(context.db(), { days: input.days }),
   }),
   keywords: operation({
     section: "analytics",

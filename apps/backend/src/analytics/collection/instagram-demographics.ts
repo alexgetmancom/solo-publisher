@@ -141,7 +141,10 @@ export function audienceDemographicsReport(backendDb: BackendDb): Record<string,
           dimension,
           inDimension.map((row) => ({
             label: row.label,
-            value: row.value,
+            // A percentage arrives scaled to tenths so one decimal survives an
+            // integer column; it is handed back as the percentage it is.
+            value: row.unit === "percent_tenths" ? row.value / 10 : row.value,
+            unit: row.unit,
             share: total ? Math.round((row.value / total) * 1000) / 10 : 0,
           })),
         );
@@ -158,6 +161,7 @@ export function audienceDemographicsReport(backendDb: BackendDb): Record<string,
       "This describes the people who follow the account, not the people who watched a given video — on Reels most views come from accounts that follow nothing.",
       "Instagram computes it over a month and delays it by up to two days, so a change since yesterday is noise, not a trend.",
       "Cities and countries are the top 45 entries per dimension; a long tail is cut off and the shares are shares of what is listed.",
+      "YouTube answers about viewers over the last 90 days, Instagram about followers this month: `metric` says which, and `subscribedStatus` is the follower/non-follower split of watch time that Instagram does not report at all.",
     ],
   };
 }

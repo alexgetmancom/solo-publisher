@@ -8,6 +8,7 @@ import { uniqueAudienceConnections } from "../audience-groups.js";
 import { evaluateAudienceMilestones } from "../audience-milestones.js";
 import { claimSync, markSynced } from "../snapshots/creator-store.js";
 import { DEMOGRAPHICS_INTERVAL_SECONDS, syncInstagramDemographics } from "./instagram-demographics.js";
+import { syncYouTubeDemographics, YOUTUBE_DEMOGRAPHICS_INTERVAL_SECONDS } from "./youtube-demographics.js";
 import { syncCommunityProfiles, syncInstagramProfile, syncXProfile, syncYouTubeProfile, syncZernioChannelProfile } from "./profile-sync.js";
 import { runVideoMetricSchedule } from "./video-metrics.js";
 
@@ -61,6 +62,14 @@ export async function runAnalyticsCycle(config: BackendConfig, backendDb: Backen
       profiles += await step(backendDb, channel.id, "analytics.creator_profile.sync", () =>
         syncInstagramProfile(config, backendDb, fetchImpl, channel, owner),
       );
+    if (channel.platform === "youtube")
+      await step(backendDb, `${channel.id}:demographics`, "analytics.audience_demographics.sync", async () => {
+        const demographics = `demographics:${channel.id}`;
+        if (!claimSync(backendDb, demographics, { intervalSeconds: YOUTUBE_DEMOGRAPHICS_INTERVAL_SECONDS, owner })) return 0;
+        const result = await syncYouTubeDemographics(config, backendDb, fetchImpl, channel);
+        markSynced(backendDb, demographics, result.unavailable ?? null);
+        return result.stored;
+      });
     if (channel.platform === "instagram" && channel.provider === "zernio")
       await step(backendDb, `${channel.id}:demographics`, "analytics.audience_demographics.sync", async () => {
         const demographics = `demographics:${channel.id}`;

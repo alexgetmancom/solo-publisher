@@ -56,12 +56,21 @@ export function creatorVideoMetrics(backendDb: BackendDb, videoDraftId: number, 
   for (const row of rows) {
     const metrics = row.metrics_json ? (JSON.parse(row.metrics_json) as Record<string, unknown>) : {};
     const name = row.target === "youtube_shorts" ? "▶️ YouTube" : "📸 Instagram";
+    // Each platform's own extra line. It used to be written only for
+    // Instagram, so YouTube's watch time and completion were collected for
+    // months and shown nowhere.
+    const seconds = (value: unknown) => (metricNumber(value) / 1000).toFixed(1);
+    const percent = (value: unknown) => metricNumber(value);
     const expanded =
-      row.target === "instagram_reels" && ["reach", "shares", "saves", "follows", "averageWatchTimeMs"].some((key) => metrics[key] != null)
+      row.target === "instagram_reels" && ["reach", "shares", "saves", "averageWatchTimeMs"].some((key) => metrics[key] != null)
         ? locale === "ru"
-          ? `\nохват: ${metricNumber(metrics.reach)} · пересылки: ${metricNumber(metrics.shares)} · сохранения: ${metricNumber(metrics.saves)} · подписки: ${metricNumber(metrics.follows)} · среднее: ${(metricNumber(metrics.averageWatchTimeMs) / 1000).toFixed(1)} с`
-          : `\nreach: ${metricNumber(metrics.reach)} · shares: ${metricNumber(metrics.shares)} · saves: ${metricNumber(metrics.saves)} · follows: ${metricNumber(metrics.follows)} · avg watch: ${(metricNumber(metrics.averageWatchTimeMs) / 1000).toFixed(1)} s`
-        : "";
+          ? `\nохват: ${metricNumber(metrics.reach)} · пересылки: ${metricNumber(metrics.shares)} · сохранения: ${metricNumber(metrics.saves)} · среднее: ${seconds(metrics.averageWatchTimeMs)} с${metrics.skipRate == null ? "" : ` · ушли за 3 с: ${percent(metrics.skipRate)}%`}`
+          : `\nreach: ${metricNumber(metrics.reach)} · shares: ${metricNumber(metrics.shares)} · saves: ${metricNumber(metrics.saves)} · avg watch: ${seconds(metrics.averageWatchTimeMs)} s${metrics.skipRate == null ? "" : ` · skipped in 3s: ${percent(metrics.skipRate)}%`}`
+        : row.target === "youtube_shorts" && metrics.averageWatchTimeMs != null
+          ? locale === "ru"
+            ? `\nсреднее: ${seconds(metrics.averageWatchTimeMs)} с · досмотр: ${percent(metrics.completionRate)}% · подписки: ${metricNumber(metrics.subscribersGained)}${metrics.retentionAt3s == null ? "" : ` · удержание 3 с: ${percent(metrics.retentionAt3s)}%`}`
+            : `\navg watch: ${seconds(metrics.averageWatchTimeMs)} s · watched: ${percent(metrics.completionRate)}% · subscribers: ${metricNumber(metrics.subscribersGained)}${metrics.retentionAt3s == null ? "" : ` · retention at 3s: ${percent(metrics.retentionAt3s)}%`}`
+          : "";
     lines.push(
       `\n${name}: ${metricNumber(metrics.views)} ${t(locale, "report.views")} · ${metricNumber(metrics.likes)} ${t(locale, "report.likes")} · ${metricNumber(metrics.comments)} ${t(locale, "report.comments")}${expanded}${row.sampled_at ? `\n${t(locale, "report.updated")}: ${new Date(row.sampled_at).toLocaleString(locale === "ru" ? "ru-RU" : "en-GB", { timeZone })}` : `\n${t(locale, "report.no-metrics")}`}`,
     );

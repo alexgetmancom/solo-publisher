@@ -103,7 +103,7 @@ describe("creatorVideoMetrics", () => {
     });
   });
 
-  it("expands the Reels-only fields and converts average watch time to seconds", () => {
+  it("expands each platform's own fields and converts average watch time to seconds", () => {
     return withDb((backendDb) => {
       const { draftId, targetId } = insertPublishedVideo(backendDb, { label: "Reel", target: "instagram_reels", publishedAt: sampledAt });
       snapshot(backendDb, targetId, "instagram_reels", {
@@ -113,13 +113,33 @@ describe("creatorVideoMetrics", () => {
         reach: 4_200,
         shares: 30,
         saves: 12,
-        follows: 3,
         averageWatchTimeMs: 8_400,
+        skipRate: 41.5,
       });
 
       const text = creatorVideoMetrics(backendDb, draftId);
       expect(text).toContain("📸 Instagram: 5000 views");
-      expect(text).toContain("reach: 4200 · shares: 30 · saves: 12 · follows: 3 · avg watch: 8.4 s");
+      // `follows` is not shown: Instagram answers null for it on every Reel, so
+      // the line said "follows: 0" forever and meant nothing.
+      expect(text).toContain("reach: 4200 · shares: 30 · saves: 12 · avg watch: 8.4 s · skipped in 3s: 42%");
+    });
+  });
+
+  it("shows what YouTube collects, which used to be gathered and never drawn", () => {
+    return withDb((backendDb) => {
+      const { draftId, targetId } = insertPublishedVideo(backendDb, { label: "Short", target: "youtube_shorts", publishedAt: sampledAt });
+      snapshot(backendDb, targetId, "youtube_shorts", {
+        views: 7_000,
+        likes: 300,
+        comments: 9,
+        averageWatchTimeMs: 19_000,
+        completionRate: 63.4,
+        subscribersGained: 4,
+        retentionAt3s: 110.7,
+      });
+
+      const text = creatorVideoMetrics(backendDb, draftId);
+      expect(text).toContain("avg watch: 19.0 s · watched: 63% · subscribers: 4 · retention at 3s: 111%");
     });
   });
 

@@ -71,6 +71,14 @@ export async function enrichYouTubeDeepAnalytics(
     deepAnalyticsBucketHours: bucket,
     deepAnalyticsAt: now.toISOString(),
     trafficSources: sources,
+    // The three seconds a Short is won in, and the whole curve behind them.
+    // Reading only the three points threw away the shape: where a video loses
+    // people in the middle is a different lesson from how it opens, and the
+    // curve is already in the answer that was paid for.
+    retentionCurve: curve.map((point) => ({
+      ratio: Math.round(point.ratio * 1000) / 1000,
+      watchRatio: Math.round(point.watchRatio * 1000) / 10,
+    })),
     ...retentionAtSeconds(curve, target.videoDurationMs, RETENTION_SECONDS),
   };
   mergeVideoSnapshot(backendDb, target.videoTargetId, "youtube_shorts", target.checkpointIndex, enrichment);

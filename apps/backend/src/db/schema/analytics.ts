@@ -224,6 +224,10 @@ export const audienceDemographics = sqliteTable(
     dimension: text().notNull(),
     label: text().notNull(),
     value: integer().notNull(),
+    /** What the value counts. Instagram answers in followers, YouTube answers
+     * in tenths of a percent of viewers -- the same shape holding two units,
+     * which is only safe while each row says which one it is. */
+    unit: text().notNull().default("count"),
     timeframe: text().notNull(),
     capturedOn: text().notNull(),
     capturedAt: text().notNull(),

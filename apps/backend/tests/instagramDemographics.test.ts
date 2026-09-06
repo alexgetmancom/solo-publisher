@@ -38,9 +38,9 @@ describe("instagram demographics", () => {
       expect(await syncInstagramDemographics(config, backendDb, fetchImpl, connection)).toEqual({ stored: 5 });
 
       const capture = (audienceDemographicsReport(backendDb).captures as Array<Record<string, unknown>>)[0];
-      const dimensions = capture?.dimensions as Record<string, Array<{ label: string; value: number; share: number }>>;
-      expect(dimensions.age?.[0]).toEqual({ label: "25-34", value: 300, share: 50 });
-      expect(dimensions.country?.[0]).toEqual({ label: "RU", value: 400, share: 80 });
+      const dimensions = capture?.dimensions as Record<string, Array<{ label: string; value: number; unit: string; share: number }>>;
+      expect(dimensions.age?.[0]).toEqual({ label: "25-34", value: 300, unit: "count", share: 50 });
+      expect(dimensions.country?.[0]).toEqual({ label: "RU", value: 400, unit: "count", share: 80 });
     });
   });
 
