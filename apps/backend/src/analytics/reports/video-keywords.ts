@@ -11,7 +11,7 @@ const TOP_KEYWORDS = 40;
 
 type Surface = "youtube_tags" | "instagram_hashtags";
 
-type Row = { videoDraftId: number; target: string; metadata: string; views: number; publishedAt: string | null };
+type Row = { videoDraftId: number; target: string; metadata: string; metrics: string | null; views: number; publishedAt: string | null };
 
 type Tagged = { videoDraftId: number; surface: Surface; keyword: string; views: number };
 
@@ -31,6 +31,7 @@ export function videoKeywordReport(backendDb: BackendDb, options: { days: number
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
       `SELECT t.video_draft_id AS videoDraftId, t.target AS target, t.metadata_json AS metadata, t.published_at AS publishedAt,
+              s.metrics_json AS metrics,
               CAST(COALESCE(json_extract(s.metrics_json, '$.views'), 0) AS INTEGER) AS views
          FROM video_targets t
          LEFT JOIN video_metric_snapshots s ON s.id = (SELECT MAX(id) FROM video_metric_snapshots WHERE video_target_id = t.id)
@@ -60,6 +61,7 @@ export function videoKeywordReport(backendDb: BackendDb, options: { days: number
       ]),
     ),
     shared: shared(tagged),
+    searchedFor: searchedFor(rows),
     reading: [
       "`lift` is the keyword's median views against the platform's own median for the window: 1.0 is average, 2.0 is twice the median video.",
       "A keyword riding on every video (the account's standard set) has a lift near 1.0 by construction and says nothing — read the ones that are used on some videos and not others.",
@@ -67,6 +69,30 @@ export function videoKeywordReport(backendDb: BackendDb, options: { days: number
       "YouTube tags are metadata nobody sees; Instagram hashtags are text in the caption. They reach different systems and are not comparable to each other.",
     ],
   };
+}
+
+/** What people typed to reach these videos, summed over the window.
+ *
+ * This is the only surface here that is not a word we chose: it is what the
+ * audience wrote. The feed carries most of the views and has no such
+ * breakdown, so this describes the search slice only -- small, and the only
+ * place the audience's own vocabulary is visible. */
+function searchedFor(rows: Row[]): Array<Record<string, unknown>> {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    if (row.target !== "youtube_shorts") continue;
+    let terms: Record<string, unknown> = {};
+    try {
+      terms = ((JSON.parse(row.metrics || "{}") as Record<string, unknown>).searchTerms ?? {}) as Record<string, unknown>;
+    } catch {
+      terms = {};
+    }
+    for (const [term, views] of Object.entries(terms)) totals.set(term, (totals.get(term) ?? 0) + metricNumber(views));
+  }
+  return [...totals.entries()]
+    .sort(([, left], [, right]) => right - left)
+    .slice(0, TOP_KEYWORDS)
+    .map(([term, views]) => ({ term, views }));
 }
 
 function summarise(entries: Tagged[], allViews: number[], limit: number): Record<string, unknown> {

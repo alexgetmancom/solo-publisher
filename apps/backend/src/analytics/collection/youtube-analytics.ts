@@ -41,6 +41,7 @@ export async function queryYouTubeAnalytics(
     dimensions?: string;
     filters?: string;
     maxResults?: number;
+    sort?: string;
   },
 ): Promise<YouTubeAnalyticsReport> {
   const url = new URL("https://youtubeanalytics.googleapis.com/v2/reports");
@@ -51,6 +52,7 @@ export async function queryYouTubeAnalytics(
   if (input.dimensions) url.searchParams.set("dimensions", input.dimensions);
   if (input.filters) url.searchParams.set("filters", input.filters);
   if (input.maxResults != null) url.searchParams.set("maxResults", String(input.maxResults));
+  if (input.sort) url.searchParams.set("sort", input.sort);
   return requestJson<YouTubeAnalyticsReport>(fetchImpl, url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -146,4 +148,57 @@ export function retentionAtSeconds(
     result[key] = Math.round(point.watchRatio * 1000) / 10;
   }
   return result;
+}
+
+/** Which searches brought a video its views.
+ *
+ * The detail dimension only answers under a traffic-source filter, and only
+ * for the sources that have a detail to give: for a Short, that is search.
+ * The feed, which carries most of the views, has no breakdown by design. */
+export async function youtubeSearchTerms(
+  fetchImpl: typeof fetch,
+  token: string,
+  videoId: string,
+  range: { startDate: string; endDate: string },
+): Promise<Record<string, number>> {
+  const report = await queryYouTubeAnalytics(fetchImpl, token, {
+    ...range,
+    metrics: "views",
+    dimensions: "insightTrafficSourceDetail",
+    filters: `video==${videoId};insightTrafficSourceType==YT_SEARCH`,
+    maxResults: 25,
+    sort: "-views",
+  });
+  const terms: Record<string, number> = {};
+  for (const row of report.rows ?? []) {
+    const [term, views] = row;
+    if (typeof term === "string") terms[term] = Number(views ?? 0);
+  }
+  return terms;
+}
+
+/** Who watched one video, as percentages of viewers by age band and gender. */
+export async function youtubeVideoViewers(
+  fetchImpl: typeof fetch,
+  token: string,
+  videoId: string,
+  range: { startDate: string; endDate: string },
+): Promise<Record<string, number>> {
+  const report = await queryYouTubeAnalytics(fetchImpl, token, {
+    ...range,
+    metrics: "viewerPercentage",
+    dimensions: "ageGroup,gender",
+    filters: `video==${videoId}`,
+    maxResults: 100,
+  });
+  const headers = (report.columnHeaders ?? []).map((header) => header.name ?? "");
+  const viewers: Record<string, number> = {};
+  for (const row of report.rows ?? []) {
+    const age = String(row[headers.indexOf("ageGroup")] ?? "");
+    const gender = String(row[headers.indexOf("gender")] ?? "");
+    const percentage = Number(row[headers.indexOf("viewerPercentage")] ?? 0);
+    if (!age || !gender || !Number.isFinite(percentage)) continue;
+    viewers[`${age}:${gender}`] = Math.round(percentage * 10) / 10;
+  }
+  return viewers;
 }

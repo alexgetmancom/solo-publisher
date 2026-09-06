@@ -49,14 +49,31 @@ describe("youtube deep analytics", () => {
         const url = String(input);
         const rows = url.includes("elapsedVideoTimeRatio")
           ? { columnHeaders: [{ name: "elapsedVideoTimeRatio" }, { name: "audienceWatchRatio" }], rows: [[0, 0.95]] }
-          : { columnHeaders: [{ name: "insightTrafficSourceType" }, { name: "views" }], rows: [["SHORTS", 800]] };
+          : url.includes("ageGroup")
+            ? {
+                columnHeaders: [{ name: "ageGroup" }, { name: "gender" }, { name: "viewerPercentage" }],
+                rows: [["age25-34", "male", 44.4]],
+              }
+            : url.includes("insightTrafficSourceDetail")
+              ? { columnHeaders: [{ name: "insightTrafficSourceDetail" }, { name: "views" }], rows: [["кооп хоррор", 120]] }
+              : {
+                  columnHeaders: [{ name: "insightTrafficSourceType" }, { name: "views" }],
+                  rows: [
+                    ["SHORTS", 5000],
+                    ["YT_SEARCH", 120],
+                  ],
+                };
         return new Response(JSON.stringify(rows), { headers: { "content-type": "application/json" } });
       }) as unknown as typeof fetch;
 
       const target = { videoTargetId: targetId, externalId: "abc", checkpointIndex: 3, publishedAt, videoDurationMs: 30_000 };
       const enrichment = await enrichYouTubeDeepAnalytics(backendDb, target, 24, "token", fetchImpl);
-      expect(enrichment.trafficSources).toEqual({ SHORTS: 800 });
-      expect(calls).toBe(2);
+      expect(enrichment.trafficSources).toEqual({ SHORTS: 5000, YT_SEARCH: 120 });
+      // Who watched, and what they searched for — the latter only because
+      // search actually brought views.
+      expect(enrichment.viewers).toEqual({ "age25-34:male": 44.4 });
+      expect(enrichment.searchTerms).toEqual({ "кооп хоррор": 120 });
+      expect(calls).toBe(4);
       // The marker is in the snapshot, so a restart cannot buy the same reading twice.
       expect(hasDeepAnalytics(backendDb, targetId, 24)).toBe(true);
       expect(hasDeepAnalytics(backendDb, targetId, 168)).toBe(false);

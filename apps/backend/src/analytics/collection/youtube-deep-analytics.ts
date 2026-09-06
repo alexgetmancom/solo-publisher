@@ -5,7 +5,9 @@ import {
   youtubeAnalyticsCompletedEnd,
   youtubeAnalyticsDate,
   youtubeAudienceRetention,
+  youtubeSearchTerms,
   youtubeTrafficSources,
+  youtubeVideoViewers,
 } from "./youtube-analytics.js";
 
 /** Ages at which a video is worth a per-video Analytics read. Traffic sources
@@ -14,6 +16,12 @@ import {
  * video's life rather than on every checkpoint: once the first day is complete,
  * and once the first week is. */
 const DEEP_ANALYTICS_AGE_BUCKETS_HOURS = [24, 168] as const;
+
+/** What a complete deep read contains. Raised when a new field joins it, so
+ * videos enriched by an older version are read again once and every video ends
+ * up with the same set -- an analysis that has the field for last week and not
+ * for the week before compares nothing. */
+const DEEP_ANALYTICS_VERSION = 2;
 
 /** The seconds a Short is won or lost in. */
 const RETENTION_SECONDS = [1, 3, 5];
@@ -44,9 +52,12 @@ export function hasDeepAnalytics(backendDb: BackendDb, videoTargetId: number, bu
   const row = unsafeDb(backendDb)
     .sqlite.prepare(
       `SELECT 1 FROM video_metric_snapshots
-        WHERE video_target_id = ? AND json_extract(metrics_json, '$.deepAnalyticsBucketHours') = ? LIMIT 1`,
+        WHERE video_target_id = ?
+          AND json_extract(metrics_json, '$.deepAnalyticsBucketHours') = ?
+          AND COALESCE(json_extract(metrics_json, '$.deepAnalyticsVersion'), 1) >= ?
+        LIMIT 1`,
     )
-    .get(videoTargetId, bucket);
+    .get(videoTargetId, bucket, DEEP_ANALYTICS_VERSION);
   return Boolean(row);
 }
 
@@ -63,14 +74,21 @@ export async function enrichYouTubeDeepAnalytics(
   const completedEnd = youtubeAnalyticsCompletedEnd(now);
   const range = { startDate: youtubeAnalyticsDate(new Date(target.publishedAt)), endDate: youtubeAnalyticsDate(completedEnd) };
   if (range.startDate > range.endDate) return {};
-  const [sources, curve] = await Promise.all([
+  const [sources, curve, viewers] = await Promise.all([
     youtubeTrafficSources(fetchImpl, token, target.externalId, range),
     youtubeAudienceRetention(fetchImpl, token, target.externalId, range),
+    youtubeVideoViewers(fetchImpl, token, target.externalId, range),
   ]);
+  // Search is the only source with a breakdown worth asking for, and asking
+  // when it brought nothing spends a call on an empty answer.
+  const searchTerms = sources.YT_SEARCH ? await youtubeSearchTerms(fetchImpl, token, target.externalId, range) : {};
   const enrichment = {
     deepAnalyticsBucketHours: bucket,
+    deepAnalyticsVersion: DEEP_ANALYTICS_VERSION,
     deepAnalyticsAt: now.toISOString(),
     trafficSources: sources,
+    ...(Object.keys(searchTerms).length ? { searchTerms } : {}),
+    ...(Object.keys(viewers).length ? { viewers } : {}),
     // The three seconds a Short is won in, and the whole curve behind them.
     // Reading only the three points threw away the shape: where a video loses
     // people in the middle is a different lesson from how it opens, and the
