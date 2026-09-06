@@ -4,6 +4,7 @@ import { audienceDemographicsReport } from "../analytics/collection/instagram-de
 import { classifyHooks } from "../analytics/collection/hook-types.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
 import { importVideoArchive } from "./archive-import.js";
+import { relinkInstagramPosts } from "./instagram-relink.js";
 import { commentQuality } from "../analytics/reports/comment-quality.js";
 import { editorialReview } from "../analytics/reports/editorial-review.js";
 import { studioBrief } from "../analytics/reports/studio-brief.js";
@@ -637,6 +638,20 @@ const operationDefs = {
         limit: input.limit,
         overwrite: input.overwrite,
       }),
+  }),
+  "instagram-relink": operation({
+    section: "media",
+    startHere: "an old video has no Instagram copy recorded",
+    summary: "Find the Instagram post that is the same video as one known only from YouTube, and record it.",
+    note: "Matched on the day it went out and on the length of the file, and only where exactly one post fits both — two videos went out on the same day often enough that a day alone decides nothing. Anything else is listed rather than guessed: a skip rate attached to the wrong video is worse than none, because a missing figure is visible and a wrong one is not. Lengths come in with `archive-import`.",
+    schema: z.object({
+      apply: applyOption,
+      account: example(z.string().min(1), "ACCOUNT_ID").describe("the provider account id, from `channels`"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      relinkInstagramPosts(context.db(), context.config(), context.fetchImpl, { apply: input.apply, accountId: input.account }),
   }),
   "archive-import": operation({
     section: "media",

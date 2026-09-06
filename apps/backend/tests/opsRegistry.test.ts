@@ -43,6 +43,7 @@ const OFF_THE_AGENT_SURFACE = [
   "restore",
   "import-x-analytics",
   "import-manual-analytics",
+  "instagram-relink",
   "format-record",
   "replace-media",
   "set-media",

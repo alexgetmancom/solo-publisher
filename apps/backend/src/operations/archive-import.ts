@@ -53,10 +53,20 @@ export async function importVideoArchive(
   const unmatched: string[] = [];
   const adopted: string[] = [];
   const skipped: string[] = [];
+  const lengths = new Map<string, number>();
   try {
     const untar = Bun.spawn(["tar", "-xf", input.file, "-C", unpacked], { stdout: "ignore", stderr: "pipe" });
     const [code, complaint] = await Promise.all([untar.exited, new Response(untar.stderr).text()]);
     if (code !== 0) throw new Error(`the archive could not be unpacked: ${complaint.trim().slice(0, 200)}`);
+    // How long each video runs, measured where the files are. It is the key
+    // that tells two videos of the same day apart when the Instagram copy has
+    // to be found again.
+    for (const name of await readdir(unpacked, { recursive: true }))
+      if (path.basename(name) === "durations.tsv")
+        for (const line of (await Bun.file(path.join(unpacked, name)).text()).split("\n")) {
+          const [id, seconds] = line.split("\t");
+          if (id && seconds && Number.isFinite(Number(seconds))) lengths.set(id, Number(seconds));
+        }
     for (const name of await readdir(unpacked, { recursive: true })) {
       // A tar made on a Mac carries a ._name sidecar for every file, holding
       // the extended attributes rather than the picture.
@@ -82,6 +92,15 @@ export async function importVideoArchive(
         }
       }
       const ref = `video:${video.videoDraftId}`;
+      const seconds = id ? lengths.get(id) : undefined;
+      if (input.apply && seconds)
+        unsafeDb(backendDb)
+          .sqlite.prepare(
+            `UPDATE video_targets
+                SET metadata_json = json_set(metadata_json, '$.videoDurationMs', ?)
+              WHERE video_draft_id = ? AND json_extract(metadata_json, '$.videoDurationMs') IS NULL`,
+          )
+          .run(Math.round(seconds * 1000), video.videoDraftId);
       if (kind === "frame") {
         if (input.apply && !(await recordOpeningFromFrame(backendDb, config, video.videoDraftId, path.join(unpacked, name))))
           skipped.push(`${ref}: its opening was already measured`);
