@@ -54,6 +54,21 @@ first, then one `ops_retry` for the target actually missing.
 come from live platform APIs and can legitimately be absent — that is not a bug to chase. Metrics
 are sampled over time, so a post published minutes ago having no numbers is expected.
 
+For a question about how videos are doing rather than one video, `ops_brief` answers the whole week
+in one call and names the command behind each of its sections; `ops_video_report` is that detail,
+and `ops_video_metrics` one video. Two habits make the difference between a report and advice worth
+acting on:
+
+- Read the `reading` block. Every report carries one and it says what its numbers do not mean.
+- Say the sample size, and refuse to recommend on `confidence: anecdotal` or `low`. A slot flagged
+  `dominatedBySingleVideo` rests on one lucky video.
+
+`openings` in `ops_video_report` is the one block about a choice rather than an outcome: what was on
+screen two seconds in, and what kind of line the video opened with, against retention at three
+seconds. The kind is a model's judgement about ten words — show the line beside the label when a
+finding rests on it. [Telling an agent how to read the numbers](../../../docs/analytics-agent.md)
+is the long form.
+
 ## Language
 
 Post text, captions and titles are written in the language of the channel they publish to.
