@@ -207,8 +207,8 @@ describe("architecture fitness", () => {
     expect(writersOf("videoTargets", "video_targets")).toEqual([
       "apps/backend/src/delivery/publication-reconciliation.ts",
       "apps/backend/src/delivery/video-worker.ts",
+      "apps/backend/src/operations/archive-import.ts",
       "apps/backend/src/operations/maintenance.ts",
-      "apps/backend/src/operations/youtube-history-import.ts",
       "apps/backend/src/publishing/video-service.ts",
       "apps/backend/src/publishing/video-settle.ts",
     ]);

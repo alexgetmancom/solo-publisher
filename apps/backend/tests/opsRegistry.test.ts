@@ -58,7 +58,6 @@ const OFF_THE_AGENT_SURFACE = [
   "milestone-announce",
   "comments-backfill",
   "youtube-analytics-backfill",
-  "youtube-history-import",
   "video-tag-backfill",
   "games-enrich",
   "demographics-sync",

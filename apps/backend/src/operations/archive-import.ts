@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { recordOpeningFromFrame } from "../analytics/collection/video-frames.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
+import { videoDrafts, videoTargets } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { updateVideoScript } from "../publishing/video-service.js";
 
@@ -11,6 +12,18 @@ import { updateVideoScript } from "../publishing/video-service.js";
  * wrote. It is what this matches on: a title is edited and re-encoded, an id
  * is the video. */
 const YOUTUBE_ID = /(?:^|[_.\- ])([A-Za-z0-9_-]{11})(?:[_.\- ]|$)/u;
+
+/** The whole name a downloader wrote: the day it went out, the id, the title.
+ * It is enough to record a video this Studio never published, which is most of
+ * this channel's back catalogue. */
+const DOWNLOADED_AS = /^(\d{4})(\d{2})(\d{2})_([A-Za-z0-9_-]{11})_(.+?)\.(?:frame2s\.jpg|ru\.vtt|ru-orig\.vtt|mp4)$/u;
+
+/** What marks a video as the channel's own history rather than this Studio's
+ * work. Read by every report that compares videos at the same age: an imported
+ * video has one reading taken years after it went out, and putting that in an
+ * age bucket would answer "what does a video have at 24 hours" with a number
+ * from a different question. */
+export const IMPORTED_HISTORY = "youtube_history";
 
 type Known = { videoDraftId: number; externalId: string; hasOperatorScript: boolean };
 
@@ -38,6 +51,7 @@ export async function importVideoArchive(
   const frames: string[] = [];
   const transcripts: string[] = [];
   const unmatched: string[] = [];
+  const adopted: string[] = [];
   const skipped: string[] = [];
   try {
     const untar = Bun.spawn(["tar", "-xf", input.file, "-C", unpacked], { stdout: "ignore", stderr: "pipe" });
@@ -49,11 +63,23 @@ export async function importVideoArchive(
       if (path.basename(name).startsWith("._")) continue;
       const kind = name.endsWith(".jpg") ? "frame" : name.endsWith(".vtt") ? "transcript" : null;
       if (!kind) continue;
-      const id = path.basename(name).match(YOUTUBE_ID)?.[1];
-      const video = id ? known.get(id) : undefined;
+      const base = path.basename(name);
+      const id = base.match(YOUTUBE_ID)?.[1];
+      let video = id ? known.get(id) : undefined;
       if (!video) {
-        unmatched.push(path.basename(name));
-        continue;
+        // A video of this channel that this Studio never published. It is real
+        // history on an account we hold the credentials for, and everything
+        // that is a ratio rather than a total is as readable for it as for any
+        // other video.
+        const recorded = input.apply ? adopt(backendDb, base) : null;
+        if (recorded) {
+          known.set(recorded.externalId, recorded);
+          adopted.push(`video:${recorded.videoDraftId}`);
+          video = recorded;
+        } else {
+          unmatched.push(base);
+          continue;
+        }
       }
       const ref = `video:${video.videoDraftId}`;
       if (kind === "frame") {
@@ -81,14 +107,67 @@ export async function importVideoArchive(
   }
   return {
     applied: input.apply,
+    adopted: adopted.length,
     frames: frames.length,
     transcripts: transcripts.length,
     skipped: skipped.slice(0, 10),
     skippedCount: skipped.length,
     unmatched: unmatched.slice(0, 10),
     unmatchedCount: unmatched.length,
-    note: "Matched on the id YouTube gave each video, read out of the file name. A frame is stored only for a video whose opening is not measured yet, and a transcript only for one whose author never wrote a script.",
+    note: "Matched on the id YouTube gave each video, read out of the file name. A video this Studio never published is recorded as the channel's own history, carrying no age series: what it had at an hour old needed someone reading it then. A frame is stored only for a video whose opening is not measured yet, and a transcript only for one whose author never wrote a script.",
   };
+}
+
+/** Records a video of this channel that this Studio did not publish.
+ *
+ * Everything comes from the file's own name, because there is nowhere else
+ * left to ask: the day it went out, the id YouTube gave it, and the title. The
+ * day is a day and not an instant, which is why nothing reads it as one --
+ * these videos are marked as history and left out of every comparison made at
+ * an hour of the day or an age. */
+function adopt(backendDb: BackendDb, fileName: string): Known | null {
+  const parts = fileName.match(DOWNLOADED_AS);
+  if (!parts) return null;
+  const [, year, month, day, externalId, title] = parts as unknown as [string, string, string, string, string, string];
+  const actorId = (
+    unsafeDb(backendDb).sqlite.prepare("SELECT actor_id AS actorId FROM video_drafts ORDER BY id LIMIT 1").get() as
+      | { actorId: number }
+      | undefined
+  )?.actorId;
+  if (actorId === undefined) return null;
+  const publishedAt = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).toISOString();
+  const now = new Date().toISOString();
+  const draftId = unsafeDb(backendDb)
+    .db.insert(videoDrafts)
+    .values({
+      actorId,
+      locale: "ru",
+      label: title.replace(/\uFF5C/gu, "|").trim(),
+      // It was published before this Studio and its source was never here.
+      studioMediaAssetId: null,
+      status: "published",
+      sourcePrunedAt: now,
+      createdAt: publishedAt,
+      updatedAt: now,
+    })
+    .returning({ id: videoDrafts.id })
+    .get().id;
+  unsafeDb(backendDb)
+    .db.insert(videoTargets)
+    .values({
+      videoDraftId: draftId,
+      target: "youtube_shorts",
+      metadataJson: { title },
+      status: "published",
+      externalId,
+      externalUrl: `https://www.youtube.com/watch?v=${externalId}`,
+      publishedAt,
+      confirmationSource: IMPORTED_HISTORY,
+      createdAt: publishedAt,
+      updatedAt: now,
+    })
+    .run();
+  return { videoDraftId: draftId, externalId, hasOperatorScript: false };
 }
 
 /** Published videos this Studio can be handed files for. */

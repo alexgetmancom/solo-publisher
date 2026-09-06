@@ -2,7 +2,7 @@ import type { BackendDb } from "../../db/client.js";
 import { unsafeDb } from "../../db/client.js";
 import { heatmapCoverage } from "../audience-heatmap.js";
 import { OPENING_SECONDS } from "../collection/video-frames.js";
-import { IMPORTED_HISTORY } from "../../operations/youtube-history-import.js";
+import { IMPORTED_HISTORY } from "../../operations/archive-import.js";
 import { metricFailureCause } from "../collection/collectors/errors.js";
 import { metricNumber } from "../snapshots/creator-store.js";
 

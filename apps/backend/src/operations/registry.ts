@@ -4,7 +4,6 @@ import { audienceDemographicsReport } from "../analytics/collection/instagram-de
 import { classifyHooks } from "../analytics/collection/hook-types.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
 import { importVideoArchive } from "./archive-import.js";
-import { importYouTubeHistory } from "./youtube-history-import.js";
 import { commentQuality } from "../analytics/reports/comment-quality.js";
 import { editorialReview } from "../analytics/reports/editorial-review.js";
 import { studioBrief } from "../analytics/reports/studio-brief.js";
@@ -639,25 +638,11 @@ const operationDefs = {
         overwrite: input.overwrite,
       }),
   }),
-  "youtube-history-import": operation({
-    section: "media",
-    startHere: "the channel published videos before this Studio did",
-    summary: "Take in the channel's own back catalogue from YouTube, so its videos can be measured like the rest.",
-    note: "Reads the uploads playlist and records every video this Studio does not already know, as published history with no source file. What they had at one hour old is gone — nobody was reading them then — so they carry no age series and `publishHours` and `ageCurve` leave them out. Everything that is a ratio rather than a total is as good as any other video's: run `youtube-analytics-backfill` for retention, `archive-import` for the opening frame and the words.",
-    schema: z.object({
-      apply: applyOption,
-      limit: z.coerce.number().int().min(1).max(500).default(200).describe("how many unknown videos to record in one run"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      importYouTubeHistory(context.db(), context.config(), context.fetchImpl, { apply: input.apply, limit: input.limit }),
-  }),
   "archive-import": operation({
     section: "media",
     startHere: "the old videos are only on my own machine now",
     summary: "Take in opening frames and caption files captured off published videos elsewhere, matched by the id YouTube gave each one.",
-    note: "A tar of files whose names carry the YouTube id — `.jpg` is an opening frame, `.vtt` a caption track. Instagram serves a published Reel for about a week and retention deletes the source, so for anything older this is the only way the opening gets in. A frame is stored only for a video whose opening is not measured yet, and a transcript only for one whose author never wrote a script.",
+    note: "A tar of files whose names carry the YouTube id — `.jpg` is an opening frame, `.vtt` a caption track. Instagram serves a published Reel for about a week and retention deletes the source, so for anything older this is the only way the opening gets in. A file whose video this Studio never published records that video as the channel's own history — real publications on this account, carrying no age series because what they had at an hour old needed someone reading them then. A frame is stored only for a video whose opening is not measured yet, and a transcript only for one whose author never wrote a script.",
     schema: z.object({
       apply: applyOption,
       file: example(z.string(), "PATH").describe("a .tar of frames and caption files"),
