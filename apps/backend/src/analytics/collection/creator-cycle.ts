@@ -62,27 +62,34 @@ export async function runAnalyticsCycle(config: BackendConfig, backendDb: Backen
       profiles += await step(backendDb, channel.id, "analytics.creator_profile.sync", () =>
         syncInstagramProfile(config, backendDb, fetchImpl, channel, owner),
       );
-    if (channel.platform === "youtube")
-      await step(backendDb, `${channel.id}:demographics`, "analytics.audience_demographics.sync", async () => {
-        const demographics = `demographics:${channel.id}`;
-        if (!claimSync(backendDb, demographics, { intervalSeconds: YOUTUBE_DEMOGRAPHICS_INTERVAL_SECONDS, owner })) return 0;
-        const result = await syncYouTubeDemographics(config, backendDb, fetchImpl, channel);
-        markSynced(backendDb, demographics, result.unavailable ?? null);
-        return result.stored;
-      });
-    if (channel.platform === "instagram" && channel.provider === "zernio")
-      await step(backendDb, `${channel.id}:demographics`, "analytics.audience_demographics.sync", async () => {
-        const demographics = `demographics:${channel.id}`;
-        if (!claimSync(backendDb, demographics, { intervalSeconds: DEMOGRAPHICS_INTERVAL_SECONDS, owner })) return 0;
-        const result = await syncInstagramDemographics(config, backendDb, fetchImpl, channel);
-        markSynced(backendDb, demographics, result.unavailable ?? null);
-        return result.stored;
-      });
     if (channel.provider === "zernio" && !standardProfile)
       profiles += await step(backendDb, channel.id, "analytics.creator_profile.sync", () =>
         syncZernioChannelProfile(config, backendDb, fetchImpl, channel, owner),
       );
   }
+  // Demographics keep their own cadence. Nested inside the profile loop they
+  // inherited its claim, so a channel whose profile was not due skipped the
+  // audience read as well -- two questions on one schedule, and the slower one
+  // silently governing the other.
+  for (const channel of channels) {
+    const owner = `demographics:${channel.id}:${crypto.randomUUID()}`;
+    const source = `demographics:${channel.id}`;
+    const read =
+      channel.platform === "youtube"
+        ? () => syncYouTubeDemographics(config, backendDb, fetchImpl, channel)
+        : channel.platform === "instagram" && channel.provider === "zernio"
+          ? () => syncInstagramDemographics(config, backendDb, fetchImpl, channel)
+          : null;
+    if (!read) continue;
+    const interval = channel.platform === "youtube" ? YOUTUBE_DEMOGRAPHICS_INTERVAL_SECONDS : DEMOGRAPHICS_INTERVAL_SECONDS;
+    if (!claimSync(backendDb, source, { intervalSeconds: interval, owner })) continue;
+    await step(backendDb, source, "analytics.audience_demographics.sync", async () => {
+      const result = await read();
+      markSynced(backendDb, source, result.unavailable ?? null);
+      return result.stored;
+    });
+  }
+
   const xOwner = `profile:x:${crypto.randomUUID()}`;
   if (
     config.ENABLE_X_PROFILE_METRICS &&
