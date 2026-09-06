@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
+import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
@@ -522,6 +523,16 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => audienceHeatmapReport(context.db()),
+  }),
+  "audience-demographics": operation({
+    section: "analytics",
+    startHere: "who is actually following this account",
+    summary: "The audience breakdown Instagram publishes: age, gender, country and city, with the day it was captured.",
+    note: "Collected daily through the provider, once per Instagram account. It describes followers, while most Reels views come from accounts that follow nothing; Instagram needs 100+ followers before it answers at all, and a smaller account is reported as unavailable rather than as an error.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => audienceDemographicsReport(context.db()),
   }),
   "audience-heatmap-import": operation({
     section: "analytics",

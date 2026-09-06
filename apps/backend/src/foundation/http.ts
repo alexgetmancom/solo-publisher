@@ -150,3 +150,12 @@ export function formBody(fields: Record<string, string | number | boolean | null
   }
   return body;
 }
+
+/** A request failure, shortened for a report that has to fit on a screen.
+ *
+ * Both ends are kept because these messages carry the URL in front and the
+ * status and body at the end: a naive truncation of a Graph or Analytics URL
+ * throws away the only half that says what went wrong. */
+export function shortenRequestFailure(message: string, limit = 400): string {
+  return message.length <= limit ? message : `${message.slice(0, Math.floor(limit / 4))} … ${message.slice(-Math.floor(limit / 2))}`;
+}

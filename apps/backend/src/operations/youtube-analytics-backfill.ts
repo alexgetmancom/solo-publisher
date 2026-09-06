@@ -10,6 +10,7 @@ import { type BackendDb, unsafeDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { channelForVideo } from "../channels/registry.js";
 import { youtubeAccessToken } from "../foundation/external/youtube.js";
+import { shortenRequestFailure } from "../foundation/http.js";
 
 /** What the owner Analytics report adds on top of the Data API snapshot. A
  * video missing all of these was never enriched. */
@@ -203,12 +204,7 @@ function full(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** Keeps both ends of a refusal. The interesting half of these messages is the
- * status and body at the end, and the URL in front of them is long enough to
- * fill a naive truncation on its own. */
-function describe(message: string): string {
-  return message.length <= 400 ? message : `${message.slice(0, 120)} … ${message.slice(-280)}`;
-}
+const describe = shortenRequestFailure;
 
 /** What an operator should do about it, decided by what the API answered
  * rather than by guesswork. Read from the whole message: the part that names

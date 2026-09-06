@@ -205,3 +205,39 @@ export const audienceActivity = sqliteTable(
     index("idx_audience_activity_captured_at").on(table.capturedAt),
   ],
 );
+
+/** Who the audience is, as a platform describes it: age bands, cities,
+ * countries, gender, captured periodically.
+ *
+ * Separate from `audienceActivity` on purpose. That table answers when
+ * followers are around and is keyed by weekday and hour; this one answers who
+ * they are and is keyed by a dimension and a label. One table for both would
+ * have to branch on which question it is holding, and a shape that branches is
+ * two shapes. */
+export const audienceDemographics = sqliteTable(
+  "audience_demographics",
+  {
+    id: autoId(),
+    platform: text().notNull(),
+    account: text().notNull(),
+    metric: text().notNull(),
+    dimension: text().notNull(),
+    label: text().notNull(),
+    value: integer().notNull(),
+    timeframe: text().notNull(),
+    capturedOn: text().notNull(),
+    capturedAt: text().notNull(),
+    source: text().notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_audience_demographics_daily").on(
+      table.platform,
+      table.account,
+      table.metric,
+      table.dimension,
+      table.label,
+      table.capturedOn,
+    ),
+    index("idx_audience_demographics_captured_at").on(table.capturedAt),
+  ],
+);
