@@ -26,9 +26,9 @@ export async function backfillYouTubeCaptions(
   backendDb: BackendDb,
   config: BackendConfig,
   fetchImpl: typeof fetch,
-  input: { apply: boolean; limit: number },
+  input: { apply: boolean; limit: number; refresh: boolean },
 ): Promise<Record<string, unknown>> {
-  const candidates = loadCandidates(backendDb).slice(0, input.limit);
+  const candidates = loadCandidates(backendDb, input.refresh).slice(0, input.limit);
   const tokens = new Map<string, string>();
   const results: Array<Record<string, unknown>> = [];
   let stored = 0;
@@ -99,15 +99,20 @@ export async function backfillYouTubeCaptions(
   };
 }
 
-/** Published YouTube videos with no script yet, newest first. */
-function loadCandidates(backendDb: BackendDb): Candidate[] {
+/** Published YouTube videos whose script is missing, and with `refresh` the
+ * ones whose text a machine produced.
+ *
+ * A script its author wrote is never a candidate: it is the words that were
+ * chosen, and a transcript of what was said is a worse copy of it. */
+function loadCandidates(backendDb: BackendDb, refresh: boolean): Candidate[] {
   return (
     unsafeDb(backendDb)
       .sqlite.prepare(
         `SELECT d.id AS videoDraftId, d.label AS label, d.locale AS locale, d.script AS script, t.external_id AS externalId
          FROM video_drafts d
          JOIN video_targets t ON t.video_draft_id = d.id AND t.target = 'youtube_shorts' AND t.status = 'published'
-        WHERE t.external_id IS NOT NULL AND d.script IS NULL
+        WHERE t.external_id IS NOT NULL
+          AND (d.script IS NULL ${refresh ? "OR d.script_source <> 'operator'" : ""})
         ORDER BY d.id DESC`,
       )
       .all() as Candidate[]
