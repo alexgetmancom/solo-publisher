@@ -675,14 +675,19 @@ function openings(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): R
         if (retention) slot.retention.push(retention);
         if (skip) slot.skip.push(skip);
       }
-      slot.views.push(targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0));
+      // A video nobody has read yet has no views, which is not the same as
+      // having none: counted, the archive's unread videos drag every median to
+      // zero. Retention and skip are already only there when they were read.
+      if (targets.some((target) => latest(target)))
+        slot.views.push(targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0));
       rows.set(key, slot);
     }
     return [...rows.entries()]
       .map(([value, slot]) => ({
         value,
-        videos: slot.views.length,
-        medianViews: median(slot.views),
+        videos: slot.retention.length || slot.views.length,
+        readForViews: slot.views.length,
+        medianViews: slot.views.length ? median(slot.views) : null,
         // The two figures the opening is actually answerable by: how many were
         // still there at three seconds, and how many left inside them.
         medianRetentionAt3s: slot.retention.length ? median(slot.retention) : null,
