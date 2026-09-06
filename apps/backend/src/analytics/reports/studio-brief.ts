@@ -166,11 +166,13 @@ function nextSteps(
   posts: Record<string, unknown>,
 ): string[] {
   const steps: string[] = [];
+  // A Studio publishes text, or video, or both. Telling one that publishes only
+  // text that none of its videos have a measured opening is not a step, it is
+  // an answer about something that does not exist here.
+  const videos = (performance.coverage as { videos?: number } | undefined)?.videos ?? 0;
   const written = posts.coverage as { standalone?: number; openingKindKnown?: number };
-  if ((written.standalone ?? 0) > 0 && (written.openingKindKnown ?? 0) < (written.standalone ?? 0) / 2)
-    steps.push(
-      `${written.openingKindKnown ?? 0} of ${written.standalone ?? 0} standalone posts have their opening named. \`post-openings-classify\` fills it in from the first line.`,
-    );
+  postSteps(steps, written);
+  if (videos === 0) return steps;
   const openings = performance.openings as { coverage?: { kind?: number; shape?: number; videos?: number } };
   if ((openings.coverage?.kind ?? 0) < (openings.coverage?.videos ?? 0) / 2)
     steps.push(
@@ -196,5 +198,15 @@ function nextSteps(
   const stopped = (performance.collection as { stopped?: Array<{ cause: string; targets: number }> } | undefined)?.stopped ?? [];
   for (const entry of stopped.filter((entry) => !/daily quota/.test(entry.cause)))
     steps.push(`${entry.targets} targets stopped collecting: ${entry.cause}`);
+  return steps;
+}
+
+/** The steps that are about the written side, said whether or not this Studio
+ * also publishes video. */
+function postSteps(steps: string[], written: { standalone?: number; openingKindKnown?: number }): string[] {
+  if ((written.standalone ?? 0) > 0 && (written.openingKindKnown ?? 0) < (written.standalone ?? 0) / 2)
+    steps.push(
+      `${written.openingKindKnown ?? 0} of ${written.standalone ?? 0} standalone posts have their opening named. \`post-openings-classify\` fills it in from the first line.`,
+    );
   return steps;
 }
