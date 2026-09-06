@@ -31,6 +31,31 @@ export async function runFfmpeg(args: string[], timeoutSeconds = 600): Promise<v
   });
 }
 
+/** Runs ffmpeg and returns what it wrote to stdout.
+ *
+ * Frame inspection wants pixels, not a file: writing a PNG to disk only to
+ * read and delete it costs two syscalls and a temp path per frame, and the
+ * frames here are a few kilobytes of raw RGB. */
+export async function runFfmpegCapture(args: string[], timeoutSeconds = 120): Promise<Uint8Array> {
+  return limiter(async () => {
+    const child = Bun.spawn(["ffmpeg", ...args], { stdout: "pipe", stderr: "pipe" });
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, timeoutSeconds * 1000);
+    const [exitCode, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).arrayBuffer(),
+      new Response(child.stderr).text(),
+    ]);
+    clearTimeout(timer);
+    if (timedOut) throw new Error(`media_processing_timeout: ffmpeg exceeded ${timeoutSeconds}s`);
+    if (exitCode !== 0) throw new Error(formatFfmpegFailure(exitCode, stderr));
+    return new Uint8Array(stdout);
+  });
+}
+
 /** Shared by every ffprobe caller: a stuck or hostile input must not hang the
  * request/job that triggered inspection, and a malformed response must not
  * surface as an unrelated JSON.parse crash. */

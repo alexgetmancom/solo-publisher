@@ -59,6 +59,7 @@ const OFF_THE_AGENT_SURFACE = [
   "video-tag-backfill",
   "games-enrich",
   "demographics-sync",
+  "frames-backfill",
   "x-import-delete",
   "x-relink",
   "purge",

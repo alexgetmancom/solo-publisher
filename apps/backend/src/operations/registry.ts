@@ -46,6 +46,7 @@ import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
 import { syncAudienceDemographics } from "./demographics-sync.js";
 import { diskReport } from "./disk-report.js";
+import { backfillVideoFrames } from "./frames-backfill.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
 import {
@@ -550,6 +551,20 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context, input) => editorialReview(context.db(), context.config(), input.locale, context.fetchImpl),
+  }),
+  "frames-backfill": operation({
+    section: "media",
+    summary:
+      "Measure the opening seconds of published videos: face, split screen or plain gameplay, plus brightness, contrast and how busy the frame is.",
+    note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
+    schema: z.object({
+      apply: applyOption,
+      limit: z.coerce.number().int().min(1).max(500).default(50).describe("how many videos to read in one run"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      backfillVideoFrames(context.db(), context.config(), context.fetchImpl, { apply: input.apply, limit: input.limit }),
   }),
   "comments-quality": operation({
     section: "analytics",

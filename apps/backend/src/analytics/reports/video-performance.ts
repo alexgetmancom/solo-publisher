@@ -371,7 +371,45 @@ function byTag(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): Reco
         .sort((left, right) => right.medianViews - left.medianViews),
     };
   };
-  return { game: summarise("game"), hook: summarise("hook"), genre: byFacet("genres"), playerMode: byFacet("playerModes") };
+  const openings = frameShapes(backendDb);
+  const opening = (() => {
+    const groups = new Map<string, number[]>();
+    let tagged = 0;
+    for (const targets of drafts) {
+      const draftId = targets[0]?.video_draft_id;
+      const shape = draftId ? openings.get(draftId) : undefined;
+      if (!shape) continue;
+      tagged += 1;
+      groups.set(shape, [
+        ...(groups.get(shape) ?? []),
+        targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0),
+      ]);
+    }
+    return {
+      taggedVideos: tagged,
+      taggedShare: drafts.length ? Math.round((tagged / drafts.length) * 100) : 0,
+      values: [...groups.entries()]
+        .map(([value, views]) => ({
+          value,
+          videos: views.length,
+          medianViews: median(views),
+          avgViews: Math.round(views.reduce((sum, view) => sum + view, 0) / views.length),
+          confidence: views.length >= CONFIDENT_SAMPLE ? "ok" : views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
+        }))
+        .sort((left, right) => right.medianViews - left.medianViews),
+    };
+  })();
+  return { game: summarise("game"), hook: summarise("hook"), genre: byFacet("genres"), playerMode: byFacet("playerModes"), opening };
+}
+
+/** How each video opens, as measured from its own first frame. */
+function frameShapes(backendDb: BackendDb): Map<number, string> {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      "SELECT video_draft_id AS videoDraftId, json_extract(features_json, '$.shape') AS shape FROM video_frame_features WHERE at_seconds = 0",
+    )
+    .all() as Array<{ videoDraftId: number; shape: string | null }>;
+  return new Map(rows.filter((row) => row.shape).map((row) => [row.videoDraftId, String(row.shape)]));
 }
 
 /** What is known about each tagged game, for the groupings that are worth more
@@ -585,6 +623,7 @@ function readingNotes(): string[] {
     "`readingAgeHours` is the age the value actually came from; where it is far from the bucket, the bucket is approximate.",
     "shares/saves/reach/follows are Instagram-only; YouTube reports averageWatchTimeMs, completionRate and subscribersGained instead.",
     "A slot with fewer than 5 videos, or one marked dominatedBySingleVideo, is not evidence for an hour recommendation — say so when reporting it.",
+    "`byTag.opening` is measured from the video's own first frame — face, split screen or plain gameplay — and is the axis to read beside retention at 1 and 3 seconds and Instagram's skip rate.",
     "`byTag.genre` and `byTag.playerMode` come from the game each video is tagged with, so they group 150 one-off games into a handful of axes; a video whose game has several genres is counted under each.",
     "`byTag` counts only tagged videos: read `taggedShare` before ranking games or hooks, and tag more with `video-tag` if it is low.",
     "`trafficSources` and `retentionAt1s/3s/5s` are YouTube-only and are read twice in a video's life, at 24 hours and at 7 days; a video younger than that carries neither.",

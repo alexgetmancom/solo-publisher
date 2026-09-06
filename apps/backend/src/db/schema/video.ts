@@ -155,3 +155,23 @@ export const socialComments = sqliteTable(
     index("idx_social_comments_target").on(table.videoTargetId, table.publishedAt),
   ],
 );
+
+/** What the opening of a video looks like, measured from its own frames.
+ *
+ * One row per video per moment, because the question is about the video and
+ * not about the copy that went to one platform: both platforms carry the same
+ * file. Stored rather than computed on read -- the frames come from a download
+ * that is gone by the time anyone asks. */
+export const videoFrameFeatures = sqliteTable(
+  "video_frame_features",
+  {
+    videoDraftId: integer()
+      .notNull()
+      .references(() => videoDrafts.id, { onDelete: "cascade" }),
+    atSeconds: integer().notNull(),
+    featuresJson: json<JsonObject>().notNull(),
+    source: text().notNull(),
+    capturedAt: text().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.videoDraftId, table.atSeconds] })],
+);
