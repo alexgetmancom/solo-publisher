@@ -1,10 +1,24 @@
 /** Fixed metric checkpoints from the actual publication time. */
 const POST_METRIC_CHECKPOINTS_MS = [1, 3, 6, 12, 24, 7 * 24, 30 * 24].map((hours) => hours * 3_600_000);
+
+/** A story is gone a day after it goes out, and the platform then answers every
+ * question about it with "this object does not exist". Asking at a week and at
+ * a month produced that answer twice per story forever, and it reached the
+ * operator as an error about a broken collection rather than as the end of the
+ * thing's life. These are the checkpoints a story actually has. */
+const STORY_METRIC_CHECKPOINTS_MS = [1, 3, 6, 12, 23].map((hours) => hours * 3_600_000);
+
 const HOUR = 3_600_000;
 
 /** Fixed analytics collection checkpoints after publication. */
-export function metricCheckpointAt(publishedAt: string | null, checkpointIndex: number, fallback = new Date()): Date | null {
-  const offset = POST_METRIC_CHECKPOINTS_MS[checkpointIndex];
+export function metricCheckpointAt(
+  publishedAt: string | null,
+  checkpointIndex: number,
+  fallback = new Date(),
+  target?: string,
+): Date | null {
+  const checkpoints = target?.startsWith("instagram_stories") || target === "telegram_stories" ? STORY_METRIC_CHECKPOINTS_MS : POST_METRIC_CHECKPOINTS_MS;
+  const offset = checkpoints[checkpointIndex];
   if (offset == null) return null;
   const published = publishedAt ? new Date(publishedAt) : fallback;
   return new Date((Number.isNaN(published.getTime()) ? fallback : published).getTime() + offset);

@@ -151,7 +151,7 @@ export function finishMetricTask(
 ): void {
   const now = new Date();
   const nextIndex = error ? task.checkCount : task.checkCount + 1;
-  const nextCheckpoint = terminal ? null : error ? new Date(now.getTime() + 15 * 60_000) : metricCheckpointAt(task.dateUtc, nextIndex, now);
+  const nextCheckpoint = terminal ? null : error ? new Date(now.getTime() + 15 * 60_000) : metricCheckpointAt(task.dateUtc, nextIndex, now, task.target);
   db.update(metricSchedule)
     .set({
       nextCheckAt: nextCheckpoint?.toISOString() ?? null,
