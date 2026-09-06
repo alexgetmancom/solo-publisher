@@ -45,6 +45,10 @@ skill that drives it, so one install gives the agent the whole Studio rather tha
 a list of unexplained tools. Its [setup prompt](../plugin/setup-prompt.md)
 connects and verifies without ever printing your token.
 
+Connecting an agent is half of it. What to put in the agent's own instructions
+— so that what it says about a channel is worth acting on — is
+[Telling an agent how to read the numbers](analytics-agent.md).
+
 To check the transport by hand before involving an agent:
 
 ```bash
