@@ -69,7 +69,7 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
     queue: queue(backendDb, options.timeZone),
     heatmaps: heatmapCoverage(backendDb, now),
     videos: videoList(byDraft, options.timeZone, options.limit),
-    collection: collectionHealth(series),
+    collection: collectionHealth(backendDb, series),
     reading: readingNotes(),
   };
 }
@@ -603,8 +603,27 @@ function videoList(byDraft: Map<number, TargetSeries[]>, timeZone: string, limit
 
 /** Why a number may be missing, said once and in the report that shows it: a
  * frozen schedule and a scope error both look like an empty column. */
-function collectionHealth(series: TargetSeries[]): Record<string, unknown> {
-  const failing = series.filter((target) => target.last_error);
+/** Which publishing route a video target belongs to, as the channel registry
+ * spells it: `youtube_shorts` on an English draft is the `youtube_en` channel. */
+const CHANNEL_PLATFORM: Record<string, string> = { youtube_shorts: "youtube", instagram_reels: "instagram" };
+
+/** Channels nobody publishes to any more.
+ *
+ * Their videos keep every view they earned, and they belong in the totals. But
+ * a route that was switched off cannot be "stopped collecting" and cannot be
+ * fixed by reconnecting it: it is finished, and reporting it as a fault sends
+ * an operator to repair something they turned off on purpose. */
+function disabledChannels(backendDb: BackendDb): Set<string> {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare("SELECT platform, locale FROM channel_connections WHERE enabled = 0")
+    .all() as Array<{ platform: string; locale: string }>;
+  return new Set(rows.map((row) => `${row.platform}:${row.locale}`));
+}
+
+function collectionHealth(backendDb: BackendDb, series: TargetSeries[]): Record<string, unknown> {
+  const disabled = disabledChannels(backendDb);
+  const live = series.filter((target) => !disabled.has(`${CHANNEL_PLATFORM[target.target] ?? target.target}:${target.locale}`));
+  const failing = live.filter((target) => target.last_error);
   // A raw 403 body is a request URL and a page of JSON, and the reader of this
   // report is an agent answering a creator's question. What stopped collection
   // is a sentence -- and how many rows it stopped, because "the quota is spent"
@@ -617,10 +636,11 @@ function collectionHealth(series: TargetSeries[]): Record<string, unknown> {
     causes.set(key, { ...seen, targets: seen.targets + 1, frozen: seen.frozen + (target.frozen_at ? 1 : 0) });
   }
   return {
-    targetsWithoutReadings: series
+    targetsWithoutReadings: live
       .filter((target) => !target.readings.length)
       .map((target) => ({ ref: `video:${target.video_draft_id}`, platform: target.target })),
-    frozen: series.filter((target) => target.frozen_at).length,
+    onDisabledChannels: series.length - live.length,
+    frozen: live.filter((target) => target.frozen_at).length,
     failing: failing.length,
     stopped: [...causes.entries()]
       .map(([cause, counts]) => ({ cause, targets: counts.targets, frozen: counts.frozen }))

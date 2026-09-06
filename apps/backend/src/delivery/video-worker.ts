@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { and, asc, eq, exists, isNull, lte, or, sql } from "drizzle-orm";
+import { recordOpeningFrames } from "../analytics/collection/video-frames.js";
 import { publicationRef } from "../application/publication-ref.js";
 import { videoChannelIdentity } from "../channels/destinations.js";
 import { videoPublicUrl, videoSourcePath } from "../content/video-assets.js";
@@ -219,6 +220,10 @@ async function executeVideoJob(config: BackendConfig, backendDb: BackendDb, job:
   const locale = draft.locale === "en" ? "en" : "ru";
   const instagramCredentials = instagramCredentialsForLocale(config, locale);
   if (job.kind === "prepare") {
+    // The last moment the file is certainly here: retention deletes it, and
+    // Instagram stops serving the published copy about a week later. Measured
+    // once per draft, and never able to fail a publication.
+    await recordOpeningFrames(backendDb, draft.id, filePath);
     if (target.target === "youtube_shorts") return prepareYouTube(config, backendDb, job, target, filePath, locale);
     if (target.deliveryProvider === "zernio") return prepareZernio(backendDb, job, target);
     return prepareInstagram(config, backendDb, job, target, draft, metadata, instagramCredentials);

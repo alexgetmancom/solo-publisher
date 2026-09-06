@@ -1,3 +1,7 @@
+import { eq } from "drizzle-orm";
+import { type BackendDb, unsafeDb } from "../../db/client.js";
+import { videoFrameFeatures } from "../../db/schema.js";
+import { log } from "../../foundation/logger.js";
 import { runFfmpegCapture } from "../../foundation/runtime/ffmpeg.js";
 
 /** The frame is measured, not viewed, so it is decoded small: 64 by 114 keeps
@@ -134,4 +138,45 @@ function edges(luma: number[]): number {
 
 function round(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+/**
+ * Measures and stores the opening of a video from the file being published.
+ *
+ * The opening is only readable while the file exists: Instagram serves a
+ * published Reel for about a week and refuses it after that, and the source
+ * file is deleted by retention. Reading it at publishing time is the only
+ * moment both are guaranteed, and it is why the archive has holes this cannot
+ * fill.
+ *
+ * A failed measurement is not a failed publication, so nothing here throws:
+ * the video goes out, and the opening is simply unknown.
+ */
+export async function recordOpeningFrames(backendDb: BackendDb, videoDraftId: number, filePath: string): Promise<void> {
+  const already = unsafeDb(backendDb)
+    .db.select({ atSeconds: videoFrameFeatures.atSeconds })
+    .from(videoFrameFeatures)
+    .where(eq(videoFrameFeatures.videoDraftId, videoDraftId))
+    .all();
+  if (already.length >= FRAME_SECONDS.length) return;
+  const capturedAt = new Date().toISOString();
+  for (const atSeconds of FRAME_SECONDS)
+    try {
+      const features = await frameFeatures(filePath, atSeconds);
+      unsafeDb(backendDb)
+        .db.insert(videoFrameFeatures)
+        .values({ videoDraftId, atSeconds, featuresJson: { ...features }, source: "local_file", capturedAt })
+        .onConflictDoUpdate({
+          target: [videoFrameFeatures.videoDraftId, videoFrameFeatures.atSeconds],
+          set: { featuresJson: { ...features }, capturedAt },
+        })
+        .run();
+    } catch (error) {
+      log("warn", "opening frame could not be measured", {
+        videoDraftId,
+        atSeconds,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
 }
