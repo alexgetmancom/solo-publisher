@@ -48,6 +48,7 @@ import { syncAudienceDemographics } from "./demographics-sync.js";
 import { diskReport } from "./disk-report.js";
 import { backfillVideoFrames } from "./frames-backfill.js";
 import { backfillYouTubeCaptions } from "./youtube-captions.js";
+import { resumeVideoMetrics } from "./video-metrics-resume.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
 import {
@@ -491,6 +492,23 @@ const operationDefs = {
       return videoPerformanceDetail(context.db(), parsed.id, context.config().TIMEZONE);
     },
   }),
+  "video-metrics-resume": operation({
+    section: "analytics",
+    startHere: "a video stopped collecting metrics and the reason has gone away",
+    summary: "Put video metric rows that stopped collecting back on the schedule.",
+    note: "Collection freezes when a platform says the post is gone or the credential is refused, and until then a frozen row is the right answer. It is the wrong one once the cause has gone — a channel reconnected, a daily quota reset — and there is otherwise no way back. Left unapplied it lists what stopped and why.",
+    schema: z.object({
+      apply: applyOption,
+      ref: refOption.optional().describe("one video, such as video:301; every stopped video when omitted"),
+    }),
+    mutates: true,
+    agent: true,
+    handler: (context, input) => {
+      const parsed = input.ref ? parsePublicationRef(input.ref) : null;
+      if (input.ref && parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
+      return resumeVideoMetrics(context.db(), { apply: input.apply, refs: parsed ? [parsed.id] : [] });
+    },
+  }),
   "captions-backfill": operation({
     section: "analytics",
     startHere: "can the old videos say what was said in them",
@@ -603,7 +621,7 @@ const operationDefs = {
     section: "media",
     summary:
       "Measure the opening seconds of published videos: face, split screen or plain gameplay, plus brightness, contrast and how busy the frame is.",
-    note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
+    note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Instagram refuses the file for anything older than about a week, so those are read once from the post's cover instead and marked `from: instagram_cover`: that is the cover, not the frame at zero seconds. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
     schema: z.object({
       apply: applyOption,
       limit: z.coerce.number().int().min(1).max(500).default(25).describe("how many videos to read in one run"),

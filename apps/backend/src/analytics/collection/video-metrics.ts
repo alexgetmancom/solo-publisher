@@ -10,7 +10,7 @@ import { zernioRequest } from "../../foundation/external/zernio.js";
 import { requestJson } from "../../foundation/http.js";
 import { t } from "../../foundation/i18n/index.js";
 import { markSynced, mergeVideoSnapshot, metricNumber, upsertVideoSnapshot } from "../snapshots/creator-store.js";
-import { describeMetricFreeze, isTerminalMetricError, terminalIfMissingRemoteObject } from "./collectors/errors.js";
+import { describeMetricFreeze, isQuotaExhausted, isTerminalMetricError, terminalIfMissingRemoteObject } from "./collectors/errors.js";
 import { nextVideoMetricCheckAt, videoMetricCheckpointAt } from "./metric-checkpoints.js";
 import { MAX_METRIC_TASKS_PER_CYCLE, METRIC_LOCK_TIMEOUT_SECONDS } from "./metric-schedule.js";
 import { collectCommentsQuietly, collectInstagramComments, collectYouTubeComments, collectZernioComments } from "./video-comments.js";
@@ -79,8 +79,8 @@ export async function runVideoMetricSchedule(config: BackendConfig, backendDb: B
     } catch (error) {
       const normalized = terminalIfMissingRemoteObject(error);
       const message = normalized instanceof Error ? normalized.message : String(normalized);
-      const terminal = isTerminalMetricError(normalized);
-      const frozen = localizedTasks.filter((task) => finishVideoMetricTask(backendDb, task, message, terminal));
+      const outcome = metricOutcome(normalized);
+      const frozen = localizedTasks.filter((task) => finishVideoMetricTask(backendDb, task, message, outcome));
       if (frozen.length)
         backendDb.events.record({
           ref: `analytics:youtube:${locale}`,
@@ -108,7 +108,7 @@ export async function runVideoMetricSchedule(config: BackendConfig, backendDb: B
         backendDb,
         task,
         normalized instanceof Error ? normalized.message : String(normalized),
-        isTerminalMetricError(normalized),
+        metricOutcome(normalized),
       );
       if (frozen) {
         const ref = publicationRef("video", task.videoDraftId);
@@ -370,14 +370,52 @@ function clampPercentage(value: number): number {
  * can't retry forever. */
 const MAX_METRIC_ERROR_RETRIES = 20;
 
+function metricOutcome(error: unknown): MetricOutcome {
+  if (isQuotaExhausted(error)) return "wait";
+  return isTerminalMetricError(error) ? "freeze" : "retry";
+}
+
+/** Google's daily quota resets at midnight Pacific, and every Studio's videos
+ * share one project's budget, so retrying before then only spends attempts on
+ * the same refusal. */
+function nextQuotaReset(now: Date): Date {
+  // Stepping in hours rather than computing a Pacific date keeps the two
+  // daylight-saving days right: one of them has no midnight-to-one hour and
+  // the other has two.
+  for (let hours = 1; hours <= 25; hours += 1) {
+    const candidate = new Date(now.getTime() + hours * 60 * 60_000);
+    if (pacificHour(candidate) === 0) return candidate;
+  }
+  return new Date(now.getTime() + 24 * 60 * 60_000);
+}
+
+function pacificHour(at: Date): number {
+  return Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", hour12: false }).format(at).replace("24", "0"),
+  );
+}
+
+/** What to do with a row after an attempt: retry it on the usual cadence,
+ * freeze it because nothing will change, or wait out a quota that resets. */
+type MetricOutcome = "retry" | "freeze" | "wait";
+
 /** Returns whether the row was frozen (terminal error or retry budget exhausted). */
-function finishVideoMetricTask(backendDb: BackendDb, task: VideoMetricTask, error: string | null, terminal = false): boolean {
+function finishVideoMetricTask(backendDb: BackendDb, task: VideoMetricTask, error: string | null, outcome: MetricOutcome = "retry"): boolean {
   const now = new Date();
   const nextIndex = error ? task.checkpointIndex : task.checkpointIndex + 1;
-  const errorCount = error ? task.errorCount + 1 : 0;
-  const exhausted = error != null && errorCount >= MAX_METRIC_ERROR_RETRIES;
+  // Waiting for a quota is not a failure of this row: counting it would spend
+  // the budget meant for real failures and freeze a healthy video after five
+  // hours of an outage nobody can shorten.
+  const errorCount = error && outcome !== "wait" ? task.errorCount + 1 : task.errorCount;
+  const exhausted = error != null && outcome !== "wait" && errorCount >= MAX_METRIC_ERROR_RETRIES;
   const nextCheckAt =
-    terminal || exhausted ? null : error ? new Date(now.getTime() + 15 * 60_000) : nextVideoMetricCheckAt(task.publishedAt, now);
+    outcome === "freeze" || exhausted
+      ? null
+      : outcome === "wait"
+        ? nextQuotaReset(now)
+        : error
+          ? new Date(now.getTime() + 15 * 60_000)
+          : nextVideoMetricCheckAt(task.publishedAt, now);
   unsafeDb(backendDb)
     .db.update(videoMetricSchedule)
     .set({

@@ -58,7 +58,7 @@ export function videoPerformanceReport(backendDb: BackendDb, options: VideoRepor
   for (const target of series) byDraft.set(target.video_draft_id, [...(byDraft.get(target.video_draft_id) ?? []), target]);
   return {
     window: { days: options.days, from: from.toISOString(), to: now.toISOString(), timeZone: options.timeZone },
-    coverage: coverage(series, byDraft),
+    coverage: { ...coverage(series, byDraft), scripts: scriptCoverage(backendDb, [...byDraft.keys()]) },
     totals: totals(series),
     publishHours: publishHours(series, options.timeZone),
     ageCurve: ageCurve(series),
@@ -192,6 +192,24 @@ function coverage(series: TargetSeries[], byDraft: Map<number, TargetSeries[]>):
     crossPosted: [...byDraft.values()].filter((targets) => new Set(targets.map((target) => target.target)).size > 1).length,
     byPlatform: perPlatform,
   };
+}
+
+/** How much of the window can say what was said in it, and whether that text
+ * was written before the video or heard afterwards. Only the written ones are
+ * evidence about the words that were chosen. */
+function scriptCoverage(backendDb: BackendDb, draftIds: number[]): Record<string, number> {
+  if (draftIds.length === 0) return { videos: 0, written: 0, heard: 0, missing: 0 };
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      `SELECT script_source AS source, COUNT(*) AS count
+         FROM video_drafts
+        WHERE id IN (${draftIds.map(() => "?").join(",")}) AND script IS NOT NULL
+        GROUP BY script_source`,
+    )
+    .all(...draftIds) as Array<{ source: string | null; count: number }>;
+  const written = rows.filter((row) => row.source === "operator").reduce((total, row) => total + row.count, 0);
+  const heard = rows.reduce((total, row) => total + row.count, 0) - written;
+  return { videos: draftIds.length, written, heard, missing: draftIds.length - written - heard };
 }
 
 function totals(series: TargetSeries[]): Record<string, unknown> {

@@ -18,7 +18,12 @@ import { zernioRequest } from "../foundation/external/zernio.js";
  * the account's list mints them again. One paged read per run replaces one
  * refused download per video. */
 type ZernioAccountAnalytics = {
-  posts?: Array<{ _id?: string; latePostId?: string; mediaItems?: Array<{ type?: string; url?: string }> }>;
+  posts?: Array<{
+    _id?: string;
+    latePostId?: string;
+    thumbnailUrl?: string;
+    mediaItems?: Array<{ type?: string; url?: string }>;
+  }>;
   pagination?: { page?: number; pages?: number };
 };
 
@@ -30,15 +35,16 @@ const PAGE_SIZE = 50;
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
 /** Instagram serves its own media to its own account, but not at whatever rate
- * a script asks for: a run that pulled two dozen files back to back was
- * answered with 403 on everything after it. This is a catch-up sweep with no
- * deadline, so it waits. */
+ * a script asks for. This is a catch-up sweep with no deadline, so it waits. */
 const PAUSE_BETWEEN_DOWNLOADS_MS = 4_000;
 
-/** Once the platform starts refusing, it keeps refusing for a while. Stopping
- * says so plainly and leaves the rest for the next run, instead of turning one
- * throttle into a hundred failures in the report. */
-const REFUSALS_BEFORE_STOPPING = 5;
+/** A video older than about a week is refused outright: the signed link the
+ * account list mints still points at the file, and the CDN answers 403 for it
+ * from any address, which two hosts on different networks confirm. The cover
+ * image of the same post is served for as long as the post exists, so the
+ * archive is measured from that -- one frame, the one the opening is judged
+ * by, rather than three. */
+const COVER_ONLY_SECONDS = [0] as const;
 
 /** The frames wanted are in the first seconds, and Instagram's progressive mp4
  * carries its index at the front, so the first few megabytes are enough. A
@@ -55,6 +61,14 @@ const DOWNLOAD_HEADERS = {
   Accept: "video/mp4,video/*;q=0.9,*/*;q=0.8",
   Range: `bytes=0-${RANGE_BYTES}`,
 } as const;
+
+/** The cover is one small image, so it is asked for whole. */
+const COVER_HEADERS = {
+  "User-Agent": DOWNLOAD_HEADERS["User-Agent"],
+  Accept: "image/jpeg,image/*;q=0.9,*/*;q=0.8",
+} as const;
+
+type Media = { video: string | null; cover: string | null };
 
 type Candidate = {
   videoDraftId: number;
@@ -84,51 +98,38 @@ export async function backfillVideoFrames(
   const accountId = candidates.find((candidate) => candidate.providerAccountId)?.providerAccountId ?? null;
   const media =
     input.apply && accountId && candidates.some((candidate) => !candidate.localPath)
-      ? await mediaIndex(config, fetchImpl, accountId, Math.ceil(candidates.length / PAGE_SIZE) + 1)
-      : new Map<string, string>();
-  let refusals = 0;
-  let stopped: string | null = null;
+      ? await mediaIndex(config, fetchImpl, accountId, candidates)
+      : new Map<string, Media>();
   if (input.apply)
     for (const candidate of candidates) {
-      if (refusals >= REFUSALS_BEFORE_STOPPING) {
-        stopped = `the platform refused ${refusals} downloads in a row; the rest is left for a later run`;
-        break;
-      }
       const ref = `video:${candidate.videoDraftId}`;
       let temporary: string | null = null;
       try {
-        const source = candidate.localPath ?? (await downloadReel(config, fetchImpl, candidate, media));
+        const fetched = candidate.localPath ? null : await downloadOpening(config, fetchImpl, candidate, media);
+        const source = candidate.localPath ?? fetched?.path ?? null;
         if (!source) {
-          failed.push({ ref, reason: "no readable copy of this video: no local file and no media URL from the provider" });
+          failed.push({ ref, reason: "no readable copy of this video: no local file, and the provider offers neither the file nor a cover" });
           continue;
         }
         temporary = candidate.localPath ? null : source;
+        const from = candidate.localPath ? "local_file" : (fetched?.from ?? "instagram_media");
         const capturedAt = new Date().toISOString();
         const shapes: string[] = [];
-        for (const atSeconds of FRAME_SECONDS) {
+        for (const atSeconds of from === "instagram_cover" ? COVER_ONLY_SECONDS : FRAME_SECONDS) {
           const features = await frameFeatures(source, atSeconds);
           shapes.push(features.shape);
           unsafeDb(backendDb)
             .db.insert(videoFrameFeatures)
-            .values({
-              videoDraftId: candidate.videoDraftId,
-              atSeconds,
-              featuresJson: { ...features },
-              source: candidate.localPath ? "local_file" : "instagram_media",
-              capturedAt,
-            })
+            .values({ videoDraftId: candidate.videoDraftId, atSeconds, featuresJson: { ...features }, source: from, capturedAt })
             .onConflictDoUpdate({
               target: [videoFrameFeatures.videoDraftId, videoFrameFeatures.atSeconds],
               set: { featuresJson: { ...features }, capturedAt },
             })
             .run();
         }
-        measured.push({ ref, label: candidate.label, shapes });
-        refusals = 0;
+        measured.push({ ref, label: candidate.label, from, shapes });
       } catch (error) {
-        const reason = (error instanceof Error ? error.message : String(error)).slice(0, 200);
-        refusals = /media_download_failed: (403|429)/.test(reason) ? refusals + 1 : 0;
-        failed.push({ ref, reason });
+        failed.push({ ref, reason: (error instanceof Error ? error.message : String(error)).slice(0, 200) });
       } finally {
         if (temporary) {
           await unlink(temporary).catch(() => undefined);
@@ -141,9 +142,10 @@ export async function backfillVideoFrames(
     candidates: candidates.length,
     mediaLinks: media.size,
     measured: measured.length,
-    ...(stopped ? { stopped } : {}),
+    fromCover: measured.filter((entry) => entry.from === "instagram_cover").length,
     failed,
     sample: input.apply ? measured.slice(0, 5) : candidates.slice(0, 5).map((candidate) => `video:${candidate.videoDraftId}`),
+    note: "A video Instagram still serves is read at 0, 1 and 3 seconds. An older one is refused from any address, and is read once from the post's cover instead: `from: instagram_cover` marks a reading that describes the cover Instagram shows, not the frame at zero seconds.",
   };
 }
 
@@ -165,44 +167,77 @@ function loadCandidates(backendDb: BackendDb): Candidate[] {
     .all() as Candidate[];
 }
 
-/** Every media link the account will give us, minted now, keyed by both ids
- * the provider uses for a post. */
+/** Every link the account will give us for the posts wanted, minted now and
+ * keyed by both ids the provider uses for a post.
+ *
+ * The pages are walked until every candidate is found rather than for a fixed
+ * count: the videos still missing a reading are the oldest ones, and they sit
+ * at the far end of an account's history. */
 async function mediaIndex(
   config: BackendConfig,
   fetchImpl: typeof fetch,
   accountId: string,
-  pagesNeeded: number,
-): Promise<Map<string, string>> {
-  const index = new Map<string, string>();
-  for (let page = 1; page <= pagesNeeded; page += 1) {
+  candidates: Candidate[],
+): Promise<Map<string, Media>> {
+  const wanted = new Set(candidates.map((candidate) => candidate.providerPostId).filter((id): id is string => Boolean(id)));
+  const index = new Map<string, Media>();
+  for (let page = 1; ; page += 1) {
     const answer = await zernioRequest<ZernioAccountAnalytics>(
       config,
       `analytics?${new URLSearchParams({ accountId, limit: String(PAGE_SIZE), page: String(page) })}`,
       fetchImpl,
     );
     for (const post of answer.posts ?? []) {
-      const url = post.mediaItems?.find((item) => item.type === "video" && item.url)?.url;
-      if (!url) continue;
-      if (post._id) index.set(post._id, url);
-      if (post.latePostId) index.set(post.latePostId, url);
+      const media: Media = {
+        video: post.mediaItems?.find((item) => item.type === "video" && item.url)?.url ?? null,
+        cover: post.thumbnailUrl ?? null,
+      };
+      if (!media.video && !media.cover) continue;
+      for (const id of [post._id, post.latePostId]) {
+        if (!id) continue;
+        index.set(id, media);
+        wanted.delete(id);
+      }
     }
-    if ((answer.pagination?.pages ?? 1) <= page) break;
+    if (wanted.size === 0 || (answer.pagination?.pages ?? 1) <= page) break;
   }
   return index;
 }
 
-/** Fetches the published Reel into a temporary file and returns its path. */
-async function downloadReel(
+/** Fetches enough of the opening to read it: the file itself when Instagram
+ * still serves it, and otherwise the post's cover image, which it serves for
+ * as long as the post exists. */
+async function downloadOpening(
   config: BackendConfig,
   fetchImpl: typeof fetch,
   candidate: Candidate,
-  media: Map<string, string>,
+  index: Map<string, Media>,
+): Promise<{ path: string; from: "instagram_media" | "instagram_cover" } | null> {
+  const media = candidate.providerPostId ? index.get(candidate.providerPostId) : null;
+  if (!media) return null;
+  if (media.video) {
+    const path = await fetchInto(fetchImpl, media.video, config, candidate, DOWNLOAD_HEADERS);
+    if (path) return { path, from: "instagram_media" };
+  }
+  if (media.cover) {
+    const path = await fetchInto(fetchImpl, media.cover, config, candidate, COVER_HEADERS);
+    if (path) return { path, from: "instagram_cover" };
+  }
+  return null;
+}
+
+/** Writes what the CDN serves into the media cache, or answers null when it
+ * refuses -- which for a video more than about a week old it always does. */
+async function fetchInto(
+  fetchImpl: typeof fetch,
+  url: string,
+  config: BackendConfig,
+  candidate: Candidate,
+  headers: Record<string, string>,
 ): Promise<string | null> {
-  const url = candidate.providerPostId ? media.get(candidate.providerPostId) : null;
-  if (!url) return null;
-  const response = await fetchImpl(url, { headers: { ...DOWNLOAD_HEADERS }, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
-  if (!response.ok && response.status !== 206) throw new Error(`media_download_failed: ${response.status}`);
-  const target = path.join(config.MEDIA_CACHE_DIR, `frame-source-${candidate.videoDraftId}.mp4`);
+  const response = await fetchImpl(url, { headers: { ...headers }, signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
+  if (!response.ok && response.status !== 206) return null;
+  const target = path.join(config.MEDIA_CACHE_DIR, `frame-source-${candidate.videoDraftId}`);
   await Bun.write(target, await response.arrayBuffer());
   return target;
 }
