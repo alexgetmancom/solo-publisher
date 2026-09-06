@@ -138,6 +138,10 @@ export const xActivityItems = sqliteTable(
     text: text().notNull(),
     url: text().notNull(),
     linkedPublicationKey: text(),
+    /** The line the post opens with, and what kind of line it is. A reader
+     * decides on the first line the way a viewer decides on the first seconds. */
+    openingLine: text(),
+    openingKind: text(),
     firstSeenAt: text().notNull(),
     lastSeenAt: text().notNull(),
     rawJson: json<JsonValue | null>(),

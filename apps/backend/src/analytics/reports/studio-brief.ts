@@ -1,6 +1,7 @@
 import type { BackendDb } from "../../db/client.js";
 import { audienceDemographicsReport } from "../collection/instagram-demographics.js";
 import { commentQuality } from "./comment-quality.js";
+import { postPerformanceReport } from "./post-performance.js";
 import { videoDigest } from "./video-digest.js";
 import { videoKeywordReport } from "./video-keywords.js";
 import { videoPerformanceReport } from "./video-performance.js";
@@ -31,6 +32,7 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
   const demographics = audienceDemographicsReport(backendDb);
   const comparison = platformComparison(backendDb, { days: 30 });
   const comments = commentQuality(backendDb, { days: options.days, limit: 3 });
+  const posts = postPerformanceReport(backendDb, { days: 30, limit: 3 });
   const byTag = performance.byTag as Record<string, Facet>;
   const scripts = (performance.coverage as { scripts?: Record<string, number> }).scripts ?? {};
   return {
@@ -54,6 +56,18 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
       },
       source: "video-report → byTag, games",
     },
+    // A Studio that publishes text as well as video is asked the same question
+    // about both, and the answer has the same shape: what did the beginning do.
+    ...(((posts.coverage as { posts?: number }).posts ?? 0) > 0
+      ? {
+          posts: {
+            howItWasWritten: posts.howItWasWritten,
+            openings: (posts.openings as Array<Record<string, unknown>>).filter((row) => Number(row.posts) >= MIN_SAMPLE),
+            outliers: (posts.outliers as unknown[]).slice(0, TOP),
+            source: "post-report",
+          },
+        }
+      : {}),
     whatHeldThem: {
       byKind: topOpenings(performance, "byKind"),
       byShape: topOpenings(performance, "byShape"),
@@ -88,7 +102,7 @@ export function studioBrief(backendDb: BackendDb, options: { days: number; timeZ
       source: "audience-demographics",
     })),
     collection: { ...(performance.collection as Record<string, unknown>), scripts },
-    nextSteps: nextSteps(byTag, performance, demographics, scripts),
+    nextSteps: nextSteps(byTag, performance, demographics, scripts, posts),
     reading: [
       "A summary of the reports underneath it: each section names the command that shows its full working.",
       "Anything thin has already been dropped here rather than shown with a warning — for the whole picture, including the uncertain parts, read the named report.",
@@ -149,8 +163,14 @@ function nextSteps(
   performance: Record<string, unknown>,
   demographics: Record<string, unknown>,
   scripts: Record<string, number>,
+  posts: Record<string, unknown>,
 ): string[] {
   const steps: string[] = [];
+  const written = posts.coverage as { standalone?: number; openingKindKnown?: number };
+  if ((written.standalone ?? 0) > 0 && (written.openingKindKnown ?? 0) < (written.standalone ?? 0) / 2)
+    steps.push(
+      `${written.openingKindKnown ?? 0} of ${written.standalone ?? 0} standalone posts have their opening named. \`post-openings-classify\` fills it in from the first line.`,
+    );
   const openings = performance.openings as { coverage?: { kind?: number; shape?: number; videos?: number } };
   if ((openings.coverage?.kind ?? 0) < (openings.coverage?.videos ?? 0) / 2)
     steps.push(

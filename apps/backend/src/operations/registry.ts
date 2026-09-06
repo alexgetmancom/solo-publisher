@@ -2,6 +2,8 @@ import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { classifyHooks } from "../analytics/collection/hook-types.js";
+import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
+import { postPerformanceReport } from "../analytics/reports/post-performance.js";
 import { enrichGames, gamesReport } from "../analytics/games.js";
 import { importVideoArchive } from "./archive-import.js";
 import { relinkInstagramPosts } from "./instagram-relink.js";
@@ -1010,6 +1012,39 @@ const operationDefs = {
         knownFeatures: operationUsageKeys(),
         ...(input.days === undefined ? {} : { days: input.days }),
         ...(input.unused_days === undefined ? {} : { unusedDays: input.unused_days }),
+      }),
+  }),
+  "post-report": operation({
+    section: "analytics",
+    startHere: "how are the posts doing, and what opening worked",
+    summary:
+      "One pass over the account's own posts: what each opening did, how a reply compares with a post of its own, and which posts happened to something else.",
+    note: "The posts' answer to `video-report`. Figures come from X's own export, which is taken by hand, so they are as fresh as the last `import-x-analytics` and no fresher. A reply borrows the audience of whatever it answers, so it is reported apart rather than averaged in, and `openings` covers standalone posts only.",
+    schema: z.object({
+      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days, counted back from now"),
+      limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many posts to list"),
+    }),
+    mutates: false,
+    agent: true,
+    handler: (context, input) => postPerformanceReport(context.db(), { days: input.days, limit: input.limit }),
+  }),
+  "post-openings-classify": operation({
+    section: "analytics",
+    startHere: "what kind of opening does each post use",
+    summary: "Name the kind of opening each standalone post used — news, rumour, numbers, take, question or personal — from its first line.",
+    note: "The posts' answer to `hooks-classify`. Reads the first line of every standalone post; a reply is left alone, because the line that opens an answer to someone else was not written to stop a scroll. The label is a model's judgement about one line, not a measurement: without --apply it prints the lines it would judge.",
+    schema: z.object({
+      apply: applyOption,
+      limit: z.coerce.number().int().min(1).max(400).default(100).describe("how many posts to judge in one run"),
+      overwrite: z.boolean().default(false).describe("judge posts that already carry a kind"),
+    }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) =>
+      classifyPostOpenings(context.db(), context.config(), context.fetchImpl, {
+        apply: input.apply,
+        limit: input.limit,
+        overwrite: input.overwrite,
       }),
   }),
   "x-analytics": operation({

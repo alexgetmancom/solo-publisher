@@ -57,6 +57,7 @@ const OFF_THE_AGENT_SURFACE = [
   "live-say",
   "dates-repair",
   "milestone-announce",
+  "post-openings-classify",
   "comments-backfill",
   "youtube-analytics-backfill",
   "video-tag-backfill",
