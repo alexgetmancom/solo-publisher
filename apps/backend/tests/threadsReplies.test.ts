@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { publicationTargets } from "../src/db/schema.js";
 import { recentPostComments } from "../src/engagement/post-comments.js";
-import { collectThreadsReplies } from "../src/engagement/threads-replies.js";
+import { backfillThreadsReplies, collectThreadsReplies } from "../src/engagement/threads-replies.js";
 import { withDb } from "./helpers/db.js";
 
 const config = { THREADS_RU_ACCESS_TOKEN: "ru-token", THREADS_EN_ACCESS_TOKEN: "en-token" } as never;
@@ -81,5 +81,69 @@ describe("threads replies", () => {
         throw new Error("must not be called");
       }) as unknown as typeof fetch;
       expect(await collectThreadsReplies(backendDb, {} as never, "threads_ru", ["1"], fetchImpl)).toBe(0);
+    }));
+});
+
+describe("threads reply backfill", () => {
+  const page = (data: unknown[], next?: string) => JSON.stringify({ data, ...(next ? { paging: { next } } : {}) });
+
+  it("follows the paging and leaves the Studio's own chain replies out", () =>
+    withDb(async (backendDb) => {
+      backendDb.db
+        .insert(publicationTargets)
+        .values({ publicationKey: "post:1", target: "threads_ru", externalId: "500", updatedAt: "2026-09-01T00:00:00.000Z" })
+        .run();
+      const calls: string[] = [];
+      const fetchImpl = (async (input: string | URL) => {
+        const url = new URL(String(input));
+        calls.push(url.pathname);
+        if (url.pathname.endsWith("/me")) return new Response(JSON.stringify({ username: "alexgetmanru" }));
+        if (url.searchParams.get("cursor") === "2")
+          return new Response(page([{ id: "c3", text: "third", username: "reader", timestamp: "2026-09-02T10:00:00+0000" }]));
+        return new Response(
+          page(
+            [
+              // The post's own author continuing the chain: not the audience.
+              { id: "c1", text: "part two of my own thread", username: "alexgetmanru", timestamp: "2026-09-02T09:00:00+0000" },
+              { id: "c2", text: "second", username: "someone", timestamp: "2026-09-02T09:30:00+0000" },
+            ],
+            "https://graph.threads.net/v1.0/500/conversation?cursor=2&access_token=ru-token",
+          ),
+        );
+      }) as unknown as typeof fetch;
+
+      const report = await backfillThreadsReplies(backendDb, config, "threads_ru", fetchImpl, { pause: async () => {} });
+      expect(report.skippedAuthor).toBe("alexgetmanru");
+      expect(report.posts).toBe(1);
+      expect(report.visited).toBe(1);
+      expect(report.stored).toBe(2);
+      expect(report.stoppedEarly).toBeNull();
+      const texts = recentPostComments(backendDb, 10)[0]?.comments.map((comment) => comment.text);
+      expect(texts).toEqual(["second", "third"]);
+    }));
+
+  it("stops on the first throttle instead of spending more of the limit", () =>
+    withDb(async (backendDb) => {
+      for (const id of ["600", "601", "602"])
+        backendDb.db
+          .insert(publicationTargets)
+          .values({ publicationKey: `post:${id}`, target: "threads_ru", externalId: id, updatedAt: "2026-09-01T00:00:00.000Z" })
+          .run();
+      let conversations = 0;
+      const fetchImpl = (async (input: string | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname.endsWith("/me")) return new Response(JSON.stringify({ username: "alexgetmanru" }));
+        conversations += 1;
+        if (conversations > 1)
+          return new Response(JSON.stringify({ error: { message: "Application request limit reached", code: 4 } }), { status: 400 });
+        return new Response(page([{ id: "x1", text: "hi", username: "reader", timestamp: "2026-09-02T09:00:00+0000" }]));
+      }) as unknown as typeof fetch;
+
+      const report = await backfillThreadsReplies(backendDb, config, "threads_ru", fetchImpl, { pause: async () => {} });
+      expect(report.stoppedEarly).toBe("throttled");
+      expect(report.visited).toBe(1);
+      expect(report.stored).toBe(1);
+      // Two of the three were never asked for: the point of stopping.
+      expect(conversations).toBe(2);
     }));
 });

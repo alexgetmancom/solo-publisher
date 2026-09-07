@@ -30,6 +30,7 @@ import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/
 import type { BackendDb } from "../db/client.js";
 import { recentPostComments } from "../engagement/post-comments.js";
 import { engagementService } from "../engagement/service.js";
+import { backfillThreadsReplies } from "../engagement/threads-replies.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { readDeploymentReleases } from "../foundation/deployment.js";
 import { log } from "../foundation/logger.js";
@@ -863,11 +864,13 @@ const operationDefs = {
   }),
   "comments-backfill": operation({
     section: "analytics",
-    summary: "Sweep every published video and store all of its comments and replies, without touching metric snapshots.",
-    note: "Comments otherwise arrive at each video's own metric cadence, which is up to a week apart once a video is a month old. This catches up instead: one call per video plus one per thread deeper than the listing carries, against a YouTube quota of 10000 a day.",
+    summary: "Sweep published work and store all of its comments and replies, without touching metric snapshots.",
+    note: "Comments otherwise arrive at each publication's own metric cadence, which is up to a week apart once it is a month old, and only ever the first page. This catches up instead. Videos cost one call each plus one per thread deeper than the listing carries, against a YouTube quota of 10000 a day; Threads is paged to the end of each conversation, leaves out the Studio's own chain replies, and stops on the first throttle rather than lengthening a block. Safe to run again: a comment is keyed by its own id.",
     startHere: "the comment history is thinner than the platform's own counter",
     schema: z.object({
-      platforms: commaList("video platforms").describe("comma-separated video targets (default: youtube_shorts,instagram_reels)"),
+      platforms: commaList("targets").describe(
+        "comma-separated targets: youtube_shorts, instagram_reels, threads_ru, threads_en (default: the two video ones)",
+      ),
       limit: z.coerce.number().int().min(1).max(1000).default(1000).describe("newest published videos to sweep"),
     }),
     mutates: true,
@@ -875,11 +878,31 @@ const operationDefs = {
     // reading `comments` and seeing the gap -- and every agent tool costs its
     // full schema in every context this server is connected to.
     agent: false,
-    handler: (context, input) =>
-      backfillVideoComments(context.config(), context.db(), context.fetchImpl, {
-        platforms: splitList(input.platforms) ?? ["youtube_shorts", "instagram_reels"],
-        limit: input.limit,
-      }),
+    // One command, because "catch the comments up" is one question however many
+    // kinds of publication it is asked about. Which reader a target gets is a
+    // lookup, not a branch on what the caller meant.
+    handler: async (context, input) => {
+      const targets = splitList(input.platforms) ?? ["youtube_shorts", "instagram_reels"];
+      const threads = targets.filter((target): target is "threads_ru" | "threads_en" => target === "threads_ru" || target === "threads_en");
+      const video = targets.filter((target) => target !== "threads_ru" && target !== "threads_en");
+      return {
+        ...(video.length
+          ? {
+              video: await backfillVideoComments(context.config(), context.db(), context.fetchImpl, {
+                platforms: video,
+                limit: input.limit,
+              }),
+            }
+          : {}),
+        ...(threads.length
+          ? {
+              posts: await Promise.all(
+                threads.map((target) => backfillThreadsReplies(context.db(), context.config(), target, context.fetchImpl)),
+              ),
+            }
+          : {}),
+      };
+    },
   }),
   milestones: operation({
     section: "analytics",
