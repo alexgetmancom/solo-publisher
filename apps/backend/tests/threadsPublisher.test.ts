@@ -337,3 +337,65 @@ describe("splitText", () => {
     expect(parts.join("")).toContain("👨🏽‍🚀");
   });
 });
+
+describe("Threads media fetch failures", () => {
+  // Subcode 2207052 is Meta failing to fetch a staged file that is public and
+  // reachable. It is marked is_transient: false and is not: the same URL
+  // succeeds moments later, and one attempt per publication loses the post.
+  const mediaFetchError = () =>
+    new Response(
+      JSON.stringify({
+        error: { message: "An unknown error occurred", type: "OAuthException", code: 1, error_subcode: 2207052, is_transient: false },
+      }),
+      { status: 400, headers: { "content-type": "application/json" } },
+    );
+
+  function flakyTransport(failures: number) {
+    let creations = 0;
+    const fetchImpl = (async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.hostname !== "graph.threads.net") return new Response("staged", { status: 200, headers: { "content-type": "image/jpeg" } });
+      const endpoint = url.pathname.replace("/v1.0/", "");
+      const params: Record<string, string> = {};
+      for (const [key, value] of url.searchParams.entries()) params[key] = value;
+      if (init?.body instanceof URLSearchParams) for (const [key, value] of init.body.entries()) params[key] = value;
+      const json = (value: unknown) =>
+        new Response(JSON.stringify(value), { status: 200, headers: { "content-type": "application/json" } });
+      if (params.fields === "id,permalink") return json({ id: endpoint, permalink: "https://www.threads.net/@a/post/1" });
+      if (params.fields === "status,error_message") return json({ status: "FINISHED" });
+      if (endpoint === "me/threads_publish") return json({ id: "published" });
+      if (endpoint === "me/threads") {
+        creations += 1;
+        return creations <= failures ? mediaFetchError() : json({ id: "container" });
+      }
+      throw new Error(`unexpected Threads endpoint: ${endpoint}`);
+    }) as unknown as typeof fetch;
+    return { fetchImpl, attempts: () => creations };
+  }
+
+  const withImage = { text: "hello", media: [{ type: "IMAGE", vpsUrl: "https://example.com/media/staging/cache-a.jpg" }] };
+
+  it("asks again rather than losing the publication", async () => {
+    const { fetchImpl, attempts } = flakyTransport(2);
+    const result = await publishToThreads(withImage, config, fetchImpl);
+    expect(result.ok).toBe(true);
+    expect(attempts()).toBe(3);
+  });
+
+  it("gives up once the retries are spent, with the platform's own error", async () => {
+    const { fetchImpl, attempts } = flakyTransport(99);
+    await expect(publishToThreads(withImage, config, fetchImpl)).rejects.toThrow("2207052");
+    // The first call plus one per configured delay, and then it stops.
+    expect(attempts()).toBe(4);
+  });
+
+  it("spends no retry on an error that is not a failed media fetch", async () => {
+    let creations = 0;
+    const fetchImpl = (async () => {
+      creations += 1;
+      return new Response(JSON.stringify({ error: { message: "Invalid OAuth access token", code: 190 } }), { status: 400 });
+    }) as unknown as typeof fetch;
+    await expect(publishToThreads(withImage, config, fetchImpl)).rejects.toThrow("190");
+    expect(creations).toBe(1);
+  });
+});

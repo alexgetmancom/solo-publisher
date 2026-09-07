@@ -1,6 +1,7 @@
 import type { BackendConfig } from "../../foundation/config.js";
 import { type ThreadsTarget, threadsCredentials } from "../../foundation/external/threads.js";
 import { formBody, requestJson } from "../../foundation/http.js";
+import { log } from "../../foundation/logger.js";
 import type { PublishResult } from "../../publishing/errors.js";
 import { threadsBody, threadsTextLimit } from "../../publishing/threads-text.js";
 import { ambiguousExternalMutation } from "../ambiguous-publication.js";
@@ -32,6 +33,7 @@ type ThreadsState = {
   partIndex: number;
   polls: number;
   carouselRebuilds: number;
+  mediaFetchRetries: number;
   startedAtMs: number;
 };
 
@@ -40,6 +42,8 @@ type ThreadsState = {
 const THREADS_PROGRESS_KEY = "threadsProgress";
 const THREADS_RESUME_KEY = "_threadsPublishedIds";
 const POLL_DELAYS_MS = [250, 750, 1_500, 3_000, 5_000] as const;
+/** How long to wait before asking Meta to fetch the same staged file again. */
+const MEDIA_FETCH_RETRY_DELAYS_MS = [5_000, 20_000, 60_000] as const;
 
 export async function publishToThreads(
   payload: Record<string, unknown>,
@@ -65,34 +69,42 @@ export async function publishToThreads(
   if (state.stage === "create_child") {
     const item = mediaItems[state.itemIndex];
     if (!item) throw new Error("threads_carousel_item_missing");
-    const child = await callThreads(
-      runtime,
-      "me/threads",
-      {
-        media_type: item.type,
-        is_carousel_item: true,
-        [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl,
-      },
-      fetchImpl,
-      "POST",
-    );
-    if (!child.id) throw new Error("threads_carousel_child_missing");
-    return deferredThreads({ ...state, stage: "wait_child", containerId: child.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    try {
+      const child = await callThreads(
+        runtime,
+        "me/threads",
+        {
+          media_type: item.type,
+          is_carousel_item: true,
+          [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl,
+        },
+        fetchImpl,
+        "POST",
+      );
+      if (!child.id) throw new Error("threads_carousel_child_missing");
+      return deferredThreads({ ...state, stage: "wait_child", containerId: child.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    } catch (error) {
+      return (await deferMediaFetchRetry(state, error, item.vpsUrl, fetchImpl)) ?? raise(error);
+    }
   }
 
   if (state.stage === "create_primary") {
     const item = mediaItems[0];
-    const container = await callThreads(
-      runtime,
-      "me/threads",
-      item
-        ? { media_type: item.type, text: parts[0], [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl }
-        : { media_type: "TEXT", text: parts[0] },
-      fetchImpl,
-      "POST",
-    );
-    if (!container.id) throw new Error("threads_container_missing");
-    return deferredThreads({ ...state, stage: "wait_primary", containerId: container.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    try {
+      const container = await callThreads(
+        runtime,
+        "me/threads",
+        item
+          ? { media_type: item.type, text: parts[0], [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl }
+          : { media_type: "TEXT", text: parts[0] },
+        fetchImpl,
+        "POST",
+      );
+      if (!container.id) throw new Error("threads_container_missing");
+      return deferredThreads({ ...state, stage: "wait_primary", containerId: container.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    } catch (error) {
+      return (await deferMediaFetchRetry(state, error, item?.vpsUrl, fetchImpl)) ?? raise(error);
+    }
   }
 
   if (state.stage === "create_parent") {
@@ -180,6 +192,57 @@ export async function publishToThreads(
   };
 }
 
+/** Meta answers a staged URL that is public, reachable and well-formed with
+ * subcode 2207052 -- "could not fetch the media file" -- often enough to lose
+ * publications. It marks the failure is_transient: false, and it is not: the
+ * same URL succeeds moments later. Nothing has reached the audience at this
+ * stage and no container exists, so asking again costs nothing.
+ *
+ * Each attempt records what this host served for that URL at that moment,
+ * because without it the next occurrence is the same investigation again: the
+ * error names our URL but says nothing about whether the file was actually
+ * there, and by the time anyone looks the answer has changed.
+ */
+async function deferMediaFetchRetry(
+  state: ThreadsState,
+  error: unknown,
+  mediaUrl: string | undefined,
+  fetchImpl: typeof fetch,
+): Promise<PublishResult | null> {
+  if (!isMediaFetchError(error)) return null;
+  const retryInMs = MEDIA_FETCH_RETRY_DELAYS_MS[state.mediaFetchRetries];
+  log("warn", "Threads could not fetch the staged media", {
+    stage: state.stage,
+    url: mediaUrl,
+    attempt: state.mediaFetchRetries + 1,
+    retryInMs: retryInMs ?? null,
+    served: await describeStagedMedia(mediaUrl, fetchImpl),
+  });
+  if (retryInMs === undefined) return null;
+  return deferredThreads({ ...state, mediaFetchRetries: state.mediaFetchRetries + 1 }, retryInMs);
+}
+
+function isMediaFetchError(error: unknown): boolean {
+  return String(error instanceof Error ? error.message : error).includes("2207052");
+}
+
+/** What this host answers for the URL Meta says it could not fetch. */
+async function describeStagedMedia(mediaUrl: string | undefined, fetchImpl: typeof fetch): Promise<Record<string, unknown>> {
+  if (!mediaUrl) return { reason: "no staged url" };
+  try {
+    const response = await fetchImpl(mediaUrl);
+    const bytes = (await response.arrayBuffer()).byteLength;
+    return { status: response.status, contentType: response.headers.get("content-type"), bytes };
+  } catch (error) {
+    return { error: String(error instanceof Error ? error.message : error) };
+  }
+}
+
+/** `??` needs an expression, and a rethrow is a statement. */
+function raise(error: unknown): never {
+  throw error;
+}
+
 function initialThreadsState(mediaCount: number, now: number): ThreadsState {
   return {
     stage: mediaCount > 1 ? "create_child" : "create_primary",
@@ -189,6 +252,7 @@ function initialThreadsState(mediaCount: number, now: number): ThreadsState {
     partIndex: 0,
     polls: 0,
     carouselRebuilds: 0,
+    mediaFetchRetries: 0,
     startedAtMs: now,
   };
 }
@@ -228,6 +292,7 @@ function threadsState(value: unknown): ThreadsState | null {
     partIndex: integer(state.partIndex),
     polls: integer(state.polls),
     carouselRebuilds: integer(state.carouselRebuilds),
+    mediaFetchRetries: integer(state.mediaFetchRetries),
     startedAtMs: typeof state.startedAtMs === "number" && Number.isFinite(state.startedAtMs) ? state.startedAtMs : Date.now(),
   };
 }

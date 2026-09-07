@@ -2,7 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { isProgressiveJpeg, prepareMediaItems, pruneMediaCache } from "../src/delivery/media-prepare.js";
+import { prepareMediaItems, pruneMediaCache } from "../src/delivery/media-prepare.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("media preparation", () => {
@@ -55,71 +55,5 @@ describe("media preparation", () => {
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
-  });
-});
-
-describe("progressive JPEG detection", () => {
-  // Meta's fetcher rejects a progressive JPEG with a subcode that reads as an
-  // unreachable URL, so the encoding has to be recognised before it is staged.
-  const jpeg = (sofMarker: number): Buffer =>
-    Buffer.from([
-      0xff,
-      0xd8, // SOI
-      0xff,
-      0xe0,
-      0x00,
-      0x06,
-      0x4a,
-      0x46,
-      0x49,
-      0x46, // APP0, a segment to walk past
-      0xff,
-      sofMarker,
-      0x00,
-      0x0b,
-      0x08,
-      0x00,
-      0x10,
-      0x00,
-      0x10,
-      0x01,
-      0x01,
-      0x11,
-      0x00,
-      0xff,
-      0xda,
-      0x00,
-      0x08,
-      0x01,
-      0x01,
-      0x00,
-      0x00,
-      0x3f,
-      0x00, // SOS
-    ]);
-
-  const writeFixture = (bytes: Buffer): string => {
-    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-jpeg-")), "image.jpg");
-    fs.writeFileSync(file, bytes);
-    return file;
-  };
-
-  it("recognises SOF2 as progressive", async () => {
-    expect(await isProgressiveJpeg(writeFixture(jpeg(0xc2)))).toBe(true);
-  });
-
-  it("leaves a baseline JPEG alone", async () => {
-    expect(await isProgressiveJpeg(writeFixture(jpeg(0xc0)))).toBe(false);
-  });
-
-  it("stops at the scan rather than walking entropy-coded data as segments", async () => {
-    // Compressed bytes that happen to look like a marker must not be read as
-    // one: the answer is settled by the segment table, which ends at the SOS.
-    const withScanData = Buffer.concat([jpeg(0xc0), Buffer.from([0xff, 0xc2, 0x00, 0x11])]);
-    expect(await isProgressiveJpeg(writeFixture(withScanData))).toBe(false);
-  });
-
-  it("treats a non-JPEG as nothing to re-encode", async () => {
-    expect(await isProgressiveJpeg(writeFixture(Buffer.from([0x89, 0x50, 0x4e, 0x47])))).toBe(false);
   });
 });
