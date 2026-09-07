@@ -35,12 +35,16 @@ describe("Meta browser OAuth", () => {
     // broken" rather than "this token cannot read them". Without
     // `threads_manage_replies` the same token publishes the first message of a
     // chain and is refused on every continuation, with an empty HTTP 500.
+    // `threads_read_replies` is the other half and is not implied by it:
+    // Threads splits the two by verb, and a token carrying only the write half
+    // collects no comments at all while publishing perfectly.
     const threadsState = new URL(metaOauthConnectUrl(config, "threads", "ru", now)).searchParams.get("state") ?? "";
     const threads = new URL(metaOauthAuthorizeUrl(config, threadsState, now));
     expect(threads.searchParams.get("scope")?.split(",")).toEqual([
       "threads_basic",
       "threads_content_publish",
       "threads_manage_replies",
+      "threads_read_replies",
       "threads_manage_insights",
     ]);
 

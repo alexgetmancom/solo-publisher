@@ -80,7 +80,13 @@ describe("token health probes", () => {
 
   it("says nothing about a complete grant, or about a provider that will not list one", () =>
     withTempDb(async (backendDb) => {
-      const scopes = ["threads_basic", "threads_content_publish", "threads_manage_replies", "threads_manage_insights"];
+      const scopes = [
+        "threads_basic",
+        "threads_content_publish",
+        "threads_manage_replies",
+        "threads_read_replies",
+        "threads_manage_insights",
+      ];
       const complete = mock(async (url: string | URL | Request) =>
         String(url).includes("debug_token") ? jsonResponse({ data: { scopes } }) : jsonResponse({ id: "123" }),
       );

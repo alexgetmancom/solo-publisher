@@ -58,7 +58,13 @@ export const META_PROVIDERS: Record<MetaOauthPlatform, MetaProvider> = {
     // `threads_manage_replies`. A token minted without it publishes the first
     // message and is refused on every continuation -- with an empty HTTP 500,
     // not a permission error, so it reads as the platform being down.
-    scope: "threads_basic,threads_content_publish,threads_manage_replies,threads_manage_insights",
+    // Reading replies is a second permission, not the same one: Threads splits
+    // them by verb, `threads_manage_replies` for the POST that writes a reply
+    // and `threads_read_replies` for the GET that reads one. A token with only
+    // the first publishes chains perfectly and is refused on every read, with
+    // the same empty 500 -- which is how a Studio collected no comments for
+    // weeks while looking healthy.
+    scope: "threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies,threads_manage_insights",
     authorizeExtras: {},
     appId: (config) => config.THREADS_APP_ID,
     appSecret: (config) => config.THREADS_APP_SECRET,
