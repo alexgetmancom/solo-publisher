@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { publicationTargets } from "../src/db/schema.js";
-import { type DiscussionMessage, recentDiscussions, recordDiscussionMessage } from "../src/engagement/discussion-comments.js";
+import { type DiscussionMessage, recordDiscussionMessage } from "../src/engagement/discussion-comments.js";
+import { recentPostComments } from "../src/engagement/post-comments.js";
 import { withDb } from "./helpers/db.js";
 
 const CHANNEL = "@alexgetmancom";
@@ -31,10 +32,17 @@ describe("discussion comments", () => {
         message({ messageId: 51, threadId: 50, replyToMessageId: 50, authorId: 7, authorName: "Reader", text: "nice one" }),
       );
       expect(outcome).toBe("comment");
-      const [discussion] = recentDiscussions(backendDb);
-      expect(discussion?.channelPostId).toBe("4321");
+      const [discussion] = recentPostComments(backendDb, 10);
+      expect(discussion?.externalPostId).toBe("4321");
       expect(discussion?.comments).toEqual([
-        { messageId: 51, author: "Reader", text: "nice one", sentAt: "2026-09-03T10:00:00.000Z", edited: false, replyToMessageId: null },
+        {
+          commentId: `${CHAT}:51`,
+          author: "Reader",
+          text: "nice one",
+          sentAt: "2026-09-03T10:00:00.000Z",
+          edited: false,
+          replyToCommentId: null,
+        },
       ]);
     }));
 
@@ -52,7 +60,7 @@ describe("discussion comments", () => {
         .run();
       recordDiscussionMessage(backendDb, CHANNEL, forward(50, 4321));
       recordDiscussionMessage(backendDb, CHANNEL, message({ messageId: 51, threadId: 50, text: "hi" }));
-      const [discussion] = recentDiscussions(backendDb);
+      const [discussion] = recentPostComments(backendDb, 10);
       expect(discussion?.publicationKey).toBe("post:160");
       expect(discussion?.url).toBe("https://t.me/alexgetmancom/4321");
     }));
@@ -64,11 +72,11 @@ describe("discussion comments", () => {
       expect(
         recordDiscussionMessage(backendDb, CHANNEL, message({ messageId: 60, threadId: 50, replyToMessageId: 55, text: "late" })),
       ).toBe("unbound");
-      expect(recentDiscussions(backendDb)).toEqual([]);
+      expect(recentPostComments(backendDb, 10)).toEqual([]);
       recordDiscussionMessage(backendDb, CHANNEL, forward(50, 4321));
-      const [discussion] = recentDiscussions(backendDb);
-      expect(discussion?.channelPostId).toBe("4321");
-      expect(discussion?.comments.map((comment) => comment.text)).toEqual(["late"]);
+      const [discussion] = recentPostComments(backendDb, 10);
+      expect(discussion?.externalPostId).toBe("4321");
+      expect(discussion?.comments.map((comment: { text: string }) => comment.text)).toEqual(["late"]);
     }));
 
   it("reads the post from the forward a top-level comment answers", () =>
@@ -86,7 +94,7 @@ describe("discussion comments", () => {
         }),
       );
       expect(outcome).toBe("comment");
-      expect(recentDiscussions(backendDb)[0]?.channelPostId).toBe("4321");
+      expect(recentPostComments(backendDb, 10)[0]?.externalPostId).toBe("4321");
     }));
 
   it("rewrites the text on an edit and says the comment was edited", () =>
@@ -105,7 +113,7 @@ describe("discussion comments", () => {
           date: new Date("2026-09-03T11:00:00.000Z"),
         }),
       );
-      const comments = recentDiscussions(backendDb)[0]?.comments ?? [];
+      const comments = recentPostComments(backendDb, 10)[0]?.comments ?? [];
       expect(comments).toHaveLength(1);
       expect(comments[0]?.text).toBe("fixed");
       expect(comments[0]?.edited).toBe(true);
@@ -125,6 +133,6 @@ describe("discussion comments", () => {
       ).toBe("ignored");
       // Group chatter outside any post's thread.
       expect(recordDiscussionMessage(backendDb, CHANNEL, message({ messageId: 71, text: "unrelated" }))).toBe("ignored");
-      expect(recentDiscussions(backendDb)).toEqual([]);
+      expect(recentPostComments(backendDb, 10)).toEqual([]);
     }));
 });

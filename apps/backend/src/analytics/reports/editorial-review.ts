@@ -1,10 +1,11 @@
+import { desc, eq, sql } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
-import { socialComments, telegramComments, videoDrafts, videoTargets } from "../../db/schema.js";
+import { socialComments, videoDrafts, videoTargets } from "../../db/schema.js";
+import { recentCommentTexts } from "../../engagement/post-comments.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { deepSeekChat } from "../../foundation/external/deepseek.js";
 import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
-import { desc, eq, sql } from "drizzle-orm";
 import { commentQuality } from "./comment-quality.js";
 import { studioBrief } from "./studio-brief.js";
 
@@ -99,14 +100,10 @@ function recentComments(backendDb: BackendDb): Array<{ platform: string; label: 
     .orderBy(desc(socialComments.publishedAt))
     .limit(COMMENT_SAMPLE)
     .all();
-  const telegram = unsafeDb(backendDb)
-    .db.select({ platform: sql<string>`'telegram'`, text: telegramComments.text, at: telegramComments.sentAt, label: sql<null>`NULL` })
-    .from(telegramComments)
-    .where(sql`trim(${telegramComments.text}) <> ''`)
-    .orderBy(desc(telegramComments.sentAt))
-    .limit(COMMENT_SAMPLE)
-    .all();
-  return [...social, ...telegram]
+  // Asked of Engagement rather than read from its table: the post side of the
+  // audience is its own area, and this report is only a reader of it.
+  const posts = recentCommentTexts(backendDb, COMMENT_SAMPLE).map((comment) => ({ ...comment, label: null }));
+  return [...social, ...posts]
     .sort((left, right) => String(right.at ?? "").localeCompare(String(left.at ?? "")))
     .slice(0, COMMENT_SAMPLE)
     .map((comment) => ({ platform: comment.platform, label: comment.label, text: comment.text.slice(0, COMMENT_LENGTH) }));

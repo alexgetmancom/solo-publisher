@@ -10,7 +10,7 @@ import { trackUsageAsync } from "../../observability/usage.js";
 import { platformAnalyticsProfile } from "../../publishing/platform-profiles.js";
 import { upsertMetricError, upsertMetrics } from "../snapshots/metric-repository.js";
 import { isTerminalMetricError } from "./collectors/errors.js";
-import { createMetricCollectors, SUPPORTED_METRIC_TARGETS } from "./collectors/index.js";
+import { createMetricCollectors, createReplyReaders, type ReplyReader, SUPPORTED_METRIC_TARGETS } from "./collectors/index.js";
 import type { MetricCollector } from "./collectors/types.js";
 import {
   claimDueMetricTasks,
@@ -24,6 +24,7 @@ export async function runMetricsCycle(
   config: BackendConfig,
   backendDb: BackendDb,
   collectors: Record<string, MetricCollector> = createMetricCollectors(config),
+  replyReaders: Record<string, ReplyReader> = createReplyReaders(config),
 ): Promise<number> {
   // One list drives creation, retirement and claiming. Deriving them separately let a
   // target be collected but never scheduled, or scheduled but never collected.
@@ -75,6 +76,21 @@ export async function runMetricsCycle(
           });
           persistMs = Date.now() - persistStartedAt;
           success = true;
+          // After the metrics are safe, never before: the replies are
+          // enrichment, and a platform that refuses them must not cost the
+          // numbers that were already collected -- nor retry the whole task to
+          // fetch them again.
+          const readReplies = replyReaders[task.target];
+          if (readReplies)
+            try {
+              await readReplies(backendDb, task);
+            } catch (error) {
+              log("warn", "replies not collected", {
+                publicationKey: task.publicationKey,
+                target: task.target,
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
         } catch (error) {
           failure = error;
           throw error;

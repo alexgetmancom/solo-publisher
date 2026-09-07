@@ -1,4 +1,6 @@
 import { TARGET_GROUPS } from "../../../botTargets.js";
+import type { BackendDb } from "../../../db/client.js";
+import { collectThreadsReplies } from "../../../engagement/threads-replies.js";
 import type { BackendConfig } from "../../../foundation/config.js";
 import type { MetricTask } from "../metric-schedule.js";
 import { collectInstagramStory } from "./meta.js";
@@ -35,4 +37,21 @@ export function createMetricCollectors(config: BackendConfig, fetchImpl: typeof 
     for (const target of TARGET_GROUPS.x) collectors[target] = x;
   }
   return collectors;
+}
+
+/** Reads the audience's replies under one publication, for the targets whose
+ * platform lets them be read.
+ *
+ * A separate map rather than a field on `MetricResult`: only some platforms
+ * answer this question, a collector has no database to answer it into, and an
+ * optional field that one target fills is a branch on the caller wearing a
+ * struct. The cycle asks whether a target has a reader; it never asks which
+ * target it is holding. */
+export type ReplyReader = (backendDb: BackendDb, task: MetricTask) => Promise<number>;
+
+export function createReplyReaders(config: BackendConfig, fetchImpl: typeof fetch = fetch): Record<string, ReplyReader> {
+  const readers: Record<string, ReplyReader> = {};
+  for (const target of TARGET_GROUPS.threads)
+    readers[target] = (backendDb, task) => collectThreadsReplies(backendDb, config, target, task.externalIds, fetchImpl);
+  return readers;
 }

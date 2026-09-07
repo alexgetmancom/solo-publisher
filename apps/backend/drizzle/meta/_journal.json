@@ -197,6 +197,13 @@
       "when": 1790300000000,
       "tag": "0027_x_activity_opening",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788800000000,
+      "tag": "0012_post_comments",
+      "breakpoints": true
     }
   ]
 }

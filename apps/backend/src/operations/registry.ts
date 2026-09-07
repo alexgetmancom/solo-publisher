@@ -1,26 +1,24 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
-import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
-import { classifyHooks } from "../analytics/collection/hook-types.js";
-import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
-import { postPerformanceReport } from "../analytics/reports/post-performance.js";
-import { enrichGames, gamesReport } from "../analytics/games.js";
-import { importVideoArchive } from "./archive-import.js";
-import { relinkInstagramPosts } from "./instagram-relink.js";
-import { commentQuality } from "../analytics/reports/comment-quality.js";
-import { editorialReview } from "../analytics/reports/editorial-review.js";
-import { studioBrief } from "../analytics/reports/studio-brief.js";
-import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
-import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
-import { platformComparison } from "../analytics/reports/video-platform-compare.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
+import { classifyHooks } from "../analytics/collection/hook-types.js";
+import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
+import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
+import { enrichGames, gamesReport } from "../analytics/games.js";
 import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
 import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
 import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
 import { recentSocialComments } from "../analytics/reports/audience.js";
+import { commentQuality } from "../analytics/reports/comment-quality.js";
+import { editorialReview } from "../analytics/reports/editorial-review.js";
 import { audienceMilestoneReport } from "../analytics/reports/milestone-report.js";
+import { postPerformanceReport } from "../analytics/reports/post-performance.js";
+import { studioBrief } from "../analytics/reports/studio-brief.js";
+import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
+import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
 import { videoPerformanceDetail, videoPerformanceReport } from "../analytics/reports/video-performance.js";
+import { platformComparison } from "../analytics/reports/video-platform-compare.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
 import { deleteXImport } from "../analytics/x-import-delete.js";
@@ -30,7 +28,7 @@ import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { recentDiscussions } from "../engagement/discussion-comments.js";
+import { recentPostComments } from "../engagement/post-comments.js";
 import { engagementService } from "../engagement/service.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { readDeploymentReleases } from "../foundation/deployment.js";
@@ -46,16 +44,15 @@ import { settleVideoTarget } from "../publishing/video-settle.js";
 import type { VideoTarget } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { streamService } from "../studio/services/streams.js";
+import { importVideoArchive } from "./archive-import.js";
 import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
 import { syncAudienceDemographics } from "./demographics-sync.js";
 import { diskReport } from "./disk-report.js";
-import { backfillVideoFrames } from "./frames-backfill.js";
-import { backfillYouTubeCaptions } from "./youtube-captions.js";
-import { resumeVideoMetrics } from "./video-metrics-resume.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
+import { backfillVideoFrames } from "./frames-backfill.js";
 import {
   buildOperationsGuide,
   formatOperationsGuide,
@@ -63,6 +60,7 @@ import {
   type OperationCatalogEntry,
   type OperationSection,
 } from "./guide.js";
+import { relinkInstagramPosts } from "./instagram-relink.js";
 import { journalEvents } from "./journal.js";
 import {
   cancelPostDraft,
@@ -103,9 +101,11 @@ import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
 import { verifyPostTargets } from "./verify.js";
-import { backfillVideoGames } from "./video-tag-backfill.js";
+import { resumeVideoMetrics } from "./video-metrics-resume.js";
 import { tagVideo } from "./video-tag.js";
+import { backfillVideoGames } from "./video-tag-backfill.js";
 import { backfillYouTubeAnalytics } from "./youtube-analytics-backfill.js";
+import { backfillYouTubeCaptions } from "./youtube-captions.js";
 
 /** Config and the database are resolved on demand: `restore` operates on the
  * file itself and must not have it opened underneath it, and `guide` runs when
@@ -625,7 +625,8 @@ const operationDefs = {
   "hooks-classify": operation({
     section: "analytics",
     startHere: "what kind of opening does each video use",
-    summary: "Name the kind of opening each video used — question, shock, address, announcement or callback — from the words it opens with.",
+    summary:
+      "Name the kind of opening each video used — question, shock, address, announcement or callback — from the words it opens with.",
     note: "Reads `opening_line`, which is the first paragraph of a script its author wrote or the first sentence of a transcript. The label is a model's judgement about ten words, not a measurement: without --apply it prints the openings it would judge, and with it the label sits beside the words so a grouping can be checked by reading four of them.",
     schema: z.object({
       apply: applyOption,
@@ -846,7 +847,8 @@ const operationDefs = {
   }),
   comments: operation({
     section: "analytics",
-    summary: "What the audience wrote back: the channel's discussion group under posts, and the video platforms under videos.",
+    summary:
+      "What the audience wrote back: comments under posts, on every platform that lets them be read, and the video platforms under videos.",
     note: "Telegram comments only from after the bot joined the group -- a group's history is delivered to nobody -- and only on threads whose forwarded post the bot has seen. YouTube and Instagram comments ride along on the video metrics checkpoint rather than a schedule of their own, so a video a month old is read about once a week; `comments-backfill` catches every video up at once. Replies are stored beside the comments they answer, which is why a total here can exceed the number of threads.",
     startHere: "what is the audience saying about a post or a video",
     schema: z.object({
@@ -855,7 +857,7 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context, input) => ({
-      telegram: recentDiscussions(context.db(), input.limit),
+      posts: recentPostComments(context.db(), input.limit),
       video: recentSocialComments(context.db(), input.limit),
     }),
   }),
@@ -1031,7 +1033,8 @@ const operationDefs = {
   "post-openings-classify": operation({
     section: "analytics",
     startHere: "what kind of opening does each post use",
-    summary: "Name the kind of opening each standalone post used — news, rumour, numbers, take, question or personal — from its first line.",
+    summary:
+      "Name the kind of opening each standalone post used — news, rumour, numbers, take, question or personal — from its first line.",
     note: "The posts' answer to `hooks-classify`. Reads the first line of every standalone post; a reply is left alone, because the line that opens an answer to someone else was not written to stop a scroll. The label is a model's judgement about one line, not a measurement: without --apply it prints the lines it would judge.",
     schema: z.object({
       apply: applyOption,
