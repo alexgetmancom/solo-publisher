@@ -9,7 +9,7 @@ import { withDb } from "./helpers/db.js";
 describe("video script", () => {
   it("is asked right after the upload, and the wizard goes on from it", () => {
     const step = VIDEO_FLOW.steps.script;
-    expect(step?.input).toBe("text");
+    expect(step?.input).toBe("text_file");
     // The upload leads into it, and it leads into the metadata: a field
     // reachable only from an edit menu was filled on one video in three
     // hundred.

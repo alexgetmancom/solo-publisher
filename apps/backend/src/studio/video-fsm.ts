@@ -83,7 +83,7 @@ const VIDEO_STEPS = defineVideoSteps({
   // way. It stays in the edit menu too, for writing one in afterwards.
   script: {
     name: "script" as const,
-    input: "text",
+    input: "text_file",
     next: (data) => firstVideoMetadataStep(data.selectedTargets ?? []),
     accept: (input, data) => ({ ...data, script: input }),
   },

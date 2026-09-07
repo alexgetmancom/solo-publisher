@@ -53,13 +53,13 @@ function videoConfig() {
   return loadTestConfig({});
 }
 
-function videoContext(input: { text?: string; callback?: string } = {}) {
+function videoContext(input: { text?: string; callback?: string; document?: Record<string, unknown> } = {}) {
   const replies: string[] = [];
   const callbackAnswers: Array<Record<string, unknown> | undefined> = [];
   const context = {
     from: { id: 42 },
     chat: { id: 100 },
-    message: input.text == null ? undefined : { text: input.text },
+    message: input.document != null ? { document: input.document } : input.text == null ? undefined : { text: input.text },
     callbackQuery: input.callback == null ? undefined : { data: input.callback, message: { message_id: 11 } },
     reply: async (text: string) => {
       replies.push(text);
@@ -671,6 +671,48 @@ describe("video publication queue", () => {
         .all()
         .map((row) => row.target),
     ).toEqual(["instagram_reels"]);
+  });
+
+  /** The script question says a .txt or .md file answers it, and the file is how
+   * a script written in an editor actually arrives. The dialog used to require
+   * text of every step that reads text, so the attachment was refused before
+   * the step that knows how to read it ever saw it. */
+  it("takes the script from an attached .txt file", async () => {
+    const backendDb = testDb.open();
+    const config = loadTestConfig({ CONTROLLER_BOT_TOKEN: "test-token" });
+    const assetId = createTestVideoAsset(backendDb, 42, "/tmp/script-file.mp4");
+    const session = saveVideoState(backendDb, 42, {
+      draftId: null,
+      step: "asset",
+      selected: ["instagram_reels"],
+      data: { videoLocale: "ru" },
+    });
+    await startVideoDraft(backendDb, config, 42, session, assetId);
+    expect(getVideoState(backendDb, 42)?.step).toBe("script");
+
+    const directory = mkdtempSync(path.join(os.tmpdir(), "studio-script-file-"));
+    const scriptPath = path.join(directory, "Dumb Ways to Build.txt");
+    writeFileSync(scriptPath, "Один укус, и всё.");
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string | URL | Request) =>
+      new Response(JSON.stringify({ ok: true, result: { file_path: scriptPath } }), {
+        headers: { "Content-Type": "application/json" },
+      })) as typeof fetch;
+    try {
+      const answered = await handleVideoConversationMessage(
+        videoContext({ document: { file_id: "script-1", file_name: "Dumb Ways to Build.txt", file_size: 17, mime_type: "text/plain" } })
+          .context,
+        backendDb,
+        config,
+      );
+      expect((answered.effects[0] as { text: string }).text).toContain("Instagram Reels");
+    } finally {
+      globalThis.fetch = originalFetch;
+      rmSync(directory, { recursive: true, force: true });
+    }
+
+    expect(getVideoState(backendDb, 42)?.step).toBe("instagram_caption");
+    expect(backendDb.db.select().from(videoDrafts).all()[0]?.script).toBe("Один укус, и всё.");
   });
 
   /** A value a platform would refuse is answered by the question itself, with

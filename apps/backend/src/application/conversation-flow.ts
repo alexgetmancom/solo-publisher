@@ -8,8 +8,10 @@ type FlowAcceptance<TData, TEffect = never> = {
 
 /** What a step expects from the transport. Steps without one are reached by a
  * control (a button), not by something the operator sends, so a message adapter
- * must leave them alone instead of guessing. */
-type FlowStepInput = "text" | "media";
+ * must leave them alone instead of guessing. A "text_file" step reads the same
+ * answer either typed or attached as the file it was written in, so an empty
+ * message there is not yet an empty answer. */
+type FlowStepInput = "text" | "text_file" | "media";
 
 export type FlowStep<TData, TInput = unknown, TEffect = never, TStep extends string = string> = {
   name: TStep;
