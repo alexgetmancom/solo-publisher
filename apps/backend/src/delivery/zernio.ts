@@ -14,7 +14,13 @@ type ZernioPost = {
   existingPost?: ZernioPost;
   status?: string;
   platforms?: Array<{ platform?: string; platformPostId?: string; platformPostUrl?: string; status?: string; error?: string }>;
-  platformAnalytics?: Array<{ platform?: string; platformPostId?: string; platformPostUrl?: string }>;
+  platformAnalytics?: Array<{
+    platform?: string;
+    platformPostId?: string;
+    platformPostUrl?: string;
+    status?: string;
+    errorMessage?: string;
+  }>;
 };
 
 type ZernioDuplicateError = {
@@ -168,10 +174,13 @@ export async function zernioPostOutcome(
   );
   const post = response.post ?? response;
   const platformResult = (post.platforms ?? []).find((item) => item.platform === platform);
-  const failed = post.status === "failed" || platformResult?.status === "failed";
+  const platformAnalytics = (post.platformAnalytics ?? []).find((item) => item.platform === platform);
+  const failed = post.status === "failed" || platformResult?.status === "failed" || platformAnalytics?.status === "failed";
   return {
     ...zernioPublishResult(post as ZernioPost, platform, providerPostId),
-    failure: failed ? (platformResult?.error ?? "the provider reported this publication as failed") : null,
+    failure: failed
+      ? (platformResult?.error ?? platformAnalytics?.errorMessage ?? "the provider reported this publication as failed")
+      : null,
   };
 }
 

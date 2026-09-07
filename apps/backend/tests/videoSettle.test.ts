@@ -88,7 +88,9 @@ describe("answering a video publication that lost its worker", () => {
       const { fetchImpl } = transport({
         _id: "zernio-post",
         status: "failed",
-        platforms: [{ platform: "instagram", status: "failed", error: "Instagram couldn't download your video" }],
+        platformAnalytics: [
+          { platform: "instagram", status: "failed", errorMessage: "Instagram couldn't download your video from the media URL" },
+        ],
       });
 
       const result = await settleVideoTarget(
@@ -101,7 +103,7 @@ describe("answering a video publication that lost its worker", () => {
       expect(result.status).toBe("failed");
       const row = backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, draftId)).get();
       expect(row).toMatchObject({ status: "failed", externalId: null, publishedAt: null });
-      expect(row?.lastError).toContain("download your video");
+      expect(row?.lastError).toBe("Instagram couldn't download your video from the media URL");
     }));
 
   it("takes what the operator can see on the platform over what the provider recorded", () =>
