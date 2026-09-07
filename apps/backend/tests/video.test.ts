@@ -694,10 +694,10 @@ describe("video publication queue", () => {
     const scriptPath = path.join(directory, "Dumb Ways to Build.txt");
     writeFileSync(scriptPath, "Один укус, и всё.");
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string | URL | Request) =>
+    globalThis.fetch = (async () =>
       new Response(JSON.stringify({ ok: true, result: { file_path: scriptPath } }), {
         headers: { "Content-Type": "application/json" },
-      })) as typeof fetch;
+      })) as unknown as typeof fetch;
     try {
       const answered = await handleVideoConversationMessage(
         videoContext({ document: { file_id: "script-1", file_name: "Dumb Ways to Build.txt", file_size: 17, mime_type: "text/plain" } })
