@@ -23,6 +23,9 @@ jobs:
     name: Determine changed areas
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions:
+      contents: read
+      statuses: read
     outputs:
       media_changed: ${{ steps.filter.outputs.media }}
       dependencies_changed: ${{ steps.filter.outputs.dependencies }}
@@ -39,16 +42,39 @@ jobs:
         id: filter
         if: github.event_name != 'schedule'
         env:
-          BASE_SHA: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
 
-          base_sha="$BASE_SHA"
-          if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]]; then
+          # The base is the last commit that actually reached production, not
+          # the push's previous tip. An amend or a rebase makes
+          # `github.event.before` a commit this history no longer contains, and
+          # the diff against it reports only what the rewrite touched: a backend
+          # fix pushed, then amended for a one-line test tweak, went green with
+          # nothing deployed. The deployment status this workflow writes on the
+          # commit it shipped is the record of what production is running, so
+          # every commit after it is what this run has to deploy.
+          base_sha=""
+          while IFS= read -r sha; do
+            if [ "$sha" = "$HEAD_SHA" ]; then
+              continue
+            fi
+            state=$(gh api "repos/$GITHUB_REPOSITORY/commits/$sha/status" \
+              --jq '.statuses[] | select(.context == "production deployment") | .state')
+            if [ "$state" = "success" ]; then
+              base_sha="$sha"
+              break
+            fi
+          done < <(git rev-list --max-count=50 "$HEAD_SHA")
+          # Nothing in reach was deployed: a first run, a branch that never
+          # deploys, or a gap longer than the walk. Treating the whole history
+          # as the change deploys once too often, which is the safe direction.
+          if [ -z "$base_sha" ]; then
             base_sha=$(git rev-list --max-parents=0 "$HEAD_SHA" | tail -n 1)
           fi
+          echo "Measuring changes since $base_sha"
 
           media=false
           dependencies=false
