@@ -10,6 +10,9 @@ import { storyDirectory } from "./story-media.js";
 
 const MEDIA_CACHE_TTL_SECONDS = 86_400;
 
+/** Enough of a JPEG to hold every segment header before the first scan. */
+const JPEG_SEGMENT_TABLE_BYTES = 65_536;
+
 export async function prepareMediaItems(
   config: BackendConfig,
   sourceItems: PublishMediaItem[],
@@ -25,10 +28,10 @@ export async function prepareMediaItems(
     if (!item) continue;
     const cacheKey = await mediaCacheKey(item, index);
     const localPath = await ensureLocalMedia(config, item, cacheKey, fetchImpl);
-    let uploadPath = localPath;
-    if (item.type === "VIDEO") {
-      uploadPath = await normalizeVideoForPublicUpload(config, localPath, cacheKey, target);
-    }
+    const uploadPath =
+      item.type === "VIDEO"
+        ? await normalizeVideoForPublicUpload(config, localPath, cacheKey, target)
+        : await baselineJpegForPublicUpload(config, localPath, cacheKey);
     // The public filename must vary with the *normalized* file, not the source:
     // two targets with different videoBounds produce different local files but
     // would otherwise stage under one name, and copyIfMissing would silently
@@ -115,6 +118,46 @@ async function ensureLocalMedia(config: BackendConfig, item: PublishMediaItem, c
   if (!item.fileId) throw new Error("media item has neither localPath nor fileId");
   await materializeTelegramFile(config, { fileId: item.fileId, ...(item.token ? { token: item.token } : {}) }, { target, fetchImpl });
   return target;
+}
+
+/** Meta's media fetcher cannot read a progressive JPEG. It answers a perfectly
+ * reachable URL with subcode 2207052 -- "could not fetch the media file" --
+ * which reads as a network or permission fault and is neither, so the failure
+ * costs a Threads publication and an investigation both. Images are otherwise
+ * staged byte for byte, so whatever encoding the source arrived in is what the
+ * platform is asked to fetch. */
+async function baselineJpegForPublicUpload(config: BackendConfig, inputPath: string, cacheKey: string): Promise<string> {
+  if (!(await isProgressiveJpeg(inputPath))) return inputPath;
+  const outputPath = path.join(config.MEDIA_CACHE_DIR, `${cacheKey}.baseline.jpg`);
+  if (await Bun.file(outputPath).exists()) return outputPath;
+  await runFfmpeg(["-y", "-i", inputPath, "-q:v", "2", outputPath]);
+  return outputPath;
+}
+
+/** Progressive encoding is declared by an SOF2 marker in the segment table,
+ * which precedes the first scan -- so the answer is in the first few kilobytes
+ * and the pixels never have to be decoded. */
+export async function isProgressiveJpeg(filePath: string): Promise<boolean> {
+  const head = new Uint8Array(await Bun.file(filePath).slice(0, JPEG_SEGMENT_TABLE_BYTES).arrayBuffer());
+  if (head[0] !== 0xff || head[1] !== 0xd8) return false;
+  let index = 2;
+  while (index + 3 < head.length) {
+    if (head[index] !== 0xff) return false;
+    const marker = head[index + 1] ?? 0;
+    // Padding before a marker, and the standalone markers that carry no length.
+    if (marker === 0xff || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+      index += marker === 0xff ? 1 : 2;
+      continue;
+    }
+    if (marker === 0xc2) return true;
+    // The scan is the last thing before entropy-coded data, which is not a
+    // segment table and must not be walked as one.
+    if (marker === 0xda) return false;
+    const length = ((head[index + 2] ?? 0) << 8) | (head[index + 3] ?? 0);
+    if (length < 2) return false;
+    index += 2 + length;
+  }
+  return false;
 }
 
 async function normalizeVideoForPublicUpload(config: BackendConfig, inputPath: string, cacheKey: string, target?: string): Promise<string> {
