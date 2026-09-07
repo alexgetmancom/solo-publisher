@@ -444,6 +444,34 @@ describe("publication reconciliation", () => {
       },
       ["youtube_ru"],
     ));
+
+  it("keeps an unfinished Zernio Reel ambiguous and records an explicit provider failure", () =>
+    withDb(async (backendDb) => {
+      const { targetId } = ambiguousZernioVideo(backendDb);
+      const pending = (async () => Response.json({ _id: "zernio-pending", status: "scheduled" })) as unknown as typeof fetch;
+
+      expect(await runPublicationReconciliation(backendDb, zernioConfig(), pending)).toMatchObject({
+        checked: 1,
+        resolved: 0,
+        unresolved: 1,
+      });
+      expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.id, targetId)).get()?.status).toBe("verification_required");
+
+      backendDb.db.update(videoJobs).set({ nextAttemptAt: null }).where(eq(videoJobs.videoTargetId, targetId)).run();
+      const failed = (async () =>
+        Response.json({
+          _id: "zernio-pending",
+          status: "failed",
+          platforms: [{ platform: "instagram", status: "failed", error: "Instagram could not download the video" }],
+        })) as unknown as typeof fetch;
+      expect(await runPublicationReconciliation(backendDb, zernioConfig(), failed)).toMatchObject({ checked: 1, resolved: 1 });
+      expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.id, targetId)).get()).toMatchObject({
+        status: "failed",
+        lastError: "Instagram could not download the video",
+        publishedAt: null,
+      });
+      expect(backendDb.db.select().from(videoJobs).where(eq(videoJobs.videoTargetId, targetId)).get()?.status).toBe("failed");
+    }));
 });
 
 function completionEvents(backendDb: Parameters<Parameters<typeof withDb>[0]>[0]) {
@@ -479,12 +507,43 @@ function ambiguousYouTubeVideo(
   return { draftId, targetId: target.id };
 }
 
+function ambiguousZernioVideo(backendDb: Parameters<Parameters<typeof withDb>[0]>[0]): { targetId: number } {
+  const now = new Date().toISOString();
+  registerChannel(backendDb, { platform: "instagram", locale: "ru", provider: "zernio", providerAccountId: "maru-account" });
+  const draftId = createTestVideoDraft(backendDb, 42, "/tmp/recovered-instagram.mp4", 24);
+  replaceVideoTargets(backendDb, draftId, ["instagram_reels"]);
+  const target = backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, draftId)).get();
+  if (!target) throw new Error("Instagram target was not created");
+  backendDb.db
+    .update(videoTargets)
+    .set({ status: "verification_required", deliveryProvider: "zernio", providerPostId: "zernio-pending" })
+    .where(eq(videoTargets.id, target.id))
+    .run();
+  backendDb.db
+    .insert(videoJobs)
+    .values({
+      videoDraftId: draftId,
+      videoTargetId: target.id,
+      kind: "publish",
+      status: "verification_required",
+      runAt: now,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
+  return { targetId: target.id };
+}
+
 function youtubeConfig() {
   return loadTestConfig({
     YOUTUBE_RU_CLIENT_ID: "client",
     YOUTUBE_RU_CLIENT_SECRET: "secret",
     YOUTUBE_RU_REFRESH_TOKEN: "refresh",
   });
+}
+
+function zernioConfig() {
+  return Object.assign(loadTestConfig(), { ZERNIO_API_KEY: "zernio-placeholder-not-a-secret" });
 }
 
 function youtubeFetch(privacyStatus: "private" | "public"): typeof fetch {

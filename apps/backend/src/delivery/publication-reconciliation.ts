@@ -18,7 +18,7 @@ import { refreshVideoDraftStatus } from "../publishing/video-data.js";
 import { verifyPlatformPublication } from "./platform-adapters.js";
 import { verifyYouTubeVideo } from "./video-publishers.js";
 import { PROVIDER_CONFIRMATION_GRACE_MS, recordVideoCompletionIfFinal } from "./video-worker.js";
-import { verifyZernioPost } from "./zernio.js";
+import { verifyZernioPost, zernioPostOutcome } from "./zernio.js";
 
 /** How many times reconciliation may ask a provider whether an ambiguous
  * publication exists before it stops polling and waits for an operator. Higher
@@ -230,10 +230,12 @@ export async function runPublicationReconciliation(
     // Graph offers no way to find the media a container became. Asking about the
     // container as if it were media would 404 at best. These close via operator.
     let confirmation: { externalId?: string | null; url?: string | null } | null = null;
+    let providerFailure: string | null = null;
     try {
       if (row.target.deliveryProvider === "zernio" && row.target.providerPostId) {
-        const verified = await verifyZernioPost(config, row.target.providerPostId, "instagram", fetchImpl);
-        confirmation = { externalId: verified.externalId, url: verified.url };
+        const outcome = await zernioPostOutcome(config, row.target.providerPostId, "instagram", fetchImpl);
+        providerFailure = outcome.failure;
+        if (outcome.externalId || outcome.url) confirmation = { externalId: outcome.externalId, url: outcome.url };
       } else if (row.target.target === "youtube_shorts" && row.target.externalId) {
         const verified = await verifyYouTubeVideo(config, row.target.externalId, locale, fetchImpl);
         if (row.job.kind === "prepare" || verified.privacyStatus === "public")
@@ -242,6 +244,34 @@ export async function runPublicationReconciliation(
     } catch (error) {
       if (classifyPublishError(error) === "auth") recordAuthFailure(backendDb, credentialTarget);
       deferVideoReconciliation(backendDb, job, reconciliationWorker);
+      continue;
+    }
+    if (providerFailure) {
+      const now = new Date().toISOString();
+      const failedVideo = unsafeDb(backendDb).db.transaction((tx) => {
+        const won = tx
+          .update(videoJobs)
+          .set({ status: "failed", lastError: providerFailure, lockedAt: null, lockedBy: null, updatedAt: now })
+          .where(
+            and(
+              eq(videoJobs.videoTargetId, row.target.id),
+              eq(videoJobs.status, "verification_required"),
+              eq(videoJobs.lockedBy, reconciliationWorker),
+            ),
+          )
+          .returning({ id: videoJobs.id })
+          .get();
+        if (!won) return false;
+        tx.update(videoTargets)
+          .set({ status: "failed", lastError: providerFailure, publishedAt: null, verifiedAt: null, updatedAt: now })
+          .where(and(eq(videoTargets.id, row.target.id), eq(videoTargets.status, "verification_required")))
+          .run();
+        return true;
+      });
+      if (!failedVideo) continue;
+      refreshVideoDraftStatus(backendDb, row.target.videoDraftId, config.VIDEO_MEDIA_RETENTION_HOURS);
+      recordVideoCompletionIfFinal(backendDb, row.target.videoDraftId);
+      resolved += 1;
       continue;
     }
     if (!confirmation) {
