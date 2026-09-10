@@ -187,6 +187,56 @@ describe("creator analytics collection", () => {
     });
   });
 
+  it("does not collect metrics for a disabled video channel", async () => {
+    await withDb(async (backendDb) => {
+      const publishedAt = new Date(Date.now() - 2 * 60 * 60_000).toISOString();
+      const { targetId } = insertPublishedVideo(backendDb, {
+        label: "Disabled English channel",
+        target: "youtube_shorts",
+        publishedAt,
+        externalId: "disabled-en-video",
+        locale: "en",
+      });
+      const { targetId: unscheduledTargetId } = insertPublishedVideo(backendDb, {
+        label: "Disabled English channel without schedule",
+        target: "youtube_shorts",
+        publishedAt,
+        externalId: "disabled-en-video-without-schedule",
+        locale: "en",
+      });
+      backendDb.db.insert(videoMetricSchedule).values({ videoTargetId: targetId, nextCheckAt: publishedAt, updatedAt: publishedAt }).run();
+      backendDb.channels.disable("youtube_en", new Date().toISOString());
+      let requests = 0;
+
+      expect(
+        await runVideoMetricSchedule(
+          loadTestConfig({
+            YOUTUBE_EN_CLIENT_ID: "client",
+            YOUTUBE_EN_CLIENT_SECRET: "secret",
+            YOUTUBE_EN_REFRESH_TOKEN: "refresh",
+          }),
+          backendDb,
+          (async () => {
+            requests += 1;
+            throw new Error("disabled channel should not be called");
+          }) as unknown as typeof fetch,
+        ),
+      ).toBe(0);
+
+      expect(requests).toBe(0);
+      expect(backendDb.db.select().from(videoMetricSchedule).where(eq(videoMetricSchedule.videoTargetId, targetId)).get()).toMatchObject({
+        frozenAt: expect.any(String),
+        lastError: null,
+      });
+      expect(
+        backendDb.db.select().from(videoMetricSchedule).where(eq(videoMetricSchedule.videoTargetId, unscheduledTargetId)).get(),
+      ).toBeUndefined();
+      expect(
+        backendDb.db.select().from(publicationEvents).where(eq(publicationEvents.eventType, "analytics.video_metrics.frozen")).all(),
+      ).toEqual([]);
+    });
+  });
+
   it("keeps YouTube video metrics healthy when comment access is unavailable", async () => {
     await withDb(async (backendDb) => {
       const publishedAt = new Date(Date.now() - 2 * 60 * 60_000).toISOString();

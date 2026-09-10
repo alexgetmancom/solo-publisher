@@ -1,5 +1,6 @@
-import { and, eq, isNotNull, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 
+import { channelForVideo } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { videoDrafts, videoMetricSchedule, videoTargets } from "../db/schema/video.js";
 
@@ -18,6 +19,7 @@ export function resumeVideoMetrics(backendDb: BackendDb, input: { apply: boolean
       videoTargetId: videoMetricSchedule.videoTargetId,
       videoDraftId: videoTargets.videoDraftId,
       target: videoTargets.target,
+      locale: videoDrafts.locale,
       label: videoDrafts.label,
       frozenAt: videoMetricSchedule.frozenAt,
       lastError: videoMetricSchedule.lastError,
@@ -25,10 +27,14 @@ export function resumeVideoMetrics(backendDb: BackendDb, input: { apply: boolean
     .from(videoMetricSchedule)
     .innerJoin(videoTargets, eq(videoTargets.id, videoMetricSchedule.videoTargetId))
     .innerJoin(videoDrafts, eq(videoDrafts.id, videoTargets.videoDraftId))
-    .where(
-      and(isNotNull(videoMetricSchedule.frozenAt), ...(input.refs.length ? [inArray(videoTargets.videoDraftId, input.refs)] : [])),
-    )
-    .all();
+    .where(and(isNotNull(videoMetricSchedule.frozenAt), ...(input.refs.length ? [inArray(videoTargets.videoDraftId, input.refs)] : [])))
+    .all()
+    .filter(
+      (row) =>
+        (row.target === "youtube_shorts" || row.target === "instagram_reels") &&
+        (row.locale === "ru" || row.locale === "en") &&
+        channelForVideo(backendDb, row.target, row.locale)?.enabled === 1,
+    );
   const now = new Date().toISOString();
   if (input.apply && rows.length)
     unsafeDb(backendDb)

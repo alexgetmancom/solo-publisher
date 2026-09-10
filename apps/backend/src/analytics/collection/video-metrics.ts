@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
-import { and, asc, eq, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { publicationRef } from "../../application/publication-ref.js";
+import { channelForVideo } from "../../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { videoDrafts, videoMetricSchedule, videoTargets } from "../../db/schema.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -64,6 +65,7 @@ type InstagramInsights = { data?: Array<{ values?: Array<{ value?: number }> }> 
 
 /** Uses the same fixed-from-publication checkpoints as text-post metrics. */
 export async function runVideoMetricSchedule(config: BackendConfig, backendDb: BackendDb, fetchImpl: typeof fetch): Promise<number> {
+  freezeDisabledVideoMetricSchedules(backendDb);
   ensureVideoMetricSchedule(backendDb);
   const tasks = claimDueVideoMetricTasks(backendDb, MAX_METRIC_TASKS_PER_CYCLE);
   const youtubeTasks = tasks.filter((task) => task.target === "youtube_shorts");
@@ -150,8 +152,9 @@ export async function runVideoMetricSchedule(config: BackendConfig, backendDb: B
 function ensureVideoMetricSchedule(backendDb: BackendDb): void {
   const now = new Date().toISOString();
   const targets = unsafeDb(backendDb)
-    .db.select({ id: videoTargets.id, publishedAt: videoTargets.publishedAt })
+    .db.select({ id: videoTargets.id, publishedAt: videoTargets.publishedAt, target: videoTargets.target, locale: videoDrafts.locale })
     .from(videoTargets)
+    .innerJoin(videoDrafts, eq(videoDrafts.id, videoTargets.videoDraftId))
     .leftJoin(videoMetricSchedule, eq(videoMetricSchedule.videoTargetId, videoTargets.id))
     .where(
       and(
@@ -160,7 +163,8 @@ function ensureVideoMetricSchedule(backendDb: BackendDb): void {
         isNull(videoMetricSchedule.videoTargetId),
       ),
     )
-    .all();
+    .all()
+    .filter((target) => videoChannelEnabled(backendDb, target.target, target.locale));
   for (const target of targets) {
     const publishedAt = new Date(target.publishedAt ?? now);
     unsafeDb(backendDb)
@@ -214,6 +218,31 @@ function ensureVideoMetricSchedule(backendDb: BackendDb): void {
         .where(eq(videoMetricSchedule.videoTargetId, task.id))
         .run();
   }
+}
+
+/** A disabled channel is a deliberate end to collection, not a credential
+ * failure. Historical readings stay intact; only its future schedule ends. */
+function freezeDisabledVideoMetricSchedules(backendDb: BackendDb): void {
+  const rows = unsafeDb(backendDb)
+    .db.select({ id: videoTargets.id, target: videoTargets.target, locale: videoDrafts.locale })
+    .from(videoMetricSchedule)
+    .innerJoin(videoTargets, eq(videoTargets.id, videoMetricSchedule.videoTargetId))
+    .innerJoin(videoDrafts, eq(videoDrafts.id, videoTargets.videoDraftId))
+    .where(isNull(videoMetricSchedule.frozenAt))
+    .all();
+  const ids = rows.filter((row) => !videoChannelEnabled(backendDb, row.target, row.locale)).map((row) => row.id);
+  if (!ids.length) return;
+  const now = new Date().toISOString();
+  unsafeDb(backendDb)
+    .db.update(videoMetricSchedule)
+    .set({ nextCheckAt: now, frozenAt: now, lastError: null, lockedBy: null, lockedAt: null, updatedAt: now })
+    .where(inArray(videoMetricSchedule.videoTargetId, ids))
+    .run();
+}
+
+function videoChannelEnabled(backendDb: BackendDb, target: string, locale: string): boolean {
+  if ((target !== "youtube_shorts" && target !== "instagram_reels") || (locale !== "ru" && locale !== "en")) return false;
+  return channelForVideo(backendDb, target, locale)?.enabled === 1;
 }
 
 function claimDueVideoMetricTasks(backendDb: BackendDb, limit: number, worker = `video-metrics:${crypto.randomUUID()}`): VideoMetricTask[] {
@@ -400,7 +429,12 @@ function pacificHour(at: Date): number {
 type MetricOutcome = "retry" | "freeze" | "wait";
 
 /** Returns whether the row was frozen (terminal error or retry budget exhausted). */
-function finishVideoMetricTask(backendDb: BackendDb, task: VideoMetricTask, error: string | null, outcome: MetricOutcome = "retry"): boolean {
+function finishVideoMetricTask(
+  backendDb: BackendDb,
+  task: VideoMetricTask,
+  error: string | null,
+  outcome: MetricOutcome = "retry",
+): boolean {
   const now = new Date();
   const nextIndex = error ? task.checkpointIndex : task.checkpointIndex + 1;
   // Waiting for a quota is not a failure of this row: counting it would spend
