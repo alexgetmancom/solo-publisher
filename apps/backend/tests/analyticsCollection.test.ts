@@ -14,6 +14,7 @@ import {
   videoMetricSnapshots,
 } from "../src/db/schema.js";
 import { flushUsage } from "../src/observability/usage.js";
+import { resumeVideoMetrics } from "../src/operations/video-metrics-resume.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { withDb as withFixtureDb } from "./helpers/db.js";
@@ -234,6 +235,7 @@ describe("creator analytics collection", () => {
       expect(
         backendDb.db.select().from(publicationEvents).where(eq(publicationEvents.eventType, "analytics.video_metrics.frozen")).all(),
       ).toEqual([]);
+      expect(resumeVideoMetrics(backendDb, { apply: false, refs: [] })).toMatchObject({ resumed: 0, videos: [] });
     });
   });
 
