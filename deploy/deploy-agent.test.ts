@@ -130,4 +130,108 @@ esac
       supportServer.stop(true);
     }
   });
+  it("keeps the last three images of the repository and leaves the running one alone", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "deploy-agent-prune-"));
+    temporaryDirectories.push(directory);
+    const docker = join(directory, "docker");
+    const commandLog = join(directory, "docker-commands.log");
+    const imageEnv = join(directory, "image.env");
+    const stateFile = join(directory, "state.json");
+    const repository = "ghcr.io/example/backend";
+    const oldImage = `${repository}@sha256:${"1".repeat(64)}`;
+    const nextImage = `${repository}@sha256:${"2".repeat(64)}`;
+    // Five images on the host, newest first. Three survive, and the fourth is
+    // the one the container is running: a rollback put an older digest back,
+    // so age alone would have removed what production is serving.
+    const identifiers = [5, 4, 3, 2, 1].map((index) => `sha256:${String(index).repeat(64)}`);
+    const running = identifiers[3] as string;
+    await Bun.write(imageEnv, `BACKEND_IMAGE=${oldImage}\n`);
+    await Bun.write(
+      stateFile,
+      `${JSON.stringify({ current: { image: oldImage, revision: "a".repeat(40), deployedAt: "2026-01-01T00:00:00.000Z" } })}\n`,
+    );
+    await Bun.write(
+      docker,
+      `#!/bin/sh
+printf '%s\\n' "$*" >> "$FAKE_DOCKER_LOG"
+case "$1 $2" in
+  "images --no-trunc")
+    printf '%s\\n' '2026-09-05 10:00:00 +0000 UTC\t${identifiers[0]}'
+    printf '%s\\n' '2026-09-04 10:00:00 +0000 UTC\t${identifiers[1]}'
+    printf '%s\\n' '2026-09-03 10:00:00 +0000 UTC\t${identifiers[2]}'
+    printf '%s\\n' '2026-09-02 10:00:00 +0000 UTC\t${identifiers[3]}'
+    printf '%s\\n' '2026-09-01 10:00:00 +0000 UTC\t${identifiers[4]}'
+    ;;
+  "image inspect")
+    case "$4" in
+      *Id*) printf '%s\\n' '${running}' ;;
+      *) printf '%s\\n' '${oldImage}' ;;
+    esac
+    ;;
+  "inspect --format") printf '%s\\n' healthy ;;
+esac
+`,
+    );
+    await chmod(docker, 0o755);
+
+    const supportServer = Bun.serve({
+      port: 0,
+      fetch(request) {
+        if (new URL(request.url).pathname === "/readyz") return new Response("ok");
+        return Response.json({ ok: true });
+      },
+    });
+    const supportPort = supportServer.port;
+    if (supportPort === undefined) throw new Error("Test support server did not bind a port.");
+    const agentPort = supportPort + 1;
+    const agent = Bun.spawn([process.execPath, join(import.meta.dir, "deploy-agent.ts")], {
+      env: {
+        ...process.env,
+        PATH: `${directory}:${process.env.PATH ?? ""}`,
+        FAKE_DOCKER_LOG: commandLog,
+        FAKE_IMAGE_ENV: imageEnv,
+        DEPLOY_AGENT_HOST: "127.0.0.1",
+        DEPLOY_AGENT_PORT: String(agentPort),
+        DEPLOY_AGENT_TOKEN: "test-token",
+        DEPLOY_IMAGE_REPOSITORY: repository,
+        DEPLOY_TARGETS_JSON: JSON.stringify({
+          alex: {
+            composeFile: join(directory, "compose.yaml"),
+            imageEnvFile: imageEnv,
+            stateFile,
+            healthUrl: `http://127.0.0.1:${supportPort}/readyz`,
+            container: "backend",
+          },
+        }),
+        DEPLOY_RETRY_ATTEMPTS: "1",
+      },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    try {
+      let response: Response | undefined;
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        response = await fetch(`http://127.0.0.1:${agentPort}/healthz`).catch(() => undefined);
+        if (response?.ok) break;
+        await Bun.sleep(20);
+      }
+      expect(response?.ok).toBe(true);
+
+      const deployed = await fetch(`http://127.0.0.1:${agentPort}/v1/deploy/alex`, {
+        method: "POST",
+        headers: { authorization: "Bearer test-token", "content-type": "application/json" },
+        body: JSON.stringify({ image: nextImage, release: "b".repeat(40) }),
+      });
+      expect(deployed.ok).toBe(true);
+
+      const commands = (await Bun.file(commandLog).text()).split("\n");
+      const removed = commands.filter((line) => line.startsWith("image rm ")).map((line) => line.slice("image rm ".length));
+      expect(removed).toEqual([identifiers[4] as string]);
+      expect(removed).not.toContain(running);
+    } finally {
+      agent.kill();
+      await agent.exited;
+      supportServer.stop(true);
+    }
+  });
 });

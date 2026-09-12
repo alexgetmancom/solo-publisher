@@ -316,6 +316,44 @@ async function activate(deploymentTarget: DeploymentTarget, image: string, relea
   await command(["rm", "-f", deploymentTarget.container], true);
   await command(composeArgs(deploymentTarget, "up", "-d", "--no-deps", "--force-recreate", deploymentTarget.service));
   await waitForHealthy(deploymentTarget);
+  await pruneImages(deploymentTarget, image);
+}
+
+/**
+ * Deploying by digest leaves every superseded image on the host under its own
+ * digest reference. That reference carries no tag but is not dangling either,
+ * so no default cleanup sees it: twenty-one media-processor images, a gigabyte
+ * apiece, had accumulated before this existed. Keep the last few so a rollback
+ * stays a local activation; rolling back past them costs a pull rather than
+ * being impossible.
+ */
+const KEPT_IMAGES = 3;
+
+async function pruneImages(deploymentTarget: ComposeTarget, image: string): Promise<void> {
+  const repository = image.slice(0, image.indexOf("@"));
+  if (!repository) return;
+  const listed = await command(["images", "--no-trunc", "--format", "{{.CreatedAt}}\t{{.ID}}", repository], true);
+  const identifiers = [
+    ...new Set(
+      listed
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .sort()
+        .reverse()
+        .map((line) => line.split("\t")[1])
+        .filter((identifier): identifier is string => Boolean(identifier)),
+    ),
+  ];
+  const running = await command(["image", "inspect", "--format", "{{.Id}}", deploymentTarget.container], true);
+  for (const identifier of identifiers.slice(KEPT_IMAGES)) {
+    // The image this deployment just activated is newest and so is never in
+    // this slice, but a rollback activates an older one: check rather than
+    // trust the ordering. An image a container still holds cannot be removed,
+    // and Docker refusing is not a deployment failure.
+    if (identifier === running) continue;
+    await command(["image", "rm", identifier], true);
+  }
 }
 
 async function notify(text: string, deploymentTarget: DeploymentTarget, release?: string, offerPromoteTo?: string[]): Promise<void> {
