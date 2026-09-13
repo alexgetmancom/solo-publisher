@@ -456,6 +456,28 @@ describe("publication reconciliation", () => {
         unresolved: 1,
       });
       expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.id, targetId)).get()?.status).toBe("verification_required");
+      expect(
+        backendDb.db
+          .select()
+          .from(publicationEvents)
+          .where(eq(publicationEvents.eventType, "studio.notification.publication_verification_required"))
+          .all(),
+      ).toEqual([]);
+
+      backendDb.db.update(videoJobs).set({ nextAttemptAt: null }).where(eq(videoJobs.videoTargetId, targetId)).run();
+      backendDb.db
+        .update(videoTargets)
+        .set({ updatedAt: new Date(Date.now() - 16 * 60_000).toISOString() })
+        .where(eq(videoTargets.id, targetId))
+        .run();
+      expect(await runPublicationReconciliation(backendDb, zernioConfig(), pending)).toMatchObject({ unresolved: 1 });
+      expect(
+        backendDb.db
+          .select()
+          .from(publicationEvents)
+          .where(eq(publicationEvents.eventType, "studio.notification.publication_verification_required"))
+          .all(),
+      ).toHaveLength(1);
 
       backendDb.db.update(videoJobs).set({ nextAttemptAt: null }).where(eq(videoJobs.videoTargetId, targetId)).run();
       const failed = (async () =>

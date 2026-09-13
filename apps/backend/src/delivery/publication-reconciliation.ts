@@ -331,27 +331,33 @@ export async function runPublicationReconciliation(
   // Age is read from the *targets*, never from the jobs. Deferring a poll
   // touches the job row, so measuring there would reset the incident's age on
   // every tick and an inbox that never ages is an inbox nobody escalates.
-  const unresolvedTimes = [
-    ...unsafeDb(backendDb)
-      .db.select({ updatedAt: publicationTargets.updatedAt })
-      .from(publicationTargets)
-      .where(eq(publicationTargets.status, "verification_required"))
-      .all(),
-    ...unsafeDb(backendDb)
-      .db.select({ updatedAt: videoTargets.updatedAt })
-      .from(videoTargets)
-      .where(eq(videoTargets.status, "verification_required"))
-      .all(),
+  const unresolvedPublications = unsafeDb(backendDb)
+    .db.select({ updatedAt: publicationTargets.updatedAt })
+    .from(publicationTargets)
+    .where(eq(publicationTargets.status, "verification_required"))
+    .all();
+  const unresolvedVideos = unsafeDb(backendDb)
+    .db.select({ updatedAt: videoTargets.updatedAt, providerPostId: videoTargets.providerPostId })
+    .from(videoTargets)
+    .where(eq(videoTargets.status, "verification_required"))
+    .all();
+  const unresolvedTimes = [...unresolvedPublications, ...unresolvedVideos]
+    .map((row) => row.updatedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+  const alertableTimes = [
+    ...unresolvedPublications,
+    ...unresolvedVideos.filter((row) => !row.providerPostId || row.updatedAt < unansweredBefore),
   ]
     .map((row) => row.updatedAt)
     .filter((value): value is string => Boolean(value))
     .sort();
-  if (unresolvedTimes.length) {
+  if (alertableTimes.length) {
     backendDb.events.record({
       type: "studio.notification.publication_verification_required",
       severity: "warn",
-      message: `${unresolvedTimes.length} publication(s) still require verification; oldest since ${unresolvedTimes[0]}`,
-      details: { count: unresolvedTimes.length, oldest_at: unresolvedTimes[0] },
+      message: `${alertableTimes.length} publication(s) still require verification; oldest since ${alertableTimes[0]}`,
+      details: { count: alertableTimes.length, oldest_at: alertableTimes[0] },
       cooldownSeconds: ALERT_COOLDOWN_SECONDS,
     });
   }
