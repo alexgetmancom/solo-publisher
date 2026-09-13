@@ -733,6 +733,14 @@ export function openingsRanked(
     // to, which is worth knowing and is not the same question as who stayed.
     scale:
       "retentionAt3s is YouTube's audienceWatchRatio at three seconds, as a percentage: 100 is every viewer watching that moment once, and above it is replays. skipRate is the share of Instagram viewers who left inside the first three seconds, so less is better.",
+    // Measured on this archive rather than assumed: skip and reach move
+    // together strongly, while nothing about the words -- their length, whether
+    // they name friends, whether they turn on a contrast -- moves with skip at
+    // all. So this ranking is close to a ranking of the videos the feed pushed,
+    // and a reader who takes the top of it as the openings that worked has
+    // credited the words for the distribution.
+    caution:
+      "A low skip rate and a wide reach go together on this channel, so this ranking does not separate what the opening did from what the feed did with the video. Read it to find openings worth reading, not as a measurement of them.",
     note:
       measured < rows.length
         ? `${rows.length - measured} of these carry no ${options.sort} and sort last: retention comes from YouTube and skip from Instagram, each reports only its own, and an imported video was read once years after it went out.`
