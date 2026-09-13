@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { videoPerformanceDetail, videoPerformanceReport } from "../src/analytics/reports/video-performance.js";
-import { creatorProfileSnapshots, videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
+import { creatorProfileSnapshots, videoDrafts, videoMetricSnapshots, videoTargets } from "../src/db/schema.js";
 import { tagVideo } from "../src/operations/video-tag.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
@@ -233,6 +233,42 @@ describe("video performance report", () => {
       ).youtube_shorts;
       expect(traffic?.videos).toBe(2);
       expect(traffic?.sources[0]).toEqual({ source: "SHORTS", views: 1400, share: 70 });
+    });
+  });
+  it("counts named openings over the window, not over the archive", async () => {
+    await withDb(async (backendDb) => {
+      const inWindow = insertPublishedVideo(backendDb, { target: "instagram_reels", publishedAt: hoursAgo(48), label: "Recent" });
+      const archived = insertPublishedVideo(backendDb, { target: "instagram_reels", publishedAt: hoursAgo(24 * 400), label: "Old" });
+      for (const { draftId } of [inWindow, archived])
+        backendDb.db.update(videoDrafts).set({ hook: "question", openingLine: "A line." }).where(eq(videoDrafts.id, draftId)).run();
+      // Two readings on the one video in the window: the group counts videos,
+      // and a video read twice is still one video.
+      backendDb.db
+        .insert(videoMetricSnapshots)
+        .values([
+          {
+            videoTargetId: inWindow.targetId,
+            platform: "instagram_reels",
+            checkpointIndex: 0,
+            sampledAt: hoursAgo(47),
+            metricsJson: { views: 100 },
+          },
+          {
+            videoTargetId: inWindow.targetId,
+            platform: "instagram_reels",
+            checkpointIndex: 1,
+            sampledAt: hoursAgo(1),
+            metricsJson: { views: 900 },
+          },
+        ])
+        .run();
+
+      const openings = videoPerformanceReport(backendDb, { days: 30, limit: 10, timeZone: TIME_ZONE }).openings as {
+        byKind: Array<{ value: string; videos: number }>;
+        coverage: { kind: number; videos: number };
+      };
+      expect(openings.coverage).toMatchObject({ kind: 1, videos: 1 });
+      expect(openings.byKind).toEqual([expect.objectContaining({ value: "question", videos: 1 })]);
     });
   });
 });

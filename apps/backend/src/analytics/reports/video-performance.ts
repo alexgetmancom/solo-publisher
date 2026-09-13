@@ -1,9 +1,9 @@
 import type { BackendDb } from "../../db/client.js";
 import { unsafeDb } from "../../db/client.js";
-import { heatmapCoverage } from "../audience-heatmap.js";
-import { OPENING_SECONDS } from "../collection/video-frames.js";
 import { IMPORTED_HISTORY } from "../../operations/archive-import.js";
+import { heatmapCoverage } from "../audience-heatmap.js";
 import { metricFailureCause } from "../collection/collectors/errors.js";
+import { OPENING_SECONDS } from "../collection/video-frames.js";
 import { metricNumber } from "../snapshots/creator-store.js";
 
 /** Ages, in hours since publication, a video is compared at. They mirror the
@@ -624,9 +624,10 @@ const CHANNEL_PLATFORM: Record<string, string> = { youtube_shorts: "youtube", in
  * fixed by reconnecting it: it is finished, and reporting it as a fault sends
  * an operator to repair something they turned off on purpose. */
 function disabledChannels(backendDb: BackendDb): Set<string> {
-  const rows = unsafeDb(backendDb)
-    .sqlite.prepare("SELECT platform, locale FROM channel_connections WHERE enabled = 0")
-    .all() as Array<{ platform: string; locale: string }>;
+  const rows = unsafeDb(backendDb).sqlite.prepare("SELECT platform, locale FROM channel_connections WHERE enabled = 0").all() as Array<{
+    platform: string;
+    locale: string;
+  }>;
   return new Set(rows.map((row) => `${row.platform}:${row.locale}`));
 }
 
@@ -662,11 +663,12 @@ function openings(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): R
   const shapes = frameShapes(backendDb);
   const said = spokenOpenings(backendDb);
   const group = (of: (draftId: number) => string | undefined) => {
-    const rows = new Map<string, { retention: number[]; skip: number[]; views: number[] }>();
+    const rows = new Map<string, { videos: number; retention: number[]; skip: number[]; views: number[] }>();
     for (const [draftId, targets] of byDraft) {
       const key = of(draftId);
       if (!key) continue;
-      const slot = rows.get(key) ?? { retention: [], skip: [], views: [] };
+      const slot = rows.get(key) ?? { videos: 0, retention: [], skip: [], views: [] };
+      slot.videos += 1;
       for (const target of targets) {
         const metrics = latest(target)?.metrics;
         if (!metrics) continue;
@@ -682,26 +684,43 @@ function openings(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): R
         slot.views.push(targets.reduce((sum, target) => sum + metricNumber(latest(target)?.metrics.views), 0));
       rows.set(key, slot);
     }
-    return [...rows.entries()]
-      .map(([value, slot]) => ({
-        value,
-        videos: slot.retention.length || slot.views.length,
-        readForViews: slot.views.length,
-        medianViews: slot.views.length ? median(slot.views) : null,
-        // The two figures the opening is actually answerable by: how many were
-        // still there at three seconds, and how many left inside them.
-        medianRetentionAt3s: slot.retention.length ? median(slot.retention) : null,
-        medianSkipRate: slot.skip.length ? median(slot.skip) : null,
-        confidence: slot.views.length >= CONFIDENT_SAMPLE ? "ok" : slot.views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
-      }))
-      .sort((left, right) => (right.medianRetentionAt3s ?? 0) - (left.medianRetentionAt3s ?? 0));
+    return (
+      [...rows.entries()]
+        .map(([value, slot]) => ({
+          value,
+          videos: slot.videos,
+          readForViews: slot.views.length,
+          medianViews: slot.views.length ? median(slot.views) : null,
+          // The two figures the opening is actually answerable by: how many were
+          // still there at three seconds, and how many left inside them.
+          medianRetentionAt3s: slot.retention.length ? median(slot.retention) : null,
+          medianSkipRate: slot.skip.length ? median(slot.skip) : null,
+          confidence: slot.views.length >= CONFIDENT_SAMPLE ? "ok" : slot.views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
+        }))
+        // Retention is the figure an opening is answerable by, but only Instagram
+        // reports it and only for as long as it serves the file: most rows carry
+        // none. Sorting those against zero puts them in insertion order and calls
+        // it a ranking, so a row without retention is ranked by the figure it
+        // does have, below every row that has the better one.
+        .sort(
+          (left, right) =>
+            Number(right.medianRetentionAt3s !== null) - Number(left.medianRetentionAt3s !== null) ||
+            (right.medianRetentionAt3s ?? 0) - (left.medianRetentionAt3s ?? 0) ||
+            (right.medianViews ?? 0) - (left.medianViews ?? 0),
+        )
+    );
   };
   return {
     byKind: group((draftId) => said.get(draftId)?.hook),
     byShape: group((draftId) => shapes.get(draftId)),
+    // Counted over the window the rest of this report describes. The maps are
+    // read whole because a lookup needs every draft, and their sizes are the
+    // archive's -- beside a windowed denominator they read as more videos
+    // named than published, and the brief that reads them stops asking for the
+    // ones that are missing.
     coverage: {
-      kind: said.size,
-      shape: shapes.size,
+      kind: [...byDraft.keys()].filter((draftId) => said.has(draftId)).length,
+      shape: [...byDraft.keys()].filter((draftId) => shapes.has(draftId)).length,
       videos: byDraft.size,
     },
     examples: [...byDraft.keys()]
