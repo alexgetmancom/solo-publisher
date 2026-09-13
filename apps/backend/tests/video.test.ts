@@ -805,4 +805,29 @@ describe("video publication queue", () => {
     expect(JSON.stringify(effects)).not.toContain("p:video:length_ok");
     expect(backendDb.db.select().from(videoDrafts).all()).toHaveLength(1);
   });
+
+  it("shows the background-music warning before the normal video question", async () => {
+    const backendDb = testDb.open();
+    const config = videoConfig();
+    const assetId = createTestVideoAsset(backendDb, 42, "/tmp/no-music-video.mp4");
+    const services = createStudioServices(backendDb, config);
+    const session = saveVideoState(backendDb, 42, {
+      draftId: null,
+      step: "asset",
+      selected: ["youtube_shorts"],
+      data: { videoLocale: "ru" },
+    });
+
+    const effects = await attachVideoAsset(backendDb, config, 42, session, assetId, {
+      ...services,
+      videos: {
+        ...services.videos,
+        assetTechnicalCheck: async () => ({ ...TECHNICAL_CHECK, backgroundMusicLikelyMissing: true }),
+      },
+    });
+
+    expect(effects[0]).toEqual({ type: "message", text: t("en", "video.background-music-warning") });
+    expect(effects[1]).toMatchObject({ type: "screen", text: expect.stringContaining(t("en", "video.prompt-script")) });
+    expect(backendDb.db.select().from(videoDrafts).all()).toHaveLength(1);
+  });
 });

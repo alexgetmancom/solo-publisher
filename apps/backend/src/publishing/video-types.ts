@@ -54,4 +54,5 @@ export type VideoTechnicalCheck = {
   fps: number;
   sizeBytes: number;
   aspectOk: boolean;
+  backgroundMusicLikelyMissing?: boolean;
 };

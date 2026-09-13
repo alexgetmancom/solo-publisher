@@ -13,6 +13,7 @@ import { youtubeCredentials } from "../foundation/external/youtube.js";
 import { probeMediaMetadata } from "../foundation/runtime/ffmpeg.js";
 import { assertFutureSchedule } from "./schedule.js";
 import { isAudienceMutationRetryable, isVideoTargetEditable, isVideoTargetMetadataEditable, isVideoTargetSchedulable } from "./state.js";
+import { backgroundMusicLikelyMissing } from "./video-audio.js";
 import { getVideoDraft, insertVideoJob, listVideoTargets, refreshVideoDraftStatus } from "./video-data.js";
 import { assertVideoMetadata } from "./video-metadata-limits.js";
 import type { VideoLocale, VideoMetadata, VideoTarget, VideoTechnicalCheck } from "./video-types.js";
@@ -451,6 +452,7 @@ async function probeVideo(source: string, size: number): Promise<VideoTechnicalC
     fps: metadata.fps,
     sizeBytes: size,
     aspectOk: Math.abs(metadata.width / metadata.height - 9 / 16) <= 0.02,
+    backgroundMusicLikelyMissing: await backgroundMusicLikelyMissing(source, metadata.audioCodec),
   };
 }
 

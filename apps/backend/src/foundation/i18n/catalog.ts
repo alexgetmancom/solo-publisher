@@ -238,7 +238,9 @@ const en = {
   "vpreview.language": "Language",
   "video.await-text": "⌨ I'm waiting for a text reply now. Tap «☰ Menu» to start a different flow.",
   "video.awaiting-button": "This step is answered with the buttons above.",
-  "video.prompt-script": "📝 The script for this video?\n\nPaste the text, or attach the .txt or .md file it is written in. Skip if there is none — it can be added later from «✏️ Edit».",
+  "video.background-music-warning": "⚠️ This video probably has no background music.",
+  "video.prompt-script":
+    "📝 The script for this video?\n\nPaste the text, or attach the .txt or .md file it is written in. Skip if there is none — it can be added later from «✏️ Edit».",
   "video.script-skipped": "Skipped the script.",
   "video.prompt-yt-title": "⌨ Title for YouTube Shorts?",
   "video.prompt-yt-description": "⌨ YouTube description (send `-` to skip):",
@@ -1035,7 +1037,9 @@ const ru = {
   "vpreview.language": "Язык",
   "video.await-text": "⌨ Сейчас жду текстовый ответ. Нажмите «☰ Показать меню», чтобы начать другой сценарий.",
   "video.awaiting-button": "На этом шаге ответ выбирается кнопками выше.",
-  "video.prompt-script": "📝 Сценарий этого ролика?\n\nВставьте текст или прикрепите файл .txt или .md, в котором он написан. Если сценария нет — пропустите, его можно добавить позже через «✏️ Редактировать».",
+  "video.background-music-warning": "⚠️ Похоже, в этом видео нет фоновой музыки.",
+  "video.prompt-script":
+    "📝 Сценарий этого ролика?\n\nВставьте текст или прикрепите файл .txt или .md, в котором он написан. Если сценария нет — пропустите, его можно добавить позже через «✏️ Редактировать».",
   "video.script-skipped": "Сценарий пропущен.",
   "video.prompt-yt-title": "⌨ Название для YouTube Shorts?",
   "video.prompt-yt-description": "⌨ Описание для YouTube (отправьте `-`, если не нужно):",

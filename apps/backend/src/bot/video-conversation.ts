@@ -4,8 +4,8 @@ import { flowStepInput } from "../application/conversation-flow.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { StudioError } from "../foundation/errors.js";
-import { describeError, t } from "../foundation/i18n/index.js";
 import { materializeTelegramFile } from "../foundation/external/telegram-files.js";
+import { describeError, t } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
 import { VIDEO_LENGTH_WARNING_SECONDS, type VideoTarget } from "../publishing/video-types.js";
@@ -137,9 +137,16 @@ export async function attachVideoAsset(
   services: StudioServices = createStudioServices(backendDb, config),
 ): Promise<PublicationEffect[]> {
   const technical = await services.videos.assetTechnicalCheck(actorId, assetId);
+  const audioWarning = backgroundMusicWarningEffects(backendDb, actorId, technical.backgroundMusicLikelyMissing);
   if (technical.seconds > VIDEO_LENGTH_WARNING_SECONDS)
-    return videoLengthWarningEffects(backendDb, actorId, session, assetId, technical.seconds);
-  return startVideoDraft(backendDb, config, actorId, session, assetId, services);
+    return [...audioWarning, ...videoLengthWarningEffects(backendDb, actorId, session, assetId, technical.seconds)];
+  return [...audioWarning, ...(await startVideoDraft(backendDb, config, actorId, session, assetId, services))];
+}
+
+function backgroundMusicWarningEffects(backendDb: BackendDb, actorId: number, likelyMissing: boolean | undefined): PublicationEffect[] {
+  if (!likelyMissing) return [];
+  const locale = settingsService(backendDb).locale(actorId);
+  return [{ type: "message", text: t(locale, "video.background-music-warning") }];
 }
 
 /** Asks about a clip longer than the operator's own cuts ever are, keeping the
@@ -205,8 +212,11 @@ export async function startVideoDraft(
 async function replaceVideoAsset({ ctx, backendDb, config, actorId, session, services }: VideoMessageArgs): Promise<PublicationEffect[]> {
   if (session.draftId == null) throw new StudioError("err.video-reopen-edit");
   const stored = await storeTelegramVideo(ctx, backendDb, config, actorId);
-  await services.videos.replaceSource(actorId, session.draftId, stored.assetId);
-  return videoCardEffects(backendDb, config, actorId, session.draftId, services);
+  const technical = await services.videos.replaceSource(actorId, session.draftId, stored.assetId);
+  return [
+    ...backgroundMusicWarningEffects(backendDb, actorId, technical.backgroundMusicLikelyMissing),
+    ...videoCardEffects(backendDb, config, actorId, session.draftId, services),
+  ];
 }
 
 /** Renames a finished draft. The name is asked for from the draft's own edit
