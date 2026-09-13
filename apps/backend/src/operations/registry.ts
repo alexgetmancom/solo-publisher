@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
-import { classifyHooks } from "../analytics/collection/hook-types.js";
+import { classifyHooks, listOpenings } from "../analytics/collection/hook-types.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
@@ -622,6 +622,16 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context, input) => editorialReview(context.db(), context.config(), input.locale, context.fetchImpl),
+  }),
+  openings: operation({
+    section: "analytics",
+    startHere: "is this grouping of openings worth believing",
+    summary: "Every opening a video was given, beside the kind it was judged to be.",
+    note: "The whole archive, not the report's window, because a grouping is argued about across all of it. `video-report` groups by these kinds and shows six of them; this is the read that says whether the grouping deserves the weight, and the one to take before `hooks-classify --overwrite` changes what the names mean.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => listOpenings(context.db()),
   }),
   "hooks-classify": operation({
     section: "analytics",

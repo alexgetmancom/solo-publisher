@@ -124,6 +124,41 @@ function storeOpeningLines(backendDb: BackendDb): void {
   for (const row of rows) write.run(openingLine(row.script, row.source ?? ""), row.id);
 }
 
+/** Every opening this Studio has, beside the kind it was given.
+ *
+ * The kind is a model's judgement, and every note that reports one says to
+ * check it by reading a few against their own words. Nothing let anyone do
+ * that: the report shows six examples and the classifier prints what it just
+ * wrote, so the only way to read the grouping whole was to open the database.
+ * This is that read, and it is the one an argument about the five kinds has to
+ * start from. */
+export function listOpenings(backendDb: BackendDb): Record<string, unknown> {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare(
+      `SELECT id, hook, script_source AS source, opening_line AS opening
+         FROM video_drafts
+        WHERE TRIM(COALESCE(opening_line, '')) <> ''
+        ORDER BY id DESC`,
+    )
+    .all() as Array<{ id: number; hook: string | null; source: string | null; opening: string }>;
+  const byKind: Record<string, number> = {};
+  for (const row of rows) byKind[row.hook ?? "unnamed"] = (byKind[row.hook ?? "unnamed"] ?? 0) + 1;
+  return {
+    videos: rows.length,
+    byKind,
+    openings: rows.map((row) => ({
+      ref: `video:${row.id}`,
+      hook: row.hook,
+      // A script its author wrote gives the opening its own paragraph; a
+      // transcript gives a first sentence and nothing to say where it ended.
+      // Which one this is belongs beside the words when they are being judged.
+      source: row.source,
+      opening: row.opening,
+    })),
+    note: "The kind is a model's judgement about ten words. Read the words, not the label, when the grouping is what is in question.",
+  };
+}
+
 function loadCandidates(backendDb: BackendDb, overwrite: boolean): Candidate[] {
   return unsafeDb(backendDb)
     .sqlite.prepare(
