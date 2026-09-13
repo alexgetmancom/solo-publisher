@@ -134,15 +134,19 @@ export async function runMetricsCycle(
         // publish failure: a target that stops answering fails every task it
         // has, and one event per publication per cooldown is hundreds of rows
         // for one outage. The publication that hit it is in the details.
-        recordEvent(transactionDb as UnsafeBackendDb["db"], backendDb.clock, {
-          ref: null,
-          type: "analytics.metrics.failed",
-          severity: terminal ? "error" : "warn",
-          target: task.target,
-          message: `${task.target} metrics collection failed: ${message}`,
-          details: { target: task.target, terminal, publicationKey: task.publicationKey, externalId: task.externalId },
-          cooldownSeconds: ALERT_COOLDOWN_SECONDS,
-        });
+        // One transport miss is ordinary on public pages and already visible
+        // in the schedule. Escalate a retryable failure only when the previous
+        // attempt failed too; terminal failures still need the operator now.
+        if (terminal || task.lastError)
+          recordEvent(transactionDb as UnsafeBackendDb["db"], backendDb.clock, {
+            ref: null,
+            type: "analytics.metrics.failed",
+            severity: terminal ? "error" : "warn",
+            target: task.target,
+            message: `${task.target} metrics collection failed: ${message}`,
+            details: { target: task.target, terminal, publicationKey: task.publicationKey, externalId: task.externalId },
+            cooldownSeconds: ALERT_COOLDOWN_SECONDS,
+          });
       });
     }
   }

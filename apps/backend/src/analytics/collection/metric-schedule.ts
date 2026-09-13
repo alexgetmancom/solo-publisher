@@ -17,6 +17,7 @@ export type MetricTask = {
   publicationKey: string;
   target: string;
   checkCount: number;
+  lastError?: string | null;
   messageId: number;
   dateUtc: string | null;
   externalId: string | null;
@@ -81,6 +82,7 @@ export function claimDueMetricTasks(
       publicationKey: metricSchedule.publicationKey,
       target: metricSchedule.target,
       checkCount: metricSchedule.checkCount,
+      lastError: metricSchedule.lastError,
       messageId: sql<number>`${drafts.postId}`,
       dateUtc: publicationTargets.publishedAt,
       externalId: publicationTargets.externalId,
@@ -130,6 +132,7 @@ export function claimDueMetricTasks(
         publicationKey: row.publicationKey,
         target: row.target,
         checkCount: row.checkCount,
+        lastError: row.lastError,
         messageId: row.messageId,
         dateUtc: row.dateUtc,
         externalId: row.externalId,

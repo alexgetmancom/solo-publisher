@@ -74,18 +74,19 @@ describe("metrics cycle", () => {
       ).toEqual({ checkCount: 0, lastError: "upstream unavailable" });
     }));
 
-  /** Both places a failure was written are erased by the next success: the
-   * schedule's `last_error` is cleared and the metric row is overwritten. An
-   * intermittent collector therefore showed a failure rate in the usage
-   * counters and left nothing anywhere saying what had failed. */
-  it("journals a collector failure, and survives the success that clears the rest", () =>
+  it("alerts only after a retryable collector fails twice in a row", () =>
     withDb(async (backendDb) => {
       seedPublishedPost(backendDb, "post:9", "threads_ru");
-      await runMetricsCycle(loadTestConfig({}), backendDb, {
+      const collectors = {
         threads_ru: async () => {
           throw new Error("upstream unavailable");
         },
-      });
+      };
+      await runMetricsCycle(loadTestConfig({}), backendDb, collectors);
+
+      expect(backendDb.db.select().from(publicationEvents).all()).toEqual([]);
+      backendDb.db.update(metricSchedule).set({ nextCheckAt: null }).run();
+      await runMetricsCycle(loadTestConfig({}), backendDb, collectors);
 
       const journalled = backendDb.db
         .select({
@@ -113,7 +114,6 @@ describe("metrics cycle", () => {
 
       expect(backendDb.db.select({ lastError: metricSchedule.lastError }).from(metricSchedule).get()).toEqual({ lastError: null });
       expect(backendDb.db.select({ error: postMetrics.error }).from(postMetrics).get()).toEqual({ error: null });
-      // The counters know it happened; without this row nothing says what did.
       expect(backendDb.db.select({ eventType: publicationEvents.eventType }).from(publicationEvents).all()).toEqual([
         { eventType: "analytics.metrics.failed" },
       ]);
@@ -140,6 +140,9 @@ describe("metrics cycle", () => {
       expect(
         backendDb.db.select({ frozenAt: metricSchedule.frozenAt, lastError: metricSchedule.lastError }).from(metricSchedule).get(),
       ).toEqual({ frozenAt: expect.any(String), lastError: "post expired" });
+      expect(
+        backendDb.db.select({ eventType: publicationEvents.eventType, severity: publicationEvents.severity }).from(publicationEvents).all(),
+      ).toEqual([{ eventType: "analytics.metrics.failed", severity: "error" }]);
     }));
 
   it("claims the oldest due metric checkpoint before newer posts", () =>
