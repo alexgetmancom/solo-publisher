@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { classifyHooks } from "../src/analytics/collection/hook-types.js";
 import { videoDrafts } from "../src/db/schema.js";
+import { tagVideo } from "../src/operations/video-tag.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -103,6 +104,43 @@ describe("hook classification", () => {
       })) as { candidates: number };
 
       expect(report.candidates).toBe(1);
+    });
+  });
+  it("forgets a kind that was struck off the list", async () => {
+    await withDb(async (backendDb) => {
+      const { draftId } = insertPublishedVideo(backendDb, {
+        target: "youtube_shorts",
+        publishedAt: new Date().toISOString(),
+        label: "Too short to judge again",
+      });
+      // Two words: there is no line to judge, so it never becomes a candidate
+      // and the retired name would have sat on it for good.
+      backendDb.db
+        .update(videoDrafts)
+        .set({ script: "Ух ты.", scriptSource: "transcript", hook: "shock" })
+        .where(eq(videoDrafts.id, draftId))
+        .run();
+
+      const report = (await classifyHooks(backendDb, loadTestConfig(), noFetch, {
+        apply: false,
+        limit: 10,
+        overwrite: false,
+      })) as { candidates: number };
+
+      expect(report.candidates).toBe(0);
+      expect(backendDb.db.select().from(videoDrafts).where(eq(videoDrafts.id, draftId)).get()?.hook).toBeNull();
+    });
+  });
+
+  it("refuses a kind of opening that is not one of the kinds", async () => {
+    await withDb(async (backendDb) => {
+      const { draftId } = insertPublishedVideo(backendDb, {
+        target: "youtube_shorts",
+        publishedAt: new Date().toISOString(),
+        label: "Tagged by hand",
+      });
+      expect(() => tagVideo(backendDb, draftId, { hook: "shock" })).toThrow(/not one of the kinds/);
+      expect(tagVideo(backendDb, draftId, { hook: "premise" })).toMatchObject({ hook: "premise", changed: true });
     });
   });
 });

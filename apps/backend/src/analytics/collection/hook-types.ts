@@ -21,7 +21,7 @@ import { openingLine } from "../../publishing/video-service.js";
  * openings sat under `announcement` with only 41 of them announcing anything.
  * If how loud a line is turns out to be worth knowing, it is a second question
  * about the same line, not a seventh name for it. */
-const HOOK_TYPES = ["premise", "release", "reaction", "callback", "address", "question"] as const;
+export const HOOK_TYPES = ["premise", "release", "reaction", "callback", "address", "question"] as const;
 
 /** How many openings go into one request. Enough that the model sees them as a
  * set and answers consistently, small enough that one bad answer costs little
@@ -79,6 +79,7 @@ export async function classifyHooks(
   input: { apply: boolean; limit: number; overwrite: boolean },
 ): Promise<Record<string, unknown>> {
   storeOpeningLines(backendDb);
+  forgetRetiredKinds(backendDb);
   const candidates = loadCandidates(backendDb, input.overwrite).slice(0, input.limit);
   const videos = candidates.reduce((total, candidate) => total + candidate.videoDraftIds.length, 0);
   if (!candidates.length) return { applied: input.apply, candidates: 0, note: "Every video with an opening already carries its kind." };
@@ -195,6 +196,21 @@ export function listOpenings(backendDb: BackendDb): Record<string, unknown> {
 
 function refs(candidate: Candidate): string {
   return candidate.videoDraftIds.map((id) => `video:${id}`).join(" ");
+}
+
+/** A name struck off the list stops being a kind the moment it is struck off.
+ *
+ * Left in place it is a grouping of its own that nothing can ever join, and
+ * the two the last change retired sat on exactly the videos too short to be
+ * judged again -- so the report would have shown them as buckets of one for
+ * good. There is no kind here rather than a kind nobody uses. */
+function forgetRetiredKinds(backendDb: BackendDb): void {
+  unsafeDb(backendDb)
+    .sqlite.prepare(
+      `UPDATE video_drafts SET hook = NULL
+        WHERE hook IS NOT NULL AND hook NOT IN (${HOOK_TYPES.map((kind) => `'${kind}'`).join(", ")})`,
+    )
+    .run();
 }
 
 /** A video carries a kind when it carries one of the kinds there are.
