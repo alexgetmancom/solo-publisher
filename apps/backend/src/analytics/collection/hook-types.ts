@@ -197,13 +197,20 @@ function refs(candidate: Candidate): string {
   return candidate.videoDraftIds.map((id) => `video:${id}`).join(" ");
 }
 
+/** A video carries a kind when it carries one of the kinds there are.
+ *
+ * The list is closed but not frozen -- it was five names and is six, and the
+ * two it dropped are still written on videos judged under them. Read as a kind
+ * they are a grouping nothing can join; read as absent they are offered again
+ * without asking anyone to remember which run wrote them. `overwrite` stays
+ * for re-judging a video whose label is current and wrong. */
 function loadCandidates(backendDb: BackendDb, overwrite: boolean): Candidate[] {
   const rows = unsafeDb(backendDb)
     .sqlite.prepare(
       `SELECT id AS videoDraftId, opening_line AS openingLine
          FROM video_drafts
         WHERE opening_line IS NOT NULL AND TRIM(opening_line) <> ''
-          ${overwrite ? "" : "AND hook IS NULL"}
+          ${overwrite ? "" : `AND (hook IS NULL OR hook NOT IN (${HOOK_TYPES.map((kind) => `'${kind}'`).join(", ")}))`}
         ORDER BY id DESC`,
     )
     .all() as Array<{ videoDraftId: number; openingLine: string }>;

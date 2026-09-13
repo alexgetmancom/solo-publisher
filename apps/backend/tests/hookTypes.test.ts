@@ -83,4 +83,26 @@ describe("hook classification", () => {
       );
     });
   });
+  it("offers a video again when the kind it carries is no longer one of the kinds", async () => {
+    await withDb(async (backendDb) => {
+      const { draftId } = insertPublishedVideo(backendDb, {
+        target: "youtube_shorts",
+        publishedAt: new Date().toISOString(),
+        label: "Judged under the old list",
+      });
+      backendDb.db
+        .update(videoDrafts)
+        .set({ script: "В этой игре ты играешь за жабу.", scriptSource: "transcript", hook: "shock" })
+        .where(eq(videoDrafts.id, draftId))
+        .run();
+
+      const report = (await classifyHooks(backendDb, loadTestConfig(), noFetch, {
+        apply: false,
+        limit: 10,
+        overwrite: false,
+      })) as { candidates: number };
+
+      expect(report.candidates).toBe(1);
+    });
+  });
 });
