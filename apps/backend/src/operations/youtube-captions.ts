@@ -1,8 +1,9 @@
-import { updateVideoScript } from "../publishing/video-service.js";
+import { channelForVideo } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { youtubeAccessToken } from "../foundation/external/youtube.js";
 import { requestJson, shortenRequestFailure } from "../foundation/http.js";
+import { updateVideoScript } from "../publishing/video-service.js";
 
 type CaptionList = {
   items?: Array<{ id?: string; snippet?: { language?: string; trackKind?: string; name?: string; isAutoSynced?: boolean } }>;
@@ -146,7 +147,13 @@ async function read(
  * A script its author wrote is never a candidate: it is the words that were
  * chosen, and a transcript of what was said is a worse copy of it. Text this
  * command already stored is not one either — re-reading it costs the same API
- * quota as a video that has nothing. */
+ * quota as a video that has nothing.
+ *
+ * Neither is a video on a channel that has been turned off. Its videos are
+ * still published and still real, but there is no credential to ask with: the
+ * token call fails before any track is listed, and sixteen of those in a row
+ * read as a broken connection rather than as a channel someone closed on
+ * purpose. `channelForVideo` answers only for the ones still connected. */
 function loadCandidates(backendDb: BackendDb, refresh: boolean, sinceDays: number | null): Candidate[] {
   return (
     unsafeDb(backendDb)
@@ -161,9 +168,11 @@ function loadCandidates(backendDb: BackendDb, refresh: boolean, sinceDays: numbe
         ORDER BY d.id DESC`,
       )
       .all() as Candidate[]
-  ).map((candidate) => {
-    return { ...candidate, locale: candidate.locale === "en" ? ("en" as const) : ("ru" as const) };
-  });
+  )
+    .map((candidate) => {
+      return { ...candidate, locale: candidate.locale === "en" ? ("en" as const) : ("ru" as const) };
+    })
+    .filter((candidate) => channelForVideo(backendDb, "youtube_shorts", candidate.locale));
 }
 
 /** SubRip is a caption format: indices, timestamps and text. Only the text is
