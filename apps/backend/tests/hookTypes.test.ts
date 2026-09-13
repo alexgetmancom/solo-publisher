@@ -143,4 +143,67 @@ describe("hook classification", () => {
       expect(tagVideo(backendDb, draftId, { hook: "premise" })).toMatchObject({ hook: "premise", changed: true });
     });
   });
+  it("settles a kind across every video that opens on the same words", async () => {
+    await withDb(async (backendDb) => {
+      const opening = "В этой игре ты играешь за жабу.";
+      const [judged, recovered, disagreeing] = ["judged", "recovered", "disagreeing"].map(
+        (name) => insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: new Date().toISOString(), label: name }).draftId,
+      );
+      const set = (id: number, hook: string | null) =>
+        backendDb.db.update(videoDrafts).set({ script: opening, scriptSource: "transcript", hook }).where(eq(videoDrafts.id, id)).run();
+      set(judged as number, "premise");
+      set(recovered as number, null);
+      set(disagreeing as number, "premise");
+
+      const report = (await classifyHooks(backendDb, loadTestConfig(), noFetch, {
+        apply: false,
+        limit: 10,
+        overwrite: false,
+      })) as { candidates: number; copied: number; cleared: number };
+
+      // The kind was settled once; the transcript that arrived later takes it
+      // rather than being judged on its own and disagreeing with its twin.
+      expect({ candidates: report.candidates, copied: report.copied }).toEqual({ candidates: 0, copied: 1 });
+      const hooks = [judged, recovered, disagreeing].map(
+        (id) =>
+          backendDb.db
+            .select()
+            .from(videoDrafts)
+            .where(eq(videoDrafts.id, id as number))
+            .get()?.hook,
+      );
+      expect(hooks).toEqual(["premise", "premise", "premise"]);
+    });
+  });
+
+  it("clears a group that disagrees with itself so one pass settles it", async () => {
+    await withDb(async (backendDb) => {
+      const opening = "В этой игре ты открываешь свой музей.";
+      const ids = ["one", "two"].map(
+        (name) => insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: new Date().toISOString(), label: name }).draftId,
+      );
+      backendDb.db
+        .update(videoDrafts)
+        .set({ script: opening, scriptSource: "transcript", hook: "premise" })
+        .where(eq(videoDrafts.id, ids[0] as number))
+        .run();
+      backendDb.db
+        .update(videoDrafts)
+        .set({ script: opening, scriptSource: "transcript", hook: "release" })
+        .where(eq(videoDrafts.id, ids[1] as number))
+        .run();
+
+      const report = (await classifyHooks(backendDb, loadTestConfig(), noFetch, {
+        apply: false,
+        limit: 10,
+        overwrite: false,
+      })) as { candidates: number; videos: number; cleared: number };
+
+      expect({ candidates: report.candidates, videos: report.videos, cleared: report.cleared }).toEqual({
+        candidates: 1,
+        videos: 2,
+        cleared: 2,
+      });
+    });
+  });
 });

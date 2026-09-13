@@ -80,14 +80,17 @@ export async function classifyHooks(
 ): Promise<Record<string, unknown>> {
   storeOpeningLines(backendDb);
   forgetRetiredKinds(backendDb);
+  const settled = settleOpeningsSaidTwice(backendDb);
   const candidates = loadCandidates(backendDb, input.overwrite).slice(0, input.limit);
   const videos = candidates.reduce((total, candidate) => total + candidate.videoDraftIds.length, 0);
-  if (!candidates.length) return { applied: input.apply, candidates: 0, note: "Every video with an opening already carries its kind." };
+  if (!candidates.length)
+    return { applied: input.apply, candidates: 0, ...settled, note: "Every video with an opening already carries its kind." };
   if (!input.apply)
     return {
       applied: false,
       candidates: candidates.length,
       videos,
+      ...settled,
       sample: candidates.slice(0, 5).map((c) => ({ refs: refs(c), opening: c.openingLine.slice(0, 120) })),
     };
   const labelled: Array<{ refs: string; hook: string; opening: string; videos: number }> = [];
@@ -133,6 +136,7 @@ export async function classifyHooks(
   return {
     applied: true,
     labelled: labelled.reduce((total, row) => total + row.videos, 0),
+    ...settled,
     openings: labelled.length,
     byKind: counts,
     refused: refused.slice(0, 10),
@@ -196,6 +200,63 @@ export function listOpenings(backendDb: BackendDb): Record<string, unknown> {
 
 function refs(candidate: Candidate): string {
   return candidate.videoDraftIds.map((id) => `video:${id}`).join(" ");
+}
+
+/** A kind belongs to the words, so two videos opening on the same words carry
+ * the same kind, and words too short to judge carry none.
+ *
+ * Grouping the candidates of one run was not enough. A video already carrying
+ * a kind is not a candidate, so when a recovered transcript turned out to
+ * repeat an opening the archive already had, it was judged on its own and
+ * disagreed with its own twin -- the fault this was meant to end, walked back
+ * in through the door marked new. The text is the unit, across the whole
+ * archive and every run: a kind already settled is copied rather than paid for
+ * again, and a text whose videos disagree is cleared so the next pass settles
+ * it once for all of them.
+ *
+ * Returns what it moved, because a run that copies forty labels and asks about
+ * none did something and should not read as a run that did nothing. */
+function settleOpeningsSaidTwice(backendDb: BackendDb): { copied: number; cleared: number } {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare("SELECT id, hook, opening_line AS opening FROM video_drafts WHERE TRIM(COALESCE(opening_line, '')) <> ''")
+    .all() as Array<{ id: number; hook: string | null; opening: string }>;
+  const write = unsafeDb(backendDb).sqlite.prepare("UPDATE video_drafts SET hook = ?, updated_at = ? WHERE id = ?");
+  const now = new Date().toISOString();
+  const groups = new Map<string, Array<{ id: number; hook: string | null }>>();
+  const tooShort: Array<{ id: number; hook: string | null }> = [];
+  for (const row of rows) {
+    if (row.opening.split(/\s+/u).filter(Boolean).length < ENOUGH_WORDS) {
+      tooShort.push(row);
+      continue;
+    }
+    const key = row.opening.trim().toLowerCase().replace(/\s+/gu, " ");
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
+  let copied = 0;
+  let cleared = 0;
+  // A judgement about words nobody can read is not a judgement about anything.
+  for (const row of tooShort)
+    if (row.hook) {
+      write.run(null, now, row.id);
+      cleared += 1;
+    }
+  for (const group of groups.values()) {
+    const kinds = [...new Set(group.map((row) => row.hook).filter(Boolean))];
+    if (kinds.length === 1) {
+      for (const row of group)
+        if (row.hook !== kinds[0]) {
+          write.run(kinds[0], now, row.id);
+          copied += 1;
+        }
+    } else if (kinds.length > 1) {
+      for (const row of group)
+        if (row.hook) {
+          write.run(null, now, row.id);
+          cleared += 1;
+        }
+    }
+  }
+  return { copied, cleared };
 }
 
 /** A name struck off the list stops being a kind the moment it is struck off.
