@@ -727,9 +727,15 @@ export function openingsRanked(
     sortedBy: options.sort,
     ...(options.kind === undefined ? { byKind: countKinds(rows) } : { kind: options.kind }),
     openings: ranked,
+    // `audienceWatchRatio` is how many times that moment was watched, not how
+    // many viewers were left: a Short loops, and a moment watched twice by half
+    // the audience reads as a hundred. It answers which openings were returned
+    // to, which is worth knowing and is not the same question as who stayed.
+    scale:
+      "retentionAt3s is YouTube's audienceWatchRatio at three seconds, as a percentage: 100 is every viewer watching that moment once, and above it is replays. skipRate is the share of Instagram viewers who left inside the first three seconds, so less is better.",
     note:
       measured < rows.length
-        ? `${rows.length - measured} of these carry no ${options.sort} and sort last: Instagram reports retention and skip, YouTube does not, and an imported video was read once years after it went out.`
+        ? `${rows.length - measured} of these carry no ${options.sort} and sort last: retention comes from YouTube and skip from Instagram, each reports only its own, and an imported video was read once years after it went out.`
         : "Retention and skip are what an opening is answerable by. Views say how much weight a row carries.",
   };
 }
@@ -790,11 +796,12 @@ function openings(backendDb: BackendDb, byDraft: Map<number, TargetSeries[]>): R
           medianSkipRate: slot.skip.length ? median(slot.skip) : null,
           confidence: slot.views.length >= CONFIDENT_SAMPLE ? "ok" : slot.views.length >= WEAK_SAMPLE ? "low" : "anecdotal",
         }))
-        // Retention is the figure an opening is answerable by, but only Instagram
-        // reports it and only for as long as it serves the file: most rows carry
-        // none. Sorting those against zero puts them in insertion order and calls
-        // it a ranking, so a row without retention is ranked by the figure it
-        // does have, below every row that has the better one.
+        // Retention is the figure an opening is answerable by, and it comes from
+        // YouTube alone -- Instagram answers the same question with its skip
+        // rate and publishes nothing finer -- so a row built from Reels carries
+        // none. Sorting those against zero puts them in insertion order and
+        // calls it a ranking, so a row without retention is ranked by the
+        // figure it does have, below every row that has the better one.
         .sort(
           (left, right) =>
             Number(right.medianRetentionAt3s !== null) - Number(left.medianRetentionAt3s !== null) ||
