@@ -651,6 +651,99 @@ function summarised(metrics: Metrics | null): Metrics | null {
   return elsewhere.length ? { ...kept, inVideoMetrics: elsewhere } : kept;
 }
 
+/** Every opening beside the figures it is answerable by, newest first or
+ * ranked by one of them.
+ *
+ * The grouping above says what a form does on average, and for the form that
+ * is two thirds of this channel an average over two hundred videos is not a
+ * finding -- it is the channel's own baseline wearing a name. The question
+ * worth asking is inside one form: of two hundred openings that all set up a
+ * situation, which ones held anyone. Answering it used to mean listing the
+ * openings, then asking after each video one at a time and joining the two by
+ * hand, which is a thing nobody does and so a question nobody asked.
+ *
+ * Retention and skip are the figures an opening is answerable by; views are
+ * here to say how much weight a row carries, not to rank by, because what a
+ * video was shown to is decided by things the first three seconds never touch.
+ * A video nobody has read carries nulls and sorts last: no figure is not a
+ * figure of zero. */
+export function openingsRanked(
+  backendDb: BackendDb,
+  options: { kind?: string; sort: "retention" | "skip" | "views" },
+): Record<string, unknown> {
+  const said = unsafeDb(backendDb)
+    .sqlite.prepare(
+      `SELECT id, hook, script_source AS source, opening_line AS opening
+         FROM video_drafts
+        WHERE TRIM(COALESCE(opening_line, '')) <> ''
+          ${options.kind ? "AND hook = ?" : ""}
+        ORDER BY id DESC`,
+    )
+    .all(...(options.kind ? [options.kind] : [])) as Array<{
+    id: number;
+    hook: string | null;
+    source: string | null;
+    opening: string;
+  }>;
+  const byDraft = new Map<number, TargetSeries[]>();
+  for (const target of loadSeries(backendDb, EVERYTHING_EVER))
+    byDraft.set(target.video_draft_id, [...(byDraft.get(target.video_draft_id) ?? []), target]);
+  const rows = said.map((row) => {
+    const targets = byDraft.get(row.id) ?? [];
+    const read = targets.filter((target) => latest(target));
+    const figures = (key: "retentionAt3s" | "skipRate") => {
+      const values = read.map((target) => metricNumber(latest(target)?.metrics[key])).filter((value) => value);
+      return values.length ? median(values) : null;
+    };
+    return {
+      ref: `video:${row.id}`,
+      hook: row.hook,
+      // A transcript's opening is its first sentence and only a proxy for the
+      // paragraph its author would have written. Ranking them together is
+      // fine; reading one as the words that were chosen is not.
+      source: row.source,
+      opening: row.opening,
+      views: read.length ? read.reduce((total, target) => total + metricNumber(latest(target)?.metrics.views), 0) : null,
+      retentionAt3s: figures("retentionAt3s"),
+      skipRate: figures("skipRate"),
+    };
+  });
+  const of = (row: (typeof rows)[number]) =>
+    options.sort === "views" ? row.views : options.sort === "skip" ? row.skipRate : row.retentionAt3s;
+  // Skip is the one where less is better, so it ranks the other way round --
+  // sorted like the others it would put the openings that lost the most
+  // viewers at the top of a list read as the ones that worked.
+  const worst = options.sort === "skip";
+  const ranked = [...rows].sort((left, right) => {
+    const a = of(left);
+    const b = of(right);
+    if (a === null || b === null) return Number(a === null) - Number(b === null);
+    return worst ? a - b : b - a;
+  });
+  const measured = rows.filter((row) => of(row) !== null).length;
+  return {
+    videos: rows.length,
+    measured,
+    sortedBy: options.sort,
+    ...(options.kind === undefined ? { byKind: countKinds(rows) } : { kind: options.kind }),
+    openings: ranked,
+    note:
+      measured < rows.length
+        ? `${rows.length - measured} of these carry no ${options.sort} and sort last: Instagram reports retention and skip, YouTube does not, and an imported video was read once years after it went out.`
+        : "Retention and skip are what an opening is answerable by. Views say how much weight a row carries.",
+  };
+}
+
+function countKinds(rows: Array<{ hook: string | null }>): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const row of rows) counts[row.hook ?? "unnamed"] = (counts[row.hook ?? "unnamed"] ?? 0) + 1;
+  return counts;
+}
+
+/** Before this Studio, before the channel. `loadSeries` asks for published_at
+ * at or after a date, and the archive's own history has no other floor. */
+const EVERYTHING_EVER = "1970-01-01T00:00:00.000Z";
+
 /** What each opening did to the first seconds.
  *
  * Views say whether a video was shown. Retention at three seconds and

@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
 import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
-import { classifyHooks, listOpenings } from "../analytics/collection/hook-types.js";
+import { classifyHooks, HOOK_TYPES } from "../analytics/collection/hook-types.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
 import { backfillVideoComments } from "../analytics/collection/video-comments.js";
@@ -17,7 +17,7 @@ import { postPerformanceReport } from "../analytics/reports/post-performance.js"
 import { studioBrief } from "../analytics/reports/studio-brief.js";
 import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
 import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
-import { videoPerformanceDetail, videoPerformanceReport } from "../analytics/reports/video-performance.js";
+import { openingsRanked, videoPerformanceDetail, videoPerformanceReport } from "../analytics/reports/video-performance.js";
 import { platformComparison } from "../analytics/reports/video-platform-compare.js";
 import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
 import { xAnalyticsReport } from "../analytics/x-activity-report.js";
@@ -626,12 +626,15 @@ const operationDefs = {
   openings: operation({
     section: "analytics",
     startHere: "is this grouping of openings worth believing",
-    summary: "Every opening a video was given, beside the kind it was judged to be.",
-    note: "The whole archive, not the report's window, because a grouping is argued about across all of it. `video-report` groups by these kinds and shows six of them; this is the read that says whether the grouping deserves the weight, and the one to take before `hooks-classify --overwrite` changes what the names mean.",
-    schema: z.object({}),
+    summary: "Every opening a video was given, with the kind it was judged to be and the figures it is answerable by.",
+    note: "The whole archive, not the report's window, because a grouping is argued about across all of it. `video-report` says what a kind does on average; this says what each opening did, so the question can be asked inside one kind — which is where it is worth asking, an average over two hundred openings of the same form being the channel's own baseline wearing a name. Sorted by `retention` unless asked otherwise; `skip` ranks the other way round, since fewer is better there. Views are weight, not rank: what a video was shown to is decided by things the first three seconds never touch.",
+    schema: z.object({
+      kind: z.enum(HOOK_TYPES).optional().describe("read one kind of opening only"),
+      sort: z.enum(["retention", "skip", "views"]).default("retention").describe("the figure to rank by"),
+    }),
     mutates: false,
     agent: true,
-    handler: (context) => listOpenings(context.db()),
+    handler: (context, input) => openingsRanked(context.db(), { ...(input.kind ? { kind: input.kind } : {}), sort: input.sort }),
   }),
   "hooks-classify": operation({
     section: "analytics",
