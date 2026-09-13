@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { videoDrafts } from "../../db/schema.js";
-import { deepSeekChat } from "../../foundation/external/deepseek.js";
 import type { BackendConfig } from "../../foundation/config.js";
+import { deepSeekChat } from "../../foundation/external/deepseek.js";
+import { openingLine } from "../../publishing/video-service.js";
 
 /** The kinds of opening this channel actually uses.
  *
@@ -49,6 +50,7 @@ export async function classifyHooks(
   fetchImpl: typeof fetch,
   input: { apply: boolean; limit: number; overwrite: boolean },
 ): Promise<Record<string, unknown>> {
+  storeOpeningLines(backendDb);
   const candidates = loadCandidates(backendDb, input.overwrite).slice(0, input.limit);
   if (!candidates.length) return { applied: input.apply, candidates: 0, note: "Every video with an opening already carries its kind." };
   if (!input.apply)
@@ -102,6 +104,24 @@ export async function classifyHooks(
     sample: labelled.slice(0, 8),
     note: "The kind is a judgement about ten words, not a measurement. Read a handful against their openings before trusting a grouping built on them.",
   };
+}
+
+/** The words each video opens with, derived from the script it has now.
+ *
+ * The column was added to a table whose scripts were already written, and it
+ * is filled in one place -- the moment a script is saved. Every script older
+ * than the column kept a null no write would ever come back for, so a video
+ * with a script sat uncountable beside one with none, and nothing said which.
+ * Deriving it here is what the posts already do before they are judged: the
+ * opening is a function of the text and where the text came from, so it can be
+ * recomputed at any time and a script that has not changed yields what it
+ * yielded before. */
+function storeOpeningLines(backendDb: BackendDb): void {
+  const rows = unsafeDb(backendDb)
+    .sqlite.prepare("SELECT id, script, script_source AS source FROM video_drafts WHERE TRIM(COALESCE(script, '')) <> ''")
+    .all() as Array<{ id: number; script: string; source: string | null }>;
+  const write = unsafeDb(backendDb).sqlite.prepare("UPDATE video_drafts SET opening_line = ? WHERE id = ?");
+  for (const row of rows) write.run(openingLine(row.script, row.source ?? ""), row.id);
 }
 
 function loadCandidates(backendDb: BackendDb, overwrite: boolean): Candidate[] {
