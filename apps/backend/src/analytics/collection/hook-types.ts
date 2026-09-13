@@ -5,34 +5,62 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { deepSeekChat } from "../../foundation/external/deepseek.js";
 import { openingLine } from "../../publishing/video-service.js";
 
-/** The kinds of opening this channel actually uses.
+/** The kinds of opening this channel actually uses, read off all of its own
+ * videos rather than imagined.
  *
- * Five, and closed: an open list would grow a new name for every video and
- * end up where the tags were, nine hundred words across ninety videos with
- * nothing to compare. Each of these has to be recognisable from ten words and
- * has to be a choice its author could make differently next time. */
-const HOOK_TYPES = ["question", "shock", "address", "announcement", "callback"] as const;
+ * Six, and closed: an open list would grow a new name for every video and end
+ * up where the tags were, nine hundred words across ninety videos with nothing
+ * to compare. Each has to be recognisable from ten words and has to be a
+ * choice its author could make differently next time.
+ *
+ * Every one of these is a form -- what the opening does. The list used to
+ * carry `shock` beside them, which is not a form but a volume, and a list that
+ * mixes the two cannot be applied twice the same way: every premise has some
+ * volume, so the choice between `shock` and anything else was settled by tone,
+ * and tone is not what is being asked. It cost half the archive -- 154 of 303
+ * openings sat under `announcement` with only 41 of them announcing anything.
+ * If how loud a line is turns out to be worth knowing, it is a second question
+ * about the same line, not a seventh name for it. */
+const HOOK_TYPES = ["premise", "release", "reaction", "callback", "address", "question"] as const;
 
 /** How many openings go into one request. Enough that the model sees them as a
  * set and answers consistently, small enough that one bad answer costs little
  * to redo. */
 const BATCH = 20;
 
-const SYSTEM_PROMPT = `You label the opening line of a short vertical gaming video, in Russian, with one of five kinds.
+/** An opening this short is an interjection with nothing in it to judge. The
+ * posts have held this guard since they were first labelled; the videos went
+ * without one and spent judgements on two words. */
+const ENOUGH_WORDS = 4;
 
+const SYSTEM_PROMPT = `You label the opening line of a short vertical gaming video, in Russian, with one of six kinds.
+
+Every kind is a form -- what the opening does. None of them is a volume: a premise can be alarming, absurd or funny and is still a premise.
+
+premise — it describes the situation the game puts the viewer in: what you are, what you do, what is done to you.
+release — it reports the game itself: that it exists, released, updated, went free, or reached an anniversary. News about the game rather than about playing it.
+reaction — it is the author's own reaction and carries no content of its own: that something was unexpected, that something was found, that this one is interesting.
+callback — it refers to an earlier video, or to a game or thing the audience already knows, and hangs this one on it.
+address — it asks the viewer for something they can actually do: join in, gather friends, tag someone, stop scrolling.
 question — it asks the viewer something, or poses a puzzle they want resolved.
-shock — it states something extreme, alarming or absurd as fact: a threat, a loss, a claim that sounds impossible.
-address — it speaks to the viewer directly and asks them to do something or join in.
-announcement — it reports that a game exists, released, or updated. Neutral news.
-callback — it refers to a previous video, a game the audience already knows, or a shared memory.
 
 Rules:
 - Answer with a JSON object mapping each id to one label. Nothing else.
 - Use exactly these labels, lowercase.
 - Judge only the words given. Do not infer from the game or from what you imagine follows.
+- How extreme, loud or funny a line is decides nothing. Judge what the line does.
+- A line that invites the viewer to picture a situation is premise: the invitation frames the situation and asks for nothing. Keep address for a line that asks for something the viewer can actually do.
 - When two fit, pick the one a viewer would notice first.`;
 
-type Candidate = { videoDraftId: number; openingLine: string };
+/** One opening to judge, and every video that opens with those exact words.
+ *
+ * The archive says the same thing twice: twelve of its openings are written
+ * word for word on two videos. Judged apart they were judged differently --
+ * four of the twelve disagreed with themselves at temperature zero, because a
+ * batch of twenty is the context of every answer in it and no two batches hold
+ * the same twenty. One text is one judgement, and it lands on every video that
+ * text belongs to. */
+type Candidate = { videoDraftIds: number[]; openingLine: string };
 
 /**
  * Fills in what kind of opening each video used.
@@ -52,18 +80,20 @@ export async function classifyHooks(
 ): Promise<Record<string, unknown>> {
   storeOpeningLines(backendDb);
   const candidates = loadCandidates(backendDb, input.overwrite).slice(0, input.limit);
+  const videos = candidates.reduce((total, candidate) => total + candidate.videoDraftIds.length, 0);
   if (!candidates.length) return { applied: input.apply, candidates: 0, note: "Every video with an opening already carries its kind." };
   if (!input.apply)
     return {
       applied: false,
       candidates: candidates.length,
-      sample: candidates.slice(0, 5).map((c) => ({ ref: `video:${c.videoDraftId}`, opening: c.openingLine.slice(0, 120) })),
+      videos,
+      sample: candidates.slice(0, 5).map((c) => ({ refs: refs(c), opening: c.openingLine.slice(0, 120) })),
     };
-  const labelled: Array<{ ref: string; hook: string; opening: string }> = [];
+  const labelled: Array<{ refs: string; hook: string; opening: string; videos: number }> = [];
   const refused: string[] = [];
   for (let start = 0; start < candidates.length; start += BATCH) {
     const batch = candidates.slice(start, start + BATCH);
-    const asked = batch.map((c) => `${c.videoDraftId}: ${c.openingLine.slice(0, 300)}`).join("\n");
+    const asked = batch.map((c) => `${c.videoDraftIds[0]}: ${c.openingLine.slice(0, 300)}`).join("\n");
     let answer: Record<string, unknown>;
     try {
       const raw = await deepSeekChat(
@@ -81,24 +111,28 @@ export async function classifyHooks(
       continue;
     }
     for (const candidate of batch) {
-      const label = String(answer[String(candidate.videoDraftId)] ?? "").toLowerCase();
+      const label = String(answer[String(candidate.videoDraftIds[0])] ?? "").toLowerCase();
       if (!HOOK_TYPES.includes(label as (typeof HOOK_TYPES)[number])) {
-        refused.push(`video:${candidate.videoDraftId}: answered ${label || "nothing"}`);
+        refused.push(`${refs(candidate)}: answered ${label || "nothing"}`);
         continue;
       }
-      unsafeDb(backendDb)
-        .db.update(videoDrafts)
-        .set({ hook: label, updatedAt: new Date().toISOString() })
-        .where(eq(videoDrafts.id, candidate.videoDraftId))
-        .run();
-      labelled.push({ ref: `video:${candidate.videoDraftId}`, hook: label, opening: candidate.openingLine.slice(0, 90) });
+      const now = new Date().toISOString();
+      for (const videoDraftId of candidate.videoDraftIds)
+        unsafeDb(backendDb).db.update(videoDrafts).set({ hook: label, updatedAt: now }).where(eq(videoDrafts.id, videoDraftId)).run();
+      labelled.push({
+        refs: refs(candidate),
+        hook: label,
+        opening: candidate.openingLine.slice(0, 90),
+        videos: candidate.videoDraftIds.length,
+      });
     }
   }
   const counts: Record<string, number> = {};
-  for (const row of labelled) counts[row.hook] = (counts[row.hook] ?? 0) + 1;
+  for (const row of labelled) counts[row.hook] = (counts[row.hook] ?? 0) + row.videos;
   return {
     applied: true,
-    labelled: labelled.length,
+    labelled: labelled.reduce((total, row) => total + row.videos, 0),
+    openings: labelled.length,
     byKind: counts,
     refused: refused.slice(0, 10),
     sample: labelled.slice(0, 8),
@@ -159,8 +193,12 @@ export function listOpenings(backendDb: BackendDb): Record<string, unknown> {
   };
 }
 
+function refs(candidate: Candidate): string {
+  return candidate.videoDraftIds.map((id) => `video:${id}`).join(" ");
+}
+
 function loadCandidates(backendDb: BackendDb, overwrite: boolean): Candidate[] {
-  return unsafeDb(backendDb)
+  const rows = unsafeDb(backendDb)
     .sqlite.prepare(
       `SELECT id AS videoDraftId, opening_line AS openingLine
          FROM video_drafts
@@ -168,5 +206,14 @@ function loadCandidates(backendDb: BackendDb, overwrite: boolean): Candidate[] {
           ${overwrite ? "" : "AND hook IS NULL"}
         ORDER BY id DESC`,
     )
-    .all() as Candidate[];
+    .all() as Array<{ videoDraftId: number; openingLine: string }>;
+  const byText = new Map<string, Candidate>();
+  for (const row of rows) {
+    if (row.openingLine.split(/\s+/u).filter(Boolean).length < ENOUGH_WORDS) continue;
+    const key = row.openingLine.trim().toLowerCase().replace(/\s+/gu, " ");
+    const seen = byText.get(key);
+    if (seen) seen.videoDraftIds.push(row.videoDraftId);
+    else byText.set(key, { videoDraftIds: [row.videoDraftId], openingLine: row.openingLine });
+  }
+  return [...byText.values()];
 }

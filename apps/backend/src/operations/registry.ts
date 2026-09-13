@@ -637,8 +637,8 @@ const operationDefs = {
     section: "analytics",
     startHere: "what kind of opening does each video use",
     summary:
-      "Name the kind of opening each video used — question, shock, address, announcement or callback — from the words it opens with.",
-    note: "Reads `opening_line`, which is the first paragraph of a script its author wrote or the first sentence of a transcript. The label is a model's judgement about ten words, not a measurement: without --apply it prints the openings it would judge, and with it the label sits beside the words so a grouping can be checked by reading four of them.",
+      "Name the kind of opening each video used — premise, release, reaction, callback, address or question — from the words it opens with.",
+    note: "Reads `opening_line`, which is the first paragraph of a script its author wrote or the first sentence of a transcript. Every kind is a form, what the opening does; how loud it is names nothing. Openings shorter than four words are left alone, and two videos opening on the same words are judged once and labelled together. The label is a model's judgement about ten words, not a measurement: without --apply it prints the openings it would judge, `openings` prints the whole archive beside the kinds it already carries.",
     schema: z.object({
       apply: applyOption,
       limit: z.coerce.number().int().min(1).max(200).default(60).describe("how many videos to judge in one run"),
