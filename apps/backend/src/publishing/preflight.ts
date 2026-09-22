@@ -124,9 +124,10 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
                 actual: post.text.length,
                 label,
                 ...(index > 0 ? { part: index + 1 } : {}),
-                // A thread is cut at the Threads budget whatever the overflow was.
-                ...(mode && index === 0 && !thread.length
-                  ? { threadParts: splitText(post.text, threadsTextLimit("threads_ru")).length }
+                // A thread is cut at the Threads budget whatever the overflow was,
+                // and an existing thread grows by the pieces its first post makes.
+                ...(mode && index === 0
+                  ? { threadParts: splitText(post.text, threadsTextLimit("threads_ru")).length + thread.length }
                   : {}),
               },
             ]

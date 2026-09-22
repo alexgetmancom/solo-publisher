@@ -77,14 +77,12 @@ function threadPartSaved(
   step: "thread_part" | "thread_edit",
 ): PublicationEffect[] {
   const screen = threadPartScreen(backendDb, config, actorId, draftId, step);
-  return [
-    {
-      type: "screen",
-      text: screen.text,
-      options: { ...(screen.markdown ? { parse_mode: "Markdown" as const } : {}), reply_markup: screen.keyboard },
-      card: { kind: "post", draftId },
-    },
-  ];
+  const options = { ...(screen.markdown ? { parse_mode: "Markdown" as const } : {}), reply_markup: screen.keyboard };
+  // The add-or-finish question is not the card: the card is repainted when the
+  // English arrives, and that repaint took these buttons away seconds after
+  // they appeared. The thread review after a rewrite is the card.
+  if (step === "thread_part") return [{ type: "screen", text: screen.text, options }];
+  return [{ type: "screen", text: screen.text, options, card: { kind: "post", draftId } }];
 }
 
 function renderPostScheduleConfirmation(

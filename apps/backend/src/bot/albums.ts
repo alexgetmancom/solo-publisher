@@ -264,5 +264,6 @@ async function refreshDraftControlCard(
     ...(preview.markdown ? { parse_mode: "Markdown" as const } : {}),
     reply_markup: preview.keyboard,
   });
-  setTelegramPostCard(backendDb, draftId, chatId, control.message_id);
+  // The add-or-finish question is not the card; see threadPartSaved.
+  if (threadStep !== "thread_part") setTelegramPostCard(backendDb, draftId, chatId, control.message_id);
 }

@@ -1,4 +1,4 @@
-import type { DomainEventInput, DraftPatch, DraftRecord, NewThreadPart, StoryPublishMode } from "../../application/ports.js";
+import type { DomainEventInput, DraftPatch, DraftRecord, NewThreadPart, StoryPublishMode, ThreadPart } from "../../application/ports.js";
 import type { PublicationPipeline, PublicationSchedule } from "../../application/publication-pipeline.js";
 import { publicationRef } from "../../application/publication-ref.js";
 import { isSiteTarget, PRESETS, presetName, TARGETS, targetLocale, targetsFor } from "../../botTargets.js";
@@ -120,6 +120,21 @@ function scheduledPostInput(draft: DraftRecord): PostScheduleInput {
 
 /** Commands for post drafts. These are deliberately transport-free and become the
  * single entry point for Telegram, Web Studio and later MCP mutations. */
+/** One written post as the thread posts it makes: split at the Threads budget,
+ * its links kept where they still fit the first piece, its media on that piece. */
+function threadPosts(part: NewThreadPart): NewThreadPart[] {
+  const pieces = splitText(part.textRu.trim(), threadsTextLimit("threads_ru"));
+  return pieces.map((textRu, index) => ({
+    textRu,
+    entitiesRu: index === 0 ? part.entitiesRu.filter((entity) => Number(entity.offset) + Number(entity.length) <= textRu.length) : [],
+    media: index === 0 ? part.media : [],
+  }));
+}
+
+function newThreadPart(part: ThreadPart): NewThreadPart {
+  return { textRu: part.textRu, entitiesRu: part.entitiesRu, media: part.media };
+}
+
 /** Every thread change leaves the English stale and the plan out of date. */
 function threadChanged(backendDb: BackendDb, config: BackendConfig, draftId: number, type: string, message: string): void {
   if (translationWanted(backendDb, backendDb.drafts.get(draftId)?.text_ru ?? "", config)) backendDb.draftTranslations.queue(draftId);
@@ -304,42 +319,49 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
      * on the first post; the rest of the text becomes the parts after it. */
     makeThread(actorId: number, draftId: number): void {
       const draft = requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
-      if (draft.thread.length) throw new StudioError("err.thread-exists");
-      const [first = "", ...rest] = splitText(draft.text_ru, threadsTextLimit("threads_ru"));
-      if (!rest.length) throw new StudioError("err.thread-too-short");
-      const entities = jsonRecordArray(draft.text_ru_entities_json).filter(
-        (entity) => Number(entity.offset) + Number(entity.length) <= first.length,
-      );
+      const [first, ...rest] = threadPosts({
+        textRu: draft.text_ru,
+        entitiesRu: jsonRecordArray(draft.text_ru_entities_json),
+        media: [],
+      });
+      if (!first || !rest.length) throw new StudioError("err.thread-too-short");
       backendDb.drafts.update(draftId, {
-        textRu: first,
-        textRuEntitiesJson: JSON.stringify(entities),
+        textRu: first.textRu,
+        textRuEntitiesJson: JSON.stringify(first.entitiesRu),
         textEnApproved: null,
         updatedAt: backendDb.clock.now().toISOString(),
       });
-      backendDb.threadParts.replace(
-        draftId,
-        rest.map((textRu) => ({ textRu, entitiesRu: [], media: [] })),
-      );
+      // The overflow goes right after the first post, ahead of any posts the
+      // thread already had.
+      backendDb.threadParts.replace(draftId, [...rest, ...draft.thread.map(newThreadPart)]);
       threadChanged(
         backendDb,
         config,
         draftId,
         "content.draft.thread-made",
-        `Draft #${draftId} became a thread of ${rest.length + 1} posts`,
+        `Draft #${draftId} became a thread of ${rest.length + draft.thread.length + 1} posts`,
       );
     },
+    /** A post over the Threads budget becomes as many posts as it takes, the
+     * media staying with the first of them. Returns the last position written. */
     appendThreadPart(actorId: number, draftId: number, part: NewThreadPart): number {
       requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
-      if (!part.textRu.trim()) throw new StudioError("err.thread-part-empty");
-      const position = backendDb.threadParts.append(draftId, { ...part, textRu: part.textRu.trim() });
+      const posts = threadPosts(part);
+      if (!posts.length) throw new StudioError("err.thread-part-empty");
+      let position = 0;
+      for (const post of posts) position = backendDb.threadParts.append(draftId, post);
       threadChanged(backendDb, config, draftId, "content.draft.thread-part-added", `Draft #${draftId} gained thread post ${position}`);
       return position;
     },
     editThreadPart(actorId: number, draftId: number, position: number, part: NewThreadPart): void {
-      requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
-      if (!part.textRu.trim()) throw new StudioError("err.thread-part-empty");
-      if (!backendDb.threadParts.update(draftId, position, { ...part, textRu: part.textRu.trim() }))
-        throw new StudioError("err.thread-part-missing");
+      const draft = requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
+      const posts = threadPosts(part);
+      if (!posts.length) throw new StudioError("err.thread-part-empty");
+      if (!draft.thread.some((existing) => existing.position === position)) throw new StudioError("err.thread-part-missing");
+      backendDb.threadParts.replace(
+        draftId,
+        draft.thread.flatMap((existing) => (existing.position === position ? posts : [newThreadPart(existing)])),
+      );
       threadChanged(backendDb, config, draftId, "content.draft.thread-part-edited", `Draft #${draftId} thread post ${position} edited`);
     },
     removeThreadPart(actorId: number, draftId: number, position: number): void {
