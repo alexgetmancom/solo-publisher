@@ -18,6 +18,7 @@ import { clearConversationState, getConversationState, saveConversationState } f
 import { cancelPromptKeyboard } from "./dialog-ui.js";
 import { executePublicationEffects, type PublicationEffect, type PublicationMessageResult } from "./effects.js";
 import { extractMessage } from "./message.js";
+import { threadPartScreen } from "./post-input-actions.js";
 import { createPostFromMessage } from "./post-screen.js";
 import { screenCallback } from "./screen-callback.js";
 import { attachVideoAsset } from "./video-conversation.js";
@@ -50,6 +51,7 @@ type MaterialKind = "post" | "article" | "video";
 const INTAKE_ENTRIES = {
   text: { accepts: ["post", "article"], prompt: "intake.prompt-text", rejected: "intake.need-text" },
   video: { accepts: ["video"], prompt: "intake.prompt-video", rejected: "intake.need-video" },
+  thread: { accepts: ["post"], prompt: "intake.prompt-thread", rejected: "intake.need-text" },
 } as const satisfies Record<string, { accepts: readonly MaterialKind[]; prompt: MessageKey; rejected: MessageKey }>;
 
 export type IntakeEntry = keyof typeof INTAKE_ENTRIES;
@@ -155,7 +157,13 @@ export async function applyIntakeKind(
       media: await importTelegramMedia(ctx.api, backendDb, config, actorId, captured.message.media),
     };
     clearConversationState(backendDb, actorId, "intake");
-    return createPostFromMessage(backendDb, config, actorId, message);
+    if (captured.entry !== "thread") return createPostFromMessage(backendDb, config, actorId, message);
+    // The first post of a thread: the card waits until the author says it is
+    // the end, and what they are asked now is whether there is more.
+    const draftId = createStudioServices(backendDb, config).posts.create(actorId, message);
+    clearConversationState(backendDb, actorId, "post");
+    const screen = threadPartScreen(backendDb, config, actorId, draftId, "thread_part");
+    return [{ type: "screen", text: screen.text, options: { reply_markup: screen.keyboard }, card: { kind: "post", draftId } }];
   }
 
   if (kind === "article") {
@@ -337,14 +345,18 @@ function capturedFrom(backendDb: BackendDb, actorId: number): Captured {
     message: { text: message.text ?? "", media: message.media ?? [], entities: message.entities ?? [] },
     markdown: typeof data?.markdown === "string" ? data.markdown : null,
     video: (data?.video as CapturedVideo | null) ?? null,
-    entry: data?.entry === "video" ? "video" : "text",
+    entry: intakeEntry(data?.entry),
   };
 }
 
 /** Which button opened this intake. A session that predates the split is a
  * text one: that is what the single entry point mostly took. */
 function entryOf(backendDb: BackendDb, actorId: number): IntakeEntry {
-  return getConversationState(backendDb, actorId, "intake")?.data.entry === "video" ? "video" : "text";
+  return intakeEntry(getConversationState(backendDb, actorId, "intake")?.data.entry);
+}
+
+function intakeEntry(value: unknown): IntakeEntry {
+  return typeof value === "string" && Object.hasOwn(INTAKE_ENTRIES, value) ? (value as IntakeEntry) : "text";
 }
 
 function isMarkdown(document: { file_name?: string; mime_type?: string } | undefined): boolean {

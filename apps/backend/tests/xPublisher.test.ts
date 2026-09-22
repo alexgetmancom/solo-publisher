@@ -170,4 +170,27 @@ describe("publishToX", () => {
     const result = await publishToX({ text: "hello" }, config, fetchImpl);
     expect(result).toMatchObject({ ok: false, id: null, url: null });
   });
+
+  it("publishes a thread as a reply chain, and resumes it from what already went out", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const responses = [
+      () => new Response(JSON.stringify({ data: { id: "t1" } }), { status: 200 }),
+      () => new Response("down", { status: 503 }),
+      () => new Response(JSON.stringify({ data: { id: "t2" } }), { status: 200 }),
+    ];
+    const fetchImpl = (async (_input: URL | RequestInfo, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return (responses.shift() as () => Response)();
+    }) as unknown as typeof fetch;
+    const payload = { text: "first", thread: [{ text: "second", entities: [], media: [] }] };
+
+    const first = await publishToX(payload, config, fetchImpl);
+    // The first post is live: the failure is a chain to finish, never a repost.
+    expect(first).toMatchObject({ ok: false, partial: true, resumeKey: "_xPublishedIds", ids: ["t1"] });
+
+    const second = await publishToX({ ...payload, _xPublishedIds: ["t1"] }, config, fetchImpl);
+    expect(second).toMatchObject({ ok: true, id: "t1", ids: ["t1", "t2"] });
+    expect(bodies.map((body) => body.text)).toEqual(["first", "second", "second"]);
+    expect(bodies[2]).toMatchObject({ reply: { in_reply_to_tweet_id: "t1" } });
+  });
 });

@@ -47,3 +47,24 @@ export const publicationTargets = sqliteTable(
     index("idx_publication_targets_updated_at").on(table.updatedAt),
   ],
 );
+
+/** The posts after the first in a thread. The first post is the draft itself —
+ * its locales, media and translation — so a draft with no rows here is an
+ * ordinary post and nothing that reads one has to know threads exist. Each
+ * later post carries its own words and media; the English is
+ * the machine translation, made with the draft's. */
+export const draftThreadParts = sqliteTable(
+  "draft_thread_parts",
+  {
+    draftId: integer().notNull(),
+    /** 2 for the first reply, and so on without gaps: removal renumbers. */
+    position: integer().notNull(),
+    textRu: text().notNull(),
+    entitiesRuJson: json<Record<string, unknown>[] | null>(),
+    textEn: text(),
+    mediaJson: json<MediaPayload[] | null>(),
+    createdAt: text().notNull(),
+    updatedAt: text().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.draftId, table.position] })],
+);

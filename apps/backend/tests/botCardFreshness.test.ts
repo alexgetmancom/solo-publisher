@@ -56,8 +56,8 @@ describe("Telegram card freshness", () => {
       expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("publish", [7]))).toBe(false);
       expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("publish", [7]))).toBe(true);
       expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("view", [7, "overview"]))).toBe(false);
-      expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("threads_chain", [7]))).toBe(true);
-      expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("threads_chain", [7]))).toBe(false);
+      expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("make_thread", [7]))).toBe(true);
+      expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("make_thread", [7]))).toBe(false);
       expect(isStaleCardCallback(callbackContext(19), backendDb, postPublication("story_schedule_all", [7]))).toBe(true);
       expect(isStaleCardCallback(callbackContext(20), backendDb, postPublication("story_schedule_all", [7]))).toBe(false);
     }));

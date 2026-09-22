@@ -150,15 +150,12 @@ describe("openBackendDb", () => {
     const backendDb = openBackendDb(dbPath);
     try {
       expect(
-        backendDb.sqlite
-          .prepare("SELECT id, actor_id, status, post_id, threads_chain_approved, story_publish_mode FROM drafts WHERE post_id=42")
-          .get(),
+        backendDb.sqlite.prepare("SELECT id, actor_id, status, post_id, story_publish_mode FROM drafts WHERE post_id=42").get(),
       ).toEqual({
         id: 7,
         actor_id: 42,
         status: "published",
         post_id: 42,
-        threads_chain_approved: 1,
         story_publish_mode: "publish",
       });
       expect(

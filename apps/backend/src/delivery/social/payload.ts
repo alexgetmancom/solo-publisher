@@ -38,7 +38,7 @@ const publishPayloadSchema = z
     slug: z.string().optional(),
     media: z.unknown().optional(),
     entities: z.array(z.record(z.string(), z.unknown())).optional(),
-    threadsChainApproved: z.boolean().optional(),
+    thread: z.array(z.object({ text: z.string(), entities: z.array(z.record(z.string(), z.unknown())), media: z.unknown() })).optional(),
   })
   .passthrough();
 
@@ -50,6 +50,19 @@ function parsePublishPayload(value: unknown): Record<string, unknown> {
 export function payloadText(payload: Record<string, unknown>): string {
   const parsed = parsePublishPayload(payload);
   return stringValue(parsed.text);
+}
+
+export type PayloadThreadPart = { text: string; entities: Record<string, unknown>[]; media: PublishMediaItem[] };
+
+/** The posts after the first. Empty for an ordinary post. */
+export function payloadThread(payload: Record<string, unknown>): PayloadThreadPart[] {
+  const thread = parsePublishPayload(payload).thread;
+  if (!Array.isArray(thread)) return [];
+  return (thread as Array<{ text: string; entities: Record<string, unknown>[]; media: unknown }>).map((part) => ({
+    text: part.text,
+    entities: part.entities,
+    media: payloadMedia({ media: part.media }),
+  }));
 }
 
 export function payloadMedia(payload: Record<string, unknown>): PublishMediaItem[] {

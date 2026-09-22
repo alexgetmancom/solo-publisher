@@ -40,10 +40,6 @@ export const drafts = sqliteTable("drafts", {
    * Draft id remains the Studio/card identity; published id remains the public
    * URL and external publication identity. */
   postId: integer().unique(),
-  /** A one-off waiver of the 500-character Threads rule for this draft only:
-   * the author saw how many posts the chain would take and accepted it. Lives
-   * and dies with the draft on purpose — a remembered waiver stops being a rule. */
-  threadsChainApproved: integer().notNull().default(0),
   /** Text-only posts always get site cards. This field records only the
    * author's final decision about the three Story delivery targets. */
   storyPublishMode: text(),

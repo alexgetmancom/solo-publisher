@@ -14,6 +14,7 @@ describe("PublicationPlan", () => {
         media_en_json: JSON.stringify([{ file_id: "en-image" }]),
         text_ru_entities_json: "[]",
         text_en_entities_json: "[]",
+        thread: [],
       } as never,
       9,
       99,
@@ -93,25 +94,40 @@ describe("publication preflight", () => {
     ]);
   });
 
-  it("waives the Threads rule only for the draft that asked, and says how long the chain is", () => {
+  it("offers a thread where the platform carries one, and says how many posts it makes", () => {
     const draft = {
       text_ru: "А".repeat(900),
       media_ru_json: null,
       targets_json: JSON.stringify({ telegram: false, threads_ru: true, threads_en: false }),
     };
-    expect(publicationPreflight(draft)).toEqual([expect.objectContaining({ target: "threads_ru", chainParts: 2 })]);
-    expect(publicationPreflight({ ...draft, threads_chain_approved: 1 })).toEqual([]);
+    expect(publicationPreflight(draft)).toEqual([expect.objectContaining({ target: "threads_ru", threadParts: 2 })]);
   });
 
-  it("never waives a Telegram caption: there is no chain to continue into", () => {
+  it("measures every post of a thread on its own, and names the one at fault", () => {
+    const targets_json = JSON.stringify({ telegram: false, threads_ru: true, threads_en: false });
+    const part = (textRu: string, media: Record<string, unknown>[] = []) => ({ position: 0, textRu, entitiesRu: [], textEn: null, media });
+    expect(publicationPreflight({ text_ru: "Раз", media_ru_json: null, targets_json, thread: [part("Два")] })).toEqual([]);
+    expect(
+      publicationPreflight({ text_ru: "Раз", media_ru_json: null, targets_json, thread: [part("Два"), part("А".repeat(501))] }),
+    ).toEqual([expect.objectContaining({ target: "threads_ru", kind: "text-limit", part: 3 })]);
+    expect(
+      publicationPreflight({
+        text_ru: "Раз",
+        media_ru_json: null,
+        targets_json,
+        thread: [part("Два", [{ type: "photo" }, { type: "photo" }])],
+      }),
+    ).toEqual([expect.objectContaining({ kind: "media-limit", limit: 1, part: 2 })]);
+  });
+
+  it("carries a Telegram thread as one rich message, free of the caption limit", () => {
     const issues = publicationPreflight({
       text_ru: "А".repeat(1025),
       media_ru_json: JSON.stringify([{ type: "photo" }]),
       targets_json: JSON.stringify({ telegram: true, threads_ru: false, threads_en: false }),
-      threads_chain_approved: 1,
+      thread: [{ position: 2, textRu: "Два", entitiesRu: [], textEn: null, media: [] }],
     });
-    expect(issues).toEqual([expect.objectContaining({ target: "telegram", limit: 1024 })]);
-    expect(issues[0]).not.toHaveProperty("chainParts");
+    expect(issues).toEqual([]);
   });
 
   it("holds EN to the same 500 characters as RU", () => {

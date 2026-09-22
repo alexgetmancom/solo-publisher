@@ -1,10 +1,11 @@
 import path from "node:path";
+import { entitiesToHtml } from "../../content/text.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { requestJson } from "../../foundation/http.js";
 import type { PublishResult } from "../../publishing/errors.js";
 import { selectMediaForTarget } from "../../publishing/media-policy.js";
 import { ambiguousExternalMutation } from "../ambiguous-publication.js";
-import { payloadMedia, payloadText } from "./payload.js";
+import { type PublishMediaItem, payloadMedia, payloadText, payloadThread } from "./payload.js";
 
 type TelegramResponse = {
   ok?: boolean;
@@ -28,6 +29,15 @@ export async function publishToTelegram(
   const text = payloadText(payload);
   const media = payloadMedia(payload);
   const entities = Array.isArray(payload.entities) ? payload.entities : undefined;
+  const thread = payloadThread(payload);
+  if (thread.length)
+    return publishRichThread(
+      config,
+      token,
+      chatId,
+      [{ text, entities: (entities ?? []) as Record<string, unknown>[], media }, ...thread],
+      fetchImpl,
+    );
   const caption = telegramCaption(text, entities);
 
   if (media.length > 1) {
@@ -86,6 +96,48 @@ export async function publishToTelegram(
     ),
   );
   return reactToPublishedMessage(normalizeTelegramResult(result, chatId), config, token, chatId, fetchImpl);
+}
+
+/** A thread is one rich message (Bot API 10.1): each part's text as a
+ * paragraph followed by its own media, in the order the author wrote them.
+ * An ordinary post never comes here and keeps its caption and album. */
+async function publishRichThread(
+  config: BackendConfig,
+  token: string,
+  chatId: string,
+  posts: Array<{ text: string; entities: Record<string, unknown>[]; media: PublishMediaItem[] }>,
+  fetchImpl: typeof fetch,
+): Promise<PublishResult> {
+  const attachments: TelegramAttachment[] = [];
+  const media: Array<{ id: string; media: { type: "photo" | "video"; media: string } }> = [];
+  const blocks = posts.flatMap((post) => {
+    const body = post.text.trim() ? [`<p>${richHtml(post.text, post.entities)}</p>`] : [];
+    const items = post.media.flatMap((item) => {
+      const id = `m${media.length + 1}`;
+      const source = telegramMediaSource(item.fileId, item.vpsUrl, item.localPath, `rich-${id}`, attachments);
+      if (!source) return [];
+      const video = item.type === "VIDEO";
+      media.push({ id, media: { type: video ? "video" : "photo", media: source } });
+      return [video ? `<video src="tg://video?id=${id}"></video>` : `<img src="tg://photo?id=${id}"/>`];
+    });
+    return [...body, ...items];
+  });
+  const richMessage = { html: blocks.join(""), ...(media.length ? { media } : {}) };
+  const request = attachments.length
+    ? await telegramForm({ chat_id: chatId, rich_message: JSON.stringify(richMessage) }, attachments)
+    : { chat_id: chatId, rich_message: richMessage };
+  const result = await ambiguousExternalMutation("telegram", () =>
+    telegramCall<TelegramResponse>(config, token, "sendRichMessage", request, fetchImpl),
+  );
+  return reactToPublishedMessage(normalizeTelegramResult(result, chatId), config, token, chatId, fetchImpl);
+}
+
+/** The site's entity renderer, in the tags rich HTML knows. */
+function richHtml(text: string, entities: Record<string, unknown>[]): string {
+  return entitiesToHtml(text, entities)
+    .replaceAll(' rel="noopener noreferrer"', "")
+    .replaceAll('<span class="spoiler">', "<tg-spoiler>")
+    .replaceAll("</span>", "</tg-spoiler>");
 }
 
 function telegramLinkPreview(entities: unknown[] | undefined): { url: string; prefer_small_media: true; show_above_text: false } | null {

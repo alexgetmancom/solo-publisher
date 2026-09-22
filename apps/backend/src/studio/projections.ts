@@ -1,5 +1,7 @@
+import type { ThreadPart } from "../application/ports.js";
 import { isStoryTarget, targetLocale } from "../botTargets.js";
 import { draftLocaleContent } from "../content/draft-content.js";
+import { type LocalizedThreadPart, localizedThread } from "../content/thread.js";
 import type { BackendDb } from "../db/client.js";
 import { mediaPolicyForTarget } from "../publishing/media-policy.js";
 import { formatPlatformText, platformProfile } from "../publishing/platform-profiles.js";
@@ -15,8 +17,8 @@ export type DeliveryProjection = {
   entities: Record<string, unknown>[];
   media: Record<string, unknown>[];
   unavailableTargets?: string[];
-  /** The author waived the single-post Threads rule for this draft. */
-  threadsChain?: boolean;
+  /** The posts after the first when the draft is a thread. */
+  thread?: LocalizedThreadPart[];
   metadata?: Record<string, unknown>;
   notes: string[];
 };
@@ -33,7 +35,7 @@ export function postDeliveryProjections(
     media_ru_json: string | null;
     media_en_json: string | null;
     targets_json: string;
-    threads_chain_approved?: number | boolean | null;
+    thread: readonly ThreadPart[];
   },
   storyCardsReady = false,
 ) {
@@ -75,7 +77,7 @@ export function postDeliveryProjections(
         label: `Preview · ${locale.toUpperCase()}`,
         targets: selected.filter((target) => !unavailableTargets.includes(target)),
         locale,
-        threadsChain: Boolean(draft.threads_chain_approved),
+        thread: localizedThread(draft.thread, locale),
         text: content[locale].text,
         entities: content[locale].entities,
         media: content[locale].media,

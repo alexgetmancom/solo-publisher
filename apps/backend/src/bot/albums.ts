@@ -12,6 +12,7 @@ import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
 import { clearConversationStateIfCurrent, getConversationState } from "./conversation-state.js";
 import { type PostSessionStep, type PostWizardStep, postStepData } from "./post-flow.js";
+import { threadPartScreen } from "./post-input-actions.js";
 import { postPreviewCard } from "./publication-renderers.js";
 
 /** Telegram delivers an album as separate messages; this is how long the
@@ -146,6 +147,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
       continue;
     }
     let cardDraftId: number | null = null;
+    let threadStep: "thread_part" | "thread_edit" | null = null;
     try {
       const state = getConversationState(backendDb, row.actorId, "post");
       if (row.stateRevision != null && state?.revision !== row.stateRevision) {
@@ -172,6 +174,17 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
         });
         clearConversationStateIfCurrent(backendDb, { kind: "post", step, draftId }, row.actorId, row.stateRevision);
         cardDraftId = draftId;
+      } else if ((step === "thread_part" || step === "thread_edit") && draftId) {
+        // An album is one post of the thread: its caption the text, its photos
+        // that post's media.
+        const part = { textRu: row.textRu, entitiesRu: jsonRecordArray(row.textEntitiesJson), media };
+        const posts = createStudioServices(backendDb, config).posts;
+        const position = Number(row.stepDataJson.position);
+        if (step === "thread_edit") posts.editThreadPart(row.actorId, draftId, position, part);
+        else posts.appendThreadPart(row.actorId, draftId, part);
+        clearConversationStateIfCurrent(backendDb, { kind: "post", step, draftId }, row.actorId, row.stateRevision);
+        cardDraftId = draftId;
+        threadStep = step;
       } else {
         const text = row.textRu;
         cardDraftId = createStudioServices(backendDb, config).posts.create(row.actorId, {
@@ -209,7 +222,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
     // Telegram failure here must never replay finalization into a second draft.
     if (cardDraftId !== null) {
       try {
-        await refreshDraftControlCard(bot, backendDb, config, row.actorId, cardDraftId, row.chatId);
+        await refreshDraftControlCard(bot, backendDb, config, row.actorId, cardDraftId, row.chatId, threadStep);
       } catch (error) {
         log("warn", "album control card failed", { album: row.id, draftId: cardDraftId, error: String(error) });
       }
@@ -240,10 +253,16 @@ async function refreshDraftControlCard(
   actorId: number,
   draftId: number,
   chatId: number,
+  threadStep: "thread_part" | "thread_edit" | null,
 ): Promise<void> {
-  const preview = postPreviewCard(backendDb, config, actorId, draftId);
+  const preview = threadStep
+    ? threadPartScreen(backendDb, config, actorId, draftId, threadStep)
+    : { ...postPreviewCard(backendDb, config, actorId, draftId), markdown: true };
   // A completed chat edit gets a fresh card at the bottom. Previous cards are
   // history, never a moving conversation prompt above the user's reply.
-  const control = await bot.api.sendMessage(chatId, preview.text, { parse_mode: "Markdown", reply_markup: preview.keyboard });
+  const control = await bot.api.sendMessage(chatId, preview.text, {
+    ...(preview.markdown ? { parse_mode: "Markdown" as const } : {}),
+    reply_markup: preview.keyboard,
+  });
   setTelegramPostCard(backendDb, draftId, chatId, control.message_id);
 }

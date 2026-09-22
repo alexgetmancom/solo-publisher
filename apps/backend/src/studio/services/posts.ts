@@ -1,4 +1,4 @@
-import type { DomainEventInput, DraftPatch, DraftRecord, StoryPublishMode } from "../../application/ports.js";
+import type { DomainEventInput, DraftPatch, DraftRecord, NewThreadPart, StoryPublishMode } from "../../application/ports.js";
 import type { PublicationPipeline, PublicationSchedule } from "../../application/publication-pipeline.js";
 import { publicationRef } from "../../application/publication-ref.js";
 import { isSiteTarget, PRESETS, presetName, TARGETS, targetLocale, targetsFor } from "../../botTargets.js";
@@ -12,9 +12,11 @@ import { emphasizeTitle } from "../../content/title-emphasis.js";
 import { translationWanted } from "../../content/translation.js";
 import type { BackendDb } from "../../db/client.js";
 import { prepareDraftStoryMedia } from "../../delivery/draft-story-media.js";
+import { splitText } from "../../delivery/social/payload.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
 import { truncateUnicode } from "../../foundation/text.js";
+import { jsonRecordArray } from "../../json.js";
 import { cancelScheduledNotifications, scheduleReminder } from "../../notifications/jobs.js";
 import { trackUsageSync } from "../../observability/usage.js";
 import { abandonPublicationTargets } from "../../publishing/abandon.js";
@@ -30,6 +32,7 @@ import { assertFutureSchedule, assertValidScheduleDate, parseManualSchedule, pub
 import { mutateScheduledDraft } from "../../publishing/scheduled-draft-mutation.js";
 import { AUDIENCE_MUTATION_RETRYABLE_STATUSES, isPostTargetRetryable } from "../../publishing/state.js";
 import { parseTargets } from "../../publishing/targets.js";
+import { threadsTextLimit } from "../../publishing/threads-text.js";
 
 import { accessibleStudioActorIds, canAccessStudioOwner } from "../access.js";
 import { postDeliveryProjections } from "../projections.js";
@@ -117,6 +120,13 @@ function scheduledPostInput(draft: DraftRecord): PostScheduleInput {
 
 /** Commands for post drafts. These are deliberately transport-free and become the
  * single entry point for Telegram, Web Studio and later MCP mutations. */
+/** Every thread change leaves the English stale and the plan out of date. */
+function threadChanged(backendDb: BackendDb, config: BackendConfig, draftId: number, type: string, message: string): void {
+  if (translationWanted(backendDb, backendDb.drafts.get(draftId)?.text_ru ?? "", config)) backendDb.draftTranslations.queue(draftId);
+  replanScheduledPostAfterMutation(backendDb, config, draftId);
+  backendDb.events.record({ ref: publicationRef("draft", draftId), type, severity: "info", message, details: {} });
+}
+
 export function postService(backendDb: BackendDb, config: BackendConfig) {
   const progress = (actorId: number, draftId: number) => {
     const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
@@ -290,20 +300,52 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       backendDb.studioPosts.acceptEntityCandidates(draftId, backendDb.clock.now().toISOString());
       replanScheduledPostAfterMutation(backendDb, config, draftId);
     },
-    /** Waives the 500-character Threads rule for this draft: the overflow becomes
-     * a reply chain. Deliberately has no "off" command — editing the text resets
-     * it, and a draft nobody waived is the normal state. */
-    approveThreadsChain(actorId: number, draftId: number): void {
-      requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
-      backendDb.drafts.update(draftId, { threadsChainApproved: 1, updatedAt: backendDb.clock.now().toISOString() });
-      replanScheduledPostAfterMutation(backendDb, config, draftId);
-      backendDb.events.record({
-        ref: publicationRef("draft", draftId),
-        type: "content.draft.threads-chain-approved",
-        severity: "info",
-        message: `Draft #${draftId} waived the Threads single-post rule`,
-        details: {},
+    /** Splits a long post into a thread at the Threads limit. The media stays
+     * on the first post; the rest of the text becomes the parts after it. */
+    makeThread(actorId: number, draftId: number): void {
+      const draft = requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
+      if (draft.thread.length) throw new StudioError("err.thread-exists");
+      const [first = "", ...rest] = splitText(draft.text_ru, threadsTextLimit("threads_ru"));
+      if (!rest.length) throw new StudioError("err.thread-too-short");
+      const entities = jsonRecordArray(draft.text_ru_entities_json).filter(
+        (entity) => Number(entity.offset) + Number(entity.length) <= first.length,
+      );
+      backendDb.drafts.update(draftId, {
+        textRu: first,
+        textRuEntitiesJson: JSON.stringify(entities),
+        textEnApproved: null,
+        updatedAt: backendDb.clock.now().toISOString(),
       });
+      backendDb.threadParts.replace(
+        draftId,
+        rest.map((textRu) => ({ textRu, entitiesRu: [], media: [] })),
+      );
+      threadChanged(
+        backendDb,
+        config,
+        draftId,
+        "content.draft.thread-made",
+        `Draft #${draftId} became a thread of ${rest.length + 1} posts`,
+      );
+    },
+    appendThreadPart(actorId: number, draftId: number, part: NewThreadPart): number {
+      requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
+      if (!part.textRu.trim()) throw new StudioError("err.thread-part-empty");
+      const position = backendDb.threadParts.append(draftId, { ...part, textRu: part.textRu.trim() });
+      threadChanged(backendDb, config, draftId, "content.draft.thread-part-added", `Draft #${draftId} gained thread post ${position}`);
+      return position;
+    },
+    editThreadPart(actorId: number, draftId: number, position: number, part: NewThreadPart): void {
+      requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
+      if (!part.textRu.trim()) throw new StudioError("err.thread-part-empty");
+      if (!backendDb.threadParts.update(draftId, position, { ...part, textRu: part.textRu.trim() }))
+        throw new StudioError("err.thread-part-missing");
+      threadChanged(backendDb, config, draftId, "content.draft.thread-part-edited", `Draft #${draftId} thread post ${position} edited`);
+    },
+    removeThreadPart(actorId: number, draftId: number, position: number): void {
+      requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
+      if (!backendDb.threadParts.remove(draftId, position)) throw new StudioError("err.thread-part-missing");
+      threadChanged(backendDb, config, draftId, "content.draft.thread-part-removed", `Draft #${draftId} lost thread post ${position}`);
     },
     /** The one article path. The bot used to call the publisher directly, which
      * is how a capability comes to exist in one surface only: nothing named it,
@@ -489,9 +531,6 @@ function prepareDraftContentEdit(
     if (!input.replaceMediaOnly && input.text) {
       update[ru ? "textRu" : "textEnApproved"] = input.text;
       update[ru ? "textRuEntitiesJson" : "textEnEntitiesJson"] = JSON.stringify(emphasizeTitle(input.text, input.entities));
-      // The waiver was given for a specific text the author had read. New text is
-      // a new decision, so the 500-character rule applies again until waived anew.
-      update.threadsChainApproved = 0;
     }
   }
   if (Object.keys(update).length === 1) throw new StudioError("err.post-no-edit");

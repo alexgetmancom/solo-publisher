@@ -1,5 +1,6 @@
-import { eq } from "drizzle-orm";
-import { drafts, postLocales } from "../db/schema.js";
+import { asc, eq } from "drizzle-orm";
+import { type LocalizedThreadPart, localizedThread } from "../content/thread.js";
+import { drafts, draftThreadParts, postLocales } from "../db/schema.js";
 import type { BackendDatabase } from "../db/types.js";
 import { jsonRecordArray } from "../json.js";
 import { effectivePublicationTargets } from "./publication-plan.js";
@@ -14,7 +15,6 @@ export function publicationSourceFromDb(db: SourceDb, postId: number): Publicati
       draftId: drafts.id,
       postId: drafts.postId,
       targetsJson: drafts.targetsJson,
-      threadsChainApproved: drafts.threadsChainApproved,
     })
     .from(drafts)
     .where(eq(drafts.postId, postId))
@@ -22,14 +22,26 @@ export function publicationSourceFromDb(db: SourceDb, postId: number): Publicati
   if (!root?.postId) throw new Error(`publication source not found: post:${postId}`);
   const rows = db.select().from(postLocales).where(eq(postLocales.draftId, root.draftId)).all();
   const byLocale = new Map(rows.map((row) => [row.locale, row]));
-  const ru = localeSource(byLocale.get("ru"), []);
-  const en = localeSource(byLocale.get("en"), ru.media);
+  const thread = db
+    .select()
+    .from(draftThreadParts)
+    .where(eq(draftThreadParts.draftId, root.draftId))
+    .orderBy(asc(draftThreadParts.position))
+    .all()
+    .map((part) => ({
+      position: part.position,
+      textRu: part.textRu,
+      entitiesRu: part.entitiesRuJson ?? [],
+      textEn: part.textEn,
+      media: (part.mediaJson ?? []) as Record<string, unknown>[],
+    }));
+  const ru = localeSource(byLocale.get("ru"), [], localizedThread(thread, "ru"));
+  const en = localeSource(byLocale.get("en"), ru.media, localizedThread(thread, "en"));
   return {
     draftId: root.draftId,
     postId: root.postId,
     targets: parseTargets(root.targetsJson),
     locales: { ru, en },
-    threadsChainApproved: root.threadsChainApproved === 1,
   };
 }
 
@@ -59,7 +71,11 @@ export function publicationPlanFromDb(
   };
 }
 
-function localeSource(row: typeof postLocales.$inferSelect | undefined, fallbackMedia: Record<string, unknown>[]): PublicationLocaleSource {
+function localeSource(
+  row: typeof postLocales.$inferSelect | undefined,
+  fallbackMedia: Record<string, unknown>[],
+  thread: LocalizedThreadPart[],
+): PublicationLocaleSource {
   const ownMedia = jsonRecordArray(row?.mediaJson);
   return {
     text: row?.approvedText ?? row?.sourceText ?? "",
@@ -70,5 +86,6 @@ function localeSource(row: typeof postLocales.$inferSelect | undefined, fallback
     slug: row?.slug ?? "",
     publishAt: row?.publishAt ?? null,
     siteEnabled: row?.siteEnabled === 1,
+    thread,
   };
 }

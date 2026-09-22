@@ -18,6 +18,10 @@ type PlatformProfile = {
   limits?: { text?: number; caption?: number };
   /** Delivery-facing media contract. Interfaces use this for previews; ports own execution. */
   media?: MediaRule & { whenVideo?: MediaRule };
+  /** How a thread reaches this platform. `chain` posts each part as a reply to
+   * the one before; `rich` sends the whole thread as one message; absent, the
+   * platform publishes a single post and the parts are joined into it. */
+  thread?: { mode: "chain"; replyMediaLimit: number } | { mode: "rich"; textLimit: number; mediaLimit: number };
   video?: { landscape: readonly [number, number]; portrait: readonly [number, number]; square: readonly [number, number] };
   analytics?: { enabled: boolean; source: string };
 };
@@ -56,26 +60,37 @@ const platformOverrides: Record<PlatformId, Omit<PlatformProfile, "id" | "label"
     capabilities: { text: true, image: true, video: true },
     limits: { text: 4096, caption: 1024 },
     media: { mode: "limited", limit: 10, label: "Telegram" },
+    // Bot API 10.1 sendRichMessage: one message, 32768 characters, 50 media.
+    thread: { mode: "rich", textLimit: 32768, mediaLimit: 50 },
   },
   site_ru: { capabilities: { text: true, image: true, video: false }, media: { mode: "all" } },
   site_en: { capabilities: { text: true, image: true, video: false }, media: { mode: "all" } },
-  // 500 is the Threads API's own hard cap on a single post. A draft that exceeds
-  // it is rejected in preflight rather than chained into a reply thread: one post
-  // per target, both locales prepared to the same budget. URLs are not stripped
-  // the way X strips them — threads-text.ts decides what a Threads post carries.
+  // 500 is the Threads API's own hard cap on a single post, and it binds every
+  // part of a thread: nothing is split at delivery, a longer text becomes a
+  // thread by the author's choice. URLs are not stripped the way X strips them —
+  // threads-text.ts decides what a Threads post carries.
   threads_ru: {
     capabilities: { text: true, image: true, video: true },
     limits: { text: 500 },
+    // A reply here is a single image or video; a carousel reply is not built.
+    thread: { mode: "chain", replyMediaLimit: 1 },
     media: { mode: "all" },
     video: threadsVideo,
   },
   threads_en: {
     capabilities: { text: true, image: true, video: true },
     limits: { text: 500 },
+    // A reply here is a single image or video; a carousel reply is not built.
+    thread: { mode: "chain", replyMediaLimit: 1 },
     media: { mode: "all" },
     video: threadsVideo,
   },
-  x: { capabilities: { text: true, image: true, video: true }, text: { removeUrls: true }, media: { mode: "all" } },
+  x: {
+    capabilities: { text: true, image: true, video: true },
+    text: { removeUrls: true },
+    media: { mode: "all" },
+    thread: { mode: "chain", replyMediaLimit: 4 },
+  },
   // An Article carries its links inside the body's entities rather than in the
   // post text, so the URL stripping that `x` needs would delete the article's
   // own references. No text limit is declared: X does not publish one, and a

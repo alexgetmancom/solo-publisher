@@ -172,6 +172,7 @@ describe("text Story cards", () => {
       media_en_json: null,
       text_ru_entities_json: "[]",
       text_en_entities_json: "[]",
+      thread: [],
       story_publish_mode: "site_only",
     };
     const siteOnly = createPublicationPlan(

@@ -45,6 +45,7 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
     range
       .text(t(locale, "menu.text"), (ctx) => openIntake(ctx, backendDb, "text"))
+      .text(t(locale, "menu.thread"), (ctx) => openIntake(ctx, backendDb, "thread"))
       .text(t(locale, "menu.video"), (ctx) => openIntake(ctx, backendDb, "video"));
     if (createStudioServices(backendDb, config).streams.connected())
       range.text(t(locale, "menu.streams"), (ctx) => showStreamScreen(ctx, backendDb, config));

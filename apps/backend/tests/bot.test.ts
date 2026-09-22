@@ -64,6 +64,7 @@ describe("Telegram controller flow", () => {
     ).toEqual([
       [`p:post:cycle_mode:${draftId}`, `p:post:view:${draftId}:platforms`],
       [`p:post:edit_ru:${draftId}`, `p:post:edit_en:${draftId}`],
+      [`p:post:thread_add:${draftId}`],
       [`p:post:publish:${draftId}`, `p:post:schedule:${draftId}`, `p:post:cancel:${draftId}:confirm_delete`],
     ]);
   });
@@ -517,7 +518,7 @@ describe("Telegram controller flow", () => {
 
   it("appends one hidden link to a Threads post that has room, and says so", () => {
     const link = [{ type: "text_link", offset: 0, length: 5, url: "https://example.com/guide" }];
-    const preview = threadsPreviewText("threads_ru", "Short post", link, false, "ru");
+    const preview = threadsPreviewText("threads_ru", "Short post", link, "ru");
     expect(preview).toContain("🔗 https://example.com/guide");
     expect(preview).toContain("ссылка влезла");
   });
@@ -527,13 +528,13 @@ describe("Telegram controller flow", () => {
     // The publisher is asserted on the same 470/471 pair in threadsPublisher.test.ts.
     // These two must never disagree: the preview is the only place the decision
     // is visible before it happens.
-    expect(threadsPreviewText("threads_ru", "a".repeat(470), link, false, "ru")).toContain("ссылка влезла");
-    expect(threadsPreviewText("threads_ru", "a".repeat(471), link, false, "ru")).toContain("ссылка убрана");
+    expect(threadsPreviewText("threads_ru", "a".repeat(470), link, "ru")).toContain("ссылка влезла");
+    expect(threadsPreviewText("threads_ru", "a".repeat(471), link, "ru")).toContain("ссылка убрана");
   });
 
   it("drops the link when it does not fit and reports how many characters were missing", () => {
     const link = [{ type: "text_link", offset: 0, length: 5, url: "https://example.com/guide" }];
-    const preview = threadsPreviewText("threads_ru", "А".repeat(490), link, false, "ru");
+    const preview = threadsPreviewText("threads_ru", "А".repeat(490), link, "ru");
     expect(preview).not.toContain("https://example.com/guide");
     // 490 text + 5 for the "\n\n🔗 " prefix (🔗 is a surrogate pair) + 25 for the
     // url = 520, i.e. 20 over the 500 budget.

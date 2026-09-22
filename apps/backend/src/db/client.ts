@@ -19,6 +19,7 @@ import { createStudioPostStore } from "./repositories/studio-posts.js";
 import { createStudioQueueStore } from "./repositories/studio-queue.js";
 import { createStudioSettingsStore } from "./repositories/studio-settings.js";
 import { createStudioVideoStore } from "./repositories/studio-videos.js";
+import { createThreadPartStore } from "./repositories/thread-parts.js";
 import * as schema from "./schema.js";
 import type { RawBackendDb, RawSqlite } from "./unsafe.js";
 
@@ -75,6 +76,7 @@ export function openBackendDb(path: string, timeout = 30_000): BackendDb {
     db,
     clock,
     drafts: createDraftStore(db, clock),
+    threadParts: createThreadPartStore(db, clock),
     draftTranslations: createDraftTranslationStore(db, clock),
     events: createEventStore(db, clock),
     entityEnrichment: createEntityEnrichmentStore(db),

@@ -1,4 +1,4 @@
-import type { Context } from "grammy";
+import { type Context, InlineKeyboard } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { StudioError } from "../foundation/errors.js";
@@ -35,8 +35,56 @@ export async function applyAdminState(
   const session = requireConversationState(backendDb, actorId, "post", expectedRevision ?? null);
   const saved = await advancePublicationFlow(backendDb, actorId, POST_FLOW, session, input, session.data, "action.session-stale");
   if (saved.step === "schedule_confirm") return renderPostScheduleConfirmation(backendDb, config, actorId, draftId, saved);
+  if (step.type === "thread_part" || step.type === "thread_edit")
+    return [
+      { type: "session", operation: "clear", kind: "post", actorId },
+      ...threadPartSaved(backendDb, config, actorId, draftId, step.type),
+    ];
   const preview = postPreviewCard(backendDb, config, actorId, draftId);
   return [{ type: "session", operation: "clear", kind: "post", actorId }, ...publicationCardEffect(preview)];
+}
+
+/** After a new post of the thread: write another, or finish and review the
+ * whole. After a rewrite: straight back to the review it came from. Chat input
+ * and a finished album both land here. */
+export function threadPartScreen(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  draftId: number,
+  step: "thread_part" | "thread_edit",
+): { text: string; keyboard: InlineKeyboard; markdown: boolean } {
+  const locale = settingsService(backendDb).locale(actorId);
+  if (step === "thread_edit") {
+    const card = publicationRenderers(backendDb, config).post.card({ actorId, publicationId: draftId, locale, view: "thread" });
+    return { text: card.text, keyboard: card.keyboard, markdown: true };
+  }
+  const parts = createStudioServices(backendDb, config).posts.get(actorId, draftId).thread.length + 1;
+  return {
+    text: t(locale, "action.thread-part-added", { parts }),
+    keyboard: new InlineKeyboard()
+      .text(t(locale, "action.thread-more"), publicationCallback("post", "thread_add", [draftId]))
+      .text(t(locale, "action.thread-done"), publicationCallback("post", "thread_done", [draftId])),
+    markdown: false,
+  };
+}
+
+function threadPartSaved(
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  draftId: number,
+  step: "thread_part" | "thread_edit",
+): PublicationEffect[] {
+  const screen = threadPartScreen(backendDb, config, actorId, draftId, step);
+  return [
+    {
+      type: "screen",
+      text: screen.text,
+      options: { ...(screen.markdown ? { parse_mode: "Markdown" as const } : {}), reply_markup: screen.keyboard },
+      card: { kind: "post", draftId },
+    },
+  ];
 }
 
 function renderPostScheduleConfirmation(

@@ -5,7 +5,7 @@ import { log } from "../../foundation/logger.js";
 import type { PublishResult } from "../../publishing/errors.js";
 import { threadsBody, threadsTextLimit } from "../../publishing/threads-text.js";
 import { ambiguousExternalMutation } from "../ambiguous-publication.js";
-import { payloadMedia, payloadText, splitText } from "./payload.js";
+import { payloadMedia, payloadText, payloadThread } from "./payload.js";
 
 type ThreadsResponse = {
   id?: string;
@@ -54,15 +54,18 @@ export async function publishToThreads(
 ): Promise<PublishResult> {
   const runtime = threadsRuntime(config, target);
   if (!runtime) return { skipped: true, reason: `missing ${threadsCredentials(config, target).envName}` };
-  // One post by default: the text is written to fit 500 characters and preflight
-  // refuses the draft otherwise, so there is nothing to continue into. A chain is
-  // only built when the author waived the rule for this draft and saw the cost.
-  const chainApproved = payload.threadsChainApproved === true;
+  // A thread is the author's own parts, each written to fit; nothing is ever
+  // split here, so an overlong part is a refusal rather than a surprise reply.
   const entities = Array.isArray(payload.entities) ? (payload.entities as Record<string, unknown>[]) : [];
-  const text = threadsBody(target, payloadText(payload), entities, { chain: chainApproved }).text;
   const limit = threadsTextLimit(target);
-  if (text.length > limit && !chainApproved) return { ok: false, error: `threads_text_too_long:${text.length}/${limit}` };
-  const parts = chainApproved ? splitText(text, limit) : [text];
+  const thread = payloadThread(payload);
+  const parts = [
+    threadsBody(target, payloadText(payload), entities).text,
+    ...thread.map((part) => threadsBody(target, part.text, part.entities).text),
+  ];
+  const overlong = parts.findIndex((part) => part.length > limit);
+  if (overlong >= 0)
+    return { ok: false, error: `threads_text_too_long:${overlong ? `part ${overlong + 1}:` : ""}${parts[overlong]?.length}/${limit}` };
   const mediaItems = payloadMedia(payload).filter((item) => item.vpsUrl);
   const state = threadsState(payload[THREADS_PROGRESS_KEY]) ?? initialThreadsState(mediaItems.length, nowImpl());
 
@@ -130,10 +133,24 @@ export async function publishToThreads(
   if (state.stage === "create_reply") {
     const parentId = state.publishedIds.at(-1);
     const part = parts[state.partIndex];
-    if (!parentId || !part) throw new Error("threads_reply_state_invalid");
-    const reply = await callThreads(runtime, "me/threads", { media_type: "TEXT", text: part, reply_to_id: parentId }, fetchImpl, "POST");
-    if (!reply.id) throw new Error("threads_reply_container_missing");
-    return deferredThreads({ ...state, stage: "wait_reply", containerId: reply.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    if (!parentId || part === undefined) throw new Error("threads_reply_state_invalid");
+    // One media item per reply; preflight refuses a part carrying more.
+    const item = thread[state.partIndex - 1]?.media.find((media) => media.vpsUrl);
+    try {
+      const reply = await callThreads(
+        runtime,
+        "me/threads",
+        item
+          ? { media_type: item.type, text: part, reply_to_id: parentId, [item.type === "VIDEO" ? "video_url" : "image_url"]: item.vpsUrl }
+          : { media_type: "TEXT", text: part, reply_to_id: parentId },
+        fetchImpl,
+        "POST",
+      );
+      if (!reply.id) throw new Error("threads_reply_container_missing");
+      return deferredThreads({ ...state, stage: "wait_reply", containerId: reply.id, polls: 0, startedAtMs: nowImpl() }, 250);
+    } catch (error) {
+      return (await deferMediaFetchRetry(state, error, item?.vpsUrl, fetchImpl)) ?? raise(error);
+    }
   }
 
   if (state.stage === "wait_child" || state.stage === "wait_primary" || state.stage === "wait_reply") {

@@ -34,7 +34,17 @@ export async function runTranslationCycle(backendDb: BackendDb, config: BackendC
   try {
     const textEn = await trackUsageAsync(backendDb, "content.draft.translate", () => translateDraftText(backendDb, draft.text_ru, config));
     if (!textEn) throw new Error("translation produced no English text");
+    // A thread is translated whole on every pass: a part added or changed
+    // re-queues the draft, and a part translated apart from its neighbours
+    // loses the voice the rest of the thread carries.
+    const thread: Array<{ position: number; textEn: string }> = [];
+    for (const part of draft.thread) {
+      const partEn = await trackUsageAsync(backendDb, "content.draft.translate", () => translateDraftText(backendDb, part.textRu, config));
+      if (!partEn) throw new Error(`translation produced no English text for thread part ${part.position}`);
+      thread.push({ position: part.position, textEn: partEn });
+    }
     backendDb.drafts.update(draft.id, { textEnMachine: textEn });
+    backendDb.threadParts.setEnglish(draft.id, thread);
     // The English Story card is rendered from the English text, which did not
     // exist when the draft was created: queueing again is what gives that card
     // something to draw.

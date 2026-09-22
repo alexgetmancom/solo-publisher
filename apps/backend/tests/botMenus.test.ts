@@ -139,10 +139,10 @@ describe("buildMainMenu", () => {
 
   /** Three entities, one row: a text publication, a video publication and the
    * stream running right now. They share no step and no card. */
-  it("gives the three entities the whole first row", async () => {
+  it("gives the entities the whole first row", async () => {
     backendDb = openBackendDb(":memory:");
     registerTestChannels(backendDb, ["youtube_ru"]);
-    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video", "🔴 Streams"]);
+    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🧵 Thread", "🎬 Video", "🔴 Streams"]);
   });
 
   /** A Studio that publishes video to Instagram and has no YouTube account has
@@ -152,7 +152,7 @@ describe("buildMainMenu", () => {
   it("drops the stream button on a Studio with no YouTube channel", async () => {
     backendDb = openBackendDb(":memory:");
     registerTestChannels(backendDb, ["instagram_ru", "telegram"]);
-    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video"]);
+    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🧵 Thread", "🎬 Video"]);
   });
 });
 

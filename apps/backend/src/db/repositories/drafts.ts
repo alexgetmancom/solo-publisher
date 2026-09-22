@@ -3,6 +3,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 import type { Clock, DraftPatch, DraftRecord, DraftStore, NewDraft } from "../../application/ports.js";
 import { drafts, postLocales } from "../schema.js";
 import type { BackendDatabase } from "../types.js";
+import { createThreadPartStore } from "./thread-parts.js";
 
 const ru = alias(postLocales, "draft_locale_ru");
 const en = alias(postLocales, "draft_locale_en");
@@ -21,7 +22,6 @@ const draftProjection = {
   post_id: drafts.postId,
   textRuEntities: ru.entitiesJson,
   textEnEntities: en.entitiesJson,
-  threads_chain_approved: drafts.threadsChainApproved,
   story_publish_mode: drafts.storyPublishMode,
   updated_at: drafts.updatedAt,
 };
@@ -41,12 +41,11 @@ type DraftProjection = {
   post_id: number | null;
   textRuEntities: string | null;
   textEnEntities: string | null;
-  threads_chain_approved: number;
   story_publish_mode: string | null;
   updated_at: string;
 };
 
-function record(row: DraftProjection): DraftRecord {
+function record(row: DraftProjection, thread: DraftRecord["thread"]): DraftRecord {
   return {
     id: row.id,
     actor_id: row.actor_id,
@@ -62,9 +61,9 @@ function record(row: DraftProjection): DraftRecord {
     post_id: row.post_id,
     text_ru_entities_json: row.textRuEntities,
     text_en_entities_json: row.textEnEntities,
-    threads_chain_approved: row.threads_chain_approved,
     story_publish_mode: row.story_publish_mode,
     updated_at: row.updated_at,
+    thread,
   };
 }
 
@@ -88,6 +87,7 @@ function selectDrafts(db: BackendDatabase) {
 
 /** SQLite adapter for the application-level draft port. */
 export function createDraftStore(db: BackendDatabase, clock: Clock): DraftStore {
+  const threadParts = createThreadPartStore(db, clock);
   return {
     create(input: NewDraft): number {
       const now = clock.now().toISOString();
@@ -131,13 +131,13 @@ export function createDraftStore(db: BackendDatabase, clock: Clock): DraftStore 
 
     get(id: number): DraftRecord | null {
       const row = selectDrafts(db).where(eq(drafts.id, id)).get() as DraftProjection | undefined;
-      return row ? record(row) : null;
+      return row ? record(row, threadParts.list(row.id)) : null;
     },
 
     list(actorIds: number[], limit: number): DraftRecord[] {
       return (
         selectDrafts(db).where(inArray(drafts.actorId, actorIds)).orderBy(desc(drafts.updatedAt)).limit(limit).all() as DraftProjection[]
-      ).map(record);
+      ).map((row) => record(row, threadParts.list(row.id)));
     },
 
     update(id: number, patch: DraftPatch): void {
@@ -161,7 +161,6 @@ function updateDraft(
   return db.transaction((tx) => {
     const root = {
       ...(patch.targetsJson === undefined ? {} : { targetsJson: patch.targetsJson }),
-      ...(patch.threadsChainApproved === undefined ? {} : { threadsChainApproved: patch.threadsChainApproved }),
       updatedAt: now,
     };
     const changed = tx

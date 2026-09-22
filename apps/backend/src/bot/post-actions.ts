@@ -45,7 +45,11 @@ export function definePostActionHandlers(define: typeof action): Record<string, 
     story_publish_site: define(handleStoryChoice, { entity: "draft", freshCard: true, args: [] }),
     story_schedule_all: define(handleStoryChoice, { entity: "draft", freshCard: true, args: [] }),
     story_schedule_site: define(handleStoryChoice, { entity: "draft", freshCard: true, args: [] }),
-    threads_chain: define(handleThreadsChain, { entity: "draft", freshCard: true, args: [] }),
+    make_thread: define(handleMakeThread, { entity: "draft", freshCard: true, args: [] }),
+    thread_add: define(handleThreadAdd, { entity: "draft", freshCard: true, args: [] }),
+    thread_done: define(handleThreadDone, { entity: "draft", args: [] }),
+    thread_edit: define(handleThreadEdit, { entity: "draft", freshCard: true, args: ["position"] }),
+    thread_remove: define(handleThreadRemove, { entity: "draft", freshCard: true, args: ["position"] }),
     skip: define(handleSkip, { entity: "draft", args: ["target", "origin"] }),
     resend: define(handleResend, { entity: "draft", freshCard: true, args: ["target"] }),
     publish: define(handlePublish, { entity: "draft", freshCard: true, args: [] }),
@@ -162,15 +166,50 @@ async function handleStoryChoice(args: PostActionArgs): Promise<PublicationActio
   return action.startsWith("story_publish_") ? queuePostNow(args) : previewEffects(args, "schedule");
 }
 
-async function handleThreadsChain(args: PostActionArgs): Promise<PublicationActionResult> {
-  const { ctx, backendDb, config, actorId, locale, draftId, services } = args;
-  services.posts.approveThreadsChain(actorId, draftId);
-  // The waiver only clears the Threads rule. Other preflight issues remain fatal.
-  const preflight = await showPublicationPreflight(args);
-  if (preflight) return preflight;
-  const storyChoice = await showStoryCardChoice(ctx, backendDb, config, actorId, draftId, "publish");
-  if (storyChoice) return storyChoice;
-  return [{ type: "toast", text: t(locale, "action.preflight-chain-approved") }, ...sendPublishConfirmation(args)];
+async function handleMakeThread(args: PostActionArgs): Promise<PublicationActionResult> {
+  const { actorId, locale, draftId, services } = args;
+  services.posts.makeThread(actorId, draftId);
+  // The parts need their English before anything can publish, so the card
+  // comes back rather than the publish confirmation.
+  return previewEffects(
+    args,
+    "overview",
+    t(locale, "action.thread-made", { parts: services.posts.get(actorId, draftId).thread.length + 1 }),
+  );
+}
+
+/** Opens the next post of the thread: whatever the next message carries --
+ * text, a photo, an album -- becomes it. */
+async function handleThreadAdd({ backendDb, actorId, locale, draftId, services }: PostActionArgs): Promise<PublicationActionResult> {
+  const step: PostWizardStep = { type: "thread_part" };
+  saveConversationState(backendDb, actorId, { kind: "post", draftId, step: step.type, data: postStepData(step), controlMessageId: null });
+  const next = services.posts.get(actorId, draftId).thread.length + 2;
+  return [promptEffect(backendDb, actorId, "post", t(locale, "action.thread-send-part", { part: next }))];
+}
+
+/** The thread is written: the author reviews it whole before anything else. */
+async function handleThreadDone(args: PostActionArgs): Promise<PublicationActionResult> {
+  clearConversationState(args.backendDb, args.actorId, "post");
+  return previewEffects(args, "thread");
+}
+
+async function handleThreadEdit({ backendDb, actorId, locale, draftId, args }: PostActionArgs): Promise<PublicationActionResult> {
+  const step: PostWizardStep = { type: "thread_edit", position: threadPosition(args.position) };
+  saveConversationState(backendDb, actorId, { kind: "post", draftId, step: step.type, data: postStepData(step), controlMessageId: null });
+  return [promptEffect(backendDb, actorId, "post", t(locale, "action.thread-send-replacement", { part: step.position }))];
+}
+
+async function handleThreadRemove(args: PostActionArgs): Promise<PublicationActionResult> {
+  const position = threadPosition(args.args.position);
+  args.services.posts.removeThreadPart(args.actorId, args.draftId, position);
+  const view = args.services.posts.get(args.actorId, args.draftId).thread.length ? "thread" : "overview";
+  return previewEffects(args, view, t(args.locale, "action.thread-part-removed", { part: position }));
+}
+
+function threadPosition(value: string | undefined): number {
+  const position = Number(value);
+  if (!Number.isInteger(position) || position < 2) throw new StudioError("action.invalid-callback-argument");
+  return position;
 }
 
 async function handleSchedule(args: PostActionArgs): Promise<PublicationActionResult> {
@@ -321,10 +360,10 @@ async function showPublicationPreflight(args: PostActionArgs): Promise<Publicati
   const issues = services.posts.validate(actorId, draftId);
   const issue = issues[0];
   if (!issue) return null;
-  // A waivable issue needs a message, not an alert: an alert cannot carry a
-  // button, and the whole point is to offer the chain right where it is refused.
-  // Only offer it when every issue is waivable — a Telegram caption stays fatal.
-  const parts = issues.every((item) => item.chainParts) ? Math.max(...issues.map((item) => item.chainParts ?? 0)) : 0;
+  // An overflow a thread would resolve needs a message, not an alert: an alert
+  // cannot carry a button, and the point is to offer the thread right where the
+  // text is refused. Only when every issue is one — a language issue stays fatal.
+  const parts = issues.every((item) => item.threadParts) ? Math.max(...issues.map((item) => item.threadParts ?? 0)) : 0;
   if (parts > 1) {
     const label = plural(locale, parts, {
       one: t(locale, "action.parts-one"),
@@ -335,11 +374,16 @@ async function showPublicationPreflight(args: PostActionArgs): Promise<Publicati
     return [
       {
         type: "screen",
-        text: t(locale, "action.preflight-chain", { label: issue.label, actual: issue.actual ?? 0, limit: issue.limit ?? 0, parts: label }),
+        text: t(locale, "action.preflight-thread", {
+          label: issue.label,
+          actual: issue.actual ?? 0,
+          limit: issue.limit ?? 0,
+          parts: label,
+        }),
         options: {
           reply_markup: new InlineKeyboard().text(
-            t(locale, "action.preflight-chain-button", { parts: label }),
-            publicationCallback("post", "threads_chain", [draftId], revision),
+            t(locale, "action.preflight-thread-button", { parts: label }),
+            publicationCallback("post", "make_thread", [draftId], revision),
           ),
         },
         card: { kind: "post", draftId },
@@ -359,7 +403,13 @@ function preflightToast(locale: StudioLocale, issue: PreflightIssue): string {
       expected: issue.locale.toUpperCase(),
       written: (issue.written ?? issue.locale).toUpperCase(),
     });
+  if (issue.kind === "empty" && issue.part)
+    return t(locale, "action.preflight-empty-part", { label: issue.label, expected: issue.locale.toUpperCase(), part: issue.part });
   if (issue.kind === "empty") return t(locale, "action.preflight-empty", { label: issue.label, expected: issue.locale.toUpperCase() });
+  if (issue.kind === "media-limit")
+    return t(locale, "action.preflight-media", { label: issue.label, actual: issue.actual ?? 0, limit: issue.limit ?? 0 });
+  if (issue.part)
+    return t(locale, "action.preflight-part", { label: issue.label, part: issue.part, actual: issue.actual ?? 0, limit: issue.limit ?? 0 });
   return t(locale, "action.preflight", { label: issue.label, actual: issue.actual ?? 0, limit: issue.limit ?? 0 });
 }
 

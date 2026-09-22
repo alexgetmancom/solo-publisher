@@ -5,13 +5,20 @@ import type { PublishResult } from "../../publishing/errors.js";
 import { httpPublishError, publishJson } from "../../publishing/errors.js";
 import { formatPlatformText } from "../../publishing/platform-profiles.js";
 import { ambiguousExternalMutation, isAmbiguousPublicationError } from "../ambiguous-publication.js";
-import { guessContentType, payloadMedia, payloadText } from "./payload.js";
+import { guessContentType, payloadMedia, payloadText, payloadThread } from "./payload.js";
 import { toContentState } from "./x-content-state.js";
 
 const UPLOAD_URL = "https://api.x.com/2/media/upload";
 type SleepImplementation = (milliseconds: number) => Promise<void>;
 const defaultSleep: SleepImplementation = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
+/** The posts of a chain that have already reached the audience. */
+const CHAIN_RESUME_KEY = "_xPublishedIds";
+
+/** One post, or a thread as a reply chain: each part answers the one before it
+ * and carries its own media. A part that fails after earlier ones went out
+ * hands their ids back, so the retry continues the chain instead of starting a
+ * second one. */
 export async function publishToX(
   payload: Record<string, unknown>,
   config: BackendConfig,
@@ -19,29 +26,55 @@ export async function publishToX(
   sleepImpl: SleepImplementation = defaultSleep,
 ): Promise<PublishResult> {
   assertXAccessToken(config);
-  const mediaIds: string[] = [];
-  for (const item of payloadMedia(payload)) {
-    if (!item.localPath || !fs.existsSync(item.localPath)) continue;
-    mediaIds.push(
-      item.type === "VIDEO"
-        ? await uploadMedia(item.localPath, "tweet_video", config, fetchImpl, sleepImpl)
-        : await uploadMedia(item.localPath, "tweet_image", config, fetchImpl, sleepImpl),
-    );
+  const parts = [{ text: payloadText(payload), media: payloadMedia(payload) }, ...payloadThread(payload)];
+  const resumed = payload[CHAIN_RESUME_KEY];
+  const publishedIds = Array.isArray(resumed) ? resumed.filter((id): id is string => typeof id === "string" && id.length > 0) : [];
+  let raw: unknown = null;
+  try {
+    for (const part of parts.slice(publishedIds.length)) {
+      const mediaIds: string[] = [];
+      for (const item of part.media) {
+        if (!item.localPath || !fs.existsSync(item.localPath)) continue;
+        mediaIds.push(
+          await uploadMedia(item.localPath, item.type === "VIDEO" ? "tweet_video" : "tweet_image", config, fetchImpl, sleepImpl),
+        );
+      }
+      const parentId = publishedIds.at(-1);
+      const body = JSON.stringify({
+        text: formatPlatformText("x", part.text),
+        ...(mediaIds.length ? { media: { media_ids: mediaIds } } : {}),
+        ...(parentId ? { reply: { in_reply_to_tweet_id: parentId } } : {}),
+      });
+      const response = await ambiguousExternalMutation("x", () =>
+        xFetch("https://api.x.com/2/tweets", config, fetchImpl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        }),
+      );
+      const result = await publishJson<{ data?: { id?: string } }>(response, "X tweet create");
+      raw = result;
+      const id = result.data?.id;
+      // Nothing to reply to and nothing to settle on: the first post without an
+      // id is not published, and a later one leaves the chain to resume.
+      if (!id && publishedIds.length === 0) return { ok: false, id: null, url: null, raw };
+      if (!id) throw new Error("x_tweet_missing_id");
+      publishedIds.push(id);
+    }
+  } catch (error) {
+    if (isAmbiguousPublicationError(error) || publishedIds.length === 0) throw error;
+    return {
+      ok: false,
+      partial: true,
+      retryable: true,
+      resumeKey: CHAIN_RESUME_KEY,
+      ids: publishedIds,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
-  const body = JSON.stringify({
-    text: formatPlatformText("x", payloadText(payload)),
-    ...(mediaIds.length ? { media: { media_ids: mediaIds } } : {}),
-  });
-  const response = await ambiguousExternalMutation("x", () =>
-    xFetch("https://api.x.com/2/tweets", config, fetchImpl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body,
-    }),
-  );
-  const result = await publishJson<{ data?: { id?: string } }>(response, "X tweet create");
-  const id = result.data?.id;
-  return { ok: Boolean(id), id: id ?? null, url: id ? `https://x.com/i/web/status/${id}` : null, raw: result };
+  const [rootId] = publishedIds;
+  if (!rootId) return { ok: false, id: null, url: null, raw };
+  return { ok: true, id: rootId, ids: publishedIds, url: `https://x.com/i/web/status/${rootId}`, raw };
 }
 
 /** Where a half-published Article leaves the draft it already created. */

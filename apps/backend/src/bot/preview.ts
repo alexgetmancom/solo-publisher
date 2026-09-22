@@ -37,6 +37,7 @@ const DRAFT_VIEWS = [
   "confirm_cancel",
   "platforms",
   "resend",
+  "thread",
 ] as const;
 
 export type DraftView = (typeof DRAFT_VIEWS)[number];
@@ -129,6 +130,36 @@ export function draftPreview(
       text: `📝 *${t(locale, "post.resend-title", { id: draftId })}*\n\n${candidates.length ? t(locale, "post.resend-hint") : t(locale, "post.resend-none")}`,
       keyboard,
     };
+  }
+
+  if (view === "thread") {
+    // Every post of the thread, each with its own way to be rewritten or
+    // dropped. The first post is the draft, edited from the card as always.
+    const parts = draft.thread;
+    for (const part of parts)
+      keyboard
+        .text(
+          t(locale, "post.thread-edit-part", { part: part.position }),
+          publicationCallback("post", "thread_edit", [draftId, String(part.position)]),
+        )
+        .text(
+          t(locale, "post.thread-remove-part", { part: part.position }),
+          publicationCallback("post", "thread_remove", [draftId, String(part.position)]),
+        )
+        .row();
+    keyboard.text(t(locale, "post.thread-add"), publicationCallback("post", "thread_add", [draftId])).row();
+    keyboard.text(t(locale, "post.back-to-preview"), publicationCallback("post", "view", [draftId, "overview"]));
+    const perPost = Math.floor(3000 / (parts.length + 1));
+    const posts = [
+      { position: 1, text: draft.text_ru, media: safeMediaCount(draft.media_ru_json) },
+      ...parts.map((part) => ({ position: part.position, text: part.textRu, media: part.media.length })),
+    ]
+      .map(
+        (post) =>
+          `*${post.position}.*${post.media ? ` 🖼 ${post.media}` : ""}\n${escapeMarkdown(truncateUnicode(post.text || t(locale, "post.media-only"), perPost))}`,
+      )
+      .join("\n\n");
+    return { text: `🧵 *${t(locale, "post.thread-title", { id: draftId, parts: parts.length + 1 })}*\n\n${posts}`, keyboard };
   }
 
   if (view === "platforms") {
@@ -267,6 +298,12 @@ export function draftPreview(
       .text(t(locale, "post.choose-platforms"), publicationCallback("post", "view", [draftId, "platforms"]))
       .row();
     appendLocaleEditButtons(keyboard, backendDb, config, draft.actor_id, draftId, locale, servesEn);
+    if (draft.thread.length)
+      keyboard.text(
+        t(locale, "post.thread-btn", { parts: draft.thread.length + 1 }),
+        publicationCallback("post", "view", [draftId, "thread"]),
+      );
+    keyboard.text(t(locale, "post.thread-add"), publicationCallback("post", "thread_add", [draftId])).row();
     // Now, later, or never: the three things that can happen to a finished
     // draft, side by side. Both publishing intents start here because each one
     // renders the Story cards for the intent it carries.
@@ -290,6 +327,7 @@ export function draftPreview(
       : storyCards.every((card) => card.status === "ready")
         ? `\n${t(locale, "post.story-cards-status", { status: readyCardStatus })}`
         : `\n${t(locale, "post.story-cards-status", { status: storyCards.map((card) => `${card.locale.toUpperCase()} ${card.status}`).join(" · ") })}`;
+  const threadLine = draft.thread.length ? `\n🧵 ${t(locale, "post.thread-line", { parts: draft.thread.length + 1 })}` : "";
   const mediaLine =
     media.ru || media.en ? `\n${t(locale, "post.media")}: ${media.ru} RU${servesEn ? ` · ${media.enEffective} EN` : ""}` : "";
   const enMediaWarning = servesEn && media.ru > 0 && media.en === 0 ? `\n⚠️ ${t(locale, "post.en-uses-ru-media")}` : "";
@@ -301,7 +339,7 @@ export function draftPreview(
     ? `\n\nEN:\n${escapeMarkdown(truncateUnicode(String(draft.text_en_approved || draft.text_en_machine || t(locale, missingEn)), PREVIEW_TEXT_LIMIT))}`
     : "";
   return {
-    text: `${draftHeader(draftId, targets, locale)}${mediaLine}${storyCardStatus}${enMediaWarning}\n\nRU:\n${escapeMarkdown(truncateUnicode(String(draft.text_ru || t(locale, "post.media-only")), PREVIEW_TEXT_LIMIT))}${enText}`,
+    text: `${draftHeader(draftId, targets, locale)}${threadLine}${mediaLine}${storyCardStatus}${enMediaWarning}\n\nRU:\n${escapeMarkdown(truncateUnicode(String(draft.text_ru || t(locale, "post.media-only")), PREVIEW_TEXT_LIMIT))}${enText}`,
     keyboard,
   };
 }

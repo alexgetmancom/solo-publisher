@@ -1,7 +1,9 @@
 import { isStoryTarget, targetLocale } from "../botTargets.js";
 import { firstLine } from "../content/message.js";
+import { joinedThread } from "../content/thread.js";
 import { payloadMedia } from "../delivery/social/payload.js";
 import { selectMediaForTarget } from "./media-policy.js";
+import { platformProfile } from "./platform-profiles.js";
 import { type PublicationSource, parsePublicationSource } from "./publication-source.js";
 
 /** Resolves the dual-locale publication source into the one durable job shape. */
@@ -13,18 +15,32 @@ export function localizeTargetPayload(value: PublicationSource | unknown, target
   if (!locale) return {};
   const payload = parsePublicationSource(value);
   const source = payload.locales[locale];
-  const rawMedia = isStoryTarget(target) && source.storyMedia.length ? source.storyMedia : source.media;
+  const story = isStoryTarget(target);
+  // A Story is drawn from the first post alone. A platform that carries a
+  // thread gets the parts as they are; any other publishes one post holding
+  // the whole thread, its parts as paragraphs and their media after the first.
+  const carriesThread = Boolean(platformProfile(target)?.thread);
+  const joined = !story && !carriesThread;
+  const body = joined ? joinedThread(source, source.thread) : { text: source.text, entities: source.entities };
+  const rawMedia =
+    story && source.storyMedia.length
+      ? source.storyMedia
+      : joined
+        ? [...source.media, ...source.thread.flatMap((part) => part.media)]
+        : source.media;
   const selectedMedia = selectMediaForTarget(target, rawMedia).map(deliveryMedia);
   const localized = {
     locale,
     title: firstLine(source.text, "Post"),
-    text: source.text,
+    text: body.text,
     media: selectedMedia,
-    entities: source.entities,
+    entities: body.entities,
     slug: source.slug,
     postId: payload.postId,
     draftId: payload.draftId,
-    threadsChainApproved: payload.threadsChainApproved,
+    thread: carriesThread
+      ? source.thread.map((part) => ({ text: part.text, entities: part.entities, media: part.media.map(deliveryMedia) }))
+      : [],
   };
   return { ...localized, media: payloadMedia(localized) };
 }

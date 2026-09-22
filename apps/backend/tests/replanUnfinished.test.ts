@@ -55,7 +55,7 @@ describe("replanning a publication that is half delivered", () => {
         .run();
       const jobId = backendDb.db.select({ jobId: publishJobs.jobId }).from(publishJobs).get()?.jobId;
 
-      createStudioServices(backendDb, config).posts.approveThreadsChain(42, 12);
+      createStudioServices(backendDb, config).posts.appendThreadPart(42, 12, { textRu: "Часть два", entitiesRu: [], media: [] });
 
       const jobs = backendDb.db
         .select({ jobId: publishJobs.jobId, status: publishJobs.status, payloadJson: publishJobs.payloadJson })

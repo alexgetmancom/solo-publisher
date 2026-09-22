@@ -8,7 +8,7 @@ import type { ClaimedPublishJob } from "../../publishing/queue.js";
 import { prepareMediaItems } from "../media-prepare.js";
 import { createPlatformAdapters, type TargetRouting } from "../platform-adapters.js";
 import type { DeliveryPorts } from "../ports.js";
-import { payloadMedia } from "../social/payload.js";
+import { payloadMedia, payloadThread } from "../social/payload.js";
 import { awaitPreparedStoryMedia } from "../story-derivatives.js";
 
 type PreparedMedia = Awaited<ReturnType<typeof prepareMediaItems>>;
@@ -31,12 +31,24 @@ async function withPreparedMedia(
   mediaCache: Map<string, Promise<PreparedMedia>>,
   enqueue: <T>(prepare: () => Promise<T>) => Promise<T>,
 ): Promise<ClaimedPublishJob> {
+  // Thread parts are prepared on every attempt: a chain resumed after its first
+  // post still has replies to send, and each carries its own media.
+  const thread = isStoryTarget(job.target) ? [] : payloadThread(job.payload);
+  const preparedThread = thread.some((part) => part.media.length)
+    ? await Promise.all(
+        thread.map(async (part, index) => ({
+          ...part,
+          media: part.media.length ? await prepareCached(job, config, fetchImpl, mediaCache, enqueue, part.media, index + 2) : [],
+        })),
+      )
+    : null;
+  const withThread = preparedThread ? { ...job, payload: { ...job.payload, thread: preparedThread } } : job;
   // A job carrying resume state is going back to finish a publication, not to
-  // build one: the media it would prepare has already been uploaded and the
+  // build one: the first post's media has already been uploaded and the
   // adapter will not look at it again.
-  if (hasResumeState(job.payload)) return job;
+  if (hasResumeState(job.payload)) return withThread;
   const media = payloadMedia(job.payload);
-  if (media.length === 0) return job;
+  if (media.length === 0) return withThread;
   // A Story is one vertical visual. Select the locale's first item before any
   // transformation: remaining album images belong only to feed targets and
   // must not consume Story-processing capacity. The Studio source is already
@@ -46,7 +58,21 @@ async function withPreparedMedia(
   const storySource = selectMediaForTarget(job.target, media);
   if (isStoryTarget(job.target)) log("info", "story delivery preparation started", { jobId: job.jobId, target: job.target });
   const sourceMedia = isStoryTarget(job.target) ? await requireStoryMedia(config, storySource) : storySource;
-  const key = mediaCacheKey(job, sourceMedia, config);
+  const items = await prepareCached(job, config, fetchImpl, mediaCache, enqueue, sourceMedia, 1);
+  return { ...withThread, payload: { ...withThread.payload, media: items } };
+}
+
+/** `part` is the post of a thread the media belongs to; an ordinary post is part 1. */
+async function prepareCached(
+  job: ClaimedPublishJob,
+  config: BackendConfig,
+  fetchImpl: typeof fetch,
+  mediaCache: Map<string, Promise<PreparedMedia>>,
+  enqueue: <T>(prepare: () => Promise<T>) => Promise<T>,
+  sourceMedia: ReturnType<typeof payloadMedia>,
+  part: number,
+): Promise<PreparedMedia> {
+  const key = mediaCacheKey(job, sourceMedia, config, part);
   // One preparation per (post, target, media) within a delivery cycle. The
   // staged public copy is a cache; the Story derivative itself belongs to the
   // durable asset and is normally already there, made at ingress.
@@ -55,14 +81,12 @@ async function withPreparedMedia(
     prepared = enqueue(() => prepareMediaItems(config, sourceMedia, fetchImpl, job.target));
     writeBoundedCache(mediaCache, key, prepared);
   }
-  let items: PreparedMedia;
   try {
-    items = await prepared;
+    return await prepared;
   } catch (error) {
     mediaCache.delete(key);
     throw error;
   }
-  return { ...job, payload: { ...job.payload, media: items } };
 }
 
 async function requireStoryMedia(config: BackendConfig, media: ReturnType<typeof payloadMedia>): Promise<ReturnType<typeof payloadMedia>> {
@@ -81,9 +105,10 @@ async function requireStoryMedia(config: BackendConfig, media: ReturnType<typeof
   );
 }
 
-function mediaCacheKey(job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>, config: BackendConfig): string {
+function mediaCacheKey(job: ClaimedPublishJob, media: ReturnType<typeof payloadMedia>, config: BackendConfig, part: number): string {
   return JSON.stringify({
     post: job.publicationKey,
+    part,
     target: job.target,
     locale: job.payload.locale ?? "en",
     // Story media is a separately rendered 9:16 asset. It must never share

@@ -29,9 +29,10 @@ export type DraftRecord = {
   post_id: number | null;
   text_ru_entities_json: string | null;
   text_en_entities_json: string | null;
-  threads_chain_approved: number;
   story_publish_mode: string | null;
   updated_at: string;
+  /** The posts after the first; empty for an ordinary post. */
+  thread: ThreadPart[];
 };
 
 export type NewDraft = {
@@ -54,7 +55,6 @@ export type DraftPatch = Partial<{
   targetsJson: string;
   mediaRuJson: string | null;
   mediaEnJson: string | null;
-  threadsChainApproved: number;
   updatedAt: string;
 }>;
 
@@ -464,10 +464,33 @@ export type DraftTranslationStore = {
   fail(draftId: number, lockedBy: string, error: string, maxAttempts: number): void;
 };
 
+/** One post after the first in a thread; the first is the draft itself. */
+export type ThreadPart = {
+  position: number;
+  textRu: string;
+  entitiesRu: Record<string, unknown>[];
+  textEn: string | null;
+  media: Record<string, unknown>[];
+};
+
+export type NewThreadPart = { textRu: string; entitiesRu: Record<string, unknown>[]; media: Record<string, unknown>[] };
+
+/** The posts after the first. Positions start at 2 and have no gaps. */
+export type ThreadPartStore = {
+  list(draftId: number): ThreadPart[];
+  append(draftId: number, part: NewThreadPart): number;
+  /** Replaces every later post at once: how a long post becomes a thread. */
+  replace(draftId: number, parts: NewThreadPart[]): void;
+  update(draftId: number, position: number, part: NewThreadPart): boolean;
+  remove(draftId: number, position: number): boolean;
+  setEnglish(draftId: number, texts: Array<{ position: number; textEn: string }>): void;
+};
+
 /** Composition-root dependencies passed into application use cases. */
 export type ApplicationPorts = {
   clock: Clock;
   drafts: DraftStore;
+  threadParts: ThreadPartStore;
   events: EventStore;
   studioPosts: StudioPostStore;
   conversationSessions: ConversationSessionStore;

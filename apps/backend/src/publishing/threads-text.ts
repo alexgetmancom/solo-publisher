@@ -30,18 +30,12 @@ export function threadsTextLimit(target: string): number {
  * URLs the author typed into the text stay untouched and count as text: dropping
  * those by budget would break the sentence holding them.
  */
-export function threadsBody(
-  target: string,
-  text: string,
-  entities: Record<string, unknown>[] = [],
-  options: { chain?: boolean } = {},
-): ThreadsBody {
+export function threadsBody(target: string, text: string, entities: Record<string, unknown>[] = []): ThreadsBody {
   const body = text.trim();
   const url = firstTextLinkUrl(entities);
   if (!url) return { text: body, url: null, droppedUrl: null, shortfall: 0 };
   const withUrl = `${body}\n\n🔗 ${url}`;
-  // A waived draft becomes a reply chain, so there is room and no reason to drop it.
-  if (options.chain || withUrl.length <= threadsTextLimit(target)) return { text: withUrl, url, droppedUrl: null, shortfall: 0 };
+  if (withUrl.length <= threadsTextLimit(target)) return { text: withUrl, url, droppedUrl: null, shortfall: 0 };
   return { text: body, url: null, droppedUrl: url, shortfall: withUrl.length - threadsTextLimit(target) };
 }
 

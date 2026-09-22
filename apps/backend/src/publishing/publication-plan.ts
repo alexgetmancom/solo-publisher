@@ -4,6 +4,7 @@ import { draftLocaleContent } from "../content/draft-content.js";
 import type { requireDraft } from "../content/drafts.js";
 import { firstLine, slugify } from "../content/message.js";
 import { entitiesToHtml } from "../content/text.js";
+import { joinedThread, type LocalizedThreadPart, localizedThread } from "../content/thread.js";
 import type { PublicationLocaleSource, PublicationSource } from "./publication-source.js";
 import { assertKnownTargets, parseTargets } from "./targets.js";
 
@@ -70,26 +71,52 @@ export function createPublicationPlan(
     slug: string,
     publishAt: string | null,
     siteEnabled: boolean,
-  ): PublicationLocaleSource => ({
-    text,
-    entities,
-    media,
-    storyMedia,
-    siteMedia: media.length ? media : storyMedia,
-    slug,
-    publishAt,
-    siteEnabled,
-  });
-  const ru = locale(textRu, entitiesRu, mediaRu, storyCards ? [storyCards.ru] : [], slugRu, schedule.ruAt, Boolean(targets.site_ru));
-  const en = locale(textEn, entitiesEn, mediaEn, storyCards ? [storyCards.en] : [], slugEn, schedule.enAt, Boolean(targets.site_en));
+    thread: LocalizedThreadPart[],
+  ): PublicationLocaleSource => {
+    // The site shows a thread as one page: every post's pictures belong to it.
+    const threadMedia = thread.flatMap((part) => part.media);
+    const ownMedia = [...media, ...threadMedia];
+    return {
+      text,
+      entities,
+      media,
+      storyMedia,
+      siteMedia: ownMedia.length ? ownMedia : storyMedia,
+      slug,
+      publishAt,
+      siteEnabled,
+      thread,
+    };
+  };
+  const threadRu = localizedThread(draft.thread, "ru");
+  const threadEn = localizedThread(draft.thread, "en");
+  const ru = locale(
+    textRu,
+    entitiesRu,
+    mediaRu,
+    storyCards ? [storyCards.ru] : [],
+    slugRu,
+    schedule.ruAt,
+    Boolean(targets.site_ru),
+    threadRu,
+  );
+  const en = locale(
+    textEn,
+    entitiesEn,
+    mediaEn,
+    storyCards ? [storyCards.en] : [],
+    slugEn,
+    schedule.enAt,
+    Boolean(targets.site_en),
+    threadEn,
+  );
+  const pageRu = joinedThread({ text: textRu, entities: entitiesRu }, threadRu);
+  const pageEn = joinedThread({ text: textEn, entities: entitiesEn }, threadEn);
   const payload: PublicationSource = {
     draftId,
     postId,
     targets,
     locales: { ru, en },
-    // Frozen with the publication source: a later draft edit cannot waive the
-    // rule for text the author did not approve.
-    threadsChainApproved: Boolean(draft.threads_chain_approved),
   };
   return {
     draftId,
@@ -105,8 +132,8 @@ export function createPublicationPlan(
     textEn,
     payload,
     locales: [
-      { locale: "ru" as const, source: ru, html: entitiesToHtml(textRu, entitiesRu), entitiesJson: draft.text_ru_entities_json },
-      { locale: "en" as const, source: en, html: entitiesToHtml(textEn, entitiesEn), entitiesJson: draft.text_en_entities_json },
+      { locale: "ru" as const, source: ru, html: entitiesToHtml(pageRu.text, pageRu.entities), entitiesJson: draft.text_ru_entities_json },
+      { locale: "en" as const, source: en, html: entitiesToHtml(pageEn.text, pageEn.entities), entitiesJson: draft.text_en_entities_json },
     ],
   };
 }

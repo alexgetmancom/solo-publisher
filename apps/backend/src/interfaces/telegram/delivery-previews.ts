@@ -1,6 +1,5 @@
 import { type Context, InputFile } from "grammy";
 import type { BackendDb } from "../../db/client.js";
-import { splitText } from "../../delivery/social/payload.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { t } from "../../foundation/i18n/index.js";
 import type { StudioLocale } from "../../foundation/locale.js";
@@ -50,6 +49,8 @@ async function sendProjectionContent(ctx: Context, projection: DeliveryProjectio
   // when the projection contains its original post text unchanged.
   const entities = metadata ? [] : projection.entities;
   await sendMedia(ctx, projection.media, text, entities);
+  // A thread is previewed post by post, in the order it will be read.
+  for (const part of projection.thread ?? []) await sendMedia(ctx, part.media, part.text, part.entities);
 }
 
 type RenderableMedia = { source: InputFile | string; video: boolean };
@@ -112,7 +113,7 @@ export async function sendThreadsPreviews(
         : null;
   const renderings = (delivery?.projections ?? []).flatMap((projection) => {
     const target = projection.targets.find((item) => item === "threads_ru" || item === "threads_en");
-    return target ? [threadsPreviewText(target, projection.text, projection.entities, Boolean(projection.threadsChain), locale)] : [];
+    return target ? [threadsPreviewText(target, projection.text, projection.entities, locale, projection.thread)] : [];
   });
   // The confirmation belongs to a draft that has changed since: say so rather
   // than acknowledging a tap that then does nothing.
@@ -147,28 +148,27 @@ export function threadsPreviewText(
   target: "threads_ru" | "threads_en",
   text: string,
   entities: Record<string, unknown>[] = [],
-  chain = false,
   locale: StudioLocale = "en",
+  thread: readonly { text: string; entities: Record<string, unknown>[] }[] = [],
 ): string {
-  // Threads takes one post, so the preview is a character budget rather than a
-  // numbered chain. The numbered form comes back only for a draft whose author
-  // waived the rule — there the chain is the thing they need to proofread.
+  // Each post of a thread is its own Threads post with its own budget, so the
+  // counter is per post; an ordinary post is a thread of one.
   const limit = threadsTextLimit(target);
-  const decision = threadsBody(target, text, entities, { chain });
   const label = target === "threads_ru" ? "Threads RU" : "Threads EN";
+  const posts = [{ text, entities }, ...thread].map((post) => threadsBody(target, post.text, post.entities));
+  const budget = (body: string) => `${body.length}/${limit}${body.length > limit ? " ⚠️" : ""}`;
   // The link's fate is stated on the counter line, with how many characters it
   // was short. Without that number a dropped link is just something the bot ate.
-  const linkNote = decision.droppedUrl
-    ? ` · ${t(locale, "preview.threads-link-dropped", { shortfall: decision.shortfall })}`
-    : decision.url
-      ? ` · ${t(locale, "preview.threads-link-kept")}`
-      : "";
-  if (!chain) {
-    const budget = `${decision.text.length}/${limit}${decision.text.length > limit ? " ⚠️" : ""}`;
-    return `🧵 ${label} · ${budget}${linkNote}\n\n${decision.text}`;
-  }
-  const parts = splitText(decision.text, limit);
-  return `🧵 ${label} · ${parts.length}${linkNote}\n\n${parts.map((part, index) => `${threadMarker(index)} ${part}`).join("\n\n")}`;
+  const linkNote = (decision: (typeof posts)[number]) =>
+    decision.droppedUrl
+      ? ` · ${t(locale, "preview.threads-link-dropped", { shortfall: decision.shortfall })}`
+      : decision.url
+        ? ` · ${t(locale, "preview.threads-link-kept")}`
+        : "";
+  const [first] = posts;
+  if (posts.length === 1 && first) return `🧵 ${label} · ${budget(first.text)}${linkNote(first)}\n\n${first.text}`;
+  const body = posts.map((post, index) => `${threadMarker(index)} ${budget(post.text)}${linkNote(post)}\n${post.text}`).join("\n\n");
+  return `🧵 ${label} · ${posts.length}\n\n${body}`;
 }
 
 function threadMarker(index: number): string {

@@ -8,13 +8,16 @@ import type { ConversationState } from "./conversation-state.js";
 import type { PublicationEffect } from "./effects.js";
 
 type PostWizardLocale = "ru" | "en";
-export type PostSessionStep = "edit_text" | "schedule_manual" | "schedule_confirm";
+export type PostSessionStep = "edit_text" | "schedule_manual" | "schedule_confirm" | "thread_part" | "thread_edit";
 type PostFlowStep = PostSessionStep | "completed";
 
 export type PostWizardStep =
   | { type: "edit_text"; locale: PostWizardLocale }
   | { type: "schedule_manual"; locale: PostWizardLocale }
-  | { type: "schedule_confirm"; locale: PostWizardLocale; value: Date };
+  | { type: "schedule_confirm"; locale: PostWizardLocale; value: Date }
+  /** The next post of a thread; `thread_edit` replaces the one at `position`. */
+  | { type: "thread_part" }
+  | { type: "thread_edit"; position: number };
 
 type PostFlowData = Record<string, unknown>;
 
@@ -32,6 +35,7 @@ export type PostFlowInput = {
 export function postStepData(step: PostWizardStep | null): Record<string, unknown> {
   if (step?.type === "edit_text" || step?.type === "schedule_manual") return { locale: step.locale };
   if (step?.type === "schedule_confirm") return { locale: step.locale, value: step.value.toISOString() };
+  if (step?.type === "thread_edit") return { position: step.position };
   return {};
 }
 
@@ -39,6 +43,8 @@ const POST_STEPS: Record<PostFlowStep, FlowStep<PostFlowData, PostFlowInput, Pub
   edit_text: { name: "edit_text", input: "text", next: () => "completed", accept: acceptPostTextEdit },
   schedule_manual: { name: "schedule_manual", input: "text", next: () => "schedule_confirm", accept: acceptManualPostSchedule },
   schedule_confirm: { name: "schedule_confirm", next: () => "completed" },
+  thread_part: { name: "thread_part", input: "text", next: () => "completed", accept: acceptThreadPart },
+  thread_edit: { name: "thread_edit", input: "text", next: () => "completed", accept: acceptThreadPart },
   completed: { name: "completed", next: () => null },
 };
 
@@ -52,6 +58,11 @@ export function postStateStep(state: Pick<ConversationState, "step" | "data"> | 
   if (!state) return null;
   if (state.step === "edit_text") return localeStep("edit_text", state.data.locale);
   if (state.step === "schedule_manual") return localeStep("schedule_manual", state.data.locale);
+  if (state.step === "thread_part") return { type: "thread_part" };
+  if (state.step === "thread_edit") {
+    const position = Number(state.data.position);
+    return Number.isInteger(position) && position >= 2 ? { type: "thread_edit", position } : null;
+  }
   if (state.step === "schedule_confirm") {
     const locale = parseLocale(state.data.locale);
     const date = parseDate(state.data.value);
@@ -80,6 +91,19 @@ function acceptPostTextEdit(input: PostFlowInput, data: PostFlowData): PostFlowD
     clearMedia: isClearMediaCommand(input.message.text),
   });
   return { ...data, input: input.message };
+}
+
+function acceptThreadPart(input: PostFlowInput, data: PostFlowData): PostFlowData {
+  const posts = createStudioServices(input.backendDb, input.config).posts;
+  const part = {
+    textRu: input.message.text,
+    entitiesRu: input.message.entities.filter((entity): entity is Record<string, unknown> => typeof entity === "object" && entity !== null),
+    media: input.message.media,
+  };
+  if (input.step.type === "thread_part") posts.appendThreadPart(input.actorId, input.draftId, part);
+  else if (input.step.type === "thread_edit") posts.editThreadPart(input.actorId, input.draftId, input.step.position, part);
+  else throw new StudioError("action.session-stale");
+  return data;
 }
 
 function localeStep(type: "edit_text" | "schedule_manual", value: unknown): PostWizardStep | null {

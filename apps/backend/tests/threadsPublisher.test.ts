@@ -198,6 +198,13 @@ describe("publishToThreads", () => {
     const result = await publishToThreads({ text: "a".repeat(501) }, config, over.fetchImpl);
     expect(over.creations()).toHaveLength(0);
     expect(result.error).toBe("threads_text_too_long:501/500");
+    const part = await publishToThreads(
+      { text: "first", thread: [{ text: "a".repeat(501), entities: [], media: [] }] },
+      config,
+      over.fetchImpl,
+    );
+    expect(over.creations()).toHaveLength(0);
+    expect(part.error).toBe("threads_text_too_long:part 2:501/500");
   });
 
   it("keeps or drops a boundary link exactly as preflight and the preview decided", async () => {
@@ -224,9 +231,9 @@ describe("publishToThreads", () => {
     expect(result.error).toContain("threads_text_too_long");
   });
 
-  it("builds the reply chain when the draft carries the author's waiver", async () => {
+  it("publishes a thread as a reply chain, one post per part", async () => {
     const { fetchImpl, creations } = transport({ publishIds: ["p1", "p2"], containerIds: ["c1", "c2"] });
-    const result = await publishToThreads({ text: `${"a".repeat(500)} tail`, threadsChainApproved: true }, config, fetchImpl);
+    const result = await publishToThreads({ text: "first", thread: [{ text: "second", entities: [], media: [] }] }, config, fetchImpl);
 
     expect(creations()).toHaveLength(2);
     // The continuation is a reply to what was just published, not a second
@@ -239,8 +246,8 @@ describe("publishToThreads", () => {
     const { fetchImpl, creations } = transport({ publishIds: ["p2"], containerIds: ["c2"] });
     const result = await publishToThreads(
       {
-        text: `${"a".repeat(500)} tail`,
-        threadsChainApproved: true,
+        text: "first",
+        thread: [{ text: "second", entities: [], media: [] }],
         threadsProgress: {
           stage: "create_reply",
           childIds: [],
