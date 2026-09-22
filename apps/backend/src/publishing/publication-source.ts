@@ -27,7 +27,6 @@ const publicationSourceSchema = z.object({
   locales: z.object({ ru: localeSourceSchema, en: localeSourceSchema }),
 });
 
-type PublicationThreadPart = z.infer<typeof threadPartSchema>;
 export type PublicationLocaleSource = z.infer<typeof localeSourceSchema>;
 export type PublicationSource = z.infer<typeof publicationSourceSchema>;
 
