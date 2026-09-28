@@ -9,7 +9,7 @@ import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("post publication retry", () => {
   it("requeues failed social and site targets and refuses a second retry", () =>
-    withDb((backendDb) => {
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, {
         draftId: 7,
@@ -62,7 +62,7 @@ describe("post publication retry", () => {
       const posts = createStudioServices(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" })).posts;
       expect(backendDb.studioPosts.failedPublicationTargets(700).map((item) => item.target)).toEqual(["threads_en", "telegram", "site_en"]);
 
-      expect(posts.retryTarget(42, 7)).toMatchObject({ requeued: 2, alreadyQueued: 0 });
+      expect(await posts.retryTarget(42, 7)).toMatchObject({ requeued: 2, alreadyQueued: 0 });
       expect(
         backendDb.db
           .select({ target: publishJobs.target, status: publishJobs.status, attemptCount: publishJobs.attemptCount })
@@ -81,7 +81,7 @@ describe("post publication retry", () => {
         { target: "telegram", status: "queued" },
         { target: "site_en", status: "queued" },
       ]);
-      expect(() => posts.retryTarget(42, 7)).toThrow("err.retry-only-failed");
+      await expect(posts.retryTarget(42, 7)).rejects.toThrow("err.retry-only-failed");
     }));
 
   /** The incident this file exists to prevent a repeat of: a Threads chain whose
@@ -90,7 +90,7 @@ describe("post publication retry", () => {
    * not what already went out -- so the first message was published a second time
    * and the audience read the same post twice. */
   it("carries what a half-published chain already delivered into its retry", () =>
-    withDb((backendDb) => {
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, {
         draftId: 9,
@@ -126,7 +126,7 @@ describe("post publication retry", () => {
         .run();
 
       const posts = createStudioServices(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" })).posts;
-      expect(posts.retryTarget(42, 9, "threads_ru")).toMatchObject({ requeued: 1 });
+      expect(await posts.retryTarget(42, 9, "threads_ru")).toMatchObject({ requeued: 1 });
 
       const job = backendDb.db.select({ status: publishJobs.status, payloadJson: publishJobs.payloadJson }).from(publishJobs).all().at(0);
       expect(job?.status).toBe("queued");
@@ -151,7 +151,7 @@ describe("post publication retry", () => {
     }));
 
   it("refuses to send a target again when it named a live post and left nothing to continue from", () =>
-    withDb((backendDb) => {
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, {
         draftId: 10,
@@ -187,7 +187,7 @@ describe("post publication retry", () => {
         .run();
 
       const posts = createStudioServices(backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" })).posts;
-      expect(() => posts.retryTarget(42, 10, "threads_ru")).toThrow("err.retry-already-delivered");
+      await expect(posts.retryTarget(42, 10, "threads_ru")).rejects.toThrow("err.retry-already-delivered");
       expect(backendDb.db.select({ status: publishJobs.status }).from(publishJobs).all()).toEqual([{ status: "failed" }]);
     }));
 
@@ -195,7 +195,7 @@ describe("post publication retry", () => {
    * republishing, and continuing a chain onto a message that was deleted writes
    * the remainder onto nothing. */
   it("carries nothing forward when the caller is republishing", () =>
-    withDb((backendDb) => {
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, {
         draftId: 13,
@@ -235,7 +235,7 @@ describe("post publication retry", () => {
     }));
 
   it("journals the live post it stops referencing, whatever status the target reached", () =>
-    withDb((backendDb) => {
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, {
         draftId: 11,
@@ -286,7 +286,7 @@ describe("post publication retry", () => {
     }));
 
   it("abandons a target the operator skips and settles the publication without it", () =>
-    withDb((backendDb) => {
+    withDb(async (backendDb) => {
       const now = new Date().toISOString();
       seedTextPost(backendDb, {
         draftId: 8,

@@ -55,6 +55,46 @@ export async function notifyFinalVideoFailure(
   });
 }
 
+/** A publication the provider will not resolve, handed to the one person who can
+ * open the account and look.
+ *
+ * Deliberately not the failure notice: that one offers a retry, and this target
+ * is exactly the one a retry must not touch -- the provider says it failed and
+ * cannot show that nothing was posted. The tap offered here asks the provider
+ * again under the fence the publication already carries; the operator's own eyes
+ * outrank both, through `video-settle --url`. */
+export async function notifyUnresolvedVideoTarget(
+  backendDb: BackendDb,
+  bot: Bot | null,
+  config: Pick<BackendConfig, "CONTROLLER_ADMIN_IDS">,
+  videoDraftId: number,
+  videoTargetId: number | null,
+): Promise<void> {
+  if (!bot || !videoTargetId) return;
+  const target = unsafeDb(backendDb).db.select().from(videoTargets).where(eq(videoTargets.id, videoTargetId)).get();
+  if (target?.status !== "verification_required") return;
+  const draft = getVideoDraft(backendDb, videoDraftId);
+  const targetName = target.target as VideoTarget;
+  await forEachAdmin(config.CONTROLLER_ADMIN_IDS, async (actorId) => {
+    if (!settingsService(backendDb).notifications(actorId).completionEnabled) return;
+    const locale = settingsService(backendDb).locale(actorId);
+    const title = draft.label || t(locale, "common.untitled");
+    await bot.api.sendMessage(
+      actorId,
+      `${t(locale, "notif.video-unresolved", { label: videoTargetLabel(targetName), title })}\n\n${target.lastError || t(locale, "notif.unknown-error")}`,
+      {
+        reply_markup: new InlineKeyboard()
+          .text(
+            t(locale, "vpreview.settle", { target: videoTargetLabel(targetName) }),
+            publicationCallback("video", "settle", [draft.id, targetName]),
+          )
+          .row()
+          .text(t(locale, "notif.open"), publicationCallback("video", "view", [draft.id, "overview"])),
+      },
+    );
+  });
+}
+
 export async function refreshVideoControlCard(
   backendDb: BackendDb,
   bot: Bot | null,
@@ -131,6 +171,7 @@ export async function sendStudioCompletion(
   const total = number(details.total) ?? 0;
   const published = number(details.published) ?? 0;
   const failed = number(details.failed) ?? 0;
+  const awaiting = number(details.awaiting) ?? 0;
   const partialLocale = event.eventType === "delivery.post.locale.completed" ? localeDetail(details.locale) : null;
   const results = completionTargets(backendDb, event.publicationKey).filter(
     (result) => partialLocale == null || targetLocale(result.target) === partialLocale,
@@ -162,7 +203,9 @@ export async function sendStudioCompletion(
         : t(locale, "notif.locale-completion-ok", { label, locale: localeName(partialLocale, locale), done: published || total, total })
       : failed
         ? t(locale, "notif.completion-failed", { label, published, total, failed })
-        : t(locale, "notif.completion-ok", { label, done: published || total, total });
+        : awaiting
+          ? t(locale, "notif.completion-awaiting", { label, published, total, awaiting })
+          : t(locale, "notif.completion-ok", { label, done: published || total, total });
     const lines = results.map(
       (result) =>
         `${result.partial ? "⚠️" : statusIcon(result.status)} ${friendlyTarget(result.target)} — ${result.partial ? t(locale, "notif.delivery-partial") : friendlyStatus(result.status, locale)}${
@@ -198,9 +241,24 @@ function completionKeyboard(
   }));
   const keyboard = new InlineKeyboard();
   const decisions = appendUnlandedControls(keyboard, { locale, kind, draftId, origin: "notice", targets: unlanded });
+  // The one safe tap for a publication nobody has confirmed, and the same one
+  // the card offers: ask the provider. Without it here the notice about an
+  // unconfirmed Reel offered nothing at all, and the operator went looking for
+  // the retry button instead.
+  let askable = false;
+  for (const result of failedTargets)
+    if (kind === "video" && result.status === "verification_required" && result.provider === "zernio") {
+      keyboard
+        .text(
+          t(locale, "vpreview.settle", { target: friendlyTarget(result.target) }),
+          publicationCallback("video", "settle", [draftId, result.target]),
+        )
+        .row();
+      askable = true;
+    }
   // A partially scheduled post is worth opening even when nothing failed: the
   // rest of it still needs a time.
-  if (!decisions && !(kind === "post" && partial)) return undefined;
+  if (!decisions && !askable && !(kind === "post" && partial)) return undefined;
   keyboard.text(t(locale, "notif.open"), publicationCallback(kind, "view", [draftId, "overview"]));
   return keyboard;
 }
@@ -217,14 +275,19 @@ async function forEachAdmin(actorIds: number[], deliver: (actorId: number) => Pr
   }
 }
 
-type CompletionTarget = { target: string; status: string; error: string | null; partial: boolean };
+type CompletionTarget = { target: string; status: string; error: string | null; partial: boolean; provider?: string | null };
 
 function completionTargets(backendDb: BackendDb, ref: string | null): CompletionTarget[] {
   const publication = parsePublicationRef(ref);
   if (!publication || publication.kind === "draft") return [];
   if (publication.kind === "video")
     return unsafeDb(backendDb)
-      .db.select({ target: videoTargets.target, status: videoTargets.status, error: videoTargets.lastError })
+      .db.select({
+        target: videoTargets.target,
+        status: videoTargets.status,
+        error: videoTargets.lastError,
+        provider: videoTargets.deliveryProvider,
+      })
       .from(videoTargets)
       .where(eq(videoTargets.videoDraftId, publication.id))
       .all()

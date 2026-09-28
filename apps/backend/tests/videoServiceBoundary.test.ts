@@ -203,7 +203,7 @@ describe("video Studio service boundary", () => {
       const target = backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, current.draftId)).get();
       if (!target) throw new Error("video target missing");
       backendDb.db.update(videoTargets).set({ status: "failed" }).where(eq(videoTargets.id, target.id)).run();
-      expect(service.retryTarget(42, current.draftId, "instagram_reels")).toEqual({ requeued: 1, alreadyQueued: 0 });
+      expect(await service.retryTarget(42, current.draftId, "instagram_reels")).toEqual({ requeued: 1, alreadyQueued: 0 });
 
       const toggle = fixture(backendDb, ["youtube_shorts"]);
       try {

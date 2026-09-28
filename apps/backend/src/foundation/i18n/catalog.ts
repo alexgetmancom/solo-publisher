@@ -567,6 +567,10 @@ const en = {
   "notif.label-post": "Post",
   "notif.delivery-partial": "published in part — the rest did not go out",
   "notif.completion-failed": "⚠️ {label}: publication finished with errors\n✅ {published} / {total}\n❌ Errors: {failed}",
+  "notif.completion-awaiting":
+    "⏳ {label}: waiting for the platform to confirm\n✅ {published} / {total}\n⏳ Unconfirmed: {awaiting}\n\nNothing is being sent again by itself, because a repeat could become a second publication.",
+  "notif.video-unresolved":
+    "❓ {label}: {title}\n\nThe provider reported a failure and the platform never confirmed either way, so this Studio does not know whether the audience has it. Open the account and look; nothing will be sent again until you say so.",
   "notif.completion-ok": "✅ {label} published\n{done} / {total}",
   "notif.locale-completion-failed": "⚠️ {locale} part of {label} finished with errors\n✅ {published} / {total}\n❌ Errors: {failed}",
   "notif.locale-completion-ok": "✅ {locale} part of {label} published\n{done} / {total}",
@@ -1385,6 +1389,10 @@ const ru = {
   "notif.label-post": "Пост",
   "notif.delivery-partial": "опубликовано частично — остаток не ушёл",
   "notif.completion-failed": "⚠️ {label}: публикация завершена с ошибками\n✅ {published} / {total}\n❌ Ошибок: {failed}",
+  "notif.completion-awaiting":
+    "⏳ {label}: ждём подтверждения площадки\n✅ {published} / {total}\n⏳ Без подтверждения: {awaiting}\n\nПовторно ничего не отправляется само: повтор может стать второй публикацией.",
+  "notif.video-unresolved":
+    "❓ {label}: {title}\n\nПровайдер сообщил об ошибке, но площадка так и не подтвердила ни публикацию, ни её отсутствие — Studio не знает, видит ли это аудитория. Посмотрите в аккаунте; повторно ничего не отправится, пока вы не скажете.",
   "notif.completion-ok": "✅ {label} опубликован\n{done} / {total}",
   "notif.locale-completion-failed": "⚠️ {locale}: часть {label} завершилась с ошибками\n✅ {published} / {total}\n❌ Ошибок: {failed}",
   "notif.locale-completion-ok": "✅ {locale}: часть {label} опубликована\n{done} / {total}",

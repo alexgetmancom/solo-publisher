@@ -486,8 +486,8 @@ const studioToolDefs = {
     schema: z.object({ video_draft_id: positiveInt, target: videoTargetSchema }),
     mutates: true,
     ref: (input) => publicationRef("video", input.video_draft_id),
-    handler: (studio, actorId, input) => {
-      studio.videos.retryTarget(actorId, input.video_draft_id, input.target);
+    handler: async (studio, actorId, input) => {
+      await studio.videos.retryTarget(actorId, input.video_draft_id, input.target);
       return { video_draft_id: input.video_draft_id, target: input.target, retried: true };
     },
   }),

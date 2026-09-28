@@ -386,7 +386,9 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         return publishDraftToQueue(backendDb, draftId);
       });
     },
-    retryTarget(actorId: number, draftId: number, target?: string) {
+    // Async to answer the shared pipeline contract, which a provider route needs:
+    // the post path has nothing to ask anyone and answers from its own tables.
+    async retryTarget(actorId: number, draftId: number, target?: string) {
       return trackUsageSync(backendDb, "studio.post.retry", () => {
         const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
         if (draft.post_id == null) throw new StudioError("err.retry-only-failed");

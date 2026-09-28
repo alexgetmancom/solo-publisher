@@ -1381,16 +1381,16 @@ const operationDefs = {
   "video-retry": operation({
     section: "delivery",
     summary: "Queue a failed video target again.",
-    note: "Only a target that failed: a publication whose outcome is unknown is answered with `video-settle` first, because a retry of something that may have landed is a second post. The new attempt carries a new idempotency fence, so it can publish what the failed one never did.",
+    note: "Only a target that failed, and a provider route is asked before it is repeated: the provider still holding a post id is queried under the fence that already covers that publication, and a new attempt is armed only if the answer is that the audience got nothing. That new attempt carries a new fence, so it can publish what the failed one never did. Answers with `settled` when the question alone resolved the target.",
     schema: z.object({
       draft: example(z.coerce.number().int().positive(), "232").describe("video draft id"),
       target: example(z.string().trim().min(1), "instagram_reels").describe("video target"),
     }),
     mutates: true,
     agent: true,
-    handler: (context, input) => {
-      retryVideoTarget(context.db(), input.draft, input.target as VideoTarget);
-      return { ref: publicationRef("video", input.draft), target: input.target, requeued: 1 };
+    handler: async (context, input) => {
+      const { settled } = await retryVideoTarget(context.config(), context.db(), input.draft, input.target as VideoTarget);
+      return { ref: publicationRef("video", input.draft), target: input.target, requeued: settled == null ? 1 : 0, settled };
     },
   }),
   "video-settle": operation({

@@ -445,7 +445,7 @@ describe("publication reconciliation", () => {
       ["youtube_ru"],
     ));
 
-  it("keeps an unfinished Zernio Reel ambiguous and records an explicit provider failure", () =>
+  it("keeps an unfinished Zernio Reel unconfirmed even when the provider calls it failed", () =>
     withDb(async (backendDb) => {
       const { targetId } = ambiguousZernioVideo(backendDb);
       const pending = (async () => Response.json({ _id: "zernio-pending", status: "scheduled" })) as unknown as typeof fetch;
@@ -479,20 +479,35 @@ describe("publication reconciliation", () => {
           .all(),
       ).toHaveLength(1);
 
-      backendDb.db.update(videoJobs).set({ nextAttemptAt: null }).where(eq(videoJobs.videoTargetId, targetId)).run();
+      // The provider's own verdict, which is the state this whole file exists for:
+      // Zernio has called a Reel failed that the account was showing. Believing
+      // it put the target in `failed`, where the completion notice offers a
+      // retry, and that retry published beside a live Reel. It stays
+      // unconfirmed, and the operator is told once the polling budget is spent.
       const failed = (async () =>
         Response.json({
           _id: "zernio-pending",
           status: "failed",
           platforms: [{ platform: "instagram", status: "failed", error: "Instagram could not download the video" }],
         })) as unknown as typeof fetch;
-      expect(await runPublicationReconciliation(backendDb, zernioConfig(), failed)).toMatchObject({ checked: 1, resolved: 1 });
+      for (let attempt = 0; attempt < RECONCILE_MAX_ATTEMPTS; attempt += 1) {
+        backendDb.db.update(videoJobs).set({ nextAttemptAt: null }).where(eq(videoJobs.videoTargetId, targetId)).run();
+        await runPublicationReconciliation(backendDb, zernioConfig(), failed);
+      }
       expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.id, targetId)).get()).toMatchObject({
-        status: "failed",
+        status: "verification_required",
         lastError: "Instagram could not download the video",
         publishedAt: null,
       });
-      expect(backendDb.db.select().from(videoJobs).where(eq(videoJobs.videoTargetId, targetId)).get()?.status).toBe("failed");
+      expect(backendDb.db.select().from(videoJobs).where(eq(videoJobs.videoTargetId, targetId)).get()).toMatchObject({
+        status: "verification_required",
+        reconcileAttemptCount: RECONCILE_MAX_ATTEMPTS,
+        nextAttemptAt: null,
+      });
+      // Said once, to whoever can open the account, and never again on a later sweep.
+      expect(
+        backendDb.db.select().from(publicationEvents).where(eq(publicationEvents.eventType, "video.target.unresolved")).all(),
+      ).toHaveLength(1);
     }));
 });
 

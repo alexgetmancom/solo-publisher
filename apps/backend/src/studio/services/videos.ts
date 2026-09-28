@@ -119,10 +119,13 @@ export function videoService(backendDb: BackendDb, config: BackendConfig) {
       });
     },
     retryTarget(actorId: number, publicationId: number, target: VideoTarget) {
-      return trackUsageSync(backendDb, "studio.video.retry", () => {
+      return trackUsageAsync(backendDb, "studio.video.retry", async () => {
         requireOwnedVideo(backendDb, config, actorId, publicationId);
-        retryVideoTarget(backendDb, publicationId, target);
-        return { requeued: 1, alreadyQueued: 0 };
+        // A provider route is asked before it is re-sent, so this answers with
+        // what the publication turned out to be rather than with a requeue that
+        // never happened.
+        const { settled } = await retryVideoTarget(config, backendDb, publicationId, target);
+        return settled == null ? { requeued: 1, alreadyQueued: 0 } : { requeued: 0, alreadyQueued: 0, settled };
       });
     },
     async cancel(actorId: number, publicationId: number) {

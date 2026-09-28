@@ -69,6 +69,8 @@ function videoTimeline(backendDb: BackendDb, ref: string, videoDraftId: number):
       // did YouTube refuse".
       metadata: videoTargets.metadataJson,
       deliveryProvider: videoTargets.deliveryProvider,
+      providerPostId: videoTargets.providerPostId,
+      confirmationSource: videoTargets.confirmationSource,
       externalId: videoTargets.externalId,
       url: videoTargets.externalUrl,
       error: videoTargets.lastError,

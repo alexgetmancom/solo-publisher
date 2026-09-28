@@ -47,7 +47,7 @@ async function handleView(context: PublicationDraftActionContext): Promise<Publi
 
 async function handleRetry(context: PublicationDraftActionContext): Promise<PublicationActionResult> {
   const target = context.args.target === "all" ? "" : (context.args.target ?? "");
-  const result = context.pipeline.retryTarget(context.actorId, context.draftId, target);
+  const result = await context.pipeline.retryTarget(context.actorId, context.draftId, target);
   const toast = {
     type: "toast" as const,
     text: t(context.locale, "action.retry-result", { requeued: result.requeued, alreadyQueued: result.alreadyQueued }),

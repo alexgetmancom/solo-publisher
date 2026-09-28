@@ -148,13 +148,28 @@ export function recordVideoCompletionIfFinal(backendDb: BackendDb, videoDraftId:
   // itself as a failure and, a minute later, as published. Bounded, because a
   // provider that never answers must not turn into silence.
   if (targets.some((target) => awaitingProviderConfirmation(target, now))) return;
-  const failed = targets.filter((target) => target.status === "failed" || target.status === "verification_required").length;
+  // A refusal and an unanswered publication are different outcomes and were
+  // counted as one number: "завершено с ошибками" about a Reel that may well be
+  // live is what sends an operator to press retry, which is the one thing that
+  // can turn it into two.
+  const failed = targets.filter((target) => target.status === "failed").length;
+  const awaiting = targets.filter((target) => target.status === "verification_required").length;
   backendDb.events.record({
     ref: publicationRef("video", videoDraftId),
     type: "delivery.video.completed",
-    severity: failed ? "warn" : "info",
-    message: failed ? `Video #${videoDraftId} completed with ${failed} failed target(s)` : `Video #${videoDraftId} published successfully`,
-    details: { videoDraftId, total: targets.length, failed, published: targets.filter((target) => target.status === "published").length },
+    severity: failed || awaiting ? "warn" : "info",
+    message: failed
+      ? `Video #${videoDraftId} completed with ${failed} failed target(s)`
+      : awaiting
+        ? `Video #${videoDraftId} completed with ${awaiting} unconfirmed target(s)`
+        : `Video #${videoDraftId} published successfully`,
+    details: {
+      videoDraftId,
+      total: targets.length,
+      failed,
+      awaiting,
+      published: targets.filter((target) => target.status === "published").length,
+    },
     cooldownSeconds: 60 * 60,
   });
 }

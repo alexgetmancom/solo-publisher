@@ -16,6 +16,7 @@ import { isAudienceMutationRetryable, isVideoTargetEditable, isVideoTargetMetada
 import { backgroundMusicLikelyMissing } from "./video-audio.js";
 import { getVideoDraft, insertVideoJob, listVideoTargets, refreshVideoDraftStatus } from "./video-data.js";
 import { assertVideoMetadata } from "./video-metadata-limits.js";
+import { settleVideoTarget } from "./video-settle.js";
 import type { VideoLocale, VideoMetadata, VideoTarget, VideoTechnicalCheck } from "./video-types.js";
 import { VIDEO_TARGETS } from "./video-types.js";
 
@@ -339,9 +340,27 @@ export function scheduleVideo(
   });
 }
 
-/** Requeues only an explicitly selected failed or externally verified platform;
- * the other platform and its media stay untouched. */
-export function retryVideoTarget(backendDb: BackendDb, videoDraftId: number, targetName: VideoTarget): void {
+/** Requeues only an explicitly selected failed platform; the other platform and
+ * its media stay untouched.
+ *
+ * A provider route is asked before anything is sent. The provider takes a
+ * publication before the platform does and then reports on it, and its report is
+ * not the account: it has called a Reel failed that was live, which is exactly
+ * the state this button is pressed in. So a target the provider still holds a
+ * post id for is settled first -- under the fence that already covers that
+ * publication -- and a new attempt is armed only if the answer is that the
+ * audience got nothing. Nothing else can tell the two apart, and guessing is a
+ * second Reel.
+ */
+export async function retryVideoTarget(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  videoDraftId: number,
+  targetName: VideoTarget,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ settled: "published" | "failed" | "verification_required" | null }> {
+  const asked = await askProviderBeforeRetry(config, backendDb, videoDraftId, targetName, fetchImpl);
+  if (asked && asked !== "failed") return { settled: asked };
   const target = unsafeDb(backendDb)
     .db.select()
     .from(videoTargets)
@@ -387,6 +406,39 @@ export function retryVideoTarget(backendDb: BackendDb, videoDraftId: number, tar
       message: `${targetName} was retried while it still named a live upload; that upload is no longer referenced`,
       details: { external_id: target.externalId, url: target.externalUrl, provider_post_id: target.providerPostId },
     });
+  return { settled: null };
+}
+
+/** What the provider says about the publication this retry is about to repeat,
+ * for the routes that can be asked. Returns null when there is nothing to ask
+ * -- a native upload, or a target the provider never gave a post id for -- and
+ * the retry proceeds on its own judgement. */
+async function askProviderBeforeRetry(
+  config: BackendConfig,
+  backendDb: BackendDb,
+  videoDraftId: number,
+  targetName: VideoTarget,
+  fetchImpl: typeof fetch,
+): Promise<"published" | "failed" | "verification_required" | null> {
+  const row = unsafeDb(backendDb)
+    .db.select({
+      provider: videoTargets.deliveryProvider,
+      providerPostId: videoTargets.providerPostId,
+      status: videoTargets.status,
+      externalId: videoTargets.externalId,
+      externalUrl: videoTargets.externalUrl,
+    })
+    .from(videoTargets)
+    .where(and(eq(videoTargets.videoDraftId, videoDraftId), eq(videoTargets.target, targetName)))
+    .get();
+  if (row?.provider !== "zernio" || !row.providerPostId) return null;
+  // A target that already names its platform publication has been answered; the
+  // question here is only about one nobody has an answer for.
+  if (row.externalId || row.externalUrl) return null;
+  if (row.status !== "failed" && row.status !== "verification_required") return null;
+  const answer = await settleVideoTarget(config, backendDb, { videoDraftId, target: targetName, apply: true }, fetchImpl);
+  const status = answer.status;
+  return status === "published" || status === "failed" || status === "verification_required" ? status : null;
 }
 
 export async function validateVideoDraft(config: BackendConfig, backendDb: BackendDb, videoDraftId: number): Promise<VideoTechnicalCheck> {

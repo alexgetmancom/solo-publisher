@@ -246,32 +246,16 @@ export async function runPublicationReconciliation(
       deferVideoReconciliation(backendDb, job, reconciliationWorker);
       continue;
     }
-    if (providerFailure) {
-      const now = new Date().toISOString();
-      const failedVideo = unsafeDb(backendDb).db.transaction((tx) => {
-        const won = tx
-          .update(videoJobs)
-          .set({ status: "failed", lastError: providerFailure, lockedAt: null, lockedBy: null, updatedAt: now })
-          .where(
-            and(
-              eq(videoJobs.videoTargetId, row.target.id),
-              eq(videoJobs.status, "verification_required"),
-              eq(videoJobs.lockedBy, reconciliationWorker),
-            ),
-          )
-          .returning({ id: videoJobs.id })
-          .get();
-        if (!won) return false;
-        tx.update(videoTargets)
-          .set({ status: "failed", lastError: providerFailure, publishedAt: null, verifiedAt: null, updatedAt: now })
-          .where(and(eq(videoTargets.id, row.target.id), eq(videoTargets.status, "verification_required")))
-          .run();
-        return true;
-      });
-      if (!failedVideo) continue;
-      refreshVideoDraftStatus(backendDb, row.target.videoDraftId, config.VIDEO_MEDIA_RETENTION_HOURS);
-      recordVideoCompletionIfFinal(backendDb, row.target.videoDraftId);
-      resolved += 1;
+    // A provider-reported failure is not the platform's answer, and this used to
+    // be recorded as if it were: the target went to `failed`, the completion
+    // notice offered a retry, and the retry published under a new fence beside a
+    // Reel the account was already showing. Zernio has reported a live
+    // publication as failed, so while it still holds a post id there is
+    // something to keep asking about -- and when the budget for asking runs out,
+    // an operator decides. Nothing here converts a provider verdict into
+    // permission to send again.
+    if (providerFailure && !confirmation) {
+      escalateUnansweredVideo(backendDb, job, row.target, providerFailure, reconciliationWorker);
       continue;
     }
     if (!confirmation) {
@@ -392,6 +376,51 @@ function deferVideoReconciliation(backendDb: BackendDb, job: typeof videoJobs.$i
     })
     .where(and(eq(videoJobs.id, job.id), eq(videoJobs.status, "verification_required"), eq(videoJobs.lockedBy, owner)))
     .run();
+}
+
+/** The last thing reconciliation does about a publication it cannot settle: it
+ * says so, once, to whoever can look at the account. Called for the provider's
+ * own refusal, which is a real answer about a publication and still not proof
+ * that nothing reached the audience.
+ *
+ * The target row is written only here, at the end of the budget, and never on an
+ * ordinary deferral: the incident's age is read from it, and an inbox that ages
+ * with every poll is one nobody escalates. */
+function escalateUnansweredVideo(
+  backendDb: BackendDb,
+  job: typeof videoJobs.$inferSelect,
+  target: typeof videoTargets.$inferSelect,
+  providerFailure: string,
+  owner: string,
+): void {
+  const exhausted = job.reconcileAttemptCount + 1 >= RECONCILE_MAX_ATTEMPTS;
+  deferVideoReconciliation(backendDb, job, owner);
+  if (!exhausted) return;
+  const now = new Date().toISOString();
+  // Fenced on the state this was decided from, like every other write here: the
+  // operator or the settle command may have answered the target while the
+  // provider was being asked.
+  const marked = unsafeDb(backendDb)
+    .db.update(videoTargets)
+    .set({ lastError: providerFailure, updatedAt: now })
+    .where(and(eq(videoTargets.id, target.id), eq(videoTargets.status, "verification_required")))
+    .returning({ id: videoTargets.id })
+    .get();
+  if (!marked) return;
+  backendDb.events.record({
+    ref: publicationRef("video", target.videoDraftId),
+    target: target.target,
+    type: "video.target.unresolved",
+    severity: "warn",
+    message: providerFailure,
+    details: {
+      videoDraftId: target.videoDraftId,
+      videoTargetId: target.id,
+      jobId: job.id,
+      provider_post_id: target.providerPostId,
+      attempts: job.reconcileAttemptCount + 1,
+    },
+  });
 }
 
 function reconciliationNextAttempt(attempt: number): string | null {

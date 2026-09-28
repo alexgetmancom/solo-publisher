@@ -204,6 +204,7 @@ describe("Telegram event consumer", () => {
           target: "instagram_reels",
           metadataJson: {},
           status: "verification_required",
+          deliveryProvider: "zernio",
           lastError: "Provider response was ambiguous",
           createdAt: now,
           updatedAt: now,
@@ -220,12 +221,18 @@ describe("Telegram event consumer", () => {
 
       await sendStudioCompletion(backendDb, bot, config, {
         publicationKey: "video:11",
-        detailsJson: { total: 1, published: 0, failed: 1 },
+        detailsJson: { total: 1, published: 0, failed: 0, awaiting: 1 },
       });
 
       expect(sendMessage).toHaveBeenCalledTimes(1);
+      // Not "finished with errors": that headline is what sends an operator
+      // looking for the retry button, and this publication may well be live.
+      expect(sendMessage.mock.calls[0]?.[1]).toContain("waiting for the platform to confirm");
       expect(sendMessage.mock.calls[0]?.[1]).toContain("Provider response was ambiguous");
-      expect(JSON.stringify(sendMessage.mock.calls[0]?.[2] ?? {})).not.toContain("p:video:retry:11");
+      const keyboard = JSON.stringify(sendMessage.mock.calls[0]?.[2] ?? {});
+      expect(keyboard).not.toContain("p:video:retry:11");
+      // The one safe tap, on the notice as well as on the card.
+      expect(keyboard).toContain("p:video:settle:11");
     }));
 
   it("notifies about a completed locale and shows the later locale schedule", async () =>

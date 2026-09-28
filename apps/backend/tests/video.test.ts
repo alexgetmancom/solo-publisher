@@ -570,7 +570,7 @@ describe("video publication queue", () => {
     expect(rows.some((row) => row.includes("YouTube Shorts") && row.includes("Instagram Reels"))).toBe(false);
   });
 
-  it("retries only a failed platform without touching the other target", () => {
+  it("retries only a failed platform without touching the other target", async () => {
     const backendDb = testDb.open();
     const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
     replaceVideoTargets(backendDb, draftId, ["youtube_shorts", "instagram_reels"]);
@@ -582,7 +582,7 @@ describe("video publication queue", () => {
     if (!instagram) throw new Error("instagram target missing");
     backendDb.db.update(videoTargets).set({ status: "failed", lastError: "Meta failed" }).where(eq(videoTargets.id, instagram.id)).run();
 
-    retryVideoTarget(backendDb, draftId, "instagram_reels");
+    await retryVideoTarget(videoConfig(), backendDb, draftId, "instagram_reels");
 
     expect(backendDb.sqlite.prepare("SELECT status FROM video_targets WHERE id=?").get(instagram.id)).toEqual({ status: "scheduled" });
     expect(
@@ -593,7 +593,7 @@ describe("video publication queue", () => {
     ).toEqual({ status: "editing" });
   });
 
-  it("does not retry a video mutation with an ambiguous provider outcome", () => {
+  it("does not retry a video mutation with an ambiguous provider outcome", async () => {
     const backendDb = testDb.open();
     const draftId = createTestVideoDraft(backendDb, 42, "video-source", 24);
     replaceVideoTargets(backendDb, draftId, ["instagram_reels"]);
@@ -605,7 +605,7 @@ describe("video publication queue", () => {
     if (!instagram) throw new Error("instagram target missing");
     backendDb.db.update(videoTargets).set({ status: "verification_required" }).where(eq(videoTargets.id, instagram.id)).run();
 
-    expect(() => retryVideoTarget(backendDb, draftId, "instagram_reels")).toThrow("err.retry-only-failed");
+    await expect(retryVideoTarget(videoConfig(), backendDb, draftId, "instagram_reels")).rejects.toThrow("err.retry-only-failed");
     expect(backendDb.sqlite.prepare("SELECT count(*) AS count FROM video_jobs WHERE video_target_id=?").get(instagram.id)).toEqual({
       count: 0,
     });

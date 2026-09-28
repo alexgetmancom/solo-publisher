@@ -6,7 +6,13 @@ import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { alertDedup, drafts, publicationEvents } from "../../db/schema.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { log } from "../../foundation/logger.js";
-import { notifyFinalVideoFailure, refreshVideoControlCard, sendStudioCompletion, sendStudioReminder } from "./video-notifications.js";
+import {
+  notifyFinalVideoFailure,
+  notifyUnresolvedVideoTarget,
+  refreshVideoControlCard,
+  sendStudioCompletion,
+  sendStudioReminder,
+} from "./video-notifications.js";
 
 const TELEGRAM_EVENT_TYPES = [
   "delivery.post.settled",
@@ -16,6 +22,7 @@ const TELEGRAM_EVENT_TYPES = [
   "publish.job.failed",
   "publish.job.retry",
   "video.target.failed",
+  "video.target.unresolved",
   "video.job.completed",
   "video.job.failed",
   "studio.notification.reminder.due",
@@ -108,6 +115,8 @@ async function deliverEvent(
     if (draft) await refreshPostControlCard(backendDb, bot, draft.id);
   } else if (event.eventType === "video.target.failed" && videoDraftId != null)
     await notifyFinalVideoFailure(backendDb, bot, config, videoDraftId, videoTargetId);
+  else if (event.eventType === "video.target.unresolved" && videoDraftId != null)
+    await notifyUnresolvedVideoTarget(backendDb, bot, config, videoDraftId, videoTargetId);
   else if (videoDraftId != null) await refreshVideoControlCard(backendDb, bot, config, videoDraftId);
 }
 

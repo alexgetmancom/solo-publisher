@@ -3,6 +3,7 @@ import { publicationRef } from "../application/publication-ref.js";
 import { videoPublicUrl } from "../content/video-assets.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { videoJobs, videoTargets } from "../db/schema.js";
+import { recordVideoCompletionIfFinal } from "../delivery/video-worker.js";
 import { publishZernioInstagramReel, zernioPostOutcome } from "../delivery/zernio.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { getVideoDraft, refreshVideoDraftStatus } from "./video-data.js";
@@ -50,7 +51,11 @@ export async function settleVideoTarget(
   // which a target wears either as verification_required or as a published row
   // with nothing to link to. Anything carrying a link is already settled.
   if (row.externalId || row.externalUrl) throw new Error(`${input.target} already has its platform publication`);
-  if (row.status !== "verification_required" && row.status !== "published")
+  // `failed` is asked about too, and deliberately: the provider's own verdict is
+  // what usually put a target there, and that verdict has been wrong about a
+  // live Reel. Asking costs one read and is the only thing standing between a
+  // retry and a second publication.
+  if (row.status !== "verification_required" && row.status !== "published" && row.status !== "failed")
     throw new Error(`${input.target} is ${row.status}, and only a target awaiting its platform link is settled this way`);
   if (row.deliveryProvider !== "zernio")
     throw new Error(`${input.target} is delivered natively, which has no idempotent replay: settle it from what the platform shows`);
@@ -146,6 +151,10 @@ function record(
     .get();
   if (!settled) throw new Error(`${row.target} was settled by something else while the provider was being asked; read its state again`);
   refreshVideoDraftStatus(backendDb, videoDraftId, config.VIDEO_MEDIA_RETENTION_HOURS);
+  // An answer is an outcome, and an outcome is what the operator is waiting to
+  // hear: settling by hand used to change the card in silence, so the only
+  // notification about the publication stayed the one that called it an error.
+  recordVideoCompletionIfFinal(backendDb, videoDraftId);
   return {
     applied: true,
     providerPostId: outcome.providerPostId,

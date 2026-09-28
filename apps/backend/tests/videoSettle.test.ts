@@ -4,7 +4,7 @@ import { registerChannel } from "../src/channels/registry.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { publicationEvents, videoTargets } from "../src/db/schema.js";
 import { PROVIDER_CONFIRMATION_GRACE_MS, recordVideoCompletionIfFinal } from "../src/delivery/video-worker.js";
-import { replaceVideoTargets, saveVideoMetadata, scheduleVideo } from "../src/publishing/video-service.js";
+import { replaceVideoTargets, retryVideoTarget, saveVideoMetadata, scheduleVideo } from "../src/publishing/video-service.js";
 import { settleVideoTarget } from "../src/publishing/video-settle.js";
 import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -35,6 +35,11 @@ function stuckReel(backendDb: UnsafeBackendDb): number {
   return draftId;
 }
 
+/** The idempotency fence of the publish attempt: same string, same publication. */
+function publishFence(backendDb: UnsafeBackendDb): unknown {
+  return backendDb.sqlite.prepare("SELECT id, run_at, status FROM video_jobs WHERE kind='publish'").get();
+}
+
 describe("answering a video publication that lost its worker", () => {
   it("asks the provider with the fenced request id and settles what came back", () =>
     withDb(async (backendDb) => {
@@ -56,6 +61,53 @@ describe("answering a video publication that lost its worker", () => {
       const row = backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, draftId)).get();
       expect(row).toMatchObject({ status: "published", externalId: "ig-1", providerPostId: "zernio-post" });
       expect(row?.verifiedAt).not.toBeNull();
+    }));
+
+  /** The incident: Zernio reported a Reel as failed, the target went to `failed`,
+   * the completion notice offered a retry, the retry was pressed -- and the
+   * account had the Reel all along. A retry of a provider route asks first, and a
+   * publication the provider is holding is settled instead of sent again. */
+  it("answers a retry from the provider instead of publishing a second Reel", () =>
+    withDb(async (backendDb) => {
+      const draftId = stuckReel(backendDb);
+      backendDb.sqlite.prepare("UPDATE video_targets SET status='failed', provider_post_id='zernio-post'").run();
+      const { fetchImpl, calls } = transport({
+        _id: "zernio-post",
+        platforms: [{ platform: "instagram", platformPostId: "ig-1", platformPostUrl: "https://instagram.com/reel/ig-1" }],
+      });
+      const fence = publishFence(backendDb);
+
+      expect(await retryVideoTarget(config, backendDb, draftId, "instagram_reels", fetchImpl)).toEqual({ settled: "published" });
+
+      // One read of the publication, and no publish call behind it.
+      expect(calls).toHaveLength(1);
+      expect(calls[0]?.url).toEndWith("/posts/zernio-post");
+      expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, draftId)).get()).toMatchObject({
+        status: "published",
+        externalId: "ig-1",
+      });
+      // Nothing was re-armed: a new fence is what turns a repeat into a second Reel.
+      expect(publishFence(backendDb)).toEqual(fence);
+    }));
+
+  it("sends again only when the provider says the audience got nothing", () =>
+    withDb(async (backendDb) => {
+      const draftId = stuckReel(backendDb);
+      backendDb.sqlite.prepare("UPDATE video_targets SET status='failed', provider_post_id='zernio-post'").run();
+      const { fetchImpl } = transport({
+        _id: "zernio-post",
+        status: "failed",
+        platforms: [{ platform: "instagram", status: "failed", error: "Instagram could not download the video" }],
+      });
+
+      const fence = publishFence(backendDb);
+
+      expect(await retryVideoTarget(config, backendDb, draftId, "instagram_reels", fetchImpl)).toEqual({ settled: null });
+
+      expect(backendDb.db.select().from(videoTargets).where(eq(videoTargets.videoDraftId, draftId)).get()?.status).toBe("scheduled");
+      // A real refusal is republished, and under a new fence so the provider makes
+      // the publication this attempt never made.
+      expect(publishFence(backendDb)).not.toEqual(fence);
     }));
 
   it("keeps a publication the platform has not confirmed inside the sweep that can confirm it", () =>

@@ -44,7 +44,9 @@ export type PublicationPipeline = {
   schedule(actorId: number, publicationId: number, schedule: PublicationSchedule): unknown;
   publish(actorId: number, publicationId: number): unknown;
   cancel(actorId: number, publicationId: number): unknown;
-  retryTarget(actorId: number, publicationId: number, target: string): PublicationRetrySummary;
+  /** Async because a provider route asks the provider what became of the
+   * publication before it repeats it; the post path answers from its own tables. */
+  retryTarget(actorId: number, publicationId: number, target: string): Promise<PublicationRetrySummary>;
   removeTarget(actorId: number, publicationId: number, target: string): unknown;
   toggleTarget(actorId: number, publicationId: number, target: string): unknown;
   slotTime(actorId: number, clock: string): Date;
