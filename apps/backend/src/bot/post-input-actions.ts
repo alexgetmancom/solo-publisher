@@ -39,7 +39,7 @@ export async function applyAdminState(
   if (step.type === "thread_part" || step.type === "thread_edit")
     return [
       { type: "session", operation: "clear", kind: "post", actorId },
-      ...threadPartSaved(backendDb, config, actorId, draftId, step.type, step.type === "thread_edit" ? step.locale : "ru"),
+      ...threadPartSaved(backendDb, config, actorId, draftId, step.type),
     ];
   const preview = postPreviewCard(backendDb, config, actorId, draftId);
   return [{ type: "session", operation: "clear", kind: "post", actorId }, ...publicationCardEffect(preview)];
@@ -54,11 +54,10 @@ export function threadPartScreen(
   actorId: number,
   draftId: number,
   step: "thread_part" | "thread_edit",
-  threadLocale: "ru" | "en" = "ru",
 ): { text: string; keyboard: InlineKeyboard; markdown: boolean; view?: DraftView } {
   const locale = settingsService(backendDb).locale(actorId);
   if (step === "thread_edit") {
-    const view = threadLocale === "en" ? "thread_en" : "thread";
+    const view = "thread" as const;
     const card = publicationRenderers(backendDb, config).post.card({ actorId, publicationId: draftId, locale, view });
     return { text: card.text, keyboard: card.keyboard, markdown: true, view };
   }
@@ -78,9 +77,8 @@ function threadPartSaved(
   actorId: number,
   draftId: number,
   step: "thread_part" | "thread_edit",
-  threadLocale: "ru" | "en",
 ): PublicationEffect[] {
-  const screen = threadPartScreen(backendDb, config, actorId, draftId, step, threadLocale);
+  const screen = threadPartScreen(backendDb, config, actorId, draftId, step);
   const options = { ...(screen.markdown ? { parse_mode: "Markdown" as const } : {}), reply_markup: screen.keyboard };
   // The add-or-finish question is not the card: the card is repainted when the
   // English arrives, and that repaint took these buttons away seconds after

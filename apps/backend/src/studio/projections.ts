@@ -3,9 +3,11 @@ import { isStoryTarget, targetLocale } from "../botTargets.js";
 import { draftLocaleContent } from "../content/draft-content.js";
 import { type LocalizedThreadPart, localizedThread } from "../content/thread.js";
 import type { BackendDb } from "../db/client.js";
+import { plannedTargetDeliveries } from "../publishing/chain-plan.js";
 import { mediaPolicyForTarget } from "../publishing/media-policy.js";
 import { formatPlatformText, platformProfile } from "../publishing/platform-profiles.js";
 import { parseTargets } from "../publishing/targets.js";
+import { isThreadsTarget } from "../publishing/threads-text.js";
 
 export type DeliveryProjection = {
   id: string;
@@ -19,6 +21,11 @@ export type DeliveryProjection = {
   unavailableTargets?: string[];
   /** The posts after the first when the draft is a thread. */
   thread?: LocalizedThreadPart[];
+  /** What a Threads account actually receives: every post cut at its own 500
+   * characters, in order. It is not the same list as `thread` -- a post the
+   * author made fit in Russian is cut again in English -- and showing the
+   * written parts as though they were the sent ones is how a preview lied. */
+  chains?: Array<{ target: "threads_ru" | "threads_en"; posts: LocalizedThreadPart[] }>;
   metadata?: Record<string, unknown>;
   notes: string[];
 };
@@ -78,6 +85,9 @@ export function postDeliveryProjections(
         targets: selected.filter((target) => !unavailableTargets.includes(target)),
         locale,
         thread: localizedThread(draft.thread, locale),
+        chains: plannedTargetDeliveries(draft)
+          .filter((delivery) => delivery.locale === locale && isThreadsTarget(delivery.target) && selected.includes(delivery.target))
+          .map((delivery) => ({ target: delivery.target as "threads_ru" | "threads_en", posts: delivery.posts })),
         text: content[locale].text,
         entities: content[locale].entities,
         media: content[locale].media,

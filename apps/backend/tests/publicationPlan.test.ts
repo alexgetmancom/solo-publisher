@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { plannedTargetDeliveries } from "../src/publishing/chain-plan.js";
 import { publicationPreflight } from "../src/publishing/preflight.js";
 import { createPublicationPlan } from "../src/publishing/publication-plan.js";
+import { isContentRefusal, isPostTargetRetryable } from "../src/publishing/state.js";
 
 describe("PublicationPlan", () => {
   it("decides localized content and target schedule before persistence", () => {
@@ -151,5 +153,57 @@ describe("publication preflight", () => {
       targets_json: JSON.stringify({ telegram: false, threads_ru: true, threads_en: true }),
     });
     expect(issues).toEqual([]);
+  });
+});
+
+describe("what each platform actually receives", () => {
+  const part = (textRu: string, textEn: string | null = null) => ({
+    position: 0,
+    textRu,
+    entitiesRu: [],
+    textEn,
+    textEnApproved: null,
+    media: [],
+  });
+
+  it("counts the posts delivery will send, not the ones the author wrote", () => {
+    // The Russian fits in two written posts; the English translation of the
+    // second does not, and Threads receives the reply it becomes.
+    const draft = {
+      text_ru: "Раз",
+      text_en_machine: "One",
+      media_ru_json: null,
+      targets_json: JSON.stringify({ threads_ru: true, threads_en: true, telegram: true }),
+      thread: [part("Два", "B".repeat(700))],
+    };
+    const deliveries = plannedTargetDeliveries(draft as never);
+    expect(deliveries.map((delivery) => [delivery.target, delivery.posts.length])).toEqual([
+      ["threads_ru", 2],
+      ["threads_en", 3],
+      ["telegram", 1],
+    ]);
+  });
+
+  it("refuses an attachment the channel cannot take, before anything publishes", () => {
+    const draft = {
+      text_ru: "Раз",
+      text_en_machine: "One",
+      media_ru_json: JSON.stringify([{ type: "video", file_id: "big", file_size: 18_000_000 }]),
+      targets_json: JSON.stringify({ discord: true }),
+    };
+    expect(publicationPreflight(draft)).toEqual([
+      expect.objectContaining({ target: "discord", kind: "media-size", limit: 10_485_760, actual: 18_000_000 }),
+    ]);
+    // A boosted server reports a larger cap of its own, and the same file passes.
+    expect(publicationPreflight(draft, { discord: 52_428_800 })).toEqual([]);
+  });
+});
+
+describe("what a failed target may be offered", () => {
+  it("offers a retry for a timeout and an edit for a refusal about the content", () => {
+    expect(isPostTargetRetryable("discord", "failed", "Discord message create 413: attachment too large")).toBe(false);
+    expect(isContentRefusal("threads_text_too_long:part 2:612/500")).toBe(true);
+    expect(isPostTargetRetryable("discord", "failed", "Discord message create 503: unavailable")).toBe(true);
+    expect(isContentRefusal("Discord message create 503: unavailable")).toBe(false);
   });
 });

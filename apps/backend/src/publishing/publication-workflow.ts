@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { publicationRef } from "../application/publication-ref.js";
 import { isStoryTarget } from "../botTargets.js";
+import { channelUploadLimits } from "../channels/platform-token-store.js";
 import { effectivePostTargets, registeredPostTargetIds } from "../channels/registry.js";
 import { requireDraft } from "../content/drafts.js";
 import { enrichPublishedPostEntities } from "../content/entity-enrichment.js";
@@ -28,7 +29,7 @@ function publishDraftToQueueInternal(backendDb: BackendDb, draftId: number, opti
     ...draft,
     targets_json: JSON.stringify(effectivePostTargets(backendDb, parseTargets(draft.targets_json))),
   };
-  assertPublicationPreflight(effectiveDraft);
+  assertPublicationPreflight(effectiveDraft, channelUploadLimits(backendDb));
   const now = new Date().toISOString();
   const mode = options.mode ?? "immediate";
   const ruAt = mode === "immediate" || options.immediateLocale === "ru" ? now : (options.ruAt?.toISOString() ?? null);

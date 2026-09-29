@@ -262,7 +262,7 @@ describe("Telegram controller flow", () => {
     const postId = publishDraftToQueue(backendDb, draftId);
     backendDb.sqlite.prepare("UPDATE site_jobs SET status='published' WHERE publication_key='post:'||? AND reason='site_ru'").run(postId);
 
-    cancelDraft(backendDb, draftId);
+    cancelDraft(backendDb, draftId, 42);
 
     expect(backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM drafts WHERE post_id=?").get(postId)).toEqual({ count: 1 });
     expect(
@@ -366,7 +366,7 @@ describe("Telegram controller flow", () => {
     refreshPublicationStatus(backendDb, postId);
     expect(backendDb.sqlite.prepare("SELECT status FROM drafts WHERE post_id=?").get(postId)).toEqual({ status: "failed" });
 
-    cancelDraft(backendDb, draftId);
+    cancelDraft(backendDb, draftId, 42);
     backendDb.sqlite.prepare("UPDATE publish_jobs SET status='published' WHERE publication_key='post:'||?").run(postId);
     refreshPublicationStatus(backendDb, postId);
     expect(backendDb.sqlite.prepare("SELECT status FROM drafts WHERE post_id=?").get(postId)).toEqual({ status: "cancelled" });
@@ -380,7 +380,7 @@ describe("Telegram controller flow", () => {
       ruAt: new Date(Date.now() + 60_000),
       enAt: new Date(Date.now() + 60_000),
     });
-    cancelDraft(backendDb, draftId);
+    cancelDraft(backendDb, draftId, 42);
     expect(backendDb.sqlite.prepare("SELECT post_id FROM drafts WHERE id=?").get(draftId)).toEqual({ post_id: null });
     expect(backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM drafts WHERE post_id=?").get(postId)).toEqual({ count: 0 });
     expect(backendDb.sqlite.prepare("SELECT COUNT(*) AS count FROM publish_jobs WHERE publication_key='post:'||?").get(postId)).toEqual({

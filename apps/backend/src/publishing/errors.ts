@@ -7,9 +7,14 @@ const transientStatusCodes = new Set([408, 425, 429, 500, 502, 503, 504]);
 // "this credential is dead", which the auth circuit breaker (auth-circuit.ts)
 // needs to distinguish from other non-retryable errors like a bad request body.
 const authStatusCodes = new Set([401, 403]);
-const permanentStatusCodes = new Set([400, 404, 409, 410, 413, 415, 422]);
+const permanentStatusCodes = new Set([400, 404, 409, 410, 422]);
+// The platform refused what the post contains, not the attempt to send it: too
+// large, the wrong type, the wrong language, no English yet. Repeating the call
+// repeats the refusal exactly, so these never carry a "Retry" -- the only thing
+// that changes the outcome is editing the post.
+const contentStatusCodes = new Set([413, 415]);
 
-export type PublishErrorClass = "transient" | "permanent" | "auth" | "unknown";
+export type PublishErrorClass = "transient" | "permanent" | "content" | "auth" | "unknown";
 
 export class HttpPublishError extends Error {
   constructor(
@@ -57,6 +62,7 @@ export function classifyPublishError(error: unknown): PublishErrorClass {
   if (status != null) {
     if (transientStatusCodes.has(status)) return "transient";
     if (authStatusCodes.has(status)) return "auth";
+    if (contentStatusCodes.has(status)) return "content";
     if (permanentStatusCodes.has(status)) return "permanent";
   }
   const text = String(error instanceof Error ? error.message : (error ?? "")).toLowerCase();
@@ -74,6 +80,9 @@ export function classifyPublishError(error: unknown): PublishErrorClass {
   }
   if (matchesMarkers(text, ["unauthorized", "forbidden", "invalid token"], [401, 403])) {
     return "auth";
+  }
+  if (matchesMarkers(text, ["_too_long", "too large", "request entity too large", "payload too large", "not_translated"], [])) {
+    return "content";
   }
   if (matchesMarkers(text, ["permission", "unsupported", "validation"], [400])) {
     return "permanent";

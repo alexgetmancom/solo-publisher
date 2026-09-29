@@ -28,6 +28,23 @@ export const publishJobs = sqliteTable(
   ],
 );
 
+/** An operator's decision that the rest of one publication is not to be
+ * delivered. It is the publication's own state rather than a sweep over
+ * whatever happened to be queued at that instant: a worker that had already
+ * claimed a target used to finish it and write success over the cancellation,
+ * and with a Threads chain re-entering the queue for every reply, which of the
+ * two happened was luck. Every claim now carries this row's absence in its
+ * `WHERE`.
+ *
+ * A delivery that has already put something in front of the audience is not
+ * stopped by it: a half-sent thread is finished, because a severed chain is
+ * worse than one extra post. */
+export const publicationCancellations = sqliteTable("publication_cancellations", {
+  publicationKey: text().primaryKey(),
+  actorId: integer().notNull(),
+  requestedAt: text().notNull(),
+});
+
 export const drafts = sqliteTable("drafts", {
   id: autoId(),
   actorId: integer().notNull(),

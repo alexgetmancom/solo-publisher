@@ -10,6 +10,7 @@ import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 import { ringWorker, ringWorkerAfter } from "../foundation/worker-signal.js";
 import { recordAuthFailure, recordAuthSuccess } from "../observability/auth-circuit.js";
+import { deliveryNotCancelled, isCancellationDeclared } from "./cancellation.js";
 import { type DeliveryPayload, deferredDeliveryPayload, hasResumeState, resumedDeliveryPayload } from "./delivery-payload.js";
 import { classifyPublishError, normalizePublishResult, type PublishResult } from "./errors.js";
 import { failedJobTransition, mayHaveReachedAudience, partialPublicationTransition } from "./job-policy.js";
@@ -135,16 +136,52 @@ export function claimPublishJob(
       );
       return null;
     }
+    // An operator's "cancel the rest" is a state of the publication, and this
+    // is where it binds: the claim itself refuses to start a delivery that has
+    // been cancelled, so it no longer matters whether the tap landed while the
+    // job sat in the queue or while a worker held it. A job carrying what it
+    // already published is exempt -- a half-sent thread is finished, because a
+    // severed chain is worse than one more reply.
+    const resuming = hasResumeState(parsePayload(row.payloadJson));
     const locked = tx
       .update(publishJobs)
       // currentPhase belongs to the attempt, not to the job: a new claim starts
       // without one so recoverStalePublishJobs can never read a phase left by
       // whoever last touched the row.
       .set({ status: "publishing", lockedBy: worker, lockedAt: now, currentPhase: null, updatedAt: now })
-      .where(and(eq(publishJobs.jobId, jobId), eq(publishJobs.status, "queued")))
+      .where(
+        and(
+          eq(publishJobs.jobId, jobId),
+          eq(publishJobs.status, "queued"),
+          ...(resuming ? [] : [deliveryNotCancelled(row.publicationKey)]),
+        ),
+      )
       .returning({ jobId: publishJobs.jobId })
       .get();
-    if (!locked) return null;
+    if (!locked) {
+      // Losing the claim to another worker leaves the job to that worker. Losing
+      // it to the cancellation is this job's ending, and it is written here.
+      if (resuming || !isCancellationDeclared(tx, row.publicationKey)) return null;
+      const stopped = tx
+        .update(publishJobs)
+        .set({ status: "cancelled", nextAttemptAt: null, lockedBy: null, lockedAt: null, currentPhase: null, updatedAt: now })
+        .where(and(eq(publishJobs.jobId, jobId), eq(publishJobs.status, "queued")))
+        .returning({ jobId: publishJobs.jobId })
+        .get();
+      if (!stopped) return null;
+      const message = `${row.target} was not published: the operator cancelled the rest of this publication`;
+      upsertPostTarget(tx, {
+        publicationKey: row.publicationKey,
+        target: row.target,
+        status: "cancelled",
+        error: null,
+        skipped: 0,
+        updatedAt: now,
+        rawJson: JSON.stringify({ job_id: row.jobId, cancelled_by_operator: true }),
+      });
+      insertEvent(tx, row.publicationKey, row.target, "publish.job.cancelled", "warn", message, { job_id: row.jobId }, now);
+      return null;
+    }
     const publicationKey = row.publicationKey;
     upsertPostTarget(tx, {
       publicationKey,

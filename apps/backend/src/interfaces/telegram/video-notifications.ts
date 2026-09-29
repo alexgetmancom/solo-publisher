@@ -182,7 +182,7 @@ export async function sendStudioCompletion(
   const retryableTargets = failedTargets.filter((result) =>
     publication?.kind === "video"
       ? isAudienceMutationRetryable(result.status)
-      : publication?.kind === "post" && isPostTargetRetryable(result.target, result.status),
+      : publication?.kind === "post" && isPostTargetRetryable(result.target, result.status, result.error),
   );
   const draftId = publicationDraftId(backendDb, event.publicationKey);
   await forEachAdmin(config.CONTROLLER_ADMIN_IDS, async (actorId) => {

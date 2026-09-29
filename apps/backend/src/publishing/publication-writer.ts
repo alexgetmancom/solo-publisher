@@ -2,6 +2,7 @@ import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { isSiteTarget, targetLocale } from "../botTargets.js";
 import type { UnsafeBackendDb } from "../db/client.js";
 import { drafts, postLocales, publishJobs, siteJobs } from "../db/schema.js";
+import { clearDeliveryCancellation } from "./cancellation.js";
 import { hasResumeState, newDeliveryPayload } from "./delivery-payload.js";
 import { localizeTargetPayload } from "./payload.js";
 import type { PublicationPlan } from "./publication-plan.js";
@@ -9,6 +10,9 @@ import { enqueuePublishJobTx } from "./queue.js";
 import { parsePayload } from "./queue-state.js";
 
 export function persistPublicationPlanTx(tx: UnsafeBackendDb["db"], plan: PublicationPlan): void {
+  // Planning this publication's delivery withdraws any standing "cancel the
+  // rest": the jobs written below are the operator asking for delivery again.
+  clearDeliveryCancellation(tx, plan.publicationKey);
   for (const locale of plan.locales) {
     const publishedAt = locale.source.siteEnabled ? (locale.source.publishAt ?? (plan.mode === "immediate" ? plan.now : null)) : null;
     tx.update(postLocales)

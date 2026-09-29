@@ -40,7 +40,7 @@ export const SCREEN_BUTTONS = {
   progress: { args: ["draft"], supersedable: true },
   progress_details: { args: ["draft"], supersedable: true },
   progress_cancel: { args: ["draft"], supersedable: false },
-  delivery_preview_threads: { args: ["kind", "id"], supersedable: false },
+  progress_cancel_confirm: { args: ["draft"], supersedable: false },
   delivery_preview_video: { args: ["id"], supersedable: false },
   stream_home: { args: [], supersedable: true },
   stream_field: { args: ["field"], supersedable: false },

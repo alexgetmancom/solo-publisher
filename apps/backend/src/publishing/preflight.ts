@@ -25,7 +25,7 @@ export type PublicationPreflightIssue = {
   target: string;
   locale: "ru" | "en";
   /** What is wrong, for surfaces to word in their own locale. */
-  kind: "text-limit" | "caption-limit" | "media-limit" | "language" | "empty";
+  kind: "text-limit" | "caption-limit" | "media-limit" | "media-size" | "language" | "empty";
   label: string;
   limit?: number;
   actual?: number;
@@ -44,7 +44,7 @@ export type PublicationPreflightIssue = {
  * validates delivery payloads, but a new draft must never become a partial
  * publication merely because a selected target cannot accept its media caption.
  */
-export function publicationPreflight(draft: DraftForPreflight): PublicationPreflightIssue[] {
+export function publicationPreflight(draft: DraftForPreflight, uploadLimits: Record<string, number> = {}): PublicationPreflightIssue[] {
   const targets = parseTargets(draft.targets_json);
   const content = {
     ru: draftLocaleContent(draft, "ru"),
@@ -65,6 +65,15 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
     // photos and the English target left on looked like it had something to
     // publish, and published a page with no words on it.
     if (!value.text.trim() && value.ownMedia.length === 0) return [{ target, locale, kind: "empty" as const, label }];
+    // A platform that refuses an oversized attachment refuses the message that
+    // carried it, text and all. Discord did that after the rest of the world
+    // had published, and then offered a retry that could only fail the same way.
+    const attachmentLimit = uploadLimits[target] ?? profile?.limits?.attachment;
+    const oversized = attachmentLimit
+      ? [value, ...thread].flatMap((item) => item.media).find((item) => Number(item.file_size ?? 0) > attachmentLimit)
+      : undefined;
+    if (attachmentLimit && oversized)
+      return [{ target, locale, kind: "media-size" as const, label, limit: attachmentLimit, actual: Number(oversized.file_size ?? 0) }];
     // A part whose English has not arrived would be an empty reply.
     const emptyPart = thread.findIndex((part) => !part.text.trim());
     if (emptyPart >= 0) return [{ target, locale, kind: "empty" as const, label, part: emptyPart + 2 }];
@@ -141,7 +150,7 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
   });
 }
 
-export function assertPublicationPreflight(draft: DraftForPreflight): void {
+export function assertPublicationPreflight(draft: DraftForPreflight, uploadLimits: Record<string, number> = {}): void {
   const targets = parseTargets(draft.targets_json);
   assertKnownTargets(targets);
   // The caller has already narrowed these to the targets with a connected
@@ -149,7 +158,7 @@ export function assertPublicationPreflight(draft: DraftForPreflight): void {
   // created anyway: no jobs, and a `scheduled` publication that no worker would
   // ever pick up and no status would ever move off "upcoming".
   if (!Object.values(targets).some(Boolean)) throw new StudioError("err.post-no-targets");
-  const issues = publicationPreflight(draft);
+  const issues = publicationPreflight(draft, uploadLimits);
   const issue = issues[0];
   if (issue) throw new StudioError("err.post-preflight", { target: issue.label, reason: issue.kind });
 }

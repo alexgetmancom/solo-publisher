@@ -105,10 +105,12 @@ describe("Telegram card freshness", () => {
 
       await handlePublicationCallback(context(postAction("publish", [draftId]), 10), backendDb, config);
 
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 15, view: "confirm_publish" });
+      // The previews now include what each Threads account receives, cut the
+      // way delivery cuts it, so they are two messages longer than they were.
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 17, view: "confirm_publish" });
       expect(
         isStaleCardCallback(
-          context(postAction("publish_confirm", [draftId]), 15),
+          context(postAction("publish_confirm", [draftId]), 17),
           backendDb,
           postPublication("publish_confirm", [draftId]),
         ),

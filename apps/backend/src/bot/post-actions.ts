@@ -203,8 +203,7 @@ async function handleThreadEdit({ backendDb, actorId, locale, draftId, args }: P
 async function handleThreadRemove(args: PostActionArgs): Promise<PublicationActionResult> {
   const position = threadPosition(args.args.position);
   args.services.posts.removeThreadPart(args.actorId, args.draftId, position);
-  const thread = threadLocale(args.args.locale) === "en" ? "thread_en" : "thread";
-  const view = args.services.posts.get(args.actorId, args.draftId).thread.length ? thread : "overview";
+  const view = args.services.posts.get(args.actorId, args.draftId).thread.length ? "thread" : "overview";
   return previewEffects(args, view, t(args.locale, "action.thread-part-removed", { part: position }));
 }
 
@@ -414,6 +413,12 @@ function preflightToast(locale: StudioLocale, issue: PreflightIssue): string {
   if (issue.kind === "empty" && issue.part)
     return t(locale, "action.preflight-empty-part", { label: issue.label, expected: issue.locale.toUpperCase(), part: issue.part });
   if (issue.kind === "empty") return t(locale, "action.preflight-empty", { label: issue.label, expected: issue.locale.toUpperCase() });
+  if (issue.kind === "media-size")
+    return t(locale, "action.preflight-media-size", {
+      label: issue.label,
+      actual: Math.ceil((issue.actual ?? 0) / 1_048_576),
+      limit: Math.floor((issue.limit ?? 0) / 1_048_576),
+    });
   if (issue.kind === "media-limit")
     return t(locale, "action.preflight-media", { label: issue.label, actual: issue.actual ?? 0, limit: issue.limit ?? 0 });
   if (issue.part)

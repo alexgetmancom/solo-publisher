@@ -15,7 +15,9 @@ type PlatformProfile = {
   capabilities: { text: boolean; image: boolean; video: boolean };
   requirements: readonly string[];
   text?: { removeUrls?: boolean };
-  limits?: { text?: number; caption?: number };
+  /** `attachment` is a floor the platform enforces for everyone; a connected
+   * channel may report a higher one of its own, which preflight prefers. */
+  limits?: { text?: number; caption?: number; attachment?: number };
   /** Delivery-facing media contract. Interfaces use this for previews; ports own execution. */
   media?: MediaRule & { whenVideo?: MediaRule };
   /** How a thread reaches this platform. `chain` posts each part as a reply to
@@ -102,7 +104,11 @@ const platformOverrides: Record<PlatformId, Omit<PlatformProfile, "id" | "label"
   // messages in the same channel, which is how a Discord channel reads anyway.
   discord: {
     capabilities: { text: true, image: true, video: true },
-    limits: { text: 2000 },
+    // 10 MB is what an unboosted Discord server takes; a boosted one takes more
+    // and says so when the channel is connected. Going over it makes Discord
+    // refuse the whole message, text included, so it is a preflight rejection
+    // and not something to discover after seven platforms have published.
+    limits: { text: 2000, attachment: 10_485_760 },
     media: { mode: "limited", limit: 10, label: "Discord" },
   },
   telegram_stories: {

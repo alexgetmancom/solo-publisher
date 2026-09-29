@@ -1,5 +1,6 @@
 import type { DomainEventInput, DraftPatch, DraftRecord } from "../application/ports.js";
 import { isStoryTarget } from "../botTargets.js";
+import { channelUploadLimits } from "../channels/platform-token-store.js";
 import { effectivePostTargets, registeredPostTargetIds } from "../channels/registry.js";
 import { draftLocaleContent } from "../content/draft-content.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
@@ -30,10 +31,10 @@ export function mutateScheduledDraft(backendDb: BackendDb, draft: DraftRecord, m
       if (mutation.queueStoryCards) queueDraftStoryCards(tx, draft.id);
       const updated = drafts.get(draft.id);
       if (!updated?.post_id) throw new Error(`scheduled draft ${draft.id} lost its post id`);
-      assertPublicationPreflight({
-        ...updated,
-        targets_json: JSON.stringify(effectivePostTargets(backendDb, parseTargets(updated.targets_json))),
-      });
+      assertPublicationPreflight(
+        { ...updated, targets_json: JSON.stringify(effectivePostTargets(backendDb, parseTargets(updated.targets_json))) },
+        channelUploadLimits(backendDb),
+      );
       if (!waitForStoryCards(tx, backendDb, updated)) persistReplan(tx, backendDb, updated);
       if (mutation.event) recordEvent(tx, backendDb.clock, mutation.event);
       return updated.post_id;
@@ -63,7 +64,7 @@ function waitForStoryCards(tx: Transaction, backendDb: BackendDb, draft: DraftRe
 function persistReplan(tx: Transaction, backendDb: BackendDb, draft: DraftRecord): void {
   const targets = effectivePostTargets(backendDb, parseTargets(draft.targets_json));
   const effectiveDraft = { ...draft, targets_json: JSON.stringify(targets) };
-  assertPublicationPreflight(effectiveDraft);
+  assertPublicationPreflight(effectiveDraft, channelUploadLimits(backendDb));
   const now = backendDb.clock.now().toISOString();
   const storyCards = readyStoryCardMedia(tx, draft.id);
   const registered = registeredPostTargetIds(backendDb);

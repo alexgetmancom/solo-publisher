@@ -4,7 +4,7 @@ import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { describeError, t } from "../foundation/i18n/index.js";
 import { clearTelegramAnalyticsDashboard } from "../interfaces/telegram/control-cards.js";
-import { sendThreadsPreviews, sendVideoSourcePreview } from "../interfaces/telegram/delivery-previews.js";
+import { sendVideoSourcePreview } from "../interfaces/telegram/delivery-previews.js";
 import { VIDEO_TARGETS, type VideoTarget } from "../publishing/video-types.js";
 import { settingsService } from "../studio/services/settings.js";
 import {
@@ -143,10 +143,15 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
   progress_cancel: async ({ ctx, backendDb, config, args }) => {
     const draftId = screenNumber(args.draft, { min: 1 });
     if (draftId == null) return false;
+    await showPostProgress(ctx, backendDb, config, draftId, { details: false, confirmCancel: true });
+    return true;
+  },
+  progress_cancel_confirm: async ({ ctx, backendDb, config, args }) => {
+    const draftId = screenNumber(args.draft, { min: 1 });
+    if (draftId == null) return false;
     await showPostProgress(ctx, backendDb, config, draftId, { details: false, cancelRemaining: true });
     return true;
   },
-  delivery_preview_threads: (screen) => threadsPreview(screen),
   delivery_preview_video: async ({ ctx, backendDb, config, args }) => {
     const id = screenNumber(args.id, { min: 1 });
     if (id == null) return false;
@@ -212,13 +217,6 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
 
 function operations({ ctx, backendDb, config, callback }: ScreenContext): Promise<boolean> {
   return handleOperationsCallback(ctx, backendDb, config, callback);
-}
-
-async function threadsPreview({ ctx, backendDb, config, args }: ScreenContext): Promise<boolean> {
-  const id = screenNumber(args.id, { min: 1 });
-  if (id == null || !args.kind) return false;
-  await sendThreadsPreviews(ctx, backendDb, config, { kind: args.kind, id });
-  return true;
 }
 
 /** The intake's controls run the way every publication control does: one

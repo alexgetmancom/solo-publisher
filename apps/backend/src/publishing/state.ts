@@ -1,4 +1,5 @@
 import { isSiteTarget, targetLocale } from "../botTargets.js";
+import { classifyPublishError } from "./errors.js";
 
 const VIDEO_FINAL_TARGET_STATUSES = new Set(["published", "failed", "cancelled", "verification_required"]);
 const POST_FINAL_JOB_STATUSES = new Set(["published", "failed", "cancelled", "skipped", "verification_required"]);
@@ -63,8 +64,19 @@ export function isPartialDelivery(status: string, externalId: string | null | un
 /** Site verification is the exception: rendering the same page again replaces
  * one deterministic artifact, so an ambiguous verification cannot duplicate a
  * publication. */
-export function isPostTargetRetryable(target: string, status: string): status is "failed" | "verification_required" {
+/** A refusal about what the post contains is never retryable, whatever its
+ * status: the same call produces the same refusal, and offering "Retry" for it
+ * spends the operator's attention on a button that cannot work. Editing the
+ * post is the only thing that changes the answer. */
+export function isPostTargetRetryable(target: string, status: string, error: string | null = null): boolean {
+  if (classifyPublishError(error) === "content") return false;
   return isAudienceMutationRetryable(status) || (isSiteTarget(target) && status === "verification_required");
+}
+
+/** Whether what went wrong is the post's own content, which is what tells an
+ * operator to edit rather than to try again. */
+export function isContentRefusal(error: string | null | undefined): boolean {
+  return classifyPublishError(error ?? null) === "content";
 }
 
 /** An empty status list is "nothing has happened yet", never success: `every`

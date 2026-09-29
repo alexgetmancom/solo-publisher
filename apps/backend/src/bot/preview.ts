@@ -1,5 +1,5 @@
 import { InlineKeyboard } from "grammy";
-import { type PresetName, presetName, TARGETS } from "../botTargets.js";
+import { type PresetName, presetName, TARGETS, targetLocale } from "../botTargets.js";
 import { postLocales } from "../channels/locales.js";
 import { effectivePostTargets, registeredPostTargetIds } from "../channels/registry.js";
 import { draftLocaleContent } from "../content/draft-content.js";
@@ -13,7 +13,7 @@ import { escapeMarkdown } from "../foundation/markdown.js";
 import { truncateUnicode } from "../foundation/text.js";
 import { formatZonedDateTime } from "../foundation/time.js";
 import { mediaPolicyForTarget } from "../publishing/media-policy.js";
-import { isPostDraftMutable, isPostTargetRetryable } from "../publishing/state.js";
+import { isContentRefusal, isPostDraftMutable, isPostTargetRetryable } from "../publishing/state.js";
 import { parseTargets } from "../publishing/targets.js";
 import { storyCardsForDraft } from "../story-cards/store.js";
 import { createStudioServices } from "../studio/services/index.js";
@@ -39,7 +39,6 @@ const DRAFT_VIEWS = [
   "platforms",
   "resend",
   "thread",
-  "thread_en",
 ] as const;
 
 export type DraftView = (typeof DRAFT_VIEWS)[number];
@@ -100,6 +99,9 @@ export function draftPreview(
   const draft = requireDraft(backendDb, draftId);
   const services = createStudioServices(backendDb, config);
   const timeConfig = services.settings.timeConfig(draft.actor_id, config);
+  // Only a thread has more than one post to account for; an ordinary post says
+  // nothing about how many messages it is.
+  const threadPlan = draft.thread.length ? services.posts.deliveryPlan(draft.actor_id, draftId) : [];
   const targets = effectivePostTargets(backendDb, parseTargets(draft.targets_json));
   const registered = registeredPostTargetIds(backendDb);
   const targetRows = TARGETS.filter(({ id }) => registered.has(id));
@@ -134,49 +136,54 @@ export function draftPreview(
     };
   }
 
-  if (view === "thread" || view === "thread_en") {
-    // Every post of the thread, each with its own way to be rewritten or
-    // dropped. The first post is the draft, edited from the card as always.
-    // The screen shows one language and rewrites that one: the English is a
-    // machine translation until the author writes over a post of it here.
-    const threadLocale = view === "thread_en" ? "en" : "ru";
+  if (view === "thread") {
+    // Both languages on one screen, post by post: the English used to hide
+    // behind a language toggle, so an author reviewing the thread saw half of
+    // what was going out. Each post carries its own way to be rewritten in
+    // either language, or dropped. The first post is the draft itself.
     const parts = draft.thread;
-    for (const part of parts)
+    for (const part of parts) {
+      keyboard.text(
+        t(locale, "post.thread-edit-part", { locale: "RU", part: part.position }),
+        publicationCallback("post", "thread_edit", [draftId, String(part.position), "ru"]),
+      );
+      if (servesEn)
+        keyboard.text(
+          t(locale, "post.thread-edit-part", { locale: "EN", part: part.position }),
+          publicationCallback("post", "thread_edit", [draftId, String(part.position), "en"]),
+        );
       keyboard
         .text(
-          t(locale, "post.thread-edit-part", { part: part.position }),
-          publicationCallback("post", "thread_edit", [draftId, String(part.position), threadLocale]),
-        )
-        .text(
           t(locale, "post.thread-remove-part", { part: part.position }),
-          publicationCallback("post", "thread_remove", [draftId, String(part.position), threadLocale]),
+          publicationCallback("post", "thread_remove", [draftId, String(part.position), "ru"]),
         )
         .row();
+    }
     keyboard.text(t(locale, "post.thread-add"), publicationCallback("post", "thread_add", [draftId]));
-    if (servesEn)
-      keyboard.text(
-        t(locale, threadLocale === "ru" ? "post.thread-in-en" : "post.thread-in-ru"),
-        publicationCallback("post", "view", [draftId, threadLocale === "ru" ? "thread_en" : "thread"]),
-      );
     keyboard.row();
     keyboard.text(t(locale, "post.back-to-preview"), publicationCallback("post", "view", [draftId, "overview"]));
-    const perPost = Math.floor(3000 / (parts.length + 1));
-    const firstText = threadLocale === "ru" ? draft.text_ru : draftLocaleContent(draft, "en").text;
-    const posts = [
-      { position: 1, text: firstText, media: safeMediaCount(draft.media_ru_json) },
+    // Two languages share the message budget, so each post gets half of what
+    // one language used to have.
+    const perPost = Math.floor(3000 / ((parts.length + 1) * (servesEn ? 2 : 1)));
+    const written = [
+      { position: 1, ru: draft.text_ru, en: draftLocaleContent(draft, "en").text, media: safeMediaCount(draft.media_ru_json) },
       ...parts.map((part) => ({
         position: part.position,
-        text: threadLocale === "ru" ? part.textRu : (part.textEnApproved ?? part.textEn ?? ""),
+        ru: part.textRu,
+        en: part.textEnApproved ?? part.textEn ?? "",
         media: part.media.length,
       })),
-    ]
-      .map(
-        (post) =>
-          `*${post.position}.*${post.media ? ` 🖼 ${post.media}` : ""}\n${escapeMarkdown(truncateUnicode(post.text || t(locale, post.media ? "post.media-only" : "post.not-translated"), perPost))}`,
-      )
+    ];
+    const body = written
+      .map((post) => {
+        const head = `*${post.position}.*${post.media ? ` 🖼 ${post.media}` : ""}`;
+        const ru = escapeMarkdown(truncateUnicode(post.ru || t(locale, post.media ? "post.media-only" : "post.not-translated"), perPost));
+        const en = servesEn ? `\nEN: ${escapeMarkdown(truncateUnicode(post.en || t(locale, "post.not-translated"), perPost))}` : "";
+        return `${head}\nRU: ${ru}${en}`;
+      })
       .join("\n\n");
     return {
-      text: `🧵 *${t(locale, "post.thread-title", { id: draftId, parts: parts.length + 1 })}* · ${threadLocale.toUpperCase()}\n\n${posts}`,
+      text: `${threadPlanLine(threadPlan, locale) || `🧵 *${t(locale, "post.thread-title", { id: draftId, parts: parts.length + 1 })}*`}\n\n${body}`,
       keyboard,
     };
   }
@@ -267,7 +274,7 @@ export function draftPreview(
     const unavailable = unavailableTargetLabels(targets, media.ru, media.enEffective);
     return {
       text: `${draftHeader(draftId, targets, locale)}\n\n⚠️ *${t(locale, "post.publish-now-q")}*\n${t(locale, "post.will-send-to")}: ${available}.${unavailable ? `\n⚠️ ${t(locale, "post.will-skip-no-media", { targets: unavailable })}` : ""}`,
-      keyboard: confirmPublishKeyboard(draftId, locale, Boolean(targets.threads_ru || targets.threads_en)),
+      keyboard: confirmPublishKeyboard(draftId, locale),
     };
   }
 
@@ -346,7 +353,7 @@ export function draftPreview(
       : storyCards.every((card) => card.status === "ready")
         ? `\n${t(locale, "post.story-cards-status", { status: readyCardStatus })}`
         : `\n${t(locale, "post.story-cards-status", { status: storyCards.map((card) => `${card.locale.toUpperCase()} ${card.status}`).join(" · ") })}`;
-  const threadLine = draft.thread.length ? `\n🧵 ${t(locale, "post.thread-line", { parts: draft.thread.length + 1 })}` : "";
+  const threadLine = threadPlanLine(threadPlan, locale);
   const mediaLine =
     media.ru || media.en ? `\n${t(locale, "post.media")}: ${media.ru} RU${servesEn ? ` · ${media.enEffective} EN` : ""}` : "";
   const enMediaWarning = servesEn && media.ru > 0 && media.en === 0 ? `\n⚠️ ${t(locale, "post.en-uses-ru-media")}` : "";
@@ -388,7 +395,16 @@ function unlandedTargets(backendDb: BackendDb, draftId: number): UnlandedTarget[
   try {
     return postProgressState(backendDb, draftId)
       .targets.filter((item) => item.status === "failed" || item.status === "verification_required")
-      .map(({ target, label, status }) => ({ target, label, retryable: isPostTargetRetryable(target, status), skippable: true }));
+      .map(({ target, label, status, error }) => ({
+        target,
+        label,
+        retryable: isPostTargetRetryable(target, status, error),
+        skippable: true,
+        // A refusal about the post's own content is fixed in the post, and the
+        // card says which language to open rather than offering a retry that
+        // would be refused identically.
+        ...(isContentRefusal(error) ? { fix: targetLocale(target) ?? "ru" } : {}),
+      }));
   } catch (error) {
     // A card without its retry buttons is still a card, but the reason the
     // progress state could not be read must not disappear with them.
@@ -409,12 +425,8 @@ function canEditLocale(backendDb: BackendDb, config: BackendConfig, actorId: num
 /** EN falls back to RU media at publish time, so the preview counts both the raw
  * EN attachments (to warn about the fallback) and the effective ones (to decide
  * which targets can actually receive the post). */
-/** The publish confirmation carries the Threads rendering, because a preview
- * per language plus a Threads message per language is four messages for a tap
- * nobody made. Here it is one button next to the one that publishes. */
-function confirmPublishKeyboard(draftId: number, locale: StudioLocale, threads: boolean): InlineKeyboard {
+function confirmPublishKeyboard(draftId: number, locale: StudioLocale): InlineKeyboard {
   const keyboard = new InlineKeyboard();
-  if (threads) keyboard.text(t(locale, "preview.show-threads"), screenCallback("delivery_preview_threads", ["post", draftId]));
   keyboard.text(t(locale, "post.publish-now-btn"), publicationCallback("post", "publish_confirm", [draftId]));
   keyboard.row().text(t(locale, "common.back"), publicationCallback("post", "view", [draftId, "overview"]));
   return keyboard;
@@ -462,4 +474,18 @@ export function modeLabel(mode: PresetName, locale: StudioLocale = "en"): string
   if (mode === "en") return t(locale, "mode.en");
   if (mode === "tg") return t(locale, "mode.tg");
   return t(locale, "mode.manual");
+}
+
+/** What each platform that carries a thread actually receives, counted the way
+ * delivery cuts it. The card used to state the number of posts the author
+ * wrote, which is not the number that goes out once the machine translation is
+ * longer than the Russian it renders. */
+function threadPlanLine(plan: ReturnType<ReturnType<typeof createStudioServices>["posts"]["deliveryPlan"]>, locale: StudioLocale): string {
+  if (!plan.length) return "";
+  const parts = plan.map((entry) =>
+    entry.chained
+      ? t(locale, "post.thread-plan-posts", { label: entry.label, posts: entry.posts })
+      : t(locale, "post.thread-plan-single", { label: entry.label }),
+  );
+  return `\n🧵 ${parts.join(" · ")}`;
 }

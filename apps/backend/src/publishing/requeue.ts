@@ -3,6 +3,7 @@ import { isSiteTarget, targetLocale } from "../botTargets.js";
 import { textLocale } from "../content/text-locale.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { drafts, publicationTargets, publishJobs, siteJobs } from "../db/schema.js";
+import { clearDeliveryCancellation } from "./cancellation.js";
 import { continuedDeliveryPayload, hasResumeState, newDeliveryPayload, restartedDeliveryPayload } from "./delivery-payload.js";
 import { requeuedPostTarget, requeuedPublishJobColumns } from "./job-policy.js";
 import { localizeTargetPayload } from "./payload.js";
@@ -97,8 +98,12 @@ export function requeuePublicationTargetsTx(
   // Only when something is actually going out again: a retry that found every
   // target held changed nothing, and moving the publication back to
   // `scheduled` would tell the Command Center a delivery was under way.
-  if (scope.postId != null && results.some((result) => result.outcome === "requeued"))
+  if (scope.postId != null && results.some((result) => result.outcome === "requeued")) {
     db.update(drafts).set({ status: "scheduled", updatedAt: now }).where(eq(drafts.postId, scope.postId)).run();
+    // Asking for a target to go out again withdraws the standing "cancel the
+    // rest": otherwise the claim would refuse the very job this just queued.
+    clearDeliveryCancellation(db, scope.publicationKey);
+  }
   return results;
 }
 

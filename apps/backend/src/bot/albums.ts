@@ -148,7 +148,6 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
     }
     let cardDraftId: number | null = null;
     let threadStep: "thread_part" | "thread_edit" | null = null;
-    let threadLocale: "ru" | "en" = "ru";
     try {
       const state = getConversationState(backendDb, row.actorId, "post");
       if (row.stateRevision != null && state?.revision !== row.stateRevision) {
@@ -187,7 +186,6 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
         clearConversationStateIfCurrent(backendDb, { kind: "post", step, draftId }, row.actorId, row.stateRevision);
         cardDraftId = draftId;
         threadStep = step;
-        threadLocale = locale ?? "ru";
       } else {
         const text = row.textRu;
         cardDraftId = createStudioServices(backendDb, config).posts.create(row.actorId, {
@@ -225,7 +223,7 @@ export async function finalizePendingAlbums(bot: Bot | null, backendDb: BackendD
     // Telegram failure here must never replay finalization into a second draft.
     if (cardDraftId !== null) {
       try {
-        await refreshDraftControlCard(bot, backendDb, config, row.actorId, cardDraftId, row.chatId, threadStep, threadLocale);
+        await refreshDraftControlCard(bot, backendDb, config, row.actorId, cardDraftId, row.chatId, threadStep);
       } catch (error) {
         log("warn", "album control card failed", { album: row.id, draftId: cardDraftId, error: String(error) });
       }
@@ -257,10 +255,9 @@ async function refreshDraftControlCard(
   draftId: number,
   chatId: number,
   threadStep: "thread_part" | "thread_edit" | null,
-  threadLocale: "ru" | "en",
 ): Promise<void> {
   const preview = threadStep
-    ? threadPartScreen(backendDb, config, actorId, draftId, threadStep, threadLocale)
+    ? threadPartScreen(backendDb, config, actorId, draftId, threadStep)
     : { ...postPreviewCard(backendDb, config, actorId, draftId), markdown: true };
   // A completed chat edit gets a fresh card at the bottom. Previous cards are
   // history, never a moving conversation prompt above the user's reply.

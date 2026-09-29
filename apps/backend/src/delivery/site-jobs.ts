@@ -8,6 +8,7 @@ import { withJobHeartbeat } from "../foundation/runtime/job-heartbeat.js";
 import { recordWorkerState } from "../foundation/runtime/worker-state.js";
 import { trackUsageAsync } from "../observability/usage.js";
 import { invalidatePublicSiteFeed } from "../public/site-read-model.js";
+import { deliveryNotCancelled } from "../publishing/cancellation.js";
 import { nextRetryAt } from "../publishing/errors.js";
 import type { PublicationSource } from "../publishing/publication-source.js";
 import { refreshPublicationStatus } from "../publishing/publication-status.js";
@@ -250,7 +251,10 @@ function claimSiteJobs(backendDb: BackendDb): SiteJob[] {
       const claimedRow = tx
         .update(siteJobs)
         .set({ status: "rendering", lockedBy: lockId, lockedAt: now, updatedAt: now })
-        .where(and(eq(siteJobs.jobId, row.jobId), eq(siteJobs.status, "queued")))
+        // A site build the operator has cancelled the rest of the publication
+        // for must not start: the condition rides in the claim itself, so a
+        // cancellation declared while this row was being read still binds.
+        .where(and(eq(siteJobs.jobId, row.jobId), eq(siteJobs.status, "queued"), deliveryNotCancelled(row.publicationKey)))
         .returning({ jobId: siteJobs.jobId })
         .get();
       if (claimedRow) {

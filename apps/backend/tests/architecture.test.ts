@@ -161,6 +161,7 @@ describe("architecture fitness", () => {
     const writers = files.filter((file) => !readers.includes(file));
     expect(writers).toEqual([
       "apps/backend/src/operations/resume-from.ts",
+      "apps/backend/src/publishing/cancellation.ts",
       "apps/backend/src/publishing/publication-writer.ts",
       "apps/backend/src/publishing/queue.ts",
       "apps/backend/src/publishing/requeue.ts",
@@ -201,6 +202,7 @@ describe("architecture fitness", () => {
       "apps/backend/src/operations/maintenance.ts",
       "apps/backend/src/operations/settle.ts",
       "apps/backend/src/publishing/abandon.ts",
+      "apps/backend/src/publishing/cancellation.ts",
       "apps/backend/src/publishing/queue-state.ts",
       "apps/backend/src/publishing/requeue.ts",
     ]);

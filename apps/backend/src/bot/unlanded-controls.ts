@@ -7,7 +7,15 @@ import { publicationCallback } from "./publication-callback.js";
 /** One target a publication did not land on, as the operator has to act on it:
  * retry it, give up on it, or -- for a target nobody can do either with --
  * simply read that it failed. */
-export type UnlandedTarget = { target: string; label: string; retryable: boolean; skippable: boolean };
+export type UnlandedTarget = {
+  target: string;
+  label: string;
+  retryable: boolean;
+  skippable: boolean;
+  /** Set when the platform refused the content itself: which language of the
+   * post has to be edited for the answer to change. */
+  fix?: "ru" | "en";
+};
 
 type UnlandedControls = {
   locale: StudioLocale;
@@ -42,7 +50,13 @@ export function appendUnlandedControls(keyboard: InlineKeyboard, options: Unland
   }
   for (const item of targets) {
     const skip = skippable.includes(item);
-    if (!item.retryable && !skip) continue;
+    if (!item.retryable && !skip && !item.fix) continue;
+    // Each action is spelled out, because the callback registry reads these
+    // call sites to know which actions exist.
+    if (item.fix === "en")
+      keyboard.text(t(locale, "notif.fix-target", { target: item.label }), publicationCallback("post", "edit_en", [draftId]));
+    if (item.fix === "ru")
+      keyboard.text(t(locale, "notif.fix-target", { target: item.label }), publicationCallback("post", "edit_ru", [draftId]));
     if (item.retryable)
       keyboard.text(
         t(locale, "notif.retry-target", { target: item.label }),

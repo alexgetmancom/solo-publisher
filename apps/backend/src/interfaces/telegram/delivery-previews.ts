@@ -51,6 +51,15 @@ async function sendProjectionContent(ctx: Context, projection: DeliveryProjectio
   await sendMedia(ctx, projection.media, text, entities);
   // A thread is previewed post by post, in the order it will be read.
   for (const part of projection.thread ?? []) await sendMedia(ctx, part.media, part.text, part.entities);
+  // And then, for every Threads account this projection goes to, the posts as
+  // Threads will actually receive them -- cut at its own budget, counted, with
+  // the link's fate stated. This used to sit behind a button on the publish
+  // confirmation, which made it a thing to remember rather than a thing seen.
+  for (const chain of projection.chains ?? []) {
+    const [first, ...rest] = chain.posts;
+    if (!first) continue;
+    await ctx.reply(threadsPreviewText(chain.target, first.text, first.entities, locale, rest));
+  }
 }
 
 type RenderableMedia = { source: InputFile | string; video: boolean };
@@ -90,35 +99,6 @@ async function sendMedia(ctx: Context, media: Record<string, unknown>[], text: s
 
 function isVideo(media: Record<string, unknown>): boolean {
   return String(media.type ?? "photo").toLowerCase() === "video";
-}
-
-/** The one deferred view of a delivery: every Threads rendering the draft
- * carries, one message per language. It hangs off the publish confirmation
- * rather than the previews themselves, which is why it takes the publication
- * -- what kind and which one -- and not a single projection. */
-export async function sendThreadsPreviews(
-  ctx: Context,
-  backendDb: BackendDb,
-  config: BackendConfig,
-  publication: { kind: string; id: number },
-): Promise<void> {
-  const actorId = Number(ctx.from?.id);
-  const locale = settingsService(backendDb).locale(actorId);
-  const services = createStudioServices(backendDb, config);
-  const delivery =
-    publication.kind === "video"
-      ? services.videos.preview(actorId, publication.id).delivery
-      : publication.kind === "post"
-        ? services.posts.preview(actorId, publication.id).delivery
-        : null;
-  const renderings = (delivery?.projections ?? []).flatMap((projection) => {
-    const target = projection.targets.find((item) => item === "threads_ru" || item === "threads_en");
-    return target ? [threadsPreviewText(target, projection.text, projection.entities, locale, projection.thread)] : [];
-  });
-  // The confirmation belongs to a draft that has changed since: say so rather
-  // than acknowledging a tap that then does nothing.
-  await ctx.answerCallbackQuery(renderings.length ? undefined : { text: t(locale, "action.card-stale") });
-  for (const rendering of renderings) await ctx.reply(rendering);
 }
 
 /** The video behind a publication, sent only when asked for. The previews show

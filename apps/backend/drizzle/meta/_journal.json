@@ -218,6 +218,20 @@
       "when": 1790300180000,
       "tag": "0030_thread_part_english",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1790693645697,
+      "tag": "0031_publication_cancellations",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1790693700000,
+      "tag": "0032_channel_upload_limit",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import type { PublicationPipeline, PublicationSchedule } from "../../application
 import { publicationRef } from "../../application/publication-ref.js";
 import { isSiteTarget, PRESETS, presetName, TARGETS, targetLocale, targetsFor } from "../../botTargets.js";
 import { postLocales } from "../../channels/locales.js";
+import { channelUploadLimits } from "../../channels/platform-token-store.js";
 import { effectivePostTargets, publishesStory, registeredPostTargetIds } from "../../channels/registry.js";
 import { listStudioMediaAssets, mediaItemsFromAssets, requireStudioMediaAssets } from "../../content/assets.js";
 import { draftLocaleContent } from "../../content/draft-content.js";
@@ -21,9 +22,12 @@ import { cancelScheduledNotifications, scheduleReminder } from "../../notificati
 import { trackUsageSync } from "../../observability/usage.js";
 import { abandonPublicationTargets } from "../../publishing/abandon.js";
 import { publishArticle } from "../../publishing/article-publish.js";
-import { cancelDraft, cancelPendingPostJobs } from "../../publishing/draft-lifecycle.js";
+import { type CancellationReport, cancelRemainingDelivery, pendingDeliveryTargets } from "../../publishing/cancellation.js";
+import { plannedTargetDeliveries } from "../../publishing/chain-plan.js";
+import { cancelDraft } from "../../publishing/draft-lifecycle.js";
 import { deliverExtraTarget } from "../../publishing/extra-delivery.js";
 import { mediaPolicyForTarget } from "../../publishing/media-policy.js";
+import { platformProfile } from "../../publishing/platform-profiles.js";
 import { publicationPreflight } from "../../publishing/preflight.js";
 import { refreshPublicationStatus } from "../../publishing/publication-status.js";
 import { publishDraftToQueue } from "../../publishing/publication-workflow.js";
@@ -192,10 +196,10 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
     },
     validate(actorId: number, draftId: number) {
       const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
-      return publicationPreflight({
-        ...draft,
-        targets_json: JSON.stringify(effectivePostTargets(backendDb, parseTargets(draft.targets_json))),
-      });
+      return publicationPreflight(
+        { ...draft, targets_json: JSON.stringify(effectivePostTargets(backendDb, parseTargets(draft.targets_json))) },
+        channelUploadLimits(backendDb),
+      );
     },
     preview(actorId: number, draftId: number) {
       const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
@@ -211,10 +215,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
       return {
         id: draft.id,
         status: draft.status,
-        issues: publicationPreflight({
-          ...draft,
-          targets_json: JSON.stringify(targets),
-        }),
+        issues: publicationPreflight({ ...draft, targets_json: JSON.stringify(targets) }, channelUploadLimits(backendDb)),
         locales: [
           { locale: "ru" as const, ...ruContent },
           { locale: "en" as const, ...enContent },
@@ -300,14 +301,34 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
     cancel(actorId: number, draftId: number): void {
       trackUsageSync(backendDb, "studio.post.cancel", () => {
         const draft = requireMutableDraft(backendDb, config, actorId, draftId);
-        cancelDraft(backendDb, draftId);
+        cancelDraft(backendDb, draftId, actorId);
         if (draft.post_id != null) cancelScheduledNotifications(backendDb, publicationRef("post", draft.post_id));
       });
     },
-    cancelJobs(actorId: number, draftId: number): void {
+    /** What each platform that carries a thread will actually receive: the
+     * posts delivery sends, cut where delivery cuts them. Surfaces read this
+     * rather than counting the parts the author wrote, which is a different
+     * number as soon as a translation is longer than its original. */
+    deliveryPlan(actorId: number, draftId: number) {
       const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
-      cancelPendingPostJobs(backendDb, draftId);
+      return plannedTargetDeliveries({
+        ...draft,
+        targets_json: JSON.stringify(effectivePostTargets(backendDb, parseTargets(draft.targets_json))),
+      })
+        .filter((delivery) => platformProfile(delivery.target)?.thread)
+        .map((delivery) => ({ label: delivery.label, posts: delivery.posts.length, chained: delivery.chained }));
+    },
+    /** The targets a "cancel the rest" would act on, for the confirmation that
+     * has to name them before the operator taps. */
+    pendingTargets(actorId: number, draftId: number) {
+      requireOwnedDraft(backendDb, config, actorId, draftId);
+      return pendingDeliveryTargets(backendDb, draftId);
+    },
+    cancelRemaining(actorId: number, draftId: number): CancellationReport {
+      const draft = requireOwnedDraft(backendDb, config, actorId, draftId);
+      const report = cancelRemainingDelivery(backendDb, draftId, actorId);
       if (draft.post_id != null) cancelScheduledNotifications(backendDb, publicationRef("post", draft.post_id));
+      return report;
     },
     setStoryPublishMode(actorId: number, draftId: number, mode: StoryPublishMode): void {
       requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
@@ -419,7 +440,7 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         if (draft.post_id == null) throw new StudioError("err.retry-only-failed");
         const retryable = backendDb.studioPosts
           .failedPublicationTargets(draft.post_id)
-          .filter((item) => isPostTargetRetryable(item.target, item.status));
+          .filter((item) => isPostTargetRetryable(item.target, item.status, item.error));
         const selected = target ? retryable.filter((item) => item.target === target) : retryable;
         if (selected.length === 0) throw new StudioError("err.retry-only-failed");
         const postId = draft.post_id;

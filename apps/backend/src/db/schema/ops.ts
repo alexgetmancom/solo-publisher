@@ -123,6 +123,11 @@ export const platformTokens = sqliteTable("platform_tokens", {
   sealedRefreshToken: text(),
   expiresAt: text(),
   refreshedAt: text().notNull(),
+  /** The largest attachment this connected channel accepts, in bytes, as the
+   * platform itself reported it. Discord's cap depends on the server's boost
+   * level, so it cannot be a constant and it cannot be guessed: it is asked for
+   * once when the channel is connected and read by preflight afterwards. */
+  uploadLimitBytes: integer(),
   updatedAt: text().notNull(),
 });
 

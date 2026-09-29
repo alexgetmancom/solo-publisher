@@ -64,6 +64,7 @@ export async function storeApiKey(
     sealedRefreshToken: null,
     expiresAt: null,
     refreshedAt: timestamp,
+    uploadLimitBytes: await uploadLimitBytes(config, target, trimmed, fetchImpl),
     updatedAt: timestamp,
   };
   storePlatformToken(backendDb, target, row);
@@ -85,3 +86,30 @@ async function verifyDiscordToken(value: string, fetchImpl: typeof fetch): Promi
   });
   return bot.username ?? bot.id ?? "";
 }
+
+/** Discord's attachment cap is the server's, and it moves with the server's
+ * boost level -- so it is asked for once, here, rather than guessed at every
+ * publication. A server that cannot be read leaves the limit unset and the
+ * platform's own floor applies. */
+async function uploadLimitBytes(
+  config: BackendConfig,
+  target: ApiKeyTarget,
+  token: string,
+  fetchImpl: typeof fetch,
+): Promise<number | null> {
+  if (target !== "discord" || !config.DISCORD_GUILD_ID) return null;
+  try {
+    const guild = await requestJson<{ premium_tier?: number }>(
+      fetchImpl,
+      `https://discord.com/api/v10/guilds/${encodeURIComponent(config.DISCORD_GUILD_ID)}`,
+      { headers: { Authorization: `Bot ${token}` } },
+    );
+    return DISCORD_BOOST_UPLOAD_BYTES[guild.premium_tier ?? 0] ?? DISCORD_BOOST_UPLOAD_BYTES[0] ?? null;
+  } catch (error) {
+    log("warn", "Discord upload limit could not be read", { error: String(error) });
+    return null;
+  }
+}
+
+/** Discord's published per-boost-tier attachment caps, tier 0 through 3. */
+const DISCORD_BOOST_UPLOAD_BYTES = [10_485_760, 10_485_760, 52_428_800, 104_857_600] as const;
