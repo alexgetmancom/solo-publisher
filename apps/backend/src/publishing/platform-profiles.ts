@@ -66,9 +66,10 @@ const platformOverrides: Record<PlatformId, Omit<PlatformProfile, "id" | "label"
   site_ru: { capabilities: { text: true, image: true, video: false }, media: { mode: "all" } },
   site_en: { capabilities: { text: true, image: true, video: false }, media: { mode: "all" } },
   // 500 is the Threads API's own hard cap on a single post, and it binds every
-  // part of a thread: nothing is split at delivery, a longer text becomes a
-  // thread by the author's choice. URLs are not stripped the way X strips them —
-  // threads-text.ts decides what a Threads post carries.
+  // part of a thread. A post over it becomes the replies it would have been:
+  // the author writes Russian that fits and the machine translation of it does
+  // not, and `chainPosts` cuts either one the same way. URLs are not stripped
+  // the way X strips them - threads-text.ts decides what a Threads post carries.
   threads_ru: {
     capabilities: { text: true, image: true, video: true },
     limits: { text: 500 },

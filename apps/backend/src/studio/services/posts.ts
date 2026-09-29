@@ -8,11 +8,11 @@ import { listStudioMediaAssets, mediaItemsFromAssets, requireStudioMediaAssets }
 import { draftLocaleContent } from "../../content/draft-content.js";
 import { createDraftFromMessage } from "../../content/drafts.js";
 import type { DraftMessage } from "../../content/message.js";
+import { splitText } from "../../content/text.js";
 import { emphasizeTitle } from "../../content/title-emphasis.js";
 import { translationWanted } from "../../content/translation.js";
 import type { BackendDb } from "../../db/client.js";
 import { prepareDraftStoryMedia } from "../../delivery/draft-story-media.js";
-import { splitText } from "../../delivery/social/payload.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { StudioError } from "../../foundation/errors.js";
 import { truncateUnicode } from "../../foundation/text.js";
@@ -131,8 +131,17 @@ function threadPosts(part: NewThreadPart): NewThreadPart[] {
   }));
 }
 
+/** An existing post of the thread as it is rewritten back, English included:
+ * rewriting one post used to be a `replace` that dropped the English of every
+ * other post in the thread. */
 function newThreadPart(part: ThreadPart): NewThreadPart {
-  return { textRu: part.textRu, entitiesRu: part.entitiesRu, media: part.media };
+  return {
+    textRu: part.textRu,
+    entitiesRu: part.entitiesRu,
+    media: part.media,
+    textEn: part.textEn,
+    textEnApproved: part.textEnApproved,
+  };
 }
 
 /** Every thread change leaves the English stale and the plan out of date. */
@@ -363,6 +372,22 @@ export function postService(backendDb: BackendDb, config: BackendConfig) {
         draft.thread.flatMap((existing) => (existing.position === position ? posts : [newThreadPart(existing)])),
       );
       threadChanged(backendDb, config, draftId, "content.draft.thread-part-edited", `Draft #${draftId} thread post ${position} edited`);
+    },
+    /** English the author wrote for one post of the thread. It is theirs, so no
+     * later translation pass overwrites it, and it is not queued for one. */
+    editThreadPartEnglish(actorId: number, draftId: number, position: number, textEn: string): void {
+      requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());
+      const text = textEn.trim();
+      if (!text) throw new StudioError("err.thread-part-empty");
+      if (!backendDb.threadParts.approveEnglish(draftId, position, text)) throw new StudioError("err.thread-part-missing");
+      replanScheduledPostAfterMutation(backendDb, config, draftId);
+      backendDb.events.record({
+        ref: publicationRef("draft", draftId),
+        type: "content.draft.thread-part-edited",
+        severity: "info",
+        message: `Draft #${draftId} thread post ${position} English edited`,
+        details: { locale: "en", position },
+      });
     },
     removeThreadPart(actorId: number, draftId: number, position: number): void {
       requirePostEditAllowed(backendDb, config, actorId, draftId, backendDb.clock.now());

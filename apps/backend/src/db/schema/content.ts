@@ -61,7 +61,11 @@ export const draftThreadParts = sqliteTable(
     position: integer().notNull(),
     textRu: text().notNull(),
     entitiesRuJson: json<Record<string, unknown>[] | null>(),
+    /** The machine translation, replaced on every translation pass. */
     textEn: text(),
+    /** English the author wrote or corrected here. It outranks the machine
+     * translation and the worker never overwrites it. */
+    textEnApproved: text(),
     mediaJson: json<MediaPayload[] | null>(),
     createdAt: text().notNull(),
     updatedAt: text().notNull(),

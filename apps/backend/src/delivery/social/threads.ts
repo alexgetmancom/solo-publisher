@@ -1,3 +1,4 @@
+import { chainPosts } from "../../content/thread.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { type ThreadsTarget, threadsCredentials } from "../../foundation/external/threads.js";
 import { formBody, requestJson } from "../../foundation/http.js";
@@ -5,7 +6,7 @@ import { log } from "../../foundation/logger.js";
 import type { PublishResult } from "../../publishing/errors.js";
 import { threadsBody, threadsTextLimit } from "../../publishing/threads-text.js";
 import { ambiguousExternalMutation } from "../ambiguous-publication.js";
-import { payloadMedia, payloadText, payloadThread } from "./payload.js";
+import { type PublishMediaItem, payloadMedia, payloadText, payloadThread } from "./payload.js";
 
 type ThreadsResponse = {
   id?: string;
@@ -54,15 +55,16 @@ export async function publishToThreads(
 ): Promise<PublishResult> {
   const runtime = threadsRuntime(config, target);
   if (!runtime) return { skipped: true, reason: `missing ${threadsCredentials(config, target).envName}` };
-  // A thread is the author's own parts, each written to fit; nothing is ever
-  // split here, so an overlong part is a refusal rather than a surprise reply.
+  // A post longer than the budget becomes the replies it would have been, in
+  // whichever language it is: `chainPosts` is where that cut is decided, and
+  // preflight counted exactly these posts. A piece still over the limit after
+  // it is a refusal rather than a surprise reply.
   const entities = Array.isArray(payload.entities) ? (payload.entities as Record<string, unknown>[]) : [];
   const limit = threadsTextLimit(target);
-  const thread = payloadThread(payload);
-  const parts = [
-    threadsBody(target, payloadText(payload), entities).text,
-    ...thread.map((part) => threadsBody(target, part.text, part.entities).text),
-  ];
+  const posts = chainPosts([{ text: payloadText(payload), entities, media: [] as PublishMediaItem[] }, ...payloadThread(payload)], limit);
+  // The replies, each with the media of the post it was written as.
+  const thread = posts.slice(1);
+  const parts = posts.map((post) => threadsBody(target, post.text, post.entities).text);
   const overlong = parts.findIndex((part) => part.length > limit);
   if (overlong >= 0)
     return { ok: false, error: `threads_text_too_long:${overlong ? `part ${overlong + 1}:` : ""}${parts[overlong]?.length}/${limit}` };

@@ -48,8 +48,8 @@ export function definePostActionHandlers(define: typeof action): Record<string, 
     make_thread: define(handleMakeThread, { entity: "draft", freshCard: true, args: [] }),
     thread_add: define(handleThreadAdd, { entity: "draft", args: [] }),
     thread_done: define(handleThreadDone, { entity: "draft", args: [] }),
-    thread_edit: define(handleThreadEdit, { entity: "draft", freshCard: true, args: ["position"] }),
-    thread_remove: define(handleThreadRemove, { entity: "draft", freshCard: true, args: ["position"] }),
+    thread_edit: define(handleThreadEdit, { entity: "draft", freshCard: true, args: ["position", "locale"] }),
+    thread_remove: define(handleThreadRemove, { entity: "draft", freshCard: true, args: ["position", "locale"] }),
     skip: define(handleSkip, { entity: "draft", args: ["target", "origin"] }),
     resend: define(handleResend, { entity: "draft", freshCard: true, args: ["target"] }),
     publish: define(handlePublish, { entity: "draft", freshCard: true, args: [] }),
@@ -194,16 +194,24 @@ async function handleThreadDone(args: PostActionArgs): Promise<PublicationAction
 }
 
 async function handleThreadEdit({ backendDb, actorId, locale, draftId, args }: PostActionArgs): Promise<PublicationActionResult> {
-  const step: PostWizardStep = { type: "thread_edit", position: threadPosition(args.position) };
+  const step: PostWizardStep = { type: "thread_edit", position: threadPosition(args.position), locale: threadLocale(args.locale) };
   saveConversationState(backendDb, actorId, { kind: "post", draftId, step: step.type, data: postStepData(step), controlMessageId: null });
-  return [promptEffect(backendDb, actorId, "post", t(locale, "action.thread-send-replacement", { part: step.position }))];
+  const prompt = step.locale === "en" ? "action.thread-send-replacement-en" : "action.thread-send-replacement";
+  return [promptEffect(backendDb, actorId, "post", t(locale, prompt, { part: step.position }))];
 }
 
 async function handleThreadRemove(args: PostActionArgs): Promise<PublicationActionResult> {
   const position = threadPosition(args.args.position);
   args.services.posts.removeThreadPart(args.actorId, args.draftId, position);
-  const view = args.services.posts.get(args.actorId, args.draftId).thread.length ? "thread" : "overview";
+  const thread = threadLocale(args.args.locale) === "en" ? "thread_en" : "thread";
+  const view = args.services.posts.get(args.actorId, args.draftId).thread.length ? thread : "overview";
   return previewEffects(args, view, t(args.locale, "action.thread-part-removed", { part: position }));
+}
+
+/** Which language of the thread a button was pressed in. Russian is what a
+ * callback from before the English screen existed means. */
+function threadLocale(value: string | undefined): "ru" | "en" {
+  return value === "en" ? "en" : "ru";
 }
 
 function threadPosition(value: string | undefined): number {

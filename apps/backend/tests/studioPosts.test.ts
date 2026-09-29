@@ -238,7 +238,9 @@ describe("Studio post commands", () => {
     expect(() =>
       posts.edit(42, draftId, {
         locale: "en",
-        text: "x".repeat(501),
+        // Russian under an English target: a rejection the platform budgets
+        // cannot express, now that a long post becomes a thread instead.
+        text: "Это русский текст под английской площадкой.",
         entities: [],
         media: [],
       }),

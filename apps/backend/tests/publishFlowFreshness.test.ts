@@ -78,7 +78,7 @@ describe("post publication card flow", () => {
 
       await handlePublicationCallback(context, backendDb, config);
 
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: nextMessageId });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: nextMessageId, view: "confirm_publish" });
       expect(
         isStaleCardCallback(
           { callbackQuery: { message: { message_id: nextMessageId } } } as unknown as Context,

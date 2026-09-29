@@ -2,6 +2,7 @@ import { InlineKeyboard } from "grammy";
 import { type PresetName, presetName, TARGETS } from "../botTargets.js";
 import { postLocales } from "../channels/locales.js";
 import { effectivePostTargets, registeredPostTargetIds } from "../channels/registry.js";
+import { draftLocaleContent } from "../content/draft-content.js";
 import { requireDraft } from "../content/drafts.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
@@ -38,6 +39,7 @@ const DRAFT_VIEWS = [
   "platforms",
   "resend",
   "thread",
+  "thread_en",
 ] as const;
 
 export type DraftView = (typeof DRAFT_VIEWS)[number];
@@ -132,34 +134,51 @@ export function draftPreview(
     };
   }
 
-  if (view === "thread") {
+  if (view === "thread" || view === "thread_en") {
     // Every post of the thread, each with its own way to be rewritten or
     // dropped. The first post is the draft, edited from the card as always.
+    // The screen shows one language and rewrites that one: the English is a
+    // machine translation until the author writes over a post of it here.
+    const threadLocale = view === "thread_en" ? "en" : "ru";
     const parts = draft.thread;
     for (const part of parts)
       keyboard
         .text(
           t(locale, "post.thread-edit-part", { part: part.position }),
-          publicationCallback("post", "thread_edit", [draftId, String(part.position)]),
+          publicationCallback("post", "thread_edit", [draftId, String(part.position), threadLocale]),
         )
         .text(
           t(locale, "post.thread-remove-part", { part: part.position }),
-          publicationCallback("post", "thread_remove", [draftId, String(part.position)]),
+          publicationCallback("post", "thread_remove", [draftId, String(part.position), threadLocale]),
         )
         .row();
-    keyboard.text(t(locale, "post.thread-add"), publicationCallback("post", "thread_add", [draftId])).row();
+    keyboard.text(t(locale, "post.thread-add"), publicationCallback("post", "thread_add", [draftId]));
+    if (servesEn)
+      keyboard.text(
+        t(locale, threadLocale === "ru" ? "post.thread-in-en" : "post.thread-in-ru"),
+        publicationCallback("post", "view", [draftId, threadLocale === "ru" ? "thread_en" : "thread"]),
+      );
+    keyboard.row();
     keyboard.text(t(locale, "post.back-to-preview"), publicationCallback("post", "view", [draftId, "overview"]));
     const perPost = Math.floor(3000 / (parts.length + 1));
+    const firstText = threadLocale === "ru" ? draft.text_ru : draftLocaleContent(draft, "en").text;
     const posts = [
-      { position: 1, text: draft.text_ru, media: safeMediaCount(draft.media_ru_json) },
-      ...parts.map((part) => ({ position: part.position, text: part.textRu, media: part.media.length })),
+      { position: 1, text: firstText, media: safeMediaCount(draft.media_ru_json) },
+      ...parts.map((part) => ({
+        position: part.position,
+        text: threadLocale === "ru" ? part.textRu : (part.textEnApproved ?? part.textEn ?? ""),
+        media: part.media.length,
+      })),
     ]
       .map(
         (post) =>
-          `*${post.position}.*${post.media ? ` 🖼 ${post.media}` : ""}\n${escapeMarkdown(truncateUnicode(post.text || t(locale, "post.media-only"), perPost))}`,
+          `*${post.position}.*${post.media ? ` 🖼 ${post.media}` : ""}\n${escapeMarkdown(truncateUnicode(post.text || t(locale, post.media ? "post.media-only" : "post.not-translated"), perPost))}`,
       )
       .join("\n\n");
-    return { text: `🧵 *${t(locale, "post.thread-title", { id: draftId, parts: parts.length + 1 })}*\n\n${posts}`, keyboard };
+    return {
+      text: `🧵 *${t(locale, "post.thread-title", { id: draftId, parts: parts.length + 1 })}* · ${threadLocale.toUpperCase()}\n\n${posts}`,
+      keyboard,
+    };
   }
 
   if (view === "platforms") {

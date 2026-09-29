@@ -17,7 +17,7 @@ export type PostWizardStep =
   | { type: "schedule_confirm"; locale: PostWizardLocale; value: Date }
   /** The next post of a thread; `thread_edit` replaces the one at `position`. */
   | { type: "thread_part" }
-  | { type: "thread_edit"; position: number };
+  | { type: "thread_edit"; position: number; locale: PostWizardLocale };
 
 type PostFlowData = Record<string, unknown>;
 
@@ -35,7 +35,7 @@ export type PostFlowInput = {
 export function postStepData(step: PostWizardStep | null): Record<string, unknown> {
   if (step?.type === "edit_text" || step?.type === "schedule_manual") return { locale: step.locale };
   if (step?.type === "schedule_confirm") return { locale: step.locale, value: step.value.toISOString() };
-  if (step?.type === "thread_edit") return { position: step.position };
+  if (step?.type === "thread_edit") return { position: step.position, locale: step.locale };
   return {};
 }
 
@@ -61,7 +61,8 @@ export function postStateStep(state: Pick<ConversationState, "step" | "data"> | 
   if (state.step === "thread_part") return { type: "thread_part" };
   if (state.step === "thread_edit") {
     const position = Number(state.data.position);
-    return Number.isInteger(position) && position >= 2 ? { type: "thread_edit", position } : null;
+    const locale = parseLocale(state.data.locale) ?? "ru";
+    return Number.isInteger(position) && position >= 2 ? { type: "thread_edit", position, locale } : null;
   }
   if (state.step === "schedule_confirm") {
     const locale = parseLocale(state.data.locale);
@@ -101,6 +102,10 @@ function acceptThreadPart(input: PostFlowInput, data: PostFlowData): PostFlowDat
     media: input.message.media,
   };
   if (input.step.type === "thread_part") posts.appendThreadPart(input.actorId, input.draftId, part);
+  // English is written over the post it belongs to and nothing else: its media
+  // is the post's, in whatever language it is read.
+  else if (input.step.type === "thread_edit" && input.step.locale === "en")
+    posts.editThreadPartEnglish(input.actorId, input.draftId, input.step.position, input.message.text);
   else if (input.step.type === "thread_edit") posts.editThreadPart(input.actorId, input.draftId, input.step.position, part);
   else throw new StudioError("action.session-stale");
   return data;

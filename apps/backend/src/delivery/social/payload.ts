@@ -95,31 +95,6 @@ export function payloadMedia(payload: Record<string, unknown>): PublishMediaItem
   });
 }
 
-function isHighSurrogate(char: string | undefined): boolean {
-  const code = char?.charCodeAt(0);
-  return code !== undefined && code >= 0xd800 && code <= 0xdbff;
-}
-
-export function splitText(text: string, limit: number): string[] {
-  const normalized = text.trim();
-  if (!normalized) return [""];
-  const parts: string[] = [];
-  let remaining = normalized;
-  while (remaining.length > limit) {
-    const window = remaining.slice(0, limit + 1);
-    const breakAt = Math.max(window.lastIndexOf("\n\n"), window.lastIndexOf("\n"), window.lastIndexOf(". "), window.lastIndexOf(" "));
-    const wordBreak = breakAt > Math.floor(limit * 0.5) ? breakAt + (window[breakAt] === "." ? 1 : 0) : limit;
-    // Without a word boundary the cut lands on `limit` exactly, which can fall
-    // between the halves of a surrogate pair and send a broken character to the
-    // API. Back off one unit; the orphaned half travels with the next part.
-    const take = isHighSurrogate(remaining[wordBreak - 1]) ? wordBreak - 1 : wordBreak;
-    parts.push(remaining.slice(0, take).trim());
-    remaining = remaining.slice(take).trim();
-  }
-  if (remaining) parts.push(remaining);
-  return parts.length > 0 ? parts : [normalized];
-}
-
 export function mediaExtension(item: PublishMediaItem): string {
   if (item.localPath) {
     const ext = fileExtension(item.localPath);

@@ -470,10 +470,19 @@ export type ThreadPart = {
   textRu: string;
   entitiesRu: Record<string, unknown>[];
   textEn: string | null;
+  textEnApproved: string | null;
   media: Record<string, unknown>[];
 };
 
-export type NewThreadPart = { textRu: string; entitiesRu: Record<string, unknown>[]; media: Record<string, unknown>[] };
+/** A post of a thread as it is written. The English travels with it so that
+ * rewriting one post does not throw away the English of its neighbours. */
+export type NewThreadPart = {
+  textRu: string;
+  entitiesRu: Record<string, unknown>[];
+  media: Record<string, unknown>[];
+  textEn?: string | null;
+  textEnApproved?: string | null;
+};
 
 /** The posts after the first. Positions start at 2 and have no gaps. */
 export type ThreadPartStore = {
@@ -484,6 +493,8 @@ export type ThreadPartStore = {
   update(draftId: number, position: number, part: NewThreadPart): boolean;
   remove(draftId: number, position: number): boolean;
   setEnglish(draftId: number, texts: Array<{ position: number; textEn: string }>): void;
+  /** English written by the author for one post, which no translation replaces. */
+  approveEnglish(draftId: number, position: number, textEn: string): boolean;
 };
 
 /** Composition-root dependencies passed into application use cases. */

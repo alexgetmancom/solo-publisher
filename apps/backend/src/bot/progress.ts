@@ -92,7 +92,9 @@ export async function refreshPostPreviewCard(backendDb: BackendDb, bot: Bot | nu
   const card = telegramPostCard(backendDb, draftId);
   const draft = backendDb.drafts.get(draftId);
   if (!card || !draft) return;
-  const preview = postPreviewCard(backendDb, config, draft.actor_id, draftId);
+  // The screen the card is on, not the overview: a repaint used to take the
+  // thread the operator was reading -- and its edit buttons -- off the screen.
+  const preview = postPreviewCard(backendDb, config, draft.actor_id, draftId, card.view);
   try {
     await bot.api.editMessageText(card.chatId, card.messageId, preview.text, {
       parse_mode: "Markdown",

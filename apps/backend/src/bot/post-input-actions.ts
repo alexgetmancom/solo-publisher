@@ -12,6 +12,7 @@ import { confirmationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
 import { extractMessage } from "./message.js";
 import { POST_FLOW, type PostFlowInput, type PostWizardStep, postStateStep } from "./post-flow.js";
+import type { DraftView } from "./preview.js";
 import { publicationCallback } from "./publication-callback.js";
 import { advancePublicationFlow } from "./publication-flow.js";
 import { postPreviewCard, publicationCardEffect, publicationRenderers } from "./publication-renderers.js";
@@ -38,7 +39,7 @@ export async function applyAdminState(
   if (step.type === "thread_part" || step.type === "thread_edit")
     return [
       { type: "session", operation: "clear", kind: "post", actorId },
-      ...threadPartSaved(backendDb, config, actorId, draftId, step.type),
+      ...threadPartSaved(backendDb, config, actorId, draftId, step.type, step.type === "thread_edit" ? step.locale : "ru"),
     ];
   const preview = postPreviewCard(backendDb, config, actorId, draftId);
   return [{ type: "session", operation: "clear", kind: "post", actorId }, ...publicationCardEffect(preview)];
@@ -53,11 +54,13 @@ export function threadPartScreen(
   actorId: number,
   draftId: number,
   step: "thread_part" | "thread_edit",
-): { text: string; keyboard: InlineKeyboard; markdown: boolean } {
+  threadLocale: "ru" | "en" = "ru",
+): { text: string; keyboard: InlineKeyboard; markdown: boolean; view?: DraftView } {
   const locale = settingsService(backendDb).locale(actorId);
   if (step === "thread_edit") {
-    const card = publicationRenderers(backendDb, config).post.card({ actorId, publicationId: draftId, locale, view: "thread" });
-    return { text: card.text, keyboard: card.keyboard, markdown: true };
+    const view = threadLocale === "en" ? "thread_en" : "thread";
+    const card = publicationRenderers(backendDb, config).post.card({ actorId, publicationId: draftId, locale, view });
+    return { text: card.text, keyboard: card.keyboard, markdown: true, view };
   }
   const parts = createStudioServices(backendDb, config).posts.get(actorId, draftId).thread.length + 1;
   return {
@@ -75,14 +78,15 @@ function threadPartSaved(
   actorId: number,
   draftId: number,
   step: "thread_part" | "thread_edit",
+  threadLocale: "ru" | "en",
 ): PublicationEffect[] {
-  const screen = threadPartScreen(backendDb, config, actorId, draftId, step);
+  const screen = threadPartScreen(backendDb, config, actorId, draftId, step, threadLocale);
   const options = { ...(screen.markdown ? { parse_mode: "Markdown" as const } : {}), reply_markup: screen.keyboard };
   // The add-or-finish question is not the card: the card is repainted when the
   // English arrives, and that repaint took these buttons away seconds after
   // they appeared. The thread review after a rewrite is the card.
   if (step === "thread_part") return [{ type: "screen", text: screen.text, options }];
-  return [{ type: "screen", text: screen.text, options, card: { kind: "post", draftId } }];
+  return [{ type: "screen", text: screen.text, options, card: { kind: "post", draftId, view: screen.view } }];
 }
 
 function renderPostScheduleConfirmation(

@@ -107,3 +107,55 @@ export function stripLeadingEmojis(text: string): string {
   if (matched && /\p{Emoji}/u.test(matched) && !/^[#*0-9]$/.test(matched[0] ?? "")) return cleaned.slice(matched.length).trim();
   return cleaned;
 }
+
+/** One text as the posts a chain platform carries it in: cut at the last
+ * boundary that ends a thought -- a paragraph, then a sentence, then a word --
+ * because a cut in the middle of a sentence is what makes a thread read like a
+ * machine wrote it. Every piece fits `limit`, and nothing is dropped. */
+export function splitText(text: string, limit: number): string[] {
+  const normalized = text.trim();
+  if (!normalized) return [""];
+  const parts: string[] = [];
+  let remaining = normalized;
+  while (remaining.length > limit) {
+    const take = cutPoint(remaining, limit);
+    parts.push(remaining.slice(0, take).trim());
+    remaining = remaining.slice(take).trim();
+  }
+  if (remaining) parts.push(remaining);
+  return parts.length > 0 ? parts : [normalized];
+}
+
+/** A piece shorter than this much of the budget is a worse read than a cut
+ * closer to the limit, so a boundary that early is not taken. */
+const MIN_FILL = 0.5;
+
+function cutPoint(text: string, limit: number): number {
+  const window = text.slice(0, limit + 1);
+  const floor = Math.floor(limit * MIN_FILL);
+  for (const boundary of [window.lastIndexOf("\n\n"), lastSentenceEnd(window, limit), window.lastIndexOf("\n"), window.lastIndexOf(" ")])
+    if (boundary > floor && boundary <= limit) return boundary;
+  // No boundary at all -- a single unbroken run of characters. The cut lands on
+  // `limit` exactly, which can fall between the halves of a surrogate pair and
+  // send a broken character to the API. Back off one unit; the orphaned half
+  // travels with the next part.
+  return isHighSurrogate(text[limit - 1]) ? limit - 1 : limit;
+}
+
+/** Where the last sentence ending inside the window finishes, its closing
+ * quotes and brackets included. A dot followed by a lowercase letter ends an
+ * abbreviation rather than a sentence, and cutting there splits one. */
+function lastSentenceEnd(window: string, limit: number): number {
+  let end = -1;
+  for (const match of window.matchAll(/[.!?\u2026]+["'\u00bb\u201d\u2019)\]]*(?=\s)/gu)) {
+    const after = window.slice(match.index + match[0].length).trimStart()[0];
+    if (after && after.toLowerCase() === after && after.toUpperCase() !== after) continue;
+    if (match.index + match[0].length <= limit) end = match.index + match[0].length;
+  }
+  return end;
+}
+
+function isHighSurrogate(char: string | undefined): boolean {
+  const code = char?.charCodeAt(0);
+  return code !== undefined && code >= 0xd800 && code <= 0xdbff;
+}

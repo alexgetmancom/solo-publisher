@@ -11,7 +11,7 @@ import { clearConversationState, saveConversationState } from "./conversation-st
 import { isUnchangedMessageEdit } from "./telegram-errors.js";
 
 type PublicationCard =
-  | { kind: "post"; draftId: number }
+  | { kind: "post"; draftId: number; view?: string | undefined }
   | { kind: "post-progress"; draftId: number; details?: boolean }
   | { kind: "video"; draftId: number };
 
@@ -150,7 +150,7 @@ class ScreenAnchor {
 function bindCard(backendDb: BackendDb, ctx: Context, card: PublicationCard | undefined, messageId: number): void {
   if (!card || ctx.chat?.id == null) return;
   const chatId = Number(ctx.chat.id);
-  if (card.kind === "post") setTelegramPostCard(backendDb, card.draftId, chatId, messageId);
+  if (card.kind === "post") setTelegramPostCard(backendDb, card.draftId, chatId, messageId, card.view);
   else if (card.kind === "post-progress") setTelegramPostProgressCard(backendDb, card.draftId, chatId, messageId, Boolean(card.details));
   else setTelegramVideoCard(backendDb, card.draftId, chatId, messageId);
 }

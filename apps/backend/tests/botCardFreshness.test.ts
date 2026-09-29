@@ -4,6 +4,7 @@ import { type Context, InlineKeyboard } from "grammy";
 import { handlePublicationCallback, isStaleCardCallback } from "../src/bot/callback-router.js";
 import { executePublicationEffects } from "../src/bot/effects.js";
 import { draftPreview } from "../src/bot/preview.js";
+import { refreshPostPreviewCard } from "../src/bot/progress.js";
 import { type PublicationCallback, parseSessionCallback, publicationCallback, versionedCallback } from "../src/bot/publication-callback.js";
 import { getVideoState, videoControlEffects } from "../src/bot/video-ui.js";
 import { createDraftFromMessage } from "../src/content/drafts.js";
@@ -17,6 +18,7 @@ import {
   telegramVideoCard,
 } from "../src/interfaces/telegram/control-cards.js";
 import { replaceVideoTargets } from "../src/publishing/video-service.js";
+import { createStudioServices } from "../src/studio/services/index.js";
 import { registerTestChannels } from "./helpers/channels.js";
 import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -49,6 +51,24 @@ function videoPublication(action: string, args: readonly (string | number)[] = [
 }
 
 describe("Telegram card freshness", () => {
+  it("repaints the screen the card is showing, not the overview it started on", () =>
+    withDb(async (backendDb: BackendDb) => {
+      const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
+      registerTestChannels(backendDb as UnsafeBackendDb, ["telegram", "threads_ru"]);
+      const draftId = createDraftFromMessage(backendDb, 42, { text: "Первый", entities: [], media: [] });
+      createStudioServices(backendDb, config).posts.appendThreadPart(42, draftId, { textRu: "Второй", entitiesRu: [], media: [] });
+      setTelegramPostCard(backendDb, draftId, 100, 20, "thread");
+      const painted: string[] = [];
+      const bot = { api: { editMessageText: async (_chat: number, _message: number, text: string) => painted.push(text) } };
+
+      // The English arriving is what used to take the thread review -- and its
+      // edit buttons -- off the screen seconds after it was opened.
+      await refreshPostPreviewCard(backendDb, bot as never, config, draftId);
+
+      expect(painted[0]).toContain("🧵");
+      expect(painted[0]).toContain("Второй");
+    }));
+
   it("rejects a mutation from a replaced post card but allows the current one", () =>
     withDb(async (backendDb: BackendDb) => {
       setTelegramPostCard(backendDb, 7, 100, 20);
@@ -85,7 +105,7 @@ describe("Telegram card freshness", () => {
 
       await handlePublicationCallback(context(postAction("publish", [draftId]), 10), backendDb, config);
 
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 15 });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 15, view: "confirm_publish" });
       expect(
         isStaleCardCallback(
           context(postAction("publish_confirm", [draftId]), 15),
@@ -116,7 +136,7 @@ describe("Telegram card freshness", () => {
         },
       ]);
 
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 20 });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 20, view: null });
     }));
 
   it("tracks a new manual schedule confirmation message", () =>
@@ -138,7 +158,7 @@ describe("Telegram card freshness", () => {
         },
       ]);
 
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 21 });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 21, view: null });
     }));
 
   it("keeps the Story scheduling flow on the message that renders its next screen", () =>
@@ -167,11 +187,11 @@ describe("Telegram card freshness", () => {
         }) as unknown as Context;
 
       await handlePublicationCallback(context(postAction("schedule", [draftId]), 10), backendDb, config);
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 11 });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 11, view: null });
 
       await handlePublicationCallback(context(postAction("story_schedule_all", [draftId]), 11), backendDb, config);
       await handlePublicationCallback(context(postAction("sched_scope", [draftId, "both"]), 11), backendDb, config);
-      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 11 });
+      expect(telegramPostCard(backendDb, draftId)).toEqual({ chatId: 100, messageId: 11, view: "schedule_ru" });
 
       await handlePublicationCallback(context(postAction("sched_pick", [draftId, "ru", "0800"]), 11), backendDb, config);
       await handlePublicationCallback(context(postAction("sched_pick", [draftId, "en", "1800"]), 11), backendDb, config);

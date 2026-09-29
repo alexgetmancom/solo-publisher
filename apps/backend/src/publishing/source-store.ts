@@ -33,6 +33,7 @@ export function publicationSourceFromDb(db: SourceDb, postId: number): Publicati
       textRu: part.textRu,
       entitiesRu: part.entitiesRuJson ?? [],
       textEn: part.textEn,
+      textEnApproved: part.textEnApproved,
       media: (part.mediaJson ?? []) as Record<string, unknown>[],
     }));
   const ru = localeSource(byLocale.get("ru"), [], localizedThread(thread, "ru"));

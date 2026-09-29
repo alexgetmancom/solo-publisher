@@ -1,9 +1,9 @@
 import type { ThreadPart } from "../application/ports.js";
 import { targetLocale } from "../botTargets.js";
 import { draftLocaleContent } from "../content/draft-content.js";
+import { splitText } from "../content/text.js";
 import { textLocale } from "../content/text-locale.js";
-import { joinedThread, localizedThread } from "../content/thread.js";
-import { splitText } from "../delivery/social/payload.js";
+import { chainPosts, joinedThread, localizedThread } from "../content/thread.js";
 import { StudioError } from "../foundation/errors.js";
 import { formatPlatformText, platformProfile } from "./platform-profiles.js";
 import { assertKnownTargets, parseTargets } from "./targets.js";
@@ -95,12 +95,16 @@ export function publicationPreflight(draft: DraftForPreflight): PublicationPrefl
     // A caption limit only binds when media is attached; a text limit is the
     // platform's own cap on a post and binds always. A platform that carries a
     // thread measures every post of it; any other publishes the parts joined.
+    // A chain platform cuts a post that does not fit into the replies it would
+    // have been, so what is measured here is those posts -- the same ones
+    // delivery sends. Only the platform's own budget is enforced on top, which
+    // a caption limit smaller than the text limit still can be.
     const posts =
       mode === "chain"
-        ? [
-            { text: measure(value.text, value.entities), media: value.media.length },
-            ...thread.map((part) => ({ text: measure(part.text, part.entities), media: part.media.length })),
-          ]
+        ? chainPosts([{ ...value, media: value.media }, ...thread], profile?.limits?.text ?? Number.MAX_SAFE_INTEGER).map((post) => ({
+            text: measure(post.text, post.entities),
+            media: post.media.length,
+          }))
         : [
             {
               text: measure(joinedThread(value, thread).text, []),

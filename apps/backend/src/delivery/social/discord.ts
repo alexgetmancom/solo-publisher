@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { splitText } from "../../content/text.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { externalFetch } from "../../foundation/http.js";
 import { log } from "../../foundation/logger.js";
@@ -6,7 +7,7 @@ import type { PublishResult } from "../../publishing/errors.js";
 import { httpPublishError, publishJson } from "../../publishing/errors.js";
 import { platformProfile } from "../../publishing/platform-profiles.js";
 import { ambiguousExternalMutation } from "../ambiguous-publication.js";
-import { guessContentType, mediaExtension, payloadMedia, payloadText, splitText } from "./payload.js";
+import { guessContentType, mediaExtension, payloadMedia, payloadText } from "./payload.js";
 
 const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 

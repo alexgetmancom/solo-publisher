@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { splitText } from "../src/delivery/social/payload.js";
+import { splitText } from "../src/content/text.js";
 import { publishToThreads as publishToThreadsStep } from "../src/delivery/social/threads.js";
 import type { PublishResult } from "../src/publishing/errors.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
@@ -186,25 +186,17 @@ describe("publishToThreads", () => {
     ).rejects.toThrow();
   });
 
-  it("publishes exactly the limit, and refuses one character more", async () => {
+  it("publishes exactly the limit as one post, and one character more as two", async () => {
     const exact = transport({ publishIds: ["p1"], containerIds: ["c1"] });
     const atLimit = await publishToThreads({ text: "a".repeat(500) }, config, exact.fetchImpl);
     expect(atLimit.ok).toBe(true);
     expect(exact.creations()[0]?.text).toHaveLength(500);
 
-    // The publisher enforces the limit itself, not only preflight: a payload can
-    // reach delivery from a queue written before the rule existed.
-    const over = transport({ publishIds: ["p1"], containerIds: ["c1"] });
+    const over = transport({ publishIds: ["p1", "p2"], containerIds: ["c1", "c2"] });
     const result = await publishToThreads({ text: "a".repeat(501) }, config, over.fetchImpl);
-    expect(over.creations()).toHaveLength(0);
-    expect(result.error).toBe("threads_text_too_long:501/500");
-    const part = await publishToThreads(
-      { text: "first", thread: [{ text: "a".repeat(501), entities: [], media: [] }] },
-      config,
-      over.fetchImpl,
-    );
-    expect(over.creations()).toHaveLength(0);
-    expect(part.error).toBe("threads_text_too_long:part 2:501/500");
+    expect(result.ids).toEqual(["p1", "p2"]);
+    expect(over.creations().map((creation) => creation.text?.length)).toEqual([500, 1]);
+    expect(over.creations()[1]).toMatchObject({ reply_to_id: "p1" });
   });
 
   it("keeps or drops a boundary link exactly as preflight and the preview decided", async () => {
@@ -220,15 +212,33 @@ describe("publishToThreads", () => {
     expect(doesNot.creations()[0]?.text).not.toContain(url);
   });
 
-  it("refuses text that does not fit one post instead of chaining a reply", async () => {
-    const { fetchImpl, creations } = transport({ publishIds: ["p1"], containerIds: ["c1"] });
-    const result = await publishToThreads({ text: `${"a".repeat(500)} tail` }, config, fetchImpl);
+  it("carries a post over the limit as the reply it would have been, losing nothing", async () => {
+    const { fetchImpl, creations } = transport({ publishIds: ["p1", "p2"], containerIds: ["c1", "c2"] });
+    const text = `${"a".repeat(500)} tail`;
+    const result = await publishToThreads({ text }, config, fetchImpl);
 
-    // Nothing is published: a truncated first half live on Threads is worse than
-    // a failed target the author can fix in the draft.
-    expect(creations()).toHaveLength(0);
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain("threads_text_too_long");
+    expect(result.ok).toBe(true);
+    expect(creations()).toHaveLength(2);
+    expect(creations()[1]).toMatchObject({ reply_to_id: "p1" });
+    // Every word of what was written reaches the audience, in order.
+    expect(
+      creations()
+        .map((creation) => creation.text)
+        .join(" "),
+    ).toBe(text);
+  });
+
+  it("splits an overlong part of a thread where its own post ends, keeping the media with it", async () => {
+    const { fetchImpl, creations } = transport({ publishIds: ["p1", "p2", "p3"], containerIds: ["c1", "c2", "c3"] });
+    const result = await publishToThreads(
+      { text: "first", thread: [{ text: `${"b".repeat(500)} tail`, entities: [], media: [] }] },
+      config,
+      fetchImpl,
+    );
+
+    expect(result.ids).toEqual(["p1", "p2", "p3"]);
+    expect(creations().map((creation) => creation.text)).toEqual(["first", "b".repeat(500), "tail"]);
+    expect(creations()[2]).toMatchObject({ reply_to_id: "p2" });
   });
 
   it("publishes a thread as a reply chain, one post per part", async () => {

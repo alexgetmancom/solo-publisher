@@ -14,7 +14,8 @@ export function createThreadPartStore(db: BackendDatabase, clock: Clock): Thread
     position,
     textRu: part.textRu,
     entitiesRuJson: part.entitiesRu.length ? part.entitiesRu : null,
-    textEn: null,
+    textEn: part.textEn ?? null,
+    textEnApproved: part.textEnApproved ?? null,
     mediaJson: part.media.length ? (part.media as MediaPayload[]) : null,
     createdAt: now,
     updatedAt: now,
@@ -32,6 +33,7 @@ export function createThreadPartStore(db: BackendDatabase, clock: Clock): Thread
           textRu: part.textRu,
           entitiesRu: part.entitiesRuJson ?? [],
           textEn: part.textEn,
+          textEnApproved: part.textEnApproved,
           media: (part.mediaJson ?? []) as Record<string, unknown>[],
         }));
     },
@@ -99,6 +101,17 @@ export function createThreadPartStore(db: BackendDatabase, clock: Clock): Thread
             .run();
         return true;
       });
+    },
+
+    approveEnglish(draftId: number, position: number, textEn: string): boolean {
+      return Boolean(
+        db
+          .update(draftThreadParts)
+          .set({ textEnApproved: textEn, updatedAt: stamp() })
+          .where(and(eq(draftThreadParts.draftId, draftId), eq(draftThreadParts.position, position)))
+          .returning({ position: draftThreadParts.position })
+          .get(),
+      );
     },
 
     setEnglish(draftId: number, texts: Array<{ position: number; textEn: string }>): void {

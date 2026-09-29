@@ -5,6 +5,10 @@ import { interfaceBindings, type JsonValue } from "../../db/schema.js";
 const TELEGRAM = "telegram";
 
 type Binding = { chatId: number; messageId: number };
+/** The draft card also carries the screen it is currently showing, so that a
+ * repaint -- the English arriving, a publication moving on -- draws the screen
+ * the operator is reading rather than putting them back on the overview. */
+type DraftCardBinding = Binding & { view: string | null };
 type AnalyticsDashboardCard = { chatId: number; messageId: number; section: "overview" | "posts" | "video"; days: 1 | 7 | 30 };
 
 /** Every control card is the same (interfaceId, entityType, entityId) binding, differing
@@ -52,13 +56,19 @@ function getBinding(backendDb: BackendDb, entityType: string, entityId: number) 
 }
 
 /** Telegram-only message references. Studio aggregates never need chat/message ids. */
-export function setTelegramPostCard(backendDb: BackendDb, draftId: number, chatId: number, messageId: number): void {
-  setBinding(backendDb, "draft", draftId, chatId, messageId);
+export function setTelegramPostCard(backendDb: BackendDb, draftId: number, chatId: number, messageId: number, view?: string): void {
+  setBinding(backendDb, "draft", draftId, chatId, messageId, { view: view ?? null });
 }
 
-export function telegramPostCard(backendDb: BackendDb, draftId: number): Binding | null {
+export function telegramPostCard(backendDb: BackendDb, draftId: number): DraftCardBinding | null {
   const binding = getBinding(backendDb, "draft", draftId);
-  return binding ? { chatId: Number(binding.conversationId), messageId: Number(binding.messageId) } : null;
+  if (!binding) return null;
+  const view = binding.stateJson?.view;
+  return {
+    chatId: Number(binding.conversationId),
+    messageId: Number(binding.messageId),
+    view: typeof view === "string" ? view : null,
+  };
 }
 
 /** Separate binding: a progress card is transient delivery UI, not the draft editor. */

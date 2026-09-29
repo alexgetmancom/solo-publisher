@@ -55,6 +55,7 @@ const POSTS: Record<string, string> = {
   makeThread: "bot-only: offered on the card when a post is over a platform's limit, after seeing what it costs",
   appendThreadPart: "bot-only: a post of a thread is written as a Telegram message",
   editThreadPart: "bot-only: the other half of appendThreadPart",
+  editThreadPartEnglish: "bot-only: the English of one post of a thread, rewritten on the thread review",
   removeThreadPart: "bot-only: the other half of appendThreadPart, on the thread review",
   publish: "draft-publish",
   publishArticle: "article-publish",

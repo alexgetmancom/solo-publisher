@@ -15,6 +15,8 @@ export type PublicationCard = {
   draftId: number;
   text: string;
   keyboard: InlineKeyboard;
+  /** The screen this card is showing, so a later repaint draws the same one. */
+  view?: string | undefined;
 };
 
 type PublicationRendererInput = {
@@ -42,7 +44,7 @@ export function publicationRenderers(
       card: (input) => {
         const view = input.view && isDraftView(input.view) ? input.view : undefined;
         const preview = draftPreview(backendDb, input.publicationId, config, input.locale, view);
-        return { kind: "post", draftId: input.publicationId, ...preview };
+        return { kind: "post", draftId: input.publicationId, view, ...preview };
       },
     },
     video: {
@@ -74,18 +76,19 @@ export function publicationCardMessage(card: PublicationCard): PublicationEffect
   return [{ type: "message", text: card.text, options: { parse_mode: "Markdown", reply_markup: card.keyboard }, card: cardRef(card) }];
 }
 
-function cardRef(card: PublicationCard): { kind: "post" | "video"; draftId: number } {
-  return { kind: card.kind, draftId: card.draftId };
+function cardRef(card: PublicationCard): { kind: "post" | "video"; draftId: number; view?: string | undefined } {
+  return { kind: card.kind, draftId: card.draftId, ...(card.kind === "post" ? { view: card.view } : {}) };
 }
 
 /** The post card as every Telegram path renders it: the same renderer, the same
  * services and the actor's own locale. Three call sites spelled it out and one
  * of them could have drifted on which locale it passed. */
-export function postPreviewCard(backendDb: BackendDb, config: BackendConfig, actorId: number, draftId: number) {
+export function postPreviewCard(backendDb: BackendDb, config: BackendConfig, actorId: number, draftId: number, view?: string | null) {
   return publicationRenderers(backendDb, config).post.card({
     actorId,
     publicationId: draftId,
     locale: settingsService(backendDb).locale(actorId),
+    view: view ?? undefined,
   });
 }
 
