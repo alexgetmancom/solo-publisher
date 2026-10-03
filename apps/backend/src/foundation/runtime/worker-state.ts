@@ -53,6 +53,7 @@ export const CORE_WORKER_NAMES = [
   "publication-reconciliation",
   "notifications",
   "video",
+  "youtube-live",
   "metrics",
   "creator-analytics",
   "metric-retention",

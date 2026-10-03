@@ -78,7 +78,13 @@ function stubYouTube(perLocale: Record<string, unknown>): { calls: string[]; res
 }
 
 const live = {
-  items: [{ id: "bc-live", snippet: { title: "Стримс", description: "", liveChatId: "chat-1" }, status: { lifeCycleStatus: "live" } }],
+  items: [
+    {
+      id: "bc-live",
+      snippet: { title: "Стримс", description: "", liveChatId: "chat-1" },
+      status: { lifeCycleStatus: "live", privacyStatus: "unlisted" },
+    },
+  ],
 };
 
 describe("stream screen", () => {
@@ -90,7 +96,12 @@ describe("stream screen", () => {
     try {
       const found = await streamService(backendDb, config).current();
       expect(found.places.map((place) => place.label)).toEqual(["YouTube RU", "YouTube EN"]);
-      expect(found.places.find((place) => place.label === "YouTube EN")).toMatchObject({ title: "Стримс", live: true, editable: true });
+      expect(found.places.find((place) => place.label === "YouTube EN")).toMatchObject({
+        title: "Стримс",
+        live: true,
+        editable: true,
+        privacyStatus: "unlisted",
+      });
       expect(found.places.find((place) => place.label === "YouTube RU")).toMatchObject({ editable: false });
     } finally {
       youtube.restore();

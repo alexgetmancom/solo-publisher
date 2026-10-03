@@ -5,6 +5,10 @@ import { videoDrafts, videoMetricSchedule, videoMetricSnapshots } from "../src/d
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { withDb } from "./helpers/db.js";
 
+const publishedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+const sampledAt = new Date(Date.parse(publishedAt) + 60 * 60 * 1000).toISOString();
+const nextCheckAt = new Date(Date.parse(publishedAt) + 24 * 60 * 60 * 1000).toISOString();
+
 describe("studio brief", () => {
   it("leaves out what it cannot stand behind and says what is missing instead", async () => {
     await withDb(async (backendDb) => {
@@ -12,7 +16,7 @@ describe("studio brief", () => {
       for (const views of [1000, 2000, 3000, 4000]) {
         const { draftId, targetId } = insertPublishedVideo(backendDb, {
           target: "youtube_shorts",
-          publishedAt: "2026-09-02T18:00:00.000Z",
+          publishedAt,
         });
         backendDb.db
           .insert(videoMetricSnapshots)
@@ -20,7 +24,7 @@ describe("studio brief", () => {
             videoTargetId: targetId,
             platform: "youtube_shorts",
             checkpointIndex: 0,
-            sampledAt: "2026-09-02T19:00:00.000Z",
+            sampledAt,
             metricsJson: { views },
           })
           .run();
@@ -40,14 +44,14 @@ describe("studio brief", () => {
 
   it("says what stopped collection in a sentence, and does not ask for work a quota will undo by itself", async () => {
     await withDb(async (backendDb) => {
-      const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt: "2026-09-02T18:00:00.000Z" });
+      const { targetId } = insertPublishedVideo(backendDb, { target: "youtube_shorts", publishedAt });
       backendDb.db
         .insert(videoMetricSnapshots)
         .values({
           videoTargetId: targetId,
           platform: "youtube_shorts",
           checkpointIndex: 0,
-          sampledAt: "2026-09-02T19:00:00.000Z",
+          sampledAt,
           metricsJson: { views: 100 },
         })
         .run();
@@ -55,11 +59,12 @@ describe("studio brief", () => {
         .insert(videoMetricSchedule)
         .values({
           videoTargetId: targetId,
-          nextCheckAt: "2026-09-03T18:00:00.000Z",
-          updatedAt: "2026-09-03T18:00:00.000Z",
+          nextCheckAt,
+          updatedAt: nextCheckAt,
           checkpointIndex: 1,
           errorCount: 1,
-          lastError: 'GET https://www.googleapis.com/youtube/v3/videos?part=snippet&id=abc failed: 403 {"error":{"errors":[{"reason":"quotaExceeded"}]}}',
+          lastError:
+            'GET https://www.googleapis.com/youtube/v3/videos?part=snippet&id=abc failed: 403 {"error":{"errors":[{"reason":"quotaExceeded"}]}}',
         })
         .run();
 

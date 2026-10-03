@@ -6,6 +6,7 @@ import { renewMetaTokens } from "../channels/meta-tokens.js";
 import { targetRouting } from "../channels/registry.js";
 import { refreshXToken } from "../channels/x-oauth.js";
 import type { BackendDb } from "../db/client.js";
+import { runYouTubeLiveCycle } from "../delivery/live-broadcast.js";
 import { pruneMediaCache } from "../delivery/media-prepare.js";
 import { createPlatformPorts } from "../delivery/ports/social.js";
 import { runPublicationReconciliation } from "../delivery/publication-reconciliation.js";
@@ -106,6 +107,9 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     }),
     startWorkerLoop("video", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
       await runTimedCycle("publishing.video.cycle", "claimed", () => runVideoCycle(config, backendDb));
+    }),
+    startWorkerLoop("youtube-live", 60 * 1000, async () => {
+      await runYouTubeLiveCycle(config, backendDb);
     }),
     // Two independent collectors on one schedule. They do not share a
     // failure: a provider outage on one must not silently stop the other.

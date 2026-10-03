@@ -48,6 +48,7 @@ export type StreamPlace = {
   description: string | null;
   live: boolean;
   url: string;
+  privacyStatus: LiveBroadcast["privacyStatus"];
   /** Whether this place can take an edit at all right now. YouTube between
    * streams has no broadcast to edit; a Twitch channel always does. */
   editable: boolean;
@@ -156,6 +157,7 @@ async function youtubePlaces(config: BackendConfig, locales: readonly VideoLocal
           description: chosen?.description ?? "",
           live,
           url: chosen?.url ?? "",
+          privacyStatus: chosen?.privacyStatus ?? null,
           editable: chosen !== null,
           chatId: chosen?.liveChatId ?? null,
           previous: {
@@ -192,6 +194,7 @@ async function twitchPlace(pending: Promise<TwitchAuth | null>, fetchImpl: typeo
         description: null,
         live: channel.live,
         url: channel.url,
+        privacyStatus: null,
         // The title belongs to the channel, so it can be set with nothing on
         // the air -- and the next stream opens under it.
         editable: true,
@@ -213,6 +216,7 @@ function absent(label: string, surface: "youtube" | "twitch"): StreamPlace {
     description: null,
     live: false,
     url: "",
+    privacyStatus: null,
     editable: false,
     chatId: null,
     previous: { title: null, description: null },

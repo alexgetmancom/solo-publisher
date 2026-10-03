@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { editYouTubeBroadcast, youtubeBroadcastInventory } from "../src/delivery/live-broadcast.js";
+import { publicationEvents, workerState } from "../src/db/schema.js";
+import { editYouTubeBroadcast, runYouTubeLiveCycle, youtubeBroadcastInventory } from "../src/delivery/live-broadcast.js";
+import { withDb } from "./helpers/db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 /**
@@ -18,15 +20,21 @@ const config = loadTestConfig({
   YOUTUBE_RU_REFRESH_TOKEN: "refresh",
 });
 
-type Call = { url: string; method: string; body: string | null };
+type Call = { url: string; method: string; body: string | null; headers: Headers };
 
 function stub(responses: (call: Call) => unknown): { calls: Call[]; fetchImpl: typeof fetch } {
   const calls: Call[] = [];
   const fetchImpl = (async (url: string | URL | Request, init: RequestInit = {}) => {
-    const call = { url: String(url), method: init.method ?? "GET", body: init.body == null ? null : String(init.body) };
+    const call = {
+      url: String(url),
+      method: init.method ?? "GET",
+      body: init.body == null ? null : String(init.body),
+      headers: new Headers(init.headers),
+    };
     calls.push(call);
     if (call.url.includes("oauth2.googleapis.com")) return Response.json({ access_token: "token" });
-    return Response.json(responses(call));
+    const response = responses(call);
+    return response instanceof Response ? response : Response.json(response);
   }) as unknown as typeof fetch;
   return { calls, fetchImpl };
 }
@@ -42,6 +50,158 @@ const LIVE = {
   status: { lifeCycleStatus: "live" },
 };
 const ONLY_LIVE = { items: [LIVE] };
+
+describe("runYouTubeLiveCycle", () => {
+  it("does not call YouTube without an enabled connection, even when credentials exist", () =>
+    withDb(async (backendDb) => {
+      const { calls, fetchImpl } = stub(() => ONLY_LIVE);
+      await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+      expect(calls).toHaveLength(0);
+      expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: true, checked: 0, corrected: 0 });
+    }));
+
+  for (const lifeCycleStatus of ["ready", "testing", "liveStarting", "live"]) {
+    it(`makes an unlisted ${lifeCycleStatus} broadcast public and confirms the same id`, () =>
+      withDb(
+        async (backendDb) => {
+          const broadcast = { ...PERSISTENT, etag: "version-1", status: { lifeCycleStatus, privacyStatus: "unlisted" } };
+          const { calls, fetchImpl } = stub((call) =>
+            call.url.includes("&id=")
+              ? { items: [{ ...broadcast, status: { lifeCycleStatus, privacyStatus: "public" } }] }
+              : { items: [broadcast] },
+          );
+          await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+          const update = calls.find((call) => call.method === "PUT");
+          expect(update?.url).toBe("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status");
+          expect(update?.headers.get("If-Match")).toBe('"version-1"');
+          expect(JSON.parse(String(update?.body))).toEqual({ id: "bc-default", status: { privacyStatus: "public" } });
+          expect(calls.at(-1)?.url).toBe("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,status&id=bc-default");
+          expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: true, checked: 1, corrected: 1 });
+          const event = backendDb.db.select().from(publicationEvents).get();
+          expect(event?.eventType).toBe("stream.youtube.visibility.corrected");
+          expect(JSON.parse(event?.detailsJson ?? "{}")).toMatchObject({
+            broadcastId: "bc-default",
+            previousPrivacyStatus: "unlisted",
+          });
+        },
+        ["youtube_ru"],
+      ));
+  }
+
+  it("does not rewrite an already public broadcast on repeated ticks", () =>
+    withDb(
+      async (backendDb) => {
+        const { calls, fetchImpl } = stub(() => ({ items: [{ ...LIVE, status: { lifeCycleStatus: "live", privacyStatus: "public" } }] }));
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(calls.some((call) => call.method === "PUT")).toBe(false);
+        expect(backendDb.db.select().from(publicationEvents).all()).toHaveLength(0);
+      },
+      ["youtube_ru"],
+    ));
+
+  it("leaves future scheduled events and finished recordings private", () =>
+    withDb(
+      async (backendDb) => {
+        const { calls, fetchImpl } = stub(() => ({
+          items: [
+            { ...LIVE, status: { lifeCycleStatus: "ready", privacyStatus: "private" } },
+            { ...PERSISTENT, status: { lifeCycleStatus: "complete", privacyStatus: "private" } },
+          ],
+        }));
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(calls.some((call) => call.method === "PUT")).toBe(false);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: true, checked: 0, corrected: 0 });
+      },
+      ["youtube_ru"],
+    ));
+
+  it("reports a failed verification and suppresses repeated alerts rather than claiming success", () =>
+    withDb(
+      async (backendDb) => {
+        const { fetchImpl } = stub(() => ({
+          items: [{ ...LIVE, etag: '"version-1"', status: { lifeCycleStatus: "live", privacyStatus: "private" } }],
+        }));
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: false, checked: 1, corrected: 0 });
+        expect(backendDb.db.select().from(publicationEvents).all()).toMatchObject([
+          { eventType: "stream.youtube.visibility.failed", severity: "error", target: "youtube_ru" },
+        ]);
+      },
+      ["youtube_ru"],
+    ));
+
+  it("does not accept another broadcast as proof that the edited one is public", () =>
+    withDb(
+      async (backendDb) => {
+        const { fetchImpl } = stub((call) => ({
+          items: [
+            call.url.includes("&id=")
+              ? { id: "bc-successor", status: { lifeCycleStatus: "live", privacyStatus: "public" } }
+              : { ...LIVE, etag: "version-1", status: { lifeCycleStatus: "live", privacyStatus: "unlisted" } },
+          ],
+        }));
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: false, corrected: 0 });
+      },
+      ["youtube_ru"],
+    ));
+
+  it("does not overwrite a broadcast that changed between the read and write", () =>
+    withDb(
+      async (backendDb) => {
+        const { calls, fetchImpl } = stub((call) =>
+          call.method === "PUT"
+            ? new Response('{"error":{"errors":[{"reason":"conditionNotMet"}]}}', { status: 412 })
+            : { items: [{ ...LIVE, etag: "version-1", status: { lifeCycleStatus: "live", privacyStatus: "unlisted" } }] },
+        );
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(calls.filter((call) => call.method === "PUT")).toHaveLength(1);
+        expect(calls.some((call) => call.url.includes("&id="))).toBe(false);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: false, corrected: 0 });
+      },
+      ["youtube_ru"],
+    ));
+
+  it("refuses to mutate a broadcast without an ETag", () =>
+    withDb(
+      async (backendDb) => {
+        const { calls, fetchImpl } = stub(() => ({ items: [{ ...LIVE, status: { lifeCycleStatus: "live", privacyStatus: "unlisted" } }] }));
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(calls.some((call) => call.method === "PUT")).toBe(false);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: false, corrected: 0 });
+      },
+      ["youtube_ru"],
+    ));
+
+  it("ignores channels where live streaming is disabled", () =>
+    withDb(
+      async (backendDb) => {
+        const { fetchImpl } = stub(() => new Response('{"error":{"errors":[{"reason":"liveStreamingNotEnabled"}]}}', { status: 403 }));
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: true, checked: 0 });
+        expect(backendDb.db.select().from(publicationEvents).all()).toHaveLength(0);
+      },
+      ["youtube_ru"],
+    ));
+
+  it("continues checking the second channel when the first one fails", () =>
+    withDb(
+      async (backendDb) => {
+        let lists = 0;
+        const { fetchImpl } = stub(() =>
+          ++lists === 1
+            ? new Response("YouTube rejected the credentials", { status: 403 })
+            : { items: [{ ...LIVE, status: { lifeCycleStatus: "live", privacyStatus: "public" } }] },
+        );
+        await runYouTubeLiveCycle(config, backendDb, fetchImpl);
+        expect(lists).toBe(2);
+        expect(backendDb.db.select().from(workerState).get()?.stateJson).toMatchObject({ ok: false, checked: 1 });
+      },
+      ["youtube_ru", "youtube_en"],
+    ));
+});
 
 describe("youtubeBroadcastInventory", () => {
   it("asks for every broadcast by status alone, without the incompatible mine filter", async () => {

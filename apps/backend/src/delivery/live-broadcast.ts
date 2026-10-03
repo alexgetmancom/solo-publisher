@@ -1,14 +1,20 @@
+import { youtubeLocales } from "../channels/locales.js";
+import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { type VideoLocale, youtubeAccessToken } from "../foundation/external/youtube.js";
 import { requestJson } from "../foundation/http.js";
+import { recordWorkerState } from "../foundation/runtime/worker-state.js";
+import { ALERT_COOLDOWN_SECONDS } from "../observability/alerts.js";
 
 /** YouTube's own lifecycle vocabulary, kept verbatim: an operator comparing this
  * against YouTube Studio should not have to translate a renaming of it. */
-type LifeCycleStatus = "created" | "ready" | "testing" | "live" | "complete" | "revoked";
+type LifeCycleStatus = "created" | "ready" | "testStarting" | "testing" | "liveStarting" | "live" | "complete" | "revoked";
 
 export type LiveBroadcast = {
   id: string;
+  etag: string | null;
   lifeCycleStatus: LifeCycleStatus;
+  privacyStatus: "private" | "unlisted" | "public" | null;
   /** The persistent broadcast behind the reusable stream key — the one whose
    * title carries from one stream to the next, the way a Twitch title does.
    * A channel has at most one. */
@@ -45,6 +51,7 @@ export const LIVE_DESCRIPTION_LIMIT = 5000;
 type BroadcastList = {
   items?: Array<{
     id?: string;
+    etag?: string;
     snippet?: {
       title?: string;
       description?: string;
@@ -53,7 +60,7 @@ type BroadcastList = {
       liveChatId?: string;
       actualEndTime?: string;
     };
-    status?: { lifeCycleStatus?: LifeCycleStatus };
+    status?: { lifeCycleStatus?: LifeCycleStatus; privacyStatus?: LiveBroadcast["privacyStatus"] };
   }>;
 };
 
@@ -76,7 +83,9 @@ async function listBroadcasts(token: string, fetchImpl: typeof fetch): Promise<L
       ? [
           {
             id: item.id,
+            etag: item.etag ?? null,
             lifeCycleStatus: item.status?.lifeCycleStatus ?? "created",
+            privacyStatus: item.status?.privacyStatus ?? null,
             isDefault: item.snippet?.isDefaultBroadcast === true,
             title: item.snippet?.title ?? "",
             description: item.snippet?.description ?? "",
@@ -92,7 +101,8 @@ async function listBroadcasts(token: string, fetchImpl: typeof fetch): Promise<L
 
 /** A stream that has ended is beyond an edit anyone would see, and a revoked
  * one is beyond editing at all. */
-const EDITABLE = new Set<LifeCycleStatus>(["created", "ready", "testing", "live"]);
+const ON_AIR = new Set<LifeCycleStatus>(["testStarting", "testing", "liveStarting", "live"]);
+const EDITABLE = new Set<LifeCycleStatus>(["created", "ready", ...ON_AIR]);
 
 /**
  * The broadcast an edit belongs on.
@@ -109,7 +119,7 @@ const EDITABLE = new Set<LifeCycleStatus>(["created", "ready", "testing", "live"
  */
 function chooseBroadcast(broadcasts: LiveBroadcast[]): LiveBroadcast | null {
   const candidates = broadcasts.filter((broadcast) => EDITABLE.has(broadcast.lifeCycleStatus));
-  const onAir = candidates.find((broadcast) => broadcast.lifeCycleStatus === "live" || broadcast.lifeCycleStatus === "testing");
+  const onAir = candidates.find((broadcast) => ON_AIR.has(broadcast.lifeCycleStatus));
   return onAir ?? candidates.sort((left, right) => startOrder(left).localeCompare(startOrder(right)))[0] ?? null;
 }
 
@@ -130,6 +140,64 @@ export async function youtubeBroadcastInventory(
 async function inventory(token: string, fetchImpl: typeof fetch): Promise<LiveBroadcastInventory> {
   const broadcasts = await listBroadcasts(token, fetchImpl);
   return { chosen: chooseBroadcast(broadcasts), broadcasts };
+}
+
+/** Keeps the current broadcast public before the encoder connects and while
+ * it is running. Future scheduled events and finished recordings stay alone.
+ * A retry sets the same visibility on the same id, never starts another stream. */
+export async function runYouTubeLiveCycle(config: BackendConfig, backendDb: BackendDb, fetchImpl: typeof fetch = fetch): Promise<void> {
+  let checked = 0;
+  let corrected = 0;
+  const errors: string[] = [];
+  for (const locale of youtubeLocales(backendDb)) {
+    const target = `youtube_${locale}`;
+    try {
+      const token = await youtubeAccessToken(config, fetchImpl, locale);
+      const current = (await inventory(token, fetchImpl)).chosen;
+      if (!current || (!ON_AIR.has(current.lifeCycleStatus) && current.scheduledStartTime !== null)) continue;
+      checked += 1;
+      if (current.privacyStatus === "public") continue;
+      if (current.privacyStatus === null || !current.etag)
+        throw new Error(`YouTube broadcast ${current.id} has no visibility or ETag; refusing an unguarded update.`);
+      await requestJson(fetchImpl, "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "If-Match": current.etag.startsWith('"') ? current.etag : `"${current.etag}"`,
+        },
+        body: JSON.stringify({ id: current.id, status: { privacyStatus: "public" } }),
+      });
+      const verified = await requestJson<BroadcastList>(
+        fetchImpl,
+        `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,status&id=${encodeURIComponent(current.id)}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!verified.items?.some((item) => item.id === current.id && item.status?.privacyStatus === "public"))
+        throw new Error(`YouTube broadcast ${current.id} was not confirmed public after the visibility update.`);
+      corrected += 1;
+      backendDb.events.record({
+        type: "stream.youtube.visibility.corrected",
+        severity: "info",
+        target,
+        message: `YouTube broadcast ${current.id} is public`,
+        details: { broadcastId: current.id, previousPrivacyStatus: current.privacyStatus, url: current.url },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("liveStreamingNotEnabled")) continue;
+      errors.push(`${target}: ${message}`);
+      backendDb.events.record({
+        type: "stream.youtube.visibility.failed",
+        severity: "error",
+        target,
+        message: "Could not confirm that the current YouTube broadcast is public",
+        details: { error: message },
+        cooldownSeconds: ALERT_COOLDOWN_SECONDS,
+      });
+    }
+  }
+  recordWorkerState(backendDb, "youtube-live", { checked, corrected }, errors.length ? errors.join("\n") : null);
 }
 
 /** What an operator can change about a stream from the bot. Both fields travel

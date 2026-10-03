@@ -322,8 +322,8 @@ const operationDefs = {
   live: operation({
     section: "studio",
     startHere: "a stream is on the air and something about it is wrong",
-    summary: "Every surface this Studio streams on, and what each is showing right now.",
-    note: "Twitch carries a channel title that survives the stream ending; YouTube carries a broadcast that exists only around one. Between streams a YouTube channel has nothing to edit, which is the normal answer and not a failure.",
+    summary: "Every surface this Studio streams on, its current title and YouTube visibility.",
+    note: "YouTube visibility is checked every minute: the current unscheduled or running broadcast is kept public. Future scheduled events and finished recordings are not changed. Twitch carries a channel title that survives the stream ending; YouTube has nothing to edit until a broadcast exists.",
     schema: z.object({}),
     mutates: false,
     agent: true,
