@@ -274,6 +274,26 @@ describe("operations registry", () => {
     // the schema an agent reads as the value to send.
     expect(ops.filter((tool) => tool.description.includes("--"))).toEqual([]);
     expect(ops.filter((tool) => Object.values(tool.inputSchema.properties ?? {}).some((field) => "placeholder" in field))).toEqual([]);
+    expect(ops.find((tool) => tool.name === "ops_status")?.inputSchema.properties?.details).toMatchObject({ type: "boolean" });
+  });
+
+  it("serves the status summary and explicit details through MCP", async () => {
+    backendDb = openBackendDb(":memory:");
+    const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
+    for (const details of [false, true]) {
+      const response = (await mcpResponse(
+        backendDb,
+        config,
+        { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "ops_status", arguments: { details } } },
+        "key",
+        42,
+      )) as { result: { content: Array<{ text: string }> } };
+      const status = JSON.parse(response.result.content[0]?.text ?? "null");
+      expect(status.workers.total).toBeGreaterThan(0);
+      expect(status.workers.problems.length).toBe(status.workers.total);
+      expect(Object.hasOwn(status.workers, "entries")).toBe(details);
+      expect(Object.hasOwn(status, "generatedAt")).toBe(details);
+    }
   });
 
   it("answers a batch as a batch and a notification with nothing", async () => {

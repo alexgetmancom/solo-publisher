@@ -86,8 +86,12 @@ analytics; what differs is the public site (alex only) and the video platforms e
 
 Start any worker, queue, configuration, publication or error investigation with
 `ops guide --json`; it is read-only and it is the source of truth for routing, the command catalog
-and what to run when the local database is unusable. Get CLI output before reading source for
-production state, and never open the production database by hand.
+and what to run when the local database is unusable. Then run `status` for the health summary.
+Expand the relevant `guide --section` for a problem,
+then use `audit`, `recent` or `timeline` as appropriate; `status --details` adds all worker records
+and timestamps. Do not read the full catalog in advance. Parse JSON before selecting fields; never
+truncate it with `head`. Get CLI output before reading source for production state, and never open
+the production database by hand.
 
 **Never run a mutation without an explicit request** — `backup`, `restore`, `--apply` variants,
 `format-record`, channel connect/disable, `retry`, manual SQL, deployments.
@@ -104,10 +108,10 @@ about one command belongs in its `summary` or `note`, which reach all three surf
 belong here.
 
 `section` is which part of the catalog a command is read in, and it is required: `guide` answers
-with section names and a symptom index, and expands one section on request, because the whole
-catalog is 29KB and a caller reading it to answer one question pays for all of it. `startHere` is
-the question a command is the beginning of the answer to; the symptom index is built from those, and
-it is what a caller reads before it knows any section name.
+with a route and a section map; each section has `commandCount` and its expansion command.
+`guide --section` exposes that section's command entries and symptom index; `--all` exposes the full
+catalog. `commands` always contains objects, never names alone. `startHere` is the question a
+command begins to answer, and builds the symptom index only in expanded views.
 
 `agent: false` keeps an operation off MCP. Every agent tool is listed in full in every context the
 server is connected to, before anything is asked, so the line is: a read is on, because diagnosis is

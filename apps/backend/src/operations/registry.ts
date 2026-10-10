@@ -94,7 +94,7 @@ import { settleAmbiguousTarget } from "./settle.js";
 import { backfillSiteImageMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
 import { skipPublicationTargets } from "./skip.js";
-import { compactOperationsStatus } from "./status.js";
+import { operationsStatus } from "./status.js";
 import { backfillTextStoryCards } from "./story-card-backfill.js";
 import { backfillStoryMedia } from "./story-media-backfill.js";
 import { pruneOrphanedStoryMedia } from "./story-media-prune.js";
@@ -127,8 +127,7 @@ export type OperationDef<S extends z.ZodType = z.ZodType> = {
    * cannot be added without saying where an operator would go looking for it. */
   section: OperationSection;
   /** The question this command is the answer to the start of, when it is one.
-   * `guide` builds its symptom index from these, and that index is what a
-   * caller reads before it knows any section name. */
+   * `guide` builds the symptom index for the section the caller expands. */
   startHere?: string;
   schema: S;
   mutates: boolean;
@@ -137,6 +136,8 @@ export type OperationDef<S extends z.ZodType = z.ZodType> = {
    * credentials, or read a path off the host stay CLI-only: an MCP caller is
    * remote, and none of those are meaningful — or safe — from there. */
   agent: boolean;
+  /** Runs before a database is available, so database-backed usage is unavailable too. */
+  databaseIndependent?: true;
   handler: (context: OperationContext, input: z.infer<S>) => unknown | Promise<unknown>;
   /** Terminal rendering. Without one the result prints as JSON. */
   format?: (result: never) => string;
@@ -257,10 +258,11 @@ const operationDefs = {
       all: z.boolean().default(false).describe("expand every section at once"),
     }),
     mutates: false,
+    databaseIndependent: true,
     // Probes a host path and the launcher's local .env.local; neither is
     // meaningful to a remote caller.
     agent: false,
-    note: "start here for any worker, queue, configuration or publication question; it answers with a symptom index and section names, and `--section` expands one",
+    note: "start here for any worker, queue, configuration or publication question; it answers with routes and section names; `--section` expands commands and symptoms, and `--all` reads the full catalog",
     handler: (context, input) => buildOperationsGuide(context.dbPath, operationCatalog(), { section: input.section, all: input.all }),
     format: formatOperationsGuide,
   }),
@@ -365,11 +367,11 @@ const operationDefs = {
   status: operation({
     section: "health",
     startHere: "is this deployment alive and are its workers running",
-    summary: "Worker heartbeats, publication counts and metric schedule health.",
-    schema: z.object({}),
+    summary: "Health summary, worker problems and publication counts; details adds all worker heartbeats and timestamps.",
+    schema: z.object({ details: z.boolean().default(false).describe("include all worker records and diagnostic timestamps") }),
     mutates: false,
     agent: true,
-    handler: (context) => compactOperationsStatus(context.config(), context.db()),
+    handler: (context, input) => operationsStatus(context.config(), context.db(), input.details),
   }),
   doctor: operation({
     section: "health",
@@ -1838,7 +1840,7 @@ export async function runOperation(name: string, context: OperationContext, args
   try {
     result = await def.handler(context, parsed.data);
   } catch (error) {
-    recordUsage(context.db(), operationUsageKey(name), false, Date.now() - startedAt);
+    if (!def.databaseIndependent) recordUsage(context.db(), operationUsageKey(name), false, Date.now() - startedAt);
     throw error;
   }
   // Measured around the handler alone: a caller's typo is rejected above, and
@@ -1846,7 +1848,7 @@ export async function runOperation(name: string, context: OperationContext, args
   // fails. Recorded here rather than at each surface, because this is the one
   // place every surface passes through -- and the CLI, which is where most of
   // these are actually run, left no trace at all before it.
-  recordUsage(context.db(), operationUsageKey(name), true, Date.now() - startedAt);
+  if (!def.databaseIndependent) recordUsage(context.db(), operationUsageKey(name), true, Date.now() - startedAt);
   if (def.mutates && !def.journalsInHandler) journalMutation(context, name, def, parsed.data);
   return result;
 }

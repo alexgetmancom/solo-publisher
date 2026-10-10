@@ -33,7 +33,7 @@ function workers(backendDb: BackendDb, expectedNames: ReadonlySet<string>) {
       const state = JSON.parse(row.state_json) as Record<string, import("../db/schema.js").JsonValue>;
       return {
         name: row.name,
-        ok: state.ok !== false,
+        ok: state.ok !== false && !state.scheduler_error,
         lastRunAt: typeof state.last_run_at === "string" ? state.last_run_at : row.updated_at,
         lastError:
           typeof state.scheduler_error === "string"
@@ -51,8 +51,8 @@ function countRows(backendDb: BackendDb, table: string): number {
   return Number(row.count);
 }
 
-/** Compact health-oriented status shared by text-first and video-first Studios. */
-export function compactOperationsStatus(config: BackendConfig, backendDb: BackendDb) {
+/** Health summary, with full worker records and timestamps on request. */
+export function operationsStatus(config: BackendConfig, backendDb: BackendDb, details = false) {
   const expectedWorkers = expectedWorkerNames(Boolean(config.controllerBotToken));
   const workerRows = workers(backendDb, new Set(expectedWorkers));
   const observedWorkers = new Set(workerRows.map((worker) => worker.name));
@@ -80,19 +80,34 @@ export function compactOperationsStatus(config: BackendConfig, backendDb: Backen
     lastCheckedAt: string | null;
   };
   const actionableIssues = backendDb.actionableIssues.list();
-  const unhealthy = missingWorkers.length > 0 || workerRows.some((worker) => !worker.ok || worker.stale) || actionableIssues.length > 0;
+  const problems = [
+    ...missingWorkers.map((name) => ({ name, reasons: ["missing"], lastError: null, ageSeconds: null })),
+    ...workerRows
+      .filter((worker) => !worker.ok || worker.stale)
+      .map((worker) => ({
+        name: worker.name,
+        reasons: [...(!worker.ok ? ["error"] : []), ...(worker.stale ? ["stale"] : [])],
+        lastError: worker.lastError,
+        ageSeconds: worker.ageSeconds,
+      })),
+  ];
 
   return {
-    ok: !unhealthy,
-    generatedAt: new Date().toISOString(),
+    ok: problems.length === 0 && actionableIssues.length === 0,
     gitRevision: gitRevision(),
     siteEnabled: config.studio.siteEnabled,
-    database: {
-      path: config.PIPELINE_DB,
-      exists: fs.existsSync(config.PIPELINE_DB),
+    ...(details
+      ? {
+          generatedAt: new Date().toISOString(),
+          database: { path: config.PIPELINE_DB, exists: fs.existsSync(config.PIPELINE_DB) },
+        }
+      : {}),
+    workers: {
+      total: expectedWorkers.length,
+      healthy: workerRows.filter((worker) => worker.ok && !worker.stale).length,
+      problems,
+      ...(details ? { entries: workerRows } : {}),
     },
-    workers: workerRows,
-    missingWorkers,
     // The same rows the Studio screen and the Command Center's red dot read.
     attention: {
       total: actionableIssues.length,
@@ -125,7 +140,7 @@ export function compactOperationsStatus(config: BackendConfig, backendDb: Backen
         frozen: Number(metricSchedule.frozen ?? 0),
         due: Number(metricSchedule.due ?? 0),
         errors: Number(metricSchedule.errors ?? 0),
-        lastCheckedAt: metricSchedule.lastCheckedAt,
+        ...(details ? { lastCheckedAt: metricSchedule.lastCheckedAt } : {}),
       },
     },
   };

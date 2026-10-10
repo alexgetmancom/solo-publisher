@@ -61,14 +61,12 @@ export type GuideView = { section?: OperationSection | undefined; all?: boolean 
 type SectionDigest = {
   name: OperationSection;
   summary: string;
-  count: number;
-  /** Names only. The whole catalog stays visible for the price of a listing,
-   * and one `guide --section` buys the detail for the part that is wanted. */
-  commands: readonly string[];
+  commandCount: number;
+  command: string;
 };
 
 type OperationsGuide = {
-  version: 2;
+  version: 3;
   local: LocalOperationsProbe;
   route: "local" | "production";
   invocation: Invocation;
@@ -87,9 +85,8 @@ type OperationsGuide = {
   production: {
     configured: boolean;
   };
-  /** Symptom to command. The first thing to read: an operator arrives with a
-   * question, not with a section name. */
-  startHere: readonly { symptom: string; command: string }[];
+  /** Symptoms for the requested section or full catalog. */
+  startHere?: readonly { symptom: string; command: string }[];
   sections: readonly SectionDigest[];
   /** How to read the rest of any section. */
   expand: string;
@@ -134,11 +131,11 @@ function readInvocation(route: "local" | "production", environment: NodeJS.Proce
   };
 }
 
-function digestSections(commands: readonly OperationCatalogEntry[]): SectionDigest[] {
+function digestSections(commands: readonly OperationCatalogEntry[], prefix: string): SectionDigest[] {
   return OPERATION_SECTIONS.map((name) => {
     const members = commands.filter((command) => command.section === name);
-    return { name, summary: SECTION_SUMMARIES[name], count: members.length, commands: members.map((command) => command.name) };
-  }).filter((section) => section.count > 0);
+    return { name, summary: SECTION_SUMMARIES[name], commandCount: members.length, command: `${prefix} guide --section ${name} --json` };
+  }).filter((section) => section.commandCount > 0);
 }
 
 /** The catalog is handed in rather than read: the guide describes the registry,
@@ -170,7 +167,7 @@ export function buildOperationsGuide(
   } as const;
   const selected = view.all ? commands : view.section ? commands.filter((entry) => entry.section === view.section) : undefined;
   return {
-    version: 2,
+    version: 3,
     local,
     route,
     invocation,
@@ -185,17 +182,18 @@ export function buildOperationsGuide(
       configured: productionLauncherConfigured(),
     },
     catalog,
-    // Section order, not catalog order: this is the first thing a caller reads,
-    // and catalog order led it with whichever symptom happened to be declared
-    // first -- a stream question, ahead of "is this deployment alive".
-    startHere: OPERATION_SECTIONS.flatMap((section) =>
-      commands.flatMap((entry) =>
-        entry.section === section && entry.startHere ? [{ symptom: entry.startHere, command: entry.name }] : [],
-      ),
-    ),
-    sections: digestSections(commands),
+    sections: digestSections(commands, invocation.prefix),
     expand: `${invocation.prefix} guide --section <${OPERATION_SECTIONS.join("|")}>, or --all for every entry`,
-    ...(selected ? { commands: selected } : {}),
+    ...(selected
+      ? {
+          startHere: OPERATION_SECTIONS.flatMap((section) =>
+            selected.flatMap((entry) =>
+              entry.section === section && entry.startHere ? [{ symptom: entry.startHere, command: entry.name }] : [],
+            ),
+          ),
+          commands: selected,
+        }
+      : {}),
   };
 }
 
@@ -251,14 +249,9 @@ export function formatOperationsGuide(guide: OperationsGuide): string {
       : `Catalog below is THIS WORKING TREE, not the deployed one. ${guide.catalog.reason}`,
     guide.catalog.authoritative ? "" : `Read the deployed catalog with: ${guide.catalog.command}`,
     "",
-    "Start here:",
-    ...guide.startHere.map((entry) => `  ${entry.symptom} → ${entry.command}`),
-    "",
+    ...(guide.startHere?.length ? ["Start here:", ...guide.startHere.map((entry) => `  ${entry.symptom} → ${entry.command}`), ""] : []),
     "Sections:",
-    ...guide.sections.flatMap((section) => [
-      `  ${section.name} (${section.count}) — ${section.summary}`,
-      `    ${section.commands.join(", ")}`,
-    ]),
+    ...guide.sections.flatMap((section) => [`  ${section.name} (${section.commandCount}) — ${section.summary}`, `    ${section.command}`]),
     "",
     `Expand: ${guide.expand}`,
     ...(detail.length ? ["", "Commands:", ...detail] : []),

@@ -17,7 +17,7 @@ import {
   withMaintenanceLock,
 } from "../src/operations/maintenance.js";
 import { diagnoseMediaProcessor, mediaProcessorStatus, reprocessPostMedia } from "../src/operations/media-processor.js";
-import { compactOperationsStatus } from "../src/operations/status.js";
+import { operationsStatus } from "../src/operations/status.js";
 import { publicationTimeline } from "../src/operations/timeline.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
 import { withDb } from "./helpers/db.js";
@@ -164,18 +164,26 @@ describe("TypeScript operations tooling", () => {
         .prepare('INSERT INTO worker_state(name,state_json,updated_at) VALUES (\'queue\',\'{"ok":true,"last_run_at":"2026-01-01"}\',?)')
         .run(now);
 
-      const status = compactOperationsStatus(loadTestConfig({}), backendDb);
+      const status = operationsStatus(loadTestConfig({}), backendDb);
 
       expect(status.ok).toBe(false);
-      expect(status.missingWorkers).toContain("story-cards");
+      expect(status.workers.problems).toContainEqual({ name: "story-cards", reasons: ["missing"], lastError: null, ageSeconds: null });
       expect(status.posts).toEqual({
         total: 1,
         targets: { total: 1, byStatus: { published: 1 } },
         jobs: { total: 1, byStatus: { published: 1 } },
       });
       expect(status.videos.drafts.total).toBe(0);
-      expect(status.workers).toHaveLength(1);
-      expect(status.workers[0]).toMatchObject({
+      expect(status.workers.healthy).toBe(1);
+      expect(status.workers.total).toBe(status.workers.problems.length + 1);
+      expect(status.workers).not.toHaveProperty("entries");
+      expect(status).not.toHaveProperty("generatedAt");
+      expect(status.metrics.schedule).not.toHaveProperty("lastCheckedAt");
+      const details = operationsStatus(loadTestConfig({}), backendDb, true);
+      expect(details.workers.entries).toHaveLength(1);
+      expect(details).toHaveProperty("generatedAt");
+      expect(details.metrics.schedule).toHaveProperty("lastCheckedAt");
+      expect(details.workers.entries?.[0]).toMatchObject({
         name: "queue",
         ok: true,
         lastRunAt: "2026-01-01",
@@ -184,8 +192,44 @@ describe("TypeScript operations tooling", () => {
         lastHeartbeatAt: expect.any(String),
         stale: false,
       });
-      expect(JSON.stringify(status).length).toBeLessThan(2_000);
       expect(status).not.toHaveProperty("jobs");
+    }));
+
+  it("keeps healthy workers compact and reports missing, stale and scheduler failures", () =>
+    withDb(async (backendDb) => {
+      const config = loadTestConfig({});
+      const names = operationsStatus(config, backendDb).workers.problems.map((worker) => worker.name);
+      const now = new Date().toISOString();
+      for (const name of names) {
+        backendDb.sqlite
+          .query("INSERT INTO worker_state(name,state_json,updated_at) VALUES (?,?,?)")
+          .run(name, JSON.stringify({ ok: true, last_heartbeat_at: now, heartbeat_interval_ms: 60_000 }), now);
+      }
+      const healthy = operationsStatus(config, backendDb);
+      expect(healthy.ok).toBe(true);
+      expect(healthy.workers).toEqual({ total: names.length, healthy: names.length, problems: [] });
+      expect(JSON.stringify(healthy).length).toBeLessThan(1_500);
+
+      backendDb.sqlite.query("DELETE FROM worker_state WHERE name = ?").run("queue");
+      backendDb.sqlite
+        .query("UPDATE worker_state SET state_json = ? WHERE name = ?")
+        .run(JSON.stringify({ ok: true, last_heartbeat_at: "2020-01-01T00:00:00.000Z", heartbeat_interval_ms: 60_000 }), "story-cards");
+      backendDb.sqlite
+        .query("UPDATE worker_state SET state_json = ? WHERE name = ?")
+        .run(
+          JSON.stringify({ ok: true, scheduler_error: "loop failed", last_heartbeat_at: now, heartbeat_interval_ms: 60_000 }),
+          "metrics",
+        );
+      const broken = operationsStatus(config, backendDb);
+      expect(broken.ok).toBe(false);
+      expect(broken.workers.healthy).toBe(names.length - 3);
+      expect(broken.workers.problems).toHaveLength(3);
+      expect(broken.workers.problems).toContainEqual({ name: "queue", reasons: ["missing"], lastError: null, ageSeconds: null });
+      expect(broken.workers.problems.find((worker) => worker.name === "story-cards")?.reasons).toEqual(["stale"]);
+      expect(broken.workers.problems.find((worker) => worker.name === "metrics")).toMatchObject({
+        reasons: ["error"],
+        lastError: "loop failed",
+      });
     }));
 
   it("reports actionable video failures in Studio status", () =>
@@ -206,7 +250,7 @@ describe("TypeScript operations tooling", () => {
         .prepare("INSERT INTO video_jobs(video_draft_id,kind,run_at,status,created_at,updated_at) VALUES (1,'publish',?,'failed',?,?)")
         .run(now, now, now);
       const config = loadTestConfig({});
-      const status = compactOperationsStatus(config, backendDb);
+      const status = operationsStatus(config, backendDb);
 
       expect(status.ok).toBe(false);
       expect(status.videos).toEqual({

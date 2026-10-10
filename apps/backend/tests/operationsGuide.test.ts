@@ -19,6 +19,22 @@ afterAll(() => {
 });
 
 describe("operations guide", () => {
+  it("runs through the CLI without opening an unavailable database", async () => {
+    const databasePath = join(temporaryDirectory(), "missing", "pipeline.db");
+    const child = Bun.spawn(["bun", "apps/backend/src/cli.ts", "guide", "--db", databasePath, "--json"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const stdout = await new Response(child.stdout).text();
+    const stderr = await new Response(child.stderr).text();
+    expect(await child.exited).toBe(0);
+    expect(stderr).toBe("");
+    const guide = JSON.parse(stdout);
+    expect(guide.local.state).toBe("missing");
+    expect(guide.route).toBe("production");
+    expect(guide.sections).toHaveLength(7);
+    expect(guide).not.toHaveProperty("commands");
+  });
   it("routes an unavailable local database to production", () => {
     const previousTarget = process.env.OPS_SSH_TARGET;
     process.env.OPS_SSH_TARGET = "";
@@ -68,9 +84,7 @@ describe("operations guide", () => {
     expect(guide.catalog.authoritative).toBe(true);
   });
 
-  // The default view is what every caller pays for, whether or not it goes on
-  // to read a section, so it carries names and no summaries.
-  it("answers with a symptom index and section names, not the whole catalog", () => {
+  it("answers with a section map and keeps command entries in expanded views", () => {
     const directory = temporaryDirectory();
     writeFileSync(join(directory, "pipeline.db"), "placeholder");
     const catalog = operationCatalog();
@@ -78,8 +92,13 @@ describe("operations guide", () => {
     const guide = buildOperationsGuide(join(directory, "pipeline.db"), catalog);
 
     expect(guide.commands).toBeUndefined();
-    expect(guide.startHere.find((entry) => entry.command === "recent")).toBeDefined();
-    expect(guide.sections.flatMap((section) => section.commands).sort()).toEqual(catalog.map((entry) => entry.name).sort());
+    expect(guide.startHere).toBeUndefined();
+    expect(guide.sections.reduce((sum, section) => sum + section.commandCount, 0)).toBe(catalog.length);
+    for (const section of guide.sections) {
+      expect(section).not.toHaveProperty("commands");
+      expect(section.command).toBe(`${guide.invocation.prefix} guide --section ${section.name} --json`);
+    }
+    expect(formatOperationsGuide(guide)).not.toContain("Start here:");
     expect(JSON.stringify(guide).length).toBeLessThan(JSON.stringify({ ...guide, commands: catalog }).length / 4);
   });
 
@@ -91,6 +110,9 @@ describe("operations guide", () => {
 
     expect(guide.commands?.map((command) => command.name)).toContain("media-status");
     expect(guide.commands?.every((command) => command.section === "media")).toBe(true);
+    expect(guide.startHere?.some((entry) => entry.command === "media-status")).toBe(true);
+    expect(guide.startHere?.some((entry) => entry.command === "recent")).toBe(false);
+    expect(formatOperationsGuide(guide)).toContain("Start here:");
   });
 
   // Without this the guide answers in the coordinates of the machine it runs
