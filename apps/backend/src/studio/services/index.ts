@@ -7,7 +7,6 @@ import { mediaService } from "./media.js";
 import { postService } from "./posts.js";
 import { queueService } from "./queue.js";
 import { settingsService } from "./settings.js";
-import { streamService } from "./streams.js";
 import { videoService } from "./videos.js";
 
 export type StudioServices = {
@@ -19,7 +18,6 @@ export type StudioServices = {
   analytics: ReturnType<typeof analyticsService>;
   capabilities: ReturnType<typeof studioCapabilityService>;
   settings: ReturnType<typeof settingsService>;
-  streams: ReturnType<typeof streamService>;
 };
 
 const serviceCaches = new WeakMap<BackendDb, WeakMap<BackendConfig, StudioServices>>();
@@ -43,7 +41,6 @@ export function createStudioServices(backendDb: BackendDb, config: BackendConfig
     analytics: analyticsService(backendDb, config),
     capabilities: studioCapabilityService(config, backendDb),
     settings: settingsService(backendDb),
-    streams: streamService(backendDb, config),
   };
   const byConfig = serviceCaches.get(backendDb) ?? new WeakMap<BackendConfig, StudioServices>();
   byConfig.set(config, services);

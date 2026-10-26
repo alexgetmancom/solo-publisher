@@ -128,7 +128,7 @@ export function channelService(backendDb: BackendDb, config: BackendConfig, fetc
     /** Starts a connection the way the CLI and the dashboard do. The bot needs
      * it for platforms whose flow is a code rather than a link. */
     startConnect(platform: ConnectPlatform, locale: "ru" | "en") {
-      return startConnect(config, backendDb, platform, locale, fetchImpl);
+      return startConnect(config, platform, locale);
     },
     xConnectUrl(): string | null {
       try {

@@ -10,7 +10,6 @@ import { showScreen } from "./effects.js";
 import { openIntake } from "./intake.js";
 import { showQueue } from "./queue.js";
 import { SETTINGS_MENU_ID } from "./settings/index.js";
-import { showStreamScreen } from "./stream-screen.js";
 
 const MAIN_MENU_ID = "main-menu";
 
@@ -25,29 +24,15 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
     //
     // With a fingerprint the plugin stops range-checking the tapped position, so
     // this has to name everything the *shape* depends on or a stale tap reaches
-    // a button that is not there. The shape depends on the streams button and
-    // nothing else; the locale is in for the same reason it is in every label.
-    fingerprint: (ctx) =>
-      `${settingsService(backendDb).locale(Number(ctx.from?.id))}:${createStudioServices(backendDb, config).streams.connected()}`,
+    // a button that is not there. Only the locale changes this menu's labels.
+    fingerprint: (ctx) => settingsService(backendDb).locale(Number(ctx.from?.id)),
   });
-  // Three entities, three ways in: a text publication, a video publication and
-  // the stream that is running right now. They share no step and no card, and
-  // one entry point that asked which of them this was made the operator answer
-  // a question they had already answered by choosing the button.
-  //
-  // Text and video are unconditional, as they have been: a draft is written
-  // before its channels are connected, and the targets inside are what a
-  // connection turns on. A stream is not like that. It is not a draft this
-  // Studio holds, it is a thing happening on a YouTube account right now, so a
-  // Studio with no YouTube account has no screen to open -- only credentials to
-  // fail to refresh, which is what this button did on Alex.
+  // Text and video drafts can be prepared before their channels are connected.
   menu.dynamic((ctx, range) => {
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
     range
       .text(t(locale, "menu.text"), (ctx) => openIntake(ctx, backendDb, "text"))
       .text(t(locale, "menu.video"), (ctx) => openIntake(ctx, backendDb, "video"));
-    if (createStudioServices(backendDb, config).streams.connected())
-      range.text(t(locale, "menu.streams"), (ctx) => showStreamScreen(ctx, backendDb, config));
   });
   menu.row();
   menu.text(

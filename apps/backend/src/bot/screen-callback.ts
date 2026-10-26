@@ -42,8 +42,6 @@ export const SCREEN_BUTTONS = {
   progress_cancel: { args: ["draft"], supersedable: false },
   progress_cancel_confirm: { args: ["draft"], supersedable: false },
   delivery_preview_video: { args: ["id"], supersedable: false },
-  stream_home: { args: [], supersedable: true },
-  stream_field: { args: ["field"], supersedable: false },
   intake_kind: { args: ["choice"], supersedable: false },
   intake_locale: { args: ["locale"], supersedable: false },
   intake_target: { args: ["target"], supersedable: false },

@@ -133,23 +133,18 @@ describe("buildMainMenu", () => {
     const labels = await mainMenuLabels(config, backendDb);
     expect(labels.some((text) => /text/i.test(text))).toBe(true);
     expect(labels.some((text) => /video/i.test(text))).toBe(true);
-    expect(labels.some((text) => /streams/i.test(text))).toBe(true);
+    expect(labels.some((text) => /streams/i.test(text))).toBe(false);
     expect(labels.some((text) => /analytics/i.test(text))).toBe(true);
   });
 
-  /** Three entities, one row: a text publication, a video publication and the
-   * stream running right now. They share no step and no card. */
+  /** Publishing has two independent entries: text and video. */
   it("gives the entities the whole first row", async () => {
     backendDb = openBackendDb(":memory:");
     registerTestChannels(backendDb, ["youtube_ru"]);
-    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video", "🔴 Streams"]);
+    expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video"]);
   });
 
-  /** A Studio that publishes video to Instagram and has no YouTube account has
-   * no stream to open a screen about -- only credentials that were never
-   * issued, which is what that button spent its time failing to refresh. Text
-   * and video stay: a draft is written before its channels are connected. */
-  it("drops the stream button on a Studio with no YouTube channel", async () => {
+  it("keeps text and video available before YouTube is connected", async () => {
     backendDb = openBackendDb(":memory:");
     registerTestChannels(backendDb, ["instagram_ru", "telegram"]);
     expect(await firstRow(backendDb)).toEqual(["📝 Text", "🎬 Video"]);

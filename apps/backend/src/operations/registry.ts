@@ -33,6 +33,7 @@ import { engagementService } from "../engagement/service.js";
 import { backfillThreadsReplies } from "../engagement/threads-replies.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { readDeploymentReleases } from "../foundation/deployment.js";
+import { youtubeCredentials } from "../foundation/external/youtube.js";
 import { log } from "../foundation/logger.js";
 import { checkDataDirectoriesWritable, requiredDataDirectories } from "../foundation/runtime/data-dirs.js";
 import { isIsoInstant } from "../foundation/time.js";
@@ -44,7 +45,6 @@ import { retryVideoTarget, updateVideoScript } from "../publishing/video-service
 import { settleVideoTarget } from "../publishing/video-settle.js";
 import type { VideoTarget } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
-import { streamService } from "../studio/services/streams.js";
 import { importVideoArchive } from "./archive-import.js";
 import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
@@ -321,48 +321,29 @@ const operationDefs = {
         profiles: input.profiles,
       }),
   }),
-  live: operation({
-    section: "studio",
-    startHere: "a stream is on the air and something about it is wrong",
-    summary: "Every surface this Studio streams on, its current title and YouTube visibility.",
-    note: "YouTube visibility is checked every minute: the current unscheduled or running broadcast is kept public. Future scheduled events and finished recordings are not changed. Twitch carries a channel title that survives the stream ending; YouTube has nothing to edit until a broadcast exists.",
-    schema: z.object({}),
+  "youtube-export": operation({
+    section: "channels",
+    summary: "Export one YouTube connection directly into another private process.",
+    note: "CLI only. Stdout contains client_id, client_secret and refresh_token; pipe it into the receiving credential importer, never a terminal or a log. Uses the same runtime configuration as publishing, including the encrypted stored token.",
+    schema: z.object({ locale: z.enum(["ru", "en"]) }),
     mutates: false,
-    agent: true,
-    handler: (context) => streamService(context.db(), context.config()).current(context.fetchImpl),
-  }),
-  "live-set": operation({
-    section: "studio",
-    summary: "Change the title or the description of the running stream, everywhere it is running.",
-    note: "One line goes to every connected surface, and each answers for itself: Twitch takes a title off the air, YouTube has nothing to rename until a broadcast exists, and only YouTube has a description.",
-    schema: z
-      .object({
-        title: example(z.string().trim().min(1), "Пилим бота в прямом эфире").describe("the new stream title").optional(),
-        description: z.string().trim().describe("the new stream description, YouTube only").optional(),
-      })
-      .refine((input) => input.title !== undefined || input.description !== undefined, {
-        message: "name a --title, a --description, or both",
-      }),
-    mutates: true,
-    agent: true,
-    handler: async (context, input) => {
-      const streams = streamService(context.db(), context.config());
-      return {
-        ...(input.title === undefined ? {} : { title: await streams.apply("title", input.title, context.fetchImpl) }),
-        ...(input.description === undefined
-          ? {}
-          : { description: await streams.apply("description", input.description, context.fetchImpl) }),
-      };
-    },
-  }),
-  "live-say": operation({
-    section: "studio",
-    summary: "Say one line in the chat of every stream that is on the air.",
-    note: "It goes out as the channel and cannot be taken back, and it is never retried: neither platform offers a deduplication key, so a line that arrived twice is two lines an audience reads.",
-    schema: z.object({ message: example(z.string().trim().min(1), "Погнали").describe("the chat message") }),
-    mutates: true,
     agent: false,
-    handler: (context, input) => streamService(context.db(), context.config()).apply("chat", input.message, context.fetchImpl),
+    streams: true,
+    handler: (context, input) => {
+      if (context.actorType !== "ops-cli") throw new Error("YouTube credentials can only be exported by the local CLI");
+      if (process.stdout.isTTY) throw new Error("Pipe YouTube credentials into a private receiving process");
+      const credentials = youtubeCredentials(context.config(), input.locale);
+      if (!credentials.clientId || !credentials.clientSecret || !credentials.refreshToken)
+        throw new Error("The selected YouTube connection is incomplete");
+      process.stdout.write(
+        JSON.stringify({
+          client_id: credentials.clientId,
+          client_secret: credentials.clientSecret,
+          refresh_token: credentials.refreshToken,
+        }),
+      );
+      return { exported: true };
+    },
   }),
   status: operation({
     section: "health",
@@ -1725,18 +1706,15 @@ const operationDefs = {
   "connect-link": operation({
     section: "channels",
     summary: "Start connecting an account, and say what has to happen next.",
-    note: "Most platforms answer with a link to open, which carries a signed, short-lived state and authorizes nothing by itself. YouTube answers with an address and a code to type there, because Google's device flow is what a server with no browser can use; approval is picked up on its own within a minute and the account appears in the channel registry. Threads and Instagram need their app id and secret, X its client id and secret, YouTube its client id and secret for that language, and all of them TOKEN_ENCRYPTION_KEY.",
+    note: "Open the signed, short-lived consent link. Threads and Instagram need their app id and secret, X its client id and secret, YouTube its client id and secret for that language, and all of them TOKEN_ENCRYPTION_KEY.",
     schema: z.object({
       platform: z.enum(CONNECT_PLATFORMS).describe("platform to connect"),
       locale: z.enum(["ru", "en"]).default("ru").describe("which language's account, for platforms this Studio keeps two of"),
     }),
     mutates: true,
     agent: true,
-    handler: (context, input) => startConnect(context.config(), context.db(), input.platform, input.locale, context.fetchImpl),
-    format: (result: ConnectStart) =>
-      result.kind === "redirect"
-        ? `${result.url}\n\nOpen within ${result.expiresInMinutes} minutes.`
-        : `${result.verificationUrl}\n\nEnter the code ${result.userCode} there within ${Math.round(result.expiresInSeconds / 60)} minutes. The connection completes on its own.`,
+    handler: (context, input) => startConnect(context.config(), input.platform, input.locale),
+    format: (result: ConnectStart) => `${result.url}\n\nOpen within ${result.expiresInMinutes} minutes.`,
   }),
   "channel-disable": operation({
     section: "channels",

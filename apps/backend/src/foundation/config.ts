@@ -132,12 +132,6 @@ const envSchema = z
     THREADS_CONTAINER_TIMEOUT_SECONDS: z.coerce.number().int().positive().default(180),
     THREADS_APP_ID: z.string().optional(),
     THREADS_APP_SECRET: z.string().optional(),
-    /** The Twitch application, which is infrastructure rather than an account:
-     * one registration serves every Studio and every channel connected through
-     * it, because the client id names the application and the token names whose
-     * account it speaks for. Registered as a public client, so there is no
-     * secret to keep -- the device flow needs none. */
-    TWITCH_CLIENT_ID: z.string().optional(),
     X_CLIENT_ID: z.string().optional(),
     X_CLIENT_SECRET: z.string().optional(),
     ENABLE_X_METRICS: booleanFlag(false),

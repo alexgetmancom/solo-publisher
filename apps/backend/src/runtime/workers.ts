@@ -1,12 +1,10 @@
 import { runAnalyticsCycle } from "../analytics/collection/creator-cycle.js";
 import { runMetricsCycle } from "../analytics/collection/metrics-cycle.js";
 import { pruneMetricSamples } from "../analytics/snapshots/metric-repository.js";
-import { redeemDeviceAuthorizations } from "../channels/connect.js";
 import { renewMetaTokens } from "../channels/meta-tokens.js";
 import { targetRouting } from "../channels/registry.js";
 import { refreshXToken } from "../channels/x-oauth.js";
 import type { BackendDb } from "../db/client.js";
-import { runYouTubeLiveCycle } from "../delivery/live-broadcast.js";
 import { pruneMediaCache } from "../delivery/media-prepare.js";
 import { createPlatformPorts } from "../delivery/ports/social.js";
 import { runPublicationReconciliation } from "../delivery/publication-reconciliation.js";
@@ -80,8 +78,6 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     // next restart.
     startWorkerLoop("credentials", 60 * 1000, async () => {
       applyStoredCredentials(config, backendDb);
-      const connected = await redeemDeviceAuthorizations(config, backendDb);
-      if (connected) log("info", "device authorizations completed", { connected });
     }),
     startWorkerLoop("x-token", 10 * 60 * 1000, async () => {
       const outcome = await refreshXToken(config, backendDb);
@@ -107,9 +103,6 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     }),
     startWorkerLoop("video", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
       await runTimedCycle("publishing.video.cycle", "claimed", () => runVideoCycle(config, backendDb));
-    }),
-    startWorkerLoop("youtube-live", 60 * 1000, async () => {
-      await runYouTubeLiveCycle(config, backendDb);
     }),
     // Two independent collectors on one schedule. They do not share a
     // failure: a provider outage on one must not silently stop the other.

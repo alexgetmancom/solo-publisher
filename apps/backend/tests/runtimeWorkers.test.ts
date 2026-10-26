@@ -16,7 +16,6 @@ const EXPECTED_WORKERS = [
   "publication-reconciliation",
   "notifications",
   "video",
-  "youtube-live",
   "metrics",
   "creator-analytics",
   "metric-retention",

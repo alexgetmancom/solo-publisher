@@ -1,85 +1,37 @@
-import { eq } from "drizzle-orm";
-import { type BackendDb, unsafeDb } from "../db/client.js";
-import { deviceAuthorizations } from "../db/schema.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { youtubeCredentials } from "../foundation/external/youtube.js";
-import { log } from "../foundation/logger.js";
-import { encryptionKey, open, seal } from "../foundation/secret-box.js";
 import type { VideoLocale } from "../publishing/video-types.js";
 import { metaOauthConnectUrl } from "./meta-oauth.js";
 import { META_PROVIDERS, type MetaOauthPlatform } from "./meta-providers.js";
-import { registerChannel } from "./registry.js";
-import { redeemTwitchDevice, startTwitchDevice, TWITCH_TOKEN_TARGET } from "./twitch-oauth.js";
 import { xOauthAuthorizeUrl } from "./x-oauth.js";
 import { youtubeOauthAuthorizeUrl } from "./youtube-oauth.js";
 
-/** Ten minutes, the life of the signed state a redirect link carries. Stated
- * with the link because a link handed over in a chat is read later than made. */
 const LINK_TTL_MINUTES = 10;
-export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube", "twitch"] as const;
+export const CONNECT_PLATFORMS = ["threads", "instagram", "x", "youtube"] as const;
 export type ConnectPlatform = (typeof CONNECT_PLATFORMS)[number];
-
-/**
- * How one platform is connected, as data.
- *
- * Two shapes, not one: most platforms send the operator to a consent screen and
- * come back to a route, while Twitch hands out a code to type on another screen
- * and answers by polling. That is a real difference in what a connection is, so
- * it is an explicit kind rather than a branch inside a flow pretending they are
- * the same. Everything else — who can be connected, what it needs,
- * whether this Studio keeps one account per language — is shared, which is why
- * every surface asks this table and none of them knows a platform by name.
- */
 type ConnectProvider = {
   label: string;
-  /** Whether an account is kept per language. X publishes as one account. */
   perLocale: boolean;
-  /** What is missing before this can be started, by setting name. */
   missing: (config: BackendConfig, locale: VideoLocale) => string[];
-} & (
-  | { kind: "redirect"; link: (config: BackendConfig, locale: VideoLocale, now: Date) => string }
-  | {
-      kind: "device";
-      start: (config: BackendConfig, backendDb: BackendDb, locale: VideoLocale, fetchImpl: typeof fetch, now: Date) => Promise<DeviceStart>;
-    }
-);
-
-type DeviceStart = { verificationUrl: string; userCode: string; expiresInSeconds: number };
-
-export type ConnectStart =
-  | { platform: ConnectPlatform; locale: VideoLocale | null; kind: "redirect"; url: string; expiresInMinutes: number }
-  | {
-      platform: ConnectPlatform;
-      locale: VideoLocale | null;
-      kind: "device";
-      verificationUrl: string;
-      userCode: string;
-      expiresInSeconds: number;
-    };
-
+  link: (config: BackendConfig, locale: VideoLocale, now: Date) => string;
+};
+export type ConnectStart = {
+  platform: ConnectPlatform;
+  locale: VideoLocale | null;
+  kind: "redirect";
+  url: string;
+  expiresInMinutes: number;
+};
 const CONNECT_PROVIDERS: Record<ConnectPlatform, ConnectProvider> = {
   threads: metaConnectProvider("threads"),
   instagram: metaConnectProvider("instagram"),
   x: {
-    kind: "redirect",
     label: "X",
     perLocale: false,
-    missing: (config) => missingSettings(config, ["X_CLIENT_ID", "X_CLIENT_SECRET", "TOKEN_ENCRYPTION_KEY"]),
-    // X's own start route is guarded for the dashboard, so what an interface
-    // hands over is the platform's link, which already carries a sealed state.
+    missing: (config) => ["X_CLIENT_ID", "X_CLIENT_SECRET", "TOKEN_ENCRYPTION_KEY"].filter((name) => !config[name as keyof BackendConfig]),
     link: (config, _locale, now) => xOauthAuthorizeUrl(config, now),
   },
-  twitch: {
-    kind: "device",
-    label: "Twitch",
-    // One account per Studio: Twitch has no per-language channels here, so no
-    // surface asks which one is meant.
-    perLocale: false,
-    missing: (config) => missingSettings(config, ["TWITCH_CLIENT_ID", "TOKEN_ENCRYPTION_KEY"]),
-    start: startTwitchConnect,
-  },
   youtube: {
-    kind: "redirect",
     label: "YouTube",
     perLocale: true,
     missing: (config, locale) => {
@@ -95,34 +47,26 @@ const CONNECT_PROVIDERS: Record<ConnectPlatform, ConnectProvider> = {
   },
 };
 
-/**
- * Starts connecting an account and returns what the operator has to do next.
- *
- * The dashboard, the bot and the CLI all call this and show what comes back, so
- * connecting is the same act everywhere and a new platform reaches every
- * surface by being added to the table above.
- */
 export async function startConnect(
   config: BackendConfig,
-  backendDb: BackendDb,
   platform: ConnectPlatform,
   locale: VideoLocale,
-  fetchImpl: typeof fetch = fetch,
   now = new Date(),
 ): Promise<ConnectStart> {
   const provider = CONNECT_PROVIDERS[platform];
   const missing = provider.missing(config, locale);
   if (missing.length) throw new Error(`${provider.label} is not configured: ${missing.join(", ")}`);
-  const at = provider.perLocale ? locale : null;
-  if (provider.kind === "redirect")
-    return { platform, locale: at, kind: "redirect", url: provider.link(config, locale, now), expiresInMinutes: LINK_TTL_MINUTES };
-  return { platform, locale: at, kind: "device", ...(await provider.start(config, backendDb, locale, fetchImpl, now)) };
+  return {
+    platform,
+    locale: provider.perLocale ? locale : null,
+    kind: "redirect",
+    url: provider.link(config, locale, now),
+    expiresInMinutes: LINK_TTL_MINUTES,
+  };
 }
-
 function metaConnectProvider(platform: MetaOauthPlatform): ConnectProvider {
   const meta = META_PROVIDERS[platform];
   return {
-    kind: "redirect",
     label: meta.label,
     perLocale: true,
     missing: (config) =>
@@ -133,109 +77,4 @@ function metaConnectProvider(platform: MetaOauthPlatform): ConnectProvider {
       ].filter((name): name is string => name !== null),
     link: (config, locale, now) => metaOauthConnectUrl(config, platform, locale, now),
   };
-}
-
-function missingSettings(config: BackendConfig, names: readonly string[]): string[] {
-  const values = config as unknown as Record<string, unknown>;
-  return names.filter((name) => !values[name]);
-}
-
-async function startTwitchConnect(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  _locale: VideoLocale,
-  fetchImpl: typeof fetch,
-  now: Date,
-): Promise<DeviceStart> {
-  const key = encryptionKey(config.TOKEN_ENCRYPTION_KEY);
-  if (!key) throw new Error("TOKEN_ENCRYPTION_KEY is required to connect an account");
-  const device = await startTwitchDevice(config, fetchImpl);
-  const row = {
-    sealedDeviceCode: seal(device.deviceCode, key),
-    userCode: device.userCode,
-    verificationUrl: device.verificationUrl,
-    intervalSeconds: device.intervalSeconds,
-    expiresAt: new Date(now.getTime() + device.expiresInSeconds * 1000).toISOString(),
-    updatedAt: now.toISOString(),
-  };
-  unsafeDb(backendDb)
-    .db.insert(deviceAuthorizations)
-    .values({ target: TWITCH_TOKEN_TARGET, ...row, createdAt: now.toISOString() })
-    .onConflictDoUpdate({ target: deviceAuthorizations.target, set: row })
-    .run();
-  return { verificationUrl: device.verificationUrl, userCode: device.userCode, expiresInSeconds: device.expiresInSeconds };
-}
-
-function pendingDeviceAuthorizations(backendDb: BackendDb): (typeof deviceAuthorizations.$inferSelect)[] {
-  return unsafeDb(backendDb).db.select().from(deviceAuthorizations).all();
-}
-
-function forgetDeviceAuthorization(backendDb: BackendDb, target: string): void {
-  unsafeDb(backendDb).db.delete(deviceAuthorizations).where(eq(deviceAuthorizations.target, target)).run();
-}
-
-/**
- * Finishes every device authorization the operator has approved.
- *
- * A device flow is answered by being polled, and the credentials worker is
- * where that belongs: an operator who started the connection from a chat, a
- * terminal or an agent has nothing left to hold open, and the approval lands in
- * the same place regardless of which surface began it.
- *
- * Two platforms answer here now, so the loop asks which one a pending row
- * belongs to instead of assuming. It used to send every device code to Google's
- * token endpoint with Google's credentials, which a Twitch code would have been
- * refused by -- and the refusal would have read as the operator saying no.
- */
-export async function redeemDeviceAuthorizations(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  fetchImpl: typeof fetch = fetch,
-  now = new Date(),
-): Promise<number> {
-  const key = encryptionKey(config.TOKEN_ENCRYPTION_KEY);
-  if (!key) return 0;
-  let connected = 0;
-  for (const pending of pendingDeviceAuthorizations(backendDb)) {
-    if (new Date(pending.expiresAt).getTime() <= now.getTime()) {
-      forgetDeviceAuthorization(backendDb, pending.target);
-      log("warn", "device authorization expired before it was approved", { target: pending.target });
-      continue;
-    }
-    const outcome = await redeemTwitch(config, backendDb, open(pending.sealedDeviceCode, key), fetchImpl, now);
-    if (outcome.status === "pending") continue;
-    forgetDeviceAuthorization(backendDb, pending.target);
-    if (outcome.status === "refused") {
-      log("warn", "device authorization was refused", { target: pending.target, error: outcome.reason });
-      continue;
-    }
-    connected += 1;
-    log("info", "channel connected", { target: pending.target, account: outcome.account });
-  }
-  return connected;
-}
-
-type RedeemOutcome = { status: "pending" } | { status: "refused"; reason: string } | { status: "connected"; account: string };
-
-async function redeemTwitch(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  deviceCode: string,
-  fetchImpl: typeof fetch,
-  now: Date,
-): Promise<RedeemOutcome> {
-  const answer = await redeemTwitchDevice(config, backendDb, deviceCode, fetchImpl, now);
-  if (answer.status !== "connected") return answer;
-  // The registry keeps one row per platform and language, and Twitch has no
-  // per-language accounts. It takes the neutral one and carries the login in
-  // its label, so what the operator reads is the account rather than a
-  // language the connection does not have.
-  registerChannel(backendDb, {
-    platform: "twitch",
-    locale: "ru",
-    provider: "native",
-    source: "interface",
-    label: `Twitch · ${answer.login}`,
-  });
-  return { status: "connected", account: answer.login };
 }

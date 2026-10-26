@@ -52,9 +52,9 @@ const OFF_THE_AGENT_SURFACE = [
   "credential-set",
   "telegram-stories-login",
   "threads-authorize",
+  "youtube-export",
   // Rare mutations, in the order the catalog carries them.
   "studio-profile-set",
-  "live-say",
   "dates-repair",
   "milestone-announce",
   "post-openings-classify",
@@ -134,7 +134,7 @@ describe("operations registry", () => {
         .filter((entry) => !entry.mutates && !entry.agent)
         .map((entry) => entry.name)
         .sort(),
-    ).toEqual(["backup-stream", "disk", "guide", "threads-authorize"]);
+    ).toEqual(["backup-stream", "disk", "guide", "threads-authorize", "youtube-export"]);
   });
 
   it("refuses input the schema does not define, on every surface", async () => {

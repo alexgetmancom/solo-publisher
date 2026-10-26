@@ -130,21 +130,3 @@ export const platformTokens = sqliteTable("platform_tokens", {
   uploadLimitBytes: integer(),
   updatedAt: text().notNull(),
 });
-
-/** A device authorization this Studio is waiting on.
- *
- * Google's device flow hands out a code the operator types on another screen,
- * and the approval arrives by polling — which used to mean a terminal blocked
- * for five minutes, the one connect flow no interface but a shell could offer.
- * Keeping the pending authorization here lets any surface start it and the
- * credentials worker finish it. The device code is sealed: it is what redeems
- * the grant until the operator approves or it expires. */
-export const deviceAuthorizations = sqliteTable("device_authorizations", {
-  target: text().primaryKey(),
-  sealedDeviceCode: text().notNull(),
-  userCode: text().notNull(),
-  verificationUrl: text().notNull(),
-  intervalSeconds: integer().notNull(),
-  expiresAt: text().notNull(),
-  ...timestamps(),
-});

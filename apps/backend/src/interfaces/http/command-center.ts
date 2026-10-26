@@ -141,9 +141,7 @@ export const commandCenterRoutes: RouteModule = (app, { config, backendDb, studi
       const started = await studio.channels.startConnect("youtube", locale);
       return connectionPage(
         "YouTube authorization",
-        started.kind === "redirect"
-          ? `Open ${started.url} and approve access within ${started.expiresInMinutes} minutes. The channel will connect itself.`
-          : `Open ${started.verificationUrl}, enter the code ${started.userCode}, and approve access within ${Math.round(started.expiresInSeconds / 60)} minutes. The channel will connect itself.`,
+        `Open ${started.url} and approve access within ${started.expiresInMinutes} minutes. The channel will connect itself.`,
         200,
       );
     } catch (error) {

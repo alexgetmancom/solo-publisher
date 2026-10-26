@@ -41,12 +41,12 @@ function withChannels(channels: readonly TestChannelId[]): Promise<{ shape: numb
 }
 
 describe("main menu fingerprint", () => {
-  it("moves whenever the shape of the menu moves", async () => {
-    const withoutStreams = await withChannels([]);
-    const withStreams = await withChannels(["youtube_ru"]);
+  it("keeps the publishing menu stable when channels change", async () => {
+    const disconnected = await withChannels([]);
+    const connected = await withChannels(["youtube_ru"]);
 
-    expect(withStreams.shape).not.toEqual(withoutStreams.shape);
-    expect(withStreams.fingerprint).not.toEqual(withoutStreams.fingerprint);
+    expect(connected.shape).toEqual(disconnected.shape);
+    expect(connected.fingerprint).toEqual(disconnected.fingerprint);
   });
 
   it("stands still while only a label moves", async () => {
