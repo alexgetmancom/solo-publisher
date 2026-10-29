@@ -6,7 +6,6 @@ import { createApiHandler } from "../src/api.js";
 import { listChannels } from "../src/channels/registry.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import type { BackendConfig } from "../src/foundation/config.js";
-import { channelService } from "../src/studio/services/channels.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS } from "./helpers/channels.js";
 import { withOpenDb } from "./helpers/db.js";
 import { openBackendDb } from "./helpers/open-db.js";
@@ -92,26 +91,38 @@ describe("Astro endpoint controller", () => {
     }
   });
 
-  it("connects a direct publication target from an authenticated Command Center form", async () => {
-    const backendDb = openBackendDb(join(tempDir("alexgetman-channel-connect-"), "pipeline.db"), 5000);
-    try {
+  it("retires the dashboard and its APIs without changing connected publishing channels", () =>
+    withTempDb(async (backendDb) => {
       const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
       const app = createApiApp(config, backendDb);
-      const body = new FormData();
-      body.set("target", "telegram_stories");
-      const response = await app.request("/command-center/channels/connect", {
-        method: "POST",
-        body,
-        headers: { cookie: "command_token=secret", origin: new URL(config.COMMAND_CENTER_URL).origin },
-      });
-
-      expect(response.status).toBe(303);
-      expect(response.headers.get("location")).toBe("/command-center?tab=studio");
-      expect(listChannels(backendDb).map(({ id }) => id)).toEqual(["telegram_stories"]);
-    } finally {
-      backendDb.close();
-    }
-  });
+      const channels = listChannels(backendDb, false);
+      const paths = [
+        "/command-center",
+        "/command-center/",
+        "/command-center?tab=studio",
+        "/command-center?token=secret",
+        "/command-center/channels/connect",
+        "/command-center/channels/disable",
+        "/command-center/channels/zernio?locale=ru",
+        "/api/command-center/fingerprint",
+        "/api/command-center/publication-details?period=7&offset=0&limit=50",
+      ];
+      for (const path of paths) {
+        for (const authenticated of [false, true]) {
+          for (const method of ["GET", "POST"]) {
+            const response = await app.request(path, {
+              method,
+              headers: authenticated ? { "X-Command-Token": "secret", "X-Admin-Token": "secret", cookie: "command_token=secret" } : {},
+              ...(method === "POST" ? { body: "target=telegram_stories&channel=telegram&token=secret" } : {}),
+            });
+            expect(response.status).toBe(404);
+            expect(response.headers.get("set-cookie")).toBeNull();
+            expect(response.headers.get("location")).toBeNull();
+          }
+        }
+      }
+      expect(listChannels(backendDb, false)).toEqual(channels);
+    }));
 
   it("refuses an oversized pageview beacon without buffering it", async () => {
     const backendDb = openBackendDb(join(tempDir("alexgetman-pageview-body-"), "pipeline.db"), 5000);
@@ -136,129 +147,6 @@ describe("Astro endpoint controller", () => {
       backendDb.close();
     }
   });
-
-  it("refuses a malformed command cookie instead of failing the request", async () => {
-    const backendDb = openBackendDb(join(tempDir("alexgetman-command-cookie-"), "pipeline.db"), 5000);
-    try {
-      const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
-      const app = createApiApp(config, backendDb);
-      const body = new FormData();
-      body.set("target", "telegram");
-      // A truncated percent escape is not a decodable cookie value. Decoding it
-      // threw, and a broken cookie answered 500 rather than "not authorized".
-      const response = await app.request("/command-center/channels/connect", {
-        method: "POST",
-        body,
-        headers: { cookie: "command_token=%", origin: new URL(config.COMMAND_CENTER_URL).origin },
-      });
-
-      expect(response.status).toBe(403);
-      expect(listChannels(backendDb)).toEqual([]);
-    } finally {
-      backendDb.close();
-    }
-  });
-
-  it("rejects a cross-origin channel connection form", async () => {
-    const backendDb = openBackendDb(join(tempDir("alexgetman-channel-csrf-"), "pipeline.db"), 5000);
-    try {
-      const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
-      const body = new FormData();
-      body.set("target", "telegram");
-      const response = await app.request("/command-center/channels/connect", {
-        method: "POST",
-        body,
-        headers: { cookie: "command_token=secret", origin: "https://attacker.example" },
-      });
-
-      expect(response.status).toBe(403);
-      expect(listChannels(backendDb)).toEqual([]);
-    } finally {
-      backendDb.close();
-    }
-  });
-
-  it("disables a channel from an authenticated Command Center form", async () => {
-    const backendDb = openBackendDb(join(tempDir("alexgetman-channel-disable-"), "pipeline.db"), 5000);
-    try {
-      const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
-      const app = createApiApp(config, backendDb);
-      channelService(backendDb, config).connectTarget("telegram");
-      const body = new FormData();
-      body.set("channel", "telegram");
-      const response = await app.request("/command-center/channels/disable", {
-        method: "POST",
-        body,
-        headers: { cookie: "command_token=secret", origin: new URL(config.COMMAND_CENTER_URL).origin },
-      });
-
-      expect(response.status).toBe(303);
-      expect(listChannels(backendDb)).toEqual([]);
-      expect(listChannels(backendDb, false)).toMatchObject([{ id: "telegram", enabled: 0 }]);
-    } finally {
-      backendDb.close();
-    }
-  });
-
-  it("stops a run of command-center login guesses", () =>
-    withTempDb(async (backendDb) => {
-      const config = loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" });
-      const app = createApiApp(config, backendDb);
-      const origin = new URL(config.COMMAND_CENTER_URL).origin;
-      const guess = () => {
-        const body = new FormData();
-        body.set("token", "wrong");
-        return app.request("/command-center", { method: "POST", body, headers: { origin } });
-      };
-
-      // No HTTP Basic stands in front of this form any more, so the limiter is
-      // the only thing making a guess cost wall-clock time.
-      const statuses: number[] = [];
-      for (let attempt = 0; attempt < 12; attempt += 1) statuses.push((await guess()).status);
-      expect(statuses.at(-1)).toBe(429);
-
-      // The owner is not collateral damage: a correct token still signs in
-      // while a stranger's guesses are being refused on the same bucket.
-      const correct = new FormData();
-      correct.set("token", "secret");
-      const signIn = await app.request("/command-center", { method: "POST", body: correct, headers: { origin } });
-      expect(signIn.status).toBe(303);
-    }));
-
-  it("serves a stable compact command-center fingerprint", () =>
-    withTempDb(async (backendDb) => {
-      const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
-      const firstResponse = await app.request("/api/command-center/fingerprint", { headers: { "X-Command-Token": "secret" } });
-      const secondResponse = await app.request("/api/command-center/fingerprint", { headers: { "X-Command-Token": "secret" } });
-      const first = await firstResponse.json();
-      const second = await secondResponse.json();
-
-      expect(firstResponse.status).toBe(200);
-      expect(secondResponse.status).toBe(200);
-      expect(first).toEqual({
-        pipelineUpdatedAt: null,
-        latestJobUpdatedAt: null,
-        latestEventAt: null,
-        videoRevision: null,
-        analyticsRevision: null,
-        studioRevision: expect.any(String),
-      });
-      expect(second).toEqual(first);
-      expect(JSON.stringify(first).length).toBeLessThan(200);
-      expect((await app.request("/api/command-center/fingerprint")).status).toBe(403);
-    }));
-
-  it("loads publication details in bounded authenticated batches", () =>
-    withTempDb(async (backendDb) => {
-      const app = createApiApp(loadTestConfig({ COMMAND_CENTER_TOKEN: "secret" }), backendDb);
-      expect((await app.request("/api/command-center/publication-details")).status).toBe(403);
-      const response = await app.request("/api/command-center/publication-details?period=1&offset=0&limit=50", {
-        headers: { "X-Command-Token": "secret" },
-      });
-      const payload = (await response.json()) as { html: string; total: number; loaded: number; remaining: number };
-      expect(response.status).toBe(200);
-      expect(payload).toEqual({ html: "", total: 0, loaded: 0, remaining: 0 });
-    }));
 
   it("serves engagement and MCP routes", () =>
     withTempDb(async (backendDb) => {
@@ -311,71 +199,4 @@ describe("Astro endpoint controller", () => {
       });
       expect(await limitedFeedback.json()).toMatchObject({ error: { code: -32000, message: "rate limit exceeded" } });
     }));
-
-  it("renders the full command center through the framework-neutral controller", async () => {
-    const backendDb = tempDb();
-    const dir = tempDir("alexgetman-markdown-");
-    try {
-      backendDb.sqlite
-        .prepare(
-          "INSERT INTO credential_checks(target,status,required_env_json,missing_env_json,last_checked_at) VALUES ('telegram','ready','[]','[]',?)",
-        )
-        .run(new Date().toISOString());
-      const app = createApiApp(
-        loadTestConfig({
-          COMMAND_CENTER_TOKEN: "secret",
-          PUBLIC_BASE_URL: "https://marux.ru",
-          SITE_PUBLIC_DIR: dir,
-        }),
-        backendDb,
-      );
-      const login = await app.request("/command-center");
-      expect(login.status).toBe(200);
-      expect(await login.text()).toContain("Введите токен Command Center");
-      const signIn = await app.request("/command-center", {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://marux.ru" },
-        body: "token=secret",
-      });
-      expect(signIn.status).toBe(303);
-      const cookie = signIn.headers.get("set-cookie");
-      expect(cookie).toContain("HttpOnly");
-      expect(cookie).toContain("Max-Age=15552000");
-      const crossSiteSignIn = await app.request("/command-center", {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://example.com" },
-        body: "token=secret",
-      });
-      expect(crossSiteSignIn.status).toBe(403);
-      const dashboard = await app.request("/command-center", { headers: { cookie: cookie ?? "" } });
-      const html = await dashboard.text();
-      expect(dashboard.status).toBe(200);
-      expect(html).toContain("Обзор");
-      expect(html).not.toContain("Аудитория и profile metrics");
-      // `&` inside an attribute is written as the entity, which is what the tagged
-      // template does for every value it interpolates.
-      expect(html).toContain('href="/command-center?tab=posts&amp;panel=health"');
-      // A fragment that reached the page as text instead of markup is what a
-      // missing `html` tag looks like: the page still renders, with its own tags
-      // printed on it. Nothing in the Command Center writes a tag as content.
-      expect(html).not.toContain("&lt;div");
-      expect(html).not.toContain("&lt;span");
-      expect(html).not.toContain("&lt;section");
-      expect(html).not.toContain("&lt;svg");
-      const englishDashboard = await app.request("/command-center?locale=en", { headers: { cookie: cookie ?? "" } });
-      const englishHtml = await englishDashboard.text();
-      expect(englishHtml).toContain('<html lang="en">');
-      expect(englishHtml).toContain(">Overview</a>");
-      expect(englishHtml).toContain('aria-label="Language"');
-      expect(englishHtml).not.toContain("ПУБЛИКАЦИИ");
-      expect(html).toContain("const navigateDashboard = async");
-      expect(html).toContain("history.pushState");
-      expect(html).not.toContain("window.location.reload");
-      expect(html).not.toContain("Health: credentials и diagnostics");
-      expect(html).toContain('font:400 16px ui-sans-serif,-apple-system,"Inter"');
-      expect(html).not.toContain("width: 22px; text-align: center; font-family: monospace");
-    } finally {
-      backendDb.close();
-    }
-  });
 });

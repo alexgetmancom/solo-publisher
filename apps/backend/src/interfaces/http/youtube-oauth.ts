@@ -7,7 +7,7 @@ import type { RouteModule } from "./context.js";
 export const youtubeOauthRoutes: RouteModule = (app, { config, backendDb, studio }) => {
   app.get("/oauth/youtube/start", (c) => {
     try {
-      if (!commandAllowed(c.req.raw, config)) throw new Error("Open this link from an authenticated Command Center");
+      if (!commandAllowed(c.req.raw, config)) throw new Error("Open an authorized Studio connection link");
       const locale = c.req.query("locale") === "en" ? "en" : "ru";
       return new Response(null, {
         status: 302,
@@ -39,7 +39,7 @@ export const youtubeOauthRoutes: RouteModule = (app, { config, backendDb, studio
 
 function page(title: string, message: string, status: number): Response {
   return new Response(
-    `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p><p><a href="/command-center?tab=studio">Return to Studio</a></p></main></body></html>`,
+    `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p><p>You can close this page and return to the publishing bot.</p></main></body></html>`,
     { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" } },
   );
 }

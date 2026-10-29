@@ -55,22 +55,15 @@ describe("host proxy topology", () => {
     expect(studio).not.toContain("/backups");
   });
 
-  it("lets the second Studio reach every Command Center endpoint its dashboard calls", () => {
-    // The allowlist named the endpoints one by one, so each new one was
-    // unreachable on Maru until someone edited this file too. The dashboard
-    // swallows the failure: "show more" fetched a Caddy 404 and simply did
-    // nothing, and the live refresh poll died the same way.
+  it("keeps the retired dashboard outside the second Studio's allowlist", () => {
     const caddy = read("deploy/caddy/Caddyfile");
-    const routes = read("apps/backend/src/interfaces/http/command-center.ts");
-
     const allowed = (caddy.match(/@allowed path ([^\n]+)/)?.[1] ?? "").split(" ");
-    const endpoints = [...routes.matchAll(/"(\/(?:api\/)?command-center\/[^"]+)"/g)].map((match) => match[1] ?? "");
-    expect(endpoints.length).toBeGreaterThan(0);
-    for (const endpoint of endpoints) {
-      expect(allowed.some((pattern) => (pattern.endsWith("*") ? endpoint.startsWith(pattern.slice(0, -1)) : endpoint === pattern))).toBe(
-        true,
-      );
-    }
+    expect(allowed).not.toContain("/command-center");
+    expect(allowed).not.toContain("/command-center/*");
+    expect(allowed).not.toContain("/api/command-center/*");
+    expect(allowed).toContain("/oauth/*");
+    expect(allowed).toContain("/api/mcp");
+    expect(allowed).toContain("/api/studio/media");
   });
 
   it("keeps the proxy free of anything the application decides", () => {

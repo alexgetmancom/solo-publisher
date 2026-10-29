@@ -31,11 +31,20 @@ describe("site middleware", () => {
     // and sitemap carried on being served — one deployment's proxy hid that.
     siteEnabled = false;
     try {
-      for (const path of ["/", "/ru/", "/42/some-slug/", "/feed.xml", "/sitemap.xml", "/llms.txt"]) {
+      for (const path of [
+        "/",
+        "/ru/",
+        "/42/some-slug/",
+        "/feed.xml",
+        "/sitemap.xml",
+        "/llms.txt",
+        "/command-center",
+        "/command-center/channels/connect",
+        "/api/command-center/fingerprint",
+      ]) {
         expect((await handle(path)).response.status).toBe(404);
       }
       for (const path of [
-        "/command-center",
         "/oauth/threads",
         "/oauth/instagram/start",
         "/healthz",

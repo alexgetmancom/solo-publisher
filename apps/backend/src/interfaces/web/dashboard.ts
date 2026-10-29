@@ -1,6 +1,4 @@
-import { xActivityDashboard } from "../../analytics/x-activity-dashboard.js";
 import { AUDIENCE_VIEWS, type AudienceView } from "../../botTargets.js";
-import { postLocales } from "../../channels/locales.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { type Html, html, raw } from "../../foundation/html.js";
@@ -13,20 +11,17 @@ import {
   commandCenterFingerprint,
   commandCenterPayload,
 } from "../../operations/command-center.js";
-import { pipelineOverviewPayload } from "../../operations/read-model.js";
 import { hasStudioAuthoringInterface, primaryStudioActorId } from "../../studio/access.js";
 import { createStudioServices } from "../../studio/services/index.js";
 import { type PlatformMetric, renderCombinedSection } from "./dashboard/combined-section.js";
 import { localeQuery, renderLocaleSwitcher } from "./dashboard/locale-links.js";
 import { renderCredentialsSection, renderDiagnosticsSection, renderQueueSection } from "./dashboard/ops-sections.js";
-import { buildOverviewData, filterPipeline, loadDashboardReadModel, videoOverviewForPeriod } from "./dashboard/overview-data.js";
+import { buildOverviewData, loadDashboardReadModel } from "./dashboard/overview-data.js";
 import { renderPeriodControls } from "./dashboard/period-controls.js";
 import { renderDashboardShell } from "./dashboard/shell.js";
-import { type PublicationDetailsResult, renderPublicationDetails } from "./dashboard/table.js";
 import { dashboardThemeToggleHtml } from "./dashboard/theme.js";
 import type { OpsPayload } from "./dashboard/types.js";
 import { createVideoOverviewCache } from "./dashboard/video-overview.js";
-import { additionalXActivityPosts } from "./dashboard/x-activity-posts.js";
 import { renderStudioOnboarding, renderStudioSection } from "./studio.js";
 
 type DashboardTab = "posts" | "studio";
@@ -80,11 +75,6 @@ function rememberDashboard(cache: Map<string, DashboardCacheEntry>, key: string,
     if (typeof oldest !== "string") break;
     cache.delete(oldest);
   }
-}
-
-/** Clears the short-lived HTML cache after an authenticated dashboard mutation. */
-export function invalidateDashboardRenderCache(backendDb: BackendDb): void {
-  dashboardCaches.delete(backendDb);
 }
 
 export function renderDashboard(
@@ -253,46 +243,6 @@ export function renderDashboard(
   return page;
 }
 
-/** Builds only the bounded read-only fragment requested by the dashboard list. */
-export function renderDashboardPublicationDetails(
-  config: BackendConfig,
-  backendDb: BackendDb,
-  weekOffset: number,
-  periodDays: number,
-  requestedView: string | undefined,
-  offset: number,
-  limit: number,
-  track?: string,
-  requestedVideoView?: string,
-  requestedLocale?: string,
-): PublicationDetailsResult {
-  // Each half asks for its own list. Without the track the endpoint answered
-  // both at once, so "показать ещё" under the clips appended posts.
-  const wantsVideo = track !== "text";
-  const wantsText = track !== "video";
-  const targetIds = dashboardTargetIds(requestedView);
-  const data = wantsText
-    ? pipelineOverviewPayload(config, backendDb, weekOffset, periodDays, 0, undefined, {
-        includeSamples: false,
-        includeContent: true,
-      })
-    : null;
-  const posts = targetIds ? (filterPipeline(data, targetIds)?.posts ?? []) : (data?.posts ?? []);
-  const xItems = wantsText && requestedView === "x" ? xActivityDashboard(backendDb, weekOffset, periodDays, config.TIMEZONE) : [];
-  const xPosts = additionalXActivityPosts(posts, xItems);
-  const videos = wantsVideo ? videoOverviewForPeriod(backendDb, weekOffset, periodDays, config, requestedVideoView).items : [];
-  const locale = parseStudioLocale(requestedLocale);
-  return renderPublicationDetails(
-    locale,
-    postLocales(backendDb),
-    [...posts, ...xPosts],
-    targetIds ?? (requestedView === "x" ? ["x"] : undefined),
-    videos,
-    offset,
-    limit,
-  );
-}
-
 /** Health is the one hidden tab whose state the operator must see without
  * opening it: a failed publish job, a broken credential, or a metric target
  * that stopped reporting. */
@@ -304,16 +254,4 @@ function opsNeedsAttention(ops: OpsPayload): boolean {
 
 function commandCenterAttentionState(attention: CommandCenterAttention): boolean {
   return attention.hasActionableIssue || attention.hasCredentialIssue || attention.hasMetricIssue;
-}
-
-function dashboardTargetIds(requestedView: string | undefined): string[] | undefined {
-  if (requestedView && AUDIENCE_VIEWS.includes(requestedView as AudienceView)) return [requestedView];
-  return undefined;
-}
-
-export function renderCommandCenterLogin(locale: StudioLocale, error = false): string {
-  return renderDashboardShell(
-    html`<section class="command-login"><h1>Command Center</h1><p class="note">${t(locale, "cc.login.prompt")}</p>${error ? html`<p class="login-error">${t(locale, "cc.login.invalid-token")}</p>` : ""}<form method="post" action="/command-center"><input type="hidden" name="locale" value="${locale}"><input type="password" name="token" autocomplete="current-password" aria-label="${t(locale, "cc.login.token-label")}" placeholder="${t(locale, "cc.login.token-label")}" required><button type="submit">${t(locale, "cc.login.open")}</button></form></section>`,
-    locale,
-  );
 }

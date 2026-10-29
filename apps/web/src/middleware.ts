@@ -18,8 +18,7 @@ const UNINDEXED = /^\/(command-center|oauth|stats|api\/command-center)(\/|$)/;
  * mean the same thing for every install. The temporary public-media staging path
  * is the one public media exception: external platforms must be able to fetch
  * it even when the Studio has no public website. */
-const WITHOUT_SITE =
-  /^\/(command-center|oauth|healthz|readyz|api\/(command-center|mcp|studio\/media)|stats|tg-feed|media\/(staging|video\/asset))(\/|$)/;
+const WITHOUT_SITE = /^\/(oauth|healthz|readyz|api\/(mcp|studio\/media)|stats|tg-feed|media\/(staging|video\/asset))(\/|$)/;
 
 /** Every post and index page has a Markdown twin at the same address plus
  * ".md". A client that asks for Markdown gets it at the canonical URL rather

@@ -1,6 +1,6 @@
 /** Response constructors shared by every HTTP route module. They encode the
- * wire conventions of this service — charset on every content-type and how a
- * session token becomes a cookie — so a new route
+ * wire conventions of this service — charset on every content-type and the
+ * streaming response lifecycle — so a new route
  * inherits them instead of restating them. */
 
 export function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
@@ -21,25 +21,6 @@ export function html(body: string): Response {
   return new Response(body, {
     headers: { "content-type": "text/html; charset=utf-8" },
   });
-}
-
-function sessionCookie(name: string, token: string): string {
-  return `${name}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=15552000`;
-}
-
-/** Query-token sign-in: promote the token into a cookie and redirect back to the
- * same URL with it stripped, so it never lingers in browser history or logs. */
-export function queryTokenRedirect(url: URL, cookieName: string, token: string): Response {
-  const clean = new URL(url);
-  clean.searchParams.delete("token");
-  return new Response(null, {
-    status: 303,
-    headers: { location: `${clean.pathname}${clean.search}${clean.hash}`, "set-cookie": sessionCookie(cookieName, token) },
-  });
-}
-
-export function loginRedirect(location: string, cookieName: string, token: string): Response {
-  return new Response(null, { status: 303, headers: { location, "set-cookie": sessionCookie(cookieName, token) } });
 }
 
 export function sse(start: (send: (event: string, data: unknown) => void) => ReturnType<typeof setInterval>): Response {

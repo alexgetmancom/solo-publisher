@@ -5,8 +5,7 @@ import type { BackendConfig } from "./config.js";
 export function commandAllowed(request: Request, config: BackendConfig, payloadToken?: string | null): boolean {
   if (!config.commandCenterToken) return false;
   // A `?token=` in the URL survives in proxy access logs, Referer headers and
-  // browser history, so it is accepted only for safe reads: the Command Center's
-  // GET bootstrap immediately trades it for an HttpOnly cookie, and diagnostic
+  // browser history, so it is accepted only for safe reads. OAuth and diagnostic
   // GET links keep working. Anything that changes state must present the token
   // in a header, the form body, or that cookie.
   const queryToken = isSafeMethod(request.method) ? new URL(request.url).searchParams.get("token") : null;
@@ -42,23 +41,6 @@ function decodedCookie(value: string): string {
     return decodeURIComponent(value);
   } catch {
     return value;
-  }
-}
-
-/** Cookie authority is ambient: a cross-site form can ride it. Routes that act
- * on a cookie alone pair `commandAllowed` with this check, so a POST has to come
- * from the Command Center's own origin. A caller presenting the token explicitly
- * is a script, not a drive-by browser form, and is exempt. */
-export function sameOriginCommandLogin(request: Request, config: BackendConfig): boolean {
-  const expectedOrigin = new URL(config.COMMAND_CENTER_URL).origin;
-  const origin = request.headers.get("origin");
-  if (origin) return origin === expectedOrigin;
-  const referer = request.headers.get("referer");
-  if (!referer) return false;
-  try {
-    return new URL(referer).origin === expectedOrigin;
-  } catch {
-    return false;
   }
 }
 

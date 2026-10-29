@@ -6,7 +6,7 @@ import type { RouteModule } from "./context.js";
 export const xOauthRoutes: RouteModule = (app, { config, backendDb, studio }) => {
   app.get("/oauth/x/start", (c) => {
     try {
-      if (!commandAllowed(c.req.raw, config)) throw new Error("Open this link from an authenticated Command Center");
+      if (!commandAllowed(c.req.raw, config)) throw new Error("Open an authorized Studio connection link");
       return new Response(null, { status: 302, headers: { location: xOauthAuthorizeUrl(config), "cache-control": "no-store" } });
     } catch (error) {
       return page("X connection link is invalid", String(error), 400);
@@ -37,7 +37,7 @@ export const xOauthRoutes: RouteModule = (app, { config, backendDb, studio }) =>
 
 function page(title: string, message: string, status: number): Response {
   return new Response(
-    `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p><p><a href="/command-center?tab=studio">Return to Studio</a></p></main></body></html>`,
+    `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><body><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p><p>You can close this page and return to the publishing bot.</p></main></body></html>`,
     { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow" } },
   );
 }

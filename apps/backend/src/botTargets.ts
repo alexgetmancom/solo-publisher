@@ -29,7 +29,7 @@ export type TargetId = (typeof TARGETS)[number]["id"];
 /** Routes whose credentials are provisioned separately and whose remaining
  * connection step is enabling the publication target. OAuth account routes
  * are absent because their consent callback registers them itself. */
-export const DIRECT_CONNECT_TARGET_IDS = [
+const DIRECT_CONNECT_TARGET_IDS = [
   "telegram",
   "discord",
   "telegram_stories",

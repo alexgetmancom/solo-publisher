@@ -15,7 +15,7 @@ const base = {
 };
 
 describe("X browser OAuth", () => {
-  it("starts only from an authenticated Command Center and redirects to X", () =>
+  it("starts only with Studio connection authorization and redirects to X", () =>
     withDb(async (backendDb) => {
       const app = createApiHandler({ config: loadTestConfig(base), backendDb });
       expect((await app(new Request("https://publisher.example.com/oauth/x/start"))).status).toBe(400);

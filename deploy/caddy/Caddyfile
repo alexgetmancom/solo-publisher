@@ -24,7 +24,7 @@ www.alexgetman.com {
 
 alexgetman.com {
 	encode zstd gzip
-	# Video and image uploads arrive through the Command Center.
+	# Studio API uploads may contain large videos and images.
 	request_body {
 		max_size 1GB
 	}
@@ -53,7 +53,7 @@ marux.ru {
 	}
 	header X-Robots-Tag "noindex, nofollow"
 
-	@allowed path /healthz /readyz /command-center /command-center/* /oauth/* /api/command-center/* /api/mcp /api/studio/media /media/staging/* /media/video/asset/*
+	@allowed path /healthz /readyz /oauth/* /api/mcp /api/studio/media /media/staging/* /media/video/asset/*
 	handle @allowed {
 		reverse_proxy 127.0.0.1:8789 {
 			import client_address

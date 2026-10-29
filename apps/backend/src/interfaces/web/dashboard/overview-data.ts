@@ -15,7 +15,7 @@ import { dashboardPipelineHistoryPayload } from "../../../operations/read-model.
 import type { CombinedSectionInput, PlatformMetric } from "./combined-section.js";
 import { audiencePlatformFollowers } from "./ops-sections.js";
 import { rollingPeriodDates } from "./period-controls.js";
-import { createVideoOverviewCache, setVideoOverviewCacheRange, type VideoOverview, videoOverview } from "./video-overview.js";
+import { type createVideoOverviewCache, setVideoOverviewCacheRange, type VideoOverview, videoOverview } from "./video-overview.js";
 
 type OverviewCache = ReturnType<typeof createVideoOverviewCache>;
 
@@ -225,24 +225,6 @@ export function buildOverviewData(
   };
 }
 
-export function videoOverviewForPeriod(
-  backendDb: BackendDb,
-  weekOffset: number,
-  periodDays: number,
-  config: BackendConfig,
-  destination?: string,
-): VideoOverview {
-  const [start, end] = rollingPeriodDates(weekOffset, periodDays, config.TIMEZONE);
-  const cache = createVideoOverviewCache(periodDays <= 7 ? 60 * 60 : 24 * 60 * 60);
-  setVideoOverviewCacheRange(
-    cache,
-    videoDayBounds(start, config.TIMEZONE, false),
-    videoDayBounds(end, config.TIMEZONE, true),
-    cache.sampleBucketSeconds,
-  );
-  return videoForDates(backendDb, config.TIMEZONE, cache, start, end, true, destination);
-}
-
 function videoForDates(
   backendDb: BackendDb,
   timeZone: string,
@@ -275,7 +257,7 @@ function shiftDays(date: Date, days: number): Date {
 
 /** Posts that reached at least one of these targets — by delivery status, by a
  * legacy Telegram url, or by having metrics for it. */
-export function filterPipeline(data: PipelineData | null, targetIds: readonly string[]): PipelineData | null {
+function filterPipeline(data: PipelineData | null, targetIds: readonly string[]): PipelineData | null {
   if (!data) return null;
   return { ...data, posts: (data.posts ?? []).filter((post) => targetIds.some((target) => postHasTarget(post, target))) };
 }

@@ -3,7 +3,6 @@ import type { BackendDb } from "./db/client.js";
 import { engagementService } from "./engagement/service.js";
 import type { BackendConfig } from "./foundation/config.js";
 import { text } from "./foundation/http-response.js";
-import { commandCenterRoutes } from "./interfaces/http/command-center.js";
 import { engagementRoutes } from "./interfaces/http/engagement.js";
 import { healthRoutes } from "./interfaces/http/health.js";
 import { metaOauthRoutes } from "./interfaces/http/meta-oauth.js";
@@ -48,7 +47,6 @@ function buildApp({ config, backendDb, studio: providedStudio }: ApiContext): Ho
   metaOauthRoutes(app, deps);
   xOauthRoutes(app, deps);
   youtubeOauthRoutes(app, deps);
-  commandCenterRoutes(app, deps);
   engagementRoutes(app, deps);
   studioRoutes(app, deps);
   app.notFound(() => text("not found\n", 404));

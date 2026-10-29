@@ -70,11 +70,16 @@ describe("Meta browser OAuth", () => {
       expect(location.searchParams.get("state")).toBe(state);
     }));
 
-  it("mints a fresh state when an authenticated Command Center link is clicked", () =>
+  it("mints a fresh state for an authenticated Studio connection link", () =>
     withDb(async (backendDb) => {
       const app = createApiHandler({ config, backendDb });
       const denied = await app(new Request("https://publisher.example.com/oauth/instagram/start?locale=ru"));
       expect(denied.status).toBe(400);
+      expect(await denied.text()).not.toContain("/command-center");
+      const malformedCookie = await app(
+        new Request("https://publisher.example.com/oauth/instagram/start?locale=ru", { headers: { cookie: "command_token=%" } }),
+      );
+      expect(malformedCookie.status).toBe(400);
       const response = await app(
         new Request("https://publisher.example.com/oauth/instagram/start?locale=ru", {
           headers: { "X-Command-Token": "command-secret" },

@@ -13,8 +13,7 @@ import {
 
 /**
  * Fills a local pipeline database and public media directory with published
- * posts, so `bun run dev` shows a real story player instead of an empty feed,
- * and /command-center shows a populated dashboard instead of zeroes.
+ * posts, so `bun run dev` shows a real story player instead of an empty feed.
  *
  * The story player only becomes interesting with more than one post and with a
  * post that has several images: the rail, the feed-mode filters and the
@@ -31,10 +30,6 @@ import {
  *
  * The seed writes `<data-dir>/demo.env` with everything the dev server needs,
  * so `bun run demo` never restates the configuration this script chose.
- *
- * The dashboard sits behind a token. Any value works locally as long as the
- * server and the browser agree, so the launch config sets COMMAND_CENTER_TOKEN=dev
- * and the seed prints the URL that logs you straight in.
  */
 
 function flag(name: string, fallback: string): string {
@@ -143,4 +138,3 @@ fs.writeFileSync(
 
 console.log(`\nEnvironment: ${envPath}\n  bun run demo`);
 console.log("  site       http://localhost:8788/");
-if (withDashboard) console.log("  dashboard  http://localhost:8788/command-center?token=dev");
