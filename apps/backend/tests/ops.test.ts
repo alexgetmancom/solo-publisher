@@ -209,6 +209,12 @@ describe("TypeScript operations tooling", () => {
       expect(healthy.ok).toBe(true);
       expect(healthy.workers).toEqual({ total: names.length, healthy: names.length, problems: [] });
       expect(JSON.stringify(healthy).length).toBeLessThan(1_500);
+      for (const name of ["metrics", "creator-analytics", "metric-retention"]) {
+        backendDb.sqlite
+          .query("INSERT INTO worker_state(name,state_json,updated_at) VALUES (?,?,?)")
+          .run(name, JSON.stringify({ ok: false, last_heartbeat_at: "2020-01-01T00:00:00.000Z" }), now);
+      }
+      expect(operationsStatus(config, backendDb).workers).toEqual(healthy.workers);
 
       backendDb.sqlite.query("DELETE FROM worker_state WHERE name = ?").run("queue");
       backendDb.sqlite
@@ -218,7 +224,7 @@ describe("TypeScript operations tooling", () => {
         .query("UPDATE worker_state SET state_json = ? WHERE name = ?")
         .run(
           JSON.stringify({ ok: true, scheduler_error: "loop failed", last_heartbeat_at: now, heartbeat_interval_ms: 60_000 }),
-          "metrics",
+          "notifications",
         );
       const broken = operationsStatus(config, backendDb);
       expect(broken.ok).toBe(false);
@@ -226,7 +232,7 @@ describe("TypeScript operations tooling", () => {
       expect(broken.workers.problems).toHaveLength(3);
       expect(broken.workers.problems).toContainEqual({ name: "queue", reasons: ["missing"], lastError: null, ageSeconds: null });
       expect(broken.workers.problems.find((worker) => worker.name === "story-cards")?.reasons).toEqual(["stale"]);
-      expect(broken.workers.problems.find((worker) => worker.name === "metrics")).toMatchObject({
+      expect(broken.workers.problems.find((worker) => worker.name === "notifications")).toMatchObject({
         reasons: ["error"],
         lastError: "loop failed",
       });
