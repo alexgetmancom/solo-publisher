@@ -1,6 +1,3 @@
-import { runAnalyticsCycle } from "../analytics/collection/creator-cycle.js";
-import { runMetricsCycle } from "../analytics/collection/metrics-cycle.js";
-import { pruneMetricSamples } from "../analytics/snapshots/metric-repository.js";
 import { renewMetaTokens } from "../channels/meta-tokens.js";
 import { targetRouting } from "../channels/registry.js";
 import { refreshXToken } from "../channels/x-oauth.js";
@@ -26,7 +23,6 @@ import { applyStoredCredentials } from "./config.js";
 
 const WATCHDOG_INTERVAL_SECONDS = 60;
 const SITE_JOB_POLL_INTERVAL_SECONDS = 10;
-const PROFILE_POLL_INTERVAL_SECONDS = 300;
 const PUBLISH_RESTART_LOCK_GRACE_SECONDS = 30;
 
 async function runTimedCycle(
@@ -103,24 +99,6 @@ export function startCoreWorkers(config: BackendConfig, backendDb: BackendDb): S
     }),
     startWorkerLoop("video", config.IDLE_POLL_INTERVAL_SECONDS * 1000, async () => {
       await runTimedCycle("publishing.video.cycle", "claimed", () => runVideoCycle(config, backendDb));
-    }),
-    // Two independent collectors on one schedule. They do not share a
-    // failure: a provider outage on one must not silently stop the other.
-    startWorkerLoop("metrics", config.METRICS_REFRESH_INTERVAL_SECONDS * 1000, async () => {
-      await runTimedCycle("analytics.metrics.cycle", "checked", () => runMetricsCycle(config, backendDb));
-    }),
-    startWorkerLoop("creator-analytics", PROFILE_POLL_INTERVAL_SECONDS * 1000, async () => {
-      await runTimedCycle("analytics.creator_cycle", "completed", () => runAnalyticsCycle(config, backendDb));
-    }),
-    // Retention is a housekeeping concern, not a collection one: it used
-    // to run on every metrics tick (10s by default), scanning
-    // metric_samples for a window that moves by a day at a time.
-    startWorkerLoop("metric-retention", 60 * 60 * 1000, async () => {
-      try {
-        pruneMetricSamples(backendDb);
-      } catch (error) {
-        log("error", "failed to prune old metric samples", { error: error instanceof Error ? error.message : String(error) });
-      }
     }),
     // Started whether or not this Studio serves a site, and idle while it does
     // not. Deciding at startup meant turning the site on left the pages served

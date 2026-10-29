@@ -16,9 +16,6 @@ const EXPECTED_WORKERS = [
   "publication-reconciliation",
   "notifications",
   "video",
-  "metrics",
-  "creator-analytics",
-  "metric-retention",
   "site",
   "site-watchdog",
   "media-cache",
@@ -36,7 +33,7 @@ afterEach(() => {
 });
 
 describe("core worker runtime", () => {
-  it("starts every enabled loop and persists lifecycle heartbeats", async () => {
+  it("keeps every publishing loop and token renewal without starting statistics collection", async () => {
     await withDb(async (backendDb) => {
       const config = loadTestConfig({ WORKER_HEARTBEAT_INTERVAL_SECONDS: "1" }, SITE_STUDIO_PROFILE);
       const loops = startCoreWorkers(config, backendDb);
