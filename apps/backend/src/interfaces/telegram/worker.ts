@@ -12,9 +12,7 @@ import { setWorkerWake } from "../../foundation/worker-signal.js";
 import { deliverPendingAlerts } from "../../observability/alerts.js";
 import { sendWeeklyAnalyticsSummary } from "./analytics-summary.js";
 import { sendDailyBackup } from "./backup.js";
-import { sendDailyEditorialInbox } from "./editorial-inbox.js";
 import { consumeTelegramEvents } from "./event-consumer.js";
-import { sendDailyNewsDigest } from "./news-digest.js";
 
 const DAILY_INTERFACE_POLL_INTERVAL_SECONDS = 60;
 
@@ -58,15 +56,6 @@ export function startTelegramWorkers(config: BackendConfig, backendDb: BackendDb
     startInterfaceLoop("telegram-daily-backup", dailyPollMs, async () => {
       const backup = await sendDailyBackup(config, backendDb, bot);
       if (backup !== "not_due" && backup !== "disabled") log("debug", "telegram daily backup tick", { status: backup });
-    }),
-    startInterfaceLoop("telegram-editorial-inbox", dailyPollMs, async () => {
-      const editorialInbox = await sendDailyEditorialInbox(config, backendDb, bot);
-      if (editorialInbox) log("debug", "telegram editorial inbox delivered");
-    }),
-    startInterfaceLoop("telegram-news-digest", dailyPollMs, async () => {
-      const newsDigest = await sendDailyNewsDigest(config, backendDb, bot);
-      if (newsDigest.status !== "not_due" && newsDigest.status !== "disabled")
-        log("debug", "telegram news digest loop tick", { status: newsDigest.status });
     }),
     startInterfaceLoop("telegram-analytics-dashboard", 60 * 60 * 1000, async () => {
       const refreshed = await refreshTelegramAnalyticsDashboards(bot, backendDb, config);

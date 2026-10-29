@@ -28,7 +28,6 @@ const TELEGRAM_EVENT_TYPES = [
   "studio.notification.reminder.due",
   "delivery.post.completed",
   "delivery.video.completed",
-  "analytics.milestone.reached",
 ];
 // Telegram is an immediate interface, not an archival notification transport.
 // Older undelivered events remain in the durable audit journal, but must never
@@ -106,8 +105,6 @@ async function deliverEvent(
     event.eventType === "delivery.video.completed"
   ) {
     await sendStudioCompletion(backendDb, bot, config, { ...event, detailsJson: details });
-  } else if (event.eventType === "analytics.milestone.reached") {
-    for (const actorId of config.CONTROLLER_ADMIN_IDS) await bot.api.sendMessage(actorId, event.message);
   } else if (event.eventType === "delivery.post.settled" || event.eventType.startsWith("publish.job.")) {
     const postId = numberDetail(details, "post_id") ?? postIdFromRef(event.publicationKey);
     const draft =

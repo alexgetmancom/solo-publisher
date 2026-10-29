@@ -12,11 +12,19 @@ import { createTestVideoAsset } from "./helpers/video.js";
 
 const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }, MSK_STUDIO_PROFILE);
 
-function milestone(message: string) {
-  return { type: "analytics.milestone.reached", severity: "info" as const, message };
+function reminder(title: string) {
+  return { type: "studio.notification.reminder.due", severity: "info" as const, message: title, details: { title, actor_id: 42 } };
 }
 
 describe("Telegram event consumer", () => {
+  it("leaves retired audience achievements in history without delivering them", async () =>
+    withDb(async (backendDb) => {
+      backendDb.events.record({ type: "analytics.milestone.reached", severity: "info", message: "Archived achievement" });
+      const sendMessage = mock(async () => undefined);
+      expect(await consumeTelegramEvents(backendDb, { api: { sendMessage } } as unknown as Bot, config)).toBe(0);
+      expect(sendMessage).not.toHaveBeenCalled();
+      expect(backendDb.db.select().from(alertDedup).all()).toHaveLength(0);
+    }));
   it("does not overwrite a draft card while no progress card is bound", async () =>
     withDb(async (backendDb) => {
       const draftId = 11;
@@ -80,18 +88,18 @@ describe("Telegram event consumer", () => {
 
   it("drops an undeliverable event instead of blocking every event behind it", async () =>
     withDb(async (backendDb) => {
-      backendDb.events.record(milestone("first"));
-      backendDb.events.record(milestone("second"));
+      backendDb.events.record(reminder("first"));
+      backendDb.events.record(reminder("second"));
       // Telegram's real failure here is a 403 from a user who blocked the bot:
       // permanent, chat-specific, and no reason to stall the whole queue.
       const sendMessage = mock(async (_chatId: number, text: string) => {
-        if (text === "first") throw new Error("Forbidden: bot was blocked by the user");
+        if (text.includes("first")) throw new Error("Forbidden: bot was blocked by the user");
         return { message_id: 1, date: 1, chat: { id: 42, type: "private" as const } };
       });
       const bot = { api: { sendMessage } } as unknown as Bot;
 
-      expect(await consumeTelegramEvents(backendDb, bot, config)).toBe(1);
-      expect(sendMessage.mock.calls.map(([, text]) => text)).toEqual(["first", "second"]);
+      expect(await consumeTelegramEvents(backendDb, bot, config)).toBe(2);
+      expect(sendMessage.mock.calls.map(([, text]) => text)).toEqual([expect.stringContaining("first"), expect.stringContaining("second")]);
 
       // Both are marked delivered: the failed one is not retried on the next tick.
       expect(await consumeTelegramEvents(backendDb, bot, config)).toBe(0);
@@ -100,7 +108,7 @@ describe("Telegram event consumer", () => {
 
   it("delivers each event exactly once across repeated ticks", async () =>
     withDb(async (backendDb) => {
-      backendDb.events.record(milestone("only"));
+      backendDb.events.record(reminder("only"));
       const sendMessage = mock(async () => ({ message_id: 1, date: 1, chat: { id: 42, type: "private" as const } }));
       const bot = { api: { sendMessage } } as unknown as Bot;
 
@@ -111,7 +119,7 @@ describe("Telegram event consumer", () => {
 
   it("durably reserves an event before calling Telegram", async () =>
     withDb(async (backendDb) => {
-      backendDb.events.record(milestone("reserved"));
+      backendDb.events.record(reminder("reserved"));
       const sendMessage = mock(async () => {
         expect(backendDb.db.select().from(alertDedup).all()).toHaveLength(1);
         return { message_id: 1, date: 1, chat: { id: 42, type: "private" as const } };

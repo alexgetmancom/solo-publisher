@@ -18,8 +18,6 @@ describe("Telegram interface workers", () => {
           "telegram-alerts",
           "telegram-weekly-summary",
           "telegram-daily-backup",
-          "telegram-editorial-inbox",
-          "telegram-news-digest",
           "telegram-analytics-dashboard",
         ]);
         await Bun.sleep(10);

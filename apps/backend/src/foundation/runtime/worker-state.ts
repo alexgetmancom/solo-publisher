@@ -73,8 +73,6 @@ export const TELEGRAM_WORKER_NAMES = [
   "telegram-alerts",
   "telegram-weekly-summary",
   "telegram-daily-backup",
-  "telegram-editorial-inbox",
-  "telegram-news-digest",
   "telegram-analytics-dashboard",
 ] as const;
 
