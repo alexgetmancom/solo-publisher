@@ -10,7 +10,6 @@ import { heartbeatLoop } from "../../foundation/runtime/worker-state.js";
 import { type ScheduledLoop, startLoop } from "../../foundation/scheduler.js";
 import { setWorkerWake } from "../../foundation/worker-signal.js";
 import { deliverPendingAlerts } from "../../observability/alerts.js";
-import { sendWeeklyAnalyticsSummary } from "./analytics-summary.js";
 import { sendDailyBackup } from "./backup.js";
 import { consumeTelegramEvents } from "./event-consumer.js";
 
@@ -48,10 +47,6 @@ export function startTelegramWorkers(config: BackendConfig, backendDb: BackendDb
         ...(actorId === undefined ? {} : { sendAlert: async (text) => void (await bot.api.sendMessage(actorId, text)) }),
       });
       if (alerts) log("debug", "telegram alert loop tick", { alerts });
-    }),
-    startInterfaceLoop("telegram-weekly-summary", dailyPollMs, async () => {
-      const weeklySummary = await sendWeeklyAnalyticsSummary(config, backendDb, bot);
-      if (weeklySummary) log("debug", "telegram weekly summary delivered");
     }),
     startInterfaceLoop("telegram-daily-backup", dailyPollMs, async () => {
       const backup = await sendDailyBackup(config, backendDb, bot);
