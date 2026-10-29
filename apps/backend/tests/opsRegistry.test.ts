@@ -53,6 +53,7 @@ const OFF_THE_AGENT_SURFACE = [
   "telegram-stories-login",
   "threads-authorize",
   "youtube-export",
+  "analytics-export",
   // Rare mutations, in the order the catalog carries them.
   "studio-profile-set",
   "dates-repair",
@@ -134,7 +135,24 @@ describe("operations registry", () => {
         .filter((entry) => !entry.mutates && !entry.agent)
         .map((entry) => entry.name)
         .sort(),
-    ).toEqual(["backup-stream", "disk", "guide", "threads-authorize", "youtube-export"]);
+    ).toEqual(["analytics-export", "backup-stream", "disk", "guide", "threads-authorize", "youtube-export"]);
+  });
+
+  it("refuses remote social credential export before opening runtime configuration", () => {
+    const def = operationDef("analytics-export");
+    expect(def).toBeDefined();
+    const remote: OperationContext = {
+      dbPath: ":memory:",
+      actorType: "mcp",
+      db: () => {
+        throw new Error("must not open the database");
+      },
+      config: () => {
+        throw new Error("must not read credentials");
+      },
+      fetchImpl: fetch,
+    };
+    expect(() => def?.handler(remote, {})).toThrow("Social credentials can only be exported by the local CLI");
   });
 
   it("refuses input the schema does not define, on every surface", async () => {

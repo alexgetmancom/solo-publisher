@@ -321,6 +321,65 @@ const operationDefs = {
         profiles: input.profiles,
       }),
   }),
+  "analytics-export": operation({
+    section: "channels",
+    summary: "Export existing social read credentials into a private statistics collector.",
+    note: "CLI only. Stdout contains credentials: pipe it directly into the receiver, never a terminal or log. This reads the resolved runtime credentials and changes no channels or publications. X credentials remain with publishing; the statistics collector needs a separate authorization.",
+    schema: z.object({}),
+    mutates: false,
+    agent: false,
+    streams: true,
+    handler: (context) => {
+      if (context.actorType !== "ops-cli") throw new Error("Social credentials can only be exported by the local CLI");
+      if (process.stdout.isTTY) throw new Error("Pipe social credentials into a private receiving process");
+      const config = context.config();
+      const connections: Record<string, Record<string, string>> = {};
+      for (const channel of createStudioServices(context.db(), config).channels.report(false)) {
+        if (!channel.enabled || channel.platform === "site" || channel.platform === "youtube" || channel.platform === "x") continue;
+        const platform = channel.platform.startsWith("instagram")
+          ? "instagram"
+          : channel.platform.startsWith("threads")
+            ? "threads"
+            : channel.platform;
+        const locale = channel.locale === "en" ? "en" : "ru";
+        const accessToken =
+          channel.provider === "zernio"
+            ? config.ZERNIO_API_KEY
+            : platform === "instagram"
+              ? locale === "en"
+                ? config.INSTAGRAM_EN_ACCESS_TOKEN
+                : config.INSTAGRAM_RU_ACCESS_TOKEN
+              : platform === "threads"
+                ? locale === "en"
+                  ? config.THREADS_EN_ACCESS_TOKEN
+                  : config.THREADS_RU_ACCESS_TOKEN
+                : platform === "discord"
+                  ? config.DISCORD_BOT_TOKEN
+                  : platform === "telegram" || platform === "telegram_stories"
+                    ? config.controllerBotToken
+                    : undefined;
+        if (!accessToken) continue;
+        const accountId = channel.providerAccountId ?? "";
+        const connection: Record<string, string> = {
+          access_token: accessToken,
+          account_id: accountId,
+          channel_id:
+            platform === "telegram" || platform === "telegram_stories"
+              ? config.TELEGRAM_CHANNEL_USERNAME
+              : platform === "discord"
+                ? (config.DISCORD_CHANNEL_ID ?? "")
+                : "",
+          guild_id: platform === "discord" ? (config.DISCORD_GUILD_ID ?? "") : "",
+        };
+        if (channel.provider !== "zernio" && platform === "instagram") {
+          connection.api_base = `https://${accessToken.startsWith("IG") ? "graph.instagram.com" : "graph.facebook.com"}/${config.INSTAGRAM_GRAPH_API_VERSION}`;
+        }
+        connections[channel.id] = connection;
+      }
+      process.stdout.write(JSON.stringify({ connections }));
+      return { exported: true };
+    },
+  }),
   "youtube-export": operation({
     section: "channels",
     summary: "Export one YouTube connection directly into another private process.",
