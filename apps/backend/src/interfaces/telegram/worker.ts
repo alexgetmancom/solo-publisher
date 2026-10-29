@@ -1,6 +1,5 @@
 import type { Bot } from "grammy";
 import { finalizePendingAlbums } from "../../bot/albums.js";
-import { refreshTelegramAnalyticsDashboards } from "../../bot/analytics-screen.js";
 import { refreshPostPreviewCard } from "../../bot/progress.js";
 import { runTranslationCycle } from "../../content/translation-worker.js";
 import type { BackendDb } from "../../db/client.js";
@@ -51,10 +50,6 @@ export function startTelegramWorkers(config: BackendConfig, backendDb: BackendDb
     startInterfaceLoop("telegram-daily-backup", dailyPollMs, async () => {
       const backup = await sendDailyBackup(config, backendDb, bot);
       if (backup !== "not_due" && backup !== "disabled") log("debug", "telegram daily backup tick", { status: backup });
-    }),
-    startInterfaceLoop("telegram-analytics-dashboard", 60 * 60 * 1000, async () => {
-      const refreshed = await refreshTelegramAnalyticsDashboards(bot, backendDb, config);
-      if (refreshed) log("debug", "analytics dashboards refreshed", { refreshed });
     }),
   ];
 }

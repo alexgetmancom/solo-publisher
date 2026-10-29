@@ -47,6 +47,8 @@ describe("main menu fingerprint", () => {
 
     expect(connected.shape).toEqual(disconnected.shape);
     expect(connected.fingerprint).toEqual(disconnected.fingerprint);
+    // The previous layout used the locale alone and included Analytics.
+    expect(connected.fingerprint).not.toBe("en");
   });
 
   it("stands still while only a label moves", async () => {

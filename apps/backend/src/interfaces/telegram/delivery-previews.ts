@@ -37,11 +37,6 @@ export async function sendTelegramDeliveryPreviews(
   }
 }
 
-/** Reuses the same safe Telegram media rendering for a published archive item. */
-export async function sendTelegramArchiveMedia(ctx: Context, media: Record<string, unknown>[]): Promise<void> {
-  await sendMedia(ctx, media, "", []);
-}
-
 async function sendProjectionContent(ctx: Context, projection: DeliveryProjection, locale: StudioLocale = "en"): Promise<void> {
   const metadata = projection.metadata ? formatMetadata(projection.metadata, locale) : "";
   const text = [projection.text, metadata].filter(Boolean).join("\n\n");

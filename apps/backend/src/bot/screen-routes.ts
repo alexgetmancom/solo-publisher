@@ -3,22 +3,9 @@ import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { describeError, t } from "../foundation/i18n/index.js";
-import { clearTelegramAnalyticsDashboard } from "../interfaces/telegram/control-cards.js";
 import { sendVideoSourcePreview } from "../interfaces/telegram/delivery-previews.js";
 import { VIDEO_TARGETS, type VideoTarget } from "../publishing/video-types.js";
 import { settingsService } from "../studio/services/settings.js";
-import {
-  analyticsPeriod,
-  analyticsSection,
-  sendPostArchiveMedia,
-  showAnalyticsDashboard,
-  showArchiveHome,
-  showMilestones,
-  showPostArchive,
-  showPostMetrics,
-  showVideoArchive,
-  showVideoMetrics,
-} from "./analytics-screen.js";
 import { runCallbackAction } from "./callback-effects.js";
 import { resultNavigationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
@@ -55,7 +42,6 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
   // A label, not a control. The boundary answers the tap; there is nothing else to do.
   noop: async () => true,
   menu_home: async ({ ctx, backendDb, config, mainMenu }) => {
-    clearTelegramAnalyticsDashboard(backendDb, Number(ctx.from?.id));
     await showMainMenu(ctx, backendDb, config, mainMenu);
     return true;
   },
@@ -77,54 +63,6 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
     const page = screenNumber(args.page);
     if (page == null) return false;
     await showQueueAttention(ctx, backendDb, config, page);
-    return true;
-  },
-  analytics_home: async ({ ctx, backendDb, config }) => {
-    await showAnalyticsDashboard(ctx, backendDb, config, "overview", 7);
-    return true;
-  },
-  analytics_section: async ({ ctx, backendDb, config, args }) => {
-    await showAnalyticsDashboard(ctx, backendDb, config, analyticsSection(args.section), analyticsPeriod(args.days));
-    return true;
-  },
-  analytics_milestones: async ({ ctx, backendDb, config, args }) => {
-    const offset = screenNumber(args.offset);
-    if (offset == null) return false;
-    await showMilestones(ctx, backendDb, config, offset);
-    return true;
-  },
-  archive_home: async ({ ctx, backendDb, config }) => {
-    await showArchiveHome(ctx, backendDb, config);
-    return true;
-  },
-  analytics_archive: async ({ ctx, backendDb, config, args }) => {
-    const offset = screenNumber(args.offset);
-    if (offset == null) return false;
-    await showVideoArchive(ctx, backendDb, config, offset);
-    return true;
-  },
-  analytics_post_archive: async ({ ctx, backendDb, config, args }) => {
-    const offset = screenNumber(args.offset);
-    if (offset == null) return false;
-    await showPostArchive(ctx, backendDb, config, offset);
-    return true;
-  },
-  analytics_video: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    if (id == null) return false;
-    await showVideoMetrics(ctx, backendDb, config, id);
-    return true;
-  },
-  analytics_post: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    if (id == null) return false;
-    await showPostMetrics(ctx, backendDb, config, id);
-    return true;
-  },
-  analytics_post_media: async ({ ctx, backendDb, config, args }) => {
-    const id = screenNumber(args.id, { min: 1 });
-    if (id == null) return false;
-    await sendPostArchiveMedia(ctx, backendDb, config, id);
     return true;
   },
   progress: async ({ ctx, backendDb, config, args }) => {

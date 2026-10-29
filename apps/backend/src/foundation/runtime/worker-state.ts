@@ -72,7 +72,6 @@ export const TELEGRAM_WORKER_NAMES = [
   "telegram-events",
   "telegram-alerts",
   "telegram-daily-backup",
-  "telegram-analytics-dashboard",
 ] as const;
 
 /** Telegram loops are expected only where a controller bot is configured; a

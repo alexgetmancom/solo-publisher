@@ -3,7 +3,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Menu } from "@grammyjs/menu";
 import type { Context, InlineKeyboard } from "grammy";
-import { analyticsKeyboard } from "../src/bot/analytics-screen.js";
 import { openIntake } from "../src/bot/intake.js";
 import { buildMainMenu } from "../src/bot/navigation.js";
 import { draftPreview } from "../src/bot/preview.js";
@@ -17,7 +16,6 @@ import {
   CHANNEL_MENU_ID,
   CHANNELS_MENU_ID,
   DEFAULT_TARGETS_MENU_ID,
-  MILESTONES_MENU_ID,
   NEWS_DIGEST_MENU_ID,
   NOTIFICATION_SETTINGS_MENU_ID,
   NOTIFICATIONS_MENU_ID,
@@ -94,7 +92,6 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     ["Settings · Notifications", NOTIFICATIONS_MENU_ID],
     ["Settings · Notifications · Publication notices", NOTIFICATION_SETTINGS_MENU_ID],
     ["Settings · Notifications · News digest", NEWS_DIGEST_MENU_ID],
-    ["Settings · Notifications · Achievements", MILESTONES_MENU_ID],
     ["Settings · System", SYSTEM_MENU_ID],
     ["Settings · System · Backup", BACKUP_MENU_ID],
   ] as const) {
@@ -136,8 +133,6 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     parts.push(section(`Video card · ${view}`, keyboardRows(preview.keyboard)));
   }
 
-  for (const view of ["overview", "posts", "video"] as const)
-    parts.push(section(`Analytics · ${view}`, keyboardRows(analyticsKeyboard("en", view, 7))));
   parts.push(section("Work queue", keyboardRows(queueView(backendDb, config, 42).keyboard)));
   parts.push(section("Work queue · needs attention", keyboardRows(attentionView(backendDb, config, 42).keyboard)));
 

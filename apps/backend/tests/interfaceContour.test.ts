@@ -25,18 +25,12 @@ const backendSources = sourceFiles("apps/backend/src");
 
 /** Answering an update -- with `ctx` -- is what the anchor owns. Sending on the
  * bot's own initiative (`bot.api`) is a different thing entirely: a reminder, a
- * failure notice, an hourly dashboard refresh. There is no tapped message to
+ * failure notice, or backup. There is no tapped message to
  * write over, and those keep their direct calls. */
 const CONTEXT_SEND = /\bctx\.(reply|editMessage|sendMessage|replyWith)/;
 
-/** The executor itself, the preview renderer that sends media Telegram cannot
- * edit, and the analytics dashboard, whose rich message Telegram can only edit
- * -- `reply` takes plain text, so it has no fallback to fall back to. */
-const CONTEXT_SEND_ALLOWED = new Set([
-  "apps/backend/src/bot/effects.ts",
-  "apps/backend/src/bot/analytics-screen.ts",
-  "apps/backend/src/interfaces/telegram/delivery-previews.ts",
-]);
+/** The executor itself and the preview renderer that sends media Telegram cannot edit. */
+const CONTEXT_SEND_ALLOWED = new Set(["apps/backend/src/bot/effects.ts", "apps/backend/src/interfaces/telegram/delivery-previews.ts"]);
 
 describe("telegram interface contour", () => {
   /** Whether an answer replaces the screen it came from or arrives below it is

@@ -14,7 +14,6 @@ export const SYSTEM_MENU_ID = "settings-system";
 export const NOTIFICATION_SETTINGS_MENU_ID = "settings-notifications";
 export const WEEKLY_DIGEST_MENU_ID = "settings-weekly-digest";
 export const BACKUP_MENU_ID = "settings-backup";
-export const MILESTONES_MENU_ID = "settings-milestones";
 export const NEWS_DIGEST_MENU_ID = "settings-news-digest";
 export const NEWS_DIGEST_TIME_MENU_ID = "settings-news-digest-time";
 export const DEFAULT_TARGETS_MENU_ID = "settings-default-targets";
@@ -25,17 +24,8 @@ export const CHANNEL_MENU_ID = "settings-channel";
 export const CHANNEL_DISABLE_MENU_ID = "settings-channel-disable";
 export const CHANNEL_CONNECT_MENU_ID = "settings-channel-connect";
 export const TIMEZONE_MENU_ID = "settings-timezone";
-export const THREADS_FOLLOWERS_MENU_ID = "settings-threads-followers";
-export const X_IMPORT_MENU_ID = "settings-x-import";
 
-export type SettingsInputStep =
-  | "timezone"
-  | "news_digest_prompt"
-  | "news_digest_time"
-  | "milestone_threshold"
-  | "threads_followers"
-  | "x_import"
-  | "youtube_signature";
+export type SettingsInputStep = "timezone" | "news_digest_prompt" | "news_digest_time" | "youtube_signature";
 
 function beginSettingsInput(backendDb: BackendDb, actorId: number, step: SettingsInputStep, data: Record<string, unknown> = {}): void {
   saveConversationState(backendDb, actorId, { kind: "settings", draftId: null, step, data, controlMessageId: null });

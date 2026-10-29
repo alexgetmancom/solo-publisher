@@ -17,7 +17,6 @@ describe("Telegram interface workers", () => {
           "telegram-events",
           "telegram-alerts",
           "telegram-daily-backup",
-          "telegram-analytics-dashboard",
         ]);
         await Bun.sleep(10);
       } finally {

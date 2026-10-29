@@ -9,7 +9,6 @@ import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState } from "../conversation-state.js";
 import { showScreen } from "../effects.js";
 import { persistentKeyboard } from "../menu-render.js";
-import { buildAnalyticsMenus, threadsFollowersText } from "./analytics.js";
 import { backupText, buildBackupMenu } from "./notifications.js";
 import {
   askSettingsInput,
@@ -21,9 +20,7 @@ import {
   SYSTEM_MENU_ID,
   settingsScreen,
   settingsUpdate,
-  THREADS_FOLLOWERS_MENU_ID,
   TIMEZONE_MENU_ID,
-  X_IMPORT_MENU_ID,
 } from "./shared.js";
 
 const TIMEZONE_OPTIONS = [
@@ -44,10 +41,7 @@ const TIMEZONE_OPTIONS = [
   ["America/Los_Angeles", "America/Los_Angeles"],
 ] as const;
 
-/** Everything that is about this machine rather than about a publication: the
- * clock it keeps, the language it speaks, the copy it takes of itself, and the
- * numbers no platform API will give us. Time zone and language used to be a
- * category of two, and the analytics pair a category of two more. */
+/** Machine settings: the clock, interface language and database backups. */
 export function buildSystemMenu(config: BackendConfig, backendDb: BackendDb): Menu<Context> {
   const language = new Menu<Context>(LANGUAGE_MENU_ID, { autoAnswer: false }).dynamic((ctx, range) => {
     const locale = settingsService(backendDb).locale(Number(ctx.from?.id));
@@ -111,25 +105,12 @@ export function buildSystemMenu(config: BackendConfig, backendDb: BackendDb): Me
         BACKUP_MENU_ID,
         settingsScreen(() => backupText(backendDb, config, locale)),
       )
-      .submenu(
-        t(locale, "settings.threads-followers"),
-        THREADS_FOLLOWERS_MENU_ID,
-        settingsScreen(() => threadsFollowersText(backendDb, locale)),
-      )
-      .row()
-      .submenu(
-        t(locale, "settings.x-import"),
-        X_IMPORT_MENU_ID,
-        settingsScreen(() => t(locale, "settings.x-import-body")),
-      )
       .row()
       .back(t(locale, "settings.back-to-settings"), backToSettings(backendDb));
   });
   system.register(language);
   system.register(timezone);
   system.register(buildBackupMenu(config, backendDb));
-  for (const menu of buildAnalyticsMenus(backendDb, (actorLocale) => t(actorLocale, "settings.category-system-body")))
-    system.register(menu);
   return system;
 
   async function switchLanguage(ctx: Context & MenuFlavor, locale: StudioLocale): Promise<void> {

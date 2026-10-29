@@ -5,7 +5,6 @@ import type { BackendConfig } from "../foundation/config.js";
 import { t } from "../foundation/i18n/index.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
-import { showAnalyticsDashboard } from "./analytics-screen.js";
 import { showScreen } from "./effects.js";
 import { openIntake } from "./intake.js";
 import { showQueue } from "./queue.js";
@@ -24,8 +23,9 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
     //
     // With a fingerprint the plugin stops range-checking the tapped position, so
     // this has to name everything the *shape* depends on or a stale tap reaches
-    // a button that is not there. Only the locale changes this menu's labels.
-    fingerprint: (ctx) => settingsService(backendDb).locale(Number(ctx.from?.id)),
+    // a button that is not there. The layout revision also invalidates buttons
+    // from the retired analytics menu.
+    fingerprint: (ctx) => `publishing:${settingsService(backendDb).locale(Number(ctx.from?.id))}`,
   });
   // Text and video drafts can be prepared before their channels are connected.
   menu.dynamic((ctx, range) => {
@@ -42,10 +42,6 @@ export function buildMainMenu(config: BackendConfig, backendDb: BackendDb, setti
       return pending ? t(locale, "menu.work-queue-count", { count: pending }) : t(locale, "menu.work-queue");
     },
     (ctx) => showQueue(ctx, backendDb, config),
-  );
-  menu.text(
-    (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "menu.analytics"),
-    (ctx) => showAnalyticsDashboard(ctx, backendDb, config, "overview", 1),
   );
   menu.submenu(
     (ctx) => t(settingsService(backendDb).locale(Number(ctx.from?.id)), "settings.title"),

@@ -7,8 +7,7 @@ import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState, getConversationState } from "../conversation-state.js";
 import { showScreen } from "../effects.js";
 import { mainMenuText } from "../menu-render.js";
-import { collectThreadsFollowers, collectXAnalyticsCsv } from "./analytics.js";
-import { buildNotificationsMenu, collectMilestoneThreshold, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
+import { buildNotificationsMenu, collectNewsDigestPrompt, collectNewsDigestTime } from "./notifications.js";
 import { buildPublishingMenu, collectYoutubeSignature } from "./publishing.js";
 import { isNavigationMessage, NOTIFICATIONS_MENU_ID, PUBLISHING_MENU_ID, SETTINGS_MENU_ID, SYSTEM_MENU_ID } from "./shared.js";
 import { buildSystemMenu, collectTimezone } from "./system.js";
@@ -31,14 +30,10 @@ export async function handleSettingsMessage(
     clearConversationState(backendDb, actorId, "settings");
     return false;
   }
-  if (state.step === "x_import") return collectXAnalyticsCsv(ctx, backendDb, config, actorId, settingsMenu);
   clearConversationState(backendDb, actorId, "settings");
-  if (state.step === "threads_followers")
-    return collectThreadsFollowers(ctx, backendDb, actorId, text, settingsMenu, state.data.account === "en" ? "en" : "ru");
   if (state.step === "timezone") return collectTimezone(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step === "news_digest_time") return collectNewsDigestTime(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step === "news_digest_prompt") return collectNewsDigestPrompt(ctx, backendDb, config, actorId, text, settingsMenu);
-  if (state.step === "milestone_threshold") return collectMilestoneThreshold(ctx, backendDb, config, actorId, text, settingsMenu);
   if (state.step !== "youtube_signature") return false;
   return collectYoutubeSignature(ctx, backendDb, config, actorId, text, settingsMenu);
 }

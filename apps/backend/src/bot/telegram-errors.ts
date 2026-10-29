@@ -9,15 +9,3 @@
 export function isUnchangedMessageEdit(error: unknown): boolean {
   return String(error).includes("message is not modified");
 }
-
-/** Runs one message edit and lets the "nothing changed" rejection pass. Every
- * screen with a button that re-renders its own state (a page indicator, the
- * active period, "← Archive" while page one is open) meets it on a repeat tap;
- * every other failure still throws. */
-export async function ignoringUnchangedEdit(edit: () => Promise<unknown>): Promise<void> {
-  try {
-    await edit();
-  } catch (error) {
-    if (!isUnchangedMessageEdit(error)) throw error;
-  }
-}

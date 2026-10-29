@@ -126,7 +126,7 @@ describe("buildMainMenu", () => {
     expect(headline("Короткий пост")).toBe("✅ 12:31 · Короткий пост");
   });
 
-  it("offers one way in per entity, and analytics", async () => {
+  it("offers publishing and queue controls without retired analytics", async () => {
     backendDb = openBackendDb(":memory:");
     registerTestChannels(backendDb, ["youtube_ru"]);
     const config = loadTestConfig({});
@@ -134,7 +134,7 @@ describe("buildMainMenu", () => {
     expect(labels.some((text) => /text/i.test(text))).toBe(true);
     expect(labels.some((text) => /video/i.test(text))).toBe(true);
     expect(labels.some((text) => /streams/i.test(text))).toBe(false);
-    expect(labels.some((text) => /analytics/i.test(text))).toBe(true);
+    expect(labels.some((text) => /analytics/i.test(text))).toBe(false);
   });
 
   /** Publishing has two independent entries: text and video. */
@@ -195,14 +195,12 @@ describe("buildSettingsMenu", () => {
     ]);
   });
 
-  /** Manual analytics, the database copy, the clock and the language are all
-   * about this machine rather than about a publication; they used to be two
-   * categories holding two entries each. */
+  /** System settings keep the database copy, clock and interface language. */
   it("gathers the machine's own settings under System", async () => {
     backendDb = openBackendDb(":memory:");
     const config = loadTestConfig({});
     const labels = await settingsMenuLabels(config, backendDb, "settings-system");
-    expect(labels).toEqual(["🕒 Time zone", "🌐 Language", "🗄 Database backup", "👥 Threads followers", "📈 Import X CSV", "← Settings"]);
+    expect(labels).toEqual(["🕒 Time zone", "🌐 Language", "🗄 Database backup", "← Settings"]);
     expect(await settingsMenuLabels(config, backendDb, "settings-notifications-category")).not.toContain("🗄 Database backup");
   });
 

@@ -1,14 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import { studioAnalyticsDashboard } from "../src/analytics/reports/studio-dashboard.js";
 import { pruneMetricSamples } from "../src/analytics/snapshots/metric-repository.js";
-import { showAnalyticsDashboard } from "../src/bot/analytics-screen.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
 import { creatorProfiles, metricSamples, publicationTargets, videoMetricSnapshots } from "../src/db/schema.js";
 import { insertPublishedVideo } from "./helpers/analytics.js";
 import { registerTestChannels, TEXT_TEST_CHANNELS, VIDEO_TEST_CHANNELS } from "./helpers/channels.js";
 import { withDb as withFixtureDb } from "./helpers/db.js";
 import { seedTextPost } from "./helpers/post.js";
-import { loadTestConfig } from "./helpers/studio-config.js";
 
 const withDb = <T>(run: (backendDb: UnsafeBackendDb) => T | Promise<T>) =>
   withFixtureDb(run, [...TEXT_TEST_CHANNELS, ...VIDEO_TEST_CHANNELS]);
@@ -237,29 +235,6 @@ describe("creator analytics dashboards", () => {
         .run();
       const dashboard = studioAnalyticsDashboard(backendDb, "posts", 30, "en").text;
       expect(dashboard).not.toContain("History has been collected since");
-    });
-  });
-});
-
-describe("analytics screen navigation", () => {
-  it("offers a way into the archive from the dashboard", async () => {
-    await withDb(async (backendDb) => {
-      let markup = "";
-      const ctx = {
-        from: { id: 42 },
-        chat: { id: 42 },
-        callbackQuery: { message: { message_id: 5 } },
-        editMessageText: async (_text: unknown, options: { reply_markup?: unknown }) => {
-          markup = JSON.stringify(options.reply_markup);
-          return true;
-        },
-      } as unknown as Parameters<typeof showAnalyticsDashboard>[0];
-
-      await showAnalyticsDashboard(ctx, backendDb, loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" }), "overview", 7);
-
-      // Every archive screen links back to "archive_home"; for a while nothing
-      // linked in, and the whole archive was unreachable from the bot.
-      expect(markup).toContain("archive_home");
     });
   });
 });

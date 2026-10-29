@@ -5,6 +5,7 @@ import * as ts from "../../../tools/layer-checker/node_modules/typescript/lib/ty
 import { publicationAction, publicationActionNames } from "../src/bot/publication-actions.js";
 import { parsePublicationCallback, publicationCallback } from "../src/bot/publication-callback.js";
 import { createPublicationScheduleEngine } from "../src/bot/scheduling.js";
+import { parseScreenCallback } from "../src/bot/screen-callback.js";
 
 type PublicationKind = "post" | "video";
 
@@ -57,6 +58,24 @@ function expectCallbackShape(data: string, kind: PublicationKind): void {
 }
 
 describe("Telegram publication callback registry", () => {
+  it("rejects retired analytics and achievement buttons from old messages", () => {
+    for (const callback of [
+      "analytics_home",
+      "analytics_section:overview:7",
+      "analytics_milestones:0",
+      "archive_home",
+      "analytics_archive:0",
+      "analytics_post_archive:0",
+      "analytics_video:1",
+      "analytics_post:1",
+      "analytics_post_media:1",
+    ]) {
+      expect(parseScreenCallback(callback)).toBeNull();
+    }
+    expect(parseScreenCallback("menu_home")?.id).toBe("menu_home");
+    expect(parseScreenCallback("queue_home")?.id).toBe("queue_home");
+  });
+
   it("declares and emits every action through source call-sites", () => {
     const emitted = emittedCallbacks();
     for (const callback of emitted) {
