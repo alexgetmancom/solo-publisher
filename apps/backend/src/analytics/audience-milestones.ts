@@ -51,21 +51,6 @@ export function milestoneScopes(backendDb: BackendDb): MilestoneScope[] {
   return buildScopes(audienceEntries(backendDb), milestonePolicy(backendDb));
 }
 
-/** Records the achievement a scope is owed and credits it, for a threshold the
- * Studio passed while it was not being watched. */
-export function announceAudienceMilestone(backendDb: BackendDb, scopeId: string, threshold: number): boolean {
-  const scope = milestoneScopes(backendDb).find((candidate) => candidate.id === scopeId);
-  if (!scope) return false;
-  const stored = readState(backendDb, scope.id);
-  recordMilestone(backendDb, scope, threshold);
-  writeState(backendDb, scope.id, {
-    followers: scopeFollowers(scope),
-    members: scopeMembers(scope),
-    reachedThrough: Math.max(threshold, stored?.reachedThrough ?? 0),
-  });
-  return true;
-}
-
 function buildScopes(entries: AudienceEntry[], settings: MilestoneSettings): MilestoneScope[] {
   const scopes: MilestoneScope[] = [
     ...entries.map((entry) => ({

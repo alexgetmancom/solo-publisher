@@ -57,7 +57,6 @@ const OFF_THE_AGENT_SURFACE = [
   // Rare mutations, in the order the catalog carries them.
   "studio-profile-set",
   "dates-repair",
-  "milestone-announce",
   "post-openings-classify",
   "comments-backfill",
   "youtube-analytics-backfill",

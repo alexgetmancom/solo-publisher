@@ -1,6 +1,5 @@
 import * as z from "zod";
 import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
-import { announceAudienceMilestone } from "../analytics/audience-milestones.js";
 import { classifyHooks, HOOK_TYPES } from "../analytics/collection/hook-types.js";
 import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
 import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
@@ -967,23 +966,6 @@ const operationDefs = {
     mutates: false,
     agent: true,
     handler: (context) => audienceMilestoneReport(context.db()),
-  }),
-  "milestone-announce": operation({
-    section: "analytics",
-    summary: "Announce one achievement a scope is owed, and credit it with that count.",
-    note: "For a threshold that was passed while nothing was watching. `milestones` lists the scope ids. It reaches the Studio's administrators as a normal achievement and cannot be taken back.",
-    schema: z.object({
-      scope: example(z.string().min(1), "group_locale:video:ru").describe("milestone scope id"),
-      threshold: z.coerce.number().int().min(1).describe("follower count to announce"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) => {
-      const backendDb = context.db();
-      if (!announceAudienceMilestone(backendDb, input.scope, input.threshold))
-        throw new Error(`Unknown milestone scope: ${input.scope}. Run \`milestones\` for the scopes this Studio has.`);
-      return { announced: { scope: input.scope, threshold: input.threshold } };
-    },
   }),
   recent: operation({
     section: "delivery",
