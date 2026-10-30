@@ -14,7 +14,7 @@ import type { PublicationSource } from "../publishing/publication-source.js";
 import { refreshPublicationStatus } from "../publishing/publication-status.js";
 import { workerId } from "../publishing/queue.js";
 import { publicationSourceFromDb } from "../publishing/source-store.js";
-import { publishContentIndex } from "./site-content-index.js";
+import { siteUrlsForIndexNow } from "./site-content-index.js";
 import { pingIndexNow } from "./site-index-now.js";
 import { materializeSiteMedia } from "./site-media.js";
 
@@ -71,7 +71,7 @@ export async function runSiteJobCycle(config: BackendConfig, backendDb: BackendD
     // changed, so serve the new shape immediately instead of waiting out the TTL.
     invalidatePublicSiteFeed(backendDb);
     try {
-      const urls = publishContentIndex(config, backendDb);
+      const urls = siteUrlsForIndexNow(config, backendDb);
       // IndexNow is an external notification, not a prerequisite for serving
       // the already materialized feed through SSR.
       void pingIndexNow(config, urls).catch((error) => {

@@ -18,6 +18,12 @@
 	header_up X-Real-IP {remote_host}
 }
 
+(studio) {
+	reverse_proxy 127.0.0.1:8788 {
+		import client_address
+	}
+}
+
 www.alexgetman.com {
 	redir https://alexgetman.com{uri} permanent
 }
@@ -36,35 +42,30 @@ alexgetman.com {
 		}
 	}
 
-	# The Studio: its API, operator pages, the media it wrote and the documents
-	# that describe its MCP endpoint. Post media variants are `media-*`; the
-	# rest of /generated/ is the site's own build output.
-	@studio path /api/* /oauth/* /media/* /stats /stats/* /healthz /readyz /tg-feed/* /.well-known/oauth-* /.well-known/mcp/* /generated/responsive/media-*
+	# The Studio: its API, operator pages, the media it wrote, the documents
+	# that describe its MCP endpoint, and the key IndexNow fetches back from the
+	# root. Post media variants are `media-*`; the rest of /generated/ is the
+	# site's own build output.
+	@studio {
+		path /api/* /oauth/* /media/* /stats /stats/* /healthz /readyz /tg-feed/* /.well-known/oauth-* /.well-known/mcp/* /generated/responsive/media-*
+	}
+	@indexnowKey path_regexp ^/[a-f0-9]{32}\.txt$
 	handle @studio {
-		reverse_proxy 127.0.0.1:8788 {
-			import client_address
-		}
+		import studio
+	}
+	handle @indexnowKey {
+		import studio
 	}
 
 	# Every page is the site (alexgetman-site), which renders what the Studio
-	# publishes at /api/public/site. A site that is down, or not yet given its
-	# first answer, falls back to the Studio's own pages — which is what makes the
-	# order of a deployment not matter: the proxy is reloaded before the Studio
-	# is replaced, and a Studio rolled back has no /api/public/site to read.
+	# publishes at /api/public/site. A deployment of the site replaces its
+	# container; retrying the connection for a few seconds turns that gap into
+	# a slow request instead of a 502.
 	handle {
-		# Listed second, the Studio is only dialled when the site refuses the
-		# connection; a site that answers 502 or 503 is caught below.
-		reverse_proxy 127.0.0.1:8792 127.0.0.1:8788 {
+		reverse_proxy 127.0.0.1:8792 {
 			import client_address
-			lb_policy first
-			lb_try_duration 2s
-			fail_duration 10s
-			@unavailable status 502 503
-			handle_response @unavailable {
-				reverse_proxy 127.0.0.1:8788 {
-					import client_address
-				}
-			}
+			lb_try_duration 10s
+			lb_try_interval 250ms
 		}
 	}
 }

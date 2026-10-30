@@ -27,6 +27,7 @@ function studio(profile: Partial<StudioProfileRecord> = SITE_STUDIO_PROFILE) {
   const handler = createApiHandler({ config, backendDb });
   return {
     backendDb,
+    dataDir,
     request: (path: string, init?: RequestInit) => handler(new Request(`http://localhost${path}`, init)),
     writeSiteFile(relative: string, body = "bytes") {
       const file = join(config.SITE_PUBLIC_DIR, relative);
@@ -106,6 +107,17 @@ describe("public files", () => {
   it("refuses a path that climbs out of the media root", async () => {
     const { request } = studio();
     expect((await request("/media/..%2F..%2Fpipeline.db")).status).toBe(403);
+  });
+
+  it("answers IndexNow's fetch of its key at the root, and no other key", async () => {
+    const { dataDir, request } = studio();
+    const key = "ab".repeat(16);
+    expect((await request(`/${key}.txt`)).status).toBe(404);
+    writeFileSync(join(dataDir, "indexnow.key"), `${key}\n`);
+    const served = await request(`/${key}.txt`);
+    expect(served.status).toBe(200);
+    expect(await served.text()).toBe(`${key}\n`);
+    expect((await request(`/${"0".repeat(32)}.txt`)).status).toBe(404);
   });
 
   it("serves a cached responsive variant and nothing it did not generate", async () => {

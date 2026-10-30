@@ -17,9 +17,6 @@ export async function pingIndexNow(config: BackendConfig, urls: string[], fetchI
   const digest = crypto.createHash("sha256").update(unique.join("\n")).digest("hex");
   const previous = readState(stateFile);
   if (previous.last_digest === digest) return;
-  // The key file only has to exist by the time IndexNow fetches it, so publish
-  // it on the path that actually pings rather than on every materialization.
-  fs.writeFileSync(path.join(config.SITE_PUBLIC_DIR, `${key}.txt`), `${key}\n`, { encoding: "utf8", mode: 0o664 });
   const state: IndexNowState = { ...previous, last_attempt_at: new Date().toISOString(), url_count: unique.length };
   writeState(stateFile, state);
   try {
@@ -48,6 +45,18 @@ export async function pingIndexNow(config: BackendConfig, urls: string[], fetchI
   } catch (error) {
     log("warn", "IndexNow request failed", { error: String(error) });
     throw error;
+  }
+}
+
+/** The key IndexNow fetches back from `/<key>.txt` to prove the pings are ours.
+ * Served by this Studio (interfaces/http/public-site.ts) rather than written
+ * into the site, which is a separate service with no disk of ours. */
+export function indexNowKey(config: BackendConfig): string | null {
+  try {
+    const value = fs.readFileSync(path.join(config.DATA_DIR, "indexnow.key"), "utf8").trim();
+    return /^[a-f0-9-]{8,128}$/i.test(value) ? value : null;
+  } catch {
+    return null;
   }
 }
 

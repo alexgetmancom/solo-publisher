@@ -1,9 +1,9 @@
 import { describe, expect, it, mock } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createDraftFromMessage } from "../src/content/drafts.js";
-import { publishContentIndex } from "../src/delivery/site-content-index.js";
+import { siteUrlsForIndexNow } from "../src/delivery/site-content-index.js";
 import { pingIndexNow } from "../src/delivery/site-index-now.js";
 import { refreshPublicationStatus } from "../src/publishing/publication-status.js";
 import { publishDraftToQueue } from "../src/publishing/publication-workflow.js";
@@ -12,7 +12,7 @@ import { openBackendDb } from "./helpers/open-db.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("site parity", () => {
-  it("publishes content memory and deduplicates IndexNow submissions", async () => {
+  it("lists the published pages and deduplicates IndexNow submissions", async () => {
     const dir = mkdtempSync(join(tmpdir(), "alexgetman-site-parity-"));
     const backendDb = openBackendDb(join(dir, "pipeline.db"));
     registerTestChannels(backendDb, TEXT_TEST_CHANNELS);
@@ -27,9 +27,8 @@ describe("site parity", () => {
       backendDb.sqlite.prepare("UPDATE publish_jobs SET status='published' WHERE publication_key='post:'||?").run(postId);
       backendDb.sqlite.prepare("UPDATE site_jobs SET status='published' WHERE publication_key='post:'||?").run(postId);
       refreshPublicationStatus(backendDb, postId);
-      const urls = publishContentIndex(config, backendDb);
-      expect(existsSync(join(config.SITE_PUBLIC_DIR, "content-index.json"))).toBe(true);
-      expect(readFileSync(join(config.SITE_PUBLIC_DIR, "content-memory.md"), "utf8")).toContain("English title");
+      const urls = siteUrlsForIndexNow(config, backendDb);
+      expect(urls).toContain(`https://example.test/${postId}/english-title/`);
       const fetchImpl = mock(async () => new Response("", { status: 202 })) as unknown as typeof fetch;
       await pingIndexNow(config, urls, fetchImpl);
       await pingIndexNow(config, urls, fetchImpl);
