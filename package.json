@@ -21,23 +21,17 @@
   },
   "scripts": {
     "prepare": "lefthook install",
-    "dev": "astro dev",
-    "demo": "bun scripts/dev-seed.ts --reset --simple && bun run build && bun --env-file=$PWD/.dev-fixture/demo.env run --filter @solo-publisher/backend dev",
-    "build": "bun scripts/generate-responsive-images.ts && astro build",
-    "preview": "astro preview",
-    "astro": "astro",
+    "demo": "bun scripts/dev-seed.ts --reset --simple && bun --env-file=$PWD/.dev-fixture/demo.env run --filter @solo-publisher/backend dev",
     "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter @solo-publisher/backend typecheck && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json",
-    "test": "bun test apps/backend/tests apps/web/src deploy",
-    "test:coverage": "bun test --coverage apps/backend/tests apps/web/src deploy",
+    "test": "bun test apps/backend/tests deploy",
+    "test:coverage": "bun test --coverage apps/backend/tests deploy",
     "check:audit": "bun audit --audit-level=high",
     "check:docker": "bun scripts/check-docker-workspaces.ts",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "knip": "bun tools/knip/node_modules/.bin/knip --config knip.json",
     "check:layers": "bun scripts/check-layers.ts",
-    "check:svelte": "tools/svelte-check/node_modules/.bin/svelte-check --workspace . --threshold warning --fail-on-warnings",
     "deps:check": "taze",
-    "check:web": "bun run build",
     "check:backend": "bun run --filter @solo-publisher/backend check",
     "check:language": "bun scripts/enforce-typescript.ts",
     "check:all": "bun scripts/check.ts",
@@ -45,18 +39,11 @@
     "ops:prod": "bun scripts/ops-prod.ts"
   },
   "dependencies": {
-    "@astrojs/rss": "^4.0.19",
-    "@mtcute/bun": "^0.32.0",
-    "svelte": "^5.56.10"
+    "@mtcute/bun": "^0.32.0"
   },
   "devDependencies": {
-    "@astrojs/node": "^11.1.4",
-    "@astrojs/svelte": "^9.0.1",
     "@biomejs/biome": "^2.5.10",
-    "astro": "^7.2.4",
-    "happy-dom": "20.11.13",
     "lefthook": "^2.1.10",
-    "sharp": "^0.35.3",
     "taze": "^21.1.0",
     "typescript": "7.0.2"
   }

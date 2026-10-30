@@ -10,10 +10,9 @@ COPY --from=mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b80
 
 FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS prod-deps
 WORKDIR /app
-COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json astro.config.ts svelte.config.ts biome.json knip.json ./
+COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json biome.json knip.json ./
 COPY --chown=bun:bun apps/backend/package.json ./apps/backend/package.json
 COPY --chown=bun:bun tools/knip/package.json ./tools/knip/package.json
-COPY --chown=bun:bun tools/svelte-check/package.json ./tools/svelte-check/package.json
 COPY --chown=bun:bun tools/layer-checker/package.json ./tools/layer-checker/package.json
 
 RUN chown bun:bun /app

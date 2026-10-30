@@ -40,7 +40,7 @@ function createApiApp(config: BackendConfig, backendDb: ReturnType<typeof openBa
   };
 }
 
-describe("Astro endpoint controller", () => {
+describe("Studio HTTP surface", () => {
   it("reports readiness from a real database query and writable data directory", async () => {
     const dataDir = tempDir("alexgetman-ready-");
     const backendDb = openBackendDb(join(dataDir, "pipeline.db"), 5000);

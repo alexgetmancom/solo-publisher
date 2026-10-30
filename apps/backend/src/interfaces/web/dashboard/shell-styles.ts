@@ -1,7 +1,6 @@
 /** The dashboard stylesheet. It is a TypeScript module rather than a .css file
- * because the page is assembled as a string by the backend and built by Astro,
- * whose bundler treats a .css import as a stylesheet to emit, not as text to
- * inline. Kept dense — one rule per line — so the whole sheet stays readable at
+ * because the page is assembled as a string by the backend, and a bundler
+ * treats a .css import as a stylesheet to emit, not as text to inline. Kept dense — one rule per line — so the whole sheet stays readable at
  * a glance instead of running to two thousand lines. */
 export const SHELL_CSS = `
     /* The family matches the reference layout; the line-height deliberately does

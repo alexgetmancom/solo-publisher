@@ -3,29 +3,24 @@ import os from "node:os";
 import path from "node:path";
 import { RESPONSIVE_WIDTHS } from "../apps/backend/src/content/site-media-naming.ts";
 import { responsiveWebpFfmpegArgs, sitePosterFfmpegArgs, siteVerticalFfmpegArgs } from "../apps/backend/src/delivery/site-media.js";
-import { devFixture, seedSiteFixture } from "../apps/web/src/server/site-fixture.js";
 import {
   localStoryFfmpegArgs,
   needsVerticalBlur,
   telegramVideoKbps,
   verticalImageFfmpegArgs,
 } from "../deploy/media-processor/story-encode.js";
+import { devFixture, seedSiteFixture } from "./fixtures/site-fixture.js";
 
 /**
  * Boots the built backend image against a throwaway seeded database and walks
- * the public SSR routes, the ops CLI and ffmpeg.
+ * the public routes, the ops CLI and ffmpeg.
  *
  * This exists because the image ships a *pruned* node_modules (see the
- * prod-deps stage in apps/backend/Dockerfile). Astro leaves externals
- * unbundled in dist/server/chunks/*.mjs, so a new bare import in apps/web can
- * silently land on a package the prune removed. Nothing else catches that:
- *   - `bun run build` succeeds, the missing package is present on the runner;
- *   - apps/web/src/server/home.smoke.test.ts drives `astro dev` from the repo,
- *     not the image, so it resolves against the full node_modules;
- *   - the container starts fine and only fails per request, with every SSR
- *     route returning 500 while /healthz and static files still answer 200.
- * Hence: run the real image, and assert on rendered bodies rather than on
- * process liveness.
+ * prod-deps stage in apps/backend/Dockerfile), and native packages (sharp,
+ * mtcute's WASM) are loaded at runtime rather than bundled. A package the prune
+ * removed is present on the runner, so the build and the tests pass, and the
+ * container starts and fails per request. Hence: run the real image, and assert
+ * on response bodies rather than on process liveness.
  *
  *   IMAGE=ghcr.io/...:tag bun scripts/image-smoke.ts
  */
@@ -44,9 +39,8 @@ const dataDir = path.join(root, "data");
 const publicDir = path.join(dataDir, "site");
 fs.mkdirSync(publicDir, { recursive: true });
 
-/** Mirrors the fixture the dev server and the SSR smoke test use, so all three
- * look at one shape of data. Two images on the first post keep the gallery
- * path exercised. */
+/** The fixture `bun run demo` seeds, so both look at one shape of data. Two
+ * images on the first post keep the gallery path exercised. */
 const { imagePaths } = seedSiteFixture({
   dbPath: path.join(dataDir, "pipeline.db"),
   publicDir,
@@ -169,33 +163,23 @@ try {
   check(ready, "container becomes ready");
   if (!ready) throw new Error("never became ready");
 
-  /** The routes below are the public SSR site, which a fresh install does not
-   * serve. Turning it on through `ops` against the running container is also
-   * the assertion that a Studio setting reaches the next request: nothing here
-   * restarts anything between this call and the walk. */
+  /** `/api/public/site` answers only for a Studio that publishes a site, which a
+   * fresh install does not. Turning it on through `ops` against the running
+   * container is also the assertion that a Studio setting reaches the next
+   * request: nothing here restarts anything between this call and the walk. */
   const siteOn = await run(["docker", "exec", "-u", "bun", container, "bun", "/app/ops/cli.js", "studio-profile-set", "--site-enabled"]);
   check(siteOn.code === 0, "public site enabled through ops", siteOn.out.trim());
   if (siteOn.code !== 0) throw new Error("could not enable the public site");
 
-  /** Minimum body size per route. A missing runtime dependency renders as a
-   * 500 with an empty body, so both the status and the length matter. */
+  /** Minimum body size per route; a failing route answers with an empty body. */
   const routes: [string, number][] = [
-    ["/", 5_000],
-    ["/ru/", 5_000],
-    ["/1/dev-post-1/", 5_000],
-    ["/1/dev-post-1.md", 100],
-    ["/feed.xml", 500],
-    ["/ru/feed.xml", 500],
-    ["/feed-ai.json", 500],
-    ["/sitemap.xml", 300],
-    ["/robots.txt", 50],
+    ["/api/public/site", 1_000],
     // Discovery documents live under a dotfile directory, which is exactly the
     // kind of path a build or artifact step drops without failing. They reached
     // production as 404s once already.
-    ["/.well-known/api-catalog", 100],
     ["/.well-known/mcp/server-card.json", 50],
     ["/.well-known/oauth-protected-resource", 50],
-    ["/.well-known/agent-skills/index.json", 50],
+    ["/.well-known/oauth-authorization-server", 50],
   ];
   const probed = await Promise.all(
     routes.map(async ([route, minimumBytes]) => {
@@ -207,12 +191,12 @@ try {
   for (const { route, minimumBytes, status, body } of probed) {
     check(status === 200 && body.length >= minimumBytes, `GET ${route}`, `${status}, ${body.length}b (min ${minimumBytes})`);
   }
-  const home = probed.find((entry) => entry.route === "/")?.body ?? "";
+  const site = probed.find((entry) => entry.route === "/api/public/site")?.body ?? "";
 
-  // The read model must link the vertical composite the media worker produces,
-  // and that file must actually be served off the mounted public dir.
-  const [firstImage] = imagePaths;
-  check(home.includes(firstImage), "home links the fixture image", firstImage);
+  // The feed must list the vertical composite the media worker produces, and
+  // that file must actually be served off the mounted public dir.
+  const firstImage = imagePaths[0] ?? "";
+  check(firstImage !== "" && site.includes(firstImage), "site feed lists the fixture image", firstImage);
   const media = await fetch(`${base}/${firstImage}`);
   check(media.status === 200, `GET /${firstImage}`, String(media.status));
 

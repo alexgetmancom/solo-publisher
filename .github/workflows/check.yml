@@ -94,7 +94,7 @@ jobs:
                 backend_image=true
                 deployment=true
                 ;;
-              apps/web/*|apps/backend/src/*|apps/backend/assets/*|apps/backend/drizzle/*|apps/backend/tsconfig.json|apps/backend/Dockerfile.release|apps/backend/Dockerfile.runtime-base|astro.config.ts|bunfig.toml|scripts/generate-responsive-images.ts|scripts/image-smoke.ts|svelte.config.ts|tsconfig.base.json|tsconfig.json)
+              apps/backend/src/*|apps/backend/assets/*|apps/backend/drizzle/*|apps/backend/tsconfig.json|apps/backend/Dockerfile.release|apps/backend/Dockerfile.runtime-base|bunfig.toml|scripts/image-smoke.ts|scripts/fixtures/*|tsconfig.base.json|tsconfig.json)
                 backend_image=true
                 deployment=true
                 ;;
@@ -185,15 +185,13 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/svelte-check/package.json', 'tools/layer-checker/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json') }}
       - name: TypeScript-only language gate
         run: bun run check:language
       - name: Typecheck
         run: bun run typecheck
       - name: Lint
         run: bun run lint
-      - name: Svelte check
-        run: bun run check:svelte
 
   quality-analysis:
     name: Repository analysis
@@ -203,7 +201,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/svelte-check/package.json', 'tools/layer-checker/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json') }}
       - name: Dead-code report
         run: bun run knip
       - name: Layer boundaries
@@ -246,7 +244,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/svelte-check/package.json', 'tools/layer-checker/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json') }}
       - name: Install production ffmpeg binaries
         env:
           FFMPEG_IMAGE: mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132
@@ -260,22 +258,20 @@ jobs:
         run: bun run test:coverage
 
   build:
-    name: Build web and backend artifacts
+    name: Build backend artifacts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/svelte-check/package.json', 'tools/layer-checker/package.json') }}
-      - name: Build checked web
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json') }}
+      - name: Build checked backend
         if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         env:
           CI: "true"
-          DATA_DIR: apps/web/src/data
         run: |
-          bun run check:web
-          bun build apps/web/server.ts --outdir runtime --target bun
+          bun build apps/backend/src/runtime/server.ts --outdir runtime --target bun
           bun build apps/backend/src/cli.ts --outdir ops --target bun
           bun build apps/backend/src/runtime/docker-entrypoint.ts --outdir entrypoint --target bun
           bun build apps/backend/src/runtime/config-check.ts --outdir entrypoint --target bun
@@ -293,8 +289,7 @@ jobs:
           CI: "true"
           DATA_DIR: /data
         run: |
-          bun run build
-          bun build apps/web/server.ts --outdir runtime --target bun --splitting --minify --sourcemap=external
+          bun build apps/backend/src/runtime/server.ts --outdir runtime --target bun --splitting --minify --sourcemap=external
           bun build apps/backend/src/cli.ts --outdir ops --target bun --minify --sourcemap=external
           bun build apps/backend/src/runtime/docker-entrypoint.ts --outdir entrypoint --target bun --minify --sourcemap=external
           bun build apps/backend/src/runtime/config-check.ts --outdir entrypoint --target bun --minify --sourcemap=external
@@ -307,7 +302,6 @@ jobs:
           test -f story-renderer/renderer-process.js
           bun build scripts/image-smoke.ts --outdir smoke --target bun
           test -f smoke/image-smoke.js
-          test -n "$(find dist -type f -print -quit)"
           test -n "$(find runtime -type f -print -quit)"
           test -n "$(find ops -type f -print -quit)"
       - name: Upload immutable backend artifacts
@@ -316,7 +310,6 @@ jobs:
         with:
           name: backend-build-${{ github.sha }}
           path: |
-            dist
             runtime
             ops
             entrypoint
@@ -337,7 +330,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/svelte-check/package.json', 'tools/layer-checker/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json') }}
       - name: Dependency audit
         run: bun run check:audit
 
@@ -447,7 +440,7 @@ jobs:
       - name: Resolve backend runtime base
         id: runtime_base
         env:
-          BASE_IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher:runtime-${{ matrix.arch }}-${{ hashFiles('bun.lock', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/svelte-check/package.json', 'tools/layer-checker/package.json', 'apps/backend/Dockerfile.runtime-base') }}
+          BASE_IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher:runtime-${{ matrix.arch }}-${{ hashFiles('bun.lock', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'apps/backend/Dockerfile.runtime-base') }}
         run: |
           echo "image=$BASE_IMAGE" >> "$GITHUB_OUTPUT"
           if docker buildx imagetools inspect "$BASE_IMAGE" >/dev/null 2>&1; then

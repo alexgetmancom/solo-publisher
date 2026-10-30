@@ -2,19 +2,10 @@ import { type Html, html } from "../../../foundation/html.js";
 /**
  * DASHBOARD DESIGN TOKENS
  *
- * NAME CONTRACT. The site declares the same token names in
- * apps/web/src/shared/styles/tokens.css. The values here are deliberately
- * different: the site is editorial (crimson accent, airy, photographic), the
- * dashboard is a dense ops tool that needs higher contrast and a blue accent so
- * that status colours stay unambiguous. What is shared is the vocabulary and
- * the switching mechanism, not the look.
+ * The dashboard is a dense ops tool that needs higher contrast and a blue
+ * accent so that status colours stay unambiguous.
  *
- * The overlap is enforced by apps/backend/tests/themeContract.test.ts, which
- * parses both files: every name in SHARED_THEME_TOKENS must be declared here
- * and on the site, in both themes. Renaming a token in one place fails there
- * rather than silently leaving the other half unstyled.
- *
- * SWITCHING. Same as the site, and the same source: shared/theme-script.ts sets
+ * SWITCHING. shared/theme-script.ts sets
  * data-theme on <html> before first paint, plus data-theme-mode holding which of
  * the three modes (system, light, dark) the operator picked. System is the
  * default and stores nothing; an explicit choice is stored in localStorage. The
@@ -25,29 +16,6 @@ import { type Html, html } from "../../../foundation/html.js";
  * scale. Those variants were drift, not design — nobody could see the
  * difference, but every new rule picked a slightly different hex.
  */
-
-/**
- * Tokens both surfaces must implement. Adding a name here without adding it to
- * both stylesheets fails the contract test.
- */
-export const SHARED_THEME_TOKENS = [
-  "bg-color",
-  "surface",
-  "surface-raised",
-  "text-header",
-  "text-main",
-  "text-secondary",
-  "text-muted",
-  "accent",
-  "accent-strong",
-  "accent-contrast",
-  "accent-glow",
-  "border",
-  "border-hover",
-  "border-soft",
-  "danger",
-  "link",
-] as const;
 
 export const DASHBOARD_THEME_CSS = `
 :root,

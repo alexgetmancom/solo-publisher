@@ -1,9 +1,0 @@
-{
-  "name": "svelte-check-runner",
-  "private": true,
-  "description": "Isolated svelte-check installation: TypeScript 6 uses the JavaScript API while the repository root uses TypeScript 7 (tsgo). Run with bun run check:svelte from the root.",
-  "devDependencies": {
-    "svelte-check": "^4.7.5",
-    "typescript": "~6.0.3"
-  }
-}

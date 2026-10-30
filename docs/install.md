@@ -63,8 +63,12 @@ operations CLI shipped in the container:
 docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled
 ```
 
-It appears at `https://your-domain/`, with its feeds, sitemap and Markdown
-endpoints, on the next request.
+This turns on what a site reads from the Studio: `GET /api/public/site` (the
+published posts and the site's identity) and the post media under `/media/` and
+`/generated/responsive/media-*`. The pages themselves are rendered by a separate
+site service pointed at this Studio with `STUDIO_URL`; the Studio no longer
+renders HTML for the public. Route `/api/`, `/oauth/`, `/media/`, `/stats`,
+`/healthz`, `/readyz` and `/.well-known/` to the Studio and the rest to the site.
 
 Temporary media that an external platform fetches during publishing is staged
 under `/data/media`, automatically created and owned by the container before the

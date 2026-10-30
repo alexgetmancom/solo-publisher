@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch ../../apps/web/server.ts",
+    "dev": "bun --watch src/runtime/server.ts",
     "build": "bun build src/cli.ts --outdir dist --target bun --splitting --minify --sourcemap=external",
-    "start": "bun --smol ../../apps/web/server.ts",
+    "start": "bun --smol src/runtime/server.ts",
     "ops": "bun src/cli.ts",
     "docker-entrypoint": "bun src/runtime/docker-entrypoint.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

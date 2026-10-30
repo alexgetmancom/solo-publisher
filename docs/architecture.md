@@ -11,7 +11,7 @@ flowchart LR
   Content --> DB[("SQLite")]
   Queue --> DB
   DB --> Workers["Delivery workers"]
-  Workers --> Site["Astro site"]
+  Workers --> Site["Public site API"]
   Workers --> Social["Telegram · X · Threads"]
   Workers --> Video["YouTube · Instagram"]
   Social --> Analytics["Creator analytics"]
@@ -41,7 +41,7 @@ hierarchies, or per-channel subscriptions.
 
 - **Chat-native authoring** — create, edit, preview, schedule, and publish from a private Telegram bot.
 - **Agent-native control** — the same Studio is exposed through MCP, so Codex and other compatible clients can write, publish, inspect analytics, and diagnose delivery.
-- **Owned website** — an Astro publication site with bilingual pages, feeds, search, sitemap, structured metadata, Markdown endpoints, and an interactive story reader.
+- **Owned website** — the Studio publishes to a bilingual site through `GET /api/public/site` and serves the media it links to; the site itself is a separate service you run next to it.
 - **Durable delivery** — SQLite stores schedules, jobs, targets, retries, and external IDs.
 - **Text and short-form video** — publish text and media to Telegram, X, and Threads; run optional YouTube Shorts and Instagram Reels or Stories workflows.
 - **Creator analytics** — collect publication metrics, audience snapshots, and operational state in one private Command Center.
@@ -50,7 +50,6 @@ hierarchies, or per-channel subscriptions.
 ## Stack
 
 - Bun and TypeScript
-- Astro and Svelte
 - grammY and MTProto
 - SQLite and Drizzle ORM
 - MCP over HTTP

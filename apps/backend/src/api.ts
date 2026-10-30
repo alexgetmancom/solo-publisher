@@ -1,11 +1,13 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import type { BackendDb } from "./db/client.js";
 import { engagementService } from "./engagement/service.js";
 import type { BackendConfig } from "./foundation/config.js";
 import { text } from "./foundation/http-response.js";
+import { discoveryRoutes } from "./interfaces/http/discovery.js";
 import { engagementRoutes } from "./interfaces/http/engagement.js";
 import { healthRoutes } from "./interfaces/http/health.js";
 import { metaOauthRoutes } from "./interfaces/http/meta-oauth.js";
+import { publicSiteRoutes } from "./interfaces/http/public-site.js";
 import { studioRoutes } from "./interfaces/http/studio.js";
 import { xOauthRoutes } from "./interfaces/http/x-oauth.js";
 import { youtubeOauthRoutes } from "./interfaces/http/youtube-oauth.js";
@@ -39,9 +41,15 @@ function buildApp({ config, backendDb, studio: providedStudio }: ApiContext): Ho
     studio,
     engagement: engagementService(backendDb, config),
   };
-  // Trailing slashes reached this dispatcher un-normalized under the old Astro
-  // catch-all route (`/api/${route}`.replace(/\/$/, "")); keep matching them.
+  // Trailing slashes have always matched; clients and bookmarks rely on it.
   const app = new Hono({ strict: false });
+
+  // Operator surfaces. They authenticate, but a crawler that indexes the login
+  // screen turns a private page into a search result, and a shared cache that
+  // kept one would serve one operator's screen to the next caller.
+  app.use("/oauth/*", unindexed);
+  app.use("/stats", unindexed);
+  app.use("/stats/*", unindexed);
 
   healthRoutes(app, deps);
   metaOauthRoutes(app, deps);
@@ -49,6 +57,14 @@ function buildApp({ config, backendDb, studio: providedStudio }: ApiContext): Ho
   youtubeOauthRoutes(app, deps);
   engagementRoutes(app, deps);
   studioRoutes(app, deps);
+  publicSiteRoutes(app, deps);
+  discoveryRoutes(app, deps);
   app.notFound(() => text("not found\n", 404));
   return app;
 }
+
+const unindexed: MiddlewareHandler = async (c, next) => {
+  await next();
+  c.res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  c.res.headers.set("Cache-Control", "no-store");
+};

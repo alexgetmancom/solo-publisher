@@ -71,7 +71,6 @@ describe("telegram interface contour", () => {
     // the column headings X writes into its own analytics export, and the
     // example values the operations catalogue prints in its usage strings.
     "apps/backend/src/bot/post-flow.ts",
-    "apps/backend/src/content/text.ts",
     "apps/backend/src/analytics/import-x-csv.ts",
     "apps/backend/src/operations/registry.ts",
     // Copy that still bypasses the catalogue. Each one renders Russian to an

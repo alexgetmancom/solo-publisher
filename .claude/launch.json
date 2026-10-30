@@ -2,48 +2,18 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "web-dev",
+      "name": "studio-dev",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["--bun", "astro", "dev"],
-      "port": 4321,
+      "runtimeArgs": ["--watch", "apps/backend/src/runtime/server.ts"],
+      "port": 8788,
       "env": {
+        "NODE_ENV": "test",
         "DATA_DIR": "/Users/alex/projects/solo-publisher/.dev-fixture",
-        "PIPELINE_DB": "/Users/alex/projects/solo-publisher/.dev-fixture/pipeline.db",
-        "SITE_PUBLIC_DIR": "/Users/alex/projects/solo-publisher/.dev-fixture/site",
         "COMMAND_CENTER_TOKEN": "dev",
-        "PUBLIC_BASE_URL": "http://localhost:4321",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
         "MCP_STUDIO_TOKEN": "demo-studio-token",
         "MCP_STUDIO_ACTOR_ID": "1",
         "STUDIO_ACTOR_IDS": "1"
-      }
-    },
-    {
-      "name": "web-dev-maru",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["--bun", "astro", "dev", "--port", "4323"],
-      "port": 4323,
-      "env": {
-        "PIPELINE_DB": "/Users/alex/projects/solo-publisher/.dev-fixture/maru-pipeline.db",
-        "SITE_PUBLIC_DIR": "/Users/alex/projects/solo-publisher/.dev-fixture/maru-site",
-        "COMMAND_CENTER_TOKEN": "dev",
-        "PUBLIC_BASE_URL": "http://localhost:4323"
-      }
-    },
-    {
-      "name": "web-dev-mock",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["--bun", "astro", "dev", "--port", "4322", "--force"],
-      "port": 4322,
-      "env": {
-        "PIPELINE_DB": "/Users/alex/projects/solo-publisher/.dev-fixture-mock/pipeline.db",
-        "SITE_PUBLIC_DIR": "/Users/alex/projects/solo-publisher/.dev-fixture-mock/site",
-        "COMMAND_CENTER_TOKEN": "dev",
-        "PUBLIC_BASE_URL": "http://localhost:4322",
-        "CONTROLLER_BOT_TOKEN": "mock",
-        "THREADS_RU_ACCESS_TOKEN": "mock",
-        "THREADS_EN_ACCESS_TOKEN": "mock",
-        "X_CLIENT_ID": "mock",
-        "X_CLIENT_SECRET": "mock"
       }
     }
   ]

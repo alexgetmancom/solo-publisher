@@ -3,8 +3,6 @@
 .DS_Store
 node_modules
 **/node_modules
-.astro
-**/.astro
 coverage
 **/coverage
 *.log
@@ -22,4 +20,3 @@ apps/backend/bot-api-temp
 **/__pycache__
 **/.pytest_cache
 **/.ruff_cache
-apps/web/public/media

@@ -3,7 +3,6 @@ ARG RUNTIME_BASE_IMAGE=ghcr.io/alexgetmancom/solo-publisher:runtime-base
 FROM ${RUNTIME_BASE_IMAGE} AS app
 
 WORKDIR /app
-COPY dist ./dist
 COPY runtime ./runtime
 COPY ops ./ops
 COPY entrypoint ./entrypoint

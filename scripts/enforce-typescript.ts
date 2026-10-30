@@ -6,17 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // runtime, ops and entrypoint hold bundles built from TypeScript sources. CI
 // only builds them after this gate runs, so it never saw them; a local image
 // build does, and the gate then fails on generated JavaScript.
-const ignoredDirectories = new Set([
-  ".git",
-  ".astro",
-  "node_modules",
-  "dist",
-  "coverage",
-  "runtime",
-  "ops",
-  "entrypoint",
-  "story-renderer",
-]);
+const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage", "runtime", "ops", "entrypoint", "story-renderer"]);
 const forbiddenExtensions = new Set([".py", ".pyi", ".js", ".jsx", ".mjs", ".cjs"]);
 // The one file that cannot be TypeScript: it runs on a bare host through
 // `curl … | sh`, before Docker has pulled anything and long before a Bun exists
@@ -38,11 +28,6 @@ function visit(directory: string): void {
     const extension = path.extname(entry.name);
     if (allowedShellSources.has(relative)) continue;
     if (forbiddenExtensions.has(extension)) violations.push(relative);
-    if (relative.startsWith("apps/web/src/features/story-player/") && extension === ".svelte") {
-      const text = fs.readFileSync(absolute, "utf8");
-      const comments = [...text.matchAll(/<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g)].map((match) => match[0]).join("\n");
-      if (/[А-Яа-яЁё]/.test(comments)) violations.push(relative);
-    }
     const disabledTypecheckDirective = "@ts-" + "nocheck";
     if (extension === ".ts" && fs.readFileSync(absolute, "utf8").includes(disabledTypecheckDirective)) violations.push(relative);
     if (!extension || extension === ".sh") {

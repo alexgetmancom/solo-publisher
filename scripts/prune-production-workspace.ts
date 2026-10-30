@@ -13,7 +13,6 @@ const workspacePackageJsons = [
   path.join(root, "package.json"),
   path.join(root, "apps/backend/package.json"),
   path.join(root, "tools/knip/package.json"),
-  path.join(root, "tools/svelte-check/package.json"),
 ];
 
 function readPackageJson(filePath: string): PackageJson {

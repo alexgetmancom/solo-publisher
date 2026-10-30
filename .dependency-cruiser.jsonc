@@ -91,35 +91,11 @@
       "to": { "path": "^apps/" }
     },
     {
-      "name": "backend-does-not-import-the-site",
-      "comment": "apps/web hosts the backend, not the other way round.",
-      "severity": "error",
-      "from": { "path": "^apps/backend/src/" },
-      "to": { "path": "^apps/web/" }
-    },
-    {
       "name": "apps-do-not-import-scripts",
       "comment": "scripts/ are build and ops tools that run from the repo root; nothing shipped may depend on them.",
       "severity": "error",
       "from": { "path": "^apps/" },
       "to": { "path": "^scripts/" }
-    },
-    {
-      "name": "site-presentation-off-the-backend",
-      "comment": "Components, features and utils render what the read model already produced. apps/web/src/server/ is exempt: runtime.ts is the composition root that boots the backend inside the Astro server, and site-fixture.ts seeds the dev and smoke database.",
-      "severity": "error",
-      "from": { "path": "^apps/web/src/(components|features|utils|scripts|layouts)/", "pathNot": "\\.test\\.ts$" },
-      "to": {
-        "path": "^apps/backend/src/",
-        "pathNot": "^apps/backend/src/(public/|content/|foundation/locale)"
-      }
-    },
-    {
-      "name": "site-pages-stay-on-the-http-boundary",
-      "comment": "An SSR route delegates to api.ts or reads the public model; it does not reach into delivery, publishing or the bot.",
-      "severity": "error",
-      "from": { "path": "^apps/web/src/pages/" },
-      "to": { "path": "^apps/backend/src/", "pathNot": "^apps/backend/src/(api\\.ts|public/|content/|foundation/)" }
     },
     {
       "name": "telegram-adapters-off-persistence",
@@ -170,7 +146,7 @@
     "doNotFollow": { "path": "node_modules" },
     "tsPreCompilationDeps": true,
     "enhancedResolveOptions": { "extensions": [".ts", ".js", ".json"] }
-    // Orphan detection is deliberately off: every Astro page, script and worker
+    // Orphan detection is deliberately off: every script and worker
     // entry reads as an orphan here, and knip already answers that question with
     // the right entry points configured.
   }

@@ -2,18 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { registerChannel } from "../apps/backend/src/channels/registry.js";
 import { openBackendDb } from "../apps/backend/src/db/client.js";
-import { seedDashboardFixture, seedOverviewParityFixture } from "../apps/web/src/server/dashboard-fixture.js";
-import {
-  devFixture,
-  FULL_DEV_HISTORY_DAYS,
-  fullDevFixture,
-  overviewParityFixture,
-  seedSiteFixture,
-} from "../apps/web/src/server/site-fixture.js";
+import { seedDashboardFixture, seedOverviewParityFixture } from "./fixtures/dashboard-fixture.js";
+import { devFixture, FULL_DEV_HISTORY_DAYS, fullDevFixture, overviewParityFixture, seedSiteFixture } from "./fixtures/site-fixture.js";
 
 /**
  * Fills a local pipeline database and public media directory with published
- * posts, so `bun run dev` shows a real story player instead of an empty feed.
+ * posts, so a Studio started with `bun run demo` answers `/api/public/site` with
+ * a real archive, and the site (alexgetman-site) pointed at it shows one.
  *
  * The story player only becomes interesting with more than one post and with a
  * post that has several images: the rail, the feed-mode filters and the
@@ -89,7 +84,7 @@ if (withDashboard) {
         dbPath,
         postIds: posts.map((post) => post.postId),
         postDates: posts.map((post) => post.dateUtc),
-        full: simple ? undefined : { days, minPostsPerDay, maxPostsPerDay },
+        ...(simple ? {} : { full: { days, minPostsPerDay, maxPostsPerDay } }),
         targets: textTargets,
       });
   console.log(`Dashboard: ${targetRows} target row(s), ${sampleRows} metric sample(s).`);
@@ -130,11 +125,11 @@ fs.writeFileSync(
     MCP_STUDIO_TOKEN: "demo-studio-token",
     MCP_STUDIO_ACTOR_ID: "1",
     STUDIO_ACTOR_IDS: "1",
-    ASTRO_DIST_DIR: path.resolve("dist"),
   })
     .map(([key, value]) => `${key}=${value}`)
     .join("\n")}\n`,
 );
 
 console.log(`\nEnvironment: ${envPath}\n  bun run demo`);
-console.log("  site       http://localhost:8788/");
+console.log("  site feed  http://localhost:8788/api/public/site");
+console.log("  the site   STUDIO_URL=http://localhost:8788 bun run dev   (in alexgetman-site)");

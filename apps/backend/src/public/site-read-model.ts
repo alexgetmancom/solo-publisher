@@ -52,15 +52,8 @@ const feedItemSchema = z
 
 export type FeedItem = z.infer<typeof feedItemSchema>;
 
-/** The whole published site, indexed the way the routes actually ask for it. */
-type PublicSiteSnapshot = {
-  items: FeedItem[];
-  byPostId: Map<number, FeedItem>;
-};
-
-/** Rebuilding the feed costs five queries plus a Zod parse per post, and a
- * single page render asks for it more than once (a post page needs the item and
- * the surrounding feed). Twenty-six routes share one build instead.
+/** Rebuilding the feed costs five queries plus a Zod parse per post, and the
+ * public site asks for it every few seconds while it has readers.
  *
  * The TTL is what makes this safe without a change feed. A publish from the
  * ops CLI happens in a separate `docker exec` process, so no in-process hook
@@ -68,28 +61,18 @@ type PublicSiteSnapshot = {
  * a scheduled post visible on its own. Both are bounded by the TTL. */
 const FEED_CACHE_TTL_MS = 3_000;
 
-type CachedFeed = { snapshot: PublicSiteSnapshot; builtAt: number };
+type CachedFeed = { items: FeedItem[]; builtAt: number };
 // Keyed by the database handle so a test's `:memory:` database and the closed
 // handle of a previous runtime never hand their feed to anyone else.
 const feedCache = new WeakMap<BackendDb, CachedFeed>();
 
 /** Published-site read model. It reads only stable publication data. */
 export function loadPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
-  return loadPublicSiteSnapshot(backendDb).items;
-}
-
-/** Loads one published item from the same cached snapshot as the archive. */
-export function loadPublicSiteItem(backendDb: BackendDb, postId: number): FeedItem | undefined {
-  return loadPublicSiteSnapshot(backendDb).byPostId.get(postId);
-}
-
-function loadPublicSiteSnapshot(backendDb: BackendDb): PublicSiteSnapshot {
   const cached = feedCache.get(backendDb);
-  if (cached && Date.now() - cached.builtAt < FEED_CACHE_TTL_MS) return cached.snapshot;
+  if (cached && Date.now() - cached.builtAt < FEED_CACHE_TTL_MS) return cached.items;
   const items = buildPublicSiteFeed(backendDb);
-  const snapshot: PublicSiteSnapshot = { items, byPostId: new Map(items.map((item) => [item.post_id, item])) };
-  feedCache.set(backendDb, { snapshot, builtAt: Date.now() });
-  return snapshot;
+  feedCache.set(backendDb, { items, builtAt: Date.now() });
+  return items;
 }
 
 /** Drops the cached feed so the next read rebuilds it. Call this from anything

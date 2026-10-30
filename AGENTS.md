@@ -121,9 +121,10 @@ Anything that moves the database file, writes credentials or reads a host path i
 # Local data
 
 `bun scripts/dev-seed.ts` prints its own launch line and URLs. An empty database is normal, not a
-bug — never write INSERTs by hand; change fixture shape in `apps/web/src/server/site-fixture.ts` or
+bug — never write INSERTs by hand; change fixture shape in `scripts/fixtures/site-fixture.ts` or
 `dashboard-fixture.ts`. The dashboard fixture is deliberately not all-green, and audience counts
 read `—` locally because they come from live platform APIs.
 
-happy-dom does not compute layout: `offsetTop`, `clientHeight` and `scrollTop` are always 0 there,
-so player geometry and scrolling can only be verified in a real browser.
+The public site is not in this repository. It is its own service (alexgetman-site) that reads
+`GET /api/public/site` and links to `/media/*` and `/generated/responsive/media-*`, which this
+Studio serves; `apps/backend/tests/publicSite.test.ts` is this side of that contract.

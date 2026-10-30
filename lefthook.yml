@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     biome:
-      glob: "*.{ts,tsx,astro,svelte,json,yml,yaml}"
+      glob: "*.{ts,tsx,json,yml,yaml}"
       run: bunx biome check --write --no-errors-on-unmatched {staged_files}
       stage_fixed: true
     gitleaks:

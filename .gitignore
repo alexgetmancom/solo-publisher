@@ -15,9 +15,6 @@ Thumbs.db
 .obsidian/
 
 # Runtime dynamic files and secrets
-/apps/web/feed/ialexey-feed.env
-/apps/web/feed/data/
-/apps/web/feed/*.log
 /apps/backend/secrets.env
 /apps/backend/secrets.*
 # The template is not a secret and both READMEs tell people to copy it, which
@@ -44,10 +41,10 @@ Thumbs.db
 /posts/
 /media/
 
-# Astro and Node.js
+# Node.js
 node_modules/
 dist/
-# The bundles CI builds from apps/web/server.ts and the backend entry points.
+# The bundles CI builds from the backend entry points.
 # Reproducing the image build locally creates them here too; untracked minified
 # bundles are one `git add -A` away from being committed.
 /runtime/
@@ -55,7 +52,6 @@ dist/
 /entrypoint/
 /story-renderer/
 /smoke/
-.astro/
 *.tsbuildinfo
 npm-debug.log*
 package-lock.json
@@ -67,14 +63,6 @@ pnpm-debug.log*
 .env.*
 !.env.example
 !.env.*.example
-
-# Cache and dynamically modified files
-/apps/web/src/data/habr_views_cache.json
-/apps/web/public/habr-images/
-/apps/web/public/generated/
-/apps/web/public/og/
-/apps/web/.image-cache.json
-/apps/web/public/media/
 
 # Local SQLite runtime artifacts and misc junk
 *.db

@@ -1,7 +1,7 @@
 # Production deployment agent
 
 `deploy-agent.ts` is intentionally a small host-side Bun service. It is the only
-component allowed to invoke Docker. The Astro application never mounts the Docker
+component allowed to invoke Docker. The Studio application never mounts the Docker
 socket and can only request a rollback using a private bearer-authenticated route.
 
 ## One-time host setup

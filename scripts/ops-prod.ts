@@ -32,7 +32,7 @@ if (argv.length === 0 || argv.includes("--as")) {
   process.exit(1);
 }
 
-const sshTarget = process.env.OPS_SSH_TARGET?.trim();
+const sshTarget = process.env.OPS_SSH_TARGET?.trim() ?? "";
 if (!sshTarget) {
   console.error("OPS_SSH_TARGET is required; set it in .env.local before using ops:prod");
   process.exit(1);

@@ -17,10 +17,9 @@ COPY --from=mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b80
 FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS build-in-docker
 WORKDIR /app
 # Сначала копируем только конфигурации и файлы package.json для кэширования
-COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json astro.config.ts svelte.config.ts biome.json knip.json ./
+COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json biome.json knip.json ./
 COPY --chown=bun:bun apps/backend/package.json ./apps/backend/package.json
 COPY --chown=bun:bun tools/knip/package.json ./tools/knip/package.json
-COPY --chown=bun:bun tools/svelte-check/package.json ./tools/svelte-check/package.json
 COPY --chown=bun:bun tools/layer-checker/package.json ./tools/layer-checker/package.json
 
 RUN chown bun:bun /app
@@ -29,10 +28,8 @@ RUN --mount=type=cache,target=/home/bun/.bun,uid=1000,gid=1000 bun install --fro
 
 # Теперь копируем исходный код
 COPY --chown=bun:bun apps/backend ./apps/backend
-COPY --chown=bun:bun apps/web ./apps/web
 COPY --chown=bun:bun scripts ./scripts
 COPY --chown=bun:bun tools/knip ./tools/knip
-COPY --chown=bun:bun tools/svelte-check ./tools/svelte-check
 COPY --chown=bun:bun tools/layer-checker ./tools/layer-checker
 # Backend shares the Story encoder with the isolated media-processor service.
 # Keep the single source in the in-Docker TypeScript build context as well.
@@ -41,8 +38,7 @@ COPY --chown=bun:bun tools/layer-checker ./tools/layer-checker
 COPY --chown=bun:bun deploy/media-processor ./deploy/media-processor
 
 RUN bun run --filter @solo-publisher/backend typecheck
-RUN DATA_DIR=/data bun run build
-RUN bun build apps/web/server.ts --outdir runtime --target bun --splitting --minify --sourcemap=external
+RUN bun build apps/backend/src/runtime/server.ts --outdir runtime --target bun --splitting --minify --sourcemap=external
 RUN bun build apps/backend/src/cli.ts --outdir ops --target bun --minify --sourcemap=external
 RUN bun build apps/backend/src/runtime/docker-entrypoint.ts --outdir entrypoint --target bun --minify --sourcemap=external
 RUN bun build apps/backend/src/runtime/config-check.ts --outdir entrypoint --target bun --minify --sourcemap=external
@@ -50,7 +46,6 @@ RUN bun build apps/backend/src/story-cards/renderer-process.ts --outdir story-re
 
 # --- СТАДИЯ КОПИРОВАНИЯ ГОТОВОГО БИЛДА С ХОСТА (для сборки в GitHub Actions) ---
 FROM scratch AS build-on-host
-COPY dist /app/dist
 COPY runtime /app/runtime
 COPY ops /app/ops
 COPY entrypoint /app/entrypoint
@@ -67,10 +62,9 @@ FROM build-${BUILD_SOURCE} AS build
 # Alpine image can contain the correct native package and still fail on import.
 FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS prod-deps
 WORKDIR /app
-COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json astro.config.ts svelte.config.ts biome.json knip.json ./
+COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json biome.json knip.json ./
 COPY --chown=bun:bun apps/backend/package.json ./apps/backend/package.json
 COPY --chown=bun:bun tools/knip/package.json ./tools/knip/package.json
-COPY --chown=bun:bun tools/svelte-check/package.json ./tools/svelte-check/package.json
 COPY --chown=bun:bun tools/layer-checker/package.json ./tools/layer-checker/package.json
 
 RUN chown bun:bun /app
@@ -103,7 +97,6 @@ COPY --from=ffmpeg-bin /tmp/ffmpeg /usr/local/bin/
 COPY --from=ffmpeg-bin /tmp/ffprobe /usr/local/bin/
 
 WORKDIR /app
-COPY --from=build /app/dist ./dist
 COPY --from=build /app/runtime ./runtime
 COPY --from=build /app/ops ./ops
 COPY --from=build /app/entrypoint ./entrypoint

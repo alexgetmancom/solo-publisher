@@ -16,11 +16,9 @@ export const CHECK_GROUPS: CheckStep[][] = [
     { name: "layers", args: ["check:layers"] },
     { name: "docker workspaces", args: ["check:docker"] },
     { name: "typecheck", args: ["typecheck"] },
-    { name: "svelte", args: ["check:svelte"] },
   ],
   [
     { name: "test", args: ["test"] },
-    { name: "web", args: ["check:web"] },
     { name: "backend", args: ["--filter", "@solo-publisher/backend", "build"] },
   ],
 ];

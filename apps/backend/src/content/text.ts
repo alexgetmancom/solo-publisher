@@ -89,25 +89,6 @@ export function firstTextLinkUrl(entities: Record<string, unknown>[]): string | 
   );
 }
 
-/** Canonical leading-emoji stripper, imported directly by the social payload
- * builder and by the web app's Layout so a post's headline strips identically in
- * both. It lives in Content rather than in delivery/social because
- * the site is its only other caller and presentation code must not reach into a
- * delivery adapter for a string helper. Handles flag pairs and ZWJ sequences; a
- * bare "#"/digit is not treated as an emoji so hashtags and numbered lists
- * survive. */
-export function stripLeadingEmojis(text: string): string {
-  if (!text) return "";
-  const cleaned = text.trim();
-  const flagGroup = cleaned.match(/^(\p{RI}{2})\s*/u)?.[1];
-  if (flagGroup) return cleaned.slice(flagGroup.length).trim();
-  const baseEmojiPart = `(?:[^\\s\\w\\d.,!?;:()""''«»а-яА-ЯёЁa-zA-Z][\\ufe00-\\ufe0f\\u20e3]?|[\\ud83c][\\udffb-\\udfff]?)`;
-  const zwjRegex = new RegExp(`^(?:${baseEmojiPart}(?:\\u200d${baseEmojiPart})*)`, "u");
-  const matched = cleaned.match(zwjRegex)?.[0];
-  if (matched && /\p{Emoji}/u.test(matched) && !/^[#*0-9]$/.test(matched[0] ?? "")) return cleaned.slice(matched.length).trim();
-  return cleaned;
-}
-
 /** One text as the posts a chain platform carries it in: cut at the last
  * boundary that ends a thought -- a paragraph, then a sentence, then a word --
  * because a cut in the middle of a sentence is what makes a thread read like a

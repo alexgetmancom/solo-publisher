@@ -6,9 +6,9 @@ import * as ts from "../tools/layer-checker/node_modules/typescript/lib/typescri
 
 const root = path.resolve(import.meta.dirname, "..");
 const configPath = path.join(root, ".dependency-cruiser.jsonc");
-const sourceRoots = ["apps/backend/src", "apps/web/src", "scripts", "deploy", "shared"];
-const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage", ".astro"]);
-const sourceExtensions = new Set([".ts", ".svelte", ".astro"]);
+const sourceRoots = ["apps/backend/src", "scripts", "deploy", "shared"];
+const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage"]);
+const sourceExtensions = new Set([".ts"]);
 
 type RuleSelector = {
   path?: string;
@@ -134,7 +134,7 @@ function componentImportSpecifiers(source: string): string[] {
 
 function resolveLocalComponent(specifier: string, file: string): string | null {
   const candidate = path.resolve(path.dirname(file), specifier);
-  for (const value of [candidate, ...[".ts", ".svelte", ".astro"].map((extension) => `${candidate}${extension}`)]) {
+  for (const value of [candidate, ...[".ts"].map((extension) => `${candidate}${extension}`)]) {
     if (fs.existsSync(value) && fs.statSync(value).isFile()) return value;
   }
   return null;
@@ -217,15 +217,6 @@ const config = readConfig();
 const files = walk(root);
 const edges = resolveEdges(files);
 const violations: string[] = [];
-
-for (const file of files.filter((value) => relativePath(value).startsWith("apps/web/src/features/story-player/"))) {
-  const source = fs.readFileSync(file, "utf8");
-  for (const [index, line] of source.split("\n").entries()) {
-    if (/(?:#[0-9a-fA-F]{3,8}\b|(?:rgb|hsl)a?\()/.test(line))
-      violations.push(`story-player raw colour: ${relativePath(file)}:${index + 1}`);
-    if (/z-index:\s*-?\d/.test(line)) violations.push(`story-player raw z-index: ${relativePath(file)}:${index + 1}`);
-  }
-}
 
 for (const rule of config.forbidden ?? []) {
   if (rule.to?.circular) {

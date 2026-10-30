@@ -11,7 +11,6 @@
       "!entrypoint",
       "!coverage",
       "!**/coverage",
-      "!**/.astro",
       "!apps/backend/data",
       "!apps/backend/bot-api-data",
       "!apps/backend/bot-api-temp",
@@ -36,28 +35,5 @@
         "noExplicitAny": "off"
       }
     }
-  },
-  "overrides": [
-    {
-      "includes": ["apps/web/src/**/*.astro", "apps/web/src/**/*.svelte"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedImports": "off",
-            "noUnusedVariables": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["apps/web/src/styles/**/*.css"],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noImportantStyles": "off"
-          }
-        }
-      }
-    }
-  ]
+  }
 }
