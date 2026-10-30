@@ -57,7 +57,6 @@ const DOWNLOAD_HEADERS = {
   Range: `bytes=0-${RANGE_BYTES}`,
 } as const;
 
-
 type Candidate = {
   videoDraftId: number;
   label: string | null;

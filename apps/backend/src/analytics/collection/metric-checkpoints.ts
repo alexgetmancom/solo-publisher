@@ -17,7 +17,8 @@ export function metricCheckpointAt(
   fallback = new Date(),
   target?: string,
 ): Date | null {
-  const checkpoints = target?.startsWith("instagram_stories") || target === "telegram_stories" ? STORY_METRIC_CHECKPOINTS_MS : POST_METRIC_CHECKPOINTS_MS;
+  const checkpoints =
+    target?.startsWith("instagram_stories") || target === "telegram_stories" ? STORY_METRIC_CHECKPOINTS_MS : POST_METRIC_CHECKPOINTS_MS;
   const offset = checkpoints[checkpointIndex];
   if (offset == null) return null;
   const published = publishedAt ? new Date(publishedAt) : fallback;

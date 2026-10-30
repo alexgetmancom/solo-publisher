@@ -55,7 +55,18 @@ async function stillFeatures(imagePath: string): Promise<FrameFeatures> {
 }
 
 async function measure(input: string[], where: string): Promise<FrameFeatures> {
-  const pixels = await runFfmpegCapture([...input, "-frames:v", "1", "-vf", `scale=${WIDTH}:${HEIGHT}`, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]);
+  const pixels = await runFfmpegCapture([
+    ...input,
+    "-frames:v",
+    "1",
+    "-vf",
+    `scale=${WIDTH}:${HEIGHT}`,
+    "-f",
+    "rawvideo",
+    "-pix_fmt",
+    "rgb24",
+    "-",
+  ]);
   if (pixels.length < WIDTH * HEIGHT * 3) throw new Error(`frame_unavailable: ffmpeg returned ${pixels.length} bytes ${where}`);
   return describe(pixels);
 }

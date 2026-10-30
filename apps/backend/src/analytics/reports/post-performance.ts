@@ -66,22 +66,31 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       standalone: standalone.length,
       replies: replies.length,
       openingKindKnown: standalone.filter((row) => row.openingKind).length,
-      lastReadingAt: rows.reduce<string | null>((latest, row) => (row.publishedAt && (!latest || row.publishedAt > latest) ? row.publishedAt : latest), null),
+      lastReadingAt: rows.reduce<string | null>(
+        (latest, row) => (row.publishedAt && (!latest || row.publishedAt > latest) ? row.publishedAt : latest),
+        null,
+      ),
     },
     // Writing under someone else's post and writing your own are different
     // acts, and only one of them is answered by an opening at all.
-    howItWasWritten: [
-      describe("standalone", standalone),
-      describe("reply", replies),
-    ],
+    howItWasWritten: [describe("standalone", standalone), describe("reply", replies)],
     // What the post is made of, beside what it says. Every one of these is a
     // choice its author makes and none of them was ever grouped by.
     howItWasBuilt: {
       length: [...group(standalone, (row) => lengthOf(row.text)).values()].map((slot) => describeSlot(slot.value, slot.rows)),
       carries: [
-        describeSlot("carries a t.co (media, quote or link)", standalone.filter((row) => SHORTENED_LINK.test(row.text))),
-        describeSlot("words only", standalone.filter((row) => !SHORTENED_LINK.test(row.text))),
-        describeSlot("with a hashtag", standalone.filter((row) => HASHTAG.test(row.text))),
+        describeSlot(
+          "carries a t.co (media, quote or link)",
+          standalone.filter((row) => SHORTENED_LINK.test(row.text)),
+        ),
+        describeSlot(
+          "words only",
+          standalone.filter((row) => !SHORTENED_LINK.test(row.text)),
+        ),
+        describeSlot(
+          "with a hashtag",
+          standalone.filter((row) => HASHTAG.test(row.text)),
+        ),
       ],
     },
     // A reply is written under someone, and under whom is the whole choice.
@@ -90,16 +99,18 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       .sort((left, right) => Number(right.follows ?? 0) - Number(left.follows ?? 0) || Number(right.posts) - Number(left.posts))
       .slice(0, options.limit),
     openings: [...group(standalone, (row) => row.openingKind ?? undefined).values()]
-      .map((slot): Record<string, unknown> => ({
-        ...describeSlot(slot.value, slot.rows),
-        // A kind is a label until you read the lines under it. These are the
-        // ones that brought the most followers, which is the question a kind
-        // is usually being asked.
-        broughtMost: [...slot.rows]
-          .sort((left, right) => right.follows - left.follows)
-          .slice(0, 3)
-          .map((row) => ({ post: row.xPostId, opening: row.openingLine?.slice(0, 100) ?? null, views: row.views, follows: row.follows })),
-      }))
+      .map(
+        (slot): Record<string, unknown> => ({
+          ...describeSlot(slot.value, slot.rows),
+          // A kind is a label until you read the lines under it. These are the
+          // ones that brought the most followers, which is the question a kind
+          // is usually being asked.
+          broughtMost: [...slot.rows]
+            .sort((left, right) => right.follows - left.follows)
+            .slice(0, 3)
+            .map((row) => ({ post: row.xPostId, opening: row.openingLine?.slice(0, 100) ?? null, views: row.views, follows: row.follows })),
+        }),
+      )
       .sort((left, right) => Number(right.medianViews ?? 0) - Number(left.medianViews ?? 0)),
     outliers: outliers(standalone).slice(0, options.limit),
     top: [...standalone]
@@ -120,10 +131,10 @@ export function postPerformanceReport(backendDb: BackendDb, options: PostReportO
       "A post keeps gaining views for days, so a young post and an old one are not comparable by total views — `ageDays` is on every row for that reason.",
       "`howItWasWritten` compares a reply with a post of its own. A reply borrows the audience of whatever it answers, so its views say more about that post than about this one.",
       "`openings` covers standalone posts only: the first line of a reply was not written to stop a scroll.",
-    "`repliedTo` groups replies by the account they were written under, ordered by the followers they brought. A reply's views belong to the post above it, so read this as which rooms are worth standing in, never as which reply was better written.",
-    "`howItWasBuilt` groups by what a post is made of rather than what it says: how long it is, and whether it carries a t.co. X shortens an attached image, video or quoted post into a t.co exactly as it does a link, so that group is \"carries something besides words\" and not \"links out\" — do not read it as advice about linking.",
-    "How many lines a post was written in is not here, and cannot be: X's own export flattens every post into one line, so the newlines the author typed are gone. `openingLine` falls back to the first sentence for those, which is a proxy and is why the kind on them is a judgement about a sentence rather than a line.",
-    "`followsPerPost` is the one figure that says what a kind is for: views are the room a post reached, and this is how many stayed. A kind can lead on one and trail on the other.",
+      "`repliedTo` groups replies by the account they were written under, ordered by the followers they brought. A reply's views belong to the post above it, so read this as which rooms are worth standing in, never as which reply was better written.",
+      '`howItWasBuilt` groups by what a post is made of rather than what it says: how long it is, and whether it carries a t.co. X shortens an attached image, video or quoted post into a t.co exactly as it does a link, so that group is "carries something besides words" and not "links out" — do not read it as advice about linking.',
+      "How many lines a post was written in is not here, and cannot be: X's own export flattens every post into one line, so the newlines the author typed are gone. `openingLine` falls back to the first sentence for those, which is a proxy and is why the kind on them is a judgement about a sentence rather than a line.",
+      "`followsPerPost` is the one figure that says what a kind is for: views are the room a post reached, and this is how many stayed. A kind can lead on one and trail on the other.",
       "An opening's kind is a model's judgement about one line, not a measurement — `post-openings-classify` prints the line beside the label.",
       `A post above ${OUTLIER_MULTIPLE}× the window's median is reported as an outlier rather than as a better post: it reached a room the others were not in, and averaging it back in describes nothing.`,
     ],

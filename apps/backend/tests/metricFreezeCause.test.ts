@@ -1,5 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import { describeMetricFreeze, isQuotaExhausted, isTerminalMetricError, terminalIfMissingRemoteObject } from "../src/analytics/collection/collectors/errors.js";
+import {
+  describeMetricFreeze,
+  isQuotaExhausted,
+  isTerminalMetricError,
+  terminalIfMissingRemoteObject,
+} from "../src/analytics/collection/collectors/errors.js";
 
 /** What YouTube answers when the project's daily budget is gone. It is a 403,
  * the same status a revoked credential gets, and the difference is only in the

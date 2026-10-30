@@ -84,11 +84,7 @@ export async function classifyPostOpenings(
         refused.push(`${candidate.xPostId}: answered ${kind || "nothing"}`);
         continue;
       }
-      unsafeDb(backendDb)
-        .db.update(xActivityItems)
-        .set({ openingKind: kind })
-        .where(eq(xActivityItems.xPostId, candidate.xPostId))
-        .run();
+      unsafeDb(backendDb).db.update(xActivityItems).set({ openingKind: kind }).where(eq(xActivityItems.xPostId, candidate.xPostId)).run();
       labelled.push({ post: candidate.xPostId, kind, opening: candidate.openingLine.slice(0, 80) });
     }
   }
