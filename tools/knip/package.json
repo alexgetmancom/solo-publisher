@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "knip": "^6.32.0",
+    "knip": "^6.44.0",
     "typescript": "7.0.2"
   }
 }
