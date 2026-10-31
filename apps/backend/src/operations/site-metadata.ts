@@ -17,12 +17,14 @@ const metadataSchema = z
             locale: z.enum(["ru", "en"]),
             text_sha256: z.string().regex(/^[a-f0-9]{64}$/),
             seo_title: z.string().trim().min(1).max(65).optional(),
+            expected_seo_title: z.string().max(65).nullable().optional(),
             images: z
               .array(
                 z
                   .object({
                     path: z.string().min(1),
                     alt: z.string().trim().min(1).max(500),
+                    expected_alt: z.string().max(500).optional(),
                   })
                   .strict(),
               )
@@ -96,7 +98,11 @@ export function applySiteMetadata(backendDb: BackendDb, raw: unknown, apply: boo
         .where(and(eq(drafts.postId, item.post_id), eq(postLocales.locale, item.locale), eq(postLocales.siteEnabled, 1)))
         .get();
       if (!row || textHash(row.approvedText ?? row.sourceText) !== item.text_sha256) throw new Error(`Published text changed for ${key}`);
-      if (item.seo_title && row.seoTitle && item.seo_title !== row.seoTitle) throw new Error(`SEO title already edited for ${key}`);
+      if (item.seo_title && item.seo_title !== row.seoTitle) {
+        if (item.expected_seo_title !== undefined && item.expected_seo_title !== row.seoTitle)
+          throw new Error(`SEO title changed for ${key}`);
+        if (row.seoTitle && item.expected_seo_title === undefined) throw new Error(`SEO title already edited for ${key}`);
+      }
       const media = (row.media?.length ? row.media : (publicMedia.get(key) ?? [])).map((image) => ({ ...image }));
       const paths = new Set<string>();
       for (const image of item.images) {
@@ -105,7 +111,11 @@ export function applySiteMetadata(backendDb: BackendDb, raw: unknown, apply: boo
         paths.add(path);
         const asset = media.find((asset) => String(asset.path ?? "").replace(/^\/+/, "") === path && asset.type !== "video");
         if (!asset) throw new Error(`Published image changed for ${key}: ${path}`);
-        if (asset.alt && asset.alt !== image.alt) throw new Error(`Alt already edited for ${key}: ${path}`);
+        if (asset.alt !== image.alt) {
+          if (image.expected_alt !== undefined && image.expected_alt !== (asset.alt ?? ""))
+            throw new Error(`Alt changed for ${key}: ${path}`);
+          if (asset.alt && image.expected_alt === undefined) throw new Error(`Alt already edited for ${key}: ${path}`);
+        }
         if (asset.alt !== image.alt) {
           asset.alt = image.alt;
           images += 1;

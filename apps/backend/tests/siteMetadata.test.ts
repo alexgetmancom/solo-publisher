@@ -72,6 +72,31 @@ describe("reviewed site metadata", () => {
     expect(() => applySiteMetadata(db, { version: 1, items: [item, { ...item, locale: "ru" }] }, true)).toThrow("text changed");
     expect(loadPublicSiteFeed(db)[0]?.seo_title_en).toBeNull();
   });
+  it("corrects reviewed existing metadata only while its expected copy still matches", () => {
+    const { db, item, plan } = setup();
+    applySiteMetadata(db, plan, true);
+    const corrected = {
+      ...item,
+      seo_title: "Corrected search title",
+      expected_seo_title: item.seo_title,
+      images: [{ ...item.images[0], alt: "A corrected image description.", expected_alt: item.images[0]?.alt }],
+    };
+    expect(() => applySiteMetadata(db, { version: 1, items: [{ ...corrected, expected_seo_title: "Stale title" }] }, true)).toThrow(
+      "SEO title changed",
+    );
+    expect(() =>
+      applySiteMetadata(
+        db,
+        { version: 1, items: [{ ...corrected, images: [{ ...corrected.images[0], expected_alt: "Stale description" }] }] },
+        true,
+      ),
+    ).toThrow("Alt changed");
+    expect(loadPublicSiteFeed(db)[0]?.seo_title_en).toBe(item.seo_title);
+    expect(applySiteMetadata(db, { version: 1, items: [corrected] }, false)).toMatchObject({ changed: 1, images: 1 });
+    expect(applySiteMetadata(db, { version: 1, items: [corrected] }, true)).toMatchObject({ changed: 1, images: 1 });
+    expect(applySiteMetadata(db, { version: 1, items: [corrected] }, true)).toMatchObject({ changed: 0, images: 0 });
+    expect(loadPublicSiteFeed(db)[0]).toMatchObject({ text_en: "Article text", seo_title_en: corrected.seo_title });
+  });
   it("does not export a locale that has not been published", () => {
     const { db } = setup();
     db.db.update(postLocales).set({ publishedAt: "2099-01-01T00:00:00.000Z" }).where(eq(postLocales.locale, "en")).run();

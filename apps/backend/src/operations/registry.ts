@@ -1075,7 +1075,7 @@ const operationDefs = {
   "site-metadata": operation({
     section: "media",
     summary: "Export published image metadata, or import reviewed alt descriptions and SEO titles.",
-    note: "Without file, exports published text hashes and images. With file, validates the version-1 JSON plan; apply saves it atomically. Changed text, replaced images and existing editorial metadata are protected. Does not resend publications.",
+    note: "Without file, exports published text hashes and images. With file, validates the version-1 JSON plan; apply saves it atomically. Changed text and replaced images are protected. To correct existing copy, supply its exact expected_seo_title or expected_alt; stale edits fail. Does not resend publications.",
     schema: z.object({ file: z.string().min(1).optional().describe("reviewed metadata JSON file"), apply: applyOption }),
     mutates: true,
     agent: false,
