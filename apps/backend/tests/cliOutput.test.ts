@@ -10,11 +10,17 @@ it("flushes an archive-sized metadata export before the CLI exits", async () => 
   const directory = mkdtempSync(join(tmpdir(), "site-metadata-cli-"));
   try {
     const file = join(directory, "pipeline.db");
-    const db = openBackendDb(file);
-    for (let id = 1; id <= 80; id++) {
-      seedTextPost(db, { postId: id, en: `Article ${id}. ${"Archive content. ".repeat(160)}`, siteEn: true });
+    const db = openBackendDb(":memory:");
+    try {
+      for (let id = 1; id <= 80; id++) {
+        seedTextPost(db, { postId: id, en: `Article ${id}. ${"Archive content. ".repeat(160)}`, siteEn: true });
+      }
+      // The CLI gets a complete file with no fixture connection holding it.
+      // Older Bun versions defer releasing prepared statements after close().
+      db.sqlite.run("VACUUM INTO ?", [file]);
+    } finally {
+      db.close();
     }
-    db.close();
     const child = Bun.spawn(["bun", fileURLToPath(new URL("../src/cli.ts", import.meta.url)), "site-metadata", "--json", "--db", file], {
       stdout: "pipe",
       stderr: "pipe",
