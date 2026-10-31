@@ -61,7 +61,9 @@ async function main(): Promise<void> {
     // and whatever the operator pastes it into.
     if (!def.streams) {
       const output = redactExternalSecrets(format && !args.flags.has("json") ? format(result as never) : JSON.stringify(result, null, 2));
-      await Bun.write(Bun.stdout, `${output}\n`);
+      await new Promise<void>((resolve, reject) => {
+        process.stdout.write(`${output}\n`, (error) => (error ? reject(error) : resolve()));
+      });
     }
     if (args.command === "doctor" && result && typeof result === "object" && "ok" in result && result.ok === false) process.exitCode = 1;
   } finally {
