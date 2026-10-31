@@ -187,11 +187,13 @@ describe("public files", () => {
   it("serves a cached responsive variant and nothing it did not generate", async () => {
     const { request, writeSiteFile } = studio();
     writeSiteFile("generated/responsive/media-posts-1-en-0-640.webp");
+    writeSiteFile("generated/responsive/media-posts-1-en-0-1280.webp");
     expect((await request("/generated/responsive/media-posts-1-en-0-640.webp")).headers.get("content-type")).toBe("image/webp");
     expect((await request("/generated/responsive/media-posts-1-en-0-640.webp?v=abcdef012345")).headers.get("cache-control")).toBe(
       "public, max-age=31536000, immutable",
     );
     expect((await request("/generated/responsive/media-posts-1-en-0-641.webp")).status).toBe(404);
+    expect((await request("/generated/responsive/media-posts-1-en-0-1280.webp")).status).toBe(200);
   });
 });
 

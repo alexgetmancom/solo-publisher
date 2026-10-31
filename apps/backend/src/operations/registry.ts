@@ -1065,7 +1065,7 @@ const operationDefs = {
   "site-responsive-backfill": operation({
     section: "media",
     summary: "Create missing or outdated responsive images and video posters for published site media.",
-    note: "Reports the gap; apply writes only 360, 640 and 960 pixel WebP derivatives, one source at a time. Does not change posts or re-encode video.",
+    note: "Reports the gap; apply writes the publication worker's WebP sizes, one source at a time. Does not change posts or re-encode video.",
     schema: z.object({ apply: applyOption }),
     mutates: true,
     agent: false,

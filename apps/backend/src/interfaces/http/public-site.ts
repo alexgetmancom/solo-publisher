@@ -71,8 +71,8 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
     const file = Bun.file(filePath);
     if (!(await file.exists())) return NOT_FOUND();
     const headers = new Headers({
-      // Materialized post media keeps its name for the life of the post; a day of
-      // client caching satisfies Lighthouse without pinning replaced files forever.
+      // Replacements change the version key. Historical links without one
+      // refresh daily rather than pinning a mutable name in the browser.
       "Cache-Control":
         !staged && versioned(c.req.url) ? "public, max-age=31536000, immutable" : "public, max-age=86400, stale-while-revalidate=604800",
     });
@@ -94,7 +94,7 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
   // launch ffmpeg or sharp.
   app.get("/generated/responsive/:file", async (c) => {
     if (!config.studio.siteEnabled) return NOT_FOUND();
-    const match = /^([A-Za-z0-9._-]+)-(\d{3})\.webp$/.exec(c.req.param("file"));
+    const match = /^([A-Za-z0-9._-]+)-(\d{3,4})\.webp$/.exec(c.req.param("file"));
     if (!match || !RESPONSIVE_WIDTHS.map(String).includes(match[2] ?? "")) return NOT_FOUND();
     const cached = Bun.file(path.join(config.SITE_PUBLIC_DIR, "generated/responsive", match[0]));
     if (!(await cached.exists())) return NOT_FOUND();

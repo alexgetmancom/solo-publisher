@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { RESPONSIVE_WIDTHS } from "../src/content/site-media-naming.js";
 import { materializeSiteMedia } from "../src/delivery/site-media.js";
 import { deduplicateSiteMedia } from "../src/operations/site-media-deduplicate.js";
 import { backfillSiteResponsive } from "../src/operations/site-responsive-backfill.js";
@@ -46,7 +47,7 @@ describe("site media materialization", () => {
       expect(await backfillSiteResponsive(db, config, false)).toMatchObject({ missing: 2, rendered: 0 });
       expect(ffmpegCalls).toBe(0);
       expect(await backfillSiteResponsive(db, config, true)).toMatchObject({ ok: true, rendered: 2, remaining: 0 });
-      expect(ffmpegCalls).toBe(6);
+      expect(ffmpegCalls).toBe(2 * RESPONSIVE_WIDTHS.length);
       expect(await backfillSiteResponsive(db, config, false)).toMatchObject({ missing: 0 });
       for (const file of ["photo.jpg", "poster.jpg", "video.mp4"])
         expect(fs.readFileSync(path.join(config.SITE_PUBLIC_DIR, "media", file), "utf8")).toBe("original");
@@ -69,7 +70,7 @@ describe("site media materialization", () => {
 
     expect(initial[0]?.path).toMatch(/^media\/posts\/1-ru-0-vertical\.jpg\?v=[a-f0-9]{12}$/);
     expect(fs.readFileSync(path.join(config.SITE_PUBLIC_DIR, "media", "posts", "1-ru-0.png"))).toEqual(image);
-    for (const width of [360, 640, 960])
+    for (const width of RESPONSIVE_WIDTHS)
       expect(fs.existsSync(path.join(config.SITE_PUBLIC_DIR, "generated", "responsive", `media-posts-1-ru-0-vertical-${width}.webp`))).toBe(
         true,
       );
@@ -84,9 +85,9 @@ describe("site media materialization", () => {
     await materializeSiteMedia(config, 2, "en", [{ type: "image", local_path: image }]);
     await materializeSiteMedia(config, 2, "en", [{ type: "image", local_path: image }]);
 
-    // one vertical projection plus its three responsive derivatives; the
+    // one vertical projection plus its responsive derivatives; the
     // unchanged second build must not add further work.
-    expect(ffmpegCalls).toBe(4);
+    expect(ffmpegCalls).toBe(1 + RESPONSIVE_WIDTHS.length);
   });
 
   it("shares equal locale files and atomically detaches a later replacement", async () => {

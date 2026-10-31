@@ -19,7 +19,7 @@ export async function siteImage(root: string, publicPath: string) {
   if (!source) return undefined;
   const version = query || `?v=${createHash("sha256").update(`${source.modified}:${source.size}`).digest("hex").slice(0, 12)}`;
   const basename = relative.replace(/[\\/]/g, "-").replace(/\.[a-z0-9]+$/i, "");
-  const responsive: Variant[] = [];
+  const responsive: (Variant & { nominal: number })[] = [];
   await Promise.all(
     RESPONSIVE_WIDTHS.map(async (width) => {
       const url = `/generated/responsive/${basename}-${width}.webp`;
@@ -30,14 +30,18 @@ export async function siteImage(root: string, publicPath: string) {
         images.delete(`${variantFile}${version}`);
         return;
       }
-      responsive.push({ path: `${url}${version}`, width: variant.width, height: variant.height });
+      responsive.push({ path: `${url}${version}`, width: variant.width, height: variant.height, nominal: width });
     }),
   );
-  responsive.sort((a, b) => a.width - b.width);
+  // Small sources can produce equal actual widths at several nominal sizes.
+  // Keep the smallest name deterministically so async IO cannot churn the ETag.
+  responsive.sort((a, b) => a.width - b.width || a.nominal - b.nominal);
   return {
     width: source.width,
     height: source.height,
-    responsive: responsive.filter((variant, index) => index === 0 || variant.width !== responsive[index - 1]?.width),
+    responsive: responsive
+      .filter((variant, index) => index === 0 || variant.width !== responsive[index - 1]?.width)
+      .map(({ nominal: _nominal, ...variant }) => variant),
   };
 }
 
