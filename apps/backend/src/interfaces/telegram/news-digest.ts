@@ -1,11 +1,11 @@
 import type { Bot } from "grammy";
 import { InputFile } from "grammy";
-import { claimSync, markSynced } from "../../analytics/snapshots/creator-store.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { t } from "../../foundation/i18n/index.js";
 import { log } from "../../foundation/logger.js";
 import { zonedDateTimeParts } from "../../foundation/time.js";
+import { claimSync, markSynced } from "../../observability/sync-state.js";
 import { type NewsDigestEffort, settingsService } from "../../studio/services/settings.js";
 
 /** The Grok CLI is a subprocess; past this it is not coming back. */

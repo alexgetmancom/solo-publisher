@@ -36,14 +36,9 @@ afterEach(() => {
  * the note and the dry-run in front of them. */
 const OFF_THE_AGENT_SURFACE = [
   "guide",
-  "hooks-classify",
-  "archive-import",
   "backup",
   "backup-stream",
   "restore",
-  "import-x-analytics",
-  "import-manual-analytics",
-  "instagram-relink",
   "format-record",
   "replace-media",
   "set-media",
@@ -57,23 +52,12 @@ const OFF_THE_AGENT_SURFACE = [
   // Rare mutations, in the order the catalog carries them.
   "studio-profile-set",
   "dates-repair",
-  "post-openings-classify",
-  "comments-backfill",
-  "youtube-analytics-backfill",
-  "video-tag-backfill",
-  "games-enrich",
-  "demographics-sync",
-  "frames-backfill",
   "video-script",
-  "captions-backfill",
-  "x-import-delete",
-  "x-relink",
   "purge",
   "story-card-backfill",
   "story-media-backfill",
   "story-media-prune",
   "disk",
-  "metrics-backfill",
 ];
 
 function context(db: UnsafeBackendDb): OperationContext {
@@ -162,7 +146,6 @@ describe("operations registry", () => {
       "delete: unknown field targte",
     );
     await expect(runOperation("retry", context(backendDb), { ref: "post:1", target: "" })).rejects.toThrow("retry: target");
-    await expect(runOperation("metrics-backfill", context(backendDb), { refs: "" })).rejects.toThrow("metrics-backfill: refs");
     await expect(runOperation("toString", context(backendDb), {})).rejects.toThrow("unknown command: toString");
   });
 

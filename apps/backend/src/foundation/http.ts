@@ -53,11 +53,6 @@ export async function requestJson<T = Record<string, unknown>>(fetchImpl: typeof
   }
 }
 
-export async function requestText(fetchImpl: typeof fetch, url: string, init: RequestInit = {}): Promise<string> {
-  const response = await externalFetch(fetchImpl, url, init);
-  return successfulResponseText(response, url, init.method);
-}
-
 async function successfulResponseText(response: Response, url: string, method?: string): Promise<string> {
   const body = await response.text();
   if (!response.ok) {
@@ -140,13 +135,4 @@ export function formBody(fields: Record<string, string | number | boolean | null
     body.append(key, String(value));
   }
   return body;
-}
-
-/** A request failure, shortened for a report that has to fit on a screen.
- *
- * Both ends are kept because these messages carry the URL in front and the
- * status and body at the end: a naive truncation of a Graph or Analytics URL
- * throws away the only half that says what went wrong. */
-export function shortenRequestFailure(message: string, limit = 400): string {
-  return message.length <= limit ? message : `${message.slice(0, Math.floor(limit / 4))} … ${message.slice(-Math.floor(limit / 2))}`;
 }

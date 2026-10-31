@@ -1,6 +1,5 @@
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
-import { analyticsService } from "./analytics.js";
 import { studioCapabilityService } from "./capabilities.js";
 import { channelService } from "./channels.js";
 import { mediaService } from "./media.js";
@@ -15,7 +14,6 @@ export type StudioServices = {
   channels: ReturnType<typeof channelService>;
   videos: ReturnType<typeof videoService>;
   queue: ReturnType<typeof queueService>;
-  analytics: ReturnType<typeof analyticsService>;
   capabilities: ReturnType<typeof studioCapabilityService>;
   settings: ReturnType<typeof settingsService>;
 };
@@ -38,7 +36,6 @@ export function createStudioServices(backendDb: BackendDb, config: BackendConfig
     channels: channelService(backendDb, config),
     videos,
     queue: queueService(backendDb, config),
-    analytics: analyticsService(backendDb, config),
     capabilities: studioCapabilityService(config, backendDb),
     settings: settingsService(backendDb),
   };

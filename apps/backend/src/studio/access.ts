@@ -21,12 +21,6 @@ export function primaryStudioActorId(config: BackendConfig): number | null {
   return config.MCP_STUDIO_ACTOR_ID ?? studioActorIds(config)[0] ?? null;
 }
 
-export function hasStudioAuthoringInterface(config: BackendConfig): boolean {
-  const telegram = Boolean(config.controllerBotToken && config.CONTROLLER_ADMIN_IDS.length);
-  const mcp = Boolean(config.MCP_STUDIO_TOKEN && config.MCP_STUDIO_ACTOR_ID);
-  return telegram || mcp;
-}
-
 export function accessibleStudioActorIds(config: BackendConfig, actorId: number): number[] {
   const roster = studioActorIds(config);
   return roster.includes(actorId) ? roster : [actorId];

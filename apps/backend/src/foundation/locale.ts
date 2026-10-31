@@ -22,7 +22,7 @@ export const STUDIO_LOCALE_NAMES: Record<StudioLocale, string> = { en: "English"
 /** BCP-47 tags for Intl formatting of dates and numbers. */
 export const STUDIO_LOCALE_TAGS: Record<StudioLocale, string> = { en: "en-GB", ru: "ru-RU" };
 
-export const DEFAULT_STUDIO_LOCALE: StudioLocale = "ru";
+const DEFAULT_STUDIO_LOCALE: StudioLocale = "ru";
 
 function isStudioLocale(value: unknown): value is StudioLocale {
   return typeof value === "string" && (STUDIO_LOCALES as readonly string[]).includes(value);

@@ -77,25 +77,25 @@ describe("production operations launcher", () => {
 
   it("defaults to the alex deployment and ships local files", async () => {
     const directory = mkdtempSync(join(tmpdir(), "alexgetman-ops-file-"));
-    const localFile = join(directory, "analytics.csv");
-    writeFileSync(localFile, "csv contents");
+    const localFile = join(directory, "script.txt");
+    writeFileSync(localFile, "script contents");
 
     try {
-      const { result, calls } = await runWithFakeSsh(["import-x-analytics", "--file", localFile, "--sampled-at", "2026-08-11T00:00:00Z"], {
+      const { result, calls } = await runWithFakeSsh(["video-script", "--ref", "video:1", "--file", localFile], {
         OPS_SSH_TARGET: "deploy@example.test",
       });
 
       expect(result.code).toBe(0);
       expect(calls).toHaveLength(3);
-      expect(calls[0]?.input).toBe("csv contents");
+      expect(calls[0]?.input).toBe("script contents");
       expect(calls[0]?.args[0]).toBe("deploy@example.test");
       expect(calls[0]?.args[1]).toContain("'alexgetman-backend'");
       expect(calls[0]?.args[1]).toContain("cat >");
       expect(calls[0]?.args[1]).toContain(`/tmp/${basename(localFile)}`);
-      expect(calls[1]?.args[1]).toContain("'/tmp/analytics.csv'");
+      expect(calls[1]?.args[1]).toContain("'/tmp/script.txt'");
       expect(calls[1]?.args[1]).toContain("'docker' 'exec' '-i'");
       expect(calls[2]?.args[1]).toContain("'rm'");
-      expect(calls[2]?.args[1]).toContain("'/tmp/analytics.csv'");
+      expect(calls[2]?.args[1]).toContain("'/tmp/script.txt'");
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

@@ -12,23 +12,22 @@ describe("operations CLI arguments", () => {
   });
 
   it("arms a boolean written as --flag=true and leaves --flag=false unarmed", () => {
-    expect(input("x-relink --apply=true")).toEqual({ apply: true });
-    expect(input("x-relink --apply=false")).toEqual({ apply: false });
-    expect(input("x-relink --apply")).toEqual({ apply: true });
+    expect(input("story-media-prune --apply=true")).toEqual({ apply: true });
+    expect(input("story-media-prune --apply=false")).toEqual({ apply: false });
+    expect(input("story-media-prune --apply")).toEqual({ apply: true });
   });
 
   it("refuses a value written after a boolean flag", () => {
     // `--apply true` parked "true" in the values map, where a boolean field
     // never looks: the mutation stayed unarmed and the run still reported ok.
-    expect(() => input("x-relink --apply true")).toThrow(/--apply is a flag/);
+    expect(() => input("story-media-prune --apply true")).toThrow(/--apply is a flag/);
     expect(() => input("purge --ref post:1 --apply yes")).toThrow(/--apply is a flag/);
   });
 
   it("hands an option no schema defines to the registry, which names it", () => {
-    // The typo this guards: --ref instead of --refs took the backfill from one
-    // publication to every target in the default set. One rejection, in the one
-    // place both surfaces validate through.
-    expect(input("metrics-backfill --ref post:165 --apply")).toEqual({ ref: "post:165", apply: true });
+    // A misspelled option must reach the registry, which rejects it in the one
+    // place both surfaces validate through, rather than vanish here.
+    expect(input("purge --reff post:165 --apply")).toEqual({ reff: "post:165", apply: true });
     expect(() => input("recent --limitt")).not.toThrow();
     expect(input("recent --limitt 3")).toEqual({ limitt: "3" });
   });

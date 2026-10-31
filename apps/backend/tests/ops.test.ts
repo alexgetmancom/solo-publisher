@@ -3,18 +3,14 @@ import { describe, expect, it } from "bun:test";
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { X_ANALYTICS_SOURCE } from "../src/analytics/x-activity-linking.js";
 import { TARGETS } from "../src/botTargets.js";
 import { metricSchedule } from "../src/db/schema.js";
 import { formatSupportSummary, seedFormatSupport } from "../src/operations/format-support.js";
 import {
-  applyMetricsBackfill,
   auditOperations,
   backupDatabase,
-  buildMetricsBackfillPlan,
   publicationConsistencyReport,
   repairPublicationConsistency,
-  withMaintenanceLock,
 } from "../src/operations/maintenance.js";
 import { diagnoseMediaProcessor, mediaProcessorStatus, reprocessPostMedia } from "../src/operations/media-processor.js";
 import { operationsStatus } from "../src/operations/status.js";
@@ -114,25 +110,6 @@ describe("TypeScript operations tooling", () => {
       expect((backendDb.sqlite.prepare("SELECT count(*) AS count FROM format_support").get() as { count: number }).count).toBe(
         TARGETS.length * 9,
       );
-    }));
-
-  it("plans and applies a metrics backfill under a maintenance lock", () =>
-    withDb(async (backendDb) => {
-      const now = new Date().toISOString();
-      seedTextPost(backendDb, { postId: 1, now });
-      backendDb.sqlite
-        .prepare("INSERT INTO publication_targets(publication_key,target,status,updated_at) VALUES ('post:1','threads_ru','published',?)")
-        .run(now);
-      const plan = buildMetricsBackfillPlan(backendDb, { targets: ["threads_ru"] });
-      expect(plan).toHaveLength(1);
-      const config = loadTestConfig({ CONTROLLER_ADMIN_IDS: "42" });
-      expect(withMaintenanceLock(backendDb, () => applyMetricsBackfill(backendDb, config, plan, true))).toBe(1);
-      expect(
-        backendDb.sqlite
-          .prepare("SELECT check_count,frozen_at FROM metric_schedule WHERE publication_key='post:1' AND target='threads_ru'")
-          .get(),
-      ).toEqual({ check_count: 0, frozen_at: null });
-      expect((backendDb.sqlite.prepare("SELECT count(*) AS count FROM maintenance_locks").get() as { count: number }).count).toBe(0);
     }));
 
   it("keeps frozen terminal metric history out of audit errors", () =>
@@ -491,7 +468,7 @@ describe("TypeScript operations tooling", () => {
           `INSERT INTO publication_targets(publication_key,target,status,external_id,url,updated_at,raw_json)
            VALUES ('post:2','x','published','2075644218979057803','https://x.com/i/web/status/2075644218979057803',?,?)`,
         )
-        .run(now, JSON.stringify({ source: X_ANALYTICS_SOURCE, x_post_id: "2075644218979057803", matched_by: "direct_text" }));
+        .run(now, JSON.stringify({ source: "x_csv_export", x_post_id: "2075644218979057803", matched_by: "direct_text" }));
       backendDb.sqlite
         .query(
           "INSERT INTO publish_jobs(publication_key,target,status,last_error,created_at,updated_at) VALUES ('post:2','x','cancelled','Cancelled by user',?,?)",

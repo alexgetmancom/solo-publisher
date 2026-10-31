@@ -54,13 +54,13 @@
       "comment": "foundation/ is imported by everything; if it imports back, every layer is transitively coupled to every other.",
       "severity": "error",
       "from": { "path": "^apps/backend/src/foundation/" },
-      "to": { "path": "^apps/backend/src/(bot/|interfaces/|studio/|delivery/|publishing/|analytics/|operations/|engagement/|content/)" }
+      "to": { "path": "^apps/backend/src/(bot/|interfaces/|studio/|delivery/|publishing/|operations/|engagement/|content/)" }
     },
     {
       "name": "domain-is-a-leaf",
       "severity": "error",
       "from": { "path": "^apps/backend/src/domain/" },
-      "to": { "path": "^apps/backend/src/(bot/|interfaces/|studio/|delivery/|publishing/|analytics/|operations/|engagement/|content/)" }
+      "to": { "path": "^apps/backend/src/(bot/|interfaces/|studio/|delivery/|publishing/|operations/|engagement/|content/)" }
     },
     {
       "name": "leaves-do-not-import-the-runtime",
@@ -112,33 +112,33 @@
     },
     {
       "name": "interfaces-go-through-studio-services",
-      "comment": "MCP and Web Studio are adapters over studio/services. Reaching past it into the schema or into publishing/delivery/analytics duplicates the command model in a second place.",
+      "comment": "MCP is an adapter over studio/services. Reaching past it into the schema or into publishing/delivery duplicates the command model in a second place.",
       "severity": "error",
-      "from": { "path": "^apps/backend/src/interfaces/(mcp\\.ts|web/studio\\.ts)" },
-      "to": { "path": "^apps/backend/src/(db/schema|publishing/|delivery/|analytics/|bot/)" }
+      "from": { "path": "^apps/backend/src/interfaces/mcp\\.ts$" },
+      "to": { "path": "^apps/backend/src/(db/schema|publishing/|delivery/|bot/)" }
     },
     {
       "name": "bot-goes-through-studio-services",
-      "comment": "The bot is an adapter over studio/services like every other surface. Reaching past it into publishing or delivery is how a capability comes to exist behind a button and nowhere else -- nothing names it, so nothing can notice the CLI and the MCP tools do not have it. The vocabulary the card needs to render (target ids, delivery state predicates, media policy) is shared on purpose; performing a publication is not. albums.ts is exempt for its own table -- a pending Telegram album is transport state, not a publication -- and settings/analytics.ts for the importers `ops import-x-analytics` runs too, where both surfaces already have the capability.",
+      "comment": "The bot is an adapter over studio/services like every other surface. Reaching past it into publishing or delivery is how a capability comes to exist behind a button and nowhere else -- nothing names it, so nothing can notice the CLI and the MCP tools do not have it. The vocabulary the card needs to render (target ids, delivery state predicates, media policy) is shared on purpose; performing a publication is not. albums.ts is exempt for its own table -- a pending Telegram album is transport state, not a publication.",
       "severity": "error",
-      "from": { "path": "^apps/backend/src/bot/", "pathNot": "^apps/backend/src/bot/(albums|settings/analytics)\\.ts$" },
+      "from": { "path": "^apps/backend/src/bot/", "pathNot": "^apps/backend/src/bot/albums\\.ts$" },
       "to": {
-        "path": "^apps/backend/src/(publishing/|delivery/|analytics/|db/schema)",
+        "path": "^apps/backend/src/(publishing/|delivery/|db/schema)",
         "pathNot": "^apps/backend/src/publishing/(video-types|state|targets|media-policy)\\.ts$"
       }
     },
     {
       "name": "core-does-not-import-studio",
-      "comment": "Studio is the command model interfaces drive. Delivery and Analytics run behind it and must not depend on it.",
+      "comment": "Studio is the command model interfaces drive. Delivery runs behind it and must not depend on it.",
       "severity": "error",
-      "from": { "path": "^apps/backend/src/(delivery/|analytics/)" },
+      "from": { "path": "^apps/backend/src/delivery/" },
       "to": { "path": "^apps/backend/src/studio/" }
     },
     {
       "name": "no-interface-deps-in-core",
       "comment": "Core layers must not depend on how their output is presented.",
       "severity": "error",
-      "from": { "path": "^apps/backend/src/(delivery/|publishing/|analytics/|content/|operations/|engagement/|public/)" },
+      "from": { "path": "^apps/backend/src/(delivery/|publishing/|content/|operations/|engagement/|public/)" },
       "to": { "path": "^apps/backend/src/(bot/|interfaces/)" }
     }
   ],

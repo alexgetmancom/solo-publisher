@@ -81,7 +81,7 @@ export function devFixture(count: number, galleryImages: number): FixturePost[] 
 
 /** Stable day counts make the fixture feel random without making screenshots
  * and regression checks change on every seed. */
-export function fullFixtureDayCounts(days: number, minPostsPerDay = 1, maxPostsPerDay = 5): number[] {
+function fullFixtureDayCounts(days: number, minPostsPerDay = 1, maxPostsPerDay = 5): number[] {
   const safeDays = Math.max(1, Math.floor(days));
   const min = Math.max(1, Math.floor(minPostsPerDay));
   const max = Math.max(min, Math.floor(maxPostsPerDay));
@@ -150,45 +150,6 @@ function fixtureRandom(seed: number): () => number {
     state = (state * 1_664_525 + 1_013_904_223) >>> 0;
     return state / 4_294_967_296;
   };
-}
-
-/** Titles of the six text publications the overview reference layout shows. The
- * dashboard reads a publication's title from its locale text, so the titles have
- * to exist as posts here — the dashboard fixture only adds metrics on top. */
-const PARITY_TITLES = [
-  "как я снимал ролик про шкаф — тред",
-  "разбор: почему короткие форматы душат охват",
-  "что не так с медианой в аналитике",
-  "shipping a self-hosted dashboard, day 3",
-  "мини-итоги недели",
-  "why nobody reads your analytics",
-] as const;
-
-/** How many days of quiet history back the norm and the sparkline. */
-export const PARITY_HISTORY_DAYS = 30;
-const PARITY_TODAY_POSTS = PARITY_TITLES.length;
-
-/**
- * The dataset behind `dev-seed --mock`: six titled publications for today plus
- * thirty days of quiet history, so the overview renders with a real norm, a
- * real delta and a thirty-bar sparkline instead of the three-point fixture.
- */
-export function overviewParityFixture(): FixturePost[] {
-  const today = PARITY_TITLES.map((title, index) => ({
-    postId: index + 1,
-    en: { slug: `parity-post-${index + 1}`, text: title, images: index === 0 ? 2 : 1 },
-    ru: { slug: `parity-post-${index + 1}-ru`, text: title, images: index === 0 ? 2 : 1 },
-  }));
-  const history = Array.from({ length: PARITY_HISTORY_DAYS }, (_, index) => {
-    const postId = PARITY_TODAY_POSTS + index + 1;
-    return {
-      postId,
-      dateUtc: new Date(Date.now() - (index + 1) * 86_400_000).toISOString(),
-      en: { slug: `parity-history-${postId}`, text: `Archive post ${index + 1}`, images: 1 },
-      ru: { slug: `parity-history-${postId}-ru`, text: `Архивный пост ${index + 1}`, images: 1 },
-    };
-  });
-  return [...today, ...history];
 }
 
 export type SeededSite = {

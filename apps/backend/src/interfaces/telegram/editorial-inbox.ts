@@ -1,6 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
-import { claimSync, markSynced } from "../../analytics/snapshots/creator-store.js";
 import { type BackendDb, unsafeDb } from "../../db/client.js";
 import { draftEntityLinks, drafts, knowledgeEntities, postLocales } from "../../db/schema.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -10,6 +9,7 @@ import type { StudioLocale } from "../../foundation/locale.js";
 import { log } from "../../foundation/logger.js";
 import { truncateUnicode } from "../../foundation/text.js";
 import { zonedDateTimeParts } from "../../foundation/time.js";
+import { claimSync, markSynced } from "../../observability/sync-state.js";
 import { settingsService } from "../../studio/services/settings.js";
 
 /** Moscow hour at which the editor receives one AI-generated opportunity inbox. */

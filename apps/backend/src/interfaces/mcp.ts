@@ -513,45 +513,6 @@ const studioToolDefs = {
       ...(await studio.videos.cancel(actorId, input.video_draft_id)),
     }),
   }),
-  /* Analytics tools below take no actorId: a Studio owns exactly one set of
-     platform accounts, so its metrics are deployment-wide rather than per-actor
-     (each account runs its own container and database). The `_actorId` these
-     handlers ignore is authorization already enforced in mcpResponse, not a
-     forgotten ownership check. */
-  studio_analytics_dashboard: tool({
-    description: "Read an analytics dashboard section for the authenticated Studio.",
-    schema: z.object({
-      section: z.enum(["overview", "audience", "posts", "video"]).optional(),
-      days: z.union([z.literal(1), z.literal(7), z.literal(30)]).optional(),
-      locale: localeSchema.optional(),
-    }),
-    handler: (studio, _actorId, input) => studio.analytics.dashboard(input.section ?? "overview", input.days ?? 7, input.locale ?? "ru"),
-  }),
-  studio_analytics_post_archive: tool({
-    description: "Read a page of post analytics archive.",
-    schema: z.object({ offset: z.number().int().min(0).max(10_000).optional(), locale: localeSchema.optional() }),
-    handler: (studio, _actorId, input) => studio.analytics.postArchive(input.offset ?? 0, input.locale ?? "ru"),
-  }),
-  studio_analytics_post_metrics: tool({
-    description: "Read analytics for one published post.",
-    schema: z.object({ post_id: positiveInt, locale: localeSchema.optional() }),
-    handler: (studio, _actorId, input) => studio.analytics.postMetrics(input.post_id, input.locale ?? "ru"),
-  }),
-  studio_analytics_video_archive: tool({
-    description: "Read a page of video analytics archive.",
-    schema: z.object({ offset: z.number().int().min(0).max(10_000).optional(), locale: localeSchema.optional() }),
-    handler: (studio, _actorId, input) => studio.analytics.videoArchive(input.offset ?? 0, input.locale ?? "ru"),
-  }),
-  studio_analytics_video_metrics: tool({
-    description: "Read analytics for one video draft.",
-    schema: z.object({ video_draft_id: positiveInt, locale: localeSchema.optional() }),
-    handler: (studio, _actorId, input) => studio.analytics.videoMetrics(input.video_draft_id, input.locale ?? "ru"),
-  }),
-  studio_analytics_editorial: tool({
-    description: "Read the channel review: its own numbers and its audience's own words, read together.",
-    schema: z.object({ locale: localeSchema.optional() }),
-    handler: (studio, _actorId, input) => studio.analytics.editorialReview(input.locale ?? "ru"),
-  }),
 };
 
 const publicTools = [

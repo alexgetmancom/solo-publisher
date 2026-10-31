@@ -1,7 +1,5 @@
 import { type TargetLocale, targetLocale } from "../botTargets.js";
 import type { BackendDb } from "../db/client.js";
-import type { VideoLocale } from "../publishing/video-types.js";
-import { videoDestinations } from "./destinations.js";
 import { registeredPostTargetIds } from "./registry.js";
 
 /**
@@ -24,10 +22,6 @@ import { registeredPostTargetIds } from "./registry.js";
 export function postLocales(backendDb: BackendDb): TargetLocale[] {
   const targets = registeredPostTargetIds(backendDb);
   return ordered([...targets].flatMap((target) => targetLocale(target) ?? []));
-}
-
-export function videoLocales(backendDb: BackendDb): VideoLocale[] {
-  return ordered(videoDestinations(backendDb).map((destination) => destination.locale));
 }
 
 /** Reading order everywhere a language is a column, a row or a heading. */

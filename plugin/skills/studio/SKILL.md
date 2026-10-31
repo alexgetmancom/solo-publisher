@@ -1,6 +1,6 @@
 ---
 name: studio
-description: Operate a self-hosted Studio deployment — write, publish, schedule and edit posts and short-form video, read publication and audience analytics, and diagnose a post that did not reach a platform. Use whenever the request is about publishing, a channel, a draft, a scheduled post, delivery to Telegram/X/Threads/Instagram/YouTube, or why something did not go out.
+description: Operate a self-hosted Studio deployment — write, publish, schedule and edit posts and short-form video, and diagnose a post that did not reach a platform. Use whenever the request is about publishing, a channel, a draft, a scheduled post, delivery to Telegram/X/Threads/Instagram/YouTube, or why something did not go out.
 ---
 
 # Studio
@@ -46,28 +46,6 @@ Start with `ops_status` — the guide is a CLI command, not a tool an agent can 
 
 Read the tool output before reasoning about causes, and never retry a target blindly: `ops_recent`
 first, then one `ops_retry` for the target actually missing.
-
-## Analytics
-
-`studio_analytics_dashboard` is the overview; `studio_analytics_post_metrics`,
-`studio_analytics_video_metrics` and `studio_analytics_audience` are the detail. Audience numbers
-come from live platform APIs and can legitimately be absent — that is not a bug to chase. Metrics
-are sampled over time, so a post published minutes ago having no numbers is expected.
-
-For a question about how videos are doing rather than one video, `ops_brief` answers the whole week
-in one call and names the command behind each of its sections; `ops_video_report` is that detail,
-and `ops_video_metrics` one video. Two habits make the difference between a report and advice worth
-acting on:
-
-- Read the `reading` block. Every report carries one and it says what its numbers do not mean.
-- Say the sample size, and refuse to recommend on `confidence: anecdotal` or `low`. A slot flagged
-  `dominatedBySingleVideo` rests on one lucky video.
-
-`openings` in `ops_video_report` is the one block about a choice rather than an outcome: what was on
-screen two seconds in, and what kind of line the video opened with, against retention at three
-seconds. The kind is a model's judgement about ten words — show the line beside the label when a
-finding rests on it. [Telling an agent how to read the numbers](../../../docs/analytics-agent.md)
-is the long form.
 
 ## Language
 

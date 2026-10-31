@@ -32,20 +32,7 @@ const interfacePersistenceOwners = new Set([
   "apps/backend/src/interfaces/telegram/editorial-inbox.ts",
   "apps/backend/src/interfaces/telegram/event-consumer.ts",
   "apps/backend/src/interfaces/telegram/video-notifications.ts",
-  "apps/backend/src/interfaces/web/dashboard/ops-sections.ts",
-  "apps/backend/src/interfaces/web/dashboard/video-overview-data.ts",
 ]);
-
-/** The text of one function declaration, up to the next top-level one. Enough
- * to say what a function does and does not call, without a parser. */
-function functionBody(text: string, name: string): string {
-  const start = text.indexOf(`function ${name}(`);
-  if (start < 0) throw new Error(`architecture rule names a function that does not exist: ${name}`);
-  const next = text.indexOf("\nfunction ", start + 1);
-  const nextExported = text.indexOf("\nexport function ", start + 1);
-  const ends = [next, nextExported].filter((index) => index > 0);
-  return ends.length ? text.slice(start, Math.min(...ends)) : text.slice(start);
-}
 
 describe("architecture fitness", () => {
   it("keeps application ports and domain event policy independent from infrastructure", () => {
@@ -176,15 +163,8 @@ describe("architecture fitness", () => {
    * audience has: a status, a platform id, a link. Delivery, Publishing and the
    * operator commands that answer for a delivery write them; nothing else does.
    *
-   * Analytics used to, in its own hand-written upsert -- an X export listing a
-   * post the queue never delivered, a collector handed a canonical permalink.
-   * Both were careful, and both were a second spelling of a write whose
-   * conditions live somewhere else. They go through
-   * delivery/observed-publication.ts now, which is what an area that *learns*
-   * something about a publication is allowed to do to one.
-   *
    * Adding a file here is allowed and is how it says it belongs. Adding one
-   * under analytics/, bot/, interfaces/ or studio/ is not: those surfaces ask
+   * under bot/, interfaces/ or studio/ is not: those surfaces ask
    * Delivery, they do not answer for it. */
   it("keeps the writers of what the audience has to Delivery, Publishing and Operations", () => {
     const writersOf = (orm: string, table: string): string[] => {
@@ -197,7 +177,6 @@ describe("architecture fitness", () => {
 
     expect(writersOf("publicationTargets", "publication_targets")).toEqual([
       "apps/backend/src/delivery/external-removals.ts",
-      "apps/backend/src/delivery/observed-publication.ts",
       "apps/backend/src/delivery/publication-reconciliation.ts",
       "apps/backend/src/operations/maintenance.ts",
       "apps/backend/src/operations/settle.ts",
@@ -209,8 +188,6 @@ describe("architecture fitness", () => {
     expect(writersOf("videoTargets", "video_targets")).toEqual([
       "apps/backend/src/delivery/publication-reconciliation.ts",
       "apps/backend/src/delivery/video-worker.ts",
-      "apps/backend/src/operations/archive-import.ts",
-      "apps/backend/src/operations/instagram-relink.ts",
       "apps/backend/src/operations/maintenance.ts",
       "apps/backend/src/publishing/video-service.ts",
       "apps/backend/src/publishing/video-settle.ts",
@@ -240,53 +217,6 @@ describe("architecture fitness", () => {
   it("keeps the delivery payload's brand assertable in one file", () => {
     const asserting = sourceFiles("apps/backend/src").filter((file) => source(file).includes("as DeliveryPayload"));
     expect(asserting).toEqual(["apps/backend/src/publishing/delivery-payload.ts"]);
-  });
-
-  /** The overview draws several windows of the same data side by side -- the
-   * period, the one before it, yesterday, the 30-day median, and the history
-   * behind the chart. Each half loads its history once and cuts every window
-   * from it: `pipelineForDates`, `xActivityForDates` and the video read model's
-   * `periodReachByRow` all slice, none re-derive.
-   *
-   * Video was the one that did not, and it cost 60-85% of the read model in
-   * production: five windows, each rebuilding every clip's series and re-running
-   * the daily spread over it. The spreading primitives are what makes that
-   * mistake expensive, so they stay inside the file that owns the single pass.
-   *
-   * The rule is that this set is empty, so the set being empty is the
-   * assertion. */
-  const windowSpreadingExceptions = new Set<string>();
-
-  it("cuts every overview comparison window from one loaded history", () => {
-    expect([...windowSpreadingExceptions]).toEqual([]);
-    const owner = "apps/backend/src/interfaces/web/dashboard/video-overview-data.ts";
-    for (const file of sourceFiles("apps/backend/src/interfaces/web/dashboard")) {
-      if (file === owner || windowSpreadingExceptions.has(file)) continue;
-      const text = source(file);
-      expect(text).not.toMatch(/\bdailyReach\(/);
-      expect(text).not.toMatch(/\bperiodReach\(/);
-    }
-    // Inside the owner the rule is narrower, and this is where it first failed:
-    // exempting the whole file let a second, larger per-window spread sit next
-    // to the one that had just been removed, and production did not move. Every
-    // window function slices; only the single pass spreads.
-    const ownerText = source(owner);
-    // Each window function reaches the history through a slicer, never through
-    // the spread itself.
-    const slicesVia: Record<string, string> = {
-      periodReachByRow: "derivedHistory(",
-      periodSubscribersByRow: "derivedHistory(",
-      dailyReachForWindow: "derivedHistory(",
-      aggregateDailyMetrics: "dailyReachForWindow(",
-    };
-    for (const [windowFunction, required] of Object.entries(slicesVia)) {
-      expect(functionBody(ownerText, windowFunction)).toContain(required);
-    }
-    // The single pass itself, and the fact that it is carried on the bundle so
-    // a second render over the same range does not repeat it.
-    const single = functionBody(ownerText, "derivedHistory");
-    expect(single).toMatch(/\bdailyReach\(/);
-    expect(single).toContain("bundle.derived");
   });
 
   it("keeps infrastructure adapters behind the composition root", () => {

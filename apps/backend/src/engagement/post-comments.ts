@@ -118,14 +118,3 @@ export function recentPostComments(backendDb: BackendDb, limit: number): Discuss
     };
   });
 }
-
-/** Comment text for the audience report, newest first. */
-export function recentCommentTexts(backendDb: BackendDb, limit: number): { platform: string; text: string; at: string }[] {
-  return unsafeDb(backendDb)
-    .db.select({ platform: postComments.target, text: postComments.text, at: postComments.sentAt })
-    .from(postComments)
-    .where(sql`trim(${postComments.text}) <> ''`)
-    .orderBy(desc(postComments.sentAt))
-    .limit(limit)
-    .all();
-}

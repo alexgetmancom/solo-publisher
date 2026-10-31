@@ -45,8 +45,6 @@ const ARGUMENTS: Record<string, Record<string, unknown>> = {
   "format-support": { ref: "post:106" },
   "media-job": { id: 1 },
   "media-status": {},
-  "x-analytics": {},
-  "x-reach": {},
 };
 
 function snapshot(backendDb: UnsafeBackendDb): Record<string, string> {

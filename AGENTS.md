@@ -71,7 +71,7 @@ that deploys nothing fails CI rather than passing green with the change unshippe
 `BackendDb` is the application handle; raw SQLite only through the explicitly named `unsafeDb(...)`.
 Studio and Content go through persistence ports and their exception set in the architecture tests
 stays empty. Publishing, Delivery and Channels own their transactions directly — that is the shape,
-not a stage. Analytics, Operations, Observability, Engagement, Notifications, the Public read model
+not a stage. Operations, Observability, Engagement, Notifications, the Public read model
 and StoryCards reach Drizzle directly, reads and writes both,
 for the tables they own. Writing another area's table from there is not covered by that: delivery
 state belongs to Delivery.
@@ -81,8 +81,8 @@ state belongs to Delivery.
 `bun run ops:prod [--as alex|maru] <command>` is the only production route, and every run prints
 what it resolved to. `alex` and `maru` are the names of the two containers on my host, not roles the
 software knows about: this command is `ssh` plus `docker exec` and it exists nowhere else. A request that names Maru means `--as maru` throughout, including the follow-up
-commands; one that names neither means alex. Both Studios publish text and video and collect
-analytics; what differs is the public site (alex only) and the video platforms each one publishes to.
+commands; one that names neither means alex. Both Studios publish text and video; statistics
+of what they published are Family's. What differs is the public site (alex only) and the video platforms each one publishes to.
 
 Start any worker, queue, configuration, publication or error investigation with
 `ops guide --json`; it is read-only and it is the source of truth for routing, the command catalog
@@ -95,8 +95,6 @@ the production database by hand.
 
 **Never run a mutation without an explicit request** — `backup`, `restore`, `--apply` variants,
 `format-record`, channel connect/disable, `retry`, manual SQL, deployments.
-
-Handed an X Analytics CSV, import it without asking: `import-x-analytics`, then `x-analytics`.
 
 # Operations registry
 
@@ -121,9 +119,7 @@ Anything that moves the database file, writes credentials or reads a host path i
 # Local data
 
 `bun scripts/dev-seed.ts` prints its own launch line and URLs. An empty database is normal, not a
-bug — never write INSERTs by hand; change fixture shape in `scripts/fixtures/site-fixture.ts` or
-`dashboard-fixture.ts`. The dashboard fixture is deliberately not all-green, and audience counts
-read `—` locally because they come from live platform APIs.
+bug — never write INSERTs by hand; change fixture shape in `scripts/fixtures/site-fixture.ts`.
 
 The public site is not in this repository. It is its own service (alexgetman-site) that reads
 `GET /api/public/site` and links to `/media/*` and `/generated/responsive/media-*`, which this

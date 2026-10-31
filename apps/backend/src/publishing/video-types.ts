@@ -26,14 +26,6 @@ export function videoTargetLabel(target: VideoTarget): string {
 
 export type VideoDestination = { target: VideoTarget; locale: VideoLocale; label: string; profile: string };
 
-export function videoDestination(
-  catalogue: readonly VideoDestination[],
-  target: string,
-  locale: string | null | undefined,
-): VideoDestination | null {
-  return catalogue.find((entry) => entry.target === target && entry.locale === locale) ?? null;
-}
-
 /** Above this a vertical clip is almost always a bad cut, not an intent: the
  * Shorts and Reels published here run well under it, and the ones that ran over
  * were personal footage the trim had missed. The platforms accept longer video,

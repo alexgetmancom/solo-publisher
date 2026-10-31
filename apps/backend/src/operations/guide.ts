@@ -4,13 +4,12 @@ import path from "node:path";
 /** The sections the catalog is read in. A section is what an operator is
  * holding when they ask -- a stuck delivery, a chart that disagrees, a channel
  * that will not connect -- not where the code lives. */
-export const OPERATION_SECTIONS = ["health", "delivery", "analytics", "media", "channels", "studio", "host"] as const;
+export const OPERATION_SECTIONS = ["health", "delivery", "media", "channels", "studio", "host"] as const;
 export type OperationSection = (typeof OPERATION_SECTIONS)[number];
 
 export const SECTION_SUMMARIES: Record<OperationSection, string> = {
   health: "Is this deployment working, and what is wrong with it.",
   delivery: "One publication: what it is, where it went, and how to move it.",
-  analytics: "Audience numbers, imported platform exports and what the charts are drawn from.",
   media: "The media processor, one publication's assets, and the stored files behind them.",
   channels: "Which accounts this Studio publishes through and the state of their credentials.",
   studio: "What this Studio is, how it is configured, and what it is streaming.",

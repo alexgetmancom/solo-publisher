@@ -32,7 +32,7 @@ describe("operations guide", () => {
     const guide = JSON.parse(stdout);
     expect(guide.local.state).toBe("missing");
     expect(guide.route).toBe("production");
-    expect(guide.sections).toHaveLength(7);
+    expect(guide.sections).toHaveLength(6);
     expect(guide).not.toHaveProperty("commands");
   });
   it("routes an unavailable local database to production", () => {

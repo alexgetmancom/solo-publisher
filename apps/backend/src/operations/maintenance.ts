@@ -1,22 +1,11 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, notInArray, sql } from "drizzle-orm";
-import { freezeDisabledMetricSchedules } from "../analytics/collection/metric-schedule.js";
-import { X_ANALYTICS_SOURCE } from "../analytics/x-activity-linking.js";
+import { and, desc, eq, gte, isNotNull, isNull, lt, notInArray, sql } from "drizzle-orm";
 import { parsePublicationRef, publicationRef } from "../application/publication-ref.js";
 import { registeredPostTargetIds } from "../channels/registry.js";
 import { type BackendDb, unsafeDb } from "../db/client.js";
-import {
-  drafts,
-  maintenanceLocks,
-  metricSchedule,
-  publicationEvents,
-  publicationTargets,
-  videoDrafts,
-  videoTargets,
-} from "../db/schema.js";
-import type { BackendConfig } from "../foundation/config.js";
+import { maintenanceLocks, metricSchedule, publicationEvents, videoDrafts, videoTargets } from "../db/schema.js";
 import { dateIntegrity } from "../observability/date-integrity.js";
 import { publicationPlanFromDb } from "../publishing/source-store.js";
 import { effectivePublicationStatus } from "../publishing/state.js";
@@ -87,63 +76,6 @@ export function pruneOperationalHistory(backendDb: BackendDb, now = new Date()):
     runtimeUsage: runtimeUsageDeleted,
     total: postEventsDeleted + sitePageviewsDeleted + runtimeUsageDeleted,
   };
-}
-
-export function buildMetricsBackfillPlan(
-  backendDb: BackendDb,
-  options: { targets: string[]; refs?: string[]; dateFrom?: string; dateTo?: string },
-): Record<string, unknown>[] {
-  if (options.targets.length === 0) return [];
-  const conditions = [
-    eq(drafts.status, "published"),
-    eq(publicationTargets.status, "published"),
-    inArray(publicationTargets.target, options.targets),
-  ];
-  const key = sql<string>`'post:' || ${drafts.postId}`;
-  const date = sql<string>`coalesce(${publicationTargets.publishedAt}, ${drafts.updatedAt})`;
-  if (options.refs?.length) conditions.push(inArray(key, options.refs));
-  if (options.dateFrom) conditions.push(gte(date, options.dateFrom));
-  if (options.dateTo) conditions.push(lte(date, options.dateTo));
-  return unsafeDb(backendDb)
-    .db.select({
-      publicationKey: key,
-      postId: drafts.postId,
-      dateUtc: date,
-      target: publicationTargets.target,
-    })
-    .from(drafts)
-    .innerJoin(publicationTargets, eq(publicationTargets.publicationKey, key))
-    .where(and(...conditions))
-    .orderBy(desc(date), publicationTargets.target)
-    .all();
-}
-
-export function applyMetricsBackfill(
-  backendDb: BackendDb,
-  config: BackendConfig,
-  rows: Record<string, unknown>[],
-  resetCounts = false,
-): number {
-  const now = new Date().toISOString();
-  unsafeDb(backendDb).db.transaction((tx) => {
-    for (const row of rows) {
-      const publicationKey = typeof row.publicationKey === "string" ? row.publicationKey : "";
-      const target = typeof row.target === "string" ? row.target : "";
-      if (!publicationKey || !target) continue;
-      tx.insert(metricSchedule)
-        .values({ publicationKey, target, nextCheckAt: null, checkCount: 0, frozenAt: null, lastError: null, updatedAt: now })
-        .onConflictDoUpdate({
-          target: [metricSchedule.publicationKey, metricSchedule.target],
-          set: { nextCheckAt: null, ...(resetCounts ? { checkCount: 0 } : {}), frozenAt: null, lastError: null, updatedAt: now },
-        })
-        .run();
-    }
-  });
-  // A backfill must not resurrect targets this Studio has deliberately kept
-  // paid-metrics disabled for; follow the same config-driven list the regular
-  // metrics cycle uses instead of a hardcoded platform pair.
-  freezeDisabledMetricSchedules(backendDb, [...(config.ENABLE_X_METRICS ? [] : ["x"])]);
-  return rows.length;
 }
 
 export function auditOperations(backendDb: BackendDb, now = new Date()): Record<string, unknown> {
@@ -457,7 +389,7 @@ function targetStateMismatches(backendDb: BackendDb): TargetStateMismatch[] {
          -- job settled as says nothing about it. Comparing the two reported two
          -- live X posts as inconsistent for a month, and repairing them would
          -- have marked the live posts cancelled.
-         AND coalesce(json_extract(t.raw_json,'$.source'),'') <> '${X_ANALYTICS_SOURCE}'
+         AND coalesce(json_extract(t.raw_json,'$.source'),'') <> 'x_csv_export'
        ORDER BY t.publication_key,t.target`,
     )
     .all() as TargetStateMismatch[];

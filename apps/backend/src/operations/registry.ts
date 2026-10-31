@@ -1,35 +1,10 @@
 import * as z from "zod";
-import { audienceHeatmapReport, importAudienceHeatmap, WEEKDAYS } from "../analytics/audience-heatmap.js";
-import { classifyHooks, HOOK_TYPES } from "../analytics/collection/hook-types.js";
-import { audienceDemographicsReport } from "../analytics/collection/instagram-demographics.js";
-import { classifyPostOpenings } from "../analytics/collection/post-opening-types.js";
-import { backfillVideoComments } from "../analytics/collection/video-comments.js";
-import { enrichGames, gamesReport } from "../analytics/games.js";
-import { importManualAnalytics } from "../analytics/import-manual-analytics.js";
-import { importXAnalyticsCsv } from "../analytics/import-x-csv.js";
-import { xReachProbe } from "../analytics/reach/x-reach-probe.js";
-import { recentSocialComments } from "../analytics/reports/audience.js";
-import { commentQuality } from "../analytics/reports/comment-quality.js";
-import { editorialReview } from "../analytics/reports/editorial-review.js";
-import { audienceMilestoneReport } from "../analytics/reports/milestone-report.js";
-import { postPerformanceReport } from "../analytics/reports/post-performance.js";
-import { studioBrief } from "../analytics/reports/studio-brief.js";
-import { outliers, videoDigest } from "../analytics/reports/video-digest.js";
-import { videoKeywordReport } from "../analytics/reports/video-keywords.js";
-import { openingsRanked, videoPerformanceDetail, videoPerformanceReport } from "../analytics/reports/video-performance.js";
-import { platformComparison } from "../analytics/reports/video-platform-compare.js";
-import { attachXActivityToPosts } from "../analytics/x-activity-linking.js";
-import { xAnalyticsReport } from "../analytics/x-activity-report.js";
-import { deleteXImport } from "../analytics/x-import-delete.js";
 import type { LocalizedProfiles, LocalizedText } from "../application/ports.js";
 import { parsePublicationRef, publicationRef } from "../application/publication-ref.js";
 import { targetIdsFor } from "../botTargets.js";
 import { API_KEY_TARGETS, storeApiKey } from "../channels/api-keys.js";
 import { CONNECT_PLATFORMS, type ConnectStart, startConnect } from "../channels/connect.js";
 import type { BackendDb } from "../db/client.js";
-import { recentPostComments } from "../engagement/post-comments.js";
-import { engagementService } from "../engagement/service.js";
-import { backfillThreadsReplies } from "../engagement/threads-replies.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { readDeploymentReleases } from "../foundation/deployment.js";
 import { youtubeCredentials } from "../foundation/external/youtube.js";
@@ -44,15 +19,12 @@ import { retryVideoTarget, updateVideoScript } from "../publishing/video-service
 import { settleVideoTarget } from "../publishing/video-settle.js";
 import type { VideoTarget } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
-import { importVideoArchive } from "./archive-import.js";
 import { exportStatus, streamDatabase, streamMediaArchive } from "./backup-export.js";
 import { replacePublishedMedia } from "./commands/media-replacement.js";
 import { runOperationCommand } from "./commands.js";
-import { syncAudienceDemographics } from "./demographics-sync.js";
 import { diskReport } from "./disk-report.js";
 import { doctorChecks } from "./doctor.js";
 import { formatSupportSummary, recordFormatEvidence } from "./format-support.js";
-import { backfillVideoFrames } from "./frames-backfill.js";
 import {
   buildOperationsGuide,
   formatOperationsGuide,
@@ -60,7 +32,6 @@ import {
   type OperationCatalogEntry,
   type OperationSection,
 } from "./guide.js";
-import { relinkInstagramPosts } from "./instagram-relink.js";
 import { journalEvents } from "./journal.js";
 import {
   cancelPostDraft,
@@ -71,14 +42,11 @@ import {
   scheduleVideoDraft,
 } from "./lifecycle.js";
 import {
-  applyMetricsBackfill,
   auditOperations,
   backupDatabase,
-  buildMetricsBackfillPlan,
   publicationConsistencyReport,
   repairPublicationConsistency,
   restoreDatabase,
-  withMaintenanceLock,
 } from "./maintenance.js";
 import { diagnoseMediaProcessor, mediaJobReport, mediaProcessorStatus, reprocessPostMedia } from "./media-processor.js";
 import { formatPostText, postText } from "./post-text.js";
@@ -101,11 +69,6 @@ import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
 import { verifyPostTargets } from "./verify.js";
-import { resumeVideoMetrics } from "./video-metrics-resume.js";
-import { tagVideo } from "./video-tag.js";
-import { backfillVideoGames } from "./video-tag-backfill.js";
-import { backfillYouTubeAnalytics } from "./youtube-analytics-backfill.js";
-import { backfillYouTubeCaptions } from "./youtube-captions.js";
 
 /** Config and the database are resolved on demand: `restore` operates on the
  * file itself and must not have it opened underneath it, and `guide` runs when
@@ -174,15 +137,6 @@ function ask(question: string): string {
  * shows them — so it is a spelling of the ref, not a mistake to reject. */
 const refSpelling = (value: string): string => (/^\d+$/.test(value) ? publicationRef("post", Number(value)) : value);
 const refOption = example(z.string().trim().min(1), "post:160").describe("publication ref").transform(refSpelling);
-const heatmapSlots = z
-  .array(
-    z.object({
-      weekday: z.enum(WEEKDAYS),
-      hour: z.coerce.number().int().min(0).max(23),
-      value: z.coerce.number().int().min(0),
-    }),
-  )
-  .min(1);
 const applyOption = z.boolean().default(false).describe("perform the change; omitted it reports the plan only");
 const draftOption = example(z.coerce.number().int().positive(), "232").describe("draft id");
 const scheduleAtOption = example(z.string().trim().min(1), '"06.08.2026 08:00"').describe(
@@ -218,7 +172,7 @@ const localeOption = z.enum(["ru", "en"]).optional().describe("restrict to one l
  * command to every target the publication has. An option spelled with nothing
  * after it is a mistake, and the only safe reading of it is an error. */
 const targetOption = example(z.string().trim().min(1).optional(), "x").describe("restrict to one delivery target");
-const commaList = (what: string) => z.string().trim().min(1).optional().describe(`comma-separated ${what}`);
+const _commaList = (what: string) => z.string().trim().min(1).optional().describe(`comma-separated ${what}`);
 const targetList = example(z.string().trim().min(1), "threads_ru")
   .describe("comma-separated exact publication targets")
   .transform((value) => splitList(value) ?? []);
@@ -233,7 +187,7 @@ function splitList(value: string | undefined): string[] | undefined {
   return items;
 }
 
-const METRIC_BACKFILL_TARGETS = "telegram,threads_ru,threads_en,instagram_stories,instagram_stories_ru,telegram_stories";
+const _METRIC_BACKFILL_TARGETS = "telegram,threads_ru,threads_en,instagram_stories,instagram_stories_ru,telegram_stories";
 
 /** The repair commands differ only in what they do to the scope they share, so
  * they share its shape too: which publication, which targets, and whether the
@@ -489,99 +443,10 @@ const operationDefs = {
         limit: input.limit,
       }),
   }),
-  dashboard: operation({
-    section: "analytics",
-    startHere: "a number on the analytics screen looks wrong",
-    summary: "One section of the analytics dashboard, exactly as the Studio screens draw it.",
-    note: "The same computation the screen caches, run here against this database: a screen and this disagreeing means the cache, not the numbers.",
-    schema: z.object({
-      section: z.enum(["overview", "audience", "posts", "video"]).default("overview").describe("which section to compute"),
-      days: z.coerce
-        .number()
-        .int()
-        .refine((value): value is 1 | 7 | 30 => value === 1 || value === 7 || value === 30, "must be 1, 7 or 30")
-        .default(7)
-        .describe("window in days"),
-      locale: z.enum(["ru", "en"]).default("ru").describe("which language's screen"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) =>
-      createStudioServices(context.db(), context.config()).analytics.dashboard(input.section, input.days, input.locale),
-  }),
-  "video-report": operation({
-    section: "analytics",
-    startHere: "how are the videos doing, and when should the next one go out",
-    summary:
-      "One pass over published videos: what went out, how each platform's copy performed, which local hour and day type it went out in, how fast it got there, and how far each figure can be trusted.",
-    note: "The whole analysis surface for videos. Slots carry `videos` and `confidence`; anything under five videos, or marked dominatedBySingleVideo, is not evidence for an hour recommendation. Native heatmaps, traffic sources and per-second retention are not here and never were: they exist only in YouTube Studio and Instagram Insights, and a browser has to read them.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days, counted back from now"),
-      limit: z.coerce.number().int().min(1).max(100).default(20).describe("how many videos to list, biggest first"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) =>
-      videoPerformanceReport(context.db(), { days: input.days, limit: input.limit, timeZone: context.config().TIMEZONE }),
-  }),
-  "video-metrics": operation({
-    section: "analytics",
-    startHere: "why did this one video do what it did",
-    summary:
-      "Every reading one video has, per platform: the value, what it gained since the previous reading, its speed, and the comments under it.",
-    note: "The drill-down `video-report` points at. `atAges` answers what the video had at 1, 2, 6, 24, 48 and 168 hours old, each with the age the reading actually came from.",
-    schema: z.object({ ref: refOption }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => {
-      const parsed = parsePublicationRef(input.ref);
-      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
-      return videoPerformanceDetail(context.db(), parsed.id, context.config().TIMEZONE);
-    },
-  }),
-  "video-metrics-resume": operation({
-    section: "analytics",
-    startHere: "a video stopped collecting metrics and the reason has gone away",
-    summary: "Put video metric rows that stopped collecting back on the schedule.",
-    note: "Collection freezes when a platform says the post is gone or the credential is refused, and until then a frozen row is the right answer. It is the wrong one once the cause has gone — a channel reconnected, a daily quota reset — and there is otherwise no way back. Left unapplied it lists what stopped and why.",
-    schema: z.object({
-      apply: applyOption,
-      ref: refOption.optional().describe("one video, such as video:301; every stopped video when omitted"),
-    }),
-    mutates: true,
-    agent: true,
-    handler: (context, input) => {
-      const parsed = input.ref ? parsePublicationRef(input.ref) : null;
-      if (input.ref && parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
-      return resumeVideoMetrics(context.db(), { apply: input.apply, refs: parsed ? [parsed.id] : [] });
-    },
-  }),
-  "captions-backfill": operation({
-    section: "analytics",
-    startHere: "can the old videos say what was said in them",
-    summary: "Read YouTube's caption tracks for published videos that have no script, and store what they say.",
-    note: "Without --apply it only lists the tracks each video has. What is stored is marked as heard rather than written, and a script from its author is never overwritten — `refresh` re-reads only machine text this command did not store, so a run does not pay again for what it already read.",
-    schema: z.object({
-      apply: applyOption,
-      limit: z.coerce.number().int().min(1).max(200).default(10).describe("how many videos to try in one run"),
-      refresh: z
-        .boolean()
-        .default(false)
-        .describe("re-read videos carrying machine text this command did not store; a script its author wrote is never touched"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      backfillYouTubeCaptions(context.db(), context.config(), context.fetchImpl, {
-        apply: input.apply,
-        limit: input.limit,
-        refresh: input.refresh,
-      }),
-  }),
   "video-script": operation({
-    section: "analytics",
+    section: "media",
     summary: "Store the script a video was written from, from a file on this host or from text.",
-    note: "The bot is where Maru attaches one at publishing time; this is the same store, for scripts that already exist somewhere else. Say which it is with `source`: a transcript is what was heard, a script is what was planned, and only one of them is evidence about the words that were chosen. The opening lines are the hook, which is what `video-report` groups by.",
+    note: "The bot is where Maru attaches one at publishing time; this is the same store, for scripts that already exist somewhere else. Say which it is with `source`: a transcript is what was heard, a script is what was planned, and only one of them is evidence about the words that were chosen.",
     schema: z.object({
       ref: refOption,
       file: example(z.string().optional(), "PATH").describe("a .txt or .md file on this host"),
@@ -595,377 +460,12 @@ const operationDefs = {
     agent: false,
     handler: async (context, input) => {
       const parsed = parsePublicationRef(input.ref);
-      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
+      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `recent` lists the refs.");
       const script = input.file ? await Bun.file(input.file).text() : (input.text ?? "");
       if (!script.trim()) throw new Error("Pass --file with a path on this host, or --text with the script itself.");
       updateVideoScript(context.db(), parsed.id, script, input.source);
       return { ref: `video:${parsed.id}`, characters: script.trim().length, lines: script.trim().split("\n").length };
     },
-  }),
-  "video-tag": operation({
-    section: "analytics",
-    startHere: "which kind of video works, not just which hour",
-    summary: "Write what a video is about and how it opens, so results can be compared by content and not only by clock.",
-    note: "Two free-text fields, on purpose. `video-report` groups by them and reports what share of the window carries a tag; a ranking over a handful of tagged videos is not an answer, and the report says so.",
-    schema: z.object({
-      ref: refOption,
-      game: z.string().optional().describe("what is being played; empty string clears it"),
-      hook: z.string().optional().describe("how the video opens; empty string clears it"),
-    }),
-    mutates: true,
-    agent: true,
-    handler: (context, input) => {
-      const parsed = parsePublicationRef(input.ref);
-      if (parsed?.kind !== "video") throw new Error("--ref must look like video:12; `video-report` lists the refs.");
-      return tagVideo(context.db(), parsed.id, {
-        ...(input.game === undefined ? {} : { game: input.game }),
-        ...(input.hook === undefined ? {} : { hook: input.hook }),
-      });
-    },
-  }),
-  "video-tag-backfill": operation({
-    section: "analytics",
-    summary: "Read the game out of the copy each video was published with, and write it into its tag.",
-    note: "Evidence only: the `Название игры` line the captions and descriptions carry, or the title's tail after the last pipe. A video whose copy names no game is listed under leftAlone and left untagged -- `video-report` can tell a missing tag from a wrong one, but not from a guessed one. Without --apply it writes nothing and shows the plan.",
-    schema: z.object({
-      apply: applyOption,
-      overwrite: z.boolean().default(false).describe("re-read videos that already carry a game"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) => backfillVideoGames(context.db(), { apply: input.apply, overwrite: input.overwrite }),
-  }),
-  "demographics-sync": operation({
-    section: "analytics",
-    summary: "Read every account's audience breakdown now instead of waiting for the daily schedule.",
-    note: "For the hour after something changes. The collector runs once a day because the data moves monthly; this is how a fix is checked without waiting until tomorrow. Reports what each account answered, including the ones that answered nothing.",
-    schema: z.object({ apply: applyOption }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) => syncAudienceDemographics(context.db(), context.config(), context.fetchImpl, { apply: input.apply }),
-  }),
-  "audience-heatmap": operation({
-    section: "analytics",
-    startHere: "when is this audience actually awake",
-    summary: "Native audience activity captured from the platforms' own dashboards, with the age of each capture.",
-    note: "Nothing collects this on its own: it is read off YouTube Studio and Instagram Insights and handed over with `audience-heatmap-import`. It describes followers, so weigh it against `video-report` publishHours, which describes results.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => audienceHeatmapReport(context.db()),
-  }),
-  review: operation({
-    section: "analytics",
-    startHere: "what do the numbers and the comments say together",
-    summary: "The channel's own figures and its audience's own words, read together by a model that is only allowed to use them.",
-    note: "Costs a model call and takes up to a minute. It is handed `brief` and the comment breakdown as facts, and told to name the sample behind every claim and to say when there is not enough data — read it as an opinion grounded in the numbers, not as a measurement. `brief` and `comments-quality` are the measurements.",
-    schema: z.object({ locale: z.enum(["ru", "en"]).default("ru").describe("language of the report") }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => editorialReview(context.db(), context.config(), input.locale, context.fetchImpl),
-  }),
-  openings: operation({
-    section: "analytics",
-    startHere: "is this grouping of openings worth believing",
-    summary: "Every opening a video was given, with the kind it was judged to be and the figures it is answerable by.",
-    note: "The whole archive, not the report's window, because a grouping is argued about across all of it. `video-report` says what a kind does on average; this says what each opening did, so the question can be asked inside one kind — which is where it is worth asking, an average over two hundred openings of the same form being the channel's own baseline wearing a name. Sorted by `retention` unless asked otherwise; `skip` ranks the other way round, since fewer is better there. Views are weight, not rank: what a video was shown to is decided by things the first three seconds never touch.",
-    schema: z.object({
-      kind: z.enum(HOOK_TYPES).optional().describe("read one kind of opening only"),
-      sort: z.enum(["retention", "skip", "views"]).default("retention").describe("the figure to rank by"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => openingsRanked(context.db(), { ...(input.kind ? { kind: input.kind } : {}), sort: input.sort }),
-  }),
-  "hooks-classify": operation({
-    section: "analytics",
-    startHere: "what kind of opening does each video use",
-    summary:
-      "Name the kind of opening each video used — premise, release, reaction, callback, address or question — from the words it opens with.",
-    note: "Reads `opening_line`, which is the first paragraph of a script its author wrote or the first sentence of a transcript. Every kind is a form, what the opening does; how loud it is names nothing. Openings shorter than four words are left alone, and two videos opening on the same words are judged once and labelled together. The label is a model's judgement about ten words, not a measurement: without --apply it prints the openings it would judge, `openings` prints the whole archive beside the kinds it already carries.",
-    schema: z.object({
-      apply: applyOption,
-      limit: z.coerce.number().int().min(1).max(200).default(60).describe("how many videos to judge in one run"),
-      overwrite: z.boolean().default(false).describe("judge videos that already carry a kind"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      classifyHooks(context.db(), context.config(), context.fetchImpl, {
-        apply: input.apply,
-        limit: input.limit,
-        overwrite: input.overwrite,
-      }),
-  }),
-  "instagram-relink": operation({
-    section: "media",
-    startHere: "an old video has no Instagram copy recorded",
-    summary: "Find the Instagram post that is the same video as one known only from YouTube, and record it.",
-    note: "Matched on the day it went out and on the length of the file, and only where exactly one post fits both — two videos went out on the same day often enough that a day alone decides nothing. Anything else is listed rather than guessed: a skip rate attached to the wrong video is worse than none, because a missing figure is visible and a wrong one is not. Lengths come in with `archive-import`.",
-    schema: z.object({
-      apply: applyOption,
-      account: example(z.string().min(1), "ACCOUNT_ID").describe("the provider account id, from `channels`"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      relinkInstagramPosts(context.db(), context.config(), context.fetchImpl, { apply: input.apply, accountId: input.account }),
-  }),
-  "archive-import": operation({
-    section: "media",
-    startHere: "the old videos are only on my own machine now",
-    summary: "Take in opening frames and caption files captured off published videos elsewhere, matched by the id YouTube gave each one.",
-    note: "A tar of files whose names carry the YouTube id — `.jpg` is an opening frame, `.vtt` a caption track. Instagram serves a published Reel for about a week and retention deletes the source, so for anything older this is the only way the opening gets in. A file whose video this Studio never published records that video as the channel's own history — real publications on this account, carrying no age series because what they had at an hour old needed someone reading them then. A frame is stored only for a video whose opening is not measured yet, and a transcript only for one whose author never wrote a script.",
-    schema: z.object({
-      apply: applyOption,
-      file: example(z.string(), "PATH").describe("a .tar of frames and caption files"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) => importVideoArchive(context.db(), context.config(), { apply: input.apply, file: input.file }),
-  }),
-  "frames-backfill": operation({
-    section: "media",
-    summary:
-      "Measure the opening seconds of published videos: face, split screen or plain gameplay, plus brightness, contrast and how busy the frame is.",
-    note: "Reads the video itself — the local file while it still exists, otherwise the published Reel fetched from the provider, since the source file is deleted by retention. Instagram serves the file for about a week after publishing and refuses it from any address after that, so an older video is measurable only from a copy of the file placed on this host. Arithmetic on pixels, not a vision model: it can say a large skin-toned region sits in the middle of the frame, it cannot say whose face it is. Without --apply it lists what it would read.",
-    schema: z.object({
-      apply: applyOption,
-      limit: z.coerce.number().int().min(1).max(500).default(25).describe("how many videos to read in one run"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      backfillVideoFrames(context.db(), context.config(), context.fetchImpl, { apply: input.apply, limit: input.limit }),
-  }),
-  "comments-quality": operation({
-    section: "analytics",
-    startHere: "what are the comments worth, not just how many",
-    summary:
-      "Comment signals per video: how many per thousand views, how many are questions, how many ask what the game was, how deep the threads go — and every request the audience wrote.",
-    note: "Counted, not judged: a video with fewer than ten comments carries `ratiosMeaningful: false`. `askedWhichGame` is the sharpest one — someone asking what the game is means the video never said it clearly.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days"),
-      limit: z.coerce.number().int().min(1).max(50).default(15).describe("how many videos to list"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => commentQuality(context.db(), { days: input.days, limit: input.limit }),
-  }),
-  brief: operation({
-    section: "analytics",
-    startHere: "tell me everything worth knowing about the channel",
-    summary:
-      "The whole picture in one call: the week, when and what to publish, which words paid, which platform carried further, who the audience is, and what is still missing.",
-    note: "Built for someone who asks once a week. It is a summary of the reports underneath it and names the command behind each section, so a question that starts here can be finished there. Findings on fewer than five videos are left out entirely rather than shown with a warning.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(90).default(7).describe("length of the week-against-week comparison"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => studioBrief(context.db(), { days: input.days, timeZone: context.config().TIMEZONE }),
-  }),
-  digest: operation({
-    section: "analytics",
-    startHere: "what changed since last week",
-    summary: "The week against the week before it, the videos that led it, and anything running far above its age right now.",
-    note: "For someone who did not ask a question. It is a summary, not evidence: a decision belongs to `video-report`, where every figure carries its sample size.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(90).default(7).describe("length of each of the two windows compared"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => videoDigest(context.db(), { days: input.days, timeZone: context.config().TIMEZONE }),
-  }),
-  outliers: operation({
-    section: "analytics",
-    startHere: "is anything taking off right now",
-    summary:
-      "Videos published in the last two days running at least three times the views a typical video of this Studio had at the same age.",
-    note: "Compared like with like: a two-hour-old video is judged against what the median video had at two hours, not against a lifetime total. A signal to act on today, not a conclusion.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => ({ breakingOut: outliers(context.db()) }),
-  }),
-  "platform-compare": operation({
-    section: "analytics",
-    startHere: "which platform carries this kind of video further",
-    summary: "The same video on both platforms: how far the Shorts feed took it against the Reels feed, per video and by genre.",
-    note: "Only videos published to both, so the content, the topic and the hour are held still and the platform is what differs. The median of per-video ratios, never one platform's total against the other's — that would only compare audience sizes.",
-    schema: z.object({ days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days") }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => platformComparison(context.db(), { days: input.days }),
-  }),
-  keywords: operation({
-    section: "analytics",
-    startHere: "which tags and hashtags are worth publishing with",
-    summary:
-      "What the words published with a video are worth: YouTube's hidden tags and Instagram's caption hashtags, each against its own platform's median.",
-    note: "`lift` is a keyword's median views against the platform median, so 2.0 means twice the typical video. A word that sits on every video has a lift of 1.0 by construction and is marked; the informative ones are used on some videos and not others. Correlation only, and the two surfaces are different systems: YouTube tags are metadata nobody sees, hashtags are text in the caption.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days"),
-      limit: z.coerce.number().int().min(1).max(40).default(15).describe("how many keywords to list per surface"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => videoKeywordReport(context.db(), { days: input.days, limit: input.limit }),
-  }),
-  games: operation({
-    section: "analytics",
-    startHere: "what kind of game is this Studio actually publishing",
-    summary: "Every game the Studio has published about, with the genre, player modes, release date and developer known for it.",
-    note: "Filled by `games-enrich` from the store page the publishing copy links to. A game with no genre had no link to read.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => gamesReport(context.db()),
-  }),
-  "games-enrich": operation({
-    section: "analytics",
-    summary: "Look up each tagged game on Steam and store its genre, player modes, release date and developer.",
-    note: "Reads the store link the video's own copy carries, so the genre is the store's word and not a guess; the app id it came from is kept as the source. Without --apply it writes nothing and shows what it would look up.",
-    schema: z.object({
-      apply: applyOption,
-      refresh: z.boolean().default(false).describe("look up games that are already described"),
-      limit: z.coerce.number().int().min(1).max(500).default(200).describe("how many games to look up in one run"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      enrichGames(context.db(), context.fetchImpl, { apply: input.apply, refresh: input.refresh, limit: input.limit }),
-  }),
-  "audience-demographics": operation({
-    section: "analytics",
-    startHere: "who is actually following this account",
-    summary: "The audience breakdown Instagram publishes: age, gender, country and city, with the day it was captured.",
-    note: "Collected daily through the provider, once per Instagram account. It describes followers, while most Reels views come from accounts that follow nothing; Instagram needs 100+ followers before it answers at all, and a smaller account is reported as unavailable rather than as an error.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => audienceDemographicsReport(context.db()),
-  }),
-  "audience-heatmap-import": operation({
-    section: "analytics",
-    summary: "Store one reading of a platform's native audience-activity heatmap.",
-    note: "For an agent that has just read the dashboard in a browser. Re-importing the same capture replaces its slots rather than duplicating them, so a repeated read costs nothing. `captured_at` is when the dashboard was read, never a rounded date: everything downstream ages the capture from it.",
-    schema: z.object({
-      platform: example(z.string().min(1), "youtube").describe("which platform's dashboard"),
-      account: example(z.string().min(1), "Marux_play").describe("which account it belongs to"),
-      metric: example(z.string().min(1), "when_followers_are_online").describe("what the dashboard says the numbers are"),
-      captured_at: example(isoInstant, "ISO").describe("when the dashboard was read"),
-      slots: example(z.string().min(1), '[{"weekday":"Mon","hour":18,"value":183}]').describe("JSON array of {weekday, hour, value}"),
-      time_zone: z.string().optional().describe("the zone the hours are in; defaults to this Studio's"),
-      period_start: z.string().optional().describe("first day the dashboard covers"),
-      period_end: z.string().optional().describe("last day the dashboard covers"),
-      source: z.string().optional().describe("the page it was read from"),
-    }),
-    mutates: true,
-    agent: true,
-    handler: (context, input) =>
-      importAudienceHeatmap(context.db(), {
-        platform: input.platform,
-        account: input.account,
-        metric: input.metric,
-        capturedAt: input.captured_at,
-        timeZone: input.time_zone ?? context.config().TIMEZONE,
-        slots: heatmapSlots.parse(JSON.parse(input.slots)),
-        ...(input.period_start ? { periodStart: input.period_start } : {}),
-        ...(input.period_end ? { periodEnd: input.period_end } : {}),
-        ...(input.source ? { source: input.source } : {}),
-      }),
-  }),
-  "youtube-analytics-backfill": operation({
-    section: "analytics",
-    startHere: "watch time, completion and traffic sources are missing from YouTube videos",
-    summary:
-      "Fill in what the owner Analytics API knows about videos already published: watch time, completion, subscribers, traffic sources and early retention.",
-    note: "Without --apply it writes nothing and makes one real report call per language, so its `reachable` line is also the answer to whether the connected token can read the Analytics API at all — publishing and reading comments do not imply reporting. Values are merged into each video's newest snapshot; the checkpoint history before it is left alone.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(365).default(60).describe("how far back to look"),
-      apply: applyOption,
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      backfillYouTubeAnalytics(context.db(), context.config(), context.fetchImpl, { days: input.days, apply: input.apply }),
-  }),
-  "site-traffic": operation({
-    section: "analytics",
-    summary: "Pageviews of the public site: the total, today, and the last seven calendar days.",
-    note: "Counted only where the public site is served; a Studio with `site-enabled` off reports zeroes because nothing is recording them.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => engagementService(context.db(), context.config()).metrics(),
-  }),
-  comments: operation({
-    section: "analytics",
-    summary:
-      "What the audience wrote back: comments under posts, on every platform that lets them be read, and the video platforms under videos.",
-    note: "Telegram comments only from after the bot joined the group -- a group's history is delivered to nobody -- and only on threads whose forwarded post the bot has seen. YouTube and Instagram comments ride along on the video metrics checkpoint rather than a schedule of their own, so a video a month old is read about once a week; `comments-backfill` catches every video up at once. Replies are stored beside the comments they answer, which is why a total here can exceed the number of threads.",
-    startHere: "what is the audience saying about a post or a video",
-    schema: z.object({
-      limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many discussed publications to list per source"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => ({
-      posts: recentPostComments(context.db(), input.limit),
-      video: recentSocialComments(context.db(), input.limit),
-    }),
-  }),
-  "comments-backfill": operation({
-    section: "analytics",
-    summary: "Sweep published work and store all of its comments and replies, without touching metric snapshots.",
-    note: "Comments otherwise arrive at each publication's own metric cadence, which is up to a week apart once it is a month old, and only ever the first page. This catches up instead. Videos cost one call each plus one per thread deeper than the listing carries, against a YouTube quota of 10000 a day; Threads is paged to the end of each conversation, leaves out the Studio's own chain replies, and stops on the first throttle rather than lengthening a block. Safe to run again: a comment is keyed by its own id.",
-    startHere: "the comment history is thinner than the platform's own counter",
-    schema: z.object({
-      platforms: commaList("targets").describe(
-        "comma-separated targets: youtube_shorts, instagram_reels, threads_ru, threads_en (default: the two video ones)",
-      ),
-      limit: z.coerce.number().int().min(1).max(1000).default(1000).describe("newest published videos to sweep"),
-    }),
-    mutates: true,
-    // Off the agent surface: a catch-up sweep is run once, deliberately, after
-    // reading `comments` and seeing the gap -- and every agent tool costs its
-    // full schema in every context this server is connected to.
-    agent: false,
-    // One command, because "catch the comments up" is one question however many
-    // kinds of publication it is asked about. Which reader a target gets is a
-    // lookup, not a branch on what the caller meant.
-    handler: async (context, input) => {
-      const targets = splitList(input.platforms) ?? ["youtube_shorts", "instagram_reels"];
-      const threads = targets.filter((target): target is "threads_ru" | "threads_en" => target === "threads_ru" || target === "threads_en");
-      const video = targets.filter((target) => target !== "threads_ru" && target !== "threads_en");
-      return {
-        ...(video.length
-          ? {
-              video: await backfillVideoComments(context.config(), context.db(), context.fetchImpl, {
-                platforms: video,
-                limit: input.limit,
-              }),
-            }
-          : {}),
-        ...(threads.length
-          ? {
-              posts: await Promise.all(
-                threads.map((target) => backfillThreadsReplies(context.db(), context.config(), target, context.fetchImpl)),
-              ),
-            }
-          : {}),
-      };
-    },
-  }),
-  milestones: operation({
-    section: "analytics",
-    summary: "Audience achievements: what each scope holds, what it has been credited with, and what it announces next.",
-    note: "`reachedThrough` is the count a scope is done announcing. It follows the audience: connecting or removing an account re-credits the scope at its new size, so a scope can be credited with a number it never announced.",
-    schema: z.object({}),
-    mutates: false,
-    agent: true,
-    handler: (context) => audienceMilestoneReport(context.db()),
   }),
   recent: operation({
     section: "delivery",
@@ -1075,82 +575,6 @@ const operationDefs = {
         ...(input.days === undefined ? {} : { days: input.days }),
         ...(input.unused_days === undefined ? {} : { unusedDays: input.unused_days }),
       }),
-  }),
-  "post-report": operation({
-    section: "analytics",
-    startHere: "how are the posts doing, and what opening worked",
-    summary:
-      "One pass over the account's own posts: what each opening did, how a reply compares with a post of its own, and which posts happened to something else.",
-    note: "The posts' answer to `video-report`. Figures come from X's own export, which is taken by hand, so they are as fresh as the last `import-x-analytics` and no fresher. A reply borrows the audience of whatever it answers, so it is reported apart rather than averaged in, and `openings` covers standalone posts only.",
-    schema: z.object({
-      days: z.coerce.number().int().min(1).max(365).default(30).describe("window in days, counted back from now"),
-      limit: z.coerce.number().int().min(1).max(50).default(10).describe("how many posts to list"),
-    }),
-    mutates: false,
-    agent: true,
-    handler: (context, input) => postPerformanceReport(context.db(), { days: input.days, limit: input.limit }),
-  }),
-  "post-openings-classify": operation({
-    section: "analytics",
-    startHere: "what kind of opening does each post use",
-    summary:
-      "Name the kind of opening each standalone post used — news, rumour, numbers, take, question or personal — from its first line.",
-    note: "The posts' answer to `hooks-classify`. Reads the first line of every standalone post; a reply is left alone, because the line that opens an answer to someone else was not written to stop a scroll. The label is a model's judgement about one line, not a measurement: without --apply it prints the lines it would judge.",
-    schema: z.object({
-      apply: applyOption,
-      limit: z.coerce.number().int().min(1).max(400).default(100).describe("how many posts to judge in one run"),
-      overwrite: z.boolean().default(false).describe("judge posts that already carry a kind"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      classifyPostOpenings(context.db(), context.config(), context.fetchImpl, {
-        apply: input.apply,
-        limit: input.limit,
-        overwrite: input.overwrite,
-      }),
-  }),
-  "x-analytics": operation({
-    section: "analytics",
-    summary:
-      "What the X CSV imports hold: coverage, unlinked activity, and linkCandidates — items matching exactly one post but under the linker's 30-character bar, reported and never linked.",
-    schema: z.object({ limit: z.coerce.number().int().min(1).max(100).default(10).describe("how many unlinked items to list") }),
-    mutates: false,
-    agent: true,
-    note: "run after every import-x-analytics",
-    handler: (context, input) => xAnalyticsReport(context.db(), input.limit),
-  }),
-  "x-reach": operation({
-    section: "analytics",
-    startHere: "a chart and a CSV disagree",
-    summary: "The daily X reach bars the overview draws, computed here from this database.",
-    schema: z.object({
-      from: example(z.string().min(1), "ISO").describe("first moment of the window"),
-      to: example(z.string().min(1), "ISO").describe("last moment of the window"),
-      item: z.string().optional().describe("an X post id, to print its raw published_at and every reading of it"),
-    }),
-    mutates: false,
-    agent: true,
-    note: "use when a chart and a CSV disagree: this answers at the source, past the read model and the HTML cache",
-    handler: (context, input) => xReachProbe(context.db(), input.from, input.to, context.config().TIMEZONE, input.item),
-  }),
-  "x-import-delete": operation({
-    section: "analytics",
-    summary: "Remove one X CSV import and every reading it wrote, leaving its posts in place.",
-    schema: z.object({ import: z.coerce.number().int().min(1).describe("the import id from x-analytics"), apply: applyOption }),
-    mutates: true,
-    agent: false,
-    note: "for an import whose readings are stamped with a moment that never happened: a re-import cannot overwrite them",
-    handler: (context, input) => deleteXImport(context.db(), input.import, input.apply),
-  }),
-  "x-relink": operation({
-    section: "analytics",
-    summary: "Attach already-imported X activity to editorial posts and project its metrics.",
-    schema: z.object({ apply: applyOption }),
-    mutates: true,
-    agent: false,
-    note: "an import runs this itself; use it after the matching rule changes, because re-importing a byte-identical CSV will not re-link anything",
-    handler: (context, input) => attachXActivityToPosts(context.db(), input.apply),
   }),
   "media-status": operation({
     section: "media",
@@ -1579,34 +1003,6 @@ const operationDefs = {
     agent: false,
     handler: (context, input) => backfillTextStoryCards(context.db(), context.config(), input.ref, input.apply, input.force),
   }),
-  "metrics-backfill": operation({
-    section: "analytics",
-    summary: "Re-sample metrics for published targets over a date range.",
-    schema: z.object({
-      targets: commaList("delivery targets").describe(`comma-separated delivery targets (default: ${METRIC_BACKFILL_TARGETS})`),
-      refs: commaList("publication refs"),
-      from: example(z.string().optional(), "ISO").describe("date lower bound"),
-      to: example(z.string().optional(), "ISO").describe("date upper bound"),
-      apply: applyOption,
-      reset_counts: z.boolean().default(false).describe("clear existing counts before re-sampling"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) => {
-      const backendDb = context.db();
-      const refs = splitList(input.refs)?.map(refSpelling);
-      const plan = buildMetricsBackfillPlan(backendDb, {
-        targets: splitList(input.targets) ?? METRIC_BACKFILL_TARGETS.split(","),
-        ...(refs ? { refs } : {}),
-        ...(input.from ? { dateFrom: input.from } : {}),
-        ...(input.to ? { dateTo: input.to } : {}),
-      });
-      const applied = input.apply
-        ? withMaintenanceLock(backendDb, () => applyMetricsBackfill(backendDb, context.config(), plan, input.reset_counts))
-        : 0;
-      return { count: plan.length, applied, plan };
-    },
-  }),
   backup: operation({
     section: "host",
     summary: "Copy the database to a timestamped file.",
@@ -1641,39 +1037,6 @@ const operationDefs = {
       restoreDatabase(input.source, context.dbPath, input.force);
       return { ok: true, restored: context.dbPath };
     },
-  }),
-  "import-x-analytics": operation({
-    section: "analytics",
-    summary: "Import an X analytics CSV export.",
-    schema: z.object({
-      file: example(z.string().min(1), "PATH").describe("CSV path on this host"),
-      sampled_at: example(isoInstant, "ISO").describe(
-        "when the export was taken: the file's own mtime in ISO UTC, never now — it stamps the metric history",
-      ),
-    }),
-    mutates: true,
-    agent: false,
-    note: "a byte-identical file is a no-op by SHA-256, so a repeat costs nothing; it links the whole table afterwards, so an older export still reaches posts written since",
-    handler: (context, input) => importXAnalyticsCsv(context.db(), input.file, input.sampled_at),
-  }),
-  "import-manual-analytics": operation({
-    section: "analytics",
-    summary: "Import hand-collected audience numbers.",
-    schema: z.object({
-      x_file: example(z.string().optional(), "PATH").describe("X analytics CSV path on this host"),
-      threads_ru_followers: z.coerce.number().int().min(0).optional(),
-      threads_en_followers: z.coerce.number().int().min(0).optional(),
-      sampled_at: example(isoInstant.optional(), "ISO").describe("defaults to now"),
-    }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) =>
-      importManualAnalytics(context.db(), {
-        sampledAt: input.sampled_at ?? new Date().toISOString(),
-        ...(input.x_file ? { xFile: input.x_file } : {}),
-        ...(input.threads_ru_followers === undefined ? {} : { threadsRuFollowers: input.threads_ru_followers }),
-        ...(input.threads_en_followers === undefined ? {} : { threadsEnFollowers: input.threads_en_followers }),
-      }),
   }),
   "format-record": operation({
     section: "channels",

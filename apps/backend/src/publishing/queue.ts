@@ -3,7 +3,6 @@ import os from "node:os";
 import process from "node:process";
 import { and, desc, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { recordPublishedXActivity } from "../analytics/x-activity-store.js";
 import { type BackendDb, type UnsafeBackendDb, unsafeDb } from "../db/client.js";
 import { type JsonObject, publicationTargets, publishJobs } from "../db/schema.js";
 import { PUBLISH_LOCK_TIMEOUT_SECONDS } from "../foundation/config.js";
@@ -401,13 +400,6 @@ export function completePublishJob(
   if (!settled) return;
   if (normalized.status === "published") recordAuthSuccess(backendDb, job.target);
   else if (normalized.status === "failed" && classifyPublishError(normalized.error) === "auth") recordAuthFailure(backendDb, job.target);
-  if (normalized.status === "published" && job.target === "x" && normalized.externalId)
-    recordPublishedXActivity(backendDb, {
-      publicationKey,
-      xPostId: String(normalized.externalId),
-      url: normalized.url,
-      publishedAt: now,
-    });
   refreshPublicationOwner(backendDb, job.publicationKey);
 }
 

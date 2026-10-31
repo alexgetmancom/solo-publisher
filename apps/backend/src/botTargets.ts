@@ -64,9 +64,6 @@ export function targetIdsFor(form: PublicationForm): [TargetId, ...TargetId[]] {
   return targetsFor(form).map(({ id }) => id) as unknown as [TargetId, ...TargetId[]];
 }
 
-export const AUDIENCE_VIEWS = ["threads_ru", "threads_en", "telegram", "x"] as const;
-export type AudienceView = (typeof AUDIENCE_VIEWS)[number];
-
 export const TARGET_GROUPS = {
   threads: ["threads_ru", "threads_en"],
   x: ["x"],

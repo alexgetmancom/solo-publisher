@@ -46,7 +46,7 @@ console.error(`ops:prod → ${deployment} (${container})`);
 
 /** A path argument names a file on this Mac, and the command runs in a
  * container that cannot see it. Ship it in, run against the copy, remove it. */
-const FILE_FLAGS = new Set(["--file", "--x-file"]);
+const FILE_FLAGS = new Set(["--file"]);
 
 /** What `logs` accepts. Deliberately three: a window, a fixed-string filter and
  * a tail. Anything more is a shell, and the shell is one ssh away. */

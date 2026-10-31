@@ -1,6 +1,6 @@
-import { syncStateFor } from "../analytics/snapshots/creator-store.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { syncStateFor } from "../observability/sync-state.js";
 import { createStudioServices } from "../studio/services/index.js";
 
 /** What the settings screens hold, plus what the daily digest actually did.

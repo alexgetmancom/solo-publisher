@@ -2,8 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { registerChannel } from "../apps/backend/src/channels/registry.js";
 import { openBackendDb } from "../apps/backend/src/db/client.js";
-import { seedDashboardFixture, seedOverviewParityFixture } from "./fixtures/dashboard-fixture.js";
-import { devFixture, FULL_DEV_HISTORY_DAYS, fullDevFixture, overviewParityFixture, seedSiteFixture } from "./fixtures/site-fixture.js";
+import { devFixture, FULL_DEV_HISTORY_DAYS, fullDevFixture, seedSiteFixture } from "./fixtures/site-fixture.js";
 
 /**
  * Fills a local pipeline database and public media directory with published
@@ -19,8 +18,6 @@ import { devFixture, FULL_DEV_HISTORY_DAYS, fullDevFixture, overviewParityFixtur
  *   bun scripts/dev-seed.ts --days 14 --min-posts 2 --max-posts 4 --gallery 3
  *   bun scripts/dev-seed.ts --simple --posts 5 --gallery 3
  *   bun scripts/dev-seed.ts --data-dir /tmp/fixture
- *   bun scripts/dev-seed.ts --no-dashboard        # site rows only
- *   bun scripts/dev-seed.ts --mock                # reference-layout parity data
  *   bun scripts/dev-seed.ts --one-language        # a Studio that publishes text in Russian only
  *
  * The seed writes `<data-dir>/demo.env` with everything the dev server needs,
@@ -43,11 +40,9 @@ const days = Math.max(1, Math.floor(Number(flag("days", String(FULL_DEV_HISTORY_
 const minPostsPerDay = Math.max(1, Math.floor(Number(flag("min-posts", "1")) || 1));
 const maxPostsPerDay = Math.max(minPostsPerDay, Math.floor(Number(flag("max-posts", "5")) || 5));
 const reset = process.argv.includes("--reset");
-const withDashboard = !process.argv.includes("--no-dashboard");
-const parity = process.argv.includes("--mock");
 const simple = process.argv.includes("--simple");
 // A Studio's connected channels decide which languages every screen is drawn
-// in, so the seed connects them: without this the local dashboard only ever
+// in, so the seed connects them: without this the Studio only ever
 // showed the fresh-install shape, where both languages are offered because
 // nothing is connected yet.
 const oneLanguage = process.argv.includes("--one-language");
@@ -68,27 +63,10 @@ if (fs.existsSync(dbPath)) {
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 fs.mkdirSync(publicDir, { recursive: true });
 
-const posts = parity
-  ? overviewParityFixture()
-  : simple
-    ? devFixture(count, galleryImages)
-    : fullDevFixture(galleryImages, { days, minPostsPerDay, maxPostsPerDay });
+const posts = simple ? devFixture(count, galleryImages) : fullDevFixture(galleryImages, { days, minPostsPerDay, maxPostsPerDay });
 const { imagePaths } = seedSiteFixture({ dbPath, publicDir, posts });
 
 console.log(`Seeded ${posts.length} post(s), first with ${galleryImages} image(s); ${imagePaths.length} media file(s) written.`);
-
-if (withDashboard) {
-  const { targetRows, sampleRows } = parity
-    ? seedOverviewParityFixture({ dbPath, postIds: posts.map((post) => post.postId) })
-    : seedDashboardFixture({
-        dbPath,
-        postIds: posts.map((post) => post.postId),
-        postDates: posts.map((post) => post.dateUtc),
-        ...(simple ? {} : { full: { days, minPostsPerDay, maxPostsPerDay } }),
-        targets: textTargets,
-      });
-  console.log(`Dashboard: ${targetRows} target row(s), ${sampleRows} metric sample(s).`);
-}
 
 connectChannels();
 

@@ -47,12 +47,6 @@ export function pipelineOverviewPayload(
   return { posts: pipelinePosts(backendDb, config, weekOffset, periodDays, comparisonOffset, offsetDays, readModelOptions) };
 }
 
-/** One bounded history holding two adjacent dashboard periods, each capped at the public read model's 100 posts. */
-export function dashboardPipelineHistoryPayload(config: BackendConfig, backendDb: BackendDb, periodDays: number, offsetDays: number) {
-  const options = resolvePipelineReadModelOptions({ includeSamples: true, compact: true });
-  return { posts: pipelinePosts(backendDb, config, 0, periodDays, 0, offsetDays, options, 200) };
-}
-
 function pipelinePosts(
   backendDb: BackendDb,
   config: BackendConfig,
@@ -257,32 +251,4 @@ function fetchMetricSamples(
         ORDER BY publicationKey ASC, target ASC, metricName ASC, bucket ASC`,
     )
     .all(start, bucketSeconds, ...publicationKeys, start, end, firstBucket) as PipelineSampleRow[];
-}
-
-/** The newest metric samples with the post they belong to. Both the pipeline
- * read model and the Command Center payload report this same list, and it was
- * written out twice, identically. */
-export function recentPostMetrics(backendDb: BackendDb) {
-  return unsafeDb(backendDb)
-    .db.select({
-      publicationKey: postMetrics.publicationKey,
-      target: postMetrics.target,
-      metricName: postMetrics.metricName,
-      value: postMetrics.value,
-      source: postMetrics.source,
-      sampledAt: postMetrics.sampledAt,
-      error: postMetrics.error,
-      postId: drafts.postId,
-      postUrl: sql<string | null>`(
-        select ${publicationTargets.url} from ${publicationTargets}
-        where ${publicationTargets.publicationKey} = ${postMetrics.publicationKey}
-          and ${publicationTargets.url} is not null
-        order by ${publicationTargets.publishedAt} asc limit 1
-      )`,
-    })
-    .from(postMetrics)
-    .leftJoin(drafts, sql`${postMetrics.publicationKey} = 'post:' || ${drafts.postId}`)
-    .orderBy(desc(postMetrics.sampledAt), asc(postMetrics.publicationKey), asc(postMetrics.target), asc(postMetrics.metricName))
-    .limit(100)
-    .all();
 }

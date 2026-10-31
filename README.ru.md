@@ -37,11 +37,8 @@ bun install --frozen-lockfile
 bun run demo
 ```
 
-Публичный сайт — <http://localhost:8788/>, Command Center —
-<http://localhost:8788/command-center?token=dev>: тестовые данные, без ключей,
-остановка по `Ctrl+C`.
-
-![Command Center Solo Publisher с аналитикой текста и видео](docs/assets/command-center-ru.png)
+Публичная лента Studio — <http://localhost:8788/api/public/site>: тестовые
+данные, без ключей, остановка по `Ctrl+C`.
 
 ## Документация
 

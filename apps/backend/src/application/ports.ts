@@ -220,15 +220,6 @@ export type StudioSettingsStore = {
   backup(): StudioBackupSettingsRecord | null;
   saveBackup(input: { enabled: number; updatedAt: string }): void;
   newsDigest(): StudioNewsDigestSettingsRecord | null;
-  milestones(): StudioMilestoneSettingsRecord | null;
-  saveMilestones(input: {
-    channelEnabled: number;
-    groupLocaleEnabled: number;
-    localeEnabled: number;
-    projectEnabled: number;
-    thresholdsJson: number[];
-    updatedAt: string;
-  }): void;
   saveNewsDigest(input: { enabled: number; hour: number; minute: number; prompt: string; effort: string; updatedAt: string }): void;
   saveNotifications(input: {
     actorId: number;
@@ -286,16 +277,6 @@ type StudioWeeklyDigestSettingsRecord = {
   id: number;
   enabled: number;
   weekday: number;
-  updatedAt: string;
-};
-
-type StudioMilestoneSettingsRecord = {
-  id: number;
-  channelEnabled: number;
-  groupLocaleEnabled: number;
-  localeEnabled: number;
-  projectEnabled: number;
-  thresholdsJson: number[];
   updatedAt: string;
 };
 

@@ -3,11 +3,11 @@ import os from "node:os";
 import path from "node:path";
 import type { Bot } from "grammy";
 import { InputFile } from "grammy";
-import { claimSync, markSynced } from "../../analytics/snapshots/creator-store.js";
 import type { BackendDb } from "../../db/client.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { t } from "../../foundation/i18n/index.js";
 import { log } from "../../foundation/logger.js";
+import { claimSync, markSynced } from "../../observability/sync-state.js";
 import { backupDatabase } from "../../operations/maintenance.js";
 import { settingsService } from "../../studio/services/settings.js";
 

@@ -6,7 +6,7 @@
 
 Write from Telegram or an MCP client such as Codex; Solo Publisher publishes to
 your website, Telegram, X, Threads, YouTube Shorts and Instagram, schedules and
-retries every destination independently, and collects the analytics back. One
+retries every destination independently. One
 owner, one server, no SaaS in the middle.
 
 ![A live publication powered by Solo Publisher](docs/assets/live-site.png)
@@ -36,11 +36,8 @@ bun install --frozen-lockfile
 bun run demo
 ```
 
-Public site at <http://localhost:8788/>, Command Center at
-<http://localhost:8788/command-center?token=dev> — fixture content, no
-credentials, `Ctrl+C` to stop.
-
-![Solo Publisher Command Center with text and video analytics](docs/assets/command-center.png)
+The Studio's public feed at <http://localhost:8788/api/public/site> — fixture
+content, no credentials, `Ctrl+C` to stop.
 
 ## Docs
 
