@@ -22,6 +22,8 @@ const feedItemSchema = z
     id: z.string(),
     post_id: z.number().int().positive(),
     date: z.string(),
+    updated_at_ru: z.string().nullable(),
+    updated_at_en: z.string().nullable(),
     text: z.string(),
     text_ru: z.string(),
     text_en: z.string(),
@@ -139,6 +141,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
       ruMedia: ruLocale.siteMediaJson,
       ruEnabled: ruLocale.siteEnabled,
       ruPublishedAt: ruLocale.publishedAt,
+      ruSiteUpdatedAt: ruLocale.siteUpdatedAt,
       enSlug: enLocale.slug,
       enSeoTitle: enLocale.seoTitle,
       enText: sql<string>`coalesce(${enLocale.approvedText}, ${enLocale.sourceText}, '')`,
@@ -146,6 +149,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
       enMedia: enLocale.siteMediaJson,
       enEnabled: enLocale.siteEnabled,
       enPublishedAt: enLocale.publishedAt,
+      enSiteUpdatedAt: enLocale.siteUpdatedAt,
       views: postMetrics.value,
     })
     .from(drafts)
@@ -227,6 +231,8 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
       id: publicationKey,
       post_id: row.postId,
       date: publicationDate(ru, en) ?? row.scheduledAt ?? row.scheduledEnAt ?? row.createdAt,
+      updated_at_ru: ru.enabled ? row.ruSiteUpdatedAt : null,
+      updated_at_en: en.enabled ? row.enSiteUpdatedAt : null,
       text: ru.text,
       text_ru: ru.text,
       text_en: en.text,
