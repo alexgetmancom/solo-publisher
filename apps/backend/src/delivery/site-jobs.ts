@@ -7,7 +7,6 @@ import type { BackendConfig } from "../foundation/config.js";
 import { withJobHeartbeat } from "../foundation/runtime/job-heartbeat.js";
 import { recordWorkerState } from "../foundation/runtime/worker-state.js";
 import { trackUsageAsync } from "../observability/usage.js";
-import { invalidatePublicSiteFeed } from "../public/site-read-model.js";
 import { deliveryNotCancelled } from "../publishing/cancellation.js";
 import { nextRetryAt } from "../publishing/errors.js";
 import type { PublicationSource } from "../publishing/publication-source.js";
@@ -67,9 +66,6 @@ export async function runSiteJobCycle(config: BackendConfig, backendDb: BackendD
       backendDb,
       jobs.filter((job) => !failures.has(job.publication_key)),
     );
-    // A materialization is the one moment this process knows the published site
-    // changed, so serve the new shape immediately instead of waiting out the TTL.
-    invalidatePublicSiteFeed(backendDb);
     try {
       const urls = siteUrlsForIndexNow(config, backendDb, new Set(completed.map((job) => job.publication_key)));
       // IndexNow is an external notification, not a prerequisite for serving

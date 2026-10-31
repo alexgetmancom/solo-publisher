@@ -8,7 +8,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { text } from "../../foundation/http-response.js";
 import { rangedFileResponse } from "../../foundation/ranged-file.js";
 import { siteImage } from "../../public/site-images.js";
-import { type FeedItem, loadPublicSiteFeed, SITE_FEED_REFRESH_MS, type SiteMedia } from "../../public/site-read-model.js";
+import { type FeedItem, loadPublicSiteFeed, type SiteMedia } from "../../public/site-read-model.js";
 import { publicVideoAsset } from "../../public/video-asset.js";
 import type { RouteModule } from "./context.js";
 
@@ -27,6 +27,7 @@ import type { RouteModule } from "./context.js";
  */
 
 const NOT_FOUND = () => text("not found\n", 404);
+const SITE_FEED_REFRESH_MS = 3_000;
 
 export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
   const cache: SiteCache = { media: new WeakMap(), items: new WeakMap() };

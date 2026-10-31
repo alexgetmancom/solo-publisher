@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { unsafeDb } from "../src/db/client.js";
 import { draftEntityLinks, drafts, knowledgeEntities, postLocales, postMetrics } from "../src/db/schema.js";
-import { invalidatePublicSiteFeed, loadPublicSiteFeed } from "../src/public/site-read-model.js";
+import { loadPublicSiteFeed } from "../src/public/site-read-model.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
 
@@ -26,10 +26,12 @@ describe("Drizzle site feed", () => {
   it("reuses an expired feed after quiet polls and unrelated writes but detects a content change without timestamp changes", () => {
     const now = Date.now();
     const clock = spyOn(Date, "now").mockReturnValue(now);
+    const select = spyOn(rawDb.db, "select");
     try {
       seedTextPost(backendDb, { postId: 1, en: "Original", siteEn: true, now: new Date(now).toISOString() });
       const first = loadPublicSiteFeed(backendDb);
       expect(first[0]?.text_en).toBe("Original");
+      select.mockClear();
       clock.mockReturnValue(now + 3001);
       expect(loadPublicSiteFeed(backendDb)).toBe(first);
       rawDb.db
@@ -38,14 +40,15 @@ describe("Drizzle site feed", () => {
         .run();
       clock.mockReturnValue(now + 6002);
       expect(loadPublicSiteFeed(backendDb)).toBe(first);
+      expect(select.mock.calls).toHaveLength(0);
       rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Changed' WHERE draft_id = 1 AND locale = 'en'");
       clock.mockReturnValue(now + 9003);
       expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("Changed");
       rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Immediate' WHERE draft_id = 1 AND locale = 'en'");
-      invalidatePublicSiteFeed(backendDb);
       expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("Immediate");
     } finally {
       clock.mockRestore();
+      select.mockRestore();
     }
   });
 
@@ -89,6 +92,96 @@ describe("Drizzle site feed", () => {
       external.close();
       db.close();
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("tracks local changes without changing the stored schema or database bytes", () => {
+    seedTextPost(backendDb, { postId: 1, en: "Published", siteEn: true });
+    const schema = rawDb.sqlite.query("SELECT type, name, sql FROM main.sqlite_schema ORDER BY type, name").all();
+    const bytes = rawDb.sqlite.serialize();
+    loadPublicSiteFeed(backendDb);
+    expect(rawDb.sqlite.query("SELECT type, name, sql FROM main.sqlite_schema ORDER BY type, name").all()).toEqual(schema);
+    expect(rawDb.sqlite.serialize()).toEqual(bytes);
+  });
+
+  it("does not cache pending transaction changes or keep a rolled-back revision", () => {
+    seedTextPost(backendDb, { postId: 1, en: "Committed", siteEn: true });
+    rawDb.sqlite.run("BEGIN");
+    try {
+      rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Rolled back' WHERE draft_id = 1 AND locale = 'en'");
+      // Even the first read may be inside a transaction. It must not install
+      // tracking or leave a snapshot behind when the transaction rolls back.
+      expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("Rolled back");
+    } finally {
+      rawDb.sqlite.run("ROLLBACK");
+    }
+    const first = loadPublicSiteFeed(backendDb);
+    expect(first[0]?.text_en).toBe("Committed");
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now + 3001);
+    const select = spyOn(rawDb.db, "select");
+    try {
+      rawDb.sqlite.run("BEGIN");
+      rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Also rolled back' WHERE draft_id = 1 AND locale = 'en'");
+      rawDb.sqlite.run("ROLLBACK");
+      expect(loadPublicSiteFeed(backendDb)).toBe(first);
+      expect(select.mock.calls).toHaveLength(0);
+      rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'New commit' WHERE draft_id = 1 AND locale = 'en'");
+      clock.mockReturnValue(now + 6002);
+      expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("New commit");
+    } finally {
+      clock.mockRestore();
+      select.mockRestore();
+    }
+  });
+
+  it("invalidates on entity, link, publication and relevant metric changes", () => {
+    const now = Date.now();
+    seedTextPost(backendDb, { postId: 1, en: "Published", siteEn: true, now: new Date(now).toISOString() });
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    let step = 0;
+    const read = () => {
+      clock.mockReturnValue(now + step++ * 3001);
+      return loadPublicSiteFeed(backendDb)[0];
+    };
+    try {
+      expect(read()?.entities).toEqual([]);
+      rawDb.sqlite.run(
+        "INSERT INTO knowledge_entities (id, kind, slug, title_ru, title_en, created_at, updated_at) VALUES (1, 'company', 'acme', 'Acme', 'Acme', ?, ?)",
+        [new Date(now).toISOString(), new Date(now).toISOString()],
+      );
+      rawDb.sqlite.run("INSERT INTO draft_entity_links (draft_id, entity_id, created_at) VALUES (1, 1, ?)", [new Date(now).toISOString()]);
+      expect(read()?.entities[0]?.slug).toBe("acme");
+      rawDb.sqlite.run("UPDATE knowledge_entities SET title_en = 'Acme AI' WHERE id = 1");
+      expect(read()?.entities[0]?.title_en).toBe("Acme AI");
+      rawDb.sqlite.run("UPDATE draft_entity_links SET link_role = 'focus' WHERE draft_id = 1");
+      expect(read()?.entities[0]?.link_role).toBe("focus");
+      rawDb.sqlite.run("DELETE FROM draft_entity_links WHERE draft_id = 1");
+      expect(read()?.entities).toEqual([]);
+      rawDb.sqlite.run(
+        "INSERT INTO post_metrics (publication_key, target, metric_name, value, unit) VALUES ('post:1', 'other', 'views', 1, 'count')",
+      );
+      expect(read()?.views).toBe(0);
+      rawDb.sqlite.run("UPDATE post_metrics SET target = 'telegram' WHERE publication_key = 'post:1'");
+      expect(read()?.views).toBe(1);
+      rawDb.sqlite.run("UPDATE post_metrics SET value = 2 WHERE publication_key = 'post:1'");
+      expect(read()?.views).toBe(2);
+      rawDb.sqlite.run("UPDATE post_metrics SET target = 'other' WHERE publication_key = 'post:1'");
+      expect(read()?.views).toBe(0);
+      rawDb.sqlite.run(
+        "INSERT INTO post_metrics (publication_key, target, metric_name, value, unit) VALUES ('post:1', 'telegram', 'views', 3, 'count')",
+      );
+      expect(read()?.views).toBe(3);
+      rawDb.sqlite.run("DELETE FROM post_metrics WHERE target = 'telegram'");
+      expect(read()?.views).toBe(0);
+      rawDb.sqlite.run("UPDATE drafts SET status = 'draft' WHERE id = 1");
+      expect(read()).toBeUndefined();
+      rawDb.sqlite.run("UPDATE drafts SET status = 'published' WHERE id = 1");
+      expect(read()?.post_id).toBe(1);
+      rawDb.sqlite.run("DELETE FROM post_locales WHERE draft_id = 1 AND locale = 'en'");
+      expect(read()).toBeUndefined();
+    } finally {
+      clock.mockRestore();
     }
   });
 

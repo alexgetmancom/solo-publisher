@@ -53,43 +53,59 @@ const feedItemSchema = z
 
 export type FeedItem = z.infer<typeof feedItemSchema>;
 
-/** Check database changes and scheduled publication boundaries at this cadence.
- * An unchanged feed retains its objects, including across unrelated worker
- * writes, so the public serializer can keep its body and ETag too. */
-export const SITE_FEED_REFRESH_MS = 3_000;
-
 type FeedState = { items: FeedItem[]; fingerprint: string; nextPublicationAt: number };
-type CachedFeed = FeedState & { builtAt: number; databaseVersion: string };
+type CachedFeed = FeedState & { databaseVersion: string };
 // Keyed by the database handle so a test's `:memory:` database and the closed
 // handle of a previous runtime never hand their feed to anyone else.
 const feedCache = new WeakMap<BackendDb, CachedFeed>();
+const tracked = new WeakSet<BackendDb>();
+
+/** Only publication inputs invalidate this connection's feed. A private
+ * in-memory counter and TEMP triggers leave the stored database untouched;
+ * the counter participates in commit/rollback with the rows it observes. */
+function trackFeedChanges(backendDb: BackendDb): void {
+  if (tracked.has(backendDb)) return;
+  const sqlite = unsafeDb(backendDb).sqlite;
+  sqlite.exec(`ATTACH DATABASE ':memory:' AS public_site_cache;
+    CREATE TABLE public_site_cache._public_site_revision (revision INTEGER NOT NULL);
+    INSERT INTO public_site_cache._public_site_revision VALUES (0);`);
+  for (const table of ["drafts", "post_locales", "knowledge_entities", "draft_entity_links", "post_metrics"]) {
+    for (const operation of ["INSERT", "UPDATE", "DELETE"]) {
+      const references = operation === "INSERT" ? ["NEW"] : operation === "DELETE" ? ["OLD"] : ["OLD", "NEW"];
+      const when =
+        table === "post_metrics"
+          ? `WHEN ${references.map((row) => `(${row}.target = 'telegram' AND ${row}.metric_name = 'views')`).join(" OR ")}`
+          : "";
+      sqlite.exec(`CREATE TEMP TRIGGER public_site_${table}_${operation}
+        AFTER ${operation} ON main.${table} ${when}
+        BEGIN UPDATE _public_site_revision SET revision = revision + 1; END;`);
+    }
+  }
+  tracked.add(backendDb);
+}
 
 /** Published-site read model. It reads only stable publication data. */
 export function loadPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
   const now = Date.now();
+  const sqlite = unsafeDb(backendDb).sqlite;
+  // A caller inside a write transaction may read its pending changes, but must
+  // not publish them into a cache that survives a rollback.
+  if (sqlite.inTransaction) return buildPublicSiteFeed(backendDb, now).items;
   const cached = feedCache.get(backendDb);
-  if (cached && now - cached.builtAt < SITE_FEED_REFRESH_MS) return cached.items;
-  // data_version observes other connections (including ops CLI writes), while
-  // total_changes observes this connection. Neither replaces the clock gate:
-  // a scheduled locale becomes public without any database write.
-  const version = unsafeDb(backendDb).sqlite.query("SELECT data_version, total_changes() AS changes FROM pragma_data_version").get() as {
+  trackFeedChanges(backendDb);
+  // data_version also observes external connections, whose writes do not run
+  // our TEMP triggers. Scheduled locales still advance on the clock alone.
+  const version = sqlite.query("SELECT data_version, revision FROM pragma_data_version, public_site_cache._public_site_revision").get() as {
     data_version: number;
-    changes: number;
+    revision: number;
   };
-  const databaseVersion = `${version.data_version}:${version.changes}`;
+  const databaseVersion = `${version.data_version}:${version.revision}`;
   const state =
     cached && cached.databaseVersion === databaseVersion && now < cached.nextPublicationAt
       ? cached
       : buildPublicSiteFeed(backendDb, now, cached);
-  feedCache.set(backendDb, { ...state, databaseVersion, builtAt: now });
+  feedCache.set(backendDb, { ...state, databaseVersion });
   return state.items;
-}
-
-/** Drops the cached feed so the next read rebuilds it. Call this from anything
- * in this process that just changed what the site publishes; the TTL is only
- * the fallback for changes made elsewhere. */
-export function invalidatePublicSiteFeed(backendDb: BackendDb): void {
-  feedCache.delete(backendDb);
 }
 
 function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedFeed): FeedState {
