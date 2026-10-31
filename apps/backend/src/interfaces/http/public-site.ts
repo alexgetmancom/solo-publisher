@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { RESPONSIVE_WIDTHS } from "../../content/site-media-naming.js";
 import { indexNowKey } from "../../delivery/site-index-now.js";
 import type { BackendConfig } from "../../foundation/config.js";
@@ -31,11 +32,26 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
   const cache: SiteCache = { media: new WeakMap(), items: new WeakMap() };
   app.get("/api/public/site", async (c) => {
     if (!config.studio.siteEnabled) return NOT_FOUND();
-    const { body, etag } = await publicSiteBody(config, loadPublicSiteFeed(backendDb), cache);
+    const read = () => publicSiteBody(config, loadPublicSiteFeed(backendDb), cache);
+    let value = await read();
+    const known = c.req.header("if-none-match");
+    // Keep an unchanged conditional request open instead of making the site
+    // repeat HTTP work every three seconds. Database, schedule and late-media
+    // checks retain the same cadence and share the ordinary response cache.
+    const requested = /^wait=(\d+)$/.exec(c.req.header("prefer") ?? "");
+    const waitSeconds = Math.min(25, Number(requested?.[1] ?? 0));
+    const deadline = performance.now() + waitSeconds * 1000;
+    const signal = c.req.raw.signal;
+    while (known === value.etag && performance.now() < deadline && !signal.aborted) {
+      await delay(Math.min(SITE_FEED_REFRESH_MS, deadline - performance.now()), undefined, { signal }).catch((error) => {
+        if (!signal.aborted) throw error;
+      });
+      if (signal.aborted) break;
+      value = await read();
+    }
+    const { body, etag } = value;
     const headers = { "content-type": "application/json; charset=utf-8", etag, "cache-control": "no-cache" };
-    // The site asks every few seconds and the answer rarely changes; a 304
-    // spares it parsing the whole archive again.
-    if (c.req.header("if-none-match") === etag) return new Response(null, { status: 304, headers });
+    if (known === etag) return new Response(null, { status: 304, headers });
     return new Response(body, { headers });
   });
 

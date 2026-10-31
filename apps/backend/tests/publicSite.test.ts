@@ -110,6 +110,75 @@ describe("GET /api/public/site", () => {
     expect(again.status).toBe(304);
   });
 
+  it("waits only for a matching conditional request and ends an unchanged wait with 304", async () => {
+    const { request } = studio();
+    const first = await request("/api/public/site", { headers: { prefer: "wait=25" } });
+    const etag = first.headers.get("etag") ?? "";
+    expect(first.status).toBe(200);
+    expect((await request("/api/public/site", { headers: { prefer: "wait=25", "if-none-match": '"older"' } })).status).toBe(200);
+    expect((await request("/api/public/site", { headers: { prefer: "wait=invalid", "if-none-match": etag } })).status).toBe(304);
+    const start = performance.now();
+    const unchanged = await request("/api/public/site", { headers: { prefer: "wait=1", "if-none-match": etag } });
+    expect(performance.now() - start).toBeGreaterThanOrEqual(900);
+    expect(unchanged.status).toBe(304);
+    expect(unchanged.headers.get("etag")).toBe(etag);
+    expect(await unchanged.text()).toBe("");
+  });
+
+  it("stops a wait when its client disconnects", async () => {
+    const { request } = studio();
+    const first = await request("/api/public/site");
+    const controller = new AbortController();
+    let settled = false;
+    const waiting = request("/api/public/site", {
+      headers: { prefer: "wait=25", "if-none-match": first.headers.get("etag") ?? "" },
+      signal: controller.signal,
+    }).then((response) => {
+      settled = true;
+      return response;
+    });
+    try {
+      await Bun.sleep(20);
+      expect(settled).toBe(false);
+    } finally {
+      controller.abort();
+      await waiting;
+    }
+    expect(settled).toBe(true);
+  });
+
+  it.each(["database", "scheduled publication", "late media"] as const)("returns a %s change during the wait", async (kind) => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "English",
+      siteEn: true,
+      siteMediaEn: kind === "late media" ? [{ type: "image", path: "media/posts/wait.jpg?v=abcdef012345" }] : [],
+    });
+    if (kind === "scheduled publication")
+      seedTextPost(backendDb, { postId: 2, en: "Scheduled", siteEn: true, publishedAt: new Date(Date.now() + 1000).toISOString() });
+    const first = await request("/api/public/site");
+    const controller = new AbortController();
+    const waiting = request("/api/public/site", {
+      headers: { prefer: "wait=10", "if-none-match": first.headers.get("etag") ?? "" },
+      signal: controller.signal,
+    });
+    try {
+      await Bun.sleep(20);
+      if (kind === "database") seedTextPost(backendDb, { postId: 2, en: "New post", siteEn: true });
+      if (kind === "late media") writeSiteFile("media/posts/wait.jpg");
+      const changed = await waiting;
+      expect(changed.status).toBe(200);
+      expect(changed.headers.get("etag")).not.toBe(first.headers.get("etag"));
+      const body = (await changed.json()) as PublicSite;
+      if (kind === "late media") expect(body.items[0]?.media_en).toEqual([{ type: "image", path: "media/posts/wait.jpg?v=abcdef012345" }]);
+      else expect(body.items.map((item) => item.post_id)).toContain(2);
+    } finally {
+      controller.abort();
+      await waiting;
+    }
+  });
+
   it("keeps the serialized archive across expired quiet polls", async () => {
     const { backendDb, request, writeSiteFile } = studio();
     seedTextPost(backendDb, {
@@ -126,7 +195,7 @@ describe("GET /api/public/site", () => {
     const serialize = spyOn(JSON, "stringify");
     try {
       const first = await request("/api/public/site");
-      const etag = first.headers.get("etag")!;
+      const etag = first.headers.get("etag") ?? "";
       serialize.mockClear();
       clock.mockReturnValue(now + 3001);
       expect((await request("/api/public/site", { headers: { "if-none-match": etag } })).status).toBe(304);
