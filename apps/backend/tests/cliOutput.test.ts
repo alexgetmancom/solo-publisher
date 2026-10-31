@@ -35,4 +35,5 @@ it("flushes an archive-sized metadata export before the CLI exits", async () => 
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-});
+  // This integration starts the complete CLI in a cold process under CI coverage.
+}, 30_000);
