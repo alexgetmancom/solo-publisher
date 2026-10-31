@@ -71,7 +71,7 @@ export async function runSiteJobCycle(config: BackendConfig, backendDb: BackendD
     // changed, so serve the new shape immediately instead of waiting out the TTL.
     invalidatePublicSiteFeed(backendDb);
     try {
-      const urls = siteUrlsForIndexNow(config, backendDb);
+      const urls = siteUrlsForIndexNow(config, backendDb, new Set(completed.map((job) => job.publication_key)));
       // IndexNow is an external notification, not a prerequisite for serving
       // the already materialized feed through SSR.
       void pingIndexNow(config, urls).catch((error) => {

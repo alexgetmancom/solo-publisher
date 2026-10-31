@@ -80,7 +80,7 @@ describe("site jobs", () => {
 
   it("publishes the EN site job while a later RU site job remains queued", async () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-site-"));
-    const config = loadTestConfig({ DATA_DIR: tempDir });
+    const config = loadTestConfig({ DATA_DIR: tempDir, INDEXNOW_ENABLED: "false" });
     backendDb = openBackendDb(":memory:");
     const now = new Date(Date.now() - 1_000).toISOString();
     const later = new Date(Date.now() + 60 * 60_000).toISOString();
@@ -155,7 +155,7 @@ describe("site jobs", () => {
 
   it("fails only the publication that could not render, not the batch it was claimed with", async () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-site-"));
-    const config = loadTestConfig({ DATA_DIR: tempDir });
+    const config = loadTestConfig({ DATA_DIR: tempDir, PUBLIC_BASE_URL: "https://example.test", INDEXNOW_ENABLED: "true" });
     backendDb = openBackendDb(":memory:");
     const now = new Date().toISOString();
     for (const postId of [1, 2]) {
@@ -179,14 +179,23 @@ describe("site jobs", () => {
         .run();
     }
 
+    seedTextPost(backendDb, { postId: 3, ru: "Unchanged", siteRu: true, slugRu: "unchanged" });
+    const notifications: string[][] = [];
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (() => Promise.reject(new Error("media host is unreachable"))) as unknown as typeof fetch;
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input) === "https://api.indexnow.org/indexnow") {
+        notifications.push(JSON.parse(String(init?.body)).urlList);
+        return new Response("", { status: 200 });
+      }
+      throw new Error("media host is unreachable");
+    }) as typeof fetch;
     try {
       await runSiteJobCycle(config, backendDb);
     } finally {
       globalThis.fetch = originalFetch;
     }
 
+    expect(notifications).toEqual([["https://example.test/ru/1/ru-1/"]]);
     expect(
       backendDb.db
         .select({ publicationKey: siteJobs.publicationKey, status: siteJobs.status, attemptCount: siteJobs.attemptCount })

@@ -4,7 +4,7 @@ import path from "node:path";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 
-type IndexNowState = { last_digest?: string; last_attempt_at?: string; last_success_at?: string; last_status?: number; url_count?: number };
+type IndexNowState = { last_attempt_at?: string; last_success_at?: string; last_status?: number; url_count?: number };
 
 /** Delivery side effect: notify search engines after site materialization. */
 export async function pingIndexNow(config: BackendConfig, urls: string[], fetchImpl: typeof fetch = fetch): Promise<void> {
@@ -14,10 +14,14 @@ export async function pingIndexNow(config: BackendConfig, urls: string[], fetchI
   const keyFile = path.join(config.DATA_DIR, "indexnow.key");
   const stateFile = path.join(config.DATA_DIR, "indexnow.json");
   const key = readOrCreateKey(keyFile);
-  const digest = crypto.createHash("sha256").update(unique.join("\n")).digest("hex");
   const previous = readState(stateFile);
-  if (previous.last_digest === digest) return;
-  const state: IndexNowState = { ...previous, last_attempt_at: new Date().toISOString(), url_count: unique.length };
+  // Each call represents a completed content change. The URL may be the same
+  // as last time when an existing post was edited.
+  const state: IndexNowState = {
+    last_attempt_at: new Date().toISOString(),
+    url_count: unique.length,
+  };
+  if (previous.last_success_at) state.last_success_at = previous.last_success_at;
   writeState(stateFile, state);
   try {
     const response = await fetchImpl("https://api.indexnow.org/indexnow", {
@@ -33,7 +37,6 @@ export async function pingIndexNow(config: BackendConfig, urls: string[], fetchI
     });
     state.last_status = response.status;
     if (response.ok || response.status === 202) {
-      state.last_digest = digest;
       state.last_success_at = new Date().toISOString();
     }
     writeState(stateFile, state);
