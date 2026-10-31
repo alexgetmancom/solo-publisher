@@ -165,7 +165,11 @@ async function withServedMedia(config: BackendConfig, item: FeedItem): Promise<F
   };
 }
 
-async function servedMedia(config: BackendConfig, entry: SiteMedia): Promise<SiteMedia[]> {
+async function servedMedia(config: BackendConfig, stored: SiteMedia): Promise<SiteMedia[]> {
+  // The publication manifest also carries worker-only upload ids and disk
+  // paths. Only the fields the public renderer consumes cross this boundary.
+  const { type, path, poster, width, height, responsive, poster_responsive } = stored;
+  const entry: SiteMedia = { type, path, poster, width, height, responsive, poster_responsive };
   if (!served(config, entry.path)) return [];
   if (entry.poster && !served(config, entry.poster)) {
     const { poster: _missing, ...rest } = entry;

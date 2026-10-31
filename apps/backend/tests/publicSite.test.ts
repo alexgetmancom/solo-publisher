@@ -107,6 +107,52 @@ describe("GET /api/public/site", () => {
     expect(again.status).toBe(304);
   });
 
+  it("publishes only renderer media fields, including missing-poster and unreadable-image fallbacks", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    const internal = { file_id: "upload-id", asset_id: 42, local_path: "/private/upload.jpg", future_worker_field: "internal" };
+    const entries = [
+      { type: "image", path: "media/posts/allowlist.jpg?v=allowlist", width: 12, height: 34, ...internal },
+      { type: "image", path: "media/posts/unreadable.jpg", width: 12, height: 34, ...internal },
+      { type: "video", path: "media/posts/missing-poster.mp4", poster: "media/posts/missing.jpg", ...internal },
+      { type: "video", path: "media/posts/video.mp4", poster: "media/posts/allowlist.jpg?v=allowlist", ...internal },
+    ];
+    seedTextPost(backendDb, {
+      postId: 1,
+      ru: "Localized post",
+      en: "English",
+      siteRu: true,
+      siteEn: true,
+      siteMediaRu: entries,
+      siteMediaEn: entries,
+    });
+    writeSiteFile("media/posts/allowlist.jpg", await image(1080, 1920));
+    writeSiteFile("generated/responsive/media-posts-allowlist-640.webp", await image(640, 1138));
+    for (const file of ["unreadable.jpg", "missing-poster.mp4", "video.mp4"]) writeSiteFile(`media/posts/${file}`);
+
+    const body = (await (await request("/api/public/site")).json()) as { items: { media: unknown[]; media_en: unknown[] }[] };
+    const expected = [
+      {
+        type: "image",
+        path: entries[0]?.path,
+        width: 1080,
+        height: 1920,
+        responsive: [{ path: "/generated/responsive/media-posts-allowlist-640.webp?v=allowlist", width: 640, height: 1138 }],
+      },
+      { type: "image", path: entries[1]?.path, width: 12, height: 34 },
+      { type: "video", path: entries[2]?.path },
+      {
+        type: "video",
+        path: entries[3]?.path,
+        poster: "media/posts/allowlist.jpg?v=allowlist",
+        width: 1080,
+        height: 1920,
+        poster_responsive: [{ path: "/generated/responsive/media-posts-allowlist-640.webp?v=allowlist", width: 640, height: 1138 }],
+      },
+    ];
+    expect(body.items[0]?.media).toEqual(expected);
+    expect(body.items[0]?.media_en).toEqual(expected);
+  });
+
   it("describes the served image and only its existing responsive variants", async () => {
     const { backendDb, request, writeSiteFile } = studio();
     seedTextPost(backendDb, {
