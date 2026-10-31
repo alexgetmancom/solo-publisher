@@ -17,6 +17,7 @@ export const postLocales = sqliteTable(
     storyMediaJson: json<MediaPayload[] | null>(),
     siteMediaJson: json<MediaPayload[] | null>(),
     slug: text(),
+    seoTitle: text(),
     siteEnabled: integer().notNull().default(0),
     publishAt: text(),
     publishedAt: text(),

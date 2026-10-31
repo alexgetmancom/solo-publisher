@@ -234,8 +234,8 @@ async function servedMedia(config: BackendConfig, stored: SiteMedia, cache: Site
   if (previous?.immutable) return previous.value;
   // The publication manifest also carries worker-only upload ids and disk
   // paths. Only the fields the public renderer consumes cross this boundary.
-  const { type, path, poster, width, height, responsive, poster_responsive } = stored;
-  const entry: SiteMedia = { type, path, poster, width, height, responsive, poster_responsive };
+  const { type, path, alt, poster, width, height, responsive, poster_responsive } = stored;
+  const entry: SiteMedia = { type, path, alt, poster, width, height, responsive, poster_responsive };
   const exists = served(config, entry.path);
   const posterExists = !entry.poster || served(config, entry.poster);
   const image =

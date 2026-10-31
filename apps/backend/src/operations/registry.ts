@@ -60,6 +60,7 @@ import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
 import { backfillSiteImageMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
+import { siteMetadata } from "./site-metadata.js";
 import { backfillSiteResponsive } from "./site-responsive-backfill.js";
 import { skipPublicationTargets } from "./skip.js";
 import { operationsStatus } from "./status.js";
@@ -1070,6 +1071,15 @@ const operationDefs = {
     mutates: true,
     agent: false,
     handler: (context, input) => backfillSiteResponsive(context.db(), context.config(), input.apply),
+  }),
+  "site-metadata": operation({
+    section: "media",
+    summary: "Export published image metadata, or import reviewed alt descriptions and SEO titles.",
+    note: "Without file, exports published text hashes and images. With file, validates the version-1 JSON plan; apply saves it atomically. Changed text, replaced images and existing editorial metadata are protected. Does not resend publications.",
+    schema: z.object({ file: z.string().min(1).optional().describe("reviewed metadata JSON file"), apply: applyOption }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) => siteMetadata(context.db(), input.file, input.apply),
   }),
   "site-media-deduplicate": operation({
     section: "media",

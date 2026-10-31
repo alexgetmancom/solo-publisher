@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import sharp from "sharp";
 import { createApiHandler } from "../src/api.js";
 import type { StudioProfileRecord } from "../src/application/ports.js";
+import { applySiteMetadata, textHash } from "../src/operations/site-metadata.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js";
@@ -63,6 +64,39 @@ function image(width: number, height: number) {
 }
 
 describe("GET /api/public/site", () => {
+  it("publishes reviewed alt and search titles and changes the ETag", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "An unchanged article",
+      siteEn: true,
+      siteMediaEn: [{ type: "image", path: "media/posts/1-en.jpg?v=one" }],
+    });
+    writeSiteFile("media/posts/1-en.jpg");
+    const before = await request("/api/public/site");
+    applySiteMetadata(
+      backendDb,
+      {
+        version: 1,
+        items: [
+          {
+            post_id: 1,
+            locale: "en",
+            text_sha256: textHash("An unchanged article"),
+            seo_title: "A concise search title",
+            images: [{ path: "media/posts/1-en.jpg?v=one", alt: "A chart comparing the two models." }],
+          },
+        ],
+      },
+      true,
+    );
+    const after = await request("/api/public/site", { headers: { "if-none-match": before.headers.get("etag") ?? "" } });
+    expect(after.status).toBe(200);
+    expect(after.headers.get("etag")).not.toBe(before.headers.get("etag"));
+    const body = (await after.json()) as { items: { seo_title_en: string; media_en: { alt: string }[] }[] };
+    expect(body.items[0]?.seo_title_en).toBe("A concise search title");
+    expect(body.items[0]?.media_en[0]?.alt).toBe("A chart comparing the two models.");
+  });
   it("does not exist on a Studio without a public site", async () => {
     const { request } = studio({ siteEnabled: 0 });
     expect((await request("/api/public/site")).status).toBe(404);

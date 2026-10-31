@@ -239,6 +239,13 @@
       "when": 1793030038703,
       "tag": "0033_remove_streams",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1793476800000,
+      "tag": "0034_site_seo_title",
+      "breakpoints": true
     }
   ]
 }
