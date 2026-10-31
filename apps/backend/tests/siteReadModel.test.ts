@@ -1,9 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { type BackendDb, openBackendDb, unsafeDb } from "../src/db/client.js";
+import { Database } from "bun:sqlite";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { unsafeDb } from "../src/db/client.js";
 import { draftEntityLinks, drafts, knowledgeEntities, postLocales, postMetrics } from "../src/db/schema.js";
-import { loadPublicSiteFeed } from "../src/public/site-read-model.js";
+import { invalidatePublicSiteFeed, loadPublicSiteFeed } from "../src/public/site-read-model.js";
+import { openBackendDb } from "./helpers/open-db.js";
+import { seedTextPost } from "./helpers/post.js";
 
-let backendDb: BackendDb;
+let backendDb: ReturnType<typeof openBackendDb>;
 
 const feedItem = (postId: number) => loadPublicSiteFeed(backendDb).find((item) => item.post_id === postId);
 let rawDb: ReturnType<typeof unsafeDb>;
@@ -17,6 +23,68 @@ beforeEach(() => {
 afterEach(() => backendDb.close());
 
 describe("Drizzle site feed", () => {
+  it("reuses an expired feed after quiet polls and unrelated writes but detects a content change without timestamp changes", () => {
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    try {
+      seedTextPost(backendDb, { postId: 1, en: "Original", siteEn: true });
+      const first = loadPublicSiteFeed(backendDb);
+      clock.mockReturnValue(now + 3001);
+      expect(loadPublicSiteFeed(backendDb)).toBe(first);
+      rawDb.db
+        .insert(postMetrics)
+        .values({ publicationKey: "post:1", target: "other", metricName: "background", value: 2, unit: "count" })
+        .run();
+      clock.mockReturnValue(now + 6002);
+      expect(loadPublicSiteFeed(backendDb)).toBe(first);
+      rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Changed' WHERE draft_id = 1 AND locale = 'en'");
+      clock.mockReturnValue(now + 9003);
+      expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("Changed");
+      rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Immediate' WHERE draft_id = 1 AND locale = 'en'");
+      invalidatePublicSiteFeed(backendDb);
+      expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("Immediate");
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("publishes a scheduled locale at its clock boundary without a database write", () => {
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    try {
+      seedTextPost(backendDb, { postId: 1, en: "Scheduled", siteEn: true, publishedAt: new Date(now + 5000).toISOString() });
+      const first = loadPublicSiteFeed(backendDb);
+      expect(first).toEqual([]);
+      clock.mockReturnValue(now + 3001);
+      expect(loadPublicSiteFeed(backendDb)).toBe(first);
+      clock.mockReturnValue(now + 6002);
+      expect(loadPublicSiteFeed(backendDb)[0]?.text_en).toBe("Scheduled");
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("observes a publication change committed by a separate SQLite connection", () => {
+    const dir = mkdtempSync(join(tmpdir(), "site-feed-external-"));
+    const file = join(dir, "site.sqlite");
+    const db = openBackendDb(file);
+    const external = new Database(file);
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    try {
+      seedTextPost(db, { postId: 1, en: "Original", siteEn: true });
+      loadPublicSiteFeed(db);
+      external.run("UPDATE post_locales SET approved_text = 'External' WHERE draft_id = 1 AND locale = 'en'");
+      clock.mockReturnValue(now + 3001);
+      expect(loadPublicSiteFeed(db)[0]?.text_en).toBe("External");
+    } finally {
+      clock.mockRestore();
+      external.close();
+      db.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("reads published localized posts and Telegram views from SQLite without feed.json", () => {
     const now = new Date().toISOString();
     rawDb.db

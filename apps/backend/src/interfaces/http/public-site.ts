@@ -7,7 +7,7 @@ import type { BackendConfig } from "../../foundation/config.js";
 import { text } from "../../foundation/http-response.js";
 import { rangedFileResponse } from "../../foundation/ranged-file.js";
 import { siteImage } from "../../public/site-images.js";
-import { type FeedItem, loadPublicSiteFeed, type SiteMedia } from "../../public/site-read-model.js";
+import { type FeedItem, loadPublicSiteFeed, SITE_FEED_REFRESH_MS, type SiteMedia } from "../../public/site-read-model.js";
 import { publicVideoAsset } from "../../public/video-asset.js";
 import type { RouteModule } from "./context.js";
 
@@ -28,9 +28,10 @@ import type { RouteModule } from "./context.js";
 const NOT_FOUND = () => text("not found\n", 404);
 
 export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
+  const cache: SiteCache = { media: new WeakMap(), items: new WeakMap() };
   app.get("/api/public/site", async (c) => {
     if (!config.studio.siteEnabled) return NOT_FOUND();
-    const { body, etag } = await publicSiteBody(config, loadPublicSiteFeed(backendDb));
+    const { body, etag } = await publicSiteBody(config, loadPublicSiteFeed(backendDb), cache);
     const headers = { "content-type": "application/json; charset=utf-8", etag, "cache-control": "no-cache" };
     // The site asks every few seconds and the answer rarely changes; a 304
     // spares it parsing the whole archive again.
@@ -110,27 +111,49 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
 };
 
 function versioned(url: string): boolean {
-  return /^[a-f0-9]{12}$/.test(new URL(url).searchParams.get("v") ?? "");
+  return /^[a-f0-9]{12}$/.test(new URL(url, "https://site.invalid/").searchParams.get("v") ?? "");
 }
 
-type SiteBody = { items: FeedItem[]; identity: string; value: Promise<{ body: string; etag: string }> };
-let lastBody: SiteBody | undefined;
+type SiteBody = {
+  items: FeedItem[];
+  identity: string;
+  checkedAt: number;
+  value: Promise<{ body: string; etag: string; rendered: FeedItem[] }>;
+};
+type SiteCache = {
+  last?: SiteBody;
+  media: WeakMap<
+    SiteMedia,
+    { exists: boolean; poster: boolean; image: Awaited<ReturnType<typeof siteImage>>; value: SiteMedia[]; immutable: boolean }
+  >;
+  items: WeakMap<FeedItem, { value: FeedItem; immutable: boolean }>;
+};
 
 /** The read model already caches the feed for a few seconds and hands back the
  * same array while it does, so the serialised answer is rebuilt only when the
  * feed or the identity actually changed. */
-function publicSiteBody(config: BackendConfig, feed: FeedItem[]): SiteBody["value"] {
+function publicSiteBody(config: BackendConfig, feed: FeedItem[], cache: SiteCache): SiteBody["value"] {
+  const previous = cache.last;
+  const now = Date.now();
   const identity = JSON.stringify({ en: siteIdentity(config, "en"), ru: siteIdentity(config, "ru") });
-  if (lastBody?.items === feed && lastBody.identity === identity) return lastBody.value;
-  const value = Promise.all(feed.map((item) => withServedMedia(config, item))).then((items) => {
+  if (previous?.items === feed && previous.identity === identity && now - previous.checkedAt < SITE_FEED_REFRESH_MS) return previous.value;
+  const value = Promise.all(feed.map((item) => withServedMedia(config, item, cache))).then(async (items) => {
+    const before = await previous?.value.catch(() => undefined);
+    if (
+      before &&
+      previous?.identity === identity &&
+      items.length === before.rendered.length &&
+      items.every((item, index) => item === before.rendered[index])
+    )
+      return before;
     const body = `{"site":${identity},"items":${JSON.stringify(items)}}`;
     const etag = `"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 27)}"`;
-    return { body, etag };
+    return { body, etag, rendered: items };
   });
-  const pending = { items: feed, identity, value };
-  lastBody = pending;
+  const pending = { items: feed, identity, value, checkedAt: now };
+  cache.last = pending;
   void value.catch(() => {
-    if (lastBody === pending) lastBody = undefined;
+    if (cache.last === pending) delete cache.last;
   });
   return value;
 }
@@ -152,39 +175,81 @@ function siteIdentity(config: BackendConfig, locale: "en" | "ru") {
 /** Media is written to disk after a post is published, so the stored list can
  * name a file that is not there yet. The site has no disk to check that against,
  * so the list it gets holds only what this Studio would actually serve. */
-async function withServedMedia(config: BackendConfig, item: FeedItem): Promise<FeedItem> {
+async function withServedMedia(config: BackendConfig, item: FeedItem, cache: SiteCache): Promise<FeedItem> {
+  const cached = cache.items.get(item);
+  if (cached?.immutable) return cached.value;
   const [media, mediaEn] = await Promise.all(
-    [item.media, item.media_en].map(async (entries) => (await Promise.all(entries.map((entry) => servedMedia(config, entry)))).flat()),
+    [item.media, item.media_en].map(async (entries) =>
+      (await Promise.all(entries.map((entry) => servedMedia(config, entry, cache)))).flat(),
+    ),
   );
-  return {
+  const value = {
     ...item,
     media: media ?? [],
     media_en: mediaEn ?? [],
     image: served(config, item.image) ? item.image : firstImage(media ?? []),
     image_en: served(config, item.image_en) ? item.image_en : firstImage(mediaEn ?? []),
   };
+  const immutable =
+    [...item.media, ...item.media_en].every((entry) => cache.media.get(entry)?.immutable) &&
+    (!item.image || (versioned(item.image) && served(config, item.image))) &&
+    (!item.image_en || (versioned(item.image_en) && served(config, item.image_en)));
+  const previous = cached?.value;
+  if (
+    cached &&
+    previous &&
+    previous.image === value.image &&
+    previous.image_en === value.image_en &&
+    previous.media.length === value.media.length &&
+    previous.media_en.length === value.media_en.length &&
+    previous.media.every((entry, index) => entry === value.media[index]) &&
+    previous.media_en.every((entry, index) => entry === value.media_en[index])
+  ) {
+    cached.immutable = immutable;
+    return previous;
+  }
+  cache.items.set(item, { value, immutable });
+  return value;
 }
 
-async function servedMedia(config: BackendConfig, stored: SiteMedia): Promise<SiteMedia[]> {
+async function servedMedia(config: BackendConfig, stored: SiteMedia, cache: SiteCache): Promise<SiteMedia[]> {
+  const previous = cache.media.get(stored);
+  if (previous?.immutable) return previous.value;
   // The publication manifest also carries worker-only upload ids and disk
   // paths. Only the fields the public renderer consumes cross this boundary.
   const { type, path, poster, width, height, responsive, poster_responsive } = stored;
   const entry: SiteMedia = { type, path, poster, width, height, responsive, poster_responsive };
-  if (!served(config, entry.path)) return [];
-  if (entry.poster && !served(config, entry.poster)) {
-    const { poster: _missing, ...rest } = entry;
-    return [rest];
+  const exists = served(config, entry.path);
+  const posterExists = !entry.poster || served(config, entry.poster);
+  const image =
+    exists && posterExists ? await siteImage(config.SITE_PUBLIC_DIR, entry.type === "video" ? entry.poster || "" : entry.path) : undefined;
+  const immutable =
+    exists &&
+    posterExists &&
+    versioned(stored.path) &&
+    (!stored.poster || versioned(stored.poster)) &&
+    (image?.complete === true || (stored.type === "video" && !stored.poster));
+  if (previous && previous.exists === exists && previous.poster === posterExists && previous.image === image) {
+    previous.immutable = immutable;
+    return previous.value;
   }
-  const image = await siteImage(config.SITE_PUBLIC_DIR, entry.type === "video" ? entry.poster || "" : entry.path);
-  if (!image) return [entry];
-  return [
-    {
-      ...entry,
-      width: image.width,
-      height: image.height,
-      ...(entry.type === "video" ? { poster_responsive: image.responsive } : { responsive: image.responsive }),
-    },
-  ];
+  let value: SiteMedia[];
+  if (!exists) value = [];
+  else if (!posterExists) {
+    const { poster: _missing, ...rest } = entry;
+    value = [rest];
+  } else if (!image) value = [entry];
+  else
+    value = [
+      {
+        ...entry,
+        width: image.width,
+        height: image.height,
+        ...(entry.type === "video" ? { poster_responsive: image.responsive } : { responsive: image.responsive }),
+      },
+    ];
+  cache.media.set(stored, { exists, poster: posterExists, image, value, immutable });
+  return value;
 }
 
 function firstImage(media: SiteMedia[]): string | null {

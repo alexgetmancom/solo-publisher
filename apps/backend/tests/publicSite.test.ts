@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, it, spyOn } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
@@ -34,6 +34,7 @@ function studio(profile: Partial<StudioProfileRecord> = SITE_STUDIO_PROFILE) {
       const file = join(config.SITE_PUBLIC_DIR, relative);
       mkdirSync(dirname(file), { recursive: true });
       writeFileSync(file, body);
+      return file;
     },
   };
 }
@@ -44,7 +45,9 @@ type PublicSite = {
     post_id: number;
     image_en: string | null;
     media_en: {
+      type?: string;
       path: string;
+      poster?: string;
       width?: number;
       height?: number;
       responsive?: { path: string; width: number; height: number }[];
@@ -105,6 +108,103 @@ describe("GET /api/public/site", () => {
     expect(etag).toBeTruthy();
     const again = await request("/api/public/site", { headers: { "if-none-match": etag ?? "" } });
     expect(again.status).toBe(304);
+  });
+
+  it("keeps the serialized archive across expired quiet polls", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "English",
+      siteEn: true,
+      siteMediaEn: [{ type: "image", path: "media/posts/stable.jpg?v=abcdef012345" }],
+    });
+    const bytes = await image(100, 100);
+    writeSiteFile("media/posts/stable.jpg", bytes);
+    writeSiteFile("generated/responsive/media-posts-stable-360.webp", bytes);
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    const serialize = spyOn(JSON, "stringify");
+    try {
+      const first = await request("/api/public/site");
+      const etag = first.headers.get("etag")!;
+      serialize.mockClear();
+      clock.mockReturnValue(now + 3001);
+      expect((await request("/api/public/site", { headers: { "if-none-match": etag } })).status).toBe(304);
+      // The remaining nominal sizes have the same actual dimensions. Becoming
+      // complete must enable reuse without changing public bytes or the ETag.
+      for (const width of [480, 640, 720, 800, 960, 1280]) writeSiteFile(`generated/responsive/media-posts-stable-${width}.webp`, bytes);
+      clock.mockReturnValue(now + 6002);
+      expect((await request("/api/public/site", { headers: { "if-none-match": etag } })).status).toBe(304);
+      expect(serialize.mock.calls.filter(([value]) => Array.isArray(value) && value[0]?.post_id === 1)).toHaveLength(0);
+    } finally {
+      clock.mockRestore();
+      serialize.mockRestore();
+    }
+  });
+
+  it("discovers late media, posters and derivatives without a database change", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "English",
+      siteEn: true,
+      siteMediaEn: [
+        { type: "image", path: "media/posts/late.jpg?v=abcdef012345" },
+        { type: "video", path: "media/posts/late.mp4?v=abcdef012345", poster: "media/posts/poster.jpg?v=abcdef012345" },
+      ],
+    });
+    writeSiteFile("media/posts/late.mp4");
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    let step = 0;
+    async function read() {
+      clock.mockReturnValue(now + step++ * 3001);
+      const response = await request("/api/public/site");
+      return { etag: response.headers.get("etag"), body: (await response.json()) as PublicSite };
+    }
+    try {
+      const first = await read();
+      expect(first.body.items[0]?.media_en).toEqual([{ type: "video", path: "media/posts/late.mp4?v=abcdef012345" }]);
+      writeSiteFile("media/posts/late.jpg", await image(1080, 1920));
+      const source = await read();
+      expect(source.etag).not.toBe(first.etag);
+      expect(source.body.items[0]?.media_en).toHaveLength(2);
+      expect((await read()).etag).toBe(source.etag);
+      writeSiteFile("media/posts/poster.jpg", await image(640, 360));
+      const poster = await read();
+      expect(poster.etag).not.toBe(source.etag);
+      expect(poster.body.items[0]?.media_en[1]).toMatchObject({ width: 640, height: 360 });
+      writeSiteFile("generated/responsive/media-posts-late-640.webp", await image(640, 1138));
+      const variant = await read();
+      expect(variant.etag).not.toBe(poster.etag);
+      expect(variant.body.items[0]?.media_en[0]?.responsive).toHaveLength(1);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("rechecks an unversioned image after it is replaced", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "English",
+      siteEn: true,
+      siteMediaEn: [{ type: "image", path: "media/posts/historical.jpg" }],
+    });
+    const file = writeSiteFile("media/posts/historical.jpg", await image(1080, 1920));
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    try {
+      const first = await request("/api/public/site");
+      writeSiteFile("media/posts/historical.jpg", await image(640, 360));
+      utimesSync(file, (now + 5000) / 1000, (now + 5000) / 1000);
+      clock.mockReturnValue(now + 3001);
+      const second = await request("/api/public/site");
+      expect(second.headers.get("etag")).not.toBe(first.headers.get("etag"));
+      expect(((await second.json()) as PublicSite).items[0]?.media_en[0]).toMatchObject({ width: 640, height: 360 });
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("publishes only renderer media fields, including missing-poster and unreadable-image fallbacks", async () => {

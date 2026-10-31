@@ -18,7 +18,10 @@ it("finds a derivative written after the first read and rejects an older generat
       .toBuffer();
     await writeFile(source, bytes);
     await utimes(source, 200, 200);
-    expect((await siteImage(root, "media/photo.jpg?v=current"))?.responsive).toEqual([]);
+    const incomplete = await siteImage(root, "media/photo.jpg?v=current");
+    expect(incomplete?.responsive).toEqual([]);
+    expect(incomplete?.complete).toBe(false);
+    expect(await siteImage(root, "media/photo.jpg?v=current")).toBe(incomplete);
 
     await writeFile(variant, bytes);
     await utimes(variant, 100, 100);
@@ -51,6 +54,7 @@ it("reuses complete image descriptions but rechecks replaced historical images",
     await writeFile(source, bytes);
     for (const width of RESPONSIVE_WIDTHS) await writeFile(join(root, `generated/responsive/media-photo-${width}.webp`), bytes);
     const first = await siteImage(root, "media/photo.jpg?v=abcdef012345");
+    expect(first?.complete).toBe(true);
     expect(await siteImage(root, "media/photo.jpg?v=abcdef012345")).toBe(first);
     // Small sources have one actual width, despite all publication sizes
     // being present. That complete set must still be reusable.

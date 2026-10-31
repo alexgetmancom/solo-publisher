@@ -7,8 +7,8 @@ import { RESPONSIVE_WIDTHS } from "../content/site-media-naming.js";
 type ImageInfo = { width: number; height: number; modified: number; size: number };
 type Variant = { path: string; width: number; height: number };
 const images = new Map<string, Promise<ImageInfo | undefined>>();
-type ImageDescription = { width: number; height: number; responsive: Variant[] };
-const complete = new Map<string, ImageDescription>();
+type ImageDescription = { width: number; height: number; responsive: Variant[]; complete: boolean };
+const descriptions = new Map<string, ImageDescription>();
 
 /** Read the served file, not the dimensions of the upload it was made from.
  * Missing derivatives are not cached: the publication worker may still write them. */
@@ -21,8 +21,8 @@ export async function siteImage(root: string, publicPath: string) {
   if (!source) return undefined;
   const version = query || `?v=${createHash("sha256").update(`${source.modified}:${source.size}`).digest("hex").slice(0, 12)}`;
   const key = `${file}${version}`;
-  const cached = complete.get(key);
-  if (cached) return cached;
+  const cached = descriptions.get(key);
+  if (cached?.complete) return cached;
   const basename = relative.replace(/[\\/]/g, "-").replace(/\.[a-z0-9]+$/i, "");
   const responsive: (Variant & { nominal: number })[] = [];
   let current = 0;
@@ -46,6 +46,7 @@ export async function siteImage(root: string, publicPath: string) {
   const description = {
     width: source.width,
     height: source.height,
+    complete: current === RESPONSIVE_WIDTHS.length,
     responsive: responsive
       .filter((variant, index) => index === 0 || variant.width !== responsive[index - 1]?.width)
       .map(({ nominal: _nominal, ...variant }) => variant),
@@ -53,8 +54,25 @@ export async function siteImage(root: string, publicPath: string) {
   // Once all publication sizes exist, the content version makes the whole
   // description reusable. Incomplete sets must be retried so late worker
   // output is discovered without changing the post or restarting the server.
-  if (current === RESPONSIVE_WIDTHS.length) complete.set(key, description);
-  return description;
+  const latest = descriptions.get(key);
+  if (latest?.complete) return latest;
+  const previous = latest;
+  const unchanged =
+    previous &&
+    previous.width === description.width &&
+    previous.height === description.height &&
+    previous.responsive.length === description.responsive.length &&
+    previous.responsive.every((variant, index) => {
+      const next = description.responsive[index];
+      return next?.path === variant.path && next.width === variant.width && next.height === variant.height;
+    });
+  const value = unchanged ? previous : description;
+  // Incomplete descriptions still retry their missing files, but retain their
+  // identity while the public fields are unchanged. A late derivative changes
+  // the value and therefore the public feed's ETag.
+  value.complete = description.complete;
+  descriptions.set(key, value);
+  return value;
 }
 
 async function imageInfo(file: string, version: string): Promise<ImageInfo | undefined> {

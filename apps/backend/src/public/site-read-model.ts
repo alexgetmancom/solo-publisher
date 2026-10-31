@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import * as z from "zod";
@@ -52,27 +53,36 @@ const feedItemSchema = z
 
 export type FeedItem = z.infer<typeof feedItemSchema>;
 
-/** Rebuilding the feed costs five queries plus a Zod parse per post, and the
- * public site asks for it every few seconds while it has readers.
- *
- * The TTL is what makes this safe without a change feed. A publish from the
- * ops CLI happens in a separate `docker exec` process, so no in-process hook
- * can see it, and `publishedAt` gating means an untouched database still turns
- * a scheduled post visible on its own. Both are bounded by the TTL. */
-const FEED_CACHE_TTL_MS = 3_000;
+/** Check database changes and scheduled publication boundaries at this cadence.
+ * An unchanged feed retains its objects, including across unrelated worker
+ * writes, so the public serializer can keep its body and ETag too. */
+export const SITE_FEED_REFRESH_MS = 3_000;
 
-type CachedFeed = { items: FeedItem[]; builtAt: number };
+type FeedState = { items: FeedItem[]; fingerprint: string; nextPublicationAt: number };
+type CachedFeed = FeedState & { builtAt: number; databaseVersion: string };
 // Keyed by the database handle so a test's `:memory:` database and the closed
 // handle of a previous runtime never hand their feed to anyone else.
 const feedCache = new WeakMap<BackendDb, CachedFeed>();
 
 /** Published-site read model. It reads only stable publication data. */
 export function loadPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
+  const now = Date.now();
   const cached = feedCache.get(backendDb);
-  if (cached && Date.now() - cached.builtAt < FEED_CACHE_TTL_MS) return cached.items;
-  const items = buildPublicSiteFeed(backendDb);
-  feedCache.set(backendDb, { items, builtAt: Date.now() });
-  return items;
+  if (cached && now - cached.builtAt < SITE_FEED_REFRESH_MS) return cached.items;
+  // data_version observes other connections (including ops CLI writes), while
+  // total_changes observes this connection. Neither replaces the clock gate:
+  // a scheduled locale becomes public without any database write.
+  const version = unsafeDb(backendDb).sqlite.query("SELECT data_version, total_changes() AS changes FROM pragma_data_version").get() as {
+    data_version: number;
+    changes: number;
+  };
+  const databaseVersion = `${version.data_version}:${version.changes}`;
+  const state =
+    cached && cached.databaseVersion === databaseVersion && now < cached.nextPublicationAt
+      ? cached
+      : buildPublicSiteFeed(backendDb, now, cached);
+  feedCache.set(backendDb, { ...state, databaseVersion, builtAt: now });
+  return state.items;
 }
 
 /** Drops the cached feed so the next read rebuilds it. Call this from anything
@@ -82,7 +92,7 @@ export function invalidatePublicSiteFeed(backendDb: BackendDb): void {
   feedCache.delete(backendDb);
 }
 
-function buildPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
+function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedFeed): FeedState {
   const ruLocale = alias(postLocales, "site_locale_ru");
   const enLocale = alias(postLocales, "site_locale_en");
   const rows = unsafeDb(backendDb)
@@ -151,8 +161,24 @@ function buildPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
       entitiesByDraft.set(entity.draftId, list);
     }
   }
-  const now = Date.now();
-  return rows.flatMap((row): FeedItem[] => {
+  // Background workers write the same database too. Compare the actual inputs
+  // so unrelated writes do not rebuild all posts or invalidate the HTTP body.
+  const fingerprint = createHash("sha256")
+    .update(JSON.stringify([rows, [...entitiesByDraft]]))
+    .digest("base64url");
+  if (cached?.fingerprint === fingerprint && now < cached.nextPublicationAt) return cached;
+  let nextPublicationAt = Number.POSITIVE_INFINITY;
+  for (const row of rows) {
+    if (row.postId == null) continue;
+    for (const [enabled, at] of [
+      [row.ruEnabled, row.ruPublishedAt],
+      [row.enEnabled, row.enPublishedAt],
+    ] as const) {
+      const when = at ? new Date(at).getTime() : 0;
+      if (enabled === 1 && when > now) nextPublicationAt = Math.min(nextPublicationAt, when);
+    }
+  }
+  const items = rows.flatMap((row): FeedItem[] => {
     if (row.postId == null) return [];
     const publicationKey = publicationRef("post", row.postId);
     const ru = locale(row.ruEnabled, row.ruPublishedAt, row.ruText, row.ruSlug, row.ruHtml, publishedMedia(row.ruMedia), now);
@@ -195,6 +221,7 @@ function buildPublicSiteFeed(backendDb: BackendDb): FeedItem[] {
     }
     return [parsed.data];
   });
+  return { items, fingerprint, nextPublicationAt };
 }
 
 type FeedEntity = {
