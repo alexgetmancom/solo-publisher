@@ -38,35 +38,10 @@ function writeYoutubeSignature(backendDb: SettingsDependencies, value: string): 
   });
 }
 
-function readWeeklyDigest(backendDb: SettingsDependencies) {
-  const row = backendDb.studioSettings.weeklyDigest();
-  return { enabled: row?.enabled !== 0, weekday: row?.weekday ?? 0 };
-}
-
 /** Absent means enabled: a Studio that has never opened settings still gets a
  * copy of its database, which is the case the backup exists for. */
 function readBackup(backendDb: SettingsDependencies) {
   return { enabled: backendDb.studioSettings.backup()?.enabled !== 0 };
-}
-
-/** How hard Grok thinks. The CLI's own scale, narrowed to what this Studio has
- * a reason to pick between. */
-export const NEWS_DIGEST_EFFORTS = ["low", "medium", "high", "xhigh"] as const;
-export type NewsDigestEffort = (typeof NEWS_DIGEST_EFFORTS)[number];
-
-function parseEffort(value: string | undefined): NewsDigestEffort {
-  return NEWS_DIGEST_EFFORTS.includes(value as NewsDigestEffort) ? (value as NewsDigestEffort) : "xhigh";
-}
-
-function readNewsDigest(backendDb: SettingsDependencies) {
-  const row = backendDb.studioSettings.newsDigest();
-  return {
-    enabled: row?.enabled === 1,
-    hour: row?.hour ?? 10,
-    minute: row?.minute ?? 0,
-    prompt: row?.prompt?.trim() ?? "",
-    effort: parseEffort(row?.effort),
-  };
 }
 
 /** What this Studio is and how its deployment behaves, as an operator sees it. */
@@ -166,55 +141,12 @@ export function settingsService(backendDb: SettingsDependencies) {
     notifications(actorId: number) {
       return readNotifications(backendDb, actorId);
     },
-    weeklyDigest() {
-      return readWeeklyDigest(backendDb);
-    },
-    newsDigest() {
-      return readNewsDigest(backendDb);
-    },
     backup() {
       return readBackup(backendDb);
     },
     setBackup(input: { enabled: boolean }) {
       backendDb.studioSettings.saveBackup({ enabled: Number(input.enabled), updatedAt: backendDb.clock.now().toISOString() });
       return { enabled: input.enabled };
-    },
-    setWeeklyDigest(input: Partial<{ enabled: boolean; weekday: number }>) {
-      if (input.weekday != null && (!Number.isInteger(input.weekday) || input.weekday < 0 || input.weekday > 6))
-        throw new StudioError("err.weekday-range");
-      const current = readWeeklyDigest(backendDb);
-      const next = { enabled: input.enabled ?? current.enabled, weekday: input.weekday ?? current.weekday };
-      backendDb.studioSettings.saveWeeklyDigest({
-        enabled: Number(next.enabled),
-        weekday: next.weekday,
-        updatedAt: backendDb.clock.now().toISOString(),
-      });
-      return next;
-    },
-    setNewsDigest(input: Partial<{ enabled: boolean; hour: number; minute: number; prompt: string; effort: NewsDigestEffort }>) {
-      if (input.hour != null && (!Number.isInteger(input.hour) || input.hour < 0 || input.hour > 23))
-        throw new StudioError("err.news-digest-hour-range");
-      if (input.minute != null && (!Number.isInteger(input.minute) || input.minute < 0 || input.minute > 59))
-        throw new StudioError("err.news-digest-minute-range");
-      if (input.prompt != null && input.prompt.trim().length > 10_000) throw new StudioError("err.news-digest-prompt-length");
-      if (input.effort != null && !NEWS_DIGEST_EFFORTS.includes(input.effort)) throw new StudioError("err.news-digest-effort-invalid");
-      const current = readNewsDigest(backendDb);
-      const next = {
-        enabled: input.enabled ?? current.enabled,
-        hour: input.hour ?? current.hour,
-        minute: input.minute ?? current.minute,
-        prompt: input.prompt == null ? current.prompt : input.prompt.trim(),
-        effort: input.effort ?? current.effort,
-      };
-      backendDb.studioSettings.saveNewsDigest({
-        enabled: Number(next.enabled),
-        hour: next.hour,
-        minute: next.minute,
-        prompt: next.prompt,
-        effort: next.effort,
-        updatedAt: backendDb.clock.now().toISOString(),
-      });
-      return next;
     },
     setNotifications(
       actorId: number,

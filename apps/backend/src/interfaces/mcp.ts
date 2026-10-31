@@ -211,24 +211,6 @@ const studioToolDefs = {
         ...(input.completion_enabled === undefined ? {} : { completionEnabled: input.completion_enabled }),
       }),
   }),
-  studio_weekly_digest_settings: tool({
-    description: "Read the Studio-wide weekly digest policy shared by every administrator.",
-    schema: z.object({}),
-    handler: (studio) => studio.settings.weeklyDigest(),
-  }),
-  studio_weekly_digest_settings_update: tool({
-    description: "Update the Studio-wide weekly digest policy shared by every administrator.",
-    schema: z.object({
-      enabled: z.boolean().optional(),
-      weekday: z.number().int().min(0).max(6).optional(),
-    }),
-    mutates: true,
-    handler: (studio, _actorId, input) =>
-      studio.settings.setWeeklyDigest({
-        ...(input.enabled === undefined ? {} : { enabled: input.enabled }),
-        ...(input.weekday === undefined ? {} : { weekday: input.weekday }),
-      }),
-  }),
   studio_media_list: tool({
     description: "List reusable media assets visible to the authenticated Studio operator.",
     schema: z.object({ limit: positiveInt.max(100).optional() }),

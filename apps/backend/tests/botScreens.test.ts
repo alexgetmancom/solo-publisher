@@ -16,7 +16,6 @@ import {
   CHANNEL_MENU_ID,
   CHANNELS_MENU_ID,
   DEFAULT_TARGETS_MENU_ID,
-  NEWS_DIGEST_MENU_ID,
   NOTIFICATION_SETTINGS_MENU_ID,
   NOTIFICATIONS_MENU_ID,
   PUBLISHING_MENU_ID,
@@ -91,7 +90,6 @@ async function renderScreens(backendDb: UnsafeBackendDb): Promise<string> {
     ["Settings · Publishing · Default targets", DEFAULT_TARGETS_MENU_ID],
     ["Settings · Notifications", NOTIFICATIONS_MENU_ID],
     ["Settings · Notifications · Publication notices", NOTIFICATION_SETTINGS_MENU_ID],
-    ["Settings · Notifications · News digest", NEWS_DIGEST_MENU_ID],
     ["Settings · System", SYSTEM_MENU_ID],
     ["Settings · System · Backup", BACKUP_MENU_ID],
   ] as const) {

@@ -215,12 +215,8 @@ export type StudioSettingsStore = {
   notifications(actorId: number): StudioNotificationSettingsRecord | null;
   locale(actorId: number): string | null;
   timezone(actorId: number): string | null;
-  weeklyDigest(): StudioWeeklyDigestSettingsRecord | null;
-  saveWeeklyDigest(input: { enabled: number; weekday: number; updatedAt: string }): void;
   backup(): StudioBackupSettingsRecord | null;
   saveBackup(input: { enabled: number; updatedAt: string }): void;
-  newsDigest(): StudioNewsDigestSettingsRecord | null;
-  saveNewsDigest(input: { enabled: number; hour: number; minute: number; prompt: string; effort: string; updatedAt: string }): void;
   saveNotifications(input: {
     actorId: number;
     videoRemindersEnabled: number;
@@ -270,23 +266,6 @@ type StudioNotificationSettingsRecord = {
 type StudioBackupSettingsRecord = {
   id: number;
   enabled: number;
-  updatedAt: string;
-};
-
-type StudioWeeklyDigestSettingsRecord = {
-  id: number;
-  enabled: number;
-  weekday: number;
-  updatedAt: string;
-};
-
-type StudioNewsDigestSettingsRecord = {
-  id: number;
-  enabled: number;
-  hour: number;
-  minute: number;
-  prompt: string;
-  effort: string;
   updatedAt: string;
 };
 

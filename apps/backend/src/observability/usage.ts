@@ -16,7 +16,6 @@ const TRACKED_FEATURES = [
   "analytics.video_metrics.collect",
   "analytics.video_captions.collect",
   "analytics.audience_demographics.sync",
-  "engagement.pageview.record",
   // The dashboard is three operations with three cost profiles: a full HTML
   // render, the JSON payload behind it, and a fingerprint the open tab polls
   // every 60 seconds. One shared key buried the render's cost under the poll's

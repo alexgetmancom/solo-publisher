@@ -3,11 +3,9 @@ import type { StudioSettingsStore } from "../../application/ports.js";
 import {
   botUiSettings,
   studioBackupSettings,
-  studioNewsDigestSettings,
   studioNotificationJobs,
   studioNotificationSettings,
   studioProfile,
-  studioWeeklyDigestSettings,
   studioYoutubeSettings,
 } from "../schema.js";
 import type { BackendDatabase } from "../types.js";
@@ -42,57 +40,14 @@ export function createStudioSettingsStore(db: BackendDatabase): StudioSettingsSt
       );
     },
 
-    weeklyDigest() {
-      return db.select().from(studioWeeklyDigestSettings).where(eq(studioWeeklyDigestSettings.id, 1)).get() ?? null;
-    },
-
     backup() {
       return db.select().from(studioBackupSettings).where(eq(studioBackupSettings.id, 1)).get() ?? null;
-    },
-
-    newsDigest() {
-      return db.select().from(studioNewsDigestSettings).where(eq(studioNewsDigestSettings.id, 1)).get() ?? null;
-    },
-
-    saveWeeklyDigest(input) {
-      db.insert(studioWeeklyDigestSettings)
-        .values({ id: 1, enabled: input.enabled, weekday: input.weekday, updatedAt: input.updatedAt })
-        .onConflictDoUpdate({
-          target: studioWeeklyDigestSettings.id,
-          set: { enabled: input.enabled, weekday: input.weekday, updatedAt: input.updatedAt },
-        })
-        .run();
     },
 
     saveBackup(input) {
       db.insert(studioBackupSettings)
         .values({ id: 1, enabled: input.enabled, updatedAt: input.updatedAt })
         .onConflictDoUpdate({ target: studioBackupSettings.id, set: { enabled: input.enabled, updatedAt: input.updatedAt } })
-        .run();
-    },
-
-    saveNewsDigest(input) {
-      db.insert(studioNewsDigestSettings)
-        .values({
-          id: 1,
-          enabled: input.enabled,
-          hour: input.hour,
-          minute: input.minute,
-          prompt: input.prompt,
-          effort: input.effort,
-          updatedAt: input.updatedAt,
-        })
-        .onConflictDoUpdate({
-          target: studioNewsDigestSettings.id,
-          set: {
-            enabled: input.enabled,
-            hour: input.hour,
-            minute: input.minute,
-            prompt: input.prompt,
-            effort: input.effort,
-            updatedAt: input.updatedAt,
-          },
-        })
         .run();
     },
 

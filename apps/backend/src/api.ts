@@ -1,10 +1,8 @@
 import { Hono, type MiddlewareHandler } from "hono";
 import type { BackendDb } from "./db/client.js";
-import { engagementService } from "./engagement/service.js";
 import type { BackendConfig } from "./foundation/config.js";
 import { text } from "./foundation/http-response.js";
 import { discoveryRoutes } from "./interfaces/http/discovery.js";
-import { engagementRoutes } from "./interfaces/http/engagement.js";
 import { healthRoutes } from "./interfaces/http/health.js";
 import { metaOauthRoutes } from "./interfaces/http/meta-oauth.js";
 import { publicSiteRoutes } from "./interfaces/http/public-site.js";
@@ -39,7 +37,6 @@ function buildApp({ config, backendDb, studio: providedStudio }: ApiContext): Ho
     config,
     backendDb,
     studio,
-    engagement: engagementService(backendDb, config),
   };
   // Trailing slashes have always matched; clients and bookmarks rely on it.
   const app = new Hono({ strict: false });
@@ -55,7 +52,6 @@ function buildApp({ config, backendDb, studio: providedStudio }: ApiContext): Ho
   metaOauthRoutes(app, deps);
   xOauthRoutes(app, deps);
   youtubeOauthRoutes(app, deps);
-  engagementRoutes(app, deps);
   studioRoutes(app, deps);
   publicSiteRoutes(app, deps);
   discoveryRoutes(app, deps);

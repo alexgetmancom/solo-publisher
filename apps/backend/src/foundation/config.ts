@@ -80,7 +80,7 @@ const envSchema = z
     CLIENT_IP_HASH_SALT: z.string().min(16).default("development-only"),
     // Defaulted, not optional: the host proxy sets X-Real-IP on every route, and
     // when this was unset the whole internet collapsed onto one visitor identity
-    // (see engagement/identity.ts), making the public rate limit one global budget.
+    // (see foundation/client-identity.ts), making the public rate limit one global budget.
     TRUSTED_CLIENT_IP_HEADER: z.enum(["x-real-ip", "cf-connecting-ip"]).default("x-real-ip"),
     COMMAND_CENTER_TOKEN: z.string().optional(),
     MCP_STUDIO_TOKEN: z.string().min(16).optional(),

@@ -17,12 +17,6 @@ export function text(body: string, status = 200): Response {
   });
 }
 
-export function html(body: string): Response {
-  return new Response(body, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
-}
-
 export function sse(start: (send: (event: string, data: unknown) => void) => ReturnType<typeof setInterval>): Response {
   let timer: ReturnType<typeof setInterval> | undefined;
   const stream = new ReadableStream<Uint8Array>({

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, like, lt, lte, or } from "drizzle-orm";
+import { and, eq, isNull, lt, lte, or } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { analyticsSync } from "../db/schema.js";
 
@@ -66,16 +66,4 @@ export function markSynced(backendDb: BackendDb, source: string, error: string |
     })
     .where(owner ? and(eq(analyticsSync.source, source), eq(analyticsSync.lockedBy, owner)) : eq(analyticsSync.source, source))
     .run();
-}
-
-/** Sync rows whose source starts with a prefix, newest first. The daily jobs
- * key one row per day, so this is how an operator sees what the last runs did. */
-export function syncStateFor(backendDb: BackendDb, prefix: string, limit = 7) {
-  return unsafeDb(backendDb)
-    .db.select()
-    .from(analyticsSync)
-    .where(like(analyticsSync.source, `${prefix}%`))
-    .orderBy(desc(analyticsSync.source))
-    .limit(limit)
-    .all();
 }

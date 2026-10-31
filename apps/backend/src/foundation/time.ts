@@ -114,20 +114,6 @@ export function formatZonedDayMonth(date: Date, locale: StudioLocale, timeZone: 
   );
 }
 
-export function zonedDateTimeParts(date: Date, timeZone: string): { day: string; hour: number; minute: number } {
-  const parts = formatter(`date-time:${timeZone}`, "en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
-  const value = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
-  return { day: `${value.year}-${value.month}-${value.day}`, hour: Number(value.hour), minute: Number(value.minute) };
-}
-
 export function manualScheduleExample(timeZone: string, now = new Date()): string {
   const date = zonedDateParts(now, timeZone);
   return `${String(date.day).padStart(2, "0")}.${String(date.month).padStart(2, "0")} HH:MM`;

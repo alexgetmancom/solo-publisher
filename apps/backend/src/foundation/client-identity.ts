@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import type { BackendConfig } from "../foundation/config.js";
+import type { BackendConfig } from "./config.js";
 
 /** Derives a privacy-preserving public visitor identity from the trusted proxy header.
  *

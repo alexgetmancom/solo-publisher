@@ -1,6 +1,5 @@
 import type { Hono } from "hono";
 import type { BackendDb } from "../../db/client.js";
-import type { engagementService } from "../../engagement/service.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import type { StudioServices } from "../../studio/services/index.js";
 
@@ -11,7 +10,6 @@ type HttpDeps = {
   config: BackendConfig;
   backendDb: BackendDb;
   studio: StudioServices;
-  engagement: ReturnType<typeof engagementService>;
 };
 
 /** Every route module exports one of these. It registers its own paths on the

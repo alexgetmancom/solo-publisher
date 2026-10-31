@@ -2,7 +2,6 @@ import type { Menu } from "@grammyjs/menu";
 import type { Context } from "grammy";
 import type { BackendDb } from "../../db/client.js";
 import { t } from "../../foundation/i18n/index.js";
-import type { StudioLocale } from "../../foundation/locale.js";
 import { settingsService } from "../../studio/services/settings.js";
 import { clearConversationState, saveConversationState } from "../conversation-state.js";
 import { showScreen } from "../effects.js";
@@ -12,10 +11,7 @@ export const PUBLISHING_MENU_ID = "settings-publishing";
 export const NOTIFICATIONS_MENU_ID = "settings-notifications-category";
 export const SYSTEM_MENU_ID = "settings-system";
 export const NOTIFICATION_SETTINGS_MENU_ID = "settings-notifications";
-export const WEEKLY_DIGEST_MENU_ID = "settings-weekly-digest";
 export const BACKUP_MENU_ID = "settings-backup";
-export const NEWS_DIGEST_MENU_ID = "settings-news-digest";
-export const NEWS_DIGEST_TIME_MENU_ID = "settings-news-digest-time";
 export const DEFAULT_TARGETS_MENU_ID = "settings-default-targets";
 export const YOUTUBE_SIGNATURE_MENU_ID = "settings-youtube";
 export const LANGUAGE_MENU_ID = "settings-language";
@@ -25,7 +21,7 @@ export const CHANNEL_DISABLE_MENU_ID = "settings-channel-disable";
 export const CHANNEL_CONNECT_MENU_ID = "settings-channel-connect";
 export const TIMEZONE_MENU_ID = "settings-timezone";
 
-export type SettingsInputStep = "timezone" | "news_digest_prompt" | "news_digest_time" | "youtube_signature";
+export type SettingsInputStep = "timezone" | "youtube_signature";
 
 function beginSettingsInput(backendDb: BackendDb, actorId: number, step: SettingsInputStep, data: Record<string, unknown> = {}): void {
   saveConversationState(backendDb, actorId, { kind: "settings", draftId: null, step, data, controlMessageId: null });
@@ -93,15 +89,6 @@ export function settingsUpdate(options: {
 /** The same, for a control that only navigates: no change to apply. */
 export function settingsScreen(body: () => string, plainText?: true) {
   return settingsUpdate({ apply: () => undefined, body, ...(plainText ? { plainText } : {}) });
-}
-
-export function formatTime(hour: number, minute: number): string {
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
-export function weekdayLabel(locale: StudioLocale, weekday: number): string {
-  const labels = locale === "ru" ? ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return labels[weekday] ?? labels[0] ?? "";
 }
 
 /** Settings input sits in front of the router and claims the next message.

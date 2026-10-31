@@ -5,8 +5,6 @@ import { DEFAULT_STUDIO_PROFILE } from "../src/studio.js";
 
 describe("application persistence ports", () => {
   it("runs the settings service without SQLite", () => {
-    let weeklyDigest: Parameters<ApplicationPorts["studioSettings"]["saveWeeklyDigest"]>[0] | undefined;
-    let newsDigest: Parameters<ApplicationPorts["studioSettings"]["saveNewsDigest"]>[0] | undefined;
     let notifications: Parameters<ApplicationPorts["studioSettings"]["saveNotifications"]>[0] | undefined;
     let timezone: Parameters<ApplicationPorts["studioSettings"]["saveTimezone"]>[0] | undefined;
     let currentTimezone: string | null = null;
@@ -18,16 +16,8 @@ describe("application persistence ports", () => {
         notifications: () => null,
         locale: () => null,
         timezone: () => currentTimezone,
-        weeklyDigest: () => null,
         backup: () => null,
         saveBackup: () => {},
-        saveWeeklyDigest: (input) => {
-          weeklyDigest = input;
-        },
-        newsDigest: () => null,
-        saveNewsDigest: (input) => {
-          newsDigest = input;
-        },
         saveNotifications: (input) => {
           notifications = input;
         },
@@ -49,23 +39,6 @@ describe("application persistence ports", () => {
     settings.setTimezone(42, "America/New_York");
     expect(timezone).toEqual({ timezone: "America/New_York", actorId: 42, updatedAt: "2026-01-02T03:04:05.000Z" });
     expect(settings.timezone(42, "Europe/Moscow")).toBe("America/New_York");
-    expect(settings.setWeeklyDigest({ enabled: true, weekday: 2 })).toEqual({ enabled: true, weekday: 2 });
-    expect(weeklyDigest).toEqual({ enabled: 1, weekday: 2, updatedAt: "2026-01-02T03:04:05.000Z" });
-    expect(settings.setNewsDigest({ enabled: true, hour: 8, minute: 30, prompt: "news", effort: "high" })).toEqual({
-      enabled: true,
-      hour: 8,
-      minute: 30,
-      prompt: "news",
-      effort: "high",
-    });
-    expect(newsDigest).toEqual({
-      enabled: 1,
-      hour: 8,
-      minute: 30,
-      prompt: "news",
-      effort: "high",
-      updatedAt: "2026-01-02T03:04:05.000Z",
-    });
     expect(settings.setNotifications(42, { videoRemindersEnabled: false, reminderMinutes: 15 })).toEqual({
       videoRemindersEnabled: false,
       postRemindersEnabled: true,

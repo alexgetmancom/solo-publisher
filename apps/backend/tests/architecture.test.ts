@@ -29,7 +29,6 @@ const applicationPersistenceExceptions = new Set<string>();
 const interfacePersistenceOwners = new Set([
   "apps/backend/src/interfaces/http/health.ts",
   "apps/backend/src/interfaces/telegram/control-cards.ts",
-  "apps/backend/src/interfaces/telegram/editorial-inbox.ts",
   "apps/backend/src/interfaces/telegram/event-consumer.ts",
   "apps/backend/src/interfaces/telegram/video-notifications.ts",
 ]);

@@ -70,9 +70,6 @@ describe("telegram interface contour", () => {
     // and the example values the operations catalogue prints in its usage strings.
     "apps/backend/src/bot/post-flow.ts",
     "apps/backend/src/operations/registry.ts",
-    // Copy that still bypasses the catalogue. Each one renders Russian to an
-    // English operator, and each one is a key waiting to be written.
-    "apps/backend/src/bot/settings/shared.ts",
   ]);
 
   it("keeps Russian copy out of the code and inside the catalogue", () => {

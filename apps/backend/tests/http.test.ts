@@ -124,31 +124,7 @@ describe("Studio HTTP surface", () => {
       expect(listChannels(backendDb, false)).toEqual(channels);
     }));
 
-  it("refuses an oversized pageview beacon without buffering it", async () => {
-    const backendDb = openBackendDb(join(tempDir("alexgetman-pageview-body-"), "pipeline.db"), 5000);
-    try {
-      const app = createApiApp(loadTestConfig({}), backendDb);
-      // Caddy allows a gigabyte and this container has 384 MB; the route is
-      // anonymous, so the ceiling has to hold here.
-      const oversized = await app.request("/stats/pageview", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ path: `/${"x".repeat(8192)}` }),
-      });
-      expect(oversized.status).toBe(413);
-
-      const accepted = await app.request("/stats/pageview", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ path: "/ok/" }),
-      });
-      expect(accepted.status).toBe(204);
-    } finally {
-      backendDb.close();
-    }
-  });
-
-  it("serves engagement and MCP routes", () =>
+  it("serves MCP and rate-limits feedback by client", () =>
     withTempDb(async (backendDb) => {
       const app = createApiApp(
         loadTestConfig({
@@ -157,17 +133,6 @@ describe("Studio HTTP surface", () => {
         }),
         backendDb,
       );
-      expect(
-        (
-          await app.request("/stats/pageview", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ path: "/post/" }),
-          })
-        ).status,
-      ).toBe(204);
-      expect(backendDb.sqlite.prepare("SELECT count FROM site_pageviews WHERE path=?").get("/post/")).toEqual({ count: 1 });
-
       const initialized = await app.request("/api/mcp", {
         method: "POST",
         headers: { "content-type": "application/json" },

@@ -151,7 +151,7 @@ describe("Studio MCP tools that call themselves read-only", () => {
 
   it("covers the whole read-only half of the Studio catalog, and really runs it", () =>
     withDb(async (backendDb) => {
-      expect(readOnly.length).toBeGreaterThan(20);
+      expect(readOnly.length).toBeGreaterThan(15);
       seed(backendDb);
       const app = createApiHandler({ config: mcpConfig(), backendDb });
 

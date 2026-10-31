@@ -168,33 +168,6 @@ describe("buildSettingsMenu", () => {
     expect(labels).toEqual(["📡 Publishing", "🔔 Notifications", "⚙️ System", "← Menu"]);
   });
 
-  it("keeps the news digest under notifications", async () => {
-    backendDb = openBackendDb(":memory:");
-    const config = loadTestConfig({});
-
-    const labels = await settingsMenuLabels(config, backendDb, "settings-notifications-category");
-    expect(labels).not.toContain("📥 Inbox");
-    expect(labels).toContain("📰 News digest");
-  });
-
-  it("renders the news digest controls with a back button", async () => {
-    backendDb = openBackendDb(":memory:");
-    const config = loadTestConfig({});
-
-    const labels = await settingsMenuLabels(config, backendDb, "settings-news-digest");
-    expect(labels).toEqual([
-      "⬜ News digest",
-      "🕒 Delivery time: 10:00",
-      "○ low",
-      "○ medium",
-      "○ high",
-      "● xhigh",
-      "✏️ Change prompt",
-      "▶️ Send now",
-      "← Notifications",
-    ]);
-  });
-
   /** System settings keep the database copy, clock and interface language. */
   it("gathers the machine's own settings under System", async () => {
     backendDb = openBackendDb(":memory:");

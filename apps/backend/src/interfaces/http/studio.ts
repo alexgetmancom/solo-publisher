@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { STUDIO_MEDIA_MAX_BYTES } from "../../content/assets.js";
+import { clientIpHash } from "../../foundation/client-identity.js";
 import { mcpStudioActor } from "../../foundation/http-auth.js";
 import { json, sse, text } from "../../foundation/http-response.js";
 import { trackUsageAsync } from "../../observability/usage.js";
@@ -12,7 +13,7 @@ import { isMediaUploadTooLarge, MediaUploadTooLargeError, streamUploadToFile } f
 let activeMediaUploads = 0;
 const MAX_ACTIVE_MEDIA_UPLOADS = 2;
 
-export const studioRoutes: RouteModule = (app, { config, backendDb, engagement, studio }) => {
+export const studioRoutes: RouteModule = (app, { config, backendDb, studio }) => {
   // The MCP transport is a privileged Studio surface, same as POST /api/mcp:
   // an unauthenticated stream let any client pin an open connection and a
   // recurring timer for free. One authority, the same one POST answers to — a
@@ -30,7 +31,7 @@ export const studioRoutes: RouteModule = (app, { config, backendDb, engagement, 
     const body = await c.req.raw.json().catch(() => null);
     if (body == null) return json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Invalid JSON" } });
     const response = await trackUsageAsync(backendDb, "studio.mcp.request", () =>
-      mcpResponse(backendDb, config, body, engagement.clientKey(c.req.raw), mcpStudioActor(c.req.raw, config), studio),
+      mcpResponse(backendDb, config, body, clientIpHash(c.req.raw, config), mcpStudioActor(c.req.raw, config), studio),
     );
     // A notification is answered by accepting it and nothing else.
     return response === null ? new Response(null, { status: 202 }) : json(response);
