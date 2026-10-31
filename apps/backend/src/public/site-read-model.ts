@@ -56,7 +56,8 @@ const feedItemSchema = z
 
 export type FeedItem = z.infer<typeof feedItemSchema>;
 
-type FeedState = { items: FeedItem[]; fingerprint: string; nextPublicationAt: number };
+type CachedItem = { fingerprint: string; item: FeedItem; nextPublicationAt: number };
+type FeedState = { items: FeedItem[]; nextPublicationAt: number; byDraft: Map<number, CachedItem> };
 type CachedFeed = FeedState & { databaseVersion: string };
 // Keyed by the database handle so a test's `:memory:` database and the closed
 // handle of a previous runtime never hand their feed to anyone else.
@@ -192,25 +193,30 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
       entitiesByDraft.set(entity.draftId, list);
     }
   }
-  // Background workers write the same database too. Compare the actual inputs
-  // so unrelated writes do not rebuild all posts or invalidate the HTTP body.
-  const fingerprint = createHash("sha256")
-    .update(JSON.stringify([rows, [...entitiesByDraft]]))
-    .digest("base64url");
-  if (cached?.fingerprint === fingerprint && now < cached.nextPublicationAt) return cached;
   let nextPublicationAt = Number.POSITIVE_INFINITY;
-  for (const row of rows) {
-    if (row.postId == null) continue;
+  const byDraft = new Map<number, CachedItem>();
+  const items = rows.flatMap((row): FeedItem[] => {
+    if (row.postId == null) return [];
+    let nextItemPublicationAt = Number.POSITIVE_INFINITY;
     for (const [enabled, at] of [
       [row.ruEnabled, row.ruPublishedAt],
       [row.enEnabled, row.enPublishedAt],
     ] as const) {
       const when = at ? new Date(at).getTime() : 0;
-      if (enabled === 1 && when > now) nextPublicationAt = Math.min(nextPublicationAt, when);
+      if (enabled === 1 && when > now) nextItemPublicationAt = Math.min(nextItemPublicationAt, when);
     }
-  }
-  const items = rows.flatMap((row): FeedItem[] => {
-    if (row.postId == null) return [];
+    nextPublicationAt = Math.min(nextPublicationAt, nextItemPublicationAt);
+    const entities = entitiesByDraft.get(row.draftId) ?? [];
+    // A view counter or one edited locale must not discard every other post's
+    // validated media and the HTTP layer's cached file descriptions.
+    const itemFingerprint = createHash("sha256")
+      .update(JSON.stringify([row, entities]))
+      .digest("base64url");
+    const previous = cached?.byDraft.get(row.draftId);
+    if (previous?.fingerprint === itemFingerprint && now < previous.nextPublicationAt) {
+      byDraft.set(row.draftId, previous);
+      return [previous.item];
+    }
     const publicationKey = publicationRef("post", row.postId);
     const ru = locale(row.ruEnabled, row.ruPublishedAt, row.ruText, row.ruSlug, row.ruHtml, publishedMedia(row.ruMedia), now);
     const en = locale(row.enEnabled, row.enPublishedAt, row.enText, row.enSlug, row.enHtml, publishedMedia(row.enMedia), now);
@@ -236,7 +242,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
       media_en: mediaEn,
       image: firstImage(media),
       image_en: firstImage(mediaEn),
-      entities: entitiesByDraft.get(row.draftId) ?? [],
+      entities,
       views: row.views ?? 0,
     });
     // A single malformed row (a legacy shape, an unexpected null) must never take
@@ -252,9 +258,11 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
       });
       return [];
     }
+    byDraft.set(row.draftId, { fingerprint: itemFingerprint, item: parsed.data, nextPublicationAt: nextItemPublicationAt });
     return [parsed.data];
   });
-  return { items, fingerprint, nextPublicationAt };
+  const unchanged = cached && items.length === cached.items.length && items.every((item, index) => item === cached.items[index]);
+  return { items: unchanged ? cached.items : items, nextPublicationAt, byDraft };
 }
 
 type FeedEntity = {

@@ -23,6 +23,93 @@ beforeEach(() => {
 afterEach(() => backendDb.close());
 
 describe("Drizzle site feed", () => {
+  it("reuses unchanged posts after a view counter or locale changes and forgets deleted posts", () => {
+    seedTextPost(backendDb, { postId: 1, en: "First", siteEn: true });
+    seedTextPost(backendDb, { postId: 2, en: "Second", siteEn: true });
+    const first = feedItem(1);
+    const second = feedItem(2);
+    rawDb.db.insert(postMetrics).values({ publicationKey: "post:1", target: "telegram", metricName: "views", value: 7 }).run();
+    expect(feedItem(1)).not.toBe(first);
+    expect(feedItem(1)?.views).toBe(7);
+    expect(feedItem(2)).toBe(second);
+    const counted = feedItem(1);
+    const countedFeed = loadPublicSiteFeed(backendDb);
+    rawDb.sqlite.run("UPDATE post_metrics SET value = 7 WHERE publication_key = 'post:1'");
+    expect(loadPublicSiteFeed(backendDb)).toBe(countedFeed);
+    rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Edited' WHERE draft_id = 1 AND locale = 'en'");
+    expect(feedItem(1)).not.toBe(counted);
+    expect(feedItem(1)?.text_en).toBe("Edited");
+    expect(feedItem(2)).toBe(second);
+    rawDb.sqlite.run("DELETE FROM drafts WHERE id = 1");
+    expect(feedItem(1)).toBeUndefined();
+    expect(feedItem(2)).toBe(second);
+    rawDb.sqlite.run("DELETE FROM post_locales WHERE draft_id = 1");
+    seedTextPost(backendDb, { postId: 1, en: "Replacement", siteEn: true });
+    expect(feedItem(1)?.text_en).toBe("Replacement");
+    expect(feedItem(2)).toBe(second);
+  });
+
+  it("invalidates every post linked to an edited entity while reusing unlinked posts", () => {
+    const now = new Date().toISOString();
+    for (const postId of [1, 2, 3]) seedTextPost(backendDb, { postId, en: `Post ${postId}`, siteEn: true });
+    const { id: entityId } = rawDb.db
+      .insert(knowledgeEntities)
+      .values({ kind: "model", slug: "shared-model", titleRu: "Shared model", createdAt: now, updatedAt: now })
+      .returning({ id: knowledgeEntities.id })
+      .get();
+    for (const draftId of [1, 2]) rawDb.db.insert(draftEntityLinks).values({ draftId, entityId, createdAt: now }).run();
+    const before = new Map(loadPublicSiteFeed(backendDb).map((item) => [item.post_id, item]));
+    rawDb.sqlite.run("UPDATE knowledge_entities SET title_en = 'New title' WHERE id = ?", [entityId]);
+    for (const postId of [1, 2]) {
+      expect(feedItem(postId)).not.toBe(before.get(postId));
+      expect(feedItem(postId)?.entities[0]?.title_en).toBe("New title");
+    }
+    expect(feedItem(3)).toBe(before.get(3));
+  });
+
+  it("publishes a cached post's second locale at its boundary while reusing other posts", () => {
+    const now = Date.now();
+    const clock = spyOn(Date, "now").mockReturnValue(now);
+    try {
+      seedTextPost(backendDb, {
+        postId: 1,
+        ru: "Published",
+        en: "Scheduled",
+        siteRu: true,
+        siteEn: true,
+        now: new Date(now).toISOString(),
+      });
+      seedTextPost(backendDb, { postId: 2, en: "Other", siteEn: true, now: new Date(now).toISOString() });
+      rawDb.sqlite.run("UPDATE post_locales SET published_at = ? WHERE draft_id = 1 AND locale = 'en'", [
+        new Date(now + 5000).toISOString(),
+      ]);
+      const first = feedItem(1);
+      expect(first?.has_ru).toBe(true);
+      expect(first?.has_en).toBe(false);
+      rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Other edited' WHERE draft_id = 2 AND locale = 'en'");
+      expect(feedItem(1)).toBe(first);
+      const other = feedItem(2);
+      clock.mockReturnValue(now + 5000);
+      expect(feedItem(1)).not.toBe(first);
+      expect(feedItem(1)?.text_en).toBe("Scheduled");
+      expect(feedItem(2)).toBe(other);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it("keeps row identities when the archive order changes", () => {
+    seedTextPost(backendDb, { postId: 1, en: "First", siteEn: true, now: "2026-01-01T00:00:00.000Z" });
+    seedTextPost(backendDb, { postId: 2, en: "Second", siteEn: true, now: "2026-01-02T00:00:00.000Z" });
+    const first = loadPublicSiteFeed(backendDb);
+    expect(first.map((item) => item.post_id)).toEqual([2, 1]);
+    rawDb.sqlite.run("UPDATE drafts SET updated_at = '2026-01-03T00:00:00.000Z' WHERE id = 1");
+    const reordered = loadPublicSiteFeed(backendDb);
+    expect(reordered).not.toBe(first);
+    expect(reordered[0]).toBe(first[1]);
+    expect(reordered[1]).toBe(first[0]);
+  });
+
   it("does not reload the public archive while private drafts and their entities are edited", () => {
     const now = new Date().toISOString();
     seedTextPost(backendDb, { postId: 1, en: "Published", siteEn: true });
