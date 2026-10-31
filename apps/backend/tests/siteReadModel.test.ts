@@ -27,8 +27,9 @@ describe("Drizzle site feed", () => {
     const now = Date.now();
     const clock = spyOn(Date, "now").mockReturnValue(now);
     try {
-      seedTextPost(backendDb, { postId: 1, en: "Original", siteEn: true });
+      seedTextPost(backendDb, { postId: 1, en: "Original", siteEn: true, now: new Date(now).toISOString() });
       const first = loadPublicSiteFeed(backendDb);
+      expect(first[0]?.text_en).toBe("Original");
       clock.mockReturnValue(now + 3001);
       expect(loadPublicSiteFeed(backendDb)).toBe(first);
       rawDb.db
@@ -52,7 +53,13 @@ describe("Drizzle site feed", () => {
     const now = Date.now();
     const clock = spyOn(Date, "now").mockReturnValue(now);
     try {
-      seedTextPost(backendDb, { postId: 1, en: "Scheduled", siteEn: true, publishedAt: new Date(now + 5000).toISOString() });
+      seedTextPost(backendDb, {
+        postId: 1,
+        en: "Scheduled",
+        siteEn: true,
+        publishedAt: new Date(now + 5000).toISOString(),
+        now: new Date(now).toISOString(),
+      });
       const first = loadPublicSiteFeed(backendDb);
       expect(first).toEqual([]);
       clock.mockReturnValue(now + 3001);
@@ -72,7 +79,7 @@ describe("Drizzle site feed", () => {
     const now = Date.now();
     const clock = spyOn(Date, "now").mockReturnValue(now);
     try {
-      seedTextPost(db, { postId: 1, en: "Original", siteEn: true });
+      seedTextPost(db, { postId: 1, en: "Original", siteEn: true, now: new Date(now).toISOString() });
       loadPublicSiteFeed(db);
       external.run("UPDATE post_locales SET approved_text = 'External' WHERE draft_id = 1 AND locale = 'en'");
       clock.mockReturnValue(now + 3001);
