@@ -1,9 +1,10 @@
+import { createHash } from "node:crypto";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { imageSizeFromFile } from "image-size/fromFile";
 import { RESPONSIVE_WIDTHS } from "../content/site-media-naming.js";
 
-type ImageInfo = { width: number; height: number; modified: number };
+type ImageInfo = { width: number; height: number; modified: number; size: number };
 type Variant = { path: string; width: number; height: number };
 const images = new Map<string, Promise<ImageInfo | undefined>>();
 
@@ -16,19 +17,20 @@ export async function siteImage(root: string, publicPath: string) {
   const query = new URL(publicPath, "https://site.invalid/").search;
   const source = await imageInfo(file, query);
   if (!source) return undefined;
+  const version = query || `?v=${createHash("sha256").update(`${source.modified}:${source.size}`).digest("hex").slice(0, 12)}`;
   const basename = relative.replace(/[\\/]/g, "-").replace(/\.[a-z0-9]+$/i, "");
   const responsive: Variant[] = [];
   await Promise.all(
     RESPONSIVE_WIDTHS.map(async (width) => {
       const url = `/generated/responsive/${basename}-${width}.webp`;
       const variantFile = path.join(root, url);
-      const variant = await imageInfo(variantFile, query);
+      const variant = await imageInfo(variantFile, version);
       if (!variant) return;
       if (variant.modified < source.modified) {
-        images.delete(`${variantFile}${query}`);
+        images.delete(`${variantFile}${version}`);
         return;
       }
-      responsive.push({ path: `${url}${query}`, width: variant.width, height: variant.height });
+      responsive.push({ path: `${url}${version}`, width: variant.width, height: variant.height });
     }),
   );
   responsive.sort((a, b) => a.width - b.width);
@@ -39,15 +41,23 @@ export async function siteImage(root: string, publicPath: string) {
   };
 }
 
-function imageInfo(file: string, version: string): Promise<ImageInfo | undefined> {
-  const key = `${file}${version}`;
+async function imageInfo(file: string, version: string): Promise<ImageInfo | undefined> {
+  // Historical URLs have no content version. Check their timestamp so a later
+  // replacement also changes the browser cache key of their derivatives.
+  const unversioned = version ? undefined : await stat(file).catch(() => undefined);
+  const key = `${file}${version || `?mtime=${unversioned?.mtimeMs}&size=${unversioned?.size}`}`;
   const cached = images.get(key);
   if (cached) return cached;
   const pending = Promise.all([imageSizeFromFile(file), stat(file)])
     .then(([size, info]) => {
       // EXIF orientation can exchange the displayed axes.
       const rotated = size.orientation !== undefined && size.orientation >= 5;
-      return { width: rotated ? size.height : size.width, height: rotated ? size.width : size.height, modified: info.mtimeMs };
+      return {
+        width: rotated ? size.height : size.width,
+        height: rotated ? size.width : size.height,
+        modified: info.mtimeMs,
+        size: info.size,
+      };
     })
     .catch(() => {
       images.delete(key);

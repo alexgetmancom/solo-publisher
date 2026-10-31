@@ -73,7 +73,8 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
     const headers = new Headers({
       // Materialized post media keeps its name for the life of the post; a day of
       // client caching satisfies Lighthouse without pinning replaced files forever.
-      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+      "Cache-Control":
+        !staged && versioned(c.req.url) ? "public, max-age=31536000, immutable" : "public, max-age=86400, stale-while-revalidate=604800",
     });
     if (file.type) headers.set("Content-Type", file.type);
     return rangedFileResponse(file, c.req.raw, { headers, headOnly: c.req.method === "HEAD" });
@@ -98,10 +99,19 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
     const cached = Bun.file(path.join(config.SITE_PUBLIC_DIR, "generated/responsive", match[0]));
     if (!(await cached.exists())) return NOT_FOUND();
     return new Response(cached, {
-      headers: { "Content-Type": "image/webp", "Cache-Control": "public, max-age=604800, stale-while-revalidate=86400" },
+      headers: {
+        "Content-Type": "image/webp",
+        "Cache-Control": versioned(c.req.url)
+          ? "public, max-age=31536000, immutable"
+          : "public, max-age=604800, stale-while-revalidate=86400",
+      },
     });
   });
 };
+
+function versioned(url: string): boolean {
+  return /^[a-f0-9]{12}$/.test(new URL(url).searchParams.get("v") ?? "");
+}
 
 type SiteBody = { items: FeedItem[]; identity: string; value: Promise<{ body: string; etag: string }> };
 let lastBody: SiteBody | undefined;

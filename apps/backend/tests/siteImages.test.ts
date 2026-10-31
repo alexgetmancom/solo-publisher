@@ -28,6 +28,11 @@ it("finds a derivative written after the first read and rejects an older generat
       { path: "/generated/responsive/media-photo-360.webp?v=current", width: 360, height: 640 },
     ]);
     expect(await siteImage(root, "../outside.jpg")).toBeUndefined();
+    const historical = (await siteImage(root, "media/photo.jpg"))?.responsive[0]?.path;
+    expect(historical).toMatch(/\?v=[a-f0-9]{12}$/);
+    await utimes(source, 400, 400);
+    await utimes(variant, 500, 500);
+    expect((await siteImage(root, "media/photo.jpg"))?.responsive[0]?.path).not.toBe(historical);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

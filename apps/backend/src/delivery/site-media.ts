@@ -195,16 +195,22 @@ async function versionedPublicPath(publicPath: string, filePath: string): Promis
 /** Create the variants before a post is exposed in the public feed. The web
  * route must only serve these files: spawning ffmpeg while handling visitors
  * previously let a cache-miss burst exhaust the small production container. */
-async function materializeResponsiveVariants(config: BackendConfig, source: string): Promise<void> {
-  if (!/\.(png|jpe?g)$/i.test(source)) return;
+export function responsiveVariantPaths(config: BackendConfig, source: string) {
+  if (!/\.(png|jpe?g)$/i.test(source)) return [];
   const relative = path.relative(config.SITE_PUBLIC_DIR, source).split(path.sep).join("/");
   if (relative.startsWith("../") || path.isAbsolute(relative)) throw new Error("site media source escapes public directory");
   const basename = relative.replace(/[\\/]/g, "-").replace(/\.[a-z0-9]+$/i, "");
   const outputDir = path.join(config.SITE_PUBLIC_DIR, "generated", "responsive");
+  return RESPONSIVE_WIDTHS.map((width) => ({ width, file: path.join(outputDir, `${basename}-${width}.webp`) }));
+}
+
+export async function materializeResponsiveVariants(config: BackendConfig, source: string): Promise<void> {
+  const variants = responsiveVariantPaths(config, source);
+  if (!variants.length) return;
+  const outputDir = path.join(config.SITE_PUBLIC_DIR, "generated", "responsive");
   await fs.promises.mkdir(outputDir, { recursive: true });
 
-  for (const width of RESPONSIVE_WIDTHS) {
-    const output = path.join(outputDir, `${basename}-${width}.webp`);
+  for (const { width, file: output } of variants) {
     // A WebP derivative is intentionally a different size from its JPG/PNG
     // source. Comparing sizes here made every site build regenerate every
     // responsive image in the archive and blocked newly published posts behind

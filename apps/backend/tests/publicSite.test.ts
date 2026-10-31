@@ -158,6 +158,10 @@ describe("public files", () => {
     const ranged = await site.request("/media/posts/1-en-0.mp4", { headers: { range: "bytes=2-4" } });
     expect(ranged.status).toBe(206);
     expect(await ranged.text()).toBe("234");
+    expect((await site.request("/media/posts/1-en-0.mp4?v=abcdef012345")).headers.get("cache-control")).toBe(
+      "public, max-age=31536000, immutable",
+    );
+    expect((await site.request("/media/posts/1-en-0.mp4")).headers.get("cache-control")).not.toContain("immutable");
 
     const noSite = studio({ siteEnabled: 0 });
     noSite.writeSiteFile("media/posts/1-en-0.mp4");
@@ -184,6 +188,9 @@ describe("public files", () => {
     const { request, writeSiteFile } = studio();
     writeSiteFile("generated/responsive/media-posts-1-en-0-640.webp");
     expect((await request("/generated/responsive/media-posts-1-en-0-640.webp")).headers.get("content-type")).toBe("image/webp");
+    expect((await request("/generated/responsive/media-posts-1-en-0-640.webp?v=abcdef012345")).headers.get("cache-control")).toBe(
+      "public, max-age=31536000, immutable",
+    );
     expect((await request("/generated/responsive/media-posts-1-en-0-641.webp")).status).toBe(404);
   });
 });

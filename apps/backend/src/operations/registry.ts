@@ -60,6 +60,7 @@ import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
 import { backfillSiteImageMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
+import { backfillSiteResponsive } from "./site-responsive-backfill.js";
 import { skipPublicationTargets } from "./skip.js";
 import { operationsStatus } from "./status.js";
 import { backfillTextStoryCards } from "./story-card-backfill.js";
@@ -1060,6 +1061,15 @@ const operationDefs = {
     mutates: true,
     agent: false,
     handler: (context, input) => backfillSiteImageMedia(context.db(), context.config(), input.apply, input.max_upload_kbps),
+  }),
+  "site-responsive-backfill": operation({
+    section: "media",
+    summary: "Create missing or outdated responsive images and video posters for published site media.",
+    note: "Reports the gap; apply writes only 360, 640 and 960 pixel WebP derivatives, one source at a time. Does not change posts or re-encode video.",
+    schema: z.object({ apply: applyOption }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) => backfillSiteResponsive(context.db(), context.config(), input.apply),
   }),
   "site-media-deduplicate": operation({
     section: "media",

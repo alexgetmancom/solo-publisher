@@ -4,6 +4,9 @@ import os from "node:os";
 import path from "node:path";
 import { materializeSiteMedia } from "../src/delivery/site-media.js";
 import { deduplicateSiteMedia } from "../src/operations/site-media-deduplicate.js";
+import { backfillSiteResponsive } from "../src/operations/site-responsive-backfill.js";
+import { openBackendDb } from "./helpers/open-db.js";
+import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 let ffmpegCalls = 0;
@@ -27,6 +30,31 @@ afterEach(() => {
 });
 
 describe("site media materialization", () => {
+  it("backfills both locale galleries and posters without changing their originals or videos", async () => {
+    directory = fs.mkdtempSync(path.join(os.tmpdir(), "site-responsive-backfill-"));
+    const config = loadTestConfig({ DATA_DIR: directory });
+    const db = openBackendDb(path.join(directory, "pipeline.db"), 5000);
+    try {
+      fs.mkdirSync(path.join(config.SITE_PUBLIC_DIR, "media"), { recursive: true });
+      for (const file of ["photo.jpg", "poster.jpg", "video.mp4"])
+        fs.writeFileSync(path.join(config.SITE_PUBLIC_DIR, "media", file), "original");
+      const media = [
+        { type: "image", path: "media/photo.jpg" },
+        { type: "video", path: "media/video.mp4", poster: "media/poster.jpg" },
+      ];
+      seedTextPost(db, { postId: 1, en: "English", ru: "Русский", siteEn: true, siteRu: true, siteMediaEn: media, siteMediaRu: media });
+      expect(await backfillSiteResponsive(db, config, false)).toMatchObject({ missing: 2, rendered: 0 });
+      expect(ffmpegCalls).toBe(0);
+      expect(await backfillSiteResponsive(db, config, true)).toMatchObject({ ok: true, rendered: 2, remaining: 0 });
+      expect(ffmpegCalls).toBe(6);
+      expect(await backfillSiteResponsive(db, config, false)).toMatchObject({ missing: 0 });
+      for (const file of ["photo.jpg", "poster.jpg", "video.mp4"])
+        expect(fs.readFileSync(path.join(config.SITE_PUBLIC_DIR, "media", file), "utf8")).toBe("original");
+    } finally {
+      db.close();
+    }
+  });
+
   it("replaces stable media files and preserves a known source extension", async () => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-site-media-"));
     const first = path.join(directory, "first.png");

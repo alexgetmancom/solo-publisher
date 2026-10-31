@@ -44,6 +44,7 @@ const OFF_THE_AGENT_SURFACE = [
   "set-media",
   "site-media-images",
   "site-media-deduplicate",
+  "site-responsive-backfill",
   "credential-set",
   "telegram-stories-login",
   "threads-authorize",
