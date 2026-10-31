@@ -12,7 +12,14 @@ import { parsePublicationSource } from "../publishing/publication-source.js";
 import { parseManualSchedule } from "../publishing/schedule.js";
 import { publicationSourceFromDb } from "../publishing/source-store.js";
 import { createStudioServices } from "../studio/services/index.js";
-import { editLocaleContentTx, parseLocaleMedia, refreshLocaleSiteTx, replaceLocaleMediaTx } from "./commands/content-repair.js";
+import {
+  assertReviewedText,
+  editLocaleContentTx,
+  parseLocaleEntities,
+  parseLocaleMedia,
+  refreshLocaleSiteTx,
+  replaceLocaleMediaTx,
+} from "./commands/content-repair.js";
 import { attemptTextFallbackRemovals, requeueAfterRemovalTx, requeuePublicationScopeTx } from "./commands/requeue.js";
 import { publicationScope, scopePlan } from "./commands/scope-plan.js";
 import { type ResolvedPublicationRef, resolvePublicationRef } from "./publication-ref.js";
@@ -35,6 +42,11 @@ const commandActionSchema = z.strictObject({
   target: z.string().optional(),
   locale: z.preprocess((value) => (value === "" ? undefined : value), z.enum(["ru", "en"]).optional()),
   text: z.string().optional(),
+  entities_json: z.string().optional(),
+  expected_text_sha256: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/)
+    .optional(),
   media_json: z.string().optional(),
   at: z.string().optional(),
   schedule_locale: z.enum(["ru", "en", "both"]).optional(),
@@ -99,6 +111,8 @@ export async function runOperationCommand(
     const text = input.text ?? "";
     if (!text.trim()) throw new Error(`text_${locale} is required`);
     const source = parsePublicationSource(sourcePayload(backendDb, publicationRef));
+    assertReviewedText(source.locales[locale].text, input.expected_text_sha256);
+    const entities = parseLocaleEntities(input.entities_json, text.trim());
     let external: Array<Record<string, unknown>> = [];
     let fallbacks: Awaited<ReturnType<typeof attemptTextFallbackRemovals>> = [];
     if (config) {
@@ -121,7 +135,7 @@ export async function runOperationCommand(
       locales: { ...source.locales, [locale]: { ...source.locales[locale], text: text.trim() } },
     };
     return commitOperation(backendDb, input, publicationRef, (tx) => {
-      const result = editLocaleContentTx(tx, publicationRef, locale, text);
+      const result = editLocaleContentTx(tx, publicationRef, locale, text, entities, input.expected_text_sha256);
       if (config) {
         result.external = external;
         result.replaced = fallbacks.flatMap(({ target, attempts }) => {

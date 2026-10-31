@@ -1,4 +1,5 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { entitiesToHtml } from "../../content/text.js";
 import type { UnsafeBackendDb } from "../../db/client.js";
 import { drafts, postLocales, siteJobs } from "../../db/schema.js";
@@ -10,6 +11,8 @@ export function editLocaleContentTx(
   ref: ResolvedPublicationRef,
   locale: "ru" | "en",
   text: string,
+  entities: Record<string, unknown>[] = [],
+  expectedTextHash?: string,
 ): Record<string, unknown> {
   const value = text.trim();
   if (!value) throw new Error(`text_${locale} is required`);
@@ -17,14 +20,37 @@ export function editLocaleContentTx(
   if (ref.postId != null) {
     const draft = db.select({ id: drafts.id }).from(drafts).where(eq(drafts.postId, ref.postId)).get();
     if (!draft) throw new Error(`publication ${ref.postId} has no aggregate`);
-    db.update(postLocales)
+    const current = db
+      .select()
+      .from(postLocales)
+      .where(and(eq(postLocales.draftId, draft.id), eq(postLocales.locale, locale)))
+      .get();
+    if (!current) throw new Error(`publication ${ref.postId} has no ${locale} content`);
+    const previousText = current.approvedText ?? current.sourceText;
+    assertReviewedText(previousText, expectedTextHash);
+    const result = db
+      .update(postLocales)
       .set(
         locale === "en"
-          ? { approvedText: value, html: entitiesToHtml(value, []), entitiesJson: "[]", updatedAt: now }
-          : { sourceText: value, html: entitiesToHtml(value, []), entitiesJson: "[]", updatedAt: now },
+          ? { approvedText: value, html: entitiesToHtml(value, entities), entitiesJson: JSON.stringify(entities), updatedAt: now }
+          : {
+              sourceText: value,
+              approvedText: current.approvedText === null ? null : value,
+              html: entitiesToHtml(value, entities),
+              entitiesJson: JSON.stringify(entities),
+              updatedAt: now,
+            },
       )
-      .where(and(eq(postLocales.draftId, draft.id), eq(postLocales.locale, locale)))
-      .run();
+      .where(
+        and(
+          eq(postLocales.draftId, draft.id),
+          eq(postLocales.locale, locale),
+          sql`coalesce(${postLocales.approvedText}, ${postLocales.sourceText}) = ${previousText}`,
+        ),
+      )
+      .returning({ draftId: postLocales.draftId })
+      .all();
+    if (result.length !== 1) throw new Error(`publication ${ref.postId} text changed during the edit`);
     db.update(drafts).set({ updatedAt: now }).where(eq(drafts.id, draft.id)).run();
   }
   enqueueRepairSiteJob(db, ref, `edit_${locale}`, now);
@@ -35,6 +61,30 @@ export function editLocaleContentTx(
     locale,
     text: true,
   };
+}
+
+export function assertReviewedText(text: string, expectedHash: string | undefined): void {
+  if (expectedHash !== undefined && createHash("sha256").update(text).digest("hex") !== expectedHash)
+    throw new Error("Published text changed; review the latest copy before editing");
+}
+
+export function parseLocaleEntities(raw: string | undefined, text: string): Record<string, unknown>[] {
+  if (raw === undefined) return [];
+  const entities: unknown = JSON.parse(raw);
+  if (!Array.isArray(entities) || entities.length > 1_000) throw new Error("entities_json must be an array of at most 1000 entities");
+  for (const entity of entities) {
+    if (
+      !entity ||
+      typeof entity !== "object" ||
+      !Number.isSafeInteger(entity.offset) ||
+      !Number.isSafeInteger(entity.length) ||
+      entity.offset < 0 ||
+      entity.length < 1 ||
+      entity.offset + entity.length > text.length
+    )
+      throw new Error("Each formatting entity must fit the replacement text");
+  }
+  return entities;
 }
 
 export function replaceLocaleMediaTx(

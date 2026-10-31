@@ -616,7 +616,15 @@ const operationDefs = {
   edit: operation({
     section: "delivery",
     summary: "Rewrite one locale's text, push it to the targets that can be edited and replace those that cannot.",
-    schema: repairSchema({ text: example(z.string().min(1), '"new text"').describe("the replacement text") }),
+    schema: repairSchema({
+      text: example(z.string().min(1), '"new text"').describe("the replacement text"),
+      entities_json: z.string().optional().describe("reviewed formatting entities for the replacement site text"),
+      expected_text_sha256: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/)
+        .optional()
+        .describe("refuse an edit if the published text changed"),
+    }),
     mutates: true,
     journalsInHandler: true,
     agent: true,

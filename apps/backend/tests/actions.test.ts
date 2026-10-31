@@ -1,7 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import { asc, count, eq } from "drizzle-orm";
-import { drafts, publicationEvents, publicationTargets, publishJobs, siteJobs } from "../src/db/schema.js";
+import { drafts, postLocales, publicationEvents, publicationTargets, publishJobs, siteJobs } from "../src/db/schema.js";
 import { runOperationCommand } from "../src/operations/commands.js";
+import { textHash } from "../src/operations/site-metadata.js";
+import { loadPublicSiteFeed } from "../src/public/site-read-model.js";
 import { newDeliveryPayload } from "../src/publishing/delivery-payload.js";
 import { enqueuePublishJobTx } from "../src/publishing/queue.js";
 import { postService } from "../src/studio/services/posts.js";
@@ -11,6 +13,47 @@ import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("command center actions", () => {
+  it("corrects reviewed site copy with links and emphasis without editing social targets", () =>
+    withDb(async (backendDb) => {
+      seedTextPost(backendDb, { postId: 8, ru: "Old text", en: "Old text", siteRu: true, siteEn: true });
+      backendDb.db.update(postLocales).set({ approvedText: "Reviewed text" }).where(eq(postLocales.locale, "ru")).run();
+      const requests: string[] = [];
+      const fetchImpl = (async (input: string | URL | Request) => {
+        requests.push(String(input));
+        return new Response("{}");
+      }) as typeof fetch;
+      for (const locale of ["ru", "en"] as const) {
+        const input = {
+          action: "edit",
+          ref: "post:8",
+          target: `site_${locale}`,
+          locale,
+          text: "New linked text",
+          entities_json: JSON.stringify([
+            { type: "bold", offset: 0, length: 3 },
+            { type: "text_link", offset: 4, length: 6, url: "https://example.com/source" },
+          ]),
+          expected_text_sha256: textHash(locale === "ru" ? "Reviewed text" : "Old text"),
+          apply: true,
+        };
+        await expect(runOperationCommand(backendDb, { ...input, expected_text_sha256: textHash("Stale copy") })).rejects.toThrow(
+          "Published text changed",
+        );
+        await expect(runOperationCommand(backendDb, { ...input, entities_json: '[{"offset":999,"length":1}]' })).rejects.toThrow(
+          "must fit",
+        );
+        const result = await runOperationCommand(backendDb, input, loadTestConfig({}), fetchImpl);
+        expect(result.external).toEqual([]);
+        const row = backendDb.db.select().from(postLocales).where(eq(postLocales.locale, locale)).get();
+        expect(row?.html).toContain('<strong>New</strong> <a href="https://example.com/source"');
+        expect(locale === "ru" ? loadPublicSiteFeed(backendDb)[0]?.text : loadPublicSiteFeed(backendDb)[0]?.text_en).toBe(
+          "New linked text",
+        );
+      }
+      expect(requests).toEqual([]);
+      expect(backendDb.db.select().from(publishJobs).all()).toEqual([]);
+    }));
+
   it("rebuilds retried jobs from the source using the target locale", () =>
     withDb(async (backendDb) => {
       const now = new Date().toISOString();
