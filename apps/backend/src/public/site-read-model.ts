@@ -62,6 +62,7 @@ type CachedFeed = FeedState & { databaseVersion: string };
 // handle of a previous runtime never hand their feed to anyone else.
 const feedCache = new WeakMap<BackendDb, CachedFeed>();
 const tracked = new WeakSet<BackendDb>();
+const SITE_STATUSES = ["published", "failed", "scheduled"];
 
 /** Only publication inputs invalidate this connection's feed. A private
  * in-memory counter and TEMP triggers leave the stored database untouched;
@@ -72,15 +73,24 @@ function trackFeedChanges(backendDb: BackendDb): void {
   sqlite.exec(`ATTACH DATABASE ':memory:' AS public_site_cache;
     CREATE TABLE public_site_cache._public_site_revision (revision INTEGER NOT NULL);
     INSERT INTO public_site_cache._public_site_revision VALUES (0);`);
+  const statuses = SITE_STATUSES.map((status) => `'${status}'`).join(",");
   for (const table of ["drafts", "post_locales", "knowledge_entities", "draft_entity_links", "post_metrics"]) {
     for (const operation of ["INSERT", "UPDATE", "DELETE"]) {
+      // Autosaves and private entity edits cannot affect the published query.
+      // Both sides matter when a row enters or leaves that query's scope.
       const references = operation === "INSERT" ? ["NEW"] : operation === "DELETE" ? ["OLD"] : ["OLD", "NEW"];
-      const when =
-        table === "post_metrics"
-          ? `WHEN ${references.map((row) => `(${row}.target = 'telegram' AND ${row}.metric_name = 'views')`).join(" OR ")}`
-          : "";
+      let relevant: string;
+      if (table === "drafts") {
+        relevant = references.map((row) => `${row}.status IN (${statuses})`).join(" OR ");
+      } else if (table === "post_locales" || table === "draft_entity_links") {
+        relevant = `EXISTS (SELECT 1 FROM main.drafts WHERE id IN (${references.map((row) => `${row}.draft_id`).join(",")}) AND status IN (${statuses}))`;
+      } else if (table === "knowledge_entities") {
+        relevant = `EXISTS (SELECT 1 FROM main.draft_entity_links AS links JOIN main.drafts AS post ON post.id = links.draft_id WHERE links.entity_id IN (${references.map((row) => `${row}.id`).join(",")}) AND post.status IN (${statuses}))`;
+      } else {
+        relevant = references.map((row) => `(${row}.target = 'telegram' AND ${row}.metric_name = 'views')`).join(" OR ");
+      }
       sqlite.exec(`CREATE TEMP TRIGGER public_site_${table}_${operation}
-        AFTER ${operation} ON main.${table} ${when}
+        AFTER ${operation} ON main.${table} WHEN ${relevant}
         BEGIN UPDATE _public_site_revision SET revision = revision + 1; END;`);
     }
   }
@@ -148,7 +158,7 @@ function buildPublicSiteFeed(backendDb: BackendDb, now: number, cached?: CachedF
         eq(postMetrics.metricName, "views"),
       ),
     )
-    .where(inArray(drafts.status, ["published", "failed", "scheduled"]))
+    .where(inArray(drafts.status, SITE_STATUSES))
     .orderBy(desc(drafts.updatedAt), desc(drafts.postId))
     .all();
 

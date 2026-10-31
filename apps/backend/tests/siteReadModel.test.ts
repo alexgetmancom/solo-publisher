@@ -23,6 +23,86 @@ beforeEach(() => {
 afterEach(() => backendDb.close());
 
 describe("Drizzle site feed", () => {
+  it("does not reload the public archive while private drafts and their entities are edited", () => {
+    const now = new Date().toISOString();
+    seedTextPost(backendDb, { postId: 1, en: "Published", siteEn: true });
+    seedTextPost(backendDb, { postId: 2, status: "draft", en: "Private", siteEn: true });
+    const first = loadPublicSiteFeed(backendDb);
+    const select = spyOn(rawDb.db, "select");
+    const check = () => {
+      expect(loadPublicSiteFeed(backendDb)).toBe(first);
+      expect(select.mock.calls).toHaveLength(0);
+    };
+    try {
+      seedTextPost(backendDb, { draftId: 3, status: "draft", en: "Another private draft" });
+      check();
+      rawDb.sqlite.run("UPDATE drafts SET updated_at = '2026-10-31T12:00:00.000Z' WHERE id = 2");
+      rawDb.sqlite.run("UPDATE post_locales SET source_text = 'Private edit' WHERE draft_id = 2");
+      check();
+      const { id: entityId } = rawDb.db
+        .insert(knowledgeEntities)
+        .values({ kind: "model", slug: "private-model", titleRu: "Private model", createdAt: now, updatedAt: now })
+        .returning({ id: knowledgeEntities.id })
+        .get();
+      check();
+      rawDb.db.insert(draftEntityLinks).values({ draftId: 2, entityId, createdAt: now }).run();
+      rawDb.sqlite.run("UPDATE draft_entity_links SET link_role = 'focus' WHERE draft_id = 2");
+      rawDb.sqlite.run("UPDATE knowledge_entities SET title_en = 'Private title' WHERE id = ?", [entityId]);
+      check();
+      rawDb.sqlite.run("DELETE FROM draft_entity_links WHERE draft_id = 2");
+      rawDb.sqlite.run("DELETE FROM knowledge_entities WHERE id = ?", [entityId]);
+      rawDb.sqlite.run("DELETE FROM drafts WHERE id = 3");
+      rawDb.sqlite.run("DELETE FROM post_locales WHERE draft_id = 3");
+      check();
+    } finally {
+      select.mockRestore();
+    }
+  });
+
+  it.each(["published", "failed", "scheduled"])("observes a private draft entering and leaving %s", (status) => {
+    seedTextPost(backendDb, { postId: 1, status: "draft", en: "Private", siteEn: true });
+    const first = loadPublicSiteFeed(backendDb);
+    expect(first).toEqual([]);
+    rawDb.sqlite.run("UPDATE post_locales SET approved_text = 'Latest edit' WHERE draft_id = 1 AND locale = 'en'");
+    expect(loadPublicSiteFeed(backendDb)).toBe(first);
+    rawDb.sqlite.run("UPDATE drafts SET status = ? WHERE id = 1", [status]);
+    expect(feedItem(1)?.text_en).toBe("Latest edit");
+    rawDb.sqlite.run("UPDATE drafts SET status = 'draft' WHERE id = 1");
+    expect(loadPublicSiteFeed(backendDb)).toEqual([]);
+    rawDb.sqlite.run("UPDATE drafts SET status = ? WHERE id = 1", [status]);
+    expect(feedItem(1)?.text_en).toBe("Latest edit");
+    rawDb.sqlite.run("DELETE FROM drafts WHERE id = 1");
+    expect(loadPublicSiteFeed(backendDb)).toEqual([]);
+  });
+
+  it("tracks both sides of entity links moving between private and public drafts", () => {
+    const now = new Date().toISOString();
+    seedTextPost(backendDb, { postId: 1, en: "Published", siteEn: true });
+    seedTextPost(backendDb, { postId: 2, status: "draft", en: "Private", siteEn: true });
+    const { id: entityId } = rawDb.db
+      .insert(knowledgeEntities)
+      .values({ kind: "model", slug: "shared-model", titleRu: "Shared model", createdAt: now, updatedAt: now })
+      .returning({ id: knowledgeEntities.id })
+      .get();
+    rawDb.db.insert(draftEntityLinks).values({ draftId: 2, entityId, createdAt: now }).run();
+    expect(feedItem(1)?.entities).toEqual([]);
+    rawDb.sqlite.run("UPDATE draft_entity_links SET draft_id = 1 WHERE draft_id = 2");
+    expect(feedItem(1)?.entities[0]?.slug).toBe("shared-model");
+    rawDb.sqlite.run("UPDATE knowledge_entities SET title_en = 'Public title' WHERE id = ?", [entityId]);
+    expect(feedItem(1)?.entities[0]?.title_en).toBe("Public title");
+    rawDb.sqlite.run("UPDATE draft_entity_links SET draft_id = 2 WHERE draft_id = 1");
+    expect(feedItem(1)?.entities).toEqual([]);
+    rawDb.db.insert(draftEntityLinks).values({ draftId: 1, entityId, createdAt: now }).run();
+    expect(feedItem(1)?.entities).toHaveLength(1);
+    rawDb.sqlite.run("DELETE FROM knowledge_entities WHERE id = ?", [entityId]);
+    expect(feedItem(1)?.entities).toEqual([]);
+    rawDb.db
+      .insert(knowledgeEntities)
+      .values({ id: entityId, kind: "model", slug: "replacement", titleRu: "Replacement", createdAt: now, updatedAt: now })
+      .run();
+    expect(feedItem(1)?.entities[0]?.slug).toBe("replacement");
+  });
+
   it("reuses an expired feed after quiet polls and unrelated writes but detects a content change without timestamp changes", () => {
     const now = Date.now();
     const clock = spyOn(Date, "now").mockReturnValue(now);
