@@ -9,7 +9,7 @@ export const SITE_MEDIA_DIR_SEGMENTS = ["media", "posts"] as const;
 export const SITE_MEDIA_URL_PREFIX = SITE_MEDIA_DIR_SEGMENTS.join("/");
 // The article column is 680 CSS pixels; common phone DPRs need the steps
 // around 720 and 800, while 1280 also covers full-size vertical masters.
-export const RESPONSIVE_WIDTHS = [360, 640, 720, 800, 960, 1280] as const;
+export const RESPONSIVE_WIDTHS = [360, 480, 640, 720, 800, 960, 1280] as const;
 
 function siteMediaBaseName(postId: number, locale: "ru" | "en", index: number): string {
   return `${postId}-${locale}-${index}`;
