@@ -7,6 +7,8 @@ import { RESPONSIVE_WIDTHS } from "../content/site-media-naming.js";
 type ImageInfo = { width: number; height: number; modified: number; size: number };
 type Variant = { path: string; width: number; height: number };
 const images = new Map<string, Promise<ImageInfo | undefined>>();
+type ImageDescription = { width: number; height: number; responsive: Variant[] };
+const complete = new Map<string, ImageDescription>();
 
 /** Read the served file, not the dimensions of the upload it was made from.
  * Missing derivatives are not cached: the publication worker may still write them. */
@@ -18,8 +20,12 @@ export async function siteImage(root: string, publicPath: string) {
   const source = await imageInfo(file, query);
   if (!source) return undefined;
   const version = query || `?v=${createHash("sha256").update(`${source.modified}:${source.size}`).digest("hex").slice(0, 12)}`;
+  const key = `${file}${version}`;
+  const cached = complete.get(key);
+  if (cached) return cached;
   const basename = relative.replace(/[\\/]/g, "-").replace(/\.[a-z0-9]+$/i, "");
   const responsive: (Variant & { nominal: number })[] = [];
+  let current = 0;
   await Promise.all(
     RESPONSIVE_WIDTHS.map(async (width) => {
       const url = `/generated/responsive/${basename}-${width}.webp`;
@@ -30,19 +36,25 @@ export async function siteImage(root: string, publicPath: string) {
         images.delete(`${variantFile}${version}`);
         return;
       }
+      current += 1;
       responsive.push({ path: `${url}${version}`, width: variant.width, height: variant.height, nominal: width });
     }),
   );
   // Small sources can produce equal actual widths at several nominal sizes.
   // Keep the smallest name deterministically so async IO cannot churn the ETag.
   responsive.sort((a, b) => a.width - b.width || a.nominal - b.nominal);
-  return {
+  const description = {
     width: source.width,
     height: source.height,
     responsive: responsive
       .filter((variant, index) => index === 0 || variant.width !== responsive[index - 1]?.width)
       .map(({ nominal: _nominal, ...variant }) => variant),
   };
+  // Once all publication sizes exist, the content version makes the whole
+  // description reusable. Incomplete sets must be retried so late worker
+  // output is discovered without changing the post or restarting the server.
+  if (current === RESPONSIVE_WIDTHS.length) complete.set(key, description);
+  return description;
 }
 
 async function imageInfo(file: string, version: string): Promise<ImageInfo | undefined> {
