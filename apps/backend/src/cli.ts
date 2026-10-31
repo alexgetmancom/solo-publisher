@@ -59,8 +59,10 @@ async function main(): Promise<void> {
     // result carries `raw_json` straight from a platform, and a provider that
     // echoes a token back in an error body puts it in a terminal, a scrollback
     // and whatever the operator pastes it into.
-    if (!def.streams)
-      console.log(redactExternalSecrets(format && !args.flags.has("json") ? format(result as never) : JSON.stringify(result, null, 2)));
+    if (!def.streams) {
+      const output = redactExternalSecrets(format && !args.flags.has("json") ? format(result as never) : JSON.stringify(result, null, 2));
+      await Bun.write(Bun.stdout, `${output}\n`);
+    }
     if (args.command === "doctor" && result && typeof result === "object" && "ok" in result && result.ok === false) process.exitCode = 1;
   } finally {
     // Usage is buffered and flushed on an interval, a shape that fits a process
