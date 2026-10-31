@@ -6,6 +6,7 @@ import { indexNowKey } from "../../delivery/site-index-now.js";
 import type { BackendConfig } from "../../foundation/config.js";
 import { text } from "../../foundation/http-response.js";
 import { rangedFileResponse } from "../../foundation/ranged-file.js";
+import { siteImage } from "../../public/site-images.js";
 import { type FeedItem, loadPublicSiteFeed, type SiteMedia } from "../../public/site-read-model.js";
 import { publicVideoAsset } from "../../public/video-asset.js";
 import type { RouteModule } from "./context.js";
@@ -27,9 +28,9 @@ import type { RouteModule } from "./context.js";
 const NOT_FOUND = () => text("not found\n", 404);
 
 export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
-  app.get("/api/public/site", (c) => {
+  app.get("/api/public/site", async (c) => {
     if (!config.studio.siteEnabled) return NOT_FOUND();
-    const { body, etag } = publicSiteBody(config, loadPublicSiteFeed(backendDb));
+    const { body, etag } = await publicSiteBody(config, loadPublicSiteFeed(backendDb));
     const headers = { "content-type": "application/json; charset=utf-8", etag, "cache-control": "no-cache" };
     // The site asks every few seconds and the answer rarely changes; a 304
     // spares it parsing the whole archive again.
@@ -102,20 +103,26 @@ export const publicSiteRoutes: RouteModule = (app, { config, backendDb }) => {
   });
 };
 
-type SiteBody = { items: FeedItem[]; identity: string; body: string; etag: string };
+type SiteBody = { items: FeedItem[]; identity: string; value: Promise<{ body: string; etag: string }> };
 let lastBody: SiteBody | undefined;
 
 /** The read model already caches the feed for a few seconds and hands back the
  * same array while it does, so the serialised answer is rebuilt only when the
  * feed or the identity actually changed. */
-function publicSiteBody(config: BackendConfig, feed: FeedItem[]): SiteBody {
+function publicSiteBody(config: BackendConfig, feed: FeedItem[]): SiteBody["value"] {
   const identity = JSON.stringify({ en: siteIdentity(config, "en"), ru: siteIdentity(config, "ru") });
-  if (lastBody?.items === feed && lastBody.identity === identity) return lastBody;
-  const items = feed.map((item) => withServedMedia(config, item));
-  const body = `{"site":${identity},"items":${JSON.stringify(items)}}`;
-  const etag = `"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 27)}"`;
-  lastBody = { items: feed, identity, body, etag };
-  return lastBody;
+  if (lastBody?.items === feed && lastBody.identity === identity) return lastBody.value;
+  const value = Promise.all(feed.map((item) => withServedMedia(config, item))).then((items) => {
+    const body = `{"site":${identity},"items":${JSON.stringify(items)}}`;
+    const etag = `"${crypto.createHash("sha256").update(body).digest("base64url").slice(0, 27)}"`;
+    return { body, etag };
+  });
+  const pending = { items: feed, identity, value };
+  lastBody = pending;
+  void value.catch(() => {
+    if (lastBody === pending) lastBody = undefined;
+  });
+  return value;
 }
 
 function siteIdentity(config: BackendConfig, locale: "en" | "ru") {
@@ -135,25 +142,35 @@ function siteIdentity(config: BackendConfig, locale: "en" | "ru") {
 /** Media is written to disk after a post is published, so the stored list can
  * name a file that is not there yet. The site has no disk to check that against,
  * so the list it gets holds only what this Studio would actually serve. */
-function withServedMedia(config: BackendConfig, item: FeedItem): FeedItem {
-  const media = item.media.flatMap((entry) => servedMedia(config, entry));
-  const mediaEn = item.media_en.flatMap((entry) => servedMedia(config, entry));
+async function withServedMedia(config: BackendConfig, item: FeedItem): Promise<FeedItem> {
+  const [media, mediaEn] = await Promise.all(
+    [item.media, item.media_en].map(async (entries) => (await Promise.all(entries.map((entry) => servedMedia(config, entry)))).flat()),
+  );
   return {
     ...item,
-    media,
-    media_en: mediaEn,
-    image: served(config, item.image) ? item.image : firstImage(media),
-    image_en: served(config, item.image_en) ? item.image_en : firstImage(mediaEn),
+    media: media ?? [],
+    media_en: mediaEn ?? [],
+    image: served(config, item.image) ? item.image : firstImage(media ?? []),
+    image_en: served(config, item.image_en) ? item.image_en : firstImage(mediaEn ?? []),
   };
 }
 
-function servedMedia(config: BackendConfig, entry: SiteMedia): SiteMedia[] {
+async function servedMedia(config: BackendConfig, entry: SiteMedia): Promise<SiteMedia[]> {
   if (!served(config, entry.path)) return [];
   if (entry.poster && !served(config, entry.poster)) {
     const { poster: _missing, ...rest } = entry;
     return [rest];
   }
-  return [entry];
+  const image = await siteImage(config.SITE_PUBLIC_DIR, entry.type === "video" ? entry.poster || "" : entry.path);
+  if (!image) return [entry];
+  return [
+    {
+      ...entry,
+      width: image.width,
+      height: image.height,
+      ...(entry.type === "video" ? { poster_responsive: image.responsive } : { responsive: image.responsive }),
+    },
+  ];
 }
 
 function firstImage(media: SiteMedia[]): string | null {

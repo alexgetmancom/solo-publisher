@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import sharp from "sharp";
 import { createApiHandler } from "../src/api.js";
 import type { StudioProfileRecord } from "../src/application/ports.js";
 import { openBackendDb } from "./helpers/open-db.js";
@@ -29,7 +30,7 @@ function studio(profile: Partial<StudioProfileRecord> = SITE_STUDIO_PROFILE) {
     backendDb,
     dataDir,
     request: (path: string, init?: RequestInit) => handler(new Request(`http://localhost${path}`, init)),
-    writeSiteFile(relative: string, body = "bytes") {
+    writeSiteFile(relative: string, body: string | Uint8Array = "bytes") {
       const file = join(config.SITE_PUBLIC_DIR, relative);
       mkdirSync(dirname(file), { recursive: true });
       writeFileSync(file, body);
@@ -39,8 +40,24 @@ function studio(profile: Partial<StudioProfileRecord> = SITE_STUDIO_PROFILE) {
 
 type PublicSite = {
   site: Record<"en" | "ru", { name: string; timezone: string }>;
-  items: { post_id: number; image_en: string | null; media_en: { path: string }[] }[];
+  items: {
+    post_id: number;
+    image_en: string | null;
+    media_en: {
+      path: string;
+      width?: number;
+      height?: number;
+      responsive?: { path: string; width: number; height: number }[];
+      poster_responsive?: { path: string; width: number; height: number }[];
+    }[];
+  }[];
 };
+
+function image(width: number, height: number) {
+  return sharp({ create: { width, height, channels: 3, background: "white" } })
+    .webp()
+    .toBuffer();
+}
 
 describe("GET /api/public/site", () => {
   it("does not exist on a Studio without a public site", async () => {
@@ -88,6 +105,49 @@ describe("GET /api/public/site", () => {
     expect(etag).toBeTruthy();
     const again = await request("/api/public/site", { headers: { "if-none-match": etag ?? "" } });
     expect(again.status).toBe(304);
+  });
+
+  it("describes the served image and only its existing responsive variants", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "English",
+      siteEn: true,
+      siteMediaEn: [{ type: "image", path: "media/posts/1-en-0.jpg?v=abc", width: 2560, height: 1440 }],
+    });
+    writeSiteFile("media/posts/1-en-0.jpg", await image(1080, 1920));
+    writeSiteFile("generated/responsive/media-posts-1-en-0-360.webp", await image(360, 640));
+    writeSiteFile("generated/responsive/media-posts-1-en-0-640.webp", await image(640, 1138));
+
+    const [item] = ((await (await request("/api/public/site")).json()) as PublicSite).items;
+    expect(item?.media_en[0]).toMatchObject({
+      width: 1080,
+      height: 1920,
+      responsive: [
+        { path: "/generated/responsive/media-posts-1-en-0-360.webp?v=abc", width: 360, height: 640 },
+        { path: "/generated/responsive/media-posts-1-en-0-640.webp?v=abc", width: 640, height: 1138 },
+      ],
+    });
+  });
+
+  it("reserves a materialized video's dimensions from its served poster", async () => {
+    const { backendDb, request, writeSiteFile } = studio();
+    seedTextPost(backendDb, {
+      postId: 1,
+      en: "English",
+      siteEn: true,
+      siteMediaEn: [{ type: "video", path: "media/posts/1.mp4", poster: "media/posts/1-poster.jpg?v=poster", width: 1920, height: 1080 }],
+    });
+    writeSiteFile("media/posts/1.mp4");
+    writeSiteFile("media/posts/1-poster.jpg", await image(1080, 1920));
+    writeSiteFile("generated/responsive/media-posts-1-poster-640.webp", await image(640, 1138));
+
+    const [item] = ((await (await request("/api/public/site")).json()) as PublicSite).items;
+    expect(item?.media_en[0]).toMatchObject({
+      width: 1080,
+      height: 1920,
+      poster_responsive: [{ path: "/generated/responsive/media-posts-1-poster-640.webp?v=poster", width: 640, height: 1138 }],
+    });
   });
 });
 
