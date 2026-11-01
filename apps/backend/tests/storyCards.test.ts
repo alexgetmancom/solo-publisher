@@ -8,14 +8,12 @@ import sharp from "sharp";
 import { storyCardUse } from "../src/botTargets.js";
 import { createDraftFromMessage } from "../src/content/drafts.js";
 import type { UnsafeBackendDb } from "../src/db/client.js";
-import { draftStoryCards, drafts, postLocales, publicationEvents, publishJobs, siteJobs } from "../src/db/schema.js";
-import { backfillTextStoryCards } from "../src/operations/story-card-backfill.js";
+import { draftStoryCards, drafts, publicationEvents, publishJobs } from "../src/db/schema.js";
 import { localizeTargetPayload } from "../src/publishing/payload.js";
 import { createPublicationPlan } from "../src/publishing/publication-plan.js";
-import { publishDraftToQueue } from "../src/publishing/publication-workflow.js";
 import { publicationSourceFromDb } from "../src/publishing/source-store.js";
 import { buildStoryCardCopy, MAX_LINES, TEMPLATE_VERSION } from "../src/story-cards/copy.js";
-import { discardDraftStoryCards, readyStoryCardMedia, setStoryPublishMode, storyCardsForDraft } from "../src/story-cards/store.js";
+import { readyStoryCardMedia, setStoryPublishMode, storyCardsForDraft } from "../src/story-cards/store.js";
 import { emojiAssetFile, STORY_CARD_EMOJI_LEFT, STORY_CARD_EMOJI_SIZE, storyCardEmojiTop } from "../src/story-cards/svg.js";
 import { runStoryCardCycle, STORY_CARD_MAX_ATTEMPTS } from "../src/story-cards/worker.js";
 import { postService } from "../src/studio/services/posts.js";
@@ -192,7 +190,7 @@ describe("text Story cards", () => {
       instagram_stories_ru: false,
       instagram_stories: false,
     });
-    expect(siteOnly.locales[0]?.source.siteMedia).toEqual([storyCards.ru]);
+    expect(siteOnly.locales[0]?.source.siteMedia).toEqual([]);
     expect(localizeTargetPayload(siteOnly.payload, "telegram").media).toEqual([]);
 
     const withStories = createPublicationPlan(
@@ -314,47 +312,4 @@ describe("text Story cards", () => {
     setStoryPublishMode(backendDb.db, draftId, "all");
     expect(backendDb.db.select().from(drafts).where(eq(drafts.id, draftId)).get()?.storyPublishMode).toBe("all");
   });
-
-  it("backfills a published site's empty media without requeueing social delivery", async () => {
-    backendDb = openStoryDb();
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "story-card-backfill-test-"));
-    temporaryDirectories.push(directory);
-    const config = loadTestConfig({
-      DATA_DIR: directory,
-      STORY_CARD_DIR: directory,
-      STORY_CARD_ASSETS_DIR: storyCardAssets,
-      STORY_CARD_RENDERER_ENTRY: testStoryCardRenderer,
-    });
-    const draftId = createDraftFromMessage(backendDb, 42, {
-      text: "🚨 СЛИВ: Две модели OpenAI появились в DesignArena.",
-      textEn: "🚨 LEAK: Two OpenAI models appeared in DesignArena.",
-      entities: [],
-      media: [],
-    });
-    discardDraftStoryCards(backendDb.db, draftId);
-    const postId = publishDraftToQueue(backendDb, draftId);
-    const socialJobsBefore = backendDb.db.select().from(publishJobs).all().length;
-
-    const dryRun = await backfillTextStoryCards(backendDb, config, `post:${postId}`, false);
-    expect(dryRun).toMatchObject({ applied: false, count: 2 });
-    expect(storyCardsForDraft(backendDb.db, draftId)).toHaveLength(0);
-
-    const applied = await backfillTextStoryCards(backendDb, config, `post:${postId}`, true);
-    expect(applied).toMatchObject({ applied: true, count: 2 });
-    expect(backendDb.db.select().from(postLocales).where(eq(postLocales.draftId, draftId)).all()).toSatisfy((locales) =>
-      locales.every((locale) => Array.isArray(locale.siteMediaJson) && locale.siteMediaJson.length === 1),
-    );
-    expect(backendDb.db.select().from(publishJobs).all()).toHaveLength(socialJobsBefore);
-    expect(
-      backendDb.db
-        .select()
-        .from(siteJobs)
-        .where(eq(siteJobs.publicationKey, `post:${postId}`))
-        .all()
-        .at(-1)?.reason,
-    ).toBe("text_story_card_backfill");
-
-    const forced = await backfillTextStoryCards(backendDb, config, `post:${postId}`, false, true);
-    expect(forced).toMatchObject({ applied: false, count: 2, force: true });
-  }, 20_000);
 });

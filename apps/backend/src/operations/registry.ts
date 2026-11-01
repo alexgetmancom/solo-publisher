@@ -58,13 +58,13 @@ import { resendPublicationTarget } from "./resend.js";
 import { resumeTargetFrom } from "./resume-from.js";
 import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
+import { repairSiteDisplay } from "./site-display-repair.js";
 import { backfillSiteMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
 import { siteMetadata } from "./site-metadata.js";
 import { backfillSiteResponsive } from "./site-responsive-backfill.js";
 import { skipPublicationTargets } from "./skip.js";
 import { operationsStatus } from "./status.js";
-import { backfillTextStoryCards } from "./story-card-backfill.js";
 import { backfillStoryMedia } from "./story-media-backfill.js";
 import { pruneOrphanedStoryMedia } from "./story-media-prune.js";
 import { loginTelegramStories } from "./telegram-stories-login.js";
@@ -1005,14 +1005,6 @@ const operationDefs = {
     note: "Retention takes a variant with its source, so this is for what accumulated before that and for files named by routes that no longer exist. A file a publish job's payload still names is reported under `held_by_a_publish_job` and never removed.",
     handler: (context, input) => pruneOrphanedStoryMedia(context.db(), context.config(), input.apply),
   }),
-  "story-card-backfill": operation({
-    section: "delivery",
-    summary: "Render the story card a text publication is missing.",
-    schema: z.object({ ref: refOption, apply: applyOption, force: z.boolean().default(false).describe("re-render an existing card") }),
-    mutates: true,
-    agent: false,
-    handler: (context, input) => backfillTextStoryCards(context.db(), context.config(), input.ref, input.apply, input.force),
-  }),
   backup: operation({
     section: "host",
     summary: "Copy the database to a timestamped file.",
@@ -1059,6 +1051,15 @@ const operationDefs = {
     mutates: true,
     agent: false,
     handler: (context, input) => ({ ok: true, status: recordFormatEvidence(context.db(), input.test, input.post_id, input.notes) }),
+  }),
+  "site-display-repair": operation({
+    section: "media",
+    summary: "Restore editorial modification dates from a reviewed plan and remove site-only Story cards.",
+    note: "Without file, exports current content fingerprints and dates. A version-1 JSON plan restores only dates whose expected timestamp and editorial fingerprint still match. Removes generated Story cards from published site galleries; keeps their social delivery assets. Does not resend publications.",
+    schema: z.object({ file: z.string().min(1).optional().describe("reviewed date restoration JSON file"), apply: applyOption }),
+    mutates: true,
+    agent: false,
+    handler: (context, input) => repairSiteDisplay(context.db(), input.file, input.apply),
   }),
   "site-media-backfill": operation({
     section: "media",

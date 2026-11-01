@@ -28,3 +28,30 @@ it("dates actual public locale changes without re-dating publication or private 
   expect(loadPublicSiteFeed(db)[0]!.updated_at_en).toBe(edited.updated_at_en);
   expect(() => db.sqlite.run("UPDATE post_locales SET site_updated_at = 'yesterday' WHERE draft_id = 1")).toThrow("ISO instant");
 });
+
+it("does not date derivative regeneration or Story decoration as an editorial change", () => {
+  const db = openBackendDb(":memory:");
+  dbs.push(db);
+  const before = [{ type: "image", asset_id: 10, path: "media/post-vertical.jpg?v=old", alt: "A chart" }];
+  seedTextPost(db, { postId: 2, ru: "News", siteRu: true, siteMediaRu: before, now: "2026-01-01T00:00:00.000Z" });
+  const write = (media: unknown) =>
+    db.sqlite.run("UPDATE post_locales SET site_media_json = ? WHERE draft_id = 2 AND locale = 'ru'", [JSON.stringify(media)]);
+  const date = () =>
+    db.sqlite.query("SELECT site_updated_at AS date FROM post_locales WHERE draft_id = 2 AND locale = 'ru'").get() as {
+      date: string | null;
+    };
+  write([{ ...before[0], path: "media/post.jpg?v=new", width: 1200, height: 600, responsive: [{ path: "small.webp" }] }]);
+  expect(date().date).toBeNull();
+  write([
+    { ...before[0], path: "media/post.jpg?v=new" },
+    { type: "image", role: "text_story_card", path: "card.jpg" },
+  ]);
+  expect(date().date).toBeNull();
+  write(before);
+  expect(date().date).toBeNull();
+  write([{ ...before[0], alt: "A corrected chart description" }]);
+  expect(date().date).not.toBeNull();
+  db.sqlite.run("UPDATE post_locales SET site_updated_at = NULL WHERE draft_id = 2 AND locale = 'ru'");
+  write([{ ...before[0], alt: "A corrected chart description", asset_id: 11 }]);
+  expect(date().date).not.toBeNull();
+});

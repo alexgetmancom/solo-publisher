@@ -14,7 +14,7 @@ import { buildStoryCardCopy } from "./copy.js";
 export const STORY_CARD_MAX_ATTEMPTS = 3;
 
 /** A Story card render is a headless browser shot; past this it is hung. */
-export const STORY_CARD_TIMEOUT_SECONDS = 15;
+const STORY_CARD_TIMEOUT_SECONDS = 15;
 
 type ClaimedCard = typeof draftStoryCards.$inferSelect & { lockedBy: string; lockedAt: string };
 

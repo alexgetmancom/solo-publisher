@@ -81,7 +81,7 @@ export function createPublicationPlan(
       entities,
       media,
       storyMedia,
-      siteMedia: ownMedia.length ? ownMedia : storyMedia,
+      siteMedia: ownMedia,
       slug,
       publishAt,
       siteEnabled,

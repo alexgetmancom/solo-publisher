@@ -27,11 +27,12 @@ type SiteMedia = Record<string, unknown> & {
  * Thread attachments share the gallery; reviewed descriptions stay with them. */
 export function siteMediaSource(source: PublicationLocaleSource): Record<string, unknown>[] {
   const originals = [...source.media, ...source.thread.flatMap((part) => part.media)];
-  if (!originals.length) return source.siteMedia;
-  return originals.map((item, index) => {
-    const alt = source.siteMedia[index]?.alt;
-    return { ...item, ...(typeof alt === "string" ? { alt } : {}) };
-  });
+  return originals
+    .filter((item) => item.role !== "text_story_card")
+    .map((item, index) => {
+      const alt = source.siteMedia[index]?.alt;
+      return { ...item, ...(typeof alt === "string" ? { alt } : {}) };
+    });
 }
 
 /** These argument builders also run in the shipped-image smoke test. */

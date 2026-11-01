@@ -56,7 +56,7 @@ const OFF_THE_AGENT_SURFACE = [
   "dates-repair",
   "video-script",
   "purge",
-  "story-card-backfill",
+  "site-display-repair",
   "story-media-backfill",
   "story-media-prune",
   "disk",
@@ -179,9 +179,6 @@ describe("operations registry", () => {
       'publish --locale ru|en --targets threads_ru --text "post text"',
     );
     expect(operationUsage("purge", operationDef("purge") as never)).toBe("purge --ref post:160 [--apply]");
-    expect(operationUsage("story-card-backfill", operationDef("story-card-backfill") as never)).toBe(
-      "story-card-backfill --ref post:160 [--apply] [--force]",
-    );
   });
 
   it("accepts the bare post number every other surface shows", async () => {

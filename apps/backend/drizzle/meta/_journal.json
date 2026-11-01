@@ -253,6 +253,13 @@
       "when": 1793484000000,
       "tag": "0035_site_content_updated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1793538000000,
+      "tag": "0036_site_media_editorial_dates",
+      "breakpoints": true
     }
   ]
 }

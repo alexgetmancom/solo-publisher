@@ -320,5 +320,5 @@ function firstImage(media: SiteMedia[]): string | null {
 
 function publishedMedia(media: unknown): SiteMedia[] {
   const items = z.array(siteMediaSchema).safeParse(media);
-  return items.success ? items.data : [];
+  return items.success ? items.data.filter((item) => item.role !== "text_story_card") : [];
 }
