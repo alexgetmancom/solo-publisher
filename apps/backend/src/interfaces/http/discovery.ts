@@ -1,4 +1,5 @@
 import { json } from "../../foundation/http-response.js";
+import { MCP_SERVER_METADATA } from "../mcp-protocol.js";
 import type { RouteModule } from "./context.js";
 
 const CACHE = { "cache-control": "public, max-age=3600" };
@@ -9,21 +10,10 @@ const CACHE = { "cache-control": "public, max-age=3600" };
 export const discoveryRoutes: RouteModule = (app, { config }) => {
   const origin = config.PUBLIC_BASE_URL.replace(/\/$/, "");
 
-  // RFC 8414. This Studio issues no tokens — the Studio bearer token is minted
-  // by its operator — so the grant and response lists are deliberately empty.
-  // The document exists because MCP clients probe for it before falling back.
-  app.get("/.well-known/oauth-authorization-server", () =>
-    json({ issuer: origin, scopes_supported: ["read:feed"], response_types_supported: [], grant_types_supported: [] }, 200, CACHE),
-  );
-
-  // RFC 9728. The MCP endpoint is the protected resource; the read-only feed
-  // scope is the only one it grants.
+  // An operator provisions the bearer token; this Studio issues no OAuth tokens
+  // and must not advertise an authorization server or fictional feed scopes.
   app.get("/.well-known/oauth-protected-resource", () =>
-    json(
-      { resource: origin, authorization_servers: [origin], scopes_supported: ["read:feed"], bearer_methods_supported: ["header"] },
-      200,
-      CACHE,
-    ),
+    json({ resource: `${origin}/api/mcp`, bearer_methods_supported: ["header"] }, 200, CACHE),
   );
 
   // The endpoint is the MCP transport itself: this card used to point at
@@ -32,13 +22,10 @@ export const discoveryRoutes: RouteModule = (app, { config }) => {
   app.get("/.well-known/mcp/server-card.json", () =>
     json(
       {
-        $schema: "https://modelcontextprotocol.io/schemas/server-card/v1.0",
         version: "1.0",
-        protocolVersion: "2025-06-18",
-        serverInfo: { name: "solo-publisher-studio-mcp", version: "1.0.0" },
-        description: `MCP server for operating the ${new URL(origin).host} Studio: drafts, delivery and analytics.`,
+        ...MCP_SERVER_METADATA,
+        description: `Operator tools for the ${new URL(origin).host} Studio. Studio tools require an operator-provisioned bearer token. Read public site content through /feed-ai.json and /llms.txt.`,
         transport: { type: "streamable-http", endpoint: "/api/mcp" },
-        capabilities: { tools: { listChanged: true }, resources: { subscribe: true, listChanged: true } },
         authentication: { required: true, schemes: ["bearer"] },
       },
       200,

@@ -452,7 +452,30 @@ describe("discovery and operator surfaces", () => {
     const card = (await (await request("/.well-known/mcp/server-card.json")).json()) as { transport: { endpoint: string } };
     expect(card.transport.endpoint).toBe("/api/mcp");
     const resource = (await (await request("/.well-known/oauth-protected-resource")).json()) as { resource: string };
-    expect(resource.resource).toBe("https://studio.example.com");
+    expect(resource.resource).toBe("https://studio.example.com/api/mcp");
+  });
+
+  it("advertises the actual MCP handshake and only implemented authentication", async () => {
+    const { request } = studio();
+    const card = await (await request("/.well-known/mcp/server-card.json")).json();
+    const handshake = await (
+      await request("/api/mcp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize" }),
+      })
+    ).json();
+    expect(card.protocolVersion).toBe(handshake.result.protocolVersion);
+    expect(card.serverInfo).toEqual(handshake.result.serverInfo);
+    expect(card.capabilities).toEqual(handshake.result.capabilities);
+    expect(card.capabilities.resources).toBeUndefined();
+    const resource = await (await request("/.well-known/oauth-protected-resource")).json();
+    expect(resource.scopes_supported).toBeUndefined();
+    expect(resource.authorization_servers).toBeUndefined();
+    expect((await request("/.well-known/oauth-authorization-server")).status).toBe(404);
+    const denied = await request("/api/mcp");
+    expect(denied.status).toBe(401);
+    expect(denied.headers.get("www-authenticate")).toContain("/.well-known/oauth-protected-resource");
   });
 
   it("keeps operator pages out of search engines and shared caches", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createDraftFromMessage } from "../src/content/drafts.js";
@@ -13,6 +13,52 @@ import { seedTextPost } from "./helpers/post.js";
 import { loadTestConfig } from "./helpers/studio-config.js";
 
 describe("site parity", () => {
+  it("retains an edit queued while an older revision of the same URL is in flight", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "indexnow-revisions-"));
+    const config = loadTestConfig({ DATA_DIR: dir, PUBLIC_BASE_URL: "https://example.test", INDEXNOW_ENABLED: "true" });
+    const replies: Array<(response: Response) => void> = [];
+    const send = mock(() => new Promise<Response>((resolve) => replies.push(resolve))) as unknown as typeof fetch;
+    try {
+      const first = pingIndexNow(config, ["https://example.test/post"], send);
+      const edited = pingIndexNow(config, ["https://example.test/post"], send);
+      expect(replies).toHaveLength(1);
+      replies[0]?.(new Response("", { status: 202 }));
+      await first;
+      await Bun.sleep(0);
+      expect(replies).toHaveLength(2);
+      expect(Object.keys(JSON.parse(readFileSync(join(dir, "indexnow.json"), "utf8")).pending_urls)).toEqual(["https://example.test/post"]);
+      replies[1]?.(new Response("", { status: 200 }));
+      await edited;
+      expect(JSON.parse(readFileSync(join(dir, "indexnow.json"), "utf8")).pending_urls).toEqual({});
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("drains more than one IndexNow batch without losing URLs beyond the provider limit", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "indexnow-batches-"));
+    const config = loadTestConfig({ DATA_DIR: dir, PUBLIC_BASE_URL: "https://example.test", INDEXNOW_ENABLED: "true" });
+    const batches: string[][] = [];
+    const send = (async (_input, init) => {
+      batches.push(JSON.parse(String(init?.body)).urlList);
+      return new Response("", { status: 202 });
+    }) as typeof fetch;
+    try {
+      await pingIndexNow(
+        config,
+        Array.from({ length: 10_001 }, (_, i) => `https://example.test/post-${i}`),
+        send,
+      );
+      expect(batches[0]).toHaveLength(10_000);
+      await pingIndexNow(config, [], send);
+      expect(batches[1]).toHaveLength(1);
+      expect(new Set(batches.flat()).size).toBe(10_001);
+      expect(JSON.parse(readFileSync(join(dir, "indexnow.json"), "utf8")).pending_urls).toEqual({});
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("notifies only changed public pages and sends later edits at the same URL", async () => {
     const dir = mkdtempSync(join(tmpdir(), "alexgetman-site-parity-"));
     const backendDb = openBackendDb(join(dir, "pipeline.db"));

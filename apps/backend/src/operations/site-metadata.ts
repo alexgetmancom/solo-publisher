@@ -4,6 +4,9 @@ import { and, eq, sql } from "drizzle-orm";
 import * as z from "zod";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, postLocales } from "../db/schema.js";
+import { siteUrlsForIndexNow } from "../delivery/site-content-index.js";
+import { enqueueIndexNow } from "../delivery/site-index-now.js";
+import type { BackendConfig } from "../foundation/config.js";
 import { loadPublicSiteFeed } from "../public/site-read-model.js";
 
 const metadataSchema = z
@@ -78,6 +81,7 @@ export function applySiteMetadata(backendDb: BackendDb, raw: unknown, apply: boo
     const seen = new Set<string>();
     let changed = 0;
     let images = 0;
+    const changedPublications = new Set<string>();
     for (const item of input.items) {
       const key: `${number}:${"ru" | "en"}` = `${item.post_id}:${item.locale}`;
       if (seen.has(key)) throw new Error(`Duplicate metadata for ${key}`);
@@ -124,6 +128,7 @@ export function applySiteMetadata(backendDb: BackendDb, raw: unknown, apply: boo
       const title = item.seo_title ?? row.seoTitle;
       if (title === row.seoTitle && JSON.stringify(media) === JSON.stringify(row.media ?? [])) continue;
       changed += 1;
+      changedPublications.add(`post:${item.post_id}`);
       if (apply) {
         const result = tx
           .update(postLocales)
@@ -143,16 +148,26 @@ export function applySiteMetadata(backendDb: BackendDb, raw: unknown, apply: boo
         if (result.length !== 1) throw new Error(`Concurrent metadata edit for ${key}`);
       }
     }
-    return { ok: true, apply, locales: input.items.length, changed, images };
+    return { ok: true, apply, locales: input.items.length, changed, images, publication_keys: [...changedPublications] };
   });
 }
 
-export async function siteMetadata(backendDb: BackendDb, file: string | undefined, apply: boolean) {
+export async function siteMetadata(backendDb: BackendDb, config: BackendConfig, file: string | undefined, apply: boolean) {
   if (!file) {
     if (apply) throw new Error("site-metadata --apply requires --file");
     return siteMetadataInventory(backendDb);
   }
   const content = await readFile(file, "utf8");
   if (content.length > 5_000_000) throw new Error("Site metadata exceeds 5 MB");
-  return applySiteMetadata(backendDb, JSON.parse(content), apply);
+  const result = applySiteMetadata(backendDb, JSON.parse(content), apply);
+  if (apply && result.publication_keys.length) {
+    try {
+      enqueueIndexNow(config, siteUrlsForIndexNow(config, backendDb, new Set(result.publication_keys)));
+    } catch (error) {
+      throw new Error(
+        `Site metadata was saved, but IndexNow could not be queued: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+  return result;
 }

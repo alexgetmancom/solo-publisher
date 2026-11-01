@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it } from "bun:test";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { postLocales } from "../src/db/schema.js";
-import { applySiteMetadata, siteMetadataInventory, textHash } from "../src/operations/site-metadata.js";
+import { applySiteMetadata, siteMetadata, siteMetadataInventory, textHash } from "../src/operations/site-metadata.js";
 import { loadPublicSiteFeed } from "../src/public/site-read-model.js";
 import { openBackendDb } from "./helpers/open-db.js";
 import { seedTextPost } from "./helpers/post.js";
+import { loadTestConfig } from "./helpers/studio-config.js";
 
 const databases: ReturnType<typeof openBackendDb>[] = [];
 afterEach(() => {
@@ -32,6 +36,29 @@ function setup() {
   return { db, item, plan: { version: 1, items: [item] } };
 }
 describe("reviewed site metadata", () => {
+  it("queues committed SEO changes and leaves previews and unchanged imports quiet", async () => {
+    const { db, plan } = setup();
+    const dir = mkdtempSync(join(tmpdir(), "metadata-indexnow-"));
+    const file = join(dir, "metadata.json");
+    const stateFile = join(dir, "indexnow.json");
+    const config = loadTestConfig({ DATA_DIR: dir, PUBLIC_BASE_URL: "https://example.test", INDEXNOW_ENABLED: "true" });
+    try {
+      writeFileSync(file, JSON.stringify(plan));
+      await siteMetadata(db, config, file, false);
+      expect(existsSync(stateFile)).toBe(false);
+      await siteMetadata(db, config, file, true);
+      const state = readFileSync(stateFile, "utf8");
+      expect(Object.keys(JSON.parse(state).pending_urls).sort()).toEqual([
+        "https://example.test/1/post-1-en/",
+        "https://example.test/ru/1/post-1-ru/",
+      ]);
+      await siteMetadata(db, config, file, true);
+      expect(readFileSync(stateFile, "utf8")).toBe(state);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("previews, saves and exposes localized metadata without changing publication text", () => {
     const { db, plan } = setup();
     expect(applySiteMetadata(db, plan, false)).toMatchObject({ changed: 1, images: 1 });

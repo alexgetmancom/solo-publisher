@@ -20,7 +20,14 @@ export const studioRoutes: RouteModule = (app, { config, backendDb, studio }) =>
   // command-center token that opens the stream and then cannot call a single
   // tool is an authorization that means nothing.
   app.get("/api/mcp", (c) => {
-    if (!mcpStudioActor(c.req.raw, config)) return text("unauthorized\n", 401);
+    if (!mcpStudioActor(c.req.raw, config)) {
+      const denied = text("unauthorized\n", 401);
+      denied.headers.set(
+        "WWW-Authenticate",
+        `Bearer resource_metadata="${config.PUBLIC_BASE_URL.replace(/\/$/, "")}/.well-known/oauth-protected-resource"`,
+      );
+      return denied;
+    }
     return sse((send) => {
       send("endpoint", `/api/mcp?connection_id=${crypto.randomUUID()}`);
       return setInterval(() => send("ping", new Date().toISOString()), 30_000);

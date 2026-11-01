@@ -1083,11 +1083,11 @@ const operationDefs = {
   "site-metadata": operation({
     section: "media",
     summary: "Export published image metadata, or import reviewed alt descriptions and SEO titles.",
-    note: "Without file, exports published text hashes and images. With file, validates the version-1 JSON plan; apply saves it atomically. Changed text and replaced images are protected. To correct existing copy, supply its exact expected_seo_title or expected_alt; stale edits fail. Does not resend publications.",
+    note: "Without file, exports published text hashes and images. With file, validates the version-1 JSON plan; apply saves it atomically and queues changed public URLs for IndexNow. Changed text and replaced images are protected. To correct existing copy, supply its exact expected_seo_title or expected_alt; stale edits fail. Does not resend publications.",
     schema: z.object({ file: z.string().min(1).optional().describe("reviewed metadata JSON file"), apply: applyOption }),
     mutates: true,
     agent: false,
-    handler: (context, input) => siteMetadata(context.db(), input.file, input.apply),
+    handler: (context, input) => siteMetadata(context.db(), context.config(), input.file, input.apply),
   }),
   "site-media-deduplicate": operation({
     section: "media",

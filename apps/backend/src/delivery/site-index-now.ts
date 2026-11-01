@@ -4,24 +4,64 @@ import path from "node:path";
 import type { BackendConfig } from "../foundation/config.js";
 import { log } from "../foundation/logger.js";
 
-type IndexNowState = { last_attempt_at?: string; last_success_at?: string; last_status?: number; url_count?: number };
+type IndexNowState = {
+  last_attempt_at?: string;
+  last_success_at?: string;
+  last_status?: number;
+  url_count?: number;
+  pending_urls?: Record<string, string>;
+  retry_at?: string;
+};
 
-/** Delivery side effect: notify search engines after site materialization. */
+const inFlight = new Map<string, Promise<void>>();
+const RETRY_DELAY_MS = 60_000;
+
+/** Queue a public content change without waiting for the search provider. */
+export function enqueueIndexNow(config: BackendConfig, urls: string[]): void {
+  if (!config.INDEXNOW_ENABLED || !urls.length) return;
+  const stateFile = path.join(config.DATA_DIR, "indexnow.json");
+  const previous = readState(stateFile);
+  const pending = { ...previous.pending_urls };
+  for (const url of new Set(urls)) pending[url] = crypto.randomUUID();
+  writeState(stateFile, { ...previous, pending_urls: pending });
+}
+
+/** Persist completed content changes before attempting the external notification.
+ * Idle site cycles also call this with no URLs to drain failed or large batches. */
 export async function pingIndexNow(config: BackendConfig, urls: string[], fetchImpl: typeof fetch = fetch): Promise<void> {
   if (!config.INDEXNOW_ENABLED) return;
-  const unique = [...new Set(urls)].sort().slice(0, 10_000);
-  if (unique.length === 0) return;
-  const keyFile = path.join(config.DATA_DIR, "indexnow.key");
   const stateFile = path.join(config.DATA_DIR, "indexnow.json");
-  const key = readOrCreateKey(keyFile);
-  const previous = readState(stateFile);
-  // Each call represents a completed content change. The URL may be the same
-  // as last time when an existing post was edited.
-  const state: IndexNowState = {
-    last_attempt_at: new Date().toISOString(),
-    url_count: unique.length,
-  };
-  if (previous.last_success_at) state.last_success_at = previous.last_success_at;
+  const unique = [...new Set(urls)].sort();
+  if (unique.length) {
+    enqueueIndexNow(config, unique);
+  } else if (!Object.keys(readState(stateFile).pending_urls ?? {}).length || inFlight.has(stateFile)) {
+    return;
+  }
+  // Enqueuing above is synchronous. Serializing sends cannot lose a content
+  // change made while an earlier request for the same URL is in flight.
+  const prior = inFlight.get(stateFile);
+  const attempt = prior
+    ? prior.catch(() => {}).then(() => sendPending(config, stateFile, unique.length === 0, fetchImpl))
+    : sendPending(config, stateFile, unique.length === 0, fetchImpl);
+  inFlight.set(stateFile, attempt);
+  try {
+    await attempt;
+  } finally {
+    if (inFlight.get(stateFile) === attempt) inFlight.delete(stateFile);
+  }
+}
+
+async function sendPending(config: BackendConfig, stateFile: string, idle: boolean, fetchImpl: typeof fetch): Promise<void> {
+  const state = readState(stateFile);
+  if (idle && state.retry_at && Date.parse(state.retry_at) > Date.now()) return;
+  const batch = Object.entries(state.pending_urls ?? {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(0, 10_000);
+  if (!batch.length) return;
+  const key = readOrCreateKey(path.join(config.DATA_DIR, "indexnow.key"));
+  state.last_attempt_at = new Date().toISOString();
+  state.url_count = batch.length;
+  delete state.last_status;
   writeState(stateFile, state);
   try {
     const response = await fetchImpl("https://api.indexnow.org/indexnow", {
@@ -31,21 +71,24 @@ export async function pingIndexNow(config: BackendConfig, urls: string[], fetchI
         host: new URL(config.PUBLIC_BASE_URL).host,
         key,
         keyLocation: `${config.PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}.txt`,
-        urlList: unique,
+        urlList: batch.map(([url]) => url),
       }),
       signal: AbortSignal.timeout(8_000),
     });
-    state.last_status = response.status;
-    if (response.ok || response.status === 202) {
-      state.last_success_at = new Date().toISOString();
+    const latest = readState(stateFile);
+    latest.last_status = response.status;
+    if (response.status === 200 || response.status === 202) {
+      for (const [url, revision] of batch) {
+        if (latest.pending_urls?.[url] === revision) delete latest.pending_urls[url];
+      }
+      latest.last_success_at = new Date().toISOString();
+      delete latest.retry_at;
     }
-    writeState(stateFile, state);
-    if (!response.ok && response.status !== 202) {
-      const error = new Error(`IndexNow request rejected: ${response.status}`);
-      log("warn", error.message, { status: response.status, urls: unique.length });
-      throw error;
-    }
+    writeState(stateFile, latest);
+    if (response.status !== 200 && response.status !== 202) throw new Error(`IndexNow request rejected: ${response.status}`);
   } catch (error) {
+    const latest = readState(stateFile);
+    writeState(stateFile, { ...latest, retry_at: new Date(Date.now() + RETRY_DELAY_MS).toISOString() });
     log("warn", "IndexNow request failed", { error: String(error) });
     throw error;
   }
@@ -76,12 +119,31 @@ function readOrCreateKey(filePath: string): string {
 
 function readState(filePath: string): IndexNowState {
   try {
-    return JSON.parse(fs.readFileSync(filePath, "utf8")) as IndexNowState;
-  } catch {
-    return {};
+    const state: IndexNowState = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    if (!state || typeof state !== "object" || Array.isArray(state)) throw new Error("Invalid IndexNow state");
+    if (
+      state.pending_urls !== undefined &&
+      (!state.pending_urls ||
+        typeof state.pending_urls !== "object" ||
+        Array.isArray(state.pending_urls) ||
+        Object.values(state.pending_urls).some((revision) => typeof revision !== "string"))
+    ) {
+      throw new Error("Invalid IndexNow pending_urls");
+    }
+    return state;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    throw error;
   }
 }
 
 function writeState(filePath: string, state: IndexNowState): void {
-  fs.writeFileSync(filePath, `${JSON.stringify(state, null, 2)}\n`, { encoding: "utf8", mode: 0o664 });
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const temporary = `${filePath}.${crypto.randomUUID()}.tmp`;
+  try {
+    fs.writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o664 });
+    fs.renameSync(temporary, filePath);
+  } finally {
+    fs.rmSync(temporary, { force: true });
+  }
 }

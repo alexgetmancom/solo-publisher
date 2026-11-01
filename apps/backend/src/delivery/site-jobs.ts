@@ -36,6 +36,7 @@ export async function runSiteJobCycle(config: BackendConfig, backendDb: BackendD
   recoverStaleSiteJobs(backendDb);
   const jobs = claimSiteJobs(backendDb);
   if (jobs.length === 0) {
+    notifyIndexNow(config, backendDb, []);
     recordWorkerState(backendDb, "site", { claimed: 0 });
     return 0;
   }
@@ -70,11 +71,7 @@ export async function runSiteJobCycle(config: BackendConfig, backendDb: BackendD
       const urls = siteUrlsForIndexNow(config, backendDb, new Set(completed.map((job) => job.publication_key)));
       // IndexNow is an external notification, not a prerequisite for serving
       // the already materialized feed through SSR.
-      void pingIndexNow(config, urls).catch((error) => {
-        insertSiteEvent(unsafeDb(backendDb).db, "site.indexnow.failed", "warn", String(error instanceof Error ? error.message : error), {
-          urls,
-        });
-      });
+      notifyIndexNow(config, backendDb, urls);
     } catch (error) {
       insertSiteEvent(
         unsafeDb(backendDb).db,
@@ -95,6 +92,14 @@ export async function runSiteJobCycle(config: BackendConfig, backendDb: BackendD
     );
   }
   return jobs.length;
+}
+
+function notifyIndexNow(config: BackendConfig, backendDb: BackendDb, urls: string[]): void {
+  void pingIndexNow(config, urls).catch((error) => {
+    insertSiteEvent(unsafeDb(backendDb).db, "site.indexnow.failed", "warn", String(error instanceof Error ? error.message : error), {
+      urls,
+    });
+  });
 }
 
 export function recoverStaleSiteJobs(backendDb: BackendDb, maxLockAgeSeconds = SITE_JOB_LOCK_TIMEOUT_SECONDS): number {

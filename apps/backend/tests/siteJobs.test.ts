@@ -20,6 +20,46 @@ afterEach(() => {
 });
 
 describe("site jobs", () => {
+  it("retries a persisted IndexNow failure on an idle cycle without republishing", async () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-indexnow-retry-"));
+    const config = loadTestConfig({ DATA_DIR: tempDir, PUBLIC_BASE_URL: "https://example.test", INDEXNOW_ENABLED: "true" });
+    backendDb = openBackendDb(":memory:");
+    const now = new Date().toISOString();
+    seedTextPost(backendDb, { postId: 1, en: "Published post", siteEn: true, slugEn: "published-post", now });
+    backendDb.db
+      .insert(siteJobs)
+      .values({ publicationKey: "post:1", reason: "publish", status: "queued", createdAt: now, updatedAt: now })
+      .run();
+    const originalFetch = globalThis.fetch;
+    let attempts = 0;
+    let status = 503;
+    const stateFile = path.join(tempDir, "indexnow.json");
+    globalThis.fetch = (async () => {
+      attempts += 1;
+      return new Response("", { status });
+    }) as unknown as typeof fetch;
+    try {
+      expect(await runSiteJobCycle(config, backendDb)).toBe(1);
+      await Bun.sleep(0);
+      expect(backendDb.db.select({ status: siteJobs.status }).from(siteJobs).get()?.status).toBe("published");
+      const pending = JSON.parse(fs.readFileSync(stateFile, "utf8"));
+      expect(Object.keys(pending.pending_urls)).toEqual(["https://example.test/1/published-post/"]);
+      status = 200;
+      expect(await runSiteJobCycle(config, backendDb)).toBe(0);
+      await Bun.sleep(0);
+      expect(attempts).toBe(1);
+      // The persisted retry deadline passes, without another publication.
+      fs.writeFileSync(stateFile, JSON.stringify({ ...pending, retry_at: new Date(Date.now() - 1).toISOString() }));
+      expect(await runSiteJobCycle(config, backendDb)).toBe(0);
+      await Bun.sleep(0);
+      expect(attempts).toBe(2);
+      expect(JSON.parse(fs.readFileSync(stateFile, "utf8")).pending_urls).toEqual({});
+      expect(backendDb.db.select().from(siteJobs).all()).toHaveLength(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("ends stale lock recovery when the retry budget is exhausted", () => {
     backendDb = openBackendDb(":memory:");
     const lockedAt = new Date(Date.now() - 60_000).toISOString();

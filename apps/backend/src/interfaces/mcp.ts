@@ -15,13 +15,9 @@ import {
   runOperation,
 } from "../operations/registry.js";
 import { createStudioServices, type StudioServices } from "../studio/services/index.js";
+import { MCP_SERVER_METADATA } from "./mcp-protocol.js";
 
 const feedbackHits = new Map<string, number[]>();
-
-/** The one revision of the wire protocol this server implements. A client that
- * asked for another reads it here and adapts; echoing back whatever it asked
- * for would promise a shape this code does not speak. */
-const PROTOCOL_VERSION = "2024-11-05";
 
 // --- Shared zod building blocks -------------------------------------------------
 
@@ -599,11 +595,7 @@ export async function mcpResponse(
     return {
       jsonrpc: "2.0",
       id,
-      result: {
-        protocolVersion: PROTOCOL_VERSION,
-        capabilities: { tools: {} },
-        serverInfo: { name: "solo-publisher-studio-mcp", version: "2.1.0" },
-      },
+      result: MCP_SERVER_METADATA,
     };
   if (request.method === "tools/list")
     return { jsonrpc: "2.0", id, result: { tools: actorId ? [...publicTools, ...studioTools, ...opsTools] : publicTools } };
