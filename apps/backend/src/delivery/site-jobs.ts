@@ -15,7 +15,7 @@ import { workerId } from "../publishing/queue.js";
 import { publicationSourceFromDb } from "../publishing/source-store.js";
 import { siteUrlsForIndexNow } from "./site-content-index.js";
 import { pingIndexNow } from "./site-index-now.js";
-import { materializeSiteMedia } from "./site-media.js";
+import { materializeSiteMedia, siteMediaSource } from "./site-media.js";
 
 export const SITE_JOB_RESTART_LOCK_GRACE_SECONDS = 30;
 const SITE_JOB_CLAIM_LIMIT = 20;
@@ -401,9 +401,9 @@ async function prepareSiteMedia(
   const hasRu = source.locales.ru.siteEnabled && isDue(source.locales.ru.publishAt, now);
   const hasEn = source.locales.en.siteEnabled && isDue(source.locales.en.publishAt, now);
   if (!hasRu && !hasEn) return null;
-  const mediaRuSource = source.locales.ru.siteMedia.length ? source.locales.ru.siteMedia : source.locales.ru.media;
+  const mediaRuSource = siteMediaSource(source.locales.ru);
   const mediaRu = hasRu ? await materializeSiteMedia(config, postId, "ru", mediaRuSource, fetchImpl) : [];
-  const mediaEnSource = source.locales.en.siteMedia.length ? source.locales.en.siteMedia : source.locales.en.media;
+  const mediaEnSource = siteMediaSource(source.locales.en);
   const mediaEn = hasEn ? await materializeSiteMedia(config, postId, "en", mediaEnSource, fetchImpl) : [];
   return {
     draftId: source.draftId,

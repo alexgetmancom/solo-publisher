@@ -42,7 +42,7 @@ const OFF_THE_AGENT_SURFACE = [
   "format-record",
   "replace-media",
   "set-media",
-  "site-media-images",
+  "site-media-backfill",
   "site-media-deduplicate",
   "site-metadata",
   "site-responsive-backfill",

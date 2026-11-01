@@ -3,7 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { RESPONSIVE_WIDTHS } from "../src/content/site-media-naming.js";
+import { postLocales } from "../src/db/schema.js";
 import { materializeSiteMedia } from "../src/delivery/site-media.js";
+import { backfillSiteMedia } from "../src/operations/site-media-backfill.js";
 import { deduplicateSiteMedia } from "../src/operations/site-media-deduplicate.js";
 import { backfillSiteResponsive } from "../src/operations/site-responsive-backfill.js";
 import { openBackendDb } from "./helpers/open-db.js";
@@ -31,6 +33,82 @@ afterEach(() => {
 });
 
 describe("site media materialization", () => {
+  it("restores recent mixed galleries from uploads and retains reviewed descriptions", async () => {
+    directory = fs.mkdtempSync(path.join(os.tmpdir(), "site-originals-backfill-"));
+    const config = loadTestConfig({ DATA_DIR: directory });
+    const db = openBackendDb(":memory:");
+    try {
+      const photo = path.join(directory, "photo.png");
+      const video = path.join(directory, "video.mp4");
+      fs.writeFileSync(photo, "square-upload");
+      fs.writeFileSync(video, "landscape-upload");
+      const media = [
+        { type: "image", local_path: photo },
+        { type: "video", local_path: video },
+      ];
+      const stored = [
+        { type: "image", path: "media/posts/2-ru-0-vertical.jpg?v=old", alt: "Reviewed description" },
+        { type: "video", path: "media/posts/2-ru-1-vertical.mp4?v=old", poster: "media/posts/2-ru-1-poster.jpg" },
+      ];
+      seedTextPost(db, { postId: 1, ru: "Older", siteRu: true, mediaRu: media, siteMediaRu: stored });
+      seedTextPost(db, {
+        postId: 2,
+        ru: "Recent",
+        en: "Translation",
+        siteRu: true,
+        siteEn: true,
+        mediaRu: media,
+        siteMediaRu: stored,
+        siteMediaEn: stored,
+      });
+      expect(await backfillSiteMedia(db, config, false, 1)).toMatchObject({ posts: 1, locale_projections: 2, changed: 0, remaining: 3 });
+      expect(ffmpegCalls).toBe(0);
+      expect(await backfillSiteMedia(db, config, true, 1)).toMatchObject({ ok: true, changed: 2, remaining: 1 });
+      const rows = db.db.select().from(postLocales).all();
+      const recent = rows.filter((row) => row.draftId === 2);
+      for (const row of recent) {
+        expect(row.siteMediaJson).toHaveLength(2);
+        expect(row.siteMediaJson?.[0]).toMatchObject({ type: "image", alt: "Reviewed description" });
+        expect(row.siteMediaJson?.[0]?.path).toMatch(new RegExp(`^media/posts/2-${row.locale}-0\\.png\\?v=`));
+        expect(row.siteMediaJson?.[1]?.path).toMatch(new RegExp(`^media/posts/2-${row.locale}-1\\.mp4\\?v=`));
+        expect(fs.readFileSync(path.join(config.SITE_PUBLIC_DIR, `media/posts/2-${row.locale}-0.png`), "utf8")).toBe("square-upload");
+      }
+      expect(rows.find((row) => row.draftId === 1 && row.locale === "ru")?.siteMediaJson).toEqual(stored);
+      expect(await backfillSiteMedia(db, config, true, 1)).toMatchObject({ ok: true, changed: 1, remaining: 0 });
+      expect(await backfillSiteMedia(db, config, true, 1)).toMatchObject({ changed: 0, remaining: 0 });
+    } finally {
+      db.close();
+    }
+  });
+
+  it("leaves a gallery intact when any original attachment cannot be recovered", async () => {
+    directory = fs.mkdtempSync(path.join(os.tmpdir(), "site-originals-backfill-"));
+    const config = loadTestConfig({ DATA_DIR: directory });
+    const db = openBackendDb(":memory:");
+    try {
+      const stored = [{ type: "image", path: "media/posts/1-ru-0-vertical.jpg?v=old" }];
+      seedTextPost(db, {
+        postId: 1,
+        ru: "Published",
+        siteRu: true,
+        mediaRu: [{ type: "image", local_path: path.join(directory, "missing.jpg") }],
+        siteMediaRu: stored,
+      });
+      const result = await backfillSiteMedia(db, config, true, 1);
+      expect(result).toMatchObject({ ok: false, changed: 0, remaining: 1 });
+      expect(result.failed).toHaveLength(1);
+      expect(
+        db.db
+          .select()
+          .from(postLocales)
+          .all()
+          .find((row) => row.locale === "ru")?.siteMediaJson,
+      ).toEqual(stored);
+    } finally {
+      db.close();
+    }
+  });
+
   it("backfills both locale galleries and posters without changing their originals or videos", async () => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "site-responsive-backfill-"));
     const config = loadTestConfig({ DATA_DIR: directory });
@@ -68,12 +146,10 @@ describe("site media materialization", () => {
     const initial = await materializeSiteMedia(config, 1, "ru", [{ type: "image", local_path: first }]);
     await materializeSiteMedia(config, 1, "ru", [{ type: "image", local_path: second }]);
 
-    expect(initial[0]?.path).toMatch(/^media\/posts\/1-ru-0-vertical\.jpg\?v=[a-f0-9]{12}$/);
+    expect(initial[0]?.path).toMatch(/^media\/posts\/1-ru-0\.png\?v=[a-f0-9]{12}$/);
     expect(fs.readFileSync(path.join(config.SITE_PUBLIC_DIR, "media", "posts", "1-ru-0.png"))).toEqual(image);
     for (const width of RESPONSIVE_WIDTHS)
-      expect(fs.existsSync(path.join(config.SITE_PUBLIC_DIR, "generated", "responsive", `media-posts-1-ru-0-vertical-${width}.webp`))).toBe(
-        true,
-      );
+      expect(fs.existsSync(path.join(config.SITE_PUBLIC_DIR, "generated", "responsive", `media-posts-1-ru-0-${width}.webp`))).toBe(true);
   });
 
   it("does not regenerate unchanged responsive derivatives on every feed build", async () => {
@@ -85,9 +161,8 @@ describe("site media materialization", () => {
     await materializeSiteMedia(config, 2, "en", [{ type: "image", local_path: image }]);
     await materializeSiteMedia(config, 2, "en", [{ type: "image", local_path: image }]);
 
-    // one vertical projection plus its responsive derivatives; the
-    // unchanged second build must not add further work.
-    expect(ffmpegCalls).toBe(1 + RESPONSIVE_WIDTHS.length);
+    // The unchanged second build must not add further work.
+    expect(ffmpegCalls).toBe(RESPONSIVE_WIDTHS.length);
   });
 
   it("shares equal locale files and atomically detaches a later replacement", async () => {
@@ -108,20 +183,20 @@ describe("site media materialization", () => {
     expect(fs.statSync(ru).ino).not.toBe(fs.statSync(en).ino);
   });
 
-  it("keeps only the vertical video master and poster in permanent site media", async () => {
+  it("keeps the original video and draws its poster without vertical padding", async () => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-site-media-"));
     const source = path.join(directory, "source.mp4");
     fs.writeFileSync(source, "video-source");
     const config = loadTestConfig({ DATA_DIR: directory });
     const [item] = await materializeSiteMedia(config, 4, "en", [{ type: "video", local_path: source }]);
     const media = path.join(config.SITE_PUBLIC_DIR, "media", "posts");
-    expect(fs.existsSync(path.join(media, "4-en-0.mp4"))).toBe(false);
-    expect(fs.existsSync(path.join(media, "4-en-0-vertical.mp4"))).toBe(true);
-    expect(fs.existsSync(path.join(media, "4-en-0-poster.jpg"))).toBe(true);
-    expect(item?.path).toMatch(/^media\/posts\/4-en-0-vertical\.mp4\?v=/);
+    expect(fs.existsSync(path.join(media, "4-en-0.mp4"))).toBe(true);
+    expect(fs.existsSync(path.join(media, "4-en-0-vertical.mp4"))).toBe(false);
+    expect(fs.existsSync(path.join(media, "4-en-0-original-poster.jpg"))).toBe(true);
+    expect(item?.path).toMatch(/^media\/posts\/4-en-0\.mp4\?v=/);
   });
 
-  it("uses the shared Story transform for the remote site derivative", async () => {
+  it("does not send article media to the remote Story processor", async () => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "alexgetman-site-media-"));
     const source = path.join(directory, "source.mp4");
     fs.writeFileSync(source, "video-source");
@@ -141,10 +216,8 @@ describe("site media materialization", () => {
 
     await materializeSiteMedia(config, 5, "en", [{ type: "video", local_path: source }], fetchImpl);
 
-    expect(requests[0]?.headers.get("x-studio-transform")).toBe("story_vertical");
-    expect(requests[0]?.headers.get("x-studio-idempotency-key")).toMatch(/^[a-f0-9]{64}$/);
-    expect(requests[1]?.url).toEndWith(`/standard`);
-    expect(requests.some((request) => request.url.endsWith("/telegram"))).toBe(false);
+    expect(requests).toHaveLength(0);
+    expect(fs.readFileSync(path.join(config.SITE_PUBLIC_DIR, "media/posts/5-en-0.mp4"), "utf8")).toBe("video-source");
   });
 
   it("migrates historical URLs without changing their paths or bytes", async () => {

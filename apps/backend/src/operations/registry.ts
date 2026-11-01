@@ -58,7 +58,7 @@ import { resendPublicationTarget } from "./resend.js";
 import { resumeTargetFrom } from "./resume-from.js";
 import { settingsReport } from "./settings-report.js";
 import { settleAmbiguousTarget } from "./settle.js";
-import { backfillSiteImageMedia } from "./site-media-backfill.js";
+import { backfillSiteMedia } from "./site-media-backfill.js";
 import { deduplicateSiteMedia } from "./site-media-deduplicate.js";
 import { siteMetadata } from "./site-metadata.js";
 import { backfillSiteResponsive } from "./site-responsive-backfill.js";
@@ -1060,16 +1060,17 @@ const operationDefs = {
     agent: false,
     handler: (context, input) => ({ ok: true, status: recordFormatEvidence(context.db(), input.test, input.post_id, input.notes) }),
   }),
-  "site-media-images": operation({
+  "site-media-backfill": operation({
     section: "media",
-    summary: "Upload site images that were never pushed to media storage.",
+    summary: "Restore original proportions to published site galleries, newest posts first.",
+    note: "Replaces the old vertical viewer files using original uploads, including videos and thread attachments. Each locale switches after all its files exist. Missing uploads leave the current gallery intact. Does not resend social publications or delete historical URLs; repeat until remaining is zero.",
     schema: z.object({
       apply: applyOption,
-      max_upload_kbps: z.coerce.number().int().min(1).max(6_250).optional().describe("throttle the upload"),
+      limit: z.coerce.number().int().min(1).default(20).describe("maximum posts per run"),
     }),
     mutates: true,
     agent: false,
-    handler: (context, input) => backfillSiteImageMedia(context.db(), context.config(), input.apply, input.max_upload_kbps),
+    handler: (context, input) => backfillSiteMedia(context.db(), context.config(), input.apply, input.limit, context.fetchImpl),
   }),
   "site-responsive-backfill": operation({
     section: "media",

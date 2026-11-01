@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { SITE_MEDIA_URL_PREFIX, siteMediaVerticalFilename } from "../../apps/backend/src/content/site-media-naming.js";
+import { SITE_MEDIA_URL_PREFIX, siteMediaFilename } from "../../apps/backend/src/content/site-media-naming.js";
 import { openBackendDb, unsafeDb } from "../../apps/backend/src/db/client.js";
 import { draftEntityLinks, drafts, knowledgeEntities, postLocales } from "../../apps/backend/src/db/schema.js";
 import { fixtureDayWindow } from "./fixture-utils.js";
@@ -236,10 +236,10 @@ export function seedSiteFixture(options: { dbPath: string; publicDir: string; po
   return { imagePaths };
 }
 
-/** The site read model only links a vertical composite once its file exists,
+/** The site read model only links an image once its file exists,
  * so the fixture writes real bytes under the production naming convention. */
 function writeFixtureImage(publicDir: string, postId: number, locale: "ru" | "en", index: number): string {
-  const publicPath = `${SITE_MEDIA_URL_PREFIX}/${siteMediaVerticalFilename(postId, locale, index, "image")}`;
+  const publicPath = `${SITE_MEDIA_URL_PREFIX}/${siteMediaFilename(postId, locale, index, "jpg")}`;
   const absolute = path.join(publicDir, publicPath);
   fs.mkdirSync(path.dirname(absolute), { recursive: true });
   fs.writeFileSync(absolute, FIXTURE_JPEG);

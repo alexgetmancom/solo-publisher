@@ -8,7 +8,7 @@
 export const SITE_MEDIA_DIR_SEGMENTS = ["media", "posts"] as const;
 export const SITE_MEDIA_URL_PREFIX = SITE_MEDIA_DIR_SEGMENTS.join("/");
 // The article column is 680 CSS pixels; common phone DPRs need the steps
-// around 720 and 800, while 1280 also covers full-size vertical masters.
+// around 720 and 800, while 1280 also covers larger article images.
 export const RESPONSIVE_WIDTHS = [360, 480, 640, 720, 800, 960, 1280] as const;
 
 function siteMediaBaseName(postId: number, locale: "ru" | "en", index: number): string {
@@ -20,10 +20,5 @@ export function siteMediaFilename(postId: number, locale: "ru" | "en", index: nu
 }
 
 export function siteMediaPosterFilename(postId: number, locale: "ru" | "en", index: number): string {
-  return `${siteMediaBaseName(postId, locale, index)}-poster.jpg`;
-}
-
-/** Public 9:16 projection used only by the vertical web viewer. */
-export function siteMediaVerticalFilename(postId: number, locale: "ru" | "en", index: number, kind: "image" | "video"): string {
-  return `${siteMediaBaseName(postId, locale, index)}-vertical.${kind === "video" ? "mp4" : "jpg"}`;
+  return `${siteMediaBaseName(postId, locale, index)}-original-poster.jpg`;
 }

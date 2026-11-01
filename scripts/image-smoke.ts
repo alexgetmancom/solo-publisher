@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { RESPONSIVE_WIDTHS } from "../apps/backend/src/content/site-media-naming.ts";
-import { responsiveWebpFfmpegArgs, sitePosterFfmpegArgs, siteVerticalFfmpegArgs } from "../apps/backend/src/delivery/site-media.js";
+import { responsiveWebpFfmpegArgs, sitePosterFfmpegArgs } from "../apps/backend/src/delivery/site-media.js";
 import {
   localStoryFfmpegArgs,
   needsVerticalBlur,
@@ -329,14 +329,9 @@ try {
       outputs: [{ path: "/tmp/story.jpg", expect: "1080x1920" }],
     },
     {
-      name: "site vertical composite",
-      args: siteVerticalFfmpegArgs("/tmp/src.mp4", "/tmp/vertical.mp4", "video"),
-      outputs: [{ path: "/tmp/vertical.mp4", expect: "1080x1920" }],
-    },
-    {
       name: "site poster frame",
-      args: sitePosterFfmpegArgs("/tmp/vertical.mp4", "/tmp/poster.jpg"),
-      outputs: [{ path: "/tmp/poster.jpg", expect: "1080x1920" }],
+      args: sitePosterFfmpegArgs("/tmp/src.mp4", "/tmp/poster.jpg"),
+      outputs: [{ path: "/tmp/poster.jpg", expect: "640x480" }],
     },
     // libwebp is the encoder most likely to go missing in a rebuilt static
     // ffmpeg, and every responsive image on the site depends on it.

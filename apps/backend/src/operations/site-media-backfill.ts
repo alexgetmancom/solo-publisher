@@ -1,70 +1,86 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { type BackendDb, unsafeDb } from "../db/client.js";
 import { drafts, postLocales } from "../db/schema.js";
-import { materializeSiteMedia } from "../delivery/site-media.js";
+import { materializeSiteMedia, siteMediaSource } from "../delivery/site-media.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { publicationSourceFromDb } from "../publishing/source-store.js";
 
-type Locale = "ru" | "en";
-type Source = Record<string, unknown>;
-type ImageWork = { draftId: number; postId: number; locale: Locale; media: Source[]; imageCount: number };
-
-/** Rebuilds archive photos only. Videos deliberately keep their historical
- * files: this backfill exists to add 9:16 still-image composites on VM-106
- * without re-encoding or replacing any old video. */
-export async function backfillSiteImageMedia(
+/** Replace the old viewer projections, newest first. Each locale changes only
+ * after its complete gallery exists; an unavailable upload leaves it intact. */
+export async function backfillSiteMedia(
   backendDb: BackendDb,
   config: BackendConfig,
   apply: boolean,
-  maxUploadKbps?: number,
+  limit: number,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<Record<string, unknown>> {
-  const rows = unsafeDb(backendDb)
-    .db.select({ draftId: drafts.id, postId: drafts.postId, media: postLocales.mediaJson, locale: postLocales.locale })
+  const db = unsafeDb(backendDb).db;
+  const rows = db
+    .select({
+      draftId: drafts.id,
+      postId: drafts.postId,
+      draftUpdatedAt: drafts.updatedAt,
+      locale: postLocales.locale,
+      updatedAt: postLocales.updatedAt,
+      publishedAt: postLocales.publishedAt,
+      media: postLocales.siteMediaJson,
+    })
     .from(drafts)
     .innerJoin(postLocales, and(eq(postLocales.draftId, drafts.id), eq(postLocales.siteEnabled, 1)))
     .where(inArray(drafts.status, ["published", "failed"]))
+    .orderBy(desc(drafts.postId))
     .all();
-  const work: ImageWork[] = rows.flatMap((row): ImageWork[] => {
-    const locale = row.locale === "ru" || row.locale === "en" ? row.locale : null;
-    if (!locale) return [];
-    if (!row.postId) return [];
-    const media = sourceItems(row.media);
-    const imageCount = media.filter((item) => String(item.type ?? "image").toLowerCase() !== "video").length;
-    return imageCount > 0 ? [{ draftId: row.draftId, postId: row.postId, locale, media, imageCount }] : [];
+  const work = rows.flatMap((row) => {
+    if (!row.postId || (row.locale !== "ru" && row.locale !== "en")) return [];
+    const locale: "ru" | "en" = row.locale;
+    if (row.publishedAt && new Date(row.publishedAt).getTime() > Date.now()) return [];
+    if (!row.media?.some((item) => /-vertical\.(jpg|mp4)(?:[?#]|$)/.test(String(item.path ?? "")))) return [];
+    const source = publicationSourceFromDb(db, row.postId).locales[locale];
+    if (!source.media.length && !source.thread.some((part) => part.media.length)) return [];
+    return [{ ...row, postId: row.postId, locale, source: siteMediaSource(source) }];
   });
-  if (!apply)
-    return {
-      ok: true,
-      apply: false,
-      posts: new Set(work.map((item) => item.postId)).size,
-      locale_projections: work.length,
-      images: work.reduce((total, item) => total + item.imageCount, 0),
-    };
-  if (!maxUploadKbps) throw new Error("site-media-images --apply requires --max-upload-kbps to protect the home VPN link");
-
-  let images = 0;
+  const selectedPosts = new Set<number>();
   for (const item of work) {
-    // VM-106 itself is single-lane; sequential submission prevents a long
-    // queue from turning a large archive run into request timeouts.
-    const media = await materializeSiteMedia(config, item.postId, item.locale, item.media, fetch, { maxUploadKbps, imageOnly: true });
-    unsafeDb(backendDb)
-      .db.update(postLocales)
-      .set({ siteMediaJson: media, updatedAt: new Date().toISOString() })
-      .where(and(eq(postLocales.locale, item.locale), eq(postLocales.draftId, item.draftId)))
-      .run();
-    images += item.imageCount;
+    if (selectedPosts.size < limit) selectedPosts.add(item.postId);
+  }
+  const selected = work.filter((item) => selectedPosts.has(item.postId));
+  const plan = selected.map((item) => ({ post_id: item.postId, locale: item.locale, media: item.source.length }));
+  let changed = 0;
+  const failed: { post_id: number; locale: string; error: string }[] = [];
+  if (apply) {
+    for (const item of selected) {
+      try {
+        const media = await materializeSiteMedia(config, item.postId, item.locale, item.source, fetchImpl);
+        const result = db
+          .update(postLocales)
+          .set({ siteMediaJson: media, updatedAt: new Date().toISOString() })
+          .where(
+            and(
+              eq(postLocales.draftId, item.draftId),
+              eq(postLocales.locale, item.locale),
+              eq(postLocales.siteEnabled, 1),
+              eq(postLocales.updatedAt, item.updatedAt),
+              sql`EXISTS (SELECT 1 FROM ${drafts} WHERE ${drafts.id} = ${item.draftId}
+                AND ${drafts.updatedAt} = ${item.draftUpdatedAt} AND ${drafts.status} IN ('published', 'failed'))`,
+            ),
+          )
+          .returning({ draftId: postLocales.draftId })
+          .all();
+        if (result.length !== 1) throw new Error("Publication changed while its media was being restored");
+        changed += 1;
+      } catch (error) {
+        failed.push({ post_id: item.postId, locale: item.locale, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
   }
   return {
-    ok: true,
-    apply: true,
-    posts: new Set(work.map((item) => item.postId)).size,
-    locale_projections: work.length,
-    images,
-    videos_touched: 0,
-    max_upload_kbps: maxUploadKbps,
+    ok: failed.length === 0,
+    apply,
+    posts: selectedPosts.size,
+    locale_projections: selected.length,
+    changed,
+    remaining: work.length - changed,
+    failed,
+    plan,
   };
-}
-
-function sourceItems(raw: unknown): Source[] {
-  const items = Array.isArray(raw) ? raw : raw && typeof raw === "object" ? [raw] : [];
-  return items.filter((item): item is Source => Boolean(item) && typeof item === "object");
 }

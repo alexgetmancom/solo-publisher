@@ -31,21 +31,6 @@ export async function deduplicateSiteMediaFile(mediaRoot: string, file: string):
   }
 }
 
-/** Remove a public projection and its private blob only when no other stable
- * URL still links to it. Used for the non-browser site-video original after
- * the vertical master and poster have been committed successfully. */
-export async function removeDeduplicatedSiteMediaFile(mediaRoot: string, file: string): Promise<void> {
-  const root = path.resolve(mediaRoot);
-  const source = path.resolve(file);
-  if (!isInside(root, source)) throw new Error("site media file escapes media root");
-  const extension = path.extname(source).toLowerCase();
-  const blob = extension ? path.join(root, ".blobs", `${await sha256File(source)}${extension}`) : null;
-  await fs.promises.rm(source);
-  if (!blob) return;
-  const blobStat = await fs.promises.stat(blob).catch(() => null);
-  if (blobStat?.nlink === 1) await fs.promises.rm(blob, { force: true });
-}
-
 export async function copyFileAtomically(source: string, target: string): Promise<void> {
   const temporary = temporaryPath(target);
   try {
