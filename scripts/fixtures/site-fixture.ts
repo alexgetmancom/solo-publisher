@@ -193,7 +193,7 @@ export function seedSiteFixture(options: { dbPath: string; publicDir: string; po
             sourceText: spec.text,
             siteMediaJson: Array.from({ length: images }, (_, index) => ({
               type: "image",
-              path: `media/posts/${post.postId}-${locale}-${index}-vertical.jpg`,
+              path: `${SITE_MEDIA_URL_PREFIX}/${siteMediaFilename(post.postId, locale, index, "jpg")}`,
             })),
             siteEnabled: 1,
             // `dateUtc` is the publication date, and it reached `createdAt`

@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
+import { seedSiteFixture } from "../../../scripts/fixtures/site-fixture.js";
 import { createApiHandler } from "../src/api.js";
 import type { StudioProfileRecord } from "../src/application/ports.js";
 import { applySiteMetadata, textHash } from "../src/operations/site-metadata.js";
@@ -16,6 +17,17 @@ import { loadTestConfig, SITE_STUDIO_PROFILE } from "./helpers/studio-config.js"
 const cleanups: (() => void)[] = [];
 afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup();
+});
+
+it("serves the smoke fixture images under the paths listed in its public feed", async () => {
+  const { dataDir, request } = studio();
+  const { imagePaths } = seedSiteFixture({ dbPath: join(dataDir, "pipeline.db"), publicDir: join(dataDir, "site") });
+  const feed = await (await request("/api/public/site")).text();
+  expect(imagePaths.length).toBeGreaterThan(0);
+  for (const image of imagePaths) {
+    expect(feed).toContain(image);
+    expect((await request(`/${image}`)).status).toBe(200);
+  }
 });
 
 function studio(profile: Partial<StudioProfileRecord> = SITE_STUDIO_PROFILE) {

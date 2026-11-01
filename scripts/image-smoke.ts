@@ -179,7 +179,6 @@ try {
     // production as 404s once already.
     ["/.well-known/mcp/server-card.json", 50],
     ["/.well-known/oauth-protected-resource", 50],
-    ["/.well-known/oauth-authorization-server", 50],
   ];
   const probed = await Promise.all(
     routes.map(async ([route, minimumBytes]) => {
@@ -193,7 +192,10 @@ try {
   }
   const site = probed.find((entry) => entry.route === "/api/public/site")?.body ?? "";
 
-  // The feed must list the vertical composite the media worker produces, and
+  const authorizationServer = await fetch(`${base}/.well-known/oauth-authorization-server`);
+  check(authorizationServer.status === 404, "does not advertise an OAuth issuer", String(authorizationServer.status));
+
+  // The feed must list the original image the media worker produces, and
   // that file must actually be served off the mounted public dir.
   const firstImage = imagePaths[0] ?? "";
   check(firstImage !== "" && site.includes(firstImage), "site feed lists the fixture image", firstImage);
