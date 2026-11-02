@@ -71,6 +71,7 @@ import { loginTelegramStories } from "./telegram-stories-login.js";
 import { authorizeThreads } from "./threads-authorize.js";
 import { publicationTimeline } from "./timeline.js";
 import { verifyPostTargets } from "./verify.js";
+import { videoLibrary } from "./video-library.js";
 
 /** Config and the database are resolved on demand: `restore` operates on the
  * file itself and must not have it opened underneath it, and `guide` runs when
@@ -444,6 +445,15 @@ const operationDefs = {
         ref: input.ref,
         limit: input.limit,
       }),
+  }),
+  "video-library": operation({
+    section: "media",
+    summary: "Read video scripts, game cards and publication links for the author's library.",
+    note: "Read-only snapshot for Family: operator means the author's original script; other sources are transcripts, not evidence of the planned wording. Includes unpublished drafts with their status. No credentials, media files or delivery controls. Performance statistics belong to Family.",
+    schema: z.object({}),
+    mutates: false,
+    agent: true,
+    handler: (context) => videoLibrary(context.db()),
   }),
   "video-script": operation({
     section: "media",
