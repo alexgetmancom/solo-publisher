@@ -2,11 +2,13 @@ import type { Menu } from "@grammyjs/menu";
 import type { Context } from "grammy";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
+import { StudioError } from "../foundation/errors.js";
 import { describeError, t } from "../foundation/i18n/index.js";
 import { sendVideoSourcePreview } from "../interfaces/telegram/delivery-previews.js";
 import { VIDEO_TARGETS, type VideoTarget } from "../publishing/video-types.js";
 import { settingsService } from "../studio/services/settings.js";
 import { runCallbackAction } from "./callback-effects.js";
+import { getConversationState } from "./conversation-state.js";
 import { resultNavigationKeyboard } from "./dialog-ui.js";
 import type { PublicationEffect } from "./effects.js";
 import { applyIntakeKind, applyIntakeVideoLocale, cancelIntake, publishReviewedArticle, toggleIntakeVideoTarget } from "./intake.js";
@@ -117,30 +119,34 @@ export const SCREEN_ROUTES: Record<ScreenId, ScreenHandler> = {
       if (choice !== "ru" && choice !== "en") return [];
       return applyIntakeVideoLocale(screen.ctx, screen.backendDb, screen.config, actorId, choice);
     }),
+  intake_download: (screen) =>
+    intakeAction(screen, async (actorId) => {
+      const revision = screenNumber(screen.args.revision, { min: 1 });
+      if (revision === null || getConversationState(screen.backendDb, actorId, "intake")?.revision !== revision)
+        throw new StudioError("intake.expired");
+      const choice = screen.args.choice;
+      if (choice === "cancel") return cancelIntakeEffects(screen, actorId);
+      if (choice !== "ru" && choice !== "en") return [];
+      return applyIntakeVideoLocale(screen.ctx, screen.backendDb, screen.config, actorId, choice);
+    }),
   intake_target: (screen) =>
     intakeAction(screen, async (actorId) => {
       const target = screen.args.target;
       if (!VIDEO_TARGETS.includes(target as VideoTarget)) return [];
       return toggleIntakeVideoTarget(screen.backendDb, actorId, target as VideoTarget);
     }),
-  intake_cancel: (screen) =>
-    intakeAction(screen, async (actorId) => {
-      cancelIntake(screen.backendDb, actorId);
-      return [
-        {
-          type: "main-menu",
-          menu: screen.mainMenu,
-          text: mainMenuText(screen.backendDb, screen.config, actorId),
-          edit: true,
-        },
-      ];
-    }),
+  intake_cancel: (screen) => intakeAction(screen, async (actorId) => cancelIntakeEffects(screen, actorId)),
   deploy_menu: operations,
   deploy_rb_ask: operations,
   deploy_pr_ask: operations,
   deploy_rollback: operations,
   deploy_promote: operations,
 };
+
+function cancelIntakeEffects(screen: ScreenContext, actorId: number): PublicationEffect[] {
+  cancelIntake(screen.backendDb, actorId);
+  return [{ type: "main-menu", menu: screen.mainMenu, text: mainMenuText(screen.backendDb, screen.config, actorId) }];
+}
 
 function operations({ ctx, backendDb, config, callback }: ScreenContext): Promise<boolean> {
   return handleOperationsCallback(ctx, backendDb, config, callback);

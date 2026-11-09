@@ -21,6 +21,7 @@ export async function storeTelegramVideo(
   config: BackendConfig,
   actorId: number,
   source?: TelegramVideoFile,
+  signal?: AbortSignal,
 ): Promise<StoredVideo> {
   if (!config.controllerBotToken) throw new Error("Telegram bot token is not configured.");
   const video = ctx.message && "video" in ctx.message ? ctx.message.video : undefined;
@@ -45,7 +46,8 @@ export async function storeTelegramVideo(
   const startedAt = performance.now();
   let filePath: string;
   try {
-    const apiFile = await ctx.api.getFile(file.fileId);
+    const apiFile = await ctx.api.getFile(file.fileId, signal);
+    signal?.throwIfAborted();
     if (!apiFile.file_path) throw new Error("Telegram did not return a file path.");
     filePath = apiFile.file_path;
     log("info", "Telegram video getFile completed", {
@@ -55,6 +57,7 @@ export async function storeTelegramVideo(
       localFile: path.isAbsolute(filePath),
     });
   } catch (error) {
+    if (signal?.aborted) throw error;
     log("warn", "Telegram video getFile failed", {
       ...details,
       durationMs: Math.round(performance.now() - startedAt),

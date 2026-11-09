@@ -1,10 +1,19 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { GrammyError } from "grammy";
 import { handlePublicationMessage } from "../src/bot/callback-router.js";
 import { getConversationState } from "../src/bot/conversation-state.js";
-import { applyIntakeKind, handleIntakeMessage, openIntake, publishReviewedArticle, toggleIntakeVideoTarget } from "../src/bot/intake.js";
+import {
+  applyIntakeKind,
+  applyIntakeVideoLocale,
+  cancelIntake,
+  handleIntakeMessage,
+  openIntake,
+  publishReviewedArticle,
+  toggleIntakeVideoTarget,
+} from "../src/bot/intake.js";
 import { pendingAlbums } from "../src/db/schema.js";
 import { unsafeDb } from "../src/db/unsafe.js";
 import { t } from "../src/foundation/i18n/index.js";
@@ -37,6 +46,38 @@ function stubDownload(body: string): () => void {
 function buttonRows(effect: { options?: Record<string, unknown> }): string[] {
   const markup = effect.options?.reply_markup as { inline_keyboard?: Array<Array<{ text: string }>> } | undefined;
   return (markup?.inline_keyboard ?? []).flat().map((button) => button.text);
+}
+
+function encodeVideoFixture(source: string): void {
+  const encoded = Bun.spawnSync([
+    "ffmpeg",
+    "-loglevel",
+    "error",
+    "-f",
+    "lavfi",
+    "-i",
+    "color=c=black:s=16x16:d=0.1",
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-an",
+    "-y",
+    source,
+  ]);
+  if (encoded.exitCode !== 0) throw new Error(`fixture encode failed: ${encoded.stderr.toString()}`);
+}
+
+function videoCallback(getFile: (fileId: string, signal: AbortSignal) => Promise<{ file_path: string }>, render: (text: string) => void) {
+  return {
+    from: { id: 42 },
+    chat: { id: 42 },
+    update: { update_id: 1 },
+    callbackQuery: { message: { message_id: 1 } },
+    api: { getFile },
+    editMessageText: async (text: string) => render(text),
+    reply: async (text: string) => render(text),
+  } as never;
 }
 
 async function capture(
@@ -88,23 +129,7 @@ describe("bot intake", () => {
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), "intake-post-video-"));
       try {
         const source = path.join(dir, "clip.mp4");
-        const encoded = Bun.spawnSync([
-          "ffmpeg",
-          "-loglevel",
-          "error",
-          "-f",
-          "lavfi",
-          "-i",
-          "color=c=black:s=16x16:d=0.1",
-          "-c:v",
-          "libx264",
-          "-pix_fmt",
-          "yuv420p",
-          "-an",
-          "-y",
-          source,
-        ]);
-        if (encoded.exitCode !== 0) throw new Error(`fixture encode failed: ${encoded.stderr.toString()}`);
+        encodeVideoFixture(source);
         const mediaConfig = loadTestConfig({ CONTROLLER_BOT_TOKEN: "bot-token", CONTROLLER_ADMIN_IDS: "42", DATA_DIR: dir });
         const video = await capture(
           backendDb,
@@ -122,6 +147,78 @@ describe("bot intake", () => {
         fs.rmSync(dir, { recursive: true, force: true });
       }
     }));
+
+  it(
+    "shows progress, retries an unavailable file twice, and advances one video draft",
+    () =>
+      withDb(async (backendDb) => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "intake-video-download-"));
+        try {
+          const source = path.join(dir, "clip.mp4");
+          encodeVideoFixture(source);
+          const mediaConfig = loadTestConfig({ CONTROLLER_BOT_TOKEN: "bot-token", DATA_DIR: dir });
+          const document = { file_id: "video-file", file_name: "clip.mp4", mime_type: "video/mp4" };
+          await capture(backendDb, { document }, "video", mediaConfig);
+
+          const unavailable = new GrammyError(
+            "Call to 'getFile' failed!",
+            {
+              ok: false,
+              error_code: 400,
+              description: "Bad Request: wrong file_id or the file is temporarily unavailable",
+            },
+            "getFile",
+            {},
+          );
+          let attempts = 0;
+          const getFile = mock(async () => {
+            attempts += 1;
+            if (attempts < 3) throw unavailable;
+            return { file_path: source };
+          });
+          const completed = Promise.withResolvers<void>();
+          const render = mock((text: string) => {
+            if (text === t("en", "video.prompt-script")) completed.resolve();
+          });
+          const ctx = videoCallback(getFile, render);
+          await applyIntakeVideoLocale(ctx, backendDb, mediaConfig, 42, "ru");
+          await applyIntakeVideoLocale(ctx, backendDb, mediaConfig, 42, "ru");
+          expect(render.mock.calls).toEqual([[t("en", "intake.downloading-video")]]);
+          expect(getFile).toHaveBeenCalledTimes(1);
+          expect(getConversationState(backendDb, 42, "intake")?.step).toBe("video_locale");
+
+          await completed.promise;
+          expect(getFile).toHaveBeenCalledTimes(3);
+          expect(getConversationState(backendDb, 42, "intake")).toBeNull();
+          expect(getConversationState(backendDb, 42, "video")).toMatchObject({ step: "script", data: { videoLocale: "ru" } });
+          expect(backendDb.sqlite.query("SELECT count(*) AS count FROM video_drafts").get()).toEqual({ count: 1 });
+        } finally {
+          cancelIntake(backendDb, 42);
+          fs.rmSync(dir, { recursive: true, force: true });
+        }
+      }, VIDEO_TEST_CHANNELS),
+    15_000,
+  );
+
+  it("cancels an in-flight download without letting its result open a video draft", () =>
+    withDb(async (backendDb) => {
+      const document = { file_id: "video-file", file_name: "clip.mp4", mime_type: "video/mp4" };
+      await capture(backendDb, { document }, "video");
+      const file = Promise.withResolvers<{ file_path: string }>();
+      const getFile = mock((_fileId: string, _signal: AbortSignal) => file.promise);
+      const render = mock((_text: string) => {});
+      await applyIntakeVideoLocale(videoCallback(getFile, render), backendDb, config, 42, "ru");
+      const signal = getFile.mock.calls[0]?.[1];
+
+      cancelIntake(backendDb, 42);
+      expect(signal?.aborted).toBe(true);
+      file.resolve({ file_path: "/not-imported.mp4" });
+      await Bun.sleep(0);
+
+      expect(render.mock.calls).toEqual([[t("en", "intake.downloading-video")]]);
+      expect(getConversationState(backendDb, 42, "intake")).toBeNull();
+      expect(getConversationState(backendDb, 42, "video")).toBeNull();
+    }, VIDEO_TEST_CHANNELS));
 
   /** The destination screen answers both questions at once: which platforms
    * get the clip, and which audience it is for. Every connected platform is on

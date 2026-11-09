@@ -35,6 +35,7 @@ export const SCREEN_BUTTONS = {
   delivery_preview_video: { args: ["id"], supersedable: false },
   intake_kind: { args: ["choice"], supersedable: false },
   intake_locale: { args: ["locale"], supersedable: false },
+  intake_download: { args: ["revision", "choice"], supersedable: false },
   intake_target: { args: ["target"], supersedable: false },
   intake_cancel: { args: [], supersedable: false },
   deploy_menu: { args: ["revision"], supersedable: false },

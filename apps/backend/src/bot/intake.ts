@@ -1,22 +1,27 @@
-import type { Context } from "grammy";
-import { InlineKeyboard } from "grammy";
+import { setTimeout as delay } from "node:timers/promises";
+import { type Context, GrammyError, HttpError, InlineKeyboard } from "grammy";
 import { targetsFor } from "../botTargets.js";
 import { parseMarkdownArticle } from "../content/markdown.js";
 import { type DraftMessage, firstNonEmptyLine } from "../content/message.js";
 import type { BackendDb } from "../db/client.js";
 import type { BackendConfig } from "../foundation/config.js";
 import { StudioError } from "../foundation/errors.js";
-import type { MessageKey } from "../foundation/i18n/index.js";
-import { t } from "../foundation/i18n/index.js";
+import { describeError, type MessageKey, t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
+import { log } from "../foundation/logger.js";
 import { importTelegramMedia } from "../interfaces/telegram/media-ingress.js";
 import { storeTelegramVideo, type TelegramVideoFile } from "../interfaces/telegram/video-ingress.js";
 import { type VideoTarget, videoTargetLabel } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
-import { clearConversationState, getConversationState, saveConversationState } from "./conversation-state.js";
+import {
+  clearConversationState,
+  clearConversationStateIfCurrent,
+  getConversationState,
+  saveConversationState,
+} from "./conversation-state.js";
 import { cancelPromptKeyboard } from "./dialog-ui.js";
-import { executePublicationEffects, type PublicationEffect, type PublicationMessageResult } from "./effects.js";
+import { executePublicationEffects, type PublicationEffect, type PublicationMessageResult, showScreen } from "./effects.js";
 import { extractMessage } from "./message.js";
 import { createPostFromMessage } from "./post-screen.js";
 import { screenCallback } from "./screen-callback.js";
@@ -24,6 +29,8 @@ import { attachVideoAsset } from "./video-conversation.js";
 import { connectedVideoTargets, saveVideoState } from "./video-ui.js";
 
 const MARKDOWN_EXTENSIONS = [".md", ".markdown", ".mdx"];
+const VIDEO_DOWNLOAD_RETRY_DELAYS_MS = [2_000, 5_000];
+const videoDownloads = new Map<number, { revision: number; controller: AbortController }>();
 
 /** Text this short is a post here. Not a theory about writing -- the operator's
  * own posts run under this, and their articles run well over it. Above it the
@@ -68,6 +75,7 @@ type Captured = { message: DraftMessage; markdown: string | null; video: Telegra
 export async function openIntake(ctx: Context, backendDb: BackendDb, entry: IntakeEntry): Promise<void> {
   const actorId = Number(ctx.from?.id);
   const locale = settingsService(backendDb).locale(actorId);
+  videoDownloads.get(actorId)?.controller.abort();
   saveConversationState(backendDb, actorId, { kind: "intake", draftId: null, step: "awaiting", data: { entry }, controlMessageId: null });
   await executePublicationEffects(ctx, backendDb, [
     {
@@ -244,9 +252,8 @@ function intakeVideoTargets(backendDb: BackendDb, actorId: number): VideoTarget[
   return selected.length ? selected : connected;
 }
 
-/** Stores the video and hands it to the wizard in the chosen language. The file
- * is fetched only here: material corrected back to a post before this point
- * costs no download and leaves no asset behind. */
+/** Leaves the audience choice in the session so its download can be retried
+ * from the same card, including after a bot restart. */
 export async function applyIntakeVideoLocale(
   ctx: Context,
   backendDb: BackendDb,
@@ -256,19 +263,94 @@ export async function applyIntakeVideoLocale(
 ): Promise<PublicationEffect[]> {
   const state = getConversationState(backendDb, actorId, "intake");
   if (state?.step !== "video_locale") throw new StudioError("intake.expired");
-  const captured = capturedFrom(backendDb, actorId);
-  if (!captured.video) throw new StudioError("intake.expired");
+  const { video } = capturedFrom(backendDb, actorId);
+  if (!video) throw new StudioError("intake.expired");
   const selected = intakeVideoTargets(backendDb, actorId);
-  const { assetId } = await storeTelegramVideo(ctx, backendDb, config, actorId, captured.video);
-  clearConversationState(backendDb, actorId, "intake");
-  const session = saveVideoState(backendDb, actorId, {
-    draftId: null,
-    step: "asset",
-    selected,
-    data: { videoLocale },
-    controlMessageId: null,
-  });
-  return attachVideoAsset(backendDb, config, actorId, session, assetId);
+  if (!selected.length) throw new StudioError("err.no-video-platforms-connected");
+  const pending = videoDownloads.get(actorId);
+  if (pending?.revision === state.revision && !pending.controller.signal.aborted) return [];
+  pending?.controller.abort();
+
+  const locale = settingsService(backendDb).locale(actorId);
+  const options = {
+    reply_markup: new InlineKeyboard()
+      .text(t(locale, "intake.retry-video-download"), screenCallback("intake_download", [state.revision, videoLocale]))
+      .text(t(locale, "common.cancel"), screenCallback("intake_download", [state.revision, "cancel"])),
+  };
+  const controller = new AbortController();
+  const download = { revision: state.revision, controller };
+  videoDownloads.set(actorId, download);
+  const release = () => {
+    if (videoDownloads.get(actorId) === download) videoDownloads.delete(actorId);
+  };
+  try {
+    await showScreen(ctx, t(locale, "intake.downloading-video"), options);
+  } catch (error) {
+    release();
+    throw error;
+  }
+
+  const isCurrent = () => !controller.signal.aborted && getConversationState(backendDb, actorId, "intake")?.revision === state.revision;
+  void (async () => {
+    let effects: PublicationEffect[];
+    let handedOff = false;
+    try {
+      const services = createStudioServices(backendDb, config);
+      const { assetId } = await downloadIntakeVideo(ctx, backendDb, config, actorId, video, controller.signal, isCurrent);
+      if (!isCurrent()) return;
+      const technical = await services.videos.assetTechnicalCheck(actorId, assetId);
+      if (!isCurrent() || !clearConversationStateIfCurrent(backendDb, state, actorId, state.revision)) return;
+      handedOff = true;
+      const session = saveVideoState(backendDb, actorId, {
+        draftId: null,
+        step: "asset",
+        selected,
+        data: { videoLocale },
+        controlMessageId: null,
+      });
+      effects = await attachVideoAsset(backendDb, config, actorId, session, assetId, technical, services);
+    } catch (error) {
+      if (controller.signal.aborted || (!handedOff && !isCurrent())) return;
+      log("warn", "Telegram video intake failed", { updateId: ctx.update.update_id, error });
+      const message = describeError(locale, error);
+      if (handedOff) await showScreen(ctx, message, { reply_markup: new InlineKeyboard() });
+      else await showScreen(ctx, t(locale, "intake.video-download-failed", { error: message }), options);
+      return;
+    }
+    if (effects[0]?.type !== "screen")
+      effects.unshift({ type: "screen", text: t(locale, "intake.video-downloaded"), options: { reply_markup: new InlineKeyboard() } });
+    await executePublicationEffects(ctx, backendDb, effects);
+  })()
+    .catch((error) => log("error", "Telegram video intake could not report its outcome", { updateId: ctx.update.update_id, error }))
+    .finally(release);
+  return [];
+}
+
+async function downloadIntakeVideo(
+  ctx: Context,
+  backendDb: BackendDb,
+  config: BackendConfig,
+  actorId: number,
+  video: TelegramVideoFile,
+  signal: AbortSignal,
+  isCurrent: () => boolean,
+): Promise<{ assetId: number }> {
+  for (let attempt = 0; ; attempt += 1) {
+    if (!isCurrent()) throw new DOMException("Video intake was replaced.", "AbortError");
+    try {
+      return await storeTelegramVideo(ctx, backendDb, config, actorId, video, signal);
+    } catch (error) {
+      const retryDelay = VIDEO_DOWNLOAD_RETRY_DELAYS_MS[attempt];
+      const unavailable =
+        error instanceof GrammyError &&
+        error.method === "getFile" &&
+        error.error_code === 400 &&
+        error.description.includes("wrong file_id or the file is temporarily unavailable");
+      if (retryDelay === undefined || !isCurrent() || !(unavailable || error instanceof HttpError)) throw error;
+      log("info", "Retrying Telegram video download", { updateId: ctx.update.update_id, attempt: attempt + 2, delayMs: retryDelay });
+      await delay(retryDelay, undefined, { signal });
+    }
+  }
 }
 
 /** Publishes the reviewed article to every connected target that carries one. */
@@ -291,6 +373,7 @@ export function publishReviewedArticle(backendDb: BackendDb, config: BackendConf
 }
 
 export function cancelIntake(backendDb: BackendDb, actorId: number): void {
+  videoDownloads.get(actorId)?.controller.abort();
   clearConversationState(backendDb, actorId, "intake");
 }
 

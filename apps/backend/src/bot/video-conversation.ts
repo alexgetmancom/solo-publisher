@@ -8,7 +8,7 @@ import { materializeTelegramFile } from "../foundation/external/telegram-files.j
 import { describeError, t } from "../foundation/i18n/index.js";
 import { log } from "../foundation/logger.js";
 import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
-import { VIDEO_LENGTH_WARNING_SECONDS, type VideoTarget } from "../publishing/video-types.js";
+import { VIDEO_LENGTH_WARNING_SECONDS, type VideoTarget, type VideoTechnicalCheck } from "../publishing/video-types.js";
 import type { StudioServices } from "../studio/services/index.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
@@ -118,7 +118,8 @@ async function acceptVideoAsset({ ctx, backendDb, config, actorId, session, serv
   // Telegram download and before a draft row exists to be orphaned.
   if (!connectedVideoTargets(backendDb).length) throw new StudioError("err.no-video-platforms-connected");
   const stored = await storeTelegramVideo(ctx, backendDb, config, actorId);
-  return attachVideoAsset(backendDb, config, actorId, session, stored.assetId, services);
+  const technical = await services.videos.assetTechnicalCheck(actorId, stored.assetId);
+  return attachVideoAsset(backendDb, config, actorId, session, stored.assetId, technical, services);
 }
 
 /** Puts a stored video behind a fresh draft and advances the wizard past the
@@ -134,9 +135,9 @@ export async function attachVideoAsset(
   actorId: number,
   session: VideoConversationState,
   assetId: number,
-  services: StudioServices = createStudioServices(backendDb, config),
+  technical: VideoTechnicalCheck,
+  services: StudioServices,
 ): Promise<PublicationEffect[]> {
-  const technical = await services.videos.assetTechnicalCheck(actorId, assetId);
   const audioWarning = backgroundMusicWarningEffects(backendDb, actorId, technical.backgroundMusicLikelyMissing);
   if (technical.seconds > VIDEO_LENGTH_WARNING_SECONDS)
     return [...audioWarning, ...videoLengthWarningEffects(backendDb, actorId, session, assetId, technical.seconds)];

@@ -615,11 +615,6 @@ describe("video publication queue", () => {
     const config = videoConfig();
     const assetId = createTestVideoAsset(backendDb, 42, "/tmp/long-video.mp4");
     const services = createStudioServices(backendDb, config);
-    // The probe is the only part of the attach that needs a real file on disk.
-    const probed = (seconds: number) => ({
-      ...services,
-      videos: { ...services.videos, assetTechnicalCheck: async () => ({ ...TECHNICAL_CHECK, seconds }) },
-    });
     const session = saveVideoState(backendDb, 42, {
       draftId: null,
       step: "asset",
@@ -627,7 +622,8 @@ describe("video publication queue", () => {
       data: { videoLocale: "ru" },
     });
 
-    const asked = await attachVideoAsset(backendDb, config, 42, session, assetId, probed(VIDEO_LENGTH_WARNING_SECONDS + 1));
+    const technical = { ...TECHNICAL_CHECK, seconds: VIDEO_LENGTH_WARNING_SECONDS + 1 };
+    const asked = await attachVideoAsset(backendDb, config, 42, session, assetId, technical, services);
 
     expect(JSON.stringify(asked)).toContain("p:video:length_ok");
     expect(getVideoState(backendDb, 42)).toMatchObject({ step: "asset", draftId: null });
@@ -636,7 +632,7 @@ describe("video publication queue", () => {
 
     const confirmed = getVideoState(backendDb, 42);
     if (!confirmed) throw new Error("video session missing");
-    await startVideoDraft(backendDb, config, 42, confirmed, assetId, probed(VIDEO_LENGTH_WARNING_SECONDS + 1));
+    await startVideoDraft(backendDb, config, 42, confirmed, assetId, services);
 
     expect(backendDb.db.select().from(videoDrafts).all()).toHaveLength(1);
     expect(getVideoState(backendDb, 42)?.step).not.toBe("asset");
@@ -797,10 +793,8 @@ describe("video publication queue", () => {
       data: { videoLocale: "ru" },
     });
 
-    const effects = await attachVideoAsset(backendDb, config, 42, session, assetId, {
-      ...services,
-      videos: { ...services.videos, assetTechnicalCheck: async () => ({ ...TECHNICAL_CHECK, seconds: VIDEO_LENGTH_WARNING_SECONDS }) },
-    });
+    const technical = { ...TECHNICAL_CHECK, seconds: VIDEO_LENGTH_WARNING_SECONDS };
+    const effects = await attachVideoAsset(backendDb, config, 42, session, assetId, technical, services);
 
     expect(JSON.stringify(effects)).not.toContain("p:video:length_ok");
     expect(backendDb.db.select().from(videoDrafts).all()).toHaveLength(1);
@@ -818,13 +812,8 @@ describe("video publication queue", () => {
       data: { videoLocale: "ru" },
     });
 
-    const effects = await attachVideoAsset(backendDb, config, 42, session, assetId, {
-      ...services,
-      videos: {
-        ...services.videos,
-        assetTechnicalCheck: async () => ({ ...TECHNICAL_CHECK, backgroundMusicLikelyMissing: true }),
-      },
-    });
+    const technical = { ...TECHNICAL_CHECK, backgroundMusicLikelyMissing: true };
+    const effects = await attachVideoAsset(backendDb, config, 42, session, assetId, technical, services);
 
     expect(effects[0]).toEqual({ type: "message", text: t("en", "video.background-music-warning") });
     expect(effects[1]).toMatchObject({ type: "screen", text: expect.stringContaining(t("en", "video.prompt-script")) });
