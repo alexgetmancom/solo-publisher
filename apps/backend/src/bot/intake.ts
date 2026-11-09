@@ -10,7 +10,7 @@ import type { MessageKey } from "../foundation/i18n/index.js";
 import { t } from "../foundation/i18n/index.js";
 import type { StudioLocale } from "../foundation/locale.js";
 import { importTelegramMedia } from "../interfaces/telegram/media-ingress.js";
-import { storeTelegramVideo } from "../interfaces/telegram/video-ingress.js";
+import { storeTelegramVideo, type TelegramVideoFile } from "../interfaces/telegram/video-ingress.js";
 import { type VideoTarget, videoTargetLabel } from "../publishing/video-types.js";
 import { createStudioServices } from "../studio/services/index.js";
 import { settingsService } from "../studio/services/settings.js";
@@ -58,8 +58,7 @@ function accepts(entry: IntakeEntry, kind: MaterialKind): boolean {
   return (INTAKE_ENTRIES[entry].accepts as readonly MaterialKind[]).includes(kind);
 }
 
-type CapturedVideo = { fileId: string; name: string; mime: string };
-type Captured = { message: DraftMessage; markdown: string | null; video: CapturedVideo | null; entry: IntakeEntry };
+type Captured = { message: DraftMessage; markdown: string | null; video: TelegramVideoFile | null; entry: IntakeEntry };
 
 /** Opens one of the intakes. It captures the material first and asks what it
  * is second, because that is the order the operator has it in -- which is also
@@ -336,7 +335,7 @@ function capturedFrom(backendDb: BackendDb, actorId: number): Captured {
   return {
     message: { text: message.text ?? "", media: message.media ?? [], entities: message.entities ?? [] },
     markdown: typeof data?.markdown === "string" ? data.markdown : null,
-    video: (data?.video as CapturedVideo | null) ?? null,
+    video: (data?.video as TelegramVideoFile | null) ?? null,
     entry: data?.entry === "video" ? "video" : "text",
   };
 }
@@ -353,7 +352,7 @@ function isMarkdown(document: { file_name?: string; mime_type?: string } | undef
   return (document.mime_type ?? "").startsWith("text/markdown") || MARKDOWN_EXTENSIONS.some((extension) => name.endsWith(extension));
 }
 
-function capturedVideo(ctx: Context, message: DraftMessage): CapturedVideo | null {
+function capturedVideo(ctx: Context, message: DraftMessage): TelegramVideoFile | null {
   if (!message.media.some((item) => item.type === "video")) return null;
   const video = ctx.message && "video" in ctx.message ? ctx.message.video : undefined;
   const document = ctx.message && "document" in ctx.message ? ctx.message.document : undefined;
@@ -363,6 +362,7 @@ function capturedVideo(ctx: Context, message: DraftMessage): CapturedVideo | nul
     fileId: file.file_id,
     name: "file_name" in file ? (file.file_name ?? "") : "",
     mime: "mime_type" in file ? (file.mime_type ?? "") : "",
+    sizeBytes: file.file_size,
   };
 }
 

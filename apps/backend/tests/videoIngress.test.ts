@@ -1,8 +1,8 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { Context } from "grammy";
+import { type Context, GrammyError } from "grammy";
 import { StudioError } from "../src/foundation/errors.js";
 import { storeTelegramVideo } from "../src/interfaces/telegram/video-ingress.js";
 import { openBackendDb } from "./helpers/open-db.js";
@@ -10,7 +10,7 @@ import { loadTestConfig } from "./helpers/studio-config.js";
 
 /** Synthetic grammY context: only the shape storeTelegramVideo actually reads. */
 function contextWith(message: Record<string, unknown>, getFile: (fileId: string) => Promise<{ file_path?: string }>): Context {
-  return { message, api: { getFile } } as unknown as Context;
+  return { update: { update_id: 42 }, message, api: { getFile } } as unknown as Context;
 }
 
 function withMediaDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
@@ -39,6 +39,45 @@ function encodeFixture(target: string): void {
 }
 
 describe("storeTelegramVideo", () => {
+  it("logs a rejected Telegram download and rethrows the original error", async () => {
+    const backendDb = openBackendDb(":memory:");
+    const config = loadTestConfig({ CONTROLLER_BOT_TOKEN: "token" });
+    const description = "Bad Request: wrong file_id or the file is temporarily unavailable";
+    const error = new GrammyError("Call to 'getFile' failed!", { ok: false, error_code: 400, description }, "getFile", {
+      file_id: "video-file-id",
+    });
+    const ctx = contextWith({}, async () => {
+      throw error;
+    });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await expect(
+        storeTelegramVideo(ctx, backendDb, config, 1, {
+          fileId: "video-file-id",
+          name: "clip.mp4",
+          mime: "video/mp4",
+          sizeBytes: 50_600_000,
+        }),
+      ).rejects.toBe(error);
+      const line = String(warn.mock.calls[0]?.[0]);
+      expect(JSON.parse(line)).toMatchObject({
+        message: "Telegram video getFile failed",
+        details: {
+          updateId: 42,
+          filename: "clip.mp4",
+          sizeBytes: 50_600_000,
+          durationMs: expect.any(Number),
+          errorCode: 400,
+          error: description,
+        },
+      });
+      expect(line).not.toContain("video-file-id");
+    } finally {
+      warn.mockRestore();
+      backendDb.close();
+    }
+  });
+
   it("rejects a message with neither a video nor a document", async () => {
     await withMediaDir(async (dir) => {
       const backendDb = openBackendDb(":memory:");
