@@ -30,6 +30,36 @@ www.alexgetman.com {
 
 alexgetman.com {
 	encode zstd gzip
+	# Family phone reports go to its own authenticated receiver, not the site.
+	log family_places {
+		no_hostname
+		output file /data/family-places/access.jsonl {
+			mode 0600
+			roll_size 1MiB
+			roll_keep 3
+			roll_keep_for 168h
+		}
+		format filter {
+			wrap json
+			fields {
+				request delete
+				resp_headers delete
+				bytes_read delete
+				size delete
+				user_id delete
+			}
+		}
+	}
+	@family_places path /presence/place /presence/point
+	handle @family_places {
+		log_name family_places
+		log_append client_ip {remote_host}
+		header X-Robots-Tag "noindex, nofollow"
+		reverse_proxy 192.168.10.106:8787 {
+			import client_address
+		}
+	}
+
 	# Studio API uploads may contain large videos and images.
 	request_body {
 		max_size 1GB
