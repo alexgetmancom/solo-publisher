@@ -234,6 +234,9 @@ jobs:
             addressed=$(grep -o '"X-Real-Ip"' <<<"$adapted" | wc -l)
             test "$proxies" -gt 0
             test "$proxies" = "$addressed" || { echo "$file: $proxies proxies but $addressed set the client address"; exit 1; }
+            if [ "$file" = deploy/caddy/Caddyfile ]; then
+              printf '%s' "$adapted" | bun deploy/check-family-routes.ts
+            fi
           done
 
   quality-tests:
