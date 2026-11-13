@@ -74,6 +74,17 @@ alexgetman.com {
 # public site. Everything not named here does not exist, so this list is the
 # security boundary, not a convenience.
 marux.ru {
+	handle /.well-known/matrix/client {
+		reverse_proxy 192.168.10.106:8008 {
+			import client_address
+		}
+	}
+	handle /.well-known/matrix/server {
+		reverse_proxy 192.168.10.106:8008 {
+			import client_address
+		}
+	}
+
 	encode zstd gzip
 	request_body {
 		max_size 1GB
@@ -105,6 +116,34 @@ marux.ru {
 data.alexgetman.com {
 	tls internal
 	reverse_proxy 127.0.0.1:8790 {
+		import client_address
+	}
+}
+
+matrix.marux.ru {
+	reverse_proxy 192.168.10.106:8008 {
+		import client_address
+	}
+}
+
+livekit.marux.ru {
+	@jwt path /sfu/get* /healthz* /get_token*
+	handle @jwt {
+		reverse_proxy 192.168.10.106:8081 {
+			import client_address
+		}
+	}
+	handle {
+		reverse_proxy 192.168.10.106:7880 {
+			import client_address
+		}
+	}
+}
+
+iq007.marux.ru {
+	encode zstd gzip
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy 192.168.10.106:8791 {
 		import client_address
 	}
 }
