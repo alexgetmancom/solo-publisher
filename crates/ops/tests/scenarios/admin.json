@@ -1,0 +1,741 @@
+{
+  "clock": "2026-11-01T10:00:00.000Z",
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_ADMIN_IDS": "42",
+    "PUBLIC_BASE_URL": "https://studio.example"
+  },
+  "normalize": [
+    ["state=[^\"&\\\\]+", "state=STATE"],
+    ["code_challenge=[A-Za-z0-9_-]+", "code_challenge=CHALLENGE"],
+    ["pipeline-[0-9]{8}T[0-9]{6}Z\\.db\":\\{\"bytes\":[0-9]+,\"sha256\":\"[0-9a-f]{64}\"\\}", "pipeline-STAMP.db\":{}"],
+    ["\"database_bytes\":[0-9]+", "\"database_bytes\":0"],
+    [
+      "\"name\":\"DATA_DIR\",\"path\":\"([^\"]*)\",\"files\":[0-9]+,\"bytes\":[0-9]+,\"megabytes\":[0-9.]+",
+      "\"name\":\"DATA_DIR\",\"files\":0,\"bytes\":0,\"megabytes\":0"
+    ],
+    ["text:'[A-Za-z0-9+/=]+\\.[A-Za-z0-9+/=]+\\.[A-Za-z0-9+/=]+'", "text:'SEALED'"],
+    ["\\\\\"bytes\\\\\":[0-9]+\\}'", "\\\"bytes\\\":0}'"],
+    ["\"stdout\":\"SQLite format 3(?:[^\"\\\\]|\\\\.)*\"", "\"stdout\":\"\""]
+  ],
+  "setup": ["UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'"],
+  "cases": [
+    {
+      "name": "audit and dates-repair over failed jobs, stuck targets, inconsistencies and bad dates",
+      "steps": [
+        {
+          "sql": "INSERT INTO publication_events (publication_key, event_type, severity, target, message, created_at) VALUES ('post:1', 'publish.failed', 'error', 'telegram', 'Telegram refused', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_events (publication_key, event_type, severity, target, message, created_at) VALUES ('post:1', 'publish.failed', 'error', 'x', 'X refused', '2026-10-31T09:00:00.000Z');\nINSERT INTO publication_events (publication_key, event_type, severity, target, message, created_at) VALUES ('post:2', 'publish.ok', 'info', 'telegram', 'Published', '2026-10-30T09:00:00.000Z');\nINSERT INTO publication_events (publication_key, event_type, severity, target, message, created_at) VALUES ('post:3', 'publish.failed', 'error', 'x', 'Old failure', '2026-08-01T09:00:00.000Z');\nINSERT INTO publish_jobs (publication_key, target, status, last_error, created_at, updated_at) VALUES ('post:1', 'telegram', 'failed', 'Telegram refused', '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z');\nINSERT INTO publish_jobs (publication_key, target, status, created_at, updated_at) VALUES ('post:1', 'x', 'verification_required', '2026-10-31T09:00:00.000Z', '2026-10-31T09:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, publish_mode, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true}', 'now', 1, '2026-10-31T07:00:00.000Z', '2026-10-31T07:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, error, updated_at) VALUES ('post:1', 'telegram', 'failed', 'Telegram refused', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, updated_at) VALUES ('post:1', 'threads_ru', 'queued', '2026-10-31T07:30:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, updated_at) VALUES ('post:1', 'x', 'verification_required', '2026-10-31T09:00:00.000Z');\nINSERT INTO metric_schedule (publication_key, target, last_error, updated_at) VALUES ('post:1', 'telegram', 'rate limited', '2026-10-31T10:00:00.000Z');\nINSERT INTO metric_schedule (publication_key, target, last_error, frozen_at, updated_at) VALUES ('post:2', 'telegram', 'frozen error', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, status, created_at, updated_at) VALUES (1, 42, 'Clip one', 'partial', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, status, created_at, updated_at) VALUES (2, 42, 'Draft clip', 'draft', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, last_error, scheduled_at, created_at, updated_at) VALUES (1, 1, 'youtube_ru', '{}', 'failed', 'quota', '2026-10-30T12:00:00.000Z', '2026-10-30T09:00:00.000Z', '2026-10-30T12:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, provider_post_id, created_at, updated_at) VALUES (2, 1, 'instagram_ru', '{}', 'verification_required', 'zp-1', '2026-10-30T09:00:00.000Z', '2026-10-30T13:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, created_at, updated_at) VALUES (3, 2, 'youtube_ru', '{}', 'failed', '2026-10-30T09:00:00.000Z', '2026-10-30T13:00:00.000Z');\nINSERT INTO video_jobs (video_draft_id, video_target_id, kind, run_at, status, created_at, updated_at) VALUES (1, 2, 'publish', '2026-10-30T12:00:00.000Z', 'failed', '2026-10-30T09:00:00.000Z', '2026-10-30T13:00:00.000Z');\nDROP TRIGGER IF EXISTS date_guard_metric_samples_sampled_at_insert;\nINSERT INTO metric_samples (publication_key, target, value, sampled_at) VALUES ('post:1', 'telegram', 10, '2026-07-21 21:14:53');\nINSERT INTO metric_samples (publication_key, target, value, sampled_at) VALUES ('post:1', 'telegram', 11, '34Z');\nDROP TRIGGER IF EXISTS date_guard_drafts_updated_at_update;\nUPDATE drafts SET updated_at = 'yesterday' WHERE id = 1"
+        },
+        {
+          "op": "audit"
+        },
+        {
+          "cli": ["audit", "--json"]
+        },
+        {
+          "op": "dates-repair",
+          "actor": "ops-cli"
+        },
+        {
+          "op": "dates-repair",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "query": "SELECT id, value, sampled_at FROM metric_samples ORDER BY id"
+        },
+        {
+          "op": "dates-repair",
+          "args": {
+            "apply": "yes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "publication-repair: plan, scoped video and post, the bad ref, then the full sweep",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, publish_mode, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true}', 'now', 1, '2026-10-31T07:00:00.000Z', '2026-10-31T07:00:00.000Z');\nINSERT INTO publish_jobs (publication_key, target, status, created_at, updated_at) VALUES ('post:1', 'telegram', 'published', '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, error, updated_at) VALUES ('post:1', 'telegram', 'failed', 'stale', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, updated_at) VALUES ('post:1', 'x', 'queued', '2026-10-31T07:30:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, publish_mode, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{\"telegram\":true}', 'now', 2, '2026-10-31T07:00:00.000Z', '2026-10-31T07:00:00.000Z');\nINSERT INTO publish_jobs (publication_key, target, status, created_at, updated_at) VALUES ('post:2', 'telegram', 'failed_archived', '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, updated_at) VALUES ('post:2', 'telegram', 'failed', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, updated_at) VALUES ('post:99', 'telegram', 'published', '2026-10-31T08:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, status, created_at, updated_at) VALUES (1, 42, 'Clip one', 'published', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, provider_post_id, last_error, created_at, updated_at) VALUES (1, 1, 'youtube_ru', '{}', 'published', 'yt-1', 'late answer', '2026-10-30T09:00:00.000Z', '2026-10-30T12:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, last_error, locked_by, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-10-30T12:00:00.000Z', 'failed', 'timeout', 'w1', '2026-10-30T09:00:00.000Z', '2026-10-30T13:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, created_at, updated_at) VALUES (2, 1, 'instagram_ru', '{}', 'published', '2026-10-30T09:00:00.000Z', '2026-10-30T12:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, created_at, updated_at) VALUES (2, 1, 2, 'publish', '2026-10-30T12:00:00.000Z', 'publishing', '2026-10-30T09:00:00.000Z', '2026-10-30T13:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, status, created_at, updated_at) VALUES (2, 42, 'Clip two', 'scheduled', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, created_at, updated_at) VALUES (3, 2, 'youtube_ru', '{}', 'published', '2026-10-30T09:00:00.000Z', '2026-10-30T12:00:00.000Z');\nPRAGMA foreign_keys = OFF;\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, created_at, updated_at) VALUES (50, 999, 'youtube_ru', '{}', 'failed', '2026-10-30T09:00:00.000Z', '2026-10-30T12:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, created_at, updated_at) VALUES (50, 999, 50, 'publish', '2026-10-30T12:00:00.000Z', 'failed', '2026-10-30T09:00:00.000Z', '2026-10-30T13:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, updated_at) VALUES (77, 'ru', '2026-10-30T09:00:00.000Z')"
+        },
+        {
+          "op": "publication-repair"
+        },
+        {
+          "op": "publication-repair",
+          "args": {
+            "ref": "video:1",
+            "apply": true
+          }
+        },
+        {
+          "op": "publication-repair",
+          "args": {
+            "ref": "1",
+            "apply": true
+          }
+        },
+        {
+          "op": "publication-repair",
+          "args": {
+            "ref": "draft:1"
+          }
+        },
+        {
+          "op": "publication-repair",
+          "args": {
+            "ref": "video:0"
+          }
+        },
+        {
+          "op": "publication-repair",
+          "args": {
+            "apply": true
+          }
+        },
+        {
+          "cli": ["publication-repair", "--ref", "post:2"]
+        }
+      ]
+    },
+    {
+      "name": "doctor: fresh, then backed up with a channel missing its credentials",
+      "steps": [
+        {
+          "op": "doctor"
+        },
+        {
+          "cli": ["doctor", "--json"]
+        },
+        {
+          "sql": "INSERT INTO worker_state (name, state_json, updated_at) VALUES ('export:media', '{\"at\":\"2026-10-30T22:00:00.000Z\",\"bytes\":null}', '2026-10-30T22:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'YouTube RU', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')"
+        },
+        {
+          "op": "doctor"
+        },
+        {
+          "sql": "DELETE FROM channel_connections"
+        },
+        {
+          "cli": ["doctor"]
+        },
+        {
+          "clock": "2026-11-09T10:00:00.000Z"
+        },
+        {
+          "op": "doctor"
+        }
+      ]
+    },
+    {
+      "name": "doctor: tokens and the Studio transport configured",
+      "env": {
+        "CONTROLLER_BOT_TOKEN": "fake-bot-token",
+        "COMMAND_CENTER_TOKEN": "fake-command-center-token",
+        "MCP_STUDIO_TOKEN": "fake-studio-transport-token",
+        "MCP_STUDIO_ACTOR_ID": "42"
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO worker_state (name, state_json, updated_at) VALUES ('export:media', '{\"at\":\"not a date\",\"bytes\":5}', '2026-10-30T22:00:00.000Z')"
+        },
+        {
+          "op": "doctor"
+        }
+      ]
+    },
+    {
+      "name": "disk: data directories, studio media holdings and orphaned Story variants",
+      "steps": [
+        {
+          "write": "data/video-media/post-asset.mp4",
+          "text": "post attachment bytes"
+        },
+        {
+          "write": "data/video-media/pending.mp4",
+          "text": "video source pending"
+        },
+        {
+          "write": "data/video-media/released.mp4",
+          "text": "video source released!"
+        },
+        {
+          "write": "data/video-media/loose.mp4",
+          "text": "unreferenced"
+        },
+        {
+          "write": "data/media-cache/abc/cached.bin",
+          "text": "cache"
+        },
+        {
+          "write": "data/story-media/post-asset-story-standard.mp4",
+          "text": "live variant"
+        },
+        {
+          "write": "data/story-media/gone-story-telegram.jpg",
+          "text": "orphaned variant"
+        },
+        {
+          "write": "data/story-media/.hidden",
+          "text": "x"
+        },
+        {
+          "write": "data/site/media/one.jpg",
+          "text": "site file"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (1, 42, 'video', 'video/mp4', 'post-asset.mp4', '$CASE/data/video-media/post-asset.mp4', 21, 'aa', 'telegram', '2026-10-30T09:00:00.000Z');\nINSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (2, 42, 'video', 'video/mp4', 'pending.mp4', '$CASE/data/video-media/pending.mp4', 20, 'bb', 'telegram', '2026-10-30T09:00:00.000Z');\nINSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (3, 42, 'video', 'video/mp4', 'released.mp4', '$CASE/data/video-media/released.mp4', 22, 'cc', 'telegram', '2026-10-30T09:00:00.000Z');\nINSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (4, 42, 'video', 'video/mp4', 'loose.mp4', '$CASE/data/video-media/loose.mp4', 12, 'dd', 'telegram', '2026-10-30T09:00:00.000Z');\nINSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (5, 42, 'video', 'video/mp4', 'missing.mp4', '$CASE/data/video-media/missing.mp4', 12, 'ee', 'telegram', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, studio_media_asset_id, status, created_at, updated_at) VALUES (1, 42, 'pending', 2, 'scheduled', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, studio_media_asset_id, status, source_pruned_at, created_at, updated_at) VALUES (2, 42, 'released', 3, 'published', '2026-10-31T09:00:00.000Z', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, label, studio_media_asset_id, status, created_at, updated_at) VALUES (3, 42, 'also post', 1, 'scheduled', '2026-10-30T09:00:00.000Z', '2026-10-30T09:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 1, '2026-10-31T07:00:00.000Z', '2026-10-31T07:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, media_json, updated_at) VALUES (1, 'ru', '[{\"asset_id\":\"1\",\"local_path\":\"$CASE/data/video-media/post-asset.mp4\"},{\"localPath\":\"$CASE/data/nowhere.jpg\"},\"junk\"]', '2026-10-30T09:00:00.000Z')"
+        },
+        {
+          "op": "disk",
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "deployments: the agent answers, refuses, then is unreachable",
+      "env": {
+        "DEPLOY_AGENT_URL": "http://agent.invalid/",
+        "DEPLOY_AGENT_TOKEN": "fake-deploy-agent-token"
+      },
+      "responses": [
+        {
+          "method": "GET",
+          "url": "http://agent.invalid/v1/releases",
+          "json": {
+            "ok": true,
+            "deploying": false,
+            "targets": [
+              {
+                "target": "alex",
+                "kind": "studio",
+                "current": {
+                  "image": "ghcr.io/x/studio:abc",
+                  "revision": "abcdef1",
+                  "deployedAt": "2026-10-31T10:00:00.000Z"
+                },
+                "previous": {
+                  "revision": "1234567"
+                }
+              },
+              {
+                "target": "maru",
+                "kind": "studio",
+                "lastFailure": {
+                  "at": "2026-10-30T10:00:00.000Z",
+                  "reason": "healthcheck"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "method": "GET",
+          "url": "http://agent.invalid/v1/releases",
+          "status": 409,
+          "json": {
+            "ok": false,
+            "message": "A rollout is in progress."
+          }
+        },
+        {
+          "method": "GET",
+          "url": "http://agent.invalid/v1/releases",
+          "status": 502,
+          "body": "<html>bad gateway</html>"
+        },
+        {
+          "method": "GET",
+          "url": "http://agent.invalid/v1/releases",
+          "status": 200,
+          "json": {
+            "ok": "yes"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "deployments"
+        },
+        {
+          "op": "deployments"
+        },
+        {
+          "op": "deployments"
+        },
+        {
+          "op": "deployments"
+        },
+        {
+          "cli": ["deployments"]
+        }
+      ]
+    },
+    {
+      "name": "deployments: no agent configured",
+      "steps": [
+        {
+          "op": "deployments"
+        }
+      ]
+    },
+    {
+      "name": "format-record: graded by the post's targets, and its refusals",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 5, '2026-10-31T07:00:00.000Z', '2026-10-31T07:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 6, '2026-10-31T07:00:00.000Z', '2026-10-31T07:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, url, external_id, updated_at) VALUES ('post:5', 'telegram', 'published', 'https://t.me/c/5', '55', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, external_id, updated_at) VALUES ('post:5', 'site_ru', 'failed', 'site-5', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, skipped, updated_at) VALUES ('post:5', 'threads_ru', 'skipped', 1, '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, url, updated_at) VALUES ('post:6', 'telegram', 'published', 'https://t.me/c/6', '2026-10-31T08:00:00.000Z');\nINSERT INTO publication_targets (publication_key, target, status, url, updated_at) VALUES ('post:6', 'site_ru', 'published', 'https://example.org/6', '2026-10-31T08:00:00.000Z')"
+        },
+        {
+          "op": "format-record",
+          "args": {
+            "test": "T02",
+            "post_id": 5,
+            "notes": "album of one"
+          }
+        },
+        {
+          "clock": "2026-11-01T11:00:00.000Z"
+        },
+        {
+          "op": "format-record",
+          "args": {
+            "test": "T01",
+            "post_id": "6",
+            "notes": ""
+          }
+        },
+        {
+          "op": "format-record",
+          "args": {
+            "test": "T99",
+            "post_id": 5
+          }
+        },
+        {
+          "op": "format-record",
+          "args": {
+            "test": "T03",
+            "post_id": 77
+          }
+        },
+        {
+          "cli": ["format-record", "--test", "T04", "--post-id", "6"]
+        }
+      ]
+    },
+    {
+      "name": "channel-connect and channel-disable",
+      "steps": [
+        {
+          "op": "channel-connect",
+          "args": {
+            "target": "threads_ru"
+          }
+        },
+        {
+          "op": "channel-connect",
+          "args": {
+            "target": "instagram_stories_ru",
+            "provider": "zernio",
+            "account_id": "zr-1",
+            "label": "Stories RU"
+          }
+        },
+        {
+          "op": "channel-connect",
+          "args": {
+            "platform": "youtube",
+            "locale": "en",
+            "account_id": "UC-en",
+            "label": "YouTube EN"
+          }
+        },
+        {
+          "op": "channel-connect",
+          "args": {
+            "platform": "instagram",
+            "locale": "ru",
+            "provider": "zernio",
+            "account_id": "",
+            "label": ""
+          }
+        },
+        {
+          "op": "channel-connect",
+          "args": {
+            "platform": "youtube"
+          }
+        },
+        {
+          "op": "channel-connect",
+          "args": {
+            "target": "nope"
+          }
+        },
+        {
+          "cli": ["channel-connect", "--target", "x", "--account-id", "acct-x"]
+        },
+        {
+          "op": "channel-disable",
+          "args": {
+            "channel": "youtube_en"
+          }
+        },
+        {
+          "op": "channel-disable",
+          "args": {
+            "channel": "nope"
+          }
+        },
+        {
+          "cli": ["channel-disable", "--channel", "threads_ru"]
+        },
+        {
+          "query": "SELECT id, platform, locale, provider, provider_account_id, target_id, label, enabled, source FROM channel_connections ORDER BY id"
+        }
+      ]
+    },
+    {
+      "name": "connect-link: every platform configured",
+      "env": {
+        "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+        "THREADS_APP_ID": "threads-app",
+        "THREADS_APP_SECRET": "fake-threads-secret",
+        "INSTAGRAM_APP_ID": "ig-app",
+        "INSTAGRAM_APP_SECRET": "fake-ig-secret",
+        "X_CLIENT_ID": "x-client",
+        "X_CLIENT_SECRET": "fake-x-secret",
+        "YOUTUBE_RU_CLIENT_ID": "yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "fake-yt-ru-secret",
+        "YOUTUBE_EN_CLIENT_ID": "yt-en-client",
+        "YOUTUBE_EN_CLIENT_SECRET": "fake-yt-en-secret"
+      },
+      "steps": [
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "threads"
+          }
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "instagram",
+            "locale": "en"
+          }
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "x"
+          }
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "youtube",
+            "locale": "en"
+          }
+        },
+        {
+          "cli": ["connect-link", "--platform", "youtube"]
+        },
+        {
+          "cli": ["connect-link", "--platform", "threads", "--json"]
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "tiktok"
+          }
+        }
+      ]
+    },
+    {
+      "name": "connect-link: what each platform is missing",
+      "steps": [
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "threads"
+          }
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "instagram",
+            "locale": "en"
+          }
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "x"
+          }
+        },
+        {
+          "op": "connect-link",
+          "args": {
+            "platform": "youtube",
+            "locale": "en"
+          }
+        },
+        {
+          "cli": ["connect-link", "--platform", "youtube"]
+        }
+      ]
+    },
+    {
+      "name": "credential-set: a verified key from stdin, and its refusals",
+      "env": {
+        "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+        "DISCORD_GUILD_ID": "guild-1"
+      },
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/accounts",
+          "json": {
+            "accounts": [
+              {
+                "_id": "a1"
+              },
+              {
+                "_id": "a2"
+              }
+            ]
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://discord.com/api/v10/users/@me",
+          "json": {
+            "id": "1001",
+            "username": "studio-bot"
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://discord.com/api/v10/guilds/guild-1",
+          "json": {
+            "id": "guild-1",
+            "premium_tier": 2
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/accounts",
+          "status": 401,
+          "json": {
+            "error": "Invalid API key"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "cli": ["credential-set", "--target", "zernio"],
+          "stdin": "  zernio-fake-key\n"
+        },
+        {
+          "cli": ["credential-set", "--target", "discord", "--json"],
+          "stdin": "discord-fake-token"
+        },
+        {
+          "cli": ["credential-set", "--target", "zernio"],
+          "stdin": "zernio-wrong-key"
+        },
+        {
+          "cli": ["credential-set", "--target", "zernio"],
+          "stdin": "   "
+        },
+        {
+          "cli": ["credential-set", "--target", "telegram"],
+          "stdin": "x"
+        },
+        {
+          "query": "SELECT target, account_id, upload_limit_bytes, refreshed_at, updated_at FROM platform_tokens ORDER BY target"
+        }
+      ]
+    },
+    {
+      "name": "credential-set: no encryption key",
+      "steps": [
+        {
+          "cli": ["credential-set", "--target", "zernio"],
+          "stdin": "zernio-fake-key"
+        }
+      ]
+    },
+    {
+      "name": "backup to a directory, then restore it over a changed database",
+      "steps": [
+        {
+          "sql": "INSERT INTO publication_events (publication_key, event_type, severity, message, created_at) VALUES ('post:1', 'kept', 'info', 'before the backup', '2026-10-31T08:00:00.000Z')"
+        },
+        {
+          "op": "backup",
+          "args": {
+            "output": "$CASE/out"
+          }
+        },
+        {
+          "sql": "INSERT INTO publication_events (publication_key, event_type, severity, message, created_at) VALUES ('post:1', 'lost', 'info', 'after the backup', '2026-10-31T09:00:00.000Z')"
+        },
+        {
+          "op": "restore",
+          "args": {
+            "source": "$CASE/out/pipeline-20261101T100000Z.db"
+          }
+        },
+        {
+          "op": "restore",
+          "args": {
+            "source": "$CASE/out/missing.db",
+            "force": true
+          }
+        },
+        {
+          "op": "restore",
+          "args": {
+            "source": "$CASE/out/pipeline-20261101T100000Z.db",
+            "force": true
+          }
+        },
+        {
+          "query": "SELECT event_type, message, details_json FROM publication_events ORDER BY id"
+        },
+        {
+          "clock": "2026-11-01T10:30:15.250Z"
+        },
+        {
+          "cli": ["backup"]
+        },
+        {
+          "cli": ["restore", "--source", "$CASE/data/backups/pipeline-20261101T103015Z.db", "--force"]
+        }
+      ]
+    },
+    {
+      "name": "backup-stream: the database, then media before and after a tree exists",
+      "steps": [
+        {
+          "cli": ["backup-stream", "--what", "db"]
+        },
+        {
+          "cli": ["backup-stream", "--what", "media"]
+        },
+        {
+          "write": "data/video-media/clip.mp4",
+          "text": "clip"
+        },
+        {
+          "write": "data/site/index.html",
+          "text": "<html></html>"
+        },
+        {
+          "clock": "2026-11-01T12:00:00.000Z"
+        },
+        {
+          "cli": ["backup-stream", "--what", "media"]
+        },
+        {
+          "query": "SELECT name, updated_at FROM worker_state WHERE name LIKE 'export:%' ORDER BY name"
+        },
+        {
+          "op": "doctor"
+        }
+      ]
+    },
+    {
+      "name": "analytics-export and youtube-export: refusals and the piped export",
+      "env": {
+        "CONTROLLER_BOT_TOKEN": "fake-bot-token",
+        "THREADS_RU_ACCESS_TOKEN": "fake-threads-ru-token",
+        "INSTAGRAM_RU_ACCESS_TOKEN": "IGfake-instagram-ru",
+        "INSTAGRAM_EN_ACCESS_TOKEN": "EAAfake-instagram-en",
+        "ZERNIO_API_KEY": "fake-zernio-key",
+        "DISCORD_BOT_TOKEN": "fake-discord-token",
+        "DISCORD_CHANNEL_ID": "chan-1",
+        "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+        "YOUTUBE_RU_CLIENT_ID": "yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "fake-yt-ru-secret",
+        "YOUTUBE_RU_REFRESH_TOKEN": "fake-yt-ru-refresh",
+        "YOUTUBE_EN_CLIENT_ID": "yt-en-client",
+        "YOUTUBE_EN_CLIENT_SECRET": "fake-yt-en-secret"
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram_stories', 'telegram_stories', 'ru', 'native', NULL, 'telegram_stories', 'telegram_stories', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_ru', 'threads', 'ru', 'native', 'th-ru', 'threads_ru', 'threads_ru', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_en', 'threads', 'en', 'native', 'th-en', 'threads_en', 'threads_en', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram_stories_ru', 'instagram_stories', 'ru', 'native', 'ig-ru', 'instagram_stories_ru', 'instagram_stories_ru', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram_stories', 'instagram_stories', 'en', 'zernio', 'zr-ig', 'instagram_stories', 'instagram_stories', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram:en', 'instagram', 'en', 'native', 'ig-en', NULL, 'Instagram EN', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('discord', 'discord', 'en', 'native', NULL, 'discord', 'discord', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', 'acct-x', 'x', 'x', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'YouTube RU', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('site_ru', 'site', 'ru', 'native', NULL, 'site_ru', 'site_ru', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z');\nINSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_off', 'threads', 'ru', 'native', 'th-off', NULL, 'off', 0, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')"
+        },
+        {
+          "op": "analytics-export"
+        },
+        {
+          "op": "youtube-export",
+          "args": {
+            "locale": "ru"
+          }
+        },
+        {
+          "cli": ["analytics-export"]
+        },
+        {
+          "cli": ["youtube-export", "--locale", "ru"]
+        },
+        {
+          "cli": ["youtube-export", "--locale", "en"]
+        }
+      ]
+    },
+    {
+      "name": "telegram-stories-login and threads-authorize refuse before any network",
+      "steps": [
+        {
+          "op": "telegram-stories-login",
+          "actor": "ops-cli"
+        },
+        {
+          "op": "threads-authorize",
+          "args": {
+            "locale": "ru"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "cli": ["telegram-stories-login"]
+        }
+      ]
+    },
+    {
+      "name": "telegram-stories-login without a session path",
+      "env": {
+        "TELEGRAM_CHANNEL_STORIES_API_ID": "12345",
+        "TELEGRAM_CHANNEL_STORIES_API_HASH": "fake-api-hash"
+      },
+      "steps": [
+        {
+          "op": "telegram-stories-login",
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "threads-authorize: nothing pasted",
+      "env": {
+        "THREADS_APP_ID": "threads-app",
+        "THREADS_APP_SECRET": "fake-threads-secret"
+      },
+      "steps": [
+        {
+          "op": "threads-authorize",
+          "args": {
+            "locale": "en"
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    }
+  ]
+}
