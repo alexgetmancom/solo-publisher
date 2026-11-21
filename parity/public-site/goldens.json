@@ -1,0 +1,941 @@
+{
+  "cases": [
+    {
+      "name": "site disabled",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'English', NULL, NULL, '[]', 'post-1-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        },
+        {
+          "request": {
+            "prefer": "wait=2"
+          }
+        }
+      ],
+      "results": [
+        {
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8",
+            "etag": null,
+            "cache-control": null
+          },
+          "body": "not found\n"
+        },
+        {
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8",
+            "etag": null,
+            "cache-control": null
+          },
+          "body": "not found\n"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "empty feed, conditional requests and an unchanged wait",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "request": {}
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "request": {
+            "if_none_match": "\"older\"",
+            "prefer": "wait=25"
+          }
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=invalid"
+          }
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=1"
+          }
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=4"
+          }
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "identity in both languages",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\n          UPDATE studio_profile SET timezone = 'Europe/Moscow', timezone_label = 'MSK',\n            name_json = '{\"en\":\"Alex\",\"ru\":\"Алекс\"}', tagline_json = '{\"en\":\"Notes \\\"quoted\\\"\",\"ru\":\"Заметки\"}',\n            about_json = '{\"en\":\"About\\nme\",\"ru\":\"\"}', bio_json = '{\"en\":\"\",\"ru\":\"Био\"}',\n            site_timezone_json = '{\"en\":\"America/New_York\",\"ru\":\"  \"}',\n            profiles_json = '{\"en\":[{\"label\":\"X\",\"url\":\"https://x.com/a\"}],\"ru\":[{\"label\":\"Telegram\",\"url\":\"https://t.me/a\"},{\"label\":\"YouTube\",\"url\":\"https://youtube.com/@a\"}]}';"
+        },
+        {
+          "request": {}
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"lDSR-XiaEvGzTuYJuswID2A7nNl\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"Alex\",\"tagline\":\"Notes \\\"quoted\\\"\",\"about\":\"About\\nme\",\"bio\":\"\",\"profiles\":[{\"label\":\"X\",\"url\":\"https://x.com/a\"}],\"timezone\":\"America/New_York\"},\"ru\":{\"name\":\"Алекс\",\"tagline\":\"Заметки\",\"about\":\"\",\"bio\":\"Био\",\"profiles\":[{\"label\":\"Telegram\",\"url\":\"https://t.me/a\"},{\"label\":\"YouTube\",\"url\":\"https://youtube.com/@a\"}],\"timezone\":\"Europe/Moscow\"}},\"items\":[]}"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "locales, statuses and views",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-11-01T00:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'ru', 'Только русский «текст»', NULL, NULL, '[]', 'post-1-ru', 'SEO ru', NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T00:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'hidden', NULL, NULL, '[]', 'post-1-en', NULL, NULL, 0, NULL, '2026-11-01T00:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'published', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-11-01T01:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'ru', 'скрыт', NULL, NULL, '[]', 'post-2-ru', 'hidden seo', NULL, 0, NULL, '2026-11-01T01:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'English only', NULL, NULL, '[]', 'post-2-en', 'SEO en', '2026-11-01T09:00:00.000Z', 1, '2026-11-01T08:00:00.000Z', '2026-11-01T01:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', NULL, NULL, 3, '2026-10-31T10:00:00.000Z', '2026-11-01T02:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'ru', 'Исходный', 'Одобренный', '<p>Одобренный</p>', '[]', 'post-3-ru', NULL, '2026-11-01T07:00:00.000Z', 1, '2026-11-01T08:00:00.000Z', '2026-11-01T02:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'en', 'Machine', 'Approved', NULL, '[]', NULL, NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T02:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (4, 7, 'failed', '{}', NULL, NULL, 4, '2026-10-31T10:00:00.000Z', '2026-11-01T03:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (4, 'en', 'Failed but public line\ttab\u0001', NULL, NULL, '[]', 'post-4-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T03:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (5, 7, 'scheduled', '{}', NULL, NULL, 5, '2026-10-31T10:00:00.000Z', '2026-11-01T03:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (5, 'en', 'Scheduled status', NULL, NULL, '[]', 'post-5-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T03:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (6, 7, 'draft', '{}', NULL, NULL, 6, '2026-10-31T10:00:00.000Z', '2026-11-01T04:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (6, 'en', 'Private draft', NULL, NULL, '[]', 'post-6-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T04:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (7, 7, 'published', '{}', NULL, NULL, NULL, '2026-10-31T10:00:00.000Z', '2026-11-01T04:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (7, 'en', 'No post id', NULL, NULL, '[]', 'post-7-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T04:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (8, 7, 'published', '{}', NULL, NULL, 8, '2026-10-31T10:00:00.000Z', '2026-11-01T05:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (8, 'ru', 'off', NULL, NULL, '[]', 'post-8-ru', NULL, NULL, 0, NULL, '2026-11-01T05:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (8, 'en', 'off', NULL, NULL, '[]', 'post-8-en', NULL, NULL, 0, NULL, '2026-11-01T05:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (9, 7, 'published', '{}', NULL, NULL, 20, '2026-10-31T10:00:00.000Z', '2026-11-01T03:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (9, 'en', 'Same updated_at, higher post id', NULL, NULL, '[]', 'post-9-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T03:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (10, 7, 'published', '{}', NULL, NULL, 10, '2026-10-31T10:00:00.000Z', '2026-11-01T06:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (10, 'en', '', NULL, NULL, '[]', 'post-10-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T06:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (11, 7, 'published', '{}', NULL, NULL, 11, '2026-10-31T10:00:00.000Z', '2026-11-01T06:00:00.000Z');\nINSERT INTO post_metrics (publication_key, target, metric_name, value) VALUES\n               ('post:1', 'telegram', 'views', 1234), ('post:2', 'telegram', 'views', 12.5),\n               ('post:3', 'threads_ru', 'views', 99), ('post:3', 'telegram', 'reactions', 5);"
+        },
+        {
+          "request": {}
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"967kQeDYtRXIyyDo_o9KIaQeXjA\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:10\",\"post_id\":10,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"\",\"html\":\"\",\"html_en\":\"\",\"slug_ru\":null,\"slug_en\":\"post-10-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:20\",\"post_id\":20,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Same updated_at, higher post id\",\"html\":\"\",\"html_en\":\"Same updated_at, higher post id\",\"slug_ru\":null,\"slug_en\":\"post-9-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:5\",\"post_id\":5,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Scheduled status\",\"html\":\"\",\"html_en\":\"Scheduled status\",\"slug_ru\":null,\"slug_en\":\"post-5-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:4\",\"post_id\":4,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Failed but public line\\ttab\\u0001\",\"html\":\"\",\"html_en\":\"Failed but public line\\ttab\\u0001\",\"slug_ru\":null,\"slug_en\":\"post-4-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":\"2026-11-01T07:00:00.000Z\",\"updated_at_en\":null,\"text\":\"Одобренный\",\"text_ru\":\"Одобренный\",\"text_en\":\"Approved\",\"html\":\"<p>Одобренный</p>\",\"html_en\":\"Approved\",\"slug_ru\":\"post-3-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:2\",\"post_id\":2,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":\"2026-11-01T09:00:00.000Z\",\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"English only\",\"html\":\"\",\"html_en\":\"English only\",\"slug_ru\":null,\"slug_en\":\"post-2-en\",\"seo_title_ru\":null,\"seo_title_en\":\"SEO en\",\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":12.5},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Только русский «текст»\",\"text_ru\":\"Только русский «текст»\",\"text_en\":\"\",\"html\":\"Только русский «текст»\",\"html_en\":\"\",\"slug_ru\":\"post-1-ru\",\"slug_en\":null,\"seo_title_ru\":\"SEO ru\",\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":1234}]}"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "scheduled locales appear when the clock reaches them",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'ru', 'Позже', NULL, NULL, '[]', 'post-1-ru', NULL, NULL, 1, '2026-11-01T11:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'Now', NULL, NULL, '[]', 'post-1-en', NULL, NULL, 1, '2026-11-01T09:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'published', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'ru', 'Будущее', NULL, NULL, '[]', 'post-2-ru', NULL, NULL, 1, '2026-11-01T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'Future', NULL, NULL, '[]', 'post-2-en', NULL, NULL, 1, '2026-11-01T13:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', '2026-11-01T05:00:00.000Z', NULL, 3, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'ru', 'Без даты', NULL, NULL, '[]', 'post-3-ru', NULL, NULL, 1, NULL, '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (4, 7, 'published', '{}', NULL, '2026-11-01T04:00:00.000Z', 4, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (4, 'en', 'No date', NULL, NULL, '[]', 'post-4-en', NULL, NULL, 1, NULL, '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (5, 7, 'published', '{}', NULL, NULL, 5, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (5, 'en', 'Created only', NULL, NULL, '[]', 'post-5-en', NULL, NULL, 1, NULL, '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "clock": "2026-11-01T11:00:00.000Z"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "clock": "2026-11-01T12:00:00.001Z"
+        },
+        {
+          "request": {}
+        },
+        {
+          "clock": "2026-11-01T13:00:00.000Z"
+        },
+        {
+          "request": {}
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"XIExubQ-whiLQWI4q6fEZ6UbWDq\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:5\",\"post_id\":5,\"date\":\"2026-10-31T10:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Created only\",\"html\":\"\",\"html_en\":\"Created only\",\"slug_ru\":null,\"slug_en\":\"post-5-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:4\",\"post_id\":4,\"date\":\"2026-11-01T04:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"No date\",\"html\":\"\",\"html_en\":\"No date\",\"slug_ru\":null,\"slug_en\":\"post-4-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T05:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Без даты\",\"text_ru\":\"Без даты\",\"text_en\":\"\",\"html\":\"Без даты\",\"html_en\":\"\",\"slug_ru\":\"post-3-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T09:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Now\",\"html\":\"\",\"html_en\":\"Now\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"XIExubQ-whiLQWI4q6fEZ6UbWDq\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"AytJ7K6m8CGlzWS1YvkNJa4wdmJ\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:5\",\"post_id\":5,\"date\":\"2026-10-31T10:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Created only\",\"html\":\"\",\"html_en\":\"Created only\",\"slug_ru\":null,\"slug_en\":\"post-5-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:4\",\"post_id\":4,\"date\":\"2026-11-01T04:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"No date\",\"html\":\"\",\"html_en\":\"No date\",\"slug_ru\":null,\"slug_en\":\"post-4-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T05:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Без даты\",\"text_ru\":\"Без даты\",\"text_en\":\"\",\"html\":\"Без даты\",\"html_en\":\"\",\"slug_ru\":\"post-3-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T11:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Позже\",\"text_ru\":\"Позже\",\"text_en\":\"Now\",\"html\":\"Позже\",\"html_en\":\"Now\",\"slug_ru\":\"post-1-ru\",\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"bVCQzQ1MTgNgrjJkkQowv9BOQYS\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:5\",\"post_id\":5,\"date\":\"2026-10-31T10:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Created only\",\"html\":\"\",\"html_en\":\"Created only\",\"slug_ru\":null,\"slug_en\":\"post-5-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:4\",\"post_id\":4,\"date\":\"2026-11-01T04:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"No date\",\"html\":\"\",\"html_en\":\"No date\",\"slug_ru\":null,\"slug_en\":\"post-4-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T05:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Без даты\",\"text_ru\":\"Без даты\",\"text_en\":\"\",\"html\":\"Без даты\",\"html_en\":\"\",\"slug_ru\":\"post-3-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:2\",\"post_id\":2,\"date\":\"2026-11-01T12:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Будущее\",\"text_ru\":\"Будущее\",\"text_en\":\"\",\"html\":\"Будущее\",\"html_en\":\"\",\"slug_ru\":\"post-2-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T11:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Позже\",\"text_ru\":\"Позже\",\"text_en\":\"Now\",\"html\":\"Позже\",\"html_en\":\"Now\",\"slug_ru\":\"post-1-ru\",\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"bWGbWXQpY4hau2kDiLI5Vg6pebx\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:5\",\"post_id\":5,\"date\":\"2026-10-31T10:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Created only\",\"html\":\"\",\"html_en\":\"Created only\",\"slug_ru\":null,\"slug_en\":\"post-5-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:4\",\"post_id\":4,\"date\":\"2026-11-01T04:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"No date\",\"html\":\"\",\"html_en\":\"No date\",\"slug_ru\":null,\"slug_en\":\"post-4-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T05:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Без даты\",\"text_ru\":\"Без даты\",\"text_en\":\"\",\"html\":\"Без даты\",\"html_en\":\"\",\"slug_ru\":\"post-3-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:2\",\"post_id\":2,\"date\":\"2026-11-01T12:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Будущее\",\"text_ru\":\"Будущее\",\"text_en\":\"Future\",\"html\":\"Будущее\",\"html_en\":\"Future\",\"slug_ru\":\"post-2-ru\",\"slug_en\":\"post-2-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T11:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Позже\",\"text_ru\":\"Позже\",\"text_en\":\"Now\",\"html\":\"Позже\",\"html_en\":\"Now\",\"slug_ru\":\"post-1-ru\",\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "media filtered to files on disk",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "write": "media/posts/present.jpg",
+          "base64": "Ynl0ZXM=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/clip.mp4",
+          "base64": "Ynl0ZXM=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/poster.jpg",
+          "base64": "Ynl0ZXM=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/en-only.jpg",
+          "base64": "Ynl0ZXM=",
+          "mtime": 1790000000
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'ru', 'Медиа', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/missing.jpg?v=abcdef012345\"},{\"type\":\"image\",\"path\":\"/media/posts/present.jpg?v=abcdef012345\",\"alt\":\"Подпись\",\"width\":12,\"height\":34,\"file_id\":\"x\",\"asset_id\":4,\"local_path\":\"/private/a.jpg\"},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4\",\"poster\":\"media/posts/missing-poster.jpg\",\"responsive\":[{\"path\":\"x\"}]},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4?v=1\",\"poster\":\"media/posts/poster.jpg\",\"width\":1920},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4#t=2\",\"poster\":\"\"},{\"type\":\"image\",\"path\":\"media/posts/present.jpg\",\"role\":\"text_story_card\"},{\"path\":\"media/posts/present.jpg\",\"extra\":{\"nested\":[1,2.5,null]},\"poster_responsive\":7}]', 'post-1-ru', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'Media', NULL, NULL, '[]', 'post-1-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'published', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'ru', 'Не тот формат', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/present.jpg\",\"alt\":null}]', 'post-2-ru', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'Own media', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/en-only.jpg\"}]', 'post-2-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', NULL, NULL, 3, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'ru', 'Объект', NULL, NULL, '{\"path\":\"media/posts/present.jpg\"}', 'post-3-ru', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'en', 'Empty path', NULL, NULL, '[{\"path\":\"\"}]', 'post-3-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (4, 7, 'published', '{}', NULL, NULL, 4, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (4, 'en', 'Only a video', NULL, NULL, '[{\"type\":\"video\",\"path\":\"media/posts/clip.mp4\"},{\"type\":\"image\",\"path\":\"media/posts/missing.jpg\"}]', 'post-4-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (5, 7, 'published', '{}', NULL, NULL, 5, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (5, 'ru', 'Нет колонки', NULL, NULL, NULL, 'post-5-ru', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (5, 'en', 'Story card only', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/present.jpg\",\"role\":\"text_story_card\"}]', 'post-5-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"LXz-JecPElOPykUiaaJUNp9usld\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:5\",\"post_id\":5,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Нет колонки\",\"text_ru\":\"Нет колонки\",\"text_en\":\"Story card only\",\"html\":\"Нет колонки\",\"html_en\":\"Story card only\",\"slug_ru\":\"post-5-ru\",\"slug_en\":\"post-5-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:4\",\"post_id\":4,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Only a video\",\"html\":\"\",\"html_en\":\"Only a video\",\"slug_ru\":null,\"slug_en\":\"post-4-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"video\",\"path\":\"media/posts/clip.mp4\"}],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Объект\",\"text_ru\":\"Объект\",\"text_en\":\"Empty path\",\"html\":\"Объект\",\"html_en\":\"Empty path\",\"slug_ru\":\"post-3-ru\",\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:2\",\"post_id\":2,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Не тот формат\",\"text_ru\":\"Не тот формат\",\"text_en\":\"Own media\",\"html\":\"Не тот формат\",\"html_en\":\"Own media\",\"slug_ru\":\"post-2-ru\",\"slug_en\":\"post-2-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/en-only.jpg\"}],\"image\":null,\"image_en\":\"media/posts/en-only.jpg\",\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Медиа\",\"text_ru\":\"Медиа\",\"text_en\":\"Media\",\"html\":\"Медиа\",\"html_en\":\"Media\",\"slug_ru\":\"post-1-ru\",\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":true,\"media\":[{\"type\":\"image\",\"path\":\"/media/posts/present.jpg?v=abcdef012345\",\"alt\":\"Подпись\",\"width\":12,\"height\":34},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4\",\"responsive\":[{\"path\":\"x\"}]},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4?v=1\",\"poster\":\"media/posts/poster.jpg\",\"width\":1920},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4#t=2\",\"poster\":\"\"},{\"path\":\"media/posts/present.jpg\",\"poster_responsive\":7}],\"media_en\":[{\"type\":\"image\",\"path\":\"/media/posts/present.jpg?v=abcdef012345\",\"alt\":\"Подпись\",\"width\":12,\"height\":34},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4\",\"responsive\":[{\"path\":\"x\"}]},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4?v=1\",\"poster\":\"media/posts/poster.jpg\",\"width\":1920},{\"type\":\"video\",\"path\":\"media/posts/clip.mp4#t=2\",\"poster\":\"\"},{\"path\":\"media/posts/present.jpg\",\"poster_responsive\":7}],\"image\":\"/media/posts/present.jpg?v=abcdef012345\",\"image_en\":\"/media/posts/present.jpg?v=abcdef012345\",\"entities\":[],\"views\":0}]}"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "image dimensions and responsive variants",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "write": "media/posts/photo.jpg",
+          "base64": "/9j/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYxLjMuMTAwAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEsAAQEAAAAAAAAAAAAAAAAAAAAHAQEAAAAAAAAAAAAAAAAAAAAAEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAIAAwAwEiAAIRAAMRAP/aAAwDAQACEQMRAD8Av4AAAAAAAAAAAP/Z",
+          "mtime": 1790000100
+        },
+        {
+          "write": "generated/responsive/media-posts-photo-360.webp",
+          "base64": "UklGRjQAAABXRUJQVlA4ICgAAADwAgCdASokABIAPpFGnkslo6KhpWgAsBIJaQAAKUNt8AD++E0AAAAA",
+          "mtime": 1790000100
+        },
+        {
+          "write": "generated/responsive/media-posts-photo-640.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000200
+        },
+        {
+          "write": "generated/responsive/media-posts-photo-720.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000200
+        },
+        {
+          "write": "generated/responsive/media-posts-photo-800.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoSAAgAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000200
+        },
+        {
+          "write": "generated/responsive/media-posts-photo-960.webp",
+          "base64": "UklGRh4AAABXRUJQVlA4TBEAAAAvI0AEAAfQ//73v/+BiOh/AAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/rotated.jpg",
+          "base64": "/9j/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYxLjMuMTAwAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEsAAQEAAAAAAAAAAAAAAAAAAAAHAQEAAAAAAAAAAAAAAAAAAAAAEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAIAAwAwEiAAIRAAMRAP/aAAwDAQACEQMRAD8Av4AAAAAAAAAAAP/Z",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/plain.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAUCAIAAAAVyRqTAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAHUlEQVR4nGP4TzPAMGr0qNGjRo8aPWr0qNFD0WgA7iYBYgsmaVgAAAAASUVORK5CYII=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/anim.gif",
+          "base64": "R0lGODlhFAAMAPcfMQAAACQAAEgAAGwAAJAAALQAANgAAPwAAAAkACQkAEgkAGwkAJAkALQkANgkAPwkAABIACRIAEhIAGxIAJBIALRIANhIAPxIAABsACRsAEhsAGxsAJBsALRsANhsAPxsAACQACSQAEiQAGyQAJCQALSQANiQAPyQAAC0ACS0AEi0AGy0AJC0ALS0ANi0APy0AADYACTYAEjYAGzYAJDYALTYANjYAPzYAAD8ACT8AEj8AGz8AJD8ALT8ANj8APz8AAAAVSQAVUgAVWwAVZAAVbQAVdgAVfwAVQAkVSQkVUgkVWwkVZAkVbQkVdgkVfwkVQBIVSRIVUhIVWxIVZBIVbRIVdhIVfxIVQBsVSRsVUhsVWxsVZBsVbRsVdhsVfxsVQCQVSSQVUiQVWyQVZCQVbSQVdiQVfyQVQC0VSS0VUi0VWy0VZC0VbS0Vdi0Vfy0VQDYVSTYVUjYVWzYVZDYVbTYVdjYVfzYVQD8VST8VUj8VWz8VZD8VbT8Vdj8Vfz8VQAAqiQAqkgAqmwAqpAAqrQAqtgAqvwAqgAkqiQkqkgkqmwkqpAkqrQkqtgkqvwkqgBIqiRIqkhIqmxIqpBIqrRIqthIqvxIqgBsqiRsqkhsqmxsqpBsqrRsqthsqvxsqgCQqiSQqkiQqmyQqpCQqrSQqtiQqvyQqgC0qiS0qki0qmy0qpC0qrS0qti0qvy0qgDYqiTYqkjYqmzYqpDYqrTYqtjYqvzYqgD8qiT8qkj8qmz8qpD8qrT8qtj8qvz8qgAA/yQA/0gA/2wA/5AA/7QA/9gA//wA/wAk/yQk/0gk/2wk/5Ak/7Qk/9gk//wk/wBI/yRI/0hI/2xI/5BI/7RI/9hI//xI/wBs/yRs/0hs/2xs/5Bs/7Rs/9hs//xs/wCQ/ySQ/0iQ/2yQ/5CQ/7SQ/9iQ//yQ/wC0/yS0/0i0/2y0/5C0/7S0/9i0//y0/wDY/yTY/0jY/2zY/5DY/7TY/9jY//zY/wD8/yT8/0j8/2z8/5D8/7T8/9j8//z8/yH/C05FVFNDQVBFMi4wAwEAAAAh+QQEBAAfACwAAAAAFAAMAAAIJwB//RtI8J/AggMPIlzIsKHDhxAdKiw4MaLFixglMqyYMKPHjxEDAgA7",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/pic.avif",
+          "base64": "AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAAD5bWV0YQAAAAAAAAAvaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAFBpY3R1cmVIYW5kbGVyAAAAAA5waXRtAAAAAAABAAAAHmlsb2MAAAAARAAAAQABAAAAAQAAASEAAAAXAAAAKGlpbmYAAAAAAAEAAAAaaW5mZQIAAAAAAQAAYXYwMUNvbG9yAAAAAGppcHJwAAAAS2lwY28AAAAUaXNwZQAAAAAAAAAoAAAAGAAAABBwaXhpAAAAAAMICAgAAAAMYXYxQ4EADAAAAAATY29scm5jbHgAAgACAAIAAAAAF2lwbWEAAAAAAAAAAQABBAECgwQAAAAfbWRhdAoGGBUnu2AQMg0YAAAAUAAAAAs4jeiA",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/lossless.webp",
+          "base64": "UklGRh4AAABXRUJQVlA4TBEAAAAvI0AEAAfQ//73v/+BiOh/AAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/alpha.webp",
+          "base64": "UklGRlgAAABXRUJQVlA4WAoAAAAQAAAAJQAAFQAAQUxQSAoAAAABB9C/iAhERP8DVlA4ICgAAADwAgCdASomABYAPpFGnkslo6KhpWgAsBIJaQAAKUNt8AD++M79KAAA",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/unversioned.jpg",
+          "base64": "/9j/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYxLjMuMTAwAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEsAAQEAAAAAAAAAAAAAAAAAAAAHAQEAAAAAAAAAAAAAAAAAAAAAEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAIAAwAwEiAAIRAAMRAP/aAAwDAQACEQMRAD8Av4AAAAAAAAAAAP/Z",
+          "mtime": 1790000300
+        },
+        {
+          "write": "generated/responsive/media-posts-unversioned-480.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000300
+        },
+        {
+          "write": "media/posts/full.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAUCAIAAAAVyRqTAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAHUlEQVR4nGP4TzPAMGr0qNGjRo8aPWr0qNFD0WgA7iYBYgsmaVgAAAAASUVORK5CYII=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-360.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-480.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-640.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-720.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-800.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-960.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-full-1280.webp",
+          "base64": "UklGRjAAAABXRUJQVlA4ICQAAACwAgCdASoUAAoAPpE6l0eloyIhMAgAsBIJaQAAeyAA/vhNAAA=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/film.mp4",
+          "base64": "Ynl0ZXM=",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/film-poster.jpg",
+          "base64": "/9j/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYxLjMuMTAwAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEsAAQEAAAAAAAAAAAAAAAAAAAAHAQEAAAAAAAAAAAAAAAAAAAAAEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAIAAwAwEiAAIRAAMRAP/aAAwDAQACEQMRAD8Av4AAAAAAAAAAAP/Z",
+          "mtime": 1790000000
+        },
+        {
+          "write": "generated/responsive/media-posts-film-poster-1280.webp",
+          "base64": "UklGRlgAAABXRUJQVlA4WAoAAAAQAAAAJQAAFQAAQUxQSAoAAAABB9C/iAhERP8DVlA4ICgAAADwAgCdASomABYAPpFGnkslo6KhpWgAsBIJaQAAKUNt8AD++M79KAAA",
+          "mtime": 1790000000
+        },
+        {
+          "write": "media/posts/broken.jpg",
+          "base64": "/9j/4AAE",
+          "mtime": 1790000000
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'ru', 'Картинки', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":2560,\"height\":1440},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\"},{\"type\":\"image\",\"path\":\"media/posts/plain.png\"},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\"},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\"},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\"},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\"},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\"},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\"},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":1,\"height\":2},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}]', 'post-1-ru', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        },
+        {
+          "write": "media/posts/unversioned.jpg",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAUCAIAAAAVyRqTAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAHUlEQVR4nGP4TzPAMGr0qNGjRo8aPWr0qNFD0WgA7iYBYgsmaVgAAAAASUVORK5CYII=",
+          "mtime": 1790000400
+        },
+        {
+          "clock": "2026-11-01T10:00:03.001Z"
+        },
+        {
+          "request": {}
+        },
+        {
+          "write": "generated/responsive/media-posts-photo-1280.webp",
+          "base64": "UklGRlgAAABXRUJQVlA4WAoAAAAQAAAAJQAAFQAAQUxQSAoAAAABB9C/iAhERP8DVlA4ICgAAADwAgCdASomABYAPpFGnkslo6KhpWgAsBIJaQAAKUNt8AD++M79KAAA",
+          "mtime": 1790000200
+        },
+        {
+          "clock": "2026-11-01T10:00:06.002Z"
+        },
+        {
+          "request": {}
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"qu7m9IqmyBaEDBAqsyjIZAY3A2a\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Картинки\",\"text_ru\":\"Картинки\",\"text_en\":\"\",\"html\":\"Картинки\",\"html_en\":\"\",\"slug_ru\":\"post-1-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-photo-800.webp?v=abc\",\"width\":18,\"height\":8},{\"path\":\"/generated/responsive/media-posts-photo-640.webp?v=abc\",\"width\":20,\"height\":10},{\"path\":\"/generated/responsive/media-posts-photo-360.webp?v=abc\",\"width\":36,\"height\":18}]},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\",\"width\":32,\"height\":48,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/plain.png\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\",\"width\":20,\"height\":12,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\",\"width\":40,\"height\":24,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\",\"width\":36,\"height\":18,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\",\"width\":38,\"height\":22,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-unversioned-480.webp?v=dd374735b751\",\"width\":20,\"height\":10}]},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-full-360.webp?v=abcdef012345\",\"width\":20,\"height\":10}]},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":32,\"height\":48,\"poster_responsive\":[{\"path\":\"/generated/responsive/media-posts-film-poster-1280.webp?v=p\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-photo-800.webp?v=abc\",\"width\":18,\"height\":8},{\"path\":\"/generated/responsive/media-posts-photo-640.webp?v=abc\",\"width\":20,\"height\":10},{\"path\":\"/generated/responsive/media-posts-photo-360.webp?v=abc\",\"width\":36,\"height\":18}]},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\",\"width\":32,\"height\":48,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/plain.png\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\",\"width\":20,\"height\":12,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\",\"width\":40,\"height\":24,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\",\"width\":36,\"height\":18,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\",\"width\":38,\"height\":22,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-unversioned-480.webp?v=dd374735b751\",\"width\":20,\"height\":10}]},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-full-360.webp?v=abcdef012345\",\"width\":20,\"height\":10}]},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":32,\"height\":48,\"poster_responsive\":[{\"path\":\"/generated/responsive/media-posts-film-poster-1280.webp?v=p\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}],\"image\":\"media/posts/photo.jpg?v=abc\",\"image_en\":\"media/posts/photo.jpg?v=abc\",\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"nz4uITyJrefeJ0Lf6-LWYKY60U9\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Картинки\",\"text_ru\":\"Картинки\",\"text_en\":\"\",\"html\":\"Картинки\",\"html_en\":\"\",\"slug_ru\":\"post-1-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-photo-800.webp?v=abc\",\"width\":18,\"height\":8},{\"path\":\"/generated/responsive/media-posts-photo-640.webp?v=abc\",\"width\":20,\"height\":10},{\"path\":\"/generated/responsive/media-posts-photo-360.webp?v=abc\",\"width\":36,\"height\":18}]},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\",\"width\":32,\"height\":48,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/plain.png\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\",\"width\":20,\"height\":12,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\",\"width\":40,\"height\":24,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\",\"width\":36,\"height\":18,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\",\"width\":38,\"height\":22,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-full-360.webp?v=abcdef012345\",\"width\":20,\"height\":10}]},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":32,\"height\":48,\"poster_responsive\":[{\"path\":\"/generated/responsive/media-posts-film-poster-1280.webp?v=p\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-photo-800.webp?v=abc\",\"width\":18,\"height\":8},{\"path\":\"/generated/responsive/media-posts-photo-640.webp?v=abc\",\"width\":20,\"height\":10},{\"path\":\"/generated/responsive/media-posts-photo-360.webp?v=abc\",\"width\":36,\"height\":18}]},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\",\"width\":32,\"height\":48,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/plain.png\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\",\"width\":20,\"height\":12,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\",\"width\":40,\"height\":24,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\",\"width\":36,\"height\":18,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\",\"width\":38,\"height\":22,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-full-360.webp?v=abcdef012345\",\"width\":20,\"height\":10}]},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":32,\"height\":48,\"poster_responsive\":[{\"path\":\"/generated/responsive/media-posts-film-poster-1280.webp?v=p\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}],\"image\":\"media/posts/photo.jpg?v=abc\",\"image_en\":\"media/posts/photo.jpg?v=abc\",\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"Qon56tMBsx4ppdYdsx2yRp604x0\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"Картинки\",\"text_ru\":\"Картинки\",\"text_en\":\"\",\"html\":\"Картинки\",\"html_en\":\"\",\"slug_ru\":\"post-1-ru\",\"slug_en\":null,\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":true,\"has_en\":false,\"media\":[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-photo-800.webp?v=abc\",\"width\":18,\"height\":8},{\"path\":\"/generated/responsive/media-posts-photo-640.webp?v=abc\",\"width\":20,\"height\":10},{\"path\":\"/generated/responsive/media-posts-photo-360.webp?v=abc\",\"width\":36,\"height\":18},{\"path\":\"/generated/responsive/media-posts-photo-1280.webp?v=abc\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\",\"width\":32,\"height\":48,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/plain.png\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\",\"width\":20,\"height\":12,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\",\"width\":40,\"height\":24,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\",\"width\":36,\"height\":18,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\",\"width\":38,\"height\":22,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-full-360.webp?v=abcdef012345\",\"width\":20,\"height\":10}]},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":32,\"height\":48,\"poster_responsive\":[{\"path\":\"/generated/responsive/media-posts-film-poster-1280.webp?v=p\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/photo.jpg?v=abc\",\"width\":48,\"height\":32,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-photo-800.webp?v=abc\",\"width\":18,\"height\":8},{\"path\":\"/generated/responsive/media-posts-photo-640.webp?v=abc\",\"width\":20,\"height\":10},{\"path\":\"/generated/responsive/media-posts-photo-360.webp?v=abc\",\"width\":36,\"height\":18},{\"path\":\"/generated/responsive/media-posts-photo-1280.webp?v=abc\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/rotated.jpg?v=r\",\"width\":32,\"height\":48,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/plain.png\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/anim.gif?v=g\",\"width\":20,\"height\":12,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/pic.avif?v=a\",\"width\":40,\"height\":24,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/lossless.webp?v=l\",\"width\":36,\"height\":18,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/alpha.webp?v=x\",\"width\":38,\"height\":22,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/unversioned.jpg\",\"width\":30,\"height\":20,\"responsive\":[]},{\"type\":\"image\",\"path\":\"media/posts/full.png?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[{\"path\":\"/generated/responsive/media-posts-full-360.webp?v=abcdef012345\",\"width\":20,\"height\":10}]},{\"type\":\"video\",\"path\":\"media/posts/film.mp4\",\"poster\":\"media/posts/film-poster.jpg?v=p\",\"width\":32,\"height\":48,\"poster_responsive\":[{\"path\":\"/generated/responsive/media-posts-film-poster-1280.webp?v=p\",\"width\":38,\"height\":22}]},{\"type\":\"image\",\"path\":\"media/posts/broken.jpg?v=b\",\"width\":5,\"height\":6}],\"image\":\"media/posts/photo.jpg?v=abc\",\"image_en\":\"media/posts/photo.jpg?v=abc\",\"entities\":[],\"views\":0}]}"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "entities",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'Linked', NULL, NULL, '[]', 'post-1-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'draft', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'Private', NULL, NULL, '[]', 'post-2-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', NULL, NULL, 3, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'en', 'No links', NULL, NULL, '[]', 'post-3-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO knowledge_entities (id, kind, slug, title_ru, title_en, created_at, updated_at) VALUES\n               (101, 'company', 'acme', 'Акме', 'Acme', '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'),\n               (102, 'model', 'gpt', 'GPT', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'),\n               (103, 'company', 'beta', 'Бета', 'Beta', '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'),\n               (104, 'legacy', 'old', 'Старое', 'Old', '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'),\n               (105, 'topic', 'ai', 'ИИ', 'AI', '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');\n             INSERT INTO draft_entity_links (draft_id, entity_id, link_role, created_at) VALUES\n               (1, 101, 'focus', '2026-11-01T10:00:00.000Z'), (1, 102, 'mention', '2026-11-01T10:00:00.000Z'), (1, 103, 'other', '2026-11-01T10:00:00.000Z'),\n               (1, 104, 'focus', '2026-11-01T10:00:00.000Z'), (1, 105, 'focus', '2026-11-01T10:00:00.000Z'), (1, 7, 'mention', '2026-11-01T10:00:00.000Z'),\n               (2, 101, 'focus', '2026-11-01T10:00:00.000Z'), (3, 5, 'focus', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        },
+        {
+          "sql": "UPDATE knowledge_entities SET title_en = 'Acme Inc' WHERE id = 101;"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "sql": "UPDATE knowledge_entities SET title_en = 'Hidden' WHERE id = 6;"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"y0CH3yoJFEK-5lyksxCeRkJkVVc\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"No links\",\"html\":\"\",\"html_en\":\"No links\",\"slug_ru\":null,\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[{\"kind\":\"company\",\"slug\":\"google\",\"title_ru\":\"Google\",\"title_en\":\"Google\",\"link_role\":\"focus\"}],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Linked\",\"html\":\"\",\"html_en\":\"Linked\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[{\"kind\":\"company\",\"slug\":\"acme\",\"title_ru\":\"Акме\",\"title_en\":\"Acme\",\"link_role\":\"focus\"},{\"kind\":\"company\",\"slug\":\"beta\",\"title_ru\":\"Бета\",\"title_en\":\"Beta\",\"link_role\":\"mention\"},{\"kind\":\"model\",\"slug\":\"claude\",\"title_ru\":\"Claude\",\"title_en\":\"Claude\",\"link_role\":\"mention\"},{\"kind\":\"model\",\"slug\":\"gpt\",\"title_ru\":\"GPT\",\"title_en\":null,\"link_role\":\"mention\"},{\"kind\":\"topic\",\"slug\":\"ai\",\"title_ru\":\"ИИ\",\"title_en\":\"AI\",\"link_role\":\"focus\"}],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"tmle6pkFV2a-z_9uxSllkxW82p9\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"No links\",\"html\":\"\",\"html_en\":\"No links\",\"slug_ru\":null,\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[{\"kind\":\"company\",\"slug\":\"google\",\"title_ru\":\"Google\",\"title_en\":\"Google\",\"link_role\":\"focus\"}],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Linked\",\"html\":\"\",\"html_en\":\"Linked\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[{\"kind\":\"company\",\"slug\":\"acme\",\"title_ru\":\"Акме\",\"title_en\":\"Acme Inc\",\"link_role\":\"focus\"},{\"kind\":\"company\",\"slug\":\"beta\",\"title_ru\":\"Бета\",\"title_en\":\"Beta\",\"link_role\":\"mention\"},{\"kind\":\"model\",\"slug\":\"claude\",\"title_ru\":\"Claude\",\"title_en\":\"Claude\",\"link_role\":\"mention\"},{\"kind\":\"model\",\"slug\":\"gpt\",\"title_ru\":\"GPT\",\"title_en\":null,\"link_role\":\"mention\"},{\"kind\":\"topic\",\"slug\":\"ai\",\"title_ru\":\"ИИ\",\"title_en\":\"AI\",\"link_role\":\"focus\"}],\"views\":0}]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"tmle6pkFV2a-z_9uxSllkxW82p9\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "cache invalidation",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'First', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/late.jpg?v=abcdef012345\"}]', 'post-1-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        },
+        {
+          "write": "media/posts/late.jpg",
+          "base64": "/9j/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYxLjMuMTAwAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEsAAQEAAAAAAAAAAAAAAAAAAAAHAQEAAAAAAAAAAAAAAAAAAAAAEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAIAAwAwEiAAIRAAMRAP/aAAwDAQACEQMRAD8Av4AAAAAAAAAAAP/Z",
+          "mtime": 1790000000
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "clock": "2026-11-01T10:00:03.001Z"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'draft', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'Private', NULL, NULL, '[]', 'post-2-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nUPDATE drafts SET updated_at = '2026-11-01T11:00:00.000Z' WHERE id = 2;"
+        },
+        {
+          "sql": "INSERT INTO post_metrics (publication_key, target, metric_name, value) VALUES ('post:1', 'threads_en', 'views', 3);"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "sql": "INSERT INTO post_metrics (publication_key, target, metric_name, value) VALUES ('post:1', 'telegram', 'views', 42);"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "sql": "UPDATE post_metrics SET value = 43 WHERE publication_key = 'post:1' AND target = 'telegram';"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "external_sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', NULL, NULL, 3, '2026-10-31T10:00:00.000Z', '2026-11-01T11:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'en', 'Written elsewhere', NULL, NULL, '[]', 'post-3-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-11-01T11:00:00.000Z');"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "sql": "UPDATE post_locales SET site_enabled = 0 WHERE draft_id = 3;"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        },
+        {
+          "sql": "DELETE FROM drafts WHERE id = 1;"
+        },
+        {
+          "request": {
+            "if_none_match": "$previous"
+          }
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"POhhKBW7gHAsJ1FzY4NpRCOgi2K\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"POhhKBW7gHAsJ1FzY4NpRCOgi2K\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"6BSwNPI5fb-WCKA8ODgs7dz0k8i\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/late.jpg?v=abcdef012345\",\"width\":48,\"height\":32,\"responsive\":[]}],\"image\":null,\"image_en\":\"media/posts/late.jpg?v=abcdef012345\",\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"6BSwNPI5fb-WCKA8ODgs7dz0k8i\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"xlMu-DZt1jV9MjTFUbAaD2TLyCC\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/late.jpg?v=abcdef012345\",\"width\":48,\"height\":32,\"responsive\":[]}],\"image\":null,\"image_en\":\"media/posts/late.jpg?v=abcdef012345\",\"entities\":[],\"views\":42}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"trGpSO_eahbNJjMHrPKNRR_HWfG\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/late.jpg?v=abcdef012345\",\"width\":48,\"height\":32,\"responsive\":[]}],\"image\":null,\"image_en\":\"media/posts/late.jpg?v=abcdef012345\",\"entities\":[],\"views\":43}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"xPx7s2TLIJ8cXOmY6Qnck8LRx54\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Written elsewhere\",\"html\":\"\",\"html_en\":\"Written elsewhere\",\"slug_ru\":null,\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/late.jpg?v=abcdef012345\",\"width\":48,\"height\":32,\"responsive\":[]}],\"image\":null,\"image_en\":\"media/posts/late.jpg?v=abcdef012345\",\"entities\":[],\"views\":43}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"trGpSO_eahbNJjMHrPKNRR_HWfG\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/late.jpg?v=abcdef012345\",\"width\":48,\"height\":32,\"responsive\":[]}],\"image\":null,\"image_en\":\"media/posts/late.jpg?v=abcdef012345\",\"entities\":[],\"views\":43}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "changes returned during a wait",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'First', NULL, NULL, '[{\"type\":\"image\",\"path\":\"media/posts/wait.jpg?v=abcdef012345\"}]', 'post-1-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'published', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'Scheduled', NULL, NULL, '[]', 'post-2-en', NULL, NULL, 1, '2026-11-01T10:00:01.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=4"
+          },
+          "during": [
+            {
+              "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', NULL, NULL, 3, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'en', 'New post', NULL, NULL, '[]', 'post-3-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+            }
+          ]
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=2"
+          },
+          "during": [
+            {
+              "clock": "2026-11-01T10:00:01.000Z"
+            }
+          ]
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=2"
+          },
+          "during": [
+            {
+              "write": "media/posts/wait.jpg",
+              "base64": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAUCAIAAAAVyRqTAAAACXBIWXMAAAABAAAAAQBPJcTWAAAAHUlEQVR4nGP4TzPAMGr0qNGjRo8aPWr0qNFD0WgA7iYBYgsmaVgAAAAASUVORK5CYII=",
+              "mtime": 1790000000
+            }
+          ]
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=4"
+          },
+          "during": [
+            {
+              "clock": "2026-11-01T10:00:05.000Z"
+            }
+          ]
+        },
+        {
+          "request": {
+            "if_none_match": "$previous",
+            "prefer": "wait=1"
+          }
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"POhhKBW7gHAsJ1FzY4NpRCOgi2K\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"EGmzhAxPphgJN1UNb0W9lBcdC8q\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"New post\",\"html\":\"\",\"html_en\":\"New post\",\"slug_ru\":null,\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"AbU1642425HoPDIbqLfvOeA0Csh\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"New post\",\"html\":\"\",\"html_en\":\"New post\",\"slug_ru\":null,\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:2\",\"post_id\":2,\"date\":\"2026-11-01T10:00:01.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Scheduled\",\"html\":\"\",\"html_en\":\"Scheduled\",\"slug_ru\":null,\"slug_en\":\"post-2-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"AbU1642425HoPDIbqLfvOeA0Csh\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"QDb_pdWY8MlwL0Mv8HppLZUev56\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:3\",\"post_id\":3,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"New post\",\"html\":\"\",\"html_en\":\"New post\",\"slug_ru\":null,\"slug_en\":\"post-3-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:2\",\"post_id\":2,\"date\":\"2026-11-01T10:00:01.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Scheduled\",\"html\":\"\",\"html_en\":\"Scheduled\",\"slug_ru\":null,\"slug_en\":\"post-2-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"First\",\"html\":\"\",\"html_en\":\"First\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[{\"type\":\"image\",\"path\":\"media/posts/wait.jpg?v=abcdef012345\",\"width\":30,\"height\":20,\"responsive\":[]}],\"image\":null,\"image_en\":\"media/posts/wait.jpg?v=abcdef012345\",\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 304,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"QDb_pdWY8MlwL0Mv8HppLZUev56\"",
+            "cache-control": "no-cache"
+          },
+          "body": null
+        }
+      ],
+      "events": []
+    },
+    {
+      "name": "malformed rows are dropped and journalled",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (1, 7, 'published', '{}', NULL, NULL, 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (1, 'en', 'Valid', NULL, NULL, '[]', 'post-1-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (2, 7, 'published', '{}', NULL, NULL, 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (2, 'en', 'Text views', NULL, NULL, '[]', 'post-2-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (3, 7, 'published', '{}', NULL, NULL, -4, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (3, 'en', 'Negative post id', NULL, NULL, '[]', 'post-3-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (4, 7, 'published', '{}', NULL, NULL, 2.5, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (4, 'en', 'Fractional post id', NULL, NULL, '[]', X'0102', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (5, 7, 'published', '{}', NULL, NULL, 5, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (5, 'en', 'Infinite views', NULL, NULL, '[]', 'post-5-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_metrics (publication_key, target, metric_name, value) VALUES\n               ('post:2', 'telegram', 'views', 'many'), ('post:5', 'telegram', 'views', 1e999);"
+        },
+        {
+          "request": {}
+        },
+        {
+          "clock": "2026-11-01T10:00:01.000Z"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, post_id, created_at, updated_at)\n     VALUES (6, 7, 'published', '{}', NULL, NULL, 6, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at)\n       VALUES (6, 'en', 'Another', NULL, NULL, '[]', 'post-6-en', NULL, NULL, 1, '2026-11-01T08:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "request": {}
+        }
+      ],
+      "results": [
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"y6A-mpw-jqJT8EVqSZmnk51vBdx\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Valid\",\"html\":\"\",\"html_en\":\"Valid\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        },
+        {
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"RAOqKFcWKrC6UN-iu4i6zDJBu9w\"",
+            "cache-control": "no-cache"
+          },
+          "body": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[{\"id\":\"post:6\",\"post_id\":6,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Another\",\"html\":\"\",\"html_en\":\"Another\",\"slug_ru\":null,\"slug_en\":\"post-6-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0},{\"id\":\"post:1\",\"post_id\":1,\"date\":\"2026-11-01T08:00:00.000Z\",\"updated_at_ru\":null,\"updated_at_en\":null,\"text\":\"\",\"text_ru\":\"\",\"text_en\":\"Valid\",\"html\":\"\",\"html_en\":\"Valid\",\"slug_ru\":null,\"slug_en\":\"post-1-en\",\"seo_title_ru\":null,\"seo_title_en\":null,\"has_ru\":false,\"has_en\":true,\"media\":[],\"media_en\":[],\"image\":null,\"image_en\":null,\"entities\":[],\"views\":0}]}"
+        }
+      ],
+      "events": [
+        {
+          "publication_key": "post:5",
+          "event_type": "site.feed.item_invalid",
+          "severity": "warn",
+          "target": null,
+          "message": "Post post:5 dropped from the public feed: Invalid input: expected number, received Infinity",
+          "details_json": "{\"publication_key\":\"post:5\",\"issues\":[{\"expected\":\"number\",\"code\":\"invalid_type\",\"received\":\"Infinity\",\"path\":[\"views\"],\"message\":\"Invalid input: expected number, received Infinity\"}]}",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "publication_key": "post:2.5",
+          "event_type": "site.feed.item_invalid",
+          "severity": "warn",
+          "target": null,
+          "message": "Post post:2.5 dropped from the public feed: Invalid input: expected int, received number",
+          "details_json": "{\"publication_key\":\"post:2.5\",\"issues\":[{\"expected\":\"int\",\"format\":\"safeint\",\"code\":\"invalid_type\",\"path\":[\"post_id\"],\"message\":\"Invalid input: expected int, received number\"},{\"expected\":\"string\",\"code\":\"invalid_type\",\"path\":[\"slug_en\"],\"message\":\"Invalid input: expected string, received Uint8Array\"}]}",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "publication_key": "post:2",
+          "event_type": "site.feed.item_invalid",
+          "severity": "warn",
+          "target": null,
+          "message": "Post post:2 dropped from the public feed: Invalid input: expected number, received string",
+          "details_json": "{\"publication_key\":\"post:2\",\"issues\":[{\"expected\":\"number\",\"code\":\"invalid_type\",\"path\":[\"views\"],\"message\":\"Invalid input: expected number, received string\"}]}",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "publication_key": "post:-4",
+          "event_type": "site.feed.item_invalid",
+          "severity": "warn",
+          "target": null,
+          "message": "Post post:-4 dropped from the public feed: Too small: expected number to be >0",
+          "details_json": "{\"publication_key\":\"post:-4\",\"issues\":[{\"origin\":\"number\",\"code\":\"too_small\",\"minimum\":0,\"inclusive\":false,\"path\":[\"post_id\"],\"message\":\"Too small: expected number to be >0\"}]}",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        }
+      ]
+    }
+  ]
+}
