@@ -64,6 +64,7 @@ dependencies = [
  "jiff",
  "runtime",
  "serde_json",
+ "story_render",
  "tokio",
 ]
 

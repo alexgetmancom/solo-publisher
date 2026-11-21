@@ -5,7 +5,7 @@
 //! contain yet. Each of those refuses with `not available in this build:
 //! <area>`, which the bot shows as the error it is; none pretends the work
 //! happened. The ones that return nothing (the worker bell, Story
-//! derivatives, a Story card left for the renderer) log instead.
+//! derivatives) log instead.
 
 use bot::{Adapters, Fut, Host};
 use content::Locale;
@@ -32,21 +32,13 @@ use runtime::ffmpeg::FfmpegMediaProbe;
 use serde_json::{Value, json};
 
 const PUBLISH_WORKER: &str = "publish worker";
-const STORY_CARD_RENDERER: &str = "Story card renderer";
 const STORY_DERIVATIVES: &str = "Story derivatives (media runtime)";
 const CONNECT_LINKS: &str = "channel connect links (channels)";
 const ZERNIO: &str = "Zernio";
 const YOUTUBE: &str = "YouTube uploads";
 
 /// Every area above, for the startup line.
-pub const AREAS: [&str; 6] = [
-    PUBLISH_WORKER,
-    STORY_CARD_RENDERER,
-    STORY_DERIVATIVES,
-    CONNECT_LINKS,
-    ZERNIO,
-    YOUTUBE,
-];
+pub const AREAS: [&str; 5] = [PUBLISH_WORKER, STORY_DERIVATIVES, CONNECT_LINKS, ZERNIO, YOUTUBE];
 
 fn message(area: &str) -> String {
     format!("not available in this build: {area}")
@@ -123,28 +115,10 @@ impl WorkerBell for AppHost {
     }
 }
 
-/// The store is real; the renderer that turns a queued card into its image
-/// is not here, so a queue that leaves cards waiting for it says so. The bot
-/// then tells the operator the cards did not finish, as it would for a stuck
-/// renderer.
+/// The store; the story-cards loop renders what it queues.
 impl StoryCards for AppHost {
     fn queue(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.queue(sqlite, draft_id)?;
-        if self
-            .story_cards
-            .for_draft(sqlite, draft_id)?
-            .iter()
-            .any(|card| card.status == "queued")
-        {
-            log(
-                LogLevel::Warn,
-                &message(STORY_CARD_RENDERER),
-                Some(
-                    json!({"draftId": draft_id, "hint": "the cards stay queued until a build with the renderer runs"}),
-                ),
-            );
-        }
-        Ok(())
+        self.story_cards.queue(sqlite, draft_id)
     }
     fn for_draft(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Vec<StoryCardState>> {
         self.story_cards.for_draft(sqlite, draft_id)

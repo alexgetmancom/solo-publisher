@@ -6,6 +6,7 @@
 //! loudly (`unported.rs`).
 
 mod unported;
+mod workers;
 
 use std::process::ExitCode;
 use std::rc::Rc;
@@ -18,6 +19,7 @@ use db::BackendDb;
 use domain::application::ports::SystemClock;
 use foundation::config::{SharedConfig, load_config};
 use foundation::logger::{LogLevel, configure_logging, log};
+use runtime::scheduler::ScheduledLoop;
 use serde_json::json;
 use tokio::signal::unix::{Signal, SignalKind, signal};
 
@@ -136,15 +138,25 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         Ok(runner) => runner,
         Err(error) => return failed(Some(bot), "Telegram bot could not start", &error.to_string()),
     };
+    let loops = workers::start(&bot);
     let not_in_this_build = [
-        ["http server", "workers", "stored platform credentials (channels)"].as_slice(),
+        [
+            "http server",
+            "the other workers",
+            "stored platform credentials (channels)",
+        ]
+        .as_slice(),
         unported::AREAS.as_slice(),
     ]
     .concat();
     log(
         LogLevel::Info,
         "studio started",
-        Some(json!({"runs": ["telegram bot (long polling)"], "notInThisBuild": not_in_this_build})),
+        Some(json!({
+            "runs": ["telegram bot (long polling)", "workers"],
+            "workers": loops.iter().map(ScheduledLoop::name).collect::<Vec<_>>(),
+            "notInThisBuild": not_in_this_build,
+        })),
     );
     let signal = tokio::select! {
         signal = next_signal(&mut interrupt, &mut terminate) => signal,
@@ -159,6 +171,9 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
     log(LogLevel::Info, "shutdown requested", Some(json!({"signal": signal})));
     let stopping = async {
         let stopped = runner.stop().await;
+        for scheduled in &loops {
+            scheduled.stop().await;
+        }
         // Updates already handed out finish before the database closes.
         bot.settled().await;
         stopped
