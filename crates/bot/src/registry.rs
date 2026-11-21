@@ -8,7 +8,9 @@
 
 use std::collections::BTreeMap;
 
+use content::Locale;
 use domain::application::conversation_flow::PublicationKind;
+use domain::publishing::video_types::{VideoTarget, VideoTechnicalCheck};
 
 use crate::Fut;
 use crate::callback::{ScreenCallback, ScreenId};
@@ -43,6 +45,37 @@ impl MessageResult {
 }
 
 pub type MessageHandler = for<'a> fn(&'a Ctx) -> Fut<'a, crate::Result<MessageResult>>;
+
+/// A video Telegram already accepted, carried by id rather than by the
+/// message that brought it (`TelegramVideoFile`): the intake stores the file
+/// only once the operator has said it is a video publication.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TelegramVideoFile {
+    pub file_id: String,
+    pub name: String,
+    pub mime: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size_bytes: Option<i64>,
+}
+
+/// A stored intake video handed to the video conversation, with where it goes.
+pub struct VideoHandoff {
+    pub actor_id: i64,
+    pub selected: Vec<VideoTarget>,
+    pub video_locale: Locale,
+    pub asset_id: i64,
+    pub technical: VideoTechnicalCheck,
+}
+
+/// What the video area does for the intake's video entry: store the captured
+/// file as a Content asset (`storeTelegramVideo`), and open the video
+/// conversation on it (`saveVideoState` + `attachVideoAsset`).
+#[derive(Clone, Copy)]
+pub struct VideoIntake {
+    pub store: for<'a> fn(&'a Ctx, &'a TelegramVideoFile) -> Fut<'a, crate::Result<i64>>,
+    pub attach: for<'a> fn(&'a Ctx, VideoHandoff) -> Fut<'a, crate::Result<Vec<Effect>>>,
+}
 
 /// The stages a message passes before the publication flows (`bot.ts:147-155`),
 /// in this order.
@@ -87,6 +120,7 @@ pub struct Registry {
     publication_messages: [Option<MessageHandler>; 2],
     stages: BTreeMap<MessageStage, MessageHandler>,
     menus: Vec<MenuDef>,
+    video_intake: Option<VideoIntake>,
 }
 
 impl Registry {
@@ -156,6 +190,12 @@ impl Registry {
         self.menus.push(menu);
     }
 
+    /// The video area's side of the intake's video entry.
+    pub fn video_intake(&mut self, intake: VideoIntake) {
+        assert!(self.video_intake.is_none(), "video intake registered twice");
+        self.video_intake = Some(intake);
+    }
+
     // ---- reads ----
 
     pub fn command_handler(&self, name: &str) -> Option<Handler> {
@@ -195,6 +235,10 @@ impl Registry {
         self.stages.values().copied()
     }
 
+    pub fn video_intake_handler(&self) -> Option<VideoIntake> {
+        self.video_intake
+    }
+
     pub fn menu_def(&self, id: &str) -> Option<&MenuDef> {
         self.menus.iter().find(|menu| menu.id == id)
     }
@@ -232,6 +276,9 @@ impl Registry {
                     missing.push((area, format!("text trigger {text:?}")));
                 }
             }
+        }
+        if self.video_intake.is_none() {
+            missing.push(("video", "video intake handoff".to_owned()));
         }
         if self.menu_def(crate::screens::entry::SETTINGS_MENU).is_none() {
             missing.push(("settings", "menu settings-menu".to_owned()));

@@ -1,30 +1,13 @@
 //! The callback boundary and the menu plugin's format, checked on the core
-//! alone: the parts of the callback goldens that reach no area yet, and the
-//! boundary rules (spec §5.4–5.7) driven through the main menu, the one menu
-//! the core owns.
+//! alone: the boundary rules (spec §5.4–5.7) driven through the main menu,
+//! the one menu the core owns.
 
 #[allow(dead_code)]
 mod support;
 
 use bot::menu::tiny_hash;
 use serde_json::{Value, json};
-use support::pending::pending_for;
-use support::{Harness, ensure_seeds, on_bot_thread, replay_steps, seed_database};
-
-/// Callback goldens whose first steps reach only the core, and how many.
-const CORE_PREFIXES: &[(&str, usize)] = &[("callback-menu-legacy", 3), ("callback-unknown", 3)];
-
-#[test]
-fn the_core_steps_of_the_callback_goldens_replay() {
-    ensure_seeds();
-    for (case, steps) in CORE_PREFIXES {
-        assert!(
-            !pending_for("callbacks", case).is_empty(),
-            "callbacks/{case} replays whole now: remove it from CORE_PREFIXES"
-        );
-        replay_steps("callbacks", case, *steps).unwrap_or_else(|error| panic!("callbacks/{case}: {error}"));
-    }
-}
+use support::{Harness, ensure_seeds, on_bot_thread, seed_database};
 
 const ADMIN: i64 = 1001;
 

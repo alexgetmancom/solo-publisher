@@ -7,7 +7,7 @@
 //! area that still misses a registration).
 
 /// Areas of the bot (`crates/bot/src/screens/<area>.rs`) not ported yet.
-pub const PENDING_AREAS: &[&str] = &["intake", "post", "video", "queue", "settings", "notices", "deploy"];
+pub const PENDING_AREAS: &[&str] = &["video", "notices"];
 
 /// Areas a case reaches beyond its own directory (callbacks/ and entry/ belong
 /// to the core), derived from the updates each case feeds: the screens its
@@ -20,13 +20,10 @@ pub const CASE_NEEDS: &[(&str, &[&str])] = &[
     ("callbacks/callback-stale-card", &["intake", "post"]),
     ("callbacks/callback-superseded", &["queue"]),
     ("callbacks/callback-unknown", &["intake", "post", "queue"]),
-    ("intake/intake-kind-choice", &["post"]),
     ("intake/intake-kind-post", &["post"]),
-    ("intake/intake-markdown-article", &["post", "queue"]),
     ("intake/intake-markdown-rather-post", &["post"]),
     ("intake/intake-photo-large", &["post"]),
     ("intake/intake-text-entry-video", &["post"]),
-    ("intake/intake-unsupported", &["post"]),
     ("intake/post-album-edit", &["post"]),
     ("intake/post-album-give-up", &["post"]),
     ("intake/post-album-thread-part", &["post"]),
@@ -72,7 +69,6 @@ pub const CASE_NEEDS: &[(&str, &[&str])] = &[
     ("post/story-choice-publish", &["intake"]),
     ("post/story-choice-schedule", &["intake"]),
     ("queue/queue-pages", &["post", "video"]),
-    ("settings/settings-system-timezone", &["intake", "post"]),
     ("settings/settings-youtube-signature", &["intake", "post"]),
     ("video/video-card-actions", &["intake", "post"]),
     ("video/video-card-draft-actions", &["intake", "post"]),

@@ -395,6 +395,17 @@ impl Api {
         self.call_as("getFile", Payload::new().set("file_id", file_id)).await
     }
 
+    /// The bytes of a file `getFile` named by a relative path, past no
+    /// transformer: it is the file endpoint, not a method.
+    pub async fn download_file(
+        &self,
+        file_path: &str,
+        max_bytes: u64,
+        timeout: Duration,
+    ) -> Result<transport::Downloaded, transport::TransportError> {
+        self.inner.transport.download(file_path, max_bytes, timeout).await
+    }
+
     /// `{ chat_id, <key>: file, ...other }` for `sendPhoto`, `sendVideo`,
     /// `sendDocument` and `sendAnimation`.
     pub async fn send_file(
@@ -515,6 +526,10 @@ mod tests {
                 .push((request.method, String::from_utf8_lossy(&body).into_owned()));
             let answer = self.answers.borrow_mut().remove(0);
             Box::pin(async move { Ok(answer.to_string().into_bytes()) })
+        }
+
+        fn download(&self, _: &str, _: u64, _: Duration) -> Fut<'_, Result<transport::Downloaded, TransportError>> {
+            unreachable!("the client tests download nothing")
         }
     }
 

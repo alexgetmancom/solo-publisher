@@ -17,4 +17,9 @@ macro_rules! areas {
 
 areas! {
     entry,
+    intake,
+    queue,
+    deploy,
+    settings,
+    post,
 }

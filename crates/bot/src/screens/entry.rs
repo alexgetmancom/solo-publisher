@@ -27,7 +27,7 @@ pub const SETTINGS_MENU: MenuId = "settings-menu";
 
 /// The English `menu.button`: keyboards sent before the interface became
 /// Russian-only still type it, so it stays a trigger.
-const MENU_BUTTON_EN: &str = "☰ Menu";
+pub(crate) const MENU_BUTTON_EN: &str = "☰ Menu";
 
 pub fn register(registry: &mut Registry) {
     registry.command("start", show_bot_menu);

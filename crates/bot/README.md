@@ -30,7 +30,9 @@ Everything is registered in `register`, never by editing shared files:
   `view`/`retry` are shared and already registered.
 - text trigger → `registry.hears(&["📝 Text", "📝 Текст"], handler)` (EN variants stay: old keyboards send them);
   message stage → `registry.message_stage(MessageStage::Settings | Intake, fn)`; menu → `registry.menu(MenuDef { … })`.
-- intake routes: wrap in `publication::run_callback_action(ctx, "<actor>:intake", …)` as TS does.
+- intake routes: wrap in `publication::run_callback_action(ctx, "<actor>:intake", …)` as TS does. The video area
+  registers `registry.video_intake(VideoIntake { store, attach })`: storing the intake's captured video and opening
+  the video conversation on it.
 
 Handlers are plain `fn`s returning `Fut<'_, …>` (`Box::pin(async move { … })`); build screens as `Vec<Effect>` and let
 `effects::execute` decide edit-in-place vs new message. Background work goes through `ctx.bot.spawn` (the replay waits
@@ -44,7 +46,7 @@ Studio services come from `ctx.services()`; boundaries Studio needs but the bot 
 
 ```
 cargo test -p bot --test goldens <area> -- --nocapture   # PASS / NOT PORTED / FAIL per case, first diff shown
-cargo test -p bot --test boundary                       # core boundary rules + core-only prefixes of callback goldens
+cargo test -p bot --test boundary                       # core boundary rules
 ```
 
 Each case replays on the database the TS recorder seeded right before its first step
@@ -52,6 +54,7 @@ Each case replays on the database the TS recorder seeded right before its first 
 missing or stale). Cross-area needs per case: `CASE_NEEDS` in `tests/support/pending.rs`. Recorder triggers (worker
 ticks) replay from `tests/support/triggers.rs`, one row per trigger name. Boundaries the replay reaches
 are implemented in `tests/support/host.rs` (unimplemented ones panic with their name). Plain HTTP the TS bot made
-(file downloads, deploy agent, Zernio; `method: "http"` in goldens) has no fake yet — the first area that needs it adds
-an HTTP boundary and records it like the recorder does. Steps feeding several updates at once compare per chat.
+(`method: "http"` in goldens) is recorded by the fakes beneath it: Telegram file downloads go through
+`Transport::download` (the fake serves the local file, as the recorder's `fileDownload` did), the deploy agent through
+its own boundary. Steps feeding several updates at once compare per chat.
 `entry/bootstrap` differs on purpose (`setMyCommands` description in Russian) and is asserted as such.

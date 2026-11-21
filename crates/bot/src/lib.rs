@@ -13,16 +13,20 @@
 //! awaits, and the per-chat ordering is the only ordering there is.
 
 pub mod action_lock;
+pub mod albums;
 pub mod api;
 pub mod bot;
 mod boundary;
 pub mod callback;
 pub mod cards;
 pub mod context;
+pub mod deployment;
 pub mod dialog_ui;
 pub mod effects;
 pub mod error_text;
+pub mod media_ingress;
 pub mod menu;
+pub mod message;
 pub mod publication;
 pub mod queue_time;
 pub mod registry;

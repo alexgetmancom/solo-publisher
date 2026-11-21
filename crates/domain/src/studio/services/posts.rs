@@ -1524,7 +1524,9 @@ impl PublicationPipeline for PostService<'_> {
     }
 
     async fn retry_target(&self, actor_id: i64, publication_id: i64, target: &str) -> Result<PublicationRetrySummary> {
-        let retry = PostService::retry_target(self, actor_id, publication_id, Some(target))?;
+        // `target ? … : retryable`: an empty target is every retryable one.
+        let target = (!target.is_empty()).then_some(target);
+        let retry = PostService::retry_target(self, actor_id, publication_id, target)?;
         Ok(PublicationRetrySummary {
             requeued: retry.requeued as u32,
             already_queued: retry.already_queued as u32,

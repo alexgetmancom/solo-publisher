@@ -8,10 +8,14 @@
 //! harness runs itself when they are missing or no longer match the committed
 //! goldens.
 
+pub mod deploy_agent;
 pub mod host;
 pub mod pending;
+pub mod reminders;
+pub mod story_cards;
 pub mod telegram;
 pub mod triggers;
+pub mod zernio;
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
@@ -29,8 +33,10 @@ use jiff::Timestamp;
 use serde_json::{Value, json};
 use std::future::Future;
 
+use deploy_agent::GoldenDeployAgent;
 use host::{FixedClock, GoldenAdapters, GoldenHost};
 use telegram::FakeTelegram;
+use zernio::GoldenZernio;
 
 const BOT_TOKEN: &str = "123456:TEST-TOKEN";
 const NOW: &str = "2026-08-20T09:00:00.000Z";
@@ -51,7 +57,7 @@ fn seeds_dir() -> PathBuf {
 }
 
 /// The recorder's temporary directory, which `<tmp>` stands for.
-fn recorder_tmp() -> PathBuf {
+pub fn recorder_tmp() -> PathBuf {
     repo_root().join("_trash-rust/tmp/bot-goldens")
 }
 
@@ -231,6 +237,64 @@ fn deliberate_deviations(area: &str, case: &str, steps: &mut [Value]) {
         );
         *description = json!(t(Key::BotCommandStart, &[]));
     }
+    without_language_button(steps);
+}
+
+/// The System menu has no 🌐 Language button in Rust (Russian only): every
+/// recorded System keyboard loses it, and its other buttons carry the hash of
+/// the keyboard without it, in the calls and in the updates that tap them.
+fn without_language_button(steps: &mut [Value]) {
+    const MENU: &str = "settings-system/";
+    fn keyboards(value: &mut Value, renamed: &mut Vec<(String, String)>) {
+        match value {
+            Value::Array(items) => items.iter_mut().for_each(|item| keyboards(item, renamed)),
+            Value::Object(object) => {
+                if let Some(Value::Array(rows)) = object.get_mut("inline_keyboard") {
+                    let system = rows.iter().filter_map(Value::as_array).flatten().any(|button| {
+                        button["callback_data"]
+                            .as_str()
+                            .is_some_and(|data| data.starts_with(MENU))
+                    });
+                    if system {
+                        let language = rows[0].as_array_mut().unwrap().remove(1);
+                        assert_eq!(
+                            language["text"], "🌐 Язык",
+                            "the TypeScript System menu has the language button"
+                        );
+                        let shape: Vec<u32> = std::iter::once(rows.len() as u32)
+                            .chain(rows.iter().map(|row| row.as_array().unwrap().len() as u32))
+                            .collect();
+                        for (i, row) in rows.iter_mut().enumerate() {
+                            for (j, button) in row.as_array_mut().unwrap().iter_mut().enumerate() {
+                                let label: Vec<u32> = button["text"].as_str().unwrap().chars().map(u32::from).collect();
+                                let hash = bot::menu::tiny_hash(shape.iter().copied().chain(label));
+                                let data = format!("{MENU}{i:x}/{j:x}//h{hash}");
+                                let old = std::mem::replace(&mut button["callback_data"], json!(data));
+                                renamed.push((old.as_str().unwrap().to_owned(), data));
+                            }
+                        }
+                    }
+                }
+                object.values_mut().for_each(|item| keyboards(item, renamed));
+            }
+            _ => {}
+        }
+    }
+    fn rename(value: &mut Value, renamed: &[(String, String)]) {
+        match value {
+            Value::Array(items) => items.iter_mut().for_each(|item| rename(item, renamed)),
+            Value::Object(object) => object.values_mut().for_each(|item| rename(item, renamed)),
+            Value::String(text) => {
+                if let Some((_, new)) = renamed.iter().find(|(old, _)| old == text) {
+                    *text = new.clone();
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut renamed = Vec::new();
+    steps.iter_mut().for_each(|step| keyboards(step, &mut renamed));
+    steps.iter_mut().for_each(|step| rename(step, &renamed));
 }
 
 /// Calls of a step that fed several updates at once, grouped by the chat they
@@ -268,6 +332,8 @@ pub struct Harness {
     pub bot: Bot,
     pub telegram: Rc<FakeTelegram>,
     pub clock: Rc<FixedClock>,
+    pub deploy_agent: Rc<GoldenDeployAgent>,
+    pub zernio: Rc<GoldenZernio>,
     /// What the bot sent while it was built (`setMyCommands`).
     pub construction: Vec<Value>,
 }
@@ -278,13 +344,20 @@ impl Harness {
         let config = load_config(env(data_dir, case_env)).map_err(|error| error.to_string())?;
         let clock = Rc::new(FixedClock(Cell::new(at)));
         let telegram = Rc::new(FakeTelegram::new(&recorder_tmp().display().to_string(), bot_user()));
+        let deploy_agent = Rc::new(GoldenDeployAgent::new(telegram.clone()));
+        let zernio = Rc::new(GoldenZernio::new(telegram.clone()));
+        let config = SharedConfig::new(config);
         let bot = Bot::new(BotDeps {
             db,
             clock: clock.clone(),
-            config: SharedConfig::new(config),
-            host: Rc::new(GoldenHost),
-            adapters: DynAdapters(Box::new(GoldenAdapters)),
+            config: config.clone(),
+            host: Rc::new(GoldenHost {
+                config,
+                clock: clock.clone(),
+            }),
+            adapters: DynAdapters(Box::new(GoldenAdapters { zernio: zernio.clone() })),
             transport: telegram.clone(),
+            deploy_agent: deploy_agent.clone(),
         });
         let mut info = bot_user();
         info["can_join_groups"] = json!(true);
@@ -297,6 +370,8 @@ impl Harness {
             bot,
             telegram,
             clock,
+            deploy_agent,
+            zernio,
             construction,
         })
     }
@@ -374,6 +449,12 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
     let db = seed_database(area, case, &format!("{case}.db"));
     let first_at = step_meta.first().and_then(|step| step["at"].as_str()).unwrap_or(NOW);
     let harness = Harness::new(db, &data_dir, &meta["env"], instant(first_at)).await?;
+    harness.deploy_agent.script(&golden["seed"]);
+    harness.zernio.script(&golden["seed"], &harness.bot.deps().config);
+    // The Story-card waiter outlives the tap that started it; with the
+    // recorder's shortened polls (`fastStoryWait`) a step lasts until it ends.
+    let fast_story_wait = meta["fastStoryWait"] == json!(true);
+    bot::screens::post::set_story_card_poll(Duration::from_millis(if fast_story_wait { 1 } else { 1000 }));
 
     for (index, (expected, meta)) in expected_steps.iter().zip(&step_meta).enumerate().take(count) {
         let at = instant(meta["at"].as_str().unwrap_or(NOW));
@@ -394,6 +475,12 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
             },
             (Value::Array(updates), _) => harness.feed(updates).await?,
             (update, _) => harness.feed(std::slice::from_ref(update)).await?,
+        };
+        let actual = if fast_story_wait {
+            bot::screens::post::story_card_waiters_settled().await;
+            [actual, harness.telegram.take_calls()].concat()
+        } else {
+            actual
         };
         let expected_calls = expected["calls"].as_array().cloned().unwrap_or_default();
         let same = if expected["update"].is_array() {

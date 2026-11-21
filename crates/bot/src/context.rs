@@ -160,7 +160,7 @@ impl Ctx {
 
     /// The fields `ctx.reply` and `ctx.replyWith*` put before the caller's
     /// options: the topic of the message being answered, when it has one.
-    fn reply_fields(&self, payload: Payload) -> Payload {
+    pub(crate) fn reply_fields(&self, payload: Payload) -> Payload {
         let Some(message) = self.update.msg() else {
             return payload;
         };

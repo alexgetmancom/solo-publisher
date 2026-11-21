@@ -30,10 +30,30 @@ pub enum BodyChunk {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TransportError(pub String);
 
+/// What the Bot API file endpoint answered: its status, the length it
+/// announced, and the body, read up to one byte past the caller's limit so an
+/// oversized file is told apart without being read whole.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Downloaded {
+    pub status: u16,
+    pub content_length: Option<u64>,
+    pub body: Vec<u8>,
+}
+
 pub trait Transport {
     /// Sends one call and returns the response body, whatever its status:
     /// Telegram answers its errors as JSON too.
     fn send(&self, request: HttpRequest) -> Fut<'_, Result<Vec<u8>, TransportError>>;
+
+    /// `GET <api root>/file/bot<token>/<file_path>`: a file `getFile` named
+    /// by a relative path (the cloud Bot API; a local server answers absolute
+    /// paths, which are read from disk instead).
+    fn download(
+        &self,
+        file_path: &str,
+        max_bytes: u64,
+        timeout: Duration,
+    ) -> Fut<'_, Result<Downloaded, TransportError>>;
 }
 
 /// The real Bot API over HTTPS (or a local Bot API server at `api_root`).
@@ -90,6 +110,33 @@ impl Transport for HttpTransport {
                 .await
                 .map_err(|error| TransportError(error.without_url().to_string()))?;
             Ok(bytes.to_vec())
+        })
+    }
+
+    fn download(
+        &self,
+        file_path: &str,
+        max_bytes: u64,
+        timeout: Duration,
+    ) -> Fut<'_, Result<Downloaded, TransportError>> {
+        let url = format!("{}/file/bot{}/{file_path}", self.api_root, self.token);
+        Box::pin(async move {
+            let failed = |error: reqwest::Error| TransportError(error.without_url().to_string());
+            let mut response = self.client.get(url).timeout(timeout).send().await.map_err(failed)?;
+            let status = response.status().as_u16();
+            let content_length = response.content_length();
+            let mut body = Vec::new();
+            while let Some(chunk) = response.chunk().await.map_err(failed)? {
+                body.extend_from_slice(&chunk);
+                if body.len() as u64 > max_bytes {
+                    break;
+                }
+            }
+            Ok(Downloaded {
+                status,
+                content_length,
+                body,
+            })
         })
     }
 }

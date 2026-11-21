@@ -7,6 +7,12 @@
 //!
 //! The post and video areas register their actions, their card renderer and
 //! their message handler; nothing here knows what a post card looks like.
+//! What both kinds build their screens from lives beside it: the schedule
+//! protocol, the delivery previews and the unlanded-target controls.
+
+pub mod delivery_previews;
+pub mod scheduling;
+pub mod unlanded;
 
 use std::fmt::Display;
 
@@ -26,7 +32,7 @@ use crate::context::Ctx;
 use crate::effects::{CardRef, Effect, execute};
 use crate::error_text::{callback_toast, describe_publication_error};
 use crate::registry::Registry;
-use crate::session::publication_session_kind;
+use crate::session::{ConversationState, ConversationStateInput, publication_session_kind};
 
 /// What the first argument of an action names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -151,6 +157,30 @@ pub fn card_message(card: PublicationCard) -> Vec<Effect> {
         text: card.text,
         options,
     }]
+}
+
+/// `advancePublicationFlow`: a step accepted its input and names the next
+/// one; the dialog moves there and consumes exactly one session revision.
+pub fn advance_flow(
+    ctx: &Ctx,
+    actor_id: i64,
+    session: &ConversationState,
+    next: Option<&str>,
+    data: domain::application::ports::JsonObject,
+    error_code: &str,
+) -> crate::Result<ConversationState> {
+    let next = next.ok_or_else(|| foundation::errors::StudioError::new(error_code))?;
+    Ok(ctx.sessions().save(
+        actor_id,
+        &ConversationStateInput {
+            kind: session.kind,
+            draft_id: session.draft_id,
+            step: next.to_owned(),
+            data,
+            control_message_id: session.control_message_id,
+            revision: Some(session.revision),
+        },
+    )?)
 }
 
 /// What turns a failure into the operator's text, and what logs it.

@@ -123,6 +123,8 @@ pub struct BotDeps {
     pub host: Rc<dyn Host>,
     pub adapters: DynAdapters,
     pub transport: Rc<dyn Transport>,
+    /// Where the release controls send promote and rollback requests.
+    pub deploy_agent: Rc<dyn crate::deployment::DeployAgent>,
 }
 
 /// Background tasks the bot started, so a caller can wait for quiet.

@@ -10,7 +10,7 @@ use std::rc::Rc;
 use std::sync::LazyLock;
 
 use bot::Fut;
-use bot::api::transport::{BodyChunk, HttpRequest, Transport, TransportError};
+use bot::api::transport::{BodyChunk, Downloaded, HttpRequest, Transport, TransportError};
 use regex::Regex;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
@@ -139,6 +139,16 @@ impl FakeTelegram {
     /// Lets the held call answer.
     pub fn release(&self) {
         self.release.add_permits(1);
+    }
+
+    /// A plain HTTP request the bot made, recorded among the calls as the
+    /// recorder's `fetch` stub records it.
+    pub fn record_http(&self, request: Value) {
+        let payload = sort_keys(&request, &self.tmp);
+        self.state
+            .borrow_mut()
+            .calls
+            .push(json!({"method": "http", "payload": payload}));
     }
 
     pub fn take_calls(&self) -> Vec<Value> {
@@ -375,16 +385,35 @@ fn js_string(value: &Value) -> String {
     }
 }
 
+/// The file endpoint the recorder's `fileDownload` stub answers.
+const FILE_ROOT: &str = "http://telegram.invalid/file/bot123456:TEST-TOKEN/";
+
 impl Transport for FakeTelegram {
+    /// The recorder's `fileDownload`: the path after the token is a local
+    /// file, served whole with its length.
+    fn download(&self, file_path: &str, _: u64, _: std::time::Duration) -> Fut<'_, Result<Downloaded, TransportError>> {
+        self.record_http(json!({"method": "GET", "url": format!("{FILE_ROOT}{file_path}")}));
+        let body = std::fs::read(file_path).unwrap_or_else(|error| panic!("no HTTP stub for {file_path}: {error}"));
+        let content_length = Some(body.len() as u64);
+        Box::pin(async move {
+            Ok(Downloaded {
+                status: 200,
+                content_length,
+                body,
+            })
+        })
+    }
+
     fn send(&self, request: HttpRequest) -> Fut<'_, Result<Vec<u8>, TransportError>> {
         let (payload, multipart) = self.parse(&request);
         let method = request.method.clone();
         let mut call = Map::new();
+        // In the recorder's key order (sorted): method, payload, transport.
         call.insert("method".into(), method.clone().into());
+        call.insert("payload".into(), payload.clone());
         if multipart {
             call.insert("transport".into(), "multipart".into());
         }
-        call.insert("payload".into(), payload.clone());
         let held = {
             let mut state = self.state.borrow_mut();
             state.calls.push(Value::Object(call));
