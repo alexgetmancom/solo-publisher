@@ -28,7 +28,7 @@ import { dump } from "./scenario-support.js";
  * $CASE, and every HTTP request the operations made. HTTP is answered from the case's
  * `responses` (`{"method", "url", "status", "headers"?, "body"?: text, "json"?: value}`, each
  * served once, first match by method and exact URL); an unanswered request is a `fetch failed`
- * TypeError. The case directory is `$CASE` in everything recorded, and the spec's `normalize`
+ * TypeError. `$CASE` in a step stands for the case directory, which is `$CASE` in everything recorded, and the spec's `normalize`
  * pairs (`[regex, replacement]`, over the recorded JSON text) replace what TypeScript leaves
  * nondeterministic (uuids, lease owners, durations).
  */
@@ -108,7 +108,7 @@ async function runCase(spec: Spec, testCase: Case, caseDir: string) {
     backendDb.close();
   }
   const requests: unknown[] = [];
-  const responses = [...(testCase.responses ?? [])];
+  const responses = JSON.parse(JSON.stringify(testCase.responses ?? []).replaceAll("$CASE", caseDir)) as Canned[];
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = new Request(input, init);
     const body = request.body ? await request.text() : null;
@@ -146,7 +146,8 @@ async function runCase(spec: Spec, testCase: Case, caseDir: string) {
   };
 
   const outputs: unknown[] = [];
-  for (const step of testCase.steps) {
+  // `$CASE` in a step (a path in SQL, an argument, a canned body) is the case directory.
+  for (const step of JSON.parse(JSON.stringify(testCase.steps).replaceAll("$CASE", caseDir)) as Step[]) {
     if (step.clock !== undefined) {
       nowMs = RealDate.parse(step.clock);
       continue;
