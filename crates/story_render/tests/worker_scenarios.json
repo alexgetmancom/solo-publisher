@@ -1,0 +1,237 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "config": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_ADMIN_IDS": "42",
+    "DATA_DIR": "{FILES}/data",
+    "STORY_CARD_ASSETS_DIR": "{ASSETS}"
+  },
+  "ignoredTables": ["runtime_usage", "worker_state"],
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "UPDATE studio_profile SET timezone = 'Europe/Moscow', timezone_label = 'MSK', name_json = '{\"ru\":\"Страта\",\"en\":\"Strata\"}', updated_at = '2026-03-01T10:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram_stories', 'telegram_stories', 'ru', 'native', NULL, 'telegram_stories', 'telegram_stories', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_en', 'threads_en', 'en', 'native', NULL, 'threads_en', 'threads_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+  ],
+  "beforeDump": [
+    "UPDATE draft_story_cards SET last_error = substr(last_error, 1, instr(last_error, ': ') - 1) WHERE instr(last_error, ': ') > 0",
+    "UPDATE post_locales SET site_updated_at = '1970-01-01T00:00:00.000Z' WHERE site_updated_at >= strftime('%Y-%m-%d', 'now')"
+  ],
+  "scenarios": [
+    {
+      "name": "renders both cards and replans the scheduled Story post",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.",
+              "textEn": "⚡️ ChatGPT reached approximately one billion weekly active users.",
+              "media": [],
+              "entities": []
+            },
+            {
+              "targets": ["telegram", "telegram_stories"]
+            }
+          ]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "call": "posts.setStoryPublishMode",
+          "args": [42, 1, "all"]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T15:00:00.000Z",
+              "enAt": "2026-03-01T16:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "clock": "2026-03-01T10:00:01.000Z"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "call": "worker.cycle"
+        }
+      ]
+    },
+    {
+      "name": "a failing render backs off, then fails and replans without the Story",
+      "config": {
+        "STORY_CARD_ASSETS_DIR": "{FILES}/missing-assets"
+      },
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.",
+              "textEn": "⚡️ ChatGPT reached approximately one billion weekly active users.",
+              "media": [],
+              "entities": []
+            },
+            {
+              "targets": ["telegram", "telegram_stories"]
+            }
+          ]
+        },
+        {
+          "call": "posts.setStoryPublishMode",
+          "args": [42, 1, "all"]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T15:00:00.000Z",
+              "enAt": "2026-03-01T16:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "clock": "2026-03-01T10:00:04.999Z"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "clock": "2026-03-01T10:00:05.000Z"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "clock": "2026-03-01T10:00:15.000Z"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "stale leases are recovered and only due cards are claimed",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.",
+              "textEn": "⚡️ ChatGPT reached approximately one billion weekly active users.",
+              "media": [],
+              "entities": []
+            },
+            {
+              "targets": ["telegram", "telegram_stories"]
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'rendering', locked_by = 'story-card:1:old', locked_at = '2026-03-01T09:58:59.999Z' WHERE locale = 'en'"
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'rendering', locked_by = 'story-card:1:fresh', locked_at = '2026-03-01T09:59:00.000Z' WHERE locale = 'ru'"
+        },
+        {
+          "call": "worker.recover"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET locked_at = NULL WHERE locale = 'ru'"
+        },
+        {
+          "call": "worker.recover"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET next_attempt_at = '2026-03-01T10:05:00.000Z' WHERE locale = 'en'"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "clock": "2026-03-01T10:05:00.000Z"
+        },
+        {
+          "call": "worker.cycle"
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    }
+  ]
+}

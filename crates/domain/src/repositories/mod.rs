@@ -72,7 +72,7 @@ pub(crate) fn json_column<T: DeserializeOwned>(text: Option<String>) -> Result<O
 }
 
 /// `crypto.randomUUID()`: a version 4 UUID in lowercase hex.
-pub(crate) fn random_uuid() -> String {
+pub fn random_uuid() -> String {
     let mut bytes = [0u8; 16];
     getrandom::getrandom(&mut bytes).expect("the operating system has no randomness source");
     bytes[6] = (bytes[6] & 0x0f) | 0x40;

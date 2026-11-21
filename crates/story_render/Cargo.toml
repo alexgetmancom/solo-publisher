@@ -1,0 +1,26 @@
+[package]
+name = "story_render"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+content = { path = "../content" }
+db = { path = "../db" }
+domain = { path = "../domain" }
+foundation = { path = "../foundation" }
+fontdb = { version = "0.24", default-features = false, features = ["fs", "memmap"] }
+jiff = { version = "0.2", default-features = false, features = ["std"] }
+jpeg-encoder = "0.7"
+resvg = { version = "0.50", default-features = false, features = ["text", "memmap-fonts", "raster-images"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+tokio = { version = "1", features = ["rt", "time"] }
+
+[dev-dependencies]
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["rt", "time", "macros"] }

@@ -1,0 +1,694 @@
+[
+  {
+    "text": "Коротко.",
+    "wordmark": "Strata",
+    "copy": { "headline": "Коротко.", "emoji": null, "lines": ["Коротко."], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Коротко.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "Коротко.",
+    "wordmark": "",
+    "copy": { "headline": "Коротко.", "emoji": null, "lines": ["Коротко."], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Коротко.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "Одно слово",
+    "wordmark": "Strata",
+    "copy": { "headline": "Одно слово", "emoji": null, "lines": ["Одно слово"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Одно слово</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "Одно слово",
+    "wordmark": "",
+    "copy": { "headline": "Одно слово", "emoji": null, "lines": ["Одно слово"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Одно слово</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "",
+    "wordmark": "Strata",
+    "copy": { "headline": "", "emoji": null, "lines": ["Update"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Update</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "",
+    "wordmark": "",
+    "copy": { "headline": "", "emoji": null, "lines": ["Update"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Update</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "🔥",
+    "wordmark": "Strata",
+    "copy": { "headline": "🔥", "emoji": "🔥", "lines": ["🔥"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">🔥</text></g>\n</svg>",
+    "emojiFile": "1f525.svg",
+    "emojiTop": 988
+  },
+  {
+    "text": "🔥",
+    "wordmark": "",
+    "copy": { "headline": "🔥", "emoji": "🔥", "lines": ["🔥"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">🔥</text></g>\n</svg>",
+    "emojiFile": "1f525.svg",
+    "emojiTop": 988
+  },
+  {
+    "text": "Update",
+    "wordmark": "Strata",
+    "copy": { "headline": "Update", "emoji": null, "lines": ["Update"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Update</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "Update",
+    "wordmark": "",
+    "copy": { "headline": "Update", "emoji": null, "lines": ["Update"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Update</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "🚨 СЛИВ: Две модели OpenAI с кодовыми именами Zinc и Magnesium были замечены в DesignArena. Остальной пост не нужен.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "СЛИВ: Две модели OpenAI с кодовыми именами Zinc и Magnesium были замечены в DesignArena.",
+      "emoji": "🚨",
+      "lines": ["СЛИВ: Две модели", "OpenAI с кодовыми", "именами Zinc и", "Magnesium были", "замечены в", "DesignArena."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">СЛИВ: Две модели</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">OpenAI с кодовыми</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">именами Zinc и</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">Magnesium были</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">замечены в</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">DesignArena.</text></g>\n</svg>",
+    "emojiFile": "1f6a8.svg",
+    "emojiTop": 753
+  },
+  {
+    "text": "⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "ChatGPT достиг примерно миллиарда еженедельно активных пользователей.",
+      "emoji": "⚡",
+      "lines": ["ChatGPT достиг", "примерно миллиарда", "еженедельно", "активных", "пользователей."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"850.5\" class=\"copy\" font-weight=\"680\">ChatGPT достиг</text><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">примерно миллиарда</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"440\">еженедельно</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">активных</text><text x=\"190\" y=\"1226.5\" class=\"copy\" font-weight=\"440\">пользователей.</text></g>\n</svg>",
+    "emojiFile": "26a1.svg",
+    "emojiTop": 800
+  },
+  {
+    "text": "⚡️ ChatGPT reached approximately one billion weekly active users.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "ChatGPT reached approximately one billion weekly active users.",
+      "emoji": "⚡️",
+      "lines": ["ChatGPT reached", "approximately one", "billion weekly active", "users."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">ChatGPT reached</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">approximately one</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">billion weekly active</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">users.</text></g>\n</svg>",
+    "emojiFile": "26a1.svg",
+    "emojiTop": 847
+  },
+  {
+    "text": "Ссылка aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa внутри поста.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Ссылка aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa внутри поста.",
+      "emoji": null,
+      "lines": [
+        "Ссылка",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaa внутри поста."
+      ],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"709.5\" class=\"copy\" font-weight=\"680\">Ссылка</text><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1367.5\" class=\"copy\" font-weight=\"440\">aaaaaa внутри поста.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 659
+  },
+  {
+    "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa…",
+      "emoji": null,
+      "lines": [
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaa…"
+      ],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"709.5\" class=\"copy\" font-weight=\"680\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaaa</text><text x=\"190\" y=\"1367.5\" class=\"copy\" font-weight=\"440\">aaaaaaaaaaaaaaaaaa…</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 659
+  },
+  {
+    "text": "🔥 длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово ",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово длинное слово…",
+      "emoji": "🔥",
+      "lines": [
+        "длинное слово",
+        "длинное слово",
+        "длинное слово",
+        "длинное слово",
+        "длинное слово",
+        "длинное слово",
+        "длинное слово",
+        "длинное слово…"
+      ],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"709.5\" class=\"copy\" font-weight=\"680\">длинное слово</text><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">длинное слово</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"440\">длинное слово</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">длинное слово</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">длинное слово</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">длинное слово</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">длинное слово</text><text x=\"190\" y=\"1367.5\" class=\"copy\" font-weight=\"440\">длинное слово…</text></g>\n</svg>",
+    "emojiFile": "1f525.svg",
+    "emojiTop": 659
+  },
+  {
+    "text": "Mmmm Wwww ЖЖЖЖ ШШШШ ЩЩЩЩ ЮЮЮЮ ФФФФ mmmm wwww",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Mmmm Wwww ЖЖЖЖ ШШШШ ЩЩЩЩ ЮЮЮЮ ФФФФ mmmm wwww",
+      "emoji": null,
+      "lines": ["Mmmm Wwww ЖЖЖЖ", "ШШШШ ЩЩЩЩ ЮЮЮЮ", "ФФФФ mmmm wwww"],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Mmmm Wwww ЖЖЖЖ</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">ШШШШ ЩЩЩЩ ЮЮЮЮ</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">ФФФФ mmmm wwww</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "Mmmm Wwww ЖЖЖЖ ШШШШ ЩЩЩЩ ЮЮЮЮ ФФФФ mmmm wwww",
+    "wordmark": "",
+    "copy": {
+      "headline": "Mmmm Wwww ЖЖЖЖ ШШШШ ЩЩЩЩ ЮЮЮЮ ФФФФ mmmm wwww",
+      "emoji": null,
+      "lines": ["Mmmm Wwww ЖЖЖЖ", "ШШШШ ЩЩЩЩ ЮЮЮЮ", "ФФФФ mmmm wwww"],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Mmmm Wwww ЖЖЖЖ</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">ШШШШ ЩЩЩЩ ЮЮЮЮ</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">ФФФФ mmmm wwww</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "illi 1111 |||| .... ,,,, :::: ;;;; !!!! '''' ````",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "illi 1111 |||| ....",
+      "emoji": null,
+      "lines": ["illi 1111 |||| ...."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">illi 1111 |||| ....</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "illi 1111 |||| .... ,,,, :::: ;;;; !!!! '''' ````",
+    "wordmark": "",
+    "copy": {
+      "headline": "illi 1111 |||| ....",
+      "emoji": null,
+      "lines": ["illi 1111 |||| ...."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">illi 1111 |||| ....</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "ABCDEFGHIJKLMNOPQRSTUVWXYZ АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ 0123456789",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "ABCDEFGHIJKLMNOPQRSTUVWXYZ АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ 0123456789",
+      "emoji": null,
+      "lines": ["ABCDEFGHIJKLMNOP", "QRSTUVWXYZ", "АБВГДЕЁЖЗИЙКЛМНО", "ПРСТУФХЦЧШЩЪЫЬЭ", "ЮЯ 0123456789"],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"850.5\" class=\"copy\" font-weight=\"680\">ABCDEFGHIJKLMNOP</text><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">QRSTUVWXYZ</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"440\">АБВГДЕЁЖЗИЙКЛМНО</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">ПРСТУФХЦЧШЩЪЫЬЭ</text><text x=\"190\" y=\"1226.5\" class=\"copy\" font-weight=\"440\">ЮЯ 0123456789</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 800
+  },
+  {
+    "text": "Запуск 🚀 сегодня: новая версия уже в магазине приложений.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Запуск 🚀 сегодня: новая версия уже в магазине приложений.",
+      "emoji": null,
+      "lines": ["Запуск 🚀 сегодня:", "новая версия уже в", "магазине приложений."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Запуск 🚀 сегодня:</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">новая версия уже в</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">магазине приложений.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "Запуск 🚀 сегодня: новая версия уже в магазине приложений.",
+    "wordmark": "",
+    "copy": {
+      "headline": "Запуск 🚀 сегодня: новая версия уже в магазине приложений.",
+      "emoji": null,
+      "lines": ["Запуск 🚀 сегодня:", "новая версия уже в", "магазине приложений."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Запуск 🚀 сегодня:</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">новая версия уже в</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">магазине приложений.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "🔥 Запуск 🚀 сегодня: «новая» версия & <теги>.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Запуск 🚀 сегодня: «новая» версия & <теги>.",
+      "emoji": "🔥",
+      "lines": ["Запуск 🚀 сегодня:", "«новая» версия &", "<теги>."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Запуск 🚀 сегодня:</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">«новая» версия &amp;</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">&lt;теги&gt;.</text></g>\n</svg>",
+    "emojiFile": "1f525.svg",
+    "emojiTop": 894
+  },
+  {
+    "text": "🔥 Запуск 🚀 сегодня: «новая» версия & <теги>.",
+    "wordmark": "",
+    "copy": {
+      "headline": "Запуск 🚀 сегодня: «новая» версия & <теги>.",
+      "emoji": "🔥",
+      "lines": ["Запуск 🚀 сегодня:", "«новая» версия &", "<теги>."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Запуск 🚀 сегодня:</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">«новая» версия &amp;</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">&lt;теги&gt;.</text></g>\n</svg>",
+    "emojiFile": "1f525.svg",
+    "emojiTop": 894
+  },
+  {
+    "text": "Цитата «в кавычках» & <теги> \"двойные\" и 'одинарные'.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Цитата «в кавычках» & <теги> \"двойные\" и 'одинарные'.",
+      "emoji": null,
+      "lines": ["Цитата «в кавычках»", "& <теги> \"двойные\" и", "'одинарные'."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Цитата «в кавычках»</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">&amp; &lt;теги&gt; &quot;двойные&quot; и</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">&apos;одинарные&apos;.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "Цитата «в кавычках» & <теги> \"двойные\" и 'одинарные'.",
+    "wordmark": "",
+    "copy": {
+      "headline": "Цитата «в кавычках» & <теги> \"двойные\" и 'одинарные'.",
+      "emoji": null,
+      "lines": ["Цитата «в кавычках»", "& <теги> \"двойные\" и", "'одинарные'."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">Цитата «в кавычках»</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">&amp; &lt;теги&gt; &quot;двойные&quot; и</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">&apos;одинарные&apos;.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "Первая строка.\nВторая строка, которая не попадёт на карточку.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Первая строка.",
+      "emoji": null,
+      "lines": ["Первая строка."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Первая строка.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "\n\n  Пустые строки сначала. Потом текст.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Пустые строки сначала.",
+      "emoji": null,
+      "lines": ["Пустые строки", "сначала."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">Пустые строки</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">сначала.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "\n\n  Пустые строки сначала. Потом текст.",
+    "wordmark": "",
+    "copy": {
+      "headline": "Пустые строки сначала.",
+      "emoji": null,
+      "lines": ["Пустые строки", "сначала."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">Пустые строки</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">сначала.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "Что? Да.",
+    "wordmark": "Strata",
+    "copy": { "headline": "Что?", "emoji": null, "lines": ["Что?"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Что?</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "Что? Да.",
+    "wordmark": "",
+    "copy": { "headline": "Что?", "emoji": null, "lines": ["Что?"], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Что?</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "v1.2 release is out. Next",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "v1.2 release is out.",
+      "emoji": null,
+      "lines": ["v1.2 release is out."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">v1.2 release is out.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "v1.2 release is out. Next",
+    "wordmark": "",
+    "copy": {
+      "headline": "v1.2 release is out.",
+      "emoji": null,
+      "lines": ["v1.2 release is out."],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">v1.2 release is out.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "🇷🇺 Россия сегодня обновила правила для разработчиков мобильных приложений и сервисов.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Россия сегодня обновила правила для разработчиков мобильных приложений и сервисов.",
+      "emoji": "🇷🇺",
+      "lines": ["Россия сегодня", "обновила правила для", "разработчиков", "мобильных", "приложений и", "сервисов."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">Россия сегодня</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">обновила правила для</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">разработчиков</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">мобильных</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">приложений и</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">сервисов.</text></g>\n</svg>",
+    "emojiFile": "1f1f7-1f1fa.svg",
+    "emojiTop": 753
+  },
+  {
+    "text": "1️⃣ первый пункт списка дел на сегодня.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "1️⃣ первый пункт списка дел на сегодня.",
+      "emoji": null,
+      "lines": ["1️⃣ первый пункт", "списка дел на", "сегодня."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">1️⃣ первый пункт</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">списка дел на</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">сегодня.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "1️⃣ первый пункт списка дел на сегодня.",
+    "wordmark": "",
+    "copy": {
+      "headline": "1️⃣ первый пункт списка дел на сегодня.",
+      "emoji": null,
+      "lines": ["1️⃣ первый пункт", "списка дел на", "сегодня."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"944.5\" class=\"copy\" font-weight=\"680\">1️⃣ первый пункт</text><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">списка дел на</text><text x=\"190\" y=\"1132.5\" class=\"copy\" font-weight=\"440\">сегодня.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 894
+  },
+  {
+    "text": "OpenAI, Anthropic, Google DeepMind и Meta договорились о совместном стандарте безопасности для открытых моделей следующего поколения, который вступит в силу в начале будущего года.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "OpenAI, Anthropic, Google DeepMind и Meta договорились о совместном стандарте безопасности для открытых моделей следующего поколения, который вступит в силу в начале будущего года.",
+      "emoji": null,
+      "lines": [
+        "OpenAI, Anthropic,",
+        "Google DeepMind и",
+        "Meta договорились о",
+        "совместном",
+        "стандарте",
+        "безопасности для",
+        "открытых моделей",
+        "следующего…"
+      ],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"709.5\" class=\"copy\" font-weight=\"680\">OpenAI, Anthropic,</text><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">Google DeepMind и</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"440\">Meta договорились о</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">совместном</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">стандарте</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">безопасности для</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">открытых моделей</text><text x=\"190\" y=\"1367.5\" class=\"copy\" font-weight=\"440\">следующего…</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 659
+  },
+  {
+    "text": "https://example.com/a/very/long/path/that/does/not/break/naturally?query=string&and=more тут текст",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "https://example.com/a/very/long/path/that/does/not/break/naturally?query=string&and=more тут текст",
+      "emoji": null,
+      "lines": ["https://example.com", "/a/very/long/path/t", "hat/does/not/break/", "naturally?query=stri", "ng&and=more тут", "текст"],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"803.5\" class=\"copy\" font-weight=\"680\">https://example.com</text><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">/a/very/long/path/t</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"440\">hat/does/not/break/</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">naturally?query=stri</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">ng&amp;and=more тут</text><text x=\"190\" y=\"1273.5\" class=\"copy\" font-weight=\"440\">текст</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 753
+  },
+  {
+    "text": "Слово\tс неразрывным пробелом и табуляцией внутри строки.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Слово\tс неразрывным пробелом и табуляцией внутри строки.",
+      "emoji": null,
+      "lines": ["Слово с неразрывным", "пробелом и", "табуляцией внутри", "строки."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">Слово с неразрывным</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">пробелом и</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">табуляцией внутри</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">строки.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 847
+  },
+  {
+    "text": "Слово\tс неразрывным пробелом и табуляцией внутри строки.",
+    "wordmark": "",
+    "copy": {
+      "headline": "Слово\tс неразрывным пробелом и табуляцией внутри строки.",
+      "emoji": null,
+      "lines": ["Слово с неразрывным", "пробелом и", "табуляцией внутри", "строки."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">Слово с неразрывным</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">пробелом и</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">табуляцией внутри</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">строки.</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 847
+  },
+  {
+    "text": "Ёлка ёжик ЁЁЁ ёё Ё",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Ёлка ёжик ЁЁЁ ёё Ё",
+      "emoji": null,
+      "lines": ["Ёлка ёжик ЁЁЁ ёё Ё"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Ёлка ёжик ЁЁЁ ёё Ё</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "Ёлка ёжик ЁЁЁ ёё Ё",
+    "wordmark": "",
+    "copy": {
+      "headline": "Ёлка ёжик ЁЁЁ ёё Ё",
+      "emoji": null,
+      "lines": ["Ёлка ёжик ЁЁЁ ёё Ё"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">Ёлка ёжик ЁЁЁ ёё Ё</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "xxxxxxxxxxxxxxxxxxx",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "xxxxxxxxxxxxxxxxxxx",
+      "emoji": null,
+      "lines": ["xxxxxxxxxxxxxxxxxxx"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">xxxxxxxxxxxxxxxxxxx</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "xxxxxxxxxxxxxxxxxxx",
+    "wordmark": "",
+    "copy": {
+      "headline": "xxxxxxxxxxxxxxxxxxx",
+      "emoji": null,
+      "lines": ["xxxxxxxxxxxxxxxxxxx"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"1038.5\" class=\"copy\" font-weight=\"680\">xxxxxxxxxxxxxxxxxxx</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 988
+  },
+  {
+    "text": "xxxxxxxxxxxxxxxxxxxx",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "xxxxxxxxxxxxxxxxxxxx",
+      "emoji": null,
+      "lines": ["xxxxxxxxxxxxxxxxxxx", "x"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">xxxxxxxxxxxxxxxxxxx</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">x</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "xxxxxxxxxxxxxxxxxxxx",
+    "wordmark": "",
+    "copy": {
+      "headline": "xxxxxxxxxxxxxxxxxxxx",
+      "emoji": null,
+      "lines": ["xxxxxxxxxxxxxxxxxxx", "x"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">xxxxxxxxxxxxxxxxxxx</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">x</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "ШШШШШШШШШШШШШ",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "ШШШШШШШШШШШШШ",
+      "emoji": null,
+      "lines": ["ШШШШШШШШШШШШ", "Ш"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">ШШШШШШШШШШШШ</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">Ш</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "ШШШШШШШШШШШШШ",
+    "wordmark": "",
+    "copy": {
+      "headline": "ШШШШШШШШШШШШШ",
+      "emoji": null,
+      "lines": ["ШШШШШШШШШШШШ", "Ш"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">ШШШШШШШШШШШШ</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">Ш</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "ШШШШШШШШШШШШШШ",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "ШШШШШШШШШШШШШШ",
+      "emoji": null,
+      "lines": ["ШШШШШШШШШШШШ", "ШШ"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">ШШШШШШШШШШШШ</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">ШШ</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "ШШШШШШШШШШШШШШ",
+    "wordmark": "",
+    "copy": {
+      "headline": "ШШШШШШШШШШШШШШ",
+      "emoji": null,
+      "lines": ["ШШШШШШШШШШШШ", "ШШ"],
+      "boldLineCount": 1,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  \n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">ШШШШШШШШШШШШ</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">ШШ</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 941
+  },
+  {
+    "text": "Mixed CASE words With Capitals Everywhere In This Headline Today",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Mixed CASE words With Capitals Everywhere In This Headline Today",
+      "emoji": null,
+      "lines": ["Mixed CASE words", "With Capitals", "Everywhere In This", "Headline Today"],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1080\" height=\"1920\">\n  <defs>\n    <filter id=\"glow\" x=\"-15%\" y=\"-25%\" width=\"130%\" height=\"150%\">\n      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"3.2\" result=\"blur\"/>\n      <feFlood flood-color=\"#f0d19a\" flood-opacity=\".18\" result=\"warm\"/>\n      <feComposite in=\"warm\" in2=\"blur\" operator=\"in\" result=\"halo\"/>\n      <feMerge><feMergeNode in=\"halo\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n    </filter>\n    <style>\n      text { font-family: Manrope, sans-serif; fill: #f3eee4; }\n      .copy { font-size: 74px; letter-spacing: -1.15px; }\n    </style>\n  </defs>\n  <text x=\"540\" y=\"150\" text-anchor=\"middle\" font-size=\"29\" font-weight=\"430\"\n        letter-spacing=\"10\" fill-opacity=\".8\" filter=\"url(#glow)\">Strata</text>\n  <g filter=\"url(#glow)\"><text x=\"190\" y=\"897.5\" class=\"copy\" font-weight=\"680\">Mixed CASE words</text><text x=\"190\" y=\"991.5\" class=\"copy\" font-weight=\"680\">With Capitals</text><text x=\"190\" y=\"1085.5\" class=\"copy\" font-weight=\"440\">Everywhere In This</text><text x=\"190\" y=\"1179.5\" class=\"copy\" font-weight=\"440\">Headline Today</text></g>\n</svg>",
+    "emojiFile": null,
+    "emojiTop": 847
+  }
+]
