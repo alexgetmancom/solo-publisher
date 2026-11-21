@@ -71,10 +71,38 @@ pub(crate) fn json_column<T: DeserializeOwned>(text: Option<String>) -> Result<O
         .map_err(Into::into)
 }
 
+/// `crypto.randomUUID()`: a version 4 UUID in lowercase hex.
+pub(crate) fn random_uuid() -> String {
+    let mut bytes = [0u8; 16];
+    getrandom::getrandom(&mut bytes).expect("the operating system has no randomness source");
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    let hex: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
+    format!(
+        "{}-{}-{}-{}-{}",
+        &hex[..8],
+        &hex[8..12],
+        &hex[12..16],
+        &hex[16..20],
+        &hex[20..]
+    )
+}
+
 /// bun:sqlite's `db.transaction(work)` as Drizzle calls it: `BEGIN` (deferred)
 /// on a connection in autocommit, a savepoint inside a transaction the caller
 /// already holds. Any error, or a panic, rolls the work back.
 pub(crate) fn transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T>) -> Result<T> {
+    run_transaction(sqlite, "BEGIN", work)
+}
+
+/// Drizzle's `transaction(work, { behavior: "immediate" })`: `BEGIN IMMEDIATE`
+/// takes the write lock up front, so what the work reads still holds when it
+/// writes. Nested, it is a savepoint like any other.
+pub(crate) fn immediate_transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T>) -> Result<T> {
+    run_transaction(sqlite, "BEGIN IMMEDIATE", work)
+}
+
+fn run_transaction<T>(sqlite: &Connection, top_level: &'static str, work: impl FnOnce() -> Result<T>) -> Result<T> {
     struct Open<'a> {
         sqlite: &'a Connection,
         rollback: &'static str,
@@ -97,7 +125,7 @@ pub(crate) fn transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<
             "ROLLBACK TO domain_transaction; RELEASE domain_transaction",
         )
     } else {
-        ("BEGIN", "COMMIT", "ROLLBACK")
+        (top_level, "COMMIT", "ROLLBACK")
     };
     sqlite.execute_batch(begin)?;
     let mut open = Open {

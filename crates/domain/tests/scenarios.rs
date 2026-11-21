@@ -5,56 +5,26 @@
 //! table's rows must come out identical. The format of a scenario is
 //! described in the TypeScript script.
 
+mod support;
+
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use content::entity_enrichment::{EntityEnrichmentStore as _, LinkRole};
-use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
 use domain::application::conversation_flow::PublicationKind;
-use domain::application::ports::{ApplicationPorts, Clock, ConversationSessionKind};
+use domain::application::ports::{ApplicationPorts, ConversationSessionKind};
 use jiff::Timestamp;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
-
-fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .unwrap()
-}
+use support::{FixedClock, arg, differences, dump, instant, lookup, out, resolve};
 
 fn spec_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/scenarios.json")
 }
 
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
-
-fn instant(value: &Value) -> Timestamp {
-    foundation::time::parse_iso_instant(value.as_str().expect("clock is a string")).unwrap()
-}
-
-fn arg<T: DeserializeOwned>(args: &[Value], index: usize) -> T {
-    serde_json::from_value(args.get(index).cloned().unwrap_or(Value::Null))
-        .unwrap_or_else(|error| panic!("argument {index} of {args:?}: {error}"))
-}
-
 fn field<T: DeserializeOwned>(args: &[Value], name: &str) -> T {
     serde_json::from_value(args[0][name].clone()).unwrap_or_else(|error| panic!("field {name} of {args:?}: {error}"))
-}
-
-/// A result as JavaScript holds it: through `JSON.stringify`, so `12.0` read
-/// from a JSON column is the number `12`, as on the TypeScript side.
-fn out(value: impl Serialize) -> Value {
-    serde_json::from_str(&domain::json::stringify(&serde_json::to_value(value).unwrap())).unwrap()
 }
 
 fn link_role(value: &str) -> LinkRole {
@@ -200,59 +170,6 @@ fn call(ports: &ApplicationPorts<'_>, name: &str, args: &[Value]) -> domain::Res
     })
 }
 
-/// `{"$": "<name>.<field>"}` arguments replaced by fields of bound results.
-fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
-    match value {
-        Value::Array(items) => Value::Array(items.iter().map(|item| resolve(item, vars)).collect()),
-        Value::Object(object) => match object.get("$") {
-            Some(Value::String(reference)) if object.len() == 1 => lookup(vars, reference).clone(),
-            _ => Value::Object(
-                object
-                    .iter()
-                    .map(|(key, item)| (key.clone(), resolve(item, vars)))
-                    .collect(),
-            ),
-        },
-        other => other.clone(),
-    }
-}
-
-fn lookup<'a>(vars: &'a Map<String, Value>, reference: &str) -> &'a Value {
-    let (name, field) = reference.split_once('.').expect("reference is <name>.<field>");
-    &vars.get(name).unwrap_or_else(|| panic!("unbound {name}"))[field]
-}
-
-/// The TypeScript script's dump, statement for statement.
-fn dump(sqlite: &Connection) -> Map<String, Value> {
-    let strings = |sql: &str, param: Option<&str>| -> Vec<String> {
-        let mut statement = sqlite.prepare(sql).unwrap();
-        let rows = statement
-            .query_map(db::rusqlite::params_from_iter(param), |row| row.get(0))
-            .unwrap();
-        rows.map(Result::unwrap).collect()
-    };
-    let mut out = Map::new();
-    for table in strings(
-        "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
-        None,
-    ) {
-        let columns = strings("SELECT name FROM pragma_table_info(?) ORDER BY cid", Some(&table));
-        let cells = columns
-            .iter()
-            .map(|column| format!(r#"typeof("{column}") || ':' || quote("{column}")"#))
-            .collect::<Vec<_>>()
-            .join(" || ' ' || ");
-        let rows = strings(
-            &format!(r#"SELECT quote(rowid) || ' ' || {cells} AS line FROM "{table}" ORDER BY rowid"#),
-            None,
-        );
-        if !rows.is_empty() {
-            out.insert(table, rows.into_iter().map(Value::String).collect());
-        }
-    }
-    out
-}
-
 fn run(scenario: &Value, start: Timestamp, setup: &[Value]) -> Value {
     let backend_db = BackendDb::open(":memory:").unwrap();
     let clock = FixedClock(Cell::new(start));
@@ -287,7 +204,7 @@ fn run(scenario: &Value, start: Timestamp, setup: &[Value]) -> Value {
     let mut text = serde_json::to_string(&json!({
         "name": scenario["name"],
         "results": results,
-        "tables": dump(sqlite),
+        "tables": dump(sqlite, &[]),
     }))
     .unwrap();
     for reference in scenario
@@ -314,55 +231,15 @@ fn run(scenario: &Value, start: Timestamp, setup: &[Value]) -> Value {
 #[test]
 fn repositories_match_typescript() {
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(spec_path()).unwrap()).unwrap();
-    let output = Command::new("bun")
-        .arg("scripts/rust/domain-scenarios.ts")
-        .arg(spec_path())
-        .current_dir(repo_root())
-        .env("TMPDIR", repo_root().join("_trash-rust/tmp"))
-        .output()
-        .expect("bun must be on PATH");
-    assert!(
-        output.status.success(),
-        "bun failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let typescript: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let typescript = support::typescript("scripts/rust/domain-scenarios.ts", &spec_path());
     let start = instant(&spec["clock"]);
-    let scenarios = spec["scenarios"].as_array().unwrap();
-    let expected = typescript["scenarios"].as_array().unwrap();
-    assert_eq!(scenarios.len(), expected.len());
-    let mut failures = Vec::new();
-    for (scenario, expected) in scenarios.iter().zip(expected) {
-        let actual = run(scenario, start, spec["setup"].as_array().unwrap());
-        let name = scenario["name"].as_str().unwrap();
-        let (expected_results, actual_results) = (
-            expected["results"].as_array().unwrap(),
-            actual["results"].as_array().unwrap(),
-        );
-        assert_eq!(expected_results.len(), actual_results.len(), "{name}: step count");
-        for (index, (left, right)) in expected_results.iter().zip(actual_results).enumerate() {
-            if left != right {
-                failures.push(format!("{name}, call #{index}:\n  ts:   {left}\n  rust: {right}"));
-            }
-        }
-        let (expected_tables, actual_tables) = (
-            expected["tables"].as_object().unwrap(),
-            actual["tables"].as_object().unwrap(),
-        );
-        for table in expected_tables
-            .keys()
-            .chain(actual_tables.keys().filter(|key| !expected_tables.contains_key(*key)))
-        {
-            let (left, right) = (&expected_tables.get(table), &actual_tables.get(table));
-            if left != right {
-                failures.push(format!(
-                    "{name}, table {table}:\n  ts:   {}\n  rust: {}",
-                    serde_json::to_string_pretty(left).unwrap(),
-                    serde_json::to_string_pretty(right).unwrap()
-                ));
-            }
-        }
-    }
+    let actual: Vec<Value> = spec["scenarios"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|scenario| run(scenario, start, spec["setup"].as_array().unwrap()))
+        .collect();
+    let failures = differences(typescript["scenarios"].as_array().unwrap(), &actual);
     assert!(
         failures.is_empty(),
         "{} differences:\n{}",

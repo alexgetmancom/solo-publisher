@@ -58,7 +58,7 @@ impl<'a> StudioSettingsStore<'a> {
         // partial copy. Failing here is better than silently serving someone
         // a Studio with no identity.
         let Some((id, timezone, timezone_label, site_enabled, lead, retention, texts, updated_at)) = row else {
-            return Err(Error::Message(
+            return Err(Error::message(
                 "studio_profile row 1 is missing; restore the database or re-run migrations",
             ));
         };

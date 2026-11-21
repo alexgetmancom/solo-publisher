@@ -123,7 +123,7 @@ impl<'a> StudioMediaAssetStore<'a> {
             .query_map(params_from_iter(integers(actor_ids).chain(integers(&ids))), asset)?
             .collect::<db::rusqlite::Result<Vec<_>>>()?;
         if assets.len() != ids.len() {
-            return Err(Error::Message(
+            return Err(Error::message(
                 "One or more media assets are not available to this owner.",
             ));
         }

@@ -95,6 +95,47 @@ fn write_string(out: &mut String, text: &str) {
     out.push('"');
 }
 
+/// `Object.entries(object)`: keys JavaScript orders as array indexes first,
+/// ascending, then the rest in insertion order.
+pub fn object_entries(object: &Map<String, Value>) -> impl Iterator<Item = (&String, &Value)> {
+    let mut indexes: Vec<(u32, &String, &Value)> = object
+        .iter()
+        .filter_map(|(key, value)| array_index(key).map(|index| (index, key, value)))
+        .collect();
+    indexes.sort_by_key(|(index, _, _)| *index);
+    indexes
+        .into_iter()
+        .map(|(_, key, value)| (key, value))
+        .chain(object.iter().filter(|(key, _)| array_index(key).is_none()))
+}
+
+/// `Boolean(value)`.
+pub fn truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(flag) => *flag,
+        Value::Number(number) => number.as_f64().is_some_and(|number| number != 0.0 && !number.is_nan()),
+        Value::String(text) => !text.is_empty(),
+        Value::Array(_) | Value::Object(_) => true,
+    }
+}
+
+/// `String(value)`.
+pub fn js_string(value: &Value) -> String {
+    match value {
+        Value::Null => "null".into(),
+        Value::Bool(flag) => flag.to_string(),
+        Value::Number(number) => number_to_string(number.as_f64().unwrap_or(f64::NAN)),
+        Value::String(text) => text.clone(),
+        Value::Array(items) => items
+            .iter()
+            .map(|item| if item.is_null() { String::new() } else { js_string(item) })
+            .collect::<Vec<_>>()
+            .join(","),
+        Value::Object(_) => "[object Object]".into(),
+    }
+}
+
 /// For patch fields where an absent key (leave the column) and `null` (clear
 /// it) mean different things.
 pub fn double_option<'de, T: Deserialize<'de>, D: Deserializer<'de>>(

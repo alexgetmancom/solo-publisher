@@ -1,0 +1,2546 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "jitter": 0.25,
+  "config": {
+    "STUDIO_ACTOR_IDS": "42"
+  },
+  "ignoredTables": ["credential_checks", "runtime_usage"],
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_ru', 'threads_ru', 'ru', 'native', NULL, 'threads_ru', 'threads_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_en', 'threads_en', 'en', 'native', NULL, 'threads_en', 'threads_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', NULL, 'x', 'x', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('site_ru', 'site_ru', 'ru', 'native', NULL, 'site_ru', 'site_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('site_en', 'site_en', 'en', 'native', NULL, 'site_en', 'site_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('discord', 'discord', 'en', 'native', NULL, 'discord', 'discord', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_shorts', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram:ru', 'instagram', 'ru', 'zernio', 'acc-1', NULL, 'instagram_reels', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+  ],
+  "beforeDump": [
+    "UPDATE post_locales SET site_updated_at = '1970-01-01T00:00:00.000Z' WHERE site_updated_at >= strftime('%Y-%m-%d', 'now')"
+  ],
+  "scenarios": [
+    {
+      "name": "publish now: plan, claim under a lease, settle every outcome",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"threads_ru\":true,\"threads_en\":true,\"x\":true,\"site_ru\":true,\"site_en\":true,\"discord\":false,\"telegram_stories\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', '[{\"type\": \"photo\", \"file_id\": \"F1\", \"file_size\": 1000, \"local_path\": \"/m/1.jpg\"}]', 0, '2026-03-01T10:00:00.000Z'), (1, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "preflight",
+          "args": [1]
+        },
+        {
+          "call": "deliveries",
+          "args": [1]
+        },
+        {
+          "call": "publishDraft",
+          "args": [1, {}],
+          "bind": "post"
+        },
+        {
+          "call": "source",
+          "args": [1]
+        },
+        {
+          "call": "plan",
+          "args": [1]
+        },
+        {
+          "call": "scheduledDrafts",
+          "args": []
+        },
+        {
+          "call": "pending",
+          "args": [1]
+        },
+        {
+          "clock": "2026-03-01T10:01:00.000Z"
+        },
+        {
+          "call": "due",
+          "args": [10]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"],
+          "bind": "jobs"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": true,
+              "id": "m-1",
+              "url": "https://t.me/c/1",
+              "verification": {
+                "status": "verified"
+              }
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            2,
+            {
+              "ok": true,
+              "ids": ["a", "b", "b"],
+              "raw": {
+                "existingPost": true
+              }
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            3,
+            {
+              "ok": false,
+              "skipped": true,
+              "reason": "nothing to send"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            4,
+            {
+              "ok": true,
+              "id": 77
+            },
+            "wrong-lock",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            4,
+            {
+              "ok": false,
+              "error": "HTTP 400 validation failed",
+              "retryable": false
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "source",
+          "args": [1]
+        },
+        {
+          "call": "plan",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "transient failure backs off, retries, then is exhausted",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (2, 42, 'scheduled', '{\"telegram\":true}', NULL, NULL, NULL, 20, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (2, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (2, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:20",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w1"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "server error",
+              "status": 503
+            },
+            "stale"
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "server error",
+              "status": 503
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w1"]
+        },
+        {
+          "clock": "2026-03-01T10:05:00.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "rate limited",
+              "status": 429,
+              "retryAfterSeconds": 45
+            },
+            "w2"
+          ]
+        },
+        {
+          "clock": "2026-03-01T10:06:00.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w3"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "connection reset by peer"
+            },
+            "w3"
+          ]
+        },
+        {
+          "clock": "2026-03-01T10:30:00.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w4"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "HTTP 503 service unavailable"
+            },
+            "w4"
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w5"]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:20"]
+        }
+      ]
+    },
+    {
+      "name": "unknown errors get one retry; permanent, content and timeout never retry",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (3, 42, 'scheduled', '{\"telegram\":true,\"threads_ru\":true,\"x\":true,\"discord\":true}', NULL, NULL, NULL, 30, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (3, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (3, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:30",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:30",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:30",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:30",
+              "target": "discord",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "unexpected parser failure"
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            2,
+            {
+              "message": "Request entity too large",
+              "status": 413
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            3,
+            {
+              "message": "delivery_execution_timeout after 120s"
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            4,
+            {
+              "message": "bad request",
+              "status": 400
+            },
+            "w1"
+          ]
+        },
+        {
+          "clock": "2026-03-01T10:10:00.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "unexpected parser failure"
+            },
+            "w2"
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:30"]
+        }
+      ]
+    },
+    {
+      "name": "a partial chain resumes from its ids and stops early once the platform answers",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (4, 42, 'scheduled', '{\"threads_ru\":true}', NULL, NULL, NULL, 40, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (4, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (4, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:40",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w1"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": false,
+              "partial": true,
+              "resumeKey": "_threadsPublishedIds",
+              "ids": ["t1", ""],
+              "error": "reply 2 refused"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": false,
+              "partial": true,
+              "resumeKey": "_threadsPublishedIds",
+              "ids": ["t1", "t2"]
+            },
+            "w2",
+            "2026-03-01T10:21:00.000Z"
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": false,
+              "partial": true,
+              "resumeKey": "_threadsPublishedIds",
+              "ids": ["t1", "t2"]
+            },
+            "w2",
+            "2026-03-01T10:19:00.000Z"
+          ]
+        },
+        {
+          "clock": "2026-03-01T11:00:00.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w3"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": false,
+              "partial": true,
+              "resumeKey": "_threadsPublishedIds",
+              "ids": ["t1", "t2"],
+              "error": "HTTP 403 forbidden"
+            },
+            "w3",
+            "2026-03-01T11:01:00.000Z"
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 40,
+              "publicationKey": "post:40"
+            },
+            ["threads_ru"],
+            {
+              "from": ["failed"],
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "cancelRemaining",
+          "args": [4, 42]
+        },
+        {
+          "call": "pending",
+          "args": [4]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w4"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": true,
+              "ids": ["t1", "t2", "t3"]
+            },
+            "w4",
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "an ambiguous outcome settles as ambiguous and is never republished",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (5, 42, 'scheduled', '{\"x\":true}', NULL, NULL, NULL, 50, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (5, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (5, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:50",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w1"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": false,
+              "retryable": true,
+              "id": "x-1",
+              "error": "socket hang up after send"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 50,
+              "publicationKey": "post:50"
+            },
+            ["x"],
+            {
+              "from": ["failed"],
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 50,
+              "publicationKey": "post:50"
+            },
+            ["x"],
+            {
+              "from": "unlessHeld",
+              "audienceReached": "republish"
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (51, 42, 'scheduled', '{\"threads_en\":true}', NULL, NULL, NULL, 51, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (51, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (51, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, updated_at) VALUES ('post:51', 'threads_en', 'published', 'live-1', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:51",
+              "target": "threads_en",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [2, "w3"]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (52, 42, 'scheduled', '{\"telegram\":true,\"discord\":true}', NULL, NULL, NULL, 52, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (52, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (52, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:52",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:52",
+              "target": "discord",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [5, "w4"]
+        },
+        {
+          "call": "requireVerification",
+          "args": [3, "transport failed after the request was sent", "nobody"]
+        },
+        {
+          "call": "requireVerification",
+          "args": [3, "transport failed after the request was sent", "w4"]
+        },
+        {
+          "call": "forceVerification",
+          "args": [
+            4,
+            "settlement crashed",
+            "w4",
+            {
+              "ok": false,
+              "ids": ["d1", 2],
+              "url": "https://discord.com/x"
+            }
+          ]
+        },
+        {
+          "call": "forceVerification",
+          "args": [4, "settlement crashed", "w4", null]
+        },
+        {
+          "call": "abandon",
+          "args": [
+            {
+              "postId": 52,
+              "publicationKey": "post:52"
+            },
+            ["telegram", "discord", "telegram", "site_ru"]
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:52"]
+        }
+      ]
+    },
+    {
+      "name": "a lost worker is queued again before the provider and held after it",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (6, 42, 'scheduled', '{\"telegram\":true,\"threads_ru\":true,\"x\":true}', NULL, NULL, NULL, 60, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (6, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (6, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:60",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:60",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:60",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET current_phase = 'provider.publish' WHERE job_id = 1"
+        },
+        {
+          "sql": "UPDATE publish_jobs SET current_phase = 'prepare', last_error = 'slow upload' WHERE job_id = 2"
+        },
+        {
+          "clock": "2026-03-01T10:10:00.000Z"
+        },
+        {
+          "call": "recoverStale",
+          "args": [900]
+        },
+        {
+          "clock": "2026-03-01T10:16:00.000Z"
+        },
+        {
+          "call": "recoverStale",
+          "args": [900]
+        },
+        {
+          "call": "complete",
+          "args": [
+            2,
+            {
+              "ok": true,
+              "id": "late"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w2"]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:60"]
+        }
+      ]
+    },
+    {
+      "name": "a settlement whose lease was taken mid-flight writes nothing",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (7, 42, 'scheduled', '{\"telegram\":true,\"threads_ru\":true}', NULL, NULL, NULL, 70, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (7, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (7, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (publication_key, target, status, payload_json, created_at, updated_at) VALUES ('post:70', 'telegram', 'failed', '{}', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:70",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:70",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "sql": "CREATE TRIGGER steal AFTER DELETE ON publish_jobs BEGIN UPDATE publish_jobs SET locked_by = 'thief' WHERE status = 'publishing'; END"
+        },
+        {
+          "call": "fail",
+          "args": [
+            2,
+            {
+              "message": "server error",
+              "status": 503
+            },
+            "w1"
+          ]
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (publication_key, target, status, payload_json, created_at, updated_at) VALUES ('post:70', 'threads_ru', 'failed', '{}', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "complete",
+          "args": [
+            3,
+            {
+              "ok": false,
+              "partial": true,
+              "resumeKey": "_threadsPublishedIds",
+              "ids": ["t1"]
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "sql": "DROP TRIGGER steal"
+        },
+        {
+          "sql": "UPDATE publish_jobs SET locked_by = 'w2' WHERE job_id = 2"
+        },
+        {
+          "call": "complete",
+          "args": [
+            2,
+            {
+              "ok": true,
+              "id": "m-1"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            2,
+            {
+              "message": "server error",
+              "status": 503
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            2,
+            {
+              "ok": true,
+              "id": "m-2"
+            },
+            "w2",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            3,
+            {
+              "ok": true,
+              "id": "t-1"
+            },
+            "w1",
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cancelling the rest stops queued work and finishes started work",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (8, 42, 'scheduled', '{\"telegram\":true,\"threads_ru\":true,\"x\":true,\"discord\":true,\"site_ru\":true}', NULL, NULL, NULL, 80, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (8, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (8, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:80",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:80",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось.",
+                "_threadsPublishedIds": ["1"]
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:80",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:80",
+              "target": "discord",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [3, "w1"]
+        },
+        {
+          "call": "claim",
+          "args": [4, "w1"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            4,
+            {
+              "message": "bad request",
+              "status": 400
+            },
+            "w1"
+          ]
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:80', 'site_ru', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "pending",
+          "args": [8]
+        },
+        {
+          "call": "cancelRemaining",
+          "args": [8, 42]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "call": "claim",
+          "args": [2, "w2"]
+        },
+        {
+          "call": "cancelRemaining",
+          "args": [99, 42]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (81, 42, 'scheduled', '{\"telegram\":true}', NULL, NULL, NULL, 81, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (81, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (81, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:81",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "sql": "INSERT INTO publication_cancellations (publication_key, actor_id, requested_at) VALUES ('post:81', 42, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "claim",
+          "args": [5, "w3"]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 81,
+              "publicationKey": "post:81"
+            },
+            ["telegram"],
+            {
+              "from": "unlessHeld",
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [5, "w3"]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (82, 42, 'scheduled', '{\"telegram\":true,\"threads_ru\":true}', NULL, NULL, NULL, 82, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (82, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (82, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:82",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:82",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, updated_at) VALUES ('post:82', 'telegram', 'queued', NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, updated_at) VALUES ('post:82', 'threads_ru', 'queued', NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "CREATE TRIGGER race AFTER UPDATE ON publication_targets WHEN NEW.status = 'cancelled' BEGIN UPDATE publish_jobs SET status = 'publishing', locked_by = 'late' WHERE publication_key = 'post:82' AND status = 'queued'; END"
+        },
+        {
+          "call": "cancelRemaining",
+          "args": [82, 42]
+        },
+        {
+          "sql": "DROP TRIGGER race"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (83, 42, 'scheduled', '{\"telegram\":true,\"site_ru\":true}', NULL, NULL, NULL, 83, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (83, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (83, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:83",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:83', 'site_ru', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "cancelDraft",
+          "args": [83, 42]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (84, 42, 'scheduled', '{\"telegram\":true,\"x\":true}', NULL, NULL, NULL, 84, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (84, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (84, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:84",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:84",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published' WHERE publication_key = 'post:84' AND target = 'telegram'"
+        },
+        {
+          "call": "cancelDraft",
+          "args": [84, 42]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:84"]
+        }
+      ]
+    },
+    {
+      "name": "retry requeues what failed once, refuses what reached the audience, and journals dropped identities",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (9, 42, 'scheduled', '{\"telegram\":true,\"threads_en\":true,\"site_ru\":true,\"x\":true}', NULL, NULL, NULL, 90, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (9, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (9, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:90",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:90",
+              "target": "threads_en",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "Provider rejected the post",
+              "status": 400
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            2,
+            {
+              "message": "Provider rejected the post",
+              "status": 400
+            },
+            "w1"
+          ]
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:90', 'site_ru', 'failed', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 90,
+              "publicationKey": "post:90"
+            },
+            ["telegram", "threads_en", "site_ru", "telegram", "site_en"],
+            {
+              "from": ["failed"],
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 90,
+              "publicationKey": "post:90"
+            },
+            ["telegram", "threads_en", "site_ru"],
+            {
+              "from": ["failed"],
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'failed' WHERE job_id = 1"
+        },
+        {
+          "sql": "UPDATE publication_targets SET external_id = 'tg-live', url = 'https://t.me/c/9' WHERE target = 'telegram'"
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 90,
+              "publicationKey": "post:90"
+            },
+            ["telegram"],
+            {
+              "from": ["failed"],
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 90,
+              "publicationKey": "post:90"
+            },
+            ["telegram"],
+            {
+              "from": ["failed"],
+              "audienceReached": "republish"
+            }
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 90,
+              "publicationKey": "post:90"
+            },
+            ["x"],
+            {
+              "from": ["failed"],
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 90,
+              "publicationKey": "post:90"
+            },
+            ["x"],
+            {
+              "from": ["failed"],
+              "createMissing": true,
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (91, 42, 'scheduled', '{\"threads_ru\":true}', NULL, NULL, NULL, 91, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (91, 'ru', 'A big patch for the game came out today, and here is what changed.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (91, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 91,
+              "publicationKey": "post:91"
+            },
+            ["threads_ru"],
+            {
+              "from": ["failed"],
+              "createMissing": true,
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (92, 42, 'scheduled', '{\"threads_en\":true}', NULL, NULL, NULL, 92, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (92, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (92, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 92,
+              "publicationKey": "post:92"
+            },
+            ["threads_en"],
+            {
+              "from": ["failed"],
+              "createMissing": true,
+              "audienceReached": "resume"
+            }
+          ]
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 93,
+              "publicationKey": "post:93"
+            },
+            ["telegram"],
+            {
+              "from": ["failed"],
+              "createMissing": true,
+              "audienceReached": "resume"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "taking a target down and putting it back journal in the same transaction",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (10, 42, 'scheduled', '{\"telegram\":true,\"x\":true}', NULL, NULL, NULL, 100, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (10, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (10, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:100",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:100",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "call": "fail",
+          "args": [
+            1,
+            {
+              "message": "bad request",
+              "status": 400
+            },
+            "w1"
+          ]
+        },
+        {
+          "call": "fail",
+          "args": [
+            2,
+            {
+              "message": "bad request",
+              "status": 400
+            },
+            "w1"
+          ]
+        },
+        {
+          "sql": "CREATE TRIGGER refuse_journal BEFORE INSERT ON publication_events WHEN NEW.event_type = 'publish.target.abandoned' AND NEW.target = 'x' BEGIN SELECT RAISE(ABORT, 'journal refused'); END"
+        },
+        {
+          "call": "abandon",
+          "args": [
+            {
+              "postId": 100,
+              "publicationKey": "post:100"
+            },
+            ["telegram", "x"]
+          ],
+          "error": "any"
+        },
+        {
+          "sql": "DROP TRIGGER refuse_journal"
+        },
+        {
+          "call": "abandon",
+          "args": [
+            {
+              "postId": 100,
+              "publicationKey": "post:100"
+            },
+            ["telegram"]
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:100"]
+        },
+        {
+          "call": "extraDelivery",
+          "args": [
+            {
+              "draftId": 10,
+              "postId": 100,
+              "publicationKey": "post:100"
+            },
+            "telegram"
+          ]
+        },
+        {
+          "sql": "UPDATE publication_targets SET external_id = 'gone-1' WHERE target = 'telegram'"
+        },
+        {
+          "sql": "CREATE TRIGGER refuse_identity BEFORE INSERT ON publication_events WHEN NEW.event_type = 'publish.target.identity_dropped' BEGIN SELECT RAISE(ABORT, 'journal refused'); END"
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 100,
+              "publicationKey": "post:100"
+            },
+            ["telegram"],
+            {
+              "from": "unlessHeld",
+              "audienceReached": "republish"
+            }
+          ],
+          "error": "any"
+        },
+        {
+          "sql": "DROP TRIGGER refuse_identity"
+        },
+        {
+          "call": "requeue",
+          "args": [
+            {
+              "postId": 100,
+              "publicationKey": "post:100"
+            },
+            ["telegram"],
+            {
+              "from": "unlessHeld",
+              "audienceReached": "republish"
+            }
+          ]
+        },
+        {
+          "call": "abandon",
+          "args": [
+            {
+              "postId": 100,
+              "publicationKey": "post:100"
+            },
+            ["x"]
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:100"]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (102, 42, 'published', '{\"telegram\":true}', NULL, NULL, NULL, 102, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (102, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (102, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:102",
+              "target": "telegram",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published' WHERE publication_key = 'post:102'"
+        },
+        {
+          "call": "extraDelivery",
+          "args": [
+            {
+              "draftId": 102,
+              "postId": 102,
+              "publicationKey": "post:102"
+            },
+            "x"
+          ]
+        },
+        {
+          "call": "extraDelivery",
+          "args": [
+            {
+              "draftId": 102,
+              "postId": 102,
+              "publicationKey": "post:102"
+            },
+            "x"
+          ]
+        },
+        {
+          "call": "extraDelivery",
+          "args": [
+            {
+              "draftId": 102,
+              "postId": 102,
+              "publicationKey": "post:102"
+            },
+            "threads_ru"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "editing a scheduled post replans it and keeps the half-delivered job",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (11, 42, 'needs_review', '{\"telegram\":true,\"threads_ru\":true,\"site_ru\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (11, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (11, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishDraft",
+          "args": [
+            11,
+            {
+              "mode": "scheduled",
+              "ruAt": "2026-03-01T11:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET payload_json = json_set(payload_json, '$._threadsPublishedIds', json('[\"18027\"]')), attempt_count = 2 WHERE target = 'threads_ru'"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, updated_at) VALUES ('post:11', 'threads_ru', 'queued', '18027', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "mutateScheduled",
+          "args": [
+            11,
+            {
+              "patch": {
+                "textRu": "Новый текст поста про большой патч для игры, теперь длиннее."
+              },
+              "event": {
+                "ref": "draft:11",
+                "type": "studio.post.edited",
+                "severity": "info",
+                "message": "edited"
+              }
+            }
+          ]
+        },
+        {
+          "call": "source",
+          "args": [11]
+        },
+        {
+          "call": "mutateScheduled",
+          "args": [
+            12,
+            {
+              "patch": {
+                "textRu": "x"
+              }
+            }
+          ],
+          "error": "any"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (12, 42, 'draft', '{\"telegram\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (12, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (12, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "mutateScheduled",
+          "args": [
+            12,
+            {
+              "patch": {
+                "textRu": "x"
+              }
+            }
+          ]
+        },
+        {
+          "call": "mutateScheduled",
+          "args": [
+            11,
+            {
+              "patch": {
+                "targetsJson": "{\"bogus\":true}"
+              }
+            }
+          ]
+        },
+        {
+          "call": "mutateScheduled",
+          "args": [
+            11,
+            {
+              "patch": {
+                "targetsJson": "{\"telegram_stories\":true}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two locales on two dates complete one at a time",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (13, 42, 'needs_review', '{\"telegram\":true,\"x\":true,\"site_en\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (13, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (13, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishDraft",
+          "args": [
+            13,
+            {
+              "mode": "scheduled",
+              "ruAt": "2026-03-01T10:30:00.000Z",
+              "enAt": "2026-03-01T11:30:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "scheduledDrafts",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:31:00.000Z"
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": true,
+              "id": "tg-1"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:13"]
+        },
+        {
+          "clock": "2026-03-01T11:31:00.000Z"
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w2"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            2,
+            {
+              "ok": true,
+              "id": "x-1"
+            },
+            "w2",
+            null
+          ]
+        },
+        {
+          "sql": "UPDATE site_jobs SET status = 'published'"
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:13"]
+        },
+        {
+          "call": "plan",
+          "args": [13]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (14, 42, 'needs_review', '{\"telegram\":true,\"x\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (14, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (14, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishDraft",
+          "args": [
+            14,
+            {
+              "mode": "scheduled",
+              "immediateLocale": "ru"
+            }
+          ]
+        },
+        {
+          "clock": "2026-03-01T11:32:00.000Z"
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w3"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            4,
+            {
+              "ok": true,
+              "id": "tg-2"
+            },
+            "w3",
+            null
+          ]
+        },
+        {
+          "call": "plan",
+          "args": [14]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (15, 42, 'needs_review', '{\"telegram\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (15, 'ru', '', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (15, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishDraft",
+          "args": [15, {}]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (16, 42, 'needs_review', '{\"discord\":true,\"telegram_stories\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (16, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (16, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishDraft",
+          "args": [16, {}]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (17, 42, 'needs_review', '{\"telegram\":true,\"threads_en\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (17, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (17, 'en', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "preflight",
+          "args": [17]
+        },
+        {
+          "call": "publishDraft",
+          "args": [17, {}]
+        },
+        {
+          "call": "publishDraft",
+          "args": [999, {}]
+        }
+      ]
+    },
+    {
+      "name": "deferred provider progress spends no attempt; an emergency settlement keeps its evidence",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (18, 42, 'scheduled', '{\"threads_ru\":true,\"x\":true}', NULL, NULL, NULL, 180, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (18, 'ru', 'Сегодня вышел большой патч для игры, и вот что в нём изменилось.', NULL, '[]', NULL, 0, '2026-03-01T10:00:00.000Z'), (18, 'en', 'A big patch for the game came out today, and here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:180",
+              "target": "threads_ru",
+              "payload": {
+                "text": "Сегодня вышел большой патч для игры, и вот что в нём изменилось."
+              }
+            }
+          ]
+        },
+        {
+          "call": "enqueue",
+          "args": [
+            {
+              "publicationKey": "post:180",
+              "target": "x",
+              "payload": {
+                "text": "A big patch for the game came out today, and here is what changed."
+              }
+            }
+          ]
+        },
+        {
+          "call": "claimDue",
+          "args": [10, "w1"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "deferred": true,
+              "progressKey": "threadsContainer",
+              "progressValue": {
+                "id": "c1"
+              },
+              "retryAfterMs": 1500.7,
+              "state": "IN_PROGRESS"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "clock": "2026-03-01T10:00:02.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w2"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "deferred": true,
+              "progressKey": "threadsContainer",
+              "progressValue": null,
+              "retryAfterMs": "90000",
+              "resumeKey": "_threadsPublishedIds",
+              "resumeValue": ["p1"]
+            },
+            "w2",
+            null
+          ]
+        },
+        {
+          "clock": "2026-03-01T10:01:10.000Z"
+        },
+        {
+          "call": "claim",
+          "args": [1, "w3"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "deferred": true,
+              "progressKey": "_sneaky",
+              "progressValue": 1
+            },
+            "w3",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "deferred": true,
+              "progressKey": "container",
+              "progressValue": 1,
+              "resumeKey": "plain",
+              "resumeValue": 1
+            },
+            "w3",
+            null
+          ]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": false,
+              "error": "Unauthorized token"
+            },
+            "w3",
+            null
+          ]
+        },
+        {
+          "call": "forceVerification",
+          "args": [
+            2,
+            "settlement crashed",
+            "w1",
+            {
+              "ok": false,
+              "ids": ["z1"],
+              "url": "https://x.com/i/z1"
+            }
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["post:180"]
+        }
+      ]
+    },
+    {
+      "name": "an article is one publication on the post delivery spine",
+      "steps": [
+        {
+          "call": "publishArticle",
+          "args": [
+            {
+              "locale": "en",
+              "targets": ["x_article", "x_article"],
+              "markdown": "# The Title\n\nBody with **bold** words.\n\n- one\n- two"
+            }
+          ]
+        },
+        {
+          "call": "publishArticle",
+          "args": [
+            {
+              "locale": "en",
+              "targets": [],
+              "markdown": "# T"
+            }
+          ]
+        },
+        {
+          "call": "publishArticle",
+          "args": [
+            {
+              "locale": "en",
+              "targets": ["telegram"],
+              "markdown": "# T"
+            }
+          ]
+        },
+        {
+          "call": "publishArticle",
+          "args": [
+            {
+              "locale": "ru",
+              "targets": ["x_article"],
+              "markdown": "# T"
+            }
+          ]
+        },
+        {
+          "call": "publishArticle",
+          "args": [
+            {
+              "locale": "en",
+              "targets": ["x_article"],
+              "markdown": "no heading"
+            }
+          ]
+        },
+        {
+          "sql": "DELETE FROM channel_connections WHERE id = 'x'"
+        },
+        {
+          "call": "publishArticle",
+          "args": [
+            {
+              "locale": "en",
+              "targets": ["x_article"],
+              "markdown": "# T"
+            }
+          ]
+        },
+        {
+          "call": "claim",
+          "args": [1, "w1"]
+        },
+        {
+          "call": "complete",
+          "args": [
+            1,
+            {
+              "ok": true,
+              "id": "art-1"
+            },
+            "w1",
+            null
+          ]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["article:1"]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["video:1"]
+        },
+        {
+          "call": "refreshOwner",
+          "args": ["nonsense"]
+        }
+      ]
+    },
+    {
+      "name": "a video from targets to schedule, retry, settlement and cancellation",
+      "steps": [
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (1, 42, 'video', 'video/mp4', 'clip.mp4', '/nonexistent/clip.mp4', 10, 'abc123', 'upload', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "video.create",
+          "args": [42, 1, 24, "ru"]
+        },
+        {
+          "call": "video.replaceTargets",
+          "args": [1, ["tiktok"]]
+        },
+        {
+          "call": "video.replaceTargets",
+          "args": [1, ["youtube_shorts", "instagram_reels", "tiktok", "youtube_shorts"]]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "youtube_shorts",
+            {
+              "title": "ТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТ",
+              "description": "d",
+              "tags": []
+            }
+          ]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "youtube_shorts",
+            {
+              "title": "A <b>",
+              "description": "d",
+              "tags": []
+            }
+          ]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "youtube_shorts",
+            {
+              "title": "Title",
+              "description": "Desc",
+              "tags": ["a b", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+            }
+          ]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "youtube_shorts",
+            {
+              "title": "Title",
+              "description": "Desc",
+              "tags": [
+                "tag number 0",
+                "tag number 1",
+                "tag number 2",
+                "tag number 3",
+                "tag number 4",
+                "tag number 5",
+                "tag number 6",
+                "tag number 7",
+                "tag number 8",
+                "tag number 9",
+                "tag number 10",
+                "tag number 11",
+                "tag number 12",
+                "tag number 13",
+                "tag number 14",
+                "tag number 15",
+                "tag number 16",
+                "tag number 17",
+                "tag number 18",
+                "tag number 19",
+                "tag number 20",
+                "tag number 21",
+                "tag number 22",
+                "tag number 23",
+                "tag number 24",
+                "tag number 25",
+                "tag number 26",
+                "tag number 27",
+                "tag number 28",
+                "tag number 29",
+                "tag number 30",
+                "tag number 31",
+                "tag number 32",
+                "tag number 33",
+                "tag number 34",
+                "tag number 35",
+                "tag number 36",
+                "tag number 37",
+                "tag number 38",
+                "tag number 39"
+              ]
+            }
+          ]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "youtube_shorts",
+            {
+              "title": "Title",
+              "description": "Desc",
+              "tags": ["a b", "c"]
+            }
+          ]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "instagram_reels",
+            {
+              "caption": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "instagram_reels",
+            {
+              "caption": "Caption #tag"
+            }
+          ]
+        },
+        {
+          "call": "video.updateLabel",
+          "args": [1, "  Launch clip  "]
+        },
+        {
+          "call": "video.updateScript",
+          "args": [1, "Capcom (Кáпком) is back with a new game.\n\nSecond paragraph.", "operator"]
+        },
+        {
+          "call": "video.updateScript",
+          "args": [1, "and so we went out to the field. it rained", "transcript"]
+        },
+        {
+          "call": "video.updateScript",
+          "args": [1, "   ", "operator"]
+        },
+        {
+          "call": "video.schedule",
+          "args": [
+            1,
+            {
+              "youtube_shorts": "2026-03-01T09:59:00.000Z"
+            },
+            30,
+            null
+          ]
+        },
+        {
+          "call": "video.schedule",
+          "args": [
+            1,
+            {
+              "youtube_shorts": "2026-04-01T10:00:00.000Z"
+            },
+            30,
+            null
+          ]
+        },
+        {
+          "call": "video.schedule",
+          "args": [1, {}, 30, null]
+        },
+        {
+          "call": "video.schedule",
+          "args": [
+            1,
+            {
+              "youtube_shorts": "2026-03-01T12:00:00.000Z",
+              "instagram_reels": "2026-03-01T13:00:00.000Z"
+            },
+            30,
+            42.5
+          ]
+        },
+        {
+          "call": "video.replaceSource",
+          "args": [1, 1, 50.25]
+        },
+        {
+          "sql": "UPDATE video_jobs SET status = 'running' WHERE id = 1"
+        },
+        {
+          "call": "video.saveMetadata",
+          "args": [
+            1,
+            "youtube_shorts",
+            {
+              "title": "T2",
+              "description": "",
+              "tags": []
+            }
+          ]
+        },
+        {
+          "call": "video.cancel",
+          "args": [1, 24]
+        },
+        {
+          "call": "video.replaceSource",
+          "args": [1, 1, 50]
+        },
+        {
+          "sql": "UPDATE video_jobs SET status = 'queued' WHERE id = 1"
+        },
+        {
+          "sql": "UPDATE video_targets SET status = 'failed', external_id = 'yt-1' WHERE target = 'youtube_shorts'"
+        },
+        {
+          "call": "video.retry",
+          "args": [1, "youtube_shorts"]
+        },
+        {
+          "sql": "UPDATE video_targets SET status = 'failed', external_id = 'ig-1', external_url = 'https://instagram.com/p/1' WHERE target = 'instagram_reels'"
+        },
+        {
+          "call": "video.retry",
+          "args": [1, "instagram_reels"]
+        },
+        {
+          "call": "video.retry",
+          "args": [1, "instagram_reels"]
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 1,
+              "target": "instagram_reels",
+              "apply": true
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE video_targets SET status = 'verification_required' WHERE target = 'instagram_reels'"
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 1,
+              "target": "youtube_shorts",
+              "apply": true
+            }
+          ]
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 1,
+              "target": "instagram_reels",
+              "apply": false
+            }
+          ]
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 1,
+              "target": "instagram_reels",
+              "apply": false,
+              "known": {
+                "url": "https://instagram.com/reel/9"
+              }
+            }
+          ]
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 1,
+              "target": "instagram_reels",
+              "apply": true,
+              "known": {
+                "externalId": "ig-9",
+                "url": "https://instagram.com/reel/9",
+                "providerPostId": "zp-9"
+              }
+            }
+          ]
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 1,
+              "target": "instagram_reels",
+              "apply": true,
+              "known": {
+                "url": "https://instagram.com/reel/9"
+              }
+            }
+          ]
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 9,
+              "target": "instagram_reels",
+              "apply": true
+            }
+          ]
+        },
+        {
+          "call": "video.cancel",
+          "args": [1, 24]
+        },
+        {
+          "call": "video.refreshStatus",
+          "args": [1, 24]
+        },
+        {
+          "call": "video.updateLabel",
+          "args": [1, "late"]
+        },
+        {
+          "call": "video.create",
+          "args": [42, 1, 24, "en"]
+        },
+        {
+          "call": "video.replaceTargets",
+          "args": [2, ["youtube_shorts"]]
+        },
+        {
+          "call": "video.schedule",
+          "args": [
+            2,
+            {
+              "youtube_shorts": "2026-03-01T11:00:00.000Z"
+            },
+            30,
+            null
+          ]
+        },
+        {
+          "call": "video.removeTarget",
+          "args": [2, "instagram_reels", 24]
+        },
+        {
+          "call": "video.removeTarget",
+          "args": [2, "youtube_shorts", 24]
+        },
+        {
+          "call": "video.create",
+          "args": [42, 1, 24, "ru"]
+        },
+        {
+          "call": "video.replaceTargets",
+          "args": [3, ["instagram_reels"]]
+        },
+        {
+          "call": "video.schedule",
+          "args": [
+            3,
+            {
+              "instagram_reels": "2026-03-01T10:30:00.000Z"
+            },
+            10,
+            null
+          ]
+        },
+        {
+          "sql": "UPDATE video_targets SET status = 'verification_required' WHERE video_draft_id = 3"
+        },
+        {
+          "call": "video.settle",
+          "args": [
+            {
+              "videoDraftId": 3,
+              "target": "instagram_reels",
+              "apply": true,
+              "known": {
+                "url": "https://instagram.com/reel/3"
+              }
+            }
+          ]
+        },
+        {
+          "call": "video.create",
+          "args": [42, 1, 24, "ru"]
+        },
+        {
+          "call": "video.replaceTargets",
+          "args": [4, ["instagram_reels", "youtube_shorts"]]
+        },
+        {
+          "call": "video.removeTarget",
+          "args": [4, "youtube_shorts", 24]
+        },
+        {
+          "call": "video.refreshStatus",
+          "args": [4, 24]
+        },
+        {
+          "call": "video.updateScript",
+          "args": [77, "x", "operator"]
+        },
+        {
+          "call": "video.create",
+          "args": [42, 1, 24, "ru"]
+        },
+        {
+          "call": "video.replaceTargets",
+          "args": [5, ["youtube_shorts", "instagram_reels"]]
+        },
+        {
+          "sql": "UPDATE video_targets SET scheduled_at = '2026-13-45T99:99:99Z' WHERE video_draft_id = 5 AND target = 'instagram_reels'"
+        },
+        {
+          "call": "video.schedule",
+          "args": [
+            5,
+            {
+              "youtube_shorts": "2026-03-01T11:00:00.000Z"
+            },
+            30,
+            null
+          ]
+        }
+      ]
+    }
+  ]
+}

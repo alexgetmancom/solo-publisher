@@ -1,6 +1,6 @@
 use db::rusqlite::{Connection, OptionalExtension, params};
 
-use super::{stamp, stamp_offset};
+use super::{random_uuid, stamp, stamp_offset};
 use crate::Result;
 use crate::application::ports::{Clock, TranslationClaim};
 
@@ -134,21 +134,4 @@ impl<'a> DraftTranslationStore<'a> {
 fn utf16_prefix(text: &str, units: usize) -> String {
     let encoded: Vec<u16> = text.encode_utf16().take(units).collect();
     String::from_utf16_lossy(&encoded)
-}
-
-/// `crypto.randomUUID()`: a version 4 UUID in lowercase hex.
-fn random_uuid() -> String {
-    let mut bytes = [0u8; 16];
-    getrandom::getrandom(&mut bytes).expect("the operating system has no randomness source");
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    let hex: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
-    format!(
-        "{}-{}-{}-{}-{}",
-        &hex[..8],
-        &hex[8..12],
-        &hex[12..16],
-        &hex[16..20],
-        &hex[20..]
-    )
 }

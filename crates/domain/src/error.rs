@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use db::rusqlite;
 use foundation::errors::StudioError;
 
@@ -13,7 +15,18 @@ pub enum Error {
     Studio(#[from] StudioError),
     /// A refusal TypeScript throws as a plain `Error` with this message.
     #[error("{0}")]
-    Message(&'static str),
+    Message(Cow<'static, str>),
+    /// A settlement fenced by a lease that another worker has since taken.
+    /// It rolls the settlement back; the queue reports it, it never escapes.
+    #[error("publish_job_lock_lost:{0}")]
+    PublishLockLost(i64),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+impl Error {
+    /// A plain refusal with the message TypeScript throws.
+    pub fn message(text: impl Into<Cow<'static, str>>) -> Self {
+        Self::Message(text.into())
+    }
+}

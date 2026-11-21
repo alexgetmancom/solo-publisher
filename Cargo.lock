@@ -182,6 +182,7 @@ dependencies = [
  "foundation",
  "getrandom",
  "jiff",
+ "regex",
  "serde",
  "serde_json",
  "thiserror",
