@@ -1,0 +1,115 @@
+{
+  "id": "video-intake-rejects-text",
+  "seed": [],
+  "specRef": "§10 #4 (intake.need-video); §6.1.2",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 Пришлите видеофайл."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "🎬 Видео"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Эта кнопка принимает видеофайл. Текст и фото — через 📝 Текст."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Это не видео"
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Могу опубликовать текст, фото, видео или Markdown-файл. Пришлите что-то из этого."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 5,
+          "sticker": {
+            "file_id": "sticker",
+            "file_unique_id": "s",
+            "height": 512,
+            "is_animated": false,
+            "is_video": false,
+            "type": "regular",
+            "width": 512
+          }
+        },
+        "update_id": 3
+      }
+    }
+  ]
+}

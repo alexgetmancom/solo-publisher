@@ -1,0 +1,951 @@
+{
+  "id": "callback-publication-stale",
+  "seed": [],
+  "specRef": "§10 #45, #93; §5.2 steps 1-5 (unknown action, invalid id, arity, missing and wrong session revision)",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Первый пост\n\nНемного текста о запуске."
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#1"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Эта карточка устарела. Откройте актуальную карточку из очереди."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "📋 Очередь"
+                  }
+                ]
+              ]
+            },
+            "text": "Эта карточка устарела. Откройте актуальную карточку из очереди."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:frobnicate:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#2"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Эта карточка устарела. Откройте актуальную карточку из очереди."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "📋 Очередь"
+                  }
+                ]
+              ]
+            },
+            "text": "Эта карточка устарела. Откройте актуальную карточку из очереди."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:frobnicate:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#3"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Некорректный пост"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:view:abc:overview",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#4"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Откройте создание видео заново."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:view:0:overview",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#5"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Эта карточка устарела. Откройте актуальную карточку из очереди."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:toggle:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#6"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Эта карточка устарела. Откройте актуальную карточку из очереди."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:cancel_dialog",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#7"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Отправьте замену следующим сообщением"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте следующим сообщением новый текст, фото или альбом. Только текст — медиа останутся, только медиа — текст останется."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:edit_ru:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#8"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Этот диалог устарел. Начните заново."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv99|p:post:cancel_dialog",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#8",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте следующим сообщением новый текст, фото или альбом. Только текст — медиа останутся, только медиа — текст останется."
+          }
+        },
+        "update_id": 10
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#9"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "draft 999 not found"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:view:999:overview",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#9",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте следующим сообщением новый текст, фото или альбом. Только текст — медиа останутся, только медиа — текст останется."
+          }
+        },
+        "update_id": 11
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "callback-publication-stale#10"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "draft 999 not found"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "progress:999",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "callback-publication-stale#10",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте следующим сообщением новый текст, фото или альбом. Только текст — медиа останутся, только медиа — текст останется."
+          }
+        },
+        "update_id": 12
+      }
+    }
+  ]
+}

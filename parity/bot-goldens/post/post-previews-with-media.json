@@ -1,0 +1,506 @@
+{
+  "id": "post-previews-with-media",
+  "seed": [],
+  "specRef": "§10 #66; §7.6 delivery previews with media",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "preview-photo"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 1 RU · 1 EN\n⚠️ EN использует RU-медиа\n\nRU:\nПост с фотографией\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "caption": "Пост с фотографией",
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "photo": [
+            {
+              "file_id": "preview-photo-small",
+              "file_size": 1200,
+              "file_unique_id": "preview-photo-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "preview-photo",
+              "file_size": 287,
+              "file_unique_id": "preview-photo-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-previews-with-media#1"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Отправьте замену следующим сообщением"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте следующим сообщением новый текст, фото или альбом. Только текст — медиа останутся, только медиа — текст останется."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:edit_en:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-previews-with-media#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 1 RU · 1 EN\n⚠️ EN использует RU-медиа\n\nRU:\nПост с фотографией\n\nEN:\n\\[не переведено\\]"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 1 RU · 1 EN\n⚠️ EN использует RU-медиа\n\nRU:\nПост с фотографией\n\nEN:\nFirst post\n\nA few words about the launch."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 6,
+          "text": "First post\n\nA few words about the launch."
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-previews-with-media#2"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "text": "👁 *Preview · RU*\ntelegram · site\\_ru · threads\\_ru · telegram\\_stories · instagram\\_stories\\_ru"
+          }
+        },
+        {
+          "method": "sendPhoto",
+          "payload": {
+            "caption": "Пост с фотографией",
+            "chat_id": "1001",
+            "photo": {
+              "file": {
+                "contentType": "application/octet-stream",
+                "name": "65cdbdb65152475a69f43e60.jpg",
+                "sha256": "65cdbdb65152475a69f43e606b6912c5915fd803aab39a60b9b0a280a27689dd",
+                "size": 287
+              }
+            }
+          },
+          "transport": "multipart"
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "🧵 Threads RU · 18/500\n\nПост с фотографией"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "text": "👁 *Preview · EN*\nsite\\_en · threads\\_en · instagram\\_stories"
+          }
+        },
+        {
+          "method": "sendPhoto",
+          "payload": {
+            "caption": "First post\n\nA few words about the launch.",
+            "caption_entities": [
+              {
+                "length": 10,
+                "offset": 0,
+                "type": "bold"
+              }
+            ],
+            "chat_id": "1001",
+            "photo": {
+              "file": {
+                "contentType": "application/octet-stream",
+                "name": "65cdbdb65152475a69f43e60.jpg",
+                "sha256": "65cdbdb65152475a69f43e606b6912c5915fd803aab39a60b9b0a280a27689dd",
+                "size": 287
+              }
+            }
+          },
+          "transport": "multipart"
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "🧵 Threads EN · 41/500\n\nFirst post\n\nA few words about the launch."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:publish_confirm:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\n\n⚠️ *Опубликовать сейчас?*\nБудет отправлено в: Telegram, Site RU, Site EN, Threads RU, Threads EN."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:publish:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-previews-with-media#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 7,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 1 RU · 1 EN\n⚠️ EN использует RU-медиа\n\nRU:\nПост с фотографией\n\nEN:\nFirst post\n\nA few words about the launch."
+          }
+        },
+        "update_id": 5
+      }
+    }
+  ]
+}

@@ -1,0 +1,1268 @@
+{
+  "id": "settings-notifications",
+  "seed": [],
+  "specRef": "§10 #75, #76; §4.10.7",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "☰ Меню"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "main-menu/1/1//f1��{",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications-category/0/0//h�Q��",
+                    "text": "🔔 Уведомления о публикациях"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications-category/1/0//hɼ�8",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 Уведомления\n\nЧто бот сообщает и когда."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-menu/0/1//hv=[�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//h��Ϩ",
+                    "text": "✅ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h�2��",
+                    "text": "✅ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//h_\u0012�-",
+                    "text": "✅ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Вкл*\nНапоминание перед отложенным текстом: *Вкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Вкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications-category/0/0//h�Q��",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications-category/0/0//h�Q��",
+                    "text": "🔔 Уведомления о публикациях"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications-category/1/0//hɼ�8",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 Уведомления\n\nЧто бот сообщает и когда."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h�2��",
+                    "text": "✅ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//h_\u0012�-",
+                    "text": "✅ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Вкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Вкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications/0/0//h��Ϩ",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//h��Ϩ",
+                    "text": "✅ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h�2��",
+                    "text": "✅ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//h_\u0012�-",
+                    "text": "✅ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Вкл*\nНапоминание перед отложенным текстом: *Вкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Вкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//h_\u0012�-",
+                    "text": "✅ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Вкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications/0/1//h�2��",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h�2��",
+                    "text": "✅ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//h_\u0012�-",
+                    "text": "✅ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Вкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Вкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//hF\u001f¨",
+                    "text": "⬜ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Выкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications/1/0//h_\u0012�-",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//h_\u0012�-",
+                    "text": "✅ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Вкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#7"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "15 мин."
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//hF\u001f¨",
+                    "text": "⬜ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h�\u0003Sd",
+                    "text": "○ 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h�\"�",
+                    "text": "● 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *15 мин.*\nУведомление о завершении: *Выкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications/3/0//h{\u001e.�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//hF\u001f¨",
+                    "text": "⬜ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h��ֈ",
+                    "text": "● 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h{\u001e.�",
+                    "text": "○ 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *5 мин.*\nУведомление о завершении: *Выкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#8"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "15 мин."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications/3/0//h�\"�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#8",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//hF\u001f¨",
+                    "text": "⬜ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h�\u0003Sd",
+                    "text": "○ 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h�\"�",
+                    "text": "● 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *15 мин.*\nУведомление о завершении: *Выкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#9"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications-category/0/0//h�Q��",
+                    "text": "🔔 Уведомления о публикациях"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications-category/1/0//hɼ�8",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 Уведомления\n\nЧто бот сообщает и когда."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications/4/0//h0\u000e��",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#9",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications/0/0//hs7\r�",
+                    "text": "⬜ Напоминание о видео"
+                  },
+                  {
+                    "callback_data": "settings-notifications/0/1//h���K",
+                    "text": "⬜ Напоминание о тексте"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/1/0//hF\u001f¨",
+                    "text": "⬜ Завершение"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/2/0//h���",
+                    "text": "○ 1 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/1//h�\u0003Sd",
+                    "text": "○ 5 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/2/2//hz�1�",
+                    "text": "○ 10 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/3/0//h�\"�",
+                    "text": "● 15 мин"
+                  },
+                  {
+                    "callback_data": "settings-notifications/3/1//h��g�",
+                    "text": "○ 30 мин"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications/4/0//h0\u000e��",
+                    "text": "← Уведомления"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 *Уведомления о публикациях*\n\nНапоминание перед отложенным видео: *Выкл*\nНапоминание перед отложенным текстом: *Выкл*\nЗа сколько: *15 мин.*\nУведомление о завершении: *Выкл*\n\nЭто настройки Studio. Telegram только доставляет их."
+          }
+        },
+        "update_id": 10
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-notifications#10"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-notifications-category/1/0//hɼ�8",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-notifications#10",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-notifications-category/0/0//h�Q��",
+                    "text": "🔔 Уведомления о публикациях"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-notifications-category/1/0//hɼ�8",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "🔔 Уведомления\n\nЧто бот сообщает и когда."
+          }
+        },
+        "update_id": 11
+      }
+    }
+  ]
+}

@@ -254,7 +254,11 @@ const html: Array<{ text: string; entities: Record<string, unknown>[]; html: str
   ...HTML_TEXTS.flatMap((text) =>
     Array.from({ length: 4 }, () => ({ text, entities: Array.from({ length: integer(0, 6) }, () => randomEntity(text.length)) })),
   ),
-].map((item) => ({ ...item, html: entitiesToHtml(item.text, item.entities).toWellFormed() }));
+].map((item) => ({
+  ...item,
+  // Bun has String#toWellFormed at runtime; the tsconfig lib predates it.
+  html: (entitiesToHtml(item.text, item.entities) as string & { toWellFormed(): string }).toWellFormed(),
+}));
 
 const textLinks = [
   [],
@@ -428,7 +432,7 @@ const chains = [
     posts: [{ text, entities: Array.from({ length: 3 }, () => randomEntity(text.length)), media: [{ type: "video" }] }],
     limit: pick(LIMITS),
   })),
-].map((input) => ({ ...input, chain: chainPosts(input.posts, input.limit) }));
+].map((input) => ({ ...input, chain: chainPosts<unknown>(input.posts, input.limit) }));
 
 write("thread.json", { localized, joined, chains });
 
@@ -658,7 +662,8 @@ write("media.json", {
 // ---- translation.ts --------------------------------------------------------
 
 const config = (key: string) => ({ DEEPSEEK_API_KEY: key }) as BackendConfig;
-const studios = [null, "ru", "en"].map((locale) => {
+const STUDIO_LOCALES = [null, "ru", "en"] as const;
+const studios = STUDIO_LOCALES.map((locale) => {
   const backendDb = openBackendDb(":memory:");
   if (locale) registerChannel(backendDb, { platform: "threads", locale, provider: "native", targetId: `threads_${locale}` });
   return backendDb;

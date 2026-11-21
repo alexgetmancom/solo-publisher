@@ -1,0 +1,86 @@
+{
+  "id": "menu-headline-tomorrow",
+  "seed": ["Scheduled through the Studio service: \"🚀 Запуск новой рубрики про игровые новинки недели\" at 2026-08-21T07:30:00.000Z"],
+  "specRef": "§4.1 headline (⏭ tomorrow, label cut)",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "is_persistent": true,
+              "keyboard": [
+                [
+                  {
+                    "text": "☰ Меню"
+                  }
+                ]
+              ],
+              "resize_keyboard": true
+            },
+            "text": "Кнопка меню всегда останется внизу чата."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь · 1"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "⏭ Завтра, 10:30 · Запуск новой рубрики..."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "entities": [
+            {
+              "length": 6,
+              "offset": 0,
+              "type": "bot_command"
+            }
+          ],
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "/start"
+        },
+        "update_id": 1
+      }
+    }
+  ]
+}

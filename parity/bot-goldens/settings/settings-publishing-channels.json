@@ -1,0 +1,1536 @@
+{
+  "id": "settings-publishing-channels",
+  "seed": [],
+  "specRef": "§10 #68, #69, #70, #71; §4.10.2, §4.10.3 list, card, disable",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "☰ Меню"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "main-menu/1/1//f1��{",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-menu/0/0//hl7�Z",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channels/0/0//h�F�T",
+                    "text": "⚠️ Discord EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/0/1//h�\u0000{�",
+                    "text": "✅ Instagram EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/1/0//h�\u0000}p",
+                    "text": "✅ Instagram RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/1/1//h�Cey",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/2/0//h�Cga",
+                    "text": "✅ Instagram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/2/1//h+��c",
+                    "text": "✅ Site EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/3/0//h+��K",
+                    "text": "✅ Site RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/3/1//h�|�",
+                    "text": "✅ Telegram RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/4/0//h��ON",
+                    "text": "⚠️ Telegram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/4/1//h�:O",
+                    "text": "⚠️ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/5/0//h�8g",
+                    "text": "⚠️ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/5/1//h=�X�",
+                    "text": "⚠️ X EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/6/0//h~���",
+                    "text": "✅ YouTube EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/6/1//h~�ҿ",
+                    "text": "✅ YouTube RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/7/0//h;��\u0000",
+                    "text": "＋ Подключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/8/0//h��3?",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🔌 Подключённые каналы\n\nПодключено: 14. Выберите канал, чтобы посмотреть или отключить."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-publishing/0/0//h��)",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel/0/0//h��@�",
+                    "text": "🗑 Отключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel/1/0//h+xR",
+                    "text": "← Каналы"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ *Telegram RU*\n\nПровайдер: native\nАккаунт: —\nСостояние: готов"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channels/3/1//h�|�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channels/0/0//h�F�T",
+                    "text": "⚠️ Discord EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/0/1//h�\u0000{�",
+                    "text": "✅ Instagram EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/1/0//h�\u0000}p",
+                    "text": "✅ Instagram RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/1/1//h�Cey",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/2/0//h�Cga",
+                    "text": "✅ Instagram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/2/1//h+��c",
+                    "text": "✅ Site EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/3/0//h+��K",
+                    "text": "✅ Site RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/3/1//h�|�",
+                    "text": "✅ Telegram RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/4/0//h��ON",
+                    "text": "⚠️ Telegram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/4/1//h�:O",
+                    "text": "⚠️ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/5/0//h�8g",
+                    "text": "⚠️ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/5/1//h=�X�",
+                    "text": "⚠️ X EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/6/0//h~���",
+                    "text": "✅ YouTube EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/6/1//h~�ҿ",
+                    "text": "✅ YouTube RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/7/0//h;��\u0000",
+                    "text": "＋ Подключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/8/0//h��3?",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🔌 Подключённые каналы\n\nПодключено: 14. Выберите канал, чтобы посмотреть или отключить."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel-disable/0/0//h�ϥ�",
+                    "text": "🗑 Да, отключить"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel-disable/1/0//h>\t��",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🗑 Отключить Telegram RU?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channel/0/0//h��@�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel/0/0//h��@�",
+                    "text": "🗑 Отключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel/1/0//h+xR",
+                    "text": "← Каналы"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ *Telegram RU*\n\nПровайдер: native\nАккаунт: —\nСостояние: готов"
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel/0/0//h��@�",
+                    "text": "🗑 Отключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel/1/0//h+xR",
+                    "text": "← Каналы"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ *Telegram RU*\n\nПровайдер: native\nАккаунт: —\nСостояние: готов"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channel-disable/1/0//h>\t��",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel-disable/0/0//h�ϥ�",
+                    "text": "🗑 Да, отключить"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel-disable/1/0//h>\t��",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🗑 Отключить Telegram RU?"
+          }
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#7"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel-disable/0/0//h�ϥ�",
+                    "text": "🗑 Да, отключить"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel-disable/1/0//h>\t��",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🗑 Отключить Telegram RU?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channel/0/0//h��@�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel/0/0//h��@�",
+                    "text": "🗑 Отключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel/1/0//h+xR",
+                    "text": "← Каналы"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ *Telegram RU*\n\nПровайдер: native\nАккаунт: —\nСостояние: готов"
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#8"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Канал отключён"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel-disable/0/0//h�ϥ�",
+                    "text": "🗑 Да, отключить"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel-disable/1/0//h>\t��",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🔌 Подключённые каналы\n\nПодключено: 13. Выберите канал, чтобы посмотреть или отключить."
+          }
+        },
+        {
+          "method": "editMessageReplyMarkup",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channels/0/0//h͡��",
+                    "text": "⚠️ Discord EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/0/1//h�.\u0011�",
+                    "text": "✅ Instagram EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/1/0//h�.\u0013�",
+                    "text": "✅ Instagram RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/1/1//h����",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/2/0//h����",
+                    "text": "✅ Instagram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/2/1//h�,S&",
+                    "text": "✅ Site EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/3/0//h�,U\u000e",
+                    "text": "✅ Site RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/3/1//hq�ʭ",
+                    "text": "⚠️ Telegram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/4/0//h\u000e�g�",
+                    "text": "⚠️ Threads RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/4/1//h\u000e�e�",
+                    "text": "⚠️ Threads EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/5/0//h*��/",
+                    "text": "⚠️ X EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/5/1//h�\u0005\u001e.",
+                    "text": "✅ YouTube EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/6/0//h�\u0005 \u0016",
+                    "text": "✅ YouTube RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/7/0//h@��O",
+                    "text": "＋ Подключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/8/0//h\u0017怖",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channel-disable/0/0//h�ϥ�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#8",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel-disable/0/0//h�ϥ�",
+                    "text": "🗑 Да, отключить"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel-disable/1/0//h>\t��",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🗑 Отключить Telegram RU?"
+          }
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#9"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel/0/0//h��@�",
+                    "text": "🗑 Отключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel/1/0//h+xR",
+                    "text": "← Каналы"
+                  }
+                ]
+              ]
+            },
+            "text": "⚠️ *Threads RU*\n\nПровайдер: native\nАккаунт: —\nСостояние: не хватает credentials: 1"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channels/4/0//h\u000e�g�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#9",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channels/0/0//h͡��",
+                    "text": "⚠️ Discord EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/0/1//h�.\u0011�",
+                    "text": "✅ Instagram EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/1/0//h�.\u0013�",
+                    "text": "✅ Instagram RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/1/1//h����",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/2/0//h����",
+                    "text": "✅ Instagram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/2/1//h�,S&",
+                    "text": "✅ Site EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/3/0//h�,U\u000e",
+                    "text": "✅ Site RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/3/1//hq�ʭ",
+                    "text": "⚠️ Telegram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/4/0//h\u000e�g�",
+                    "text": "⚠️ Threads RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/4/1//h\u000e�e�",
+                    "text": "⚠️ Threads EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/5/0//h*��/",
+                    "text": "⚠️ X EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/5/1//h�\u0005\u001e.",
+                    "text": "✅ YouTube EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/6/0//h�\u0005 \u0016",
+                    "text": "✅ YouTube RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/7/0//h@��O",
+                    "text": "＋ Подключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/8/0//h\u0017怖",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🔌 Подключённые каналы\n\nПодключено: 13. Выберите канал, чтобы посмотреть или отключить."
+          }
+        },
+        "update_id": 10
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#10"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channels/0/0//h͡��",
+                    "text": "⚠️ Discord EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/0/1//h�.\u0011�",
+                    "text": "✅ Instagram EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/1/0//h�.\u0013�",
+                    "text": "✅ Instagram RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/1/1//h����",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/2/0//h����",
+                    "text": "✅ Instagram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/2/1//h�,S&",
+                    "text": "✅ Site EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/3/0//h�,U\u000e",
+                    "text": "✅ Site RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/3/1//hq�ʭ",
+                    "text": "⚠️ Telegram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/4/0//h\u000e�g�",
+                    "text": "⚠️ Threads RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/4/1//h\u000e�e�",
+                    "text": "⚠️ Threads EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/5/0//h*��/",
+                    "text": "⚠️ X EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/5/1//h�\u0005\u001e.",
+                    "text": "✅ YouTube EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/6/0//h�\u0005 \u0016",
+                    "text": "✅ YouTube RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/7/0//h@��O",
+                    "text": "＋ Подключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/8/0//h\u0017怖",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🔌 Подключённые каналы\n\nПодключено: 13. Выберите канал, чтобы посмотреть или отключить."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channel/1/0//h+xR",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#10",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channel/0/0//h��@�",
+                    "text": "🗑 Отключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channel/1/0//h+xR",
+                    "text": "← Каналы"
+                  }
+                ]
+              ]
+            },
+            "text": "⚠️ *Threads RU*\n\nПровайдер: native\nАккаунт: —\nСостояние: не хватает credentials: 1"
+          }
+        },
+        "update_id": 11
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#11"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-channels/8/0//h\u0017怖",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#11",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-channels/0/0//h͡��",
+                    "text": "⚠️ Discord EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/0/1//h�.\u0011�",
+                    "text": "✅ Instagram EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/1/0//h�.\u0013�",
+                    "text": "✅ Instagram RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/1/1//h����",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/2/0//h����",
+                    "text": "✅ Instagram Stories RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/2/1//h�,S&",
+                    "text": "✅ Site EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/3/0//h�,U\u000e",
+                    "text": "✅ Site RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/3/1//hq�ʭ",
+                    "text": "⚠️ Telegram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/4/0//h\u000e�g�",
+                    "text": "⚠️ Threads RU"
+                  },
+                  {
+                    "callback_data": "settings-channels/4/1//h\u000e�e�",
+                    "text": "⚠️ Threads EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/5/0//h*��/",
+                    "text": "⚠️ X EN"
+                  },
+                  {
+                    "callback_data": "settings-channels/5/1//h�\u0005\u001e.",
+                    "text": "✅ YouTube EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/6/0//h�\u0005 \u0016",
+                    "text": "✅ YouTube RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/7/0//h@��O",
+                    "text": "＋ Подключить канал"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-channels/8/0//h\u0017怖",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🔌 Подключённые каналы\n\nПодключено: 13. Выберите канал, чтобы посмотреть или отключить."
+          }
+        },
+        "update_id": 12
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-publishing-channels#12"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-publishing/2/0//hG��[",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-publishing-channels#12",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        },
+        "update_id": 13
+      }
+    }
+  ]
+}

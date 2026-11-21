@@ -1,0 +1,198 @@
+{
+  "id": "post-album-give-up",
+  "seed": ["After both album items arrive, getFile answers 'wrong file_id' for them."],
+  "specRef": "§10 #92; §6.5 attempts > 5",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Альбом получен. Создам или обновлю черновик через несколько секунд."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "caption": "Альбом, который не собрать",
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "media_group_id": "album-d",
+          "message_id": 3,
+          "photo": [
+            {
+              "file_id": "broken-1-small",
+              "file_size": 1200,
+              "file_unique_id": "broken-1-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "broken-1",
+              "file_size": 287,
+              "file_unique_id": "broken-1-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "media_group_id": "album-d",
+          "message_id": 5,
+          "photo": [
+            {
+              "file_id": "broken-2-small",
+              "file_size": 1200,
+              "file_unique_id": "broken-2-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "broken-2",
+              "file_size": 287,
+              "file_unique_id": "broken-2-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "broken-1"
+          }
+        }
+      ],
+      "trigger": "album worker tick (+5 s)"
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "broken-1"
+          }
+        }
+      ],
+      "trigger": "album worker tick (+5 s)"
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "broken-1"
+          }
+        }
+      ],
+      "trigger": "album worker tick (+5 s)"
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "broken-1"
+          }
+        }
+      ],
+      "trigger": "album worker tick (+5 s)"
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "broken-1"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Не удалось собрать черновик из этого альбома. Пришлите его ещё раз."
+          }
+        }
+      ],
+      "trigger": "album worker tick (+5 s)"
+    },
+    {
+      "calls": [],
+      "trigger": "album worker tick (+5 s)"
+    }
+  ]
+}

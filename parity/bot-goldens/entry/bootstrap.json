@@ -1,0 +1,23 @@
+{
+  "id": "bootstrap",
+  "seed": [],
+  "specRef": "§1.1 setMyCommands",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "setMyCommands",
+          "payload": {
+            "commands": [
+              {
+                "command": "start",
+                "description": "Restore bot menu"
+              }
+            ]
+          }
+        }
+      ],
+      "trigger": "createBot"
+    }
+  ]
+}

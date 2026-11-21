@@ -1,0 +1,1131 @@
+{
+  "id": "post-thread",
+  "seed": [],
+  "specRef": "§10 #28, #30, #31; §4.5.10; §5.2.2 thread_add, thread_done, thread_edit, thread_remove; §6.2 thread_part, thread_edit",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Первый пост\n\nНемного текста о запуске."
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Пришлите пост 2: текст, фото или видео."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_add:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[не переведено\\]"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Дополнить"
+                  },
+                  {
+                    "callback_data": "p:post:thread_done:1",
+                    "text": "✅ Это конец"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Постов в треде: 2. Дополнить или закончить?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 5,
+          "text": "Второй пост цепочки"
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 6,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv4|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Пришлите пост 3: текст, фото или видео."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_add:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 6,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Дополнить"
+                  },
+                  {
+                    "callback_data": "p:post:thread_done:1",
+                    "text": "✅ Это конец"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Постов в треде: 2. Дополнить или закончить?"
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "thread-photo"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Дополнить"
+                  },
+                  {
+                    "callback_data": "p:post:thread_done:1",
+                    "text": "✅ Это конец"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Постов в треде: 3. Дополнить или закончить?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "caption": "Третий пост с фото",
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 7,
+          "photo": [
+            {
+              "file_id": "thread-photo-small",
+              "file_size": 1200,
+              "file_unique_id": "thread-photo-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "thread-photo",
+              "file_size": 287,
+              "file_unique_id": "thread-photo-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 8,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:ru",
+                    "text": "✏️ RU 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:en",
+                    "text": "✏️ EN 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:3:ru",
+                    "text": "🗑 3"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 3 поста · Threads EN — 3 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост цепочки\nEN: \\[не переведено\\]\n\n*3.* 🖼 1\nRU: Третий пост с фото\nEN: \\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_done:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 8,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Дополнить"
+                  },
+                  {
+                    "callback_data": "p:post:thread_done:1",
+                    "text": "✅ Это конец"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Постов в треде: 3. Дополнить или закончить?"
+          }
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 8,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv8|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ Пришлите новый пост 2."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_edit:1:2:ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 8,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:ru",
+                    "text": "✏️ RU 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:en",
+                    "text": "✏️ EN 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:3:ru",
+                    "text": "🗑 3"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 3 поста · Threads EN — 3 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост цепочки\nEN: \\[не переведено\\]\n\n*3.* 🖼 1\nRU: Третий пост с фото\nEN: \\[не переведено\\]"
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:ru",
+                    "text": "✏️ RU 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:en",
+                    "text": "✏️ EN 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:3:ru",
+                    "text": "🗑 3"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 3 поста · Threads EN — 3 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост, исправленный\nEN: \\[не переведено\\]\n\n*3.* 🖼 1\nRU: Третий пост с фото\nEN: \\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 9,
+          "text": "Второй пост, исправленный"
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 10,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv11|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ Пришлите новый английский пост 2."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_edit:1:2:en",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 10,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:ru",
+                    "text": "✏️ RU 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:en",
+                    "text": "✏️ EN 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:3:ru",
+                    "text": "🗑 3"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 3 поста · Threads EN — 3 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост, исправленный\nEN: \\[не переведено\\]\n\n*3.* 🖼 1\nRU: Третий пост с фото\nEN: \\[не переведено\\]"
+          }
+        },
+        "update_id": 10
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:ru",
+                    "text": "✏️ RU 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:en",
+                    "text": "✏️ EN 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:3:ru",
+                    "text": "🗑 3"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 3 поста · Threads EN — 3 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост, исправленный\nEN: Second post in English\n\n*3.* 🖼 1\nRU: Третий пост с фото\nEN: \\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 11,
+          "text": "Second post in English"
+        },
+        "update_id": 11
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#6"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "🗑 Пост 3 удалён."
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 12,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 2 поста · Threads EN — 2 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост, исправленный\nEN: Second post in English"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_remove:1:3:ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 12,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:ru",
+                    "text": "✏️ RU 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:3:en",
+                    "text": "✏️ EN 3"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:3:ru",
+                    "text": "🗑 3"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 3 поста · Threads EN — 3 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост, исправленный\nEN: Second post in English\n\n*3.* 🖼 1\nRU: Третий пост с фото\nEN: \\[не переведено\\]"
+          }
+        },
+        "update_id": 12
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-thread#7"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "🗑 Пост 2 удалён."
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 12,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_remove:1:2:ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-thread#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 12,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:ru",
+                    "text": "✏️ RU 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_edit:1:2:en",
+                    "text": "✏️ EN 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_remove:1:2:ru",
+                    "text": "🗑 2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← К предпросмотру"
+                  }
+                ]
+              ]
+            },
+            "text": "\n🧵 Telegram — одним сообщением · Threads RU — 2 поста · Threads EN — 2 поста\n\n*1.*\nRU: Первый пост\n\nНемного текста о запуске.\nEN: \\[не переведено\\]\n\n*2.*\nRU: Второй пост, исправленный\nEN: Second post in English"
+          }
+        },
+        "update_id": 13
+      }
+    }
+  ]
+}

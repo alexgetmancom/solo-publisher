@@ -1,0 +1,361 @@
+{
+  "id": "deploy-promote",
+  "seed": [
+    "The deploy agent's message \"Deploy alex 0123456789ab successful and healthy.\" with its two buttons is in the chat.",
+    "The deploy agent answers 200 {\"ok\":true,\"release\":\"0123456789abcdef0123456789abcdef01234567\",\"currentRevision\":\"0123456789abcdef0123456789abcdef01234567\"}."
+  ],
+  "specRef": "§10 #83, #84, #85; §4.12 deploy_pr_ask, deploy_promote, deploy_menu",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "deploy-promote#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_promote:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "✅ Подтвердить"
+                  },
+                  {
+                    "callback_data": "deploy_menu:0123456789abcdef0123456789abcdef01234567",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "Deploy alex 0123456789ab successful and healthy.\n\n⚠️ Раскатить 0123456789ab на maru сейчас?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "deploy_pr_ask:maru:0123456789abcdef0123456789abcdef01234567",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "deploy-promote#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_rb_ask:alex:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Откатить alex"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить maru"
+                  }
+                ]
+              ]
+            },
+            "text": "Deploy alex 0123456789ab successful and healthy."
+          }
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "deploy-promote#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_rb_ask:alex:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Откатить alex"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить maru"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:worker:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить worker"
+                  }
+                ]
+              ]
+            },
+            "text": "Управление релизом 0123456789ab:"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "deploy_menu:0123456789abcdef0123456789abcdef01234567",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "deploy-promote#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_promote:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "✅ Подтвердить"
+                  },
+                  {
+                    "callback_data": "deploy_menu:0123456789abcdef0123456789abcdef01234567",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "Deploy alex 0123456789ab successful and healthy.\n\n⚠️ Раскатить 0123456789ab на maru сейчас?"
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "deploy-promote#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_promote:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "✅ Подтвердить"
+                  },
+                  {
+                    "callback_data": "deploy_menu:0123456789abcdef0123456789abcdef01234567",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "Управление релизом 0123456789ab:\n\n⚠️ Раскатить 0123456789ab на maru сейчас?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "deploy_pr_ask:maru:0123456789abcdef0123456789abcdef01234567",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "deploy-promote#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_rb_ask:alex:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Откатить alex"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить maru"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:worker:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить worker"
+                  }
+                ]
+              ]
+            },
+            "text": "Управление релизом 0123456789ab:"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "deploy-promote#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [[]]
+            },
+            "text": "⏳ Раскатываю maru (0123456789ab)…"
+          }
+        },
+        {
+          "method": "http",
+          "payload": {
+            "body": {
+              "release": "0123456789abcdef0123456789abcdef01234567"
+            },
+            "method": "POST",
+            "url": "http://deploy-agent.invalid/v1/promote/maru"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_rb_ask:alex:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Откатить alex"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить maru"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "deploy_pr_ask:worker:0123456789abcdef0123456789abcdef01234567",
+                    "text": "Раскатить worker"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Готово: сейчас работает 0123456789ab.\n\nУправление релизом 0123456789ab:"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "deploy_promote:maru:0123456789abcdef0123456789abcdef01234567",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "deploy-promote#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 1,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "deploy_promote:maru:0123456789abcdef0123456789abcdef01234567",
+                    "text": "✅ Подтвердить"
+                  },
+                  {
+                    "callback_data": "deploy_menu:0123456789abcdef0123456789abcdef01234567",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "Управление релизом 0123456789ab:\n\n⚠️ Раскатить 0123456789ab на maru сейчас?"
+          }
+        },
+        "update_id": 4
+      }
+    }
+  ]
+}

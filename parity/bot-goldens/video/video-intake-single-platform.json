@@ -1,0 +1,106 @@
+{
+  "id": "video-intake-single-platform",
+  "seed": [],
+  "specRef": "§10 #8 (one connected platform: no toggles)",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 Пришлите видеофайл."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "🎬 Видео"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "video": {
+            "duration": 5,
+            "file_id": "clip",
+            "file_name": "clip.mp4",
+            "file_size": 35977,
+            "file_unique_id": "clip-u",
+            "height": 480,
+            "mime_type": "video/mp4",
+            "width": 270
+          }
+        },
+        "update_id": 2
+      }
+    }
+  ]
+}

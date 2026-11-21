@@ -1,0 +1,86 @@
+{
+  "id": "start",
+  "seed": [],
+  "specRef": "§10 #1, #2; §2 /start",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "is_persistent": true,
+              "keyboard": [
+                [
+                  {
+                    "text": "☰ Меню"
+                  }
+                ]
+              ],
+              "resize_keyboard": true
+            },
+            "text": "Кнопка меню всегда останется внизу чата."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "entities": [
+            {
+              "length": 6,
+              "offset": 0,
+              "type": "bot_command"
+            }
+          ],
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "/start"
+        },
+        "update_id": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,902 @@
+{
+  "id": "settings-default-targets",
+  "seed": [],
+  "specRef": "§10 #73; §4.10.4",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "☰ Меню"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-default-targets#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "main-menu/1/1//f1��{",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-default-targets#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-default-targets#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-menu/0/0//hl7�Z",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-default-targets#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-default-targets#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-default-targets/0/0//h�\u0016�V",
+                    "text": "✅ Telegram"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/0/1//h�~p-",
+                    "text": "✅ Site RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/1/0//h�~nE",
+                    "text": "✅ Site EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/1/1//hӸ��",
+                    "text": "✅ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/2/0//hӸ��",
+                    "text": "✅ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/2/1//h\u000e\\�0",
+                    "text": "⬜ X (Twitter)"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/3/0//h�hh\b",
+                    "text": "⬜ X Article"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/3/1//h��\u0001\u0018",
+                    "text": "⬜ Discord"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/4/0//hs��[",
+                    "text": "✅ Telegram Stories"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/4/1//hZ��+",
+                    "text": "✅ Instagram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/5/0//hZ��C",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/6/0//h���Y",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🌐 Площадки по умолчанию\n\nАктивны: *Telegram, Site RU, Site EN, Threads RU, Threads EN, Telegram Stories, Instagram Stories RU, Instagram Stories EN*\n\nС этими площадками создаётся каждый новый черновик. Выберите их ниже."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-publishing/0/1//h�� 6",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-default-targets#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-default-targets#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-default-targets/0/0//h�\u0016�V",
+                    "text": "✅ Telegram"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/0/1//h�~p-",
+                    "text": "✅ Site RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/1/0//h�~nE",
+                    "text": "✅ Site EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/1/1//hӸ��",
+                    "text": "✅ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/2/0//hӸ��",
+                    "text": "✅ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/2/1//h�w+i",
+                    "text": "✅ X (Twitter)"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/3/0//h�hh\b",
+                    "text": "⬜ X Article"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/3/1//h��\u0001\u0018",
+                    "text": "⬜ Discord"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/4/0//hs��[",
+                    "text": "✅ Telegram Stories"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/4/1//hZ��+",
+                    "text": "✅ Instagram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/5/0//hZ��C",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/6/0//h���Y",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🌐 Площадки по умолчанию\n\nАктивны: *Telegram, Site RU, Site EN, Threads RU, Threads EN, X (Twitter), Telegram Stories, Instagram Stories RU, Instagram Stories EN*\n\nС этими площадками создаётся каждый новый черновик. Выберите их ниже."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-default-targets/2/1//h\u000e\\�0",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-default-targets#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-default-targets/0/0//h�\u0016�V",
+                    "text": "✅ Telegram"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/0/1//h�~p-",
+                    "text": "✅ Site RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/1/0//h�~nE",
+                    "text": "✅ Site EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/1/1//hӸ��",
+                    "text": "✅ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/2/0//hӸ��",
+                    "text": "✅ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/2/1//h\u000e\\�0",
+                    "text": "⬜ X (Twitter)"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/3/0//h�hh\b",
+                    "text": "⬜ X Article"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/3/1//h��\u0001\u0018",
+                    "text": "⬜ Discord"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/4/0//hs��[",
+                    "text": "✅ Telegram Stories"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/4/1//hZ��+",
+                    "text": "✅ Instagram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/5/0//hZ��C",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/6/0//h���Y",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🌐 Площадки по умолчанию\n\nАктивны: *Telegram, Site RU, Site EN, Threads RU, Threads EN, Telegram Stories, Instagram Stories RU, Instagram Stories EN*\n\nС этими площадками создаётся каждый новый черновик. Выберите их ниже."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-default-targets#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-default-targets/0/0//h\u0000��I",
+                    "text": "⬜ Telegram"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/0/1//h�~p-",
+                    "text": "✅ Site RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/1/0//h�~nE",
+                    "text": "✅ Site EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/1/1//hӸ��",
+                    "text": "✅ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/2/0//hӸ��",
+                    "text": "✅ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/2/1//h�w+i",
+                    "text": "✅ X (Twitter)"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/3/0//h�hh\b",
+                    "text": "⬜ X Article"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/3/1//h��\u0001\u0018",
+                    "text": "⬜ Discord"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/4/0//hs��[",
+                    "text": "✅ Telegram Stories"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/4/1//hZ��+",
+                    "text": "✅ Instagram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/5/0//hZ��C",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/6/0//h���Y",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🌐 Площадки по умолчанию\n\nАктивны: *Site RU, Site EN, Threads RU, Threads EN, X (Twitter), Telegram Stories, Instagram Stories RU, Instagram Stories EN*\n\nС этими площадками создаётся каждый новый черновик. Выберите их ниже."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-default-targets/0/0//h�\u0016�V",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-default-targets#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-default-targets/0/0//h�\u0016�V",
+                    "text": "✅ Telegram"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/0/1//h�~p-",
+                    "text": "✅ Site RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/1/0//h�~nE",
+                    "text": "✅ Site EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/1/1//hӸ��",
+                    "text": "✅ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/2/0//hӸ��",
+                    "text": "✅ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/2/1//h�w+i",
+                    "text": "✅ X (Twitter)"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/3/0//h�hh\b",
+                    "text": "⬜ X Article"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/3/1//h��\u0001\u0018",
+                    "text": "⬜ Discord"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/4/0//hs��[",
+                    "text": "✅ Telegram Stories"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/4/1//hZ��+",
+                    "text": "✅ Instagram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/5/0//hZ��C",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/6/0//h���Y",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🌐 Площадки по умолчанию\n\nАктивны: *Telegram, Site RU, Site EN, Threads RU, Threads EN, X (Twitter), Telegram Stories, Instagram Stories RU, Instagram Stories EN*\n\nС этими площадками создаётся каждый новый черновик. Выберите их ниже."
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-default-targets#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-publishing/0/0//h��)",
+                    "text": "🔌 Каналы"
+                  },
+                  {
+                    "callback_data": "settings-publishing/0/1//h�� 6",
+                    "text": "🌐 Площадки по умолчанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/1/0//hMߊ;",
+                    "text": "▶️ Подпись YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-publishing/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-default-targets/6/0//h���Y",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-default-targets#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-default-targets/0/0//h\u0000��I",
+                    "text": "⬜ Telegram"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/0/1//h�~p-",
+                    "text": "✅ Site RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/1/0//h�~nE",
+                    "text": "✅ Site EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/1/1//hӸ��",
+                    "text": "✅ Threads RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/2/0//hӸ��",
+                    "text": "✅ Threads EN"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/2/1//h�w+i",
+                    "text": "✅ X (Twitter)"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/3/0//h�hh\b",
+                    "text": "⬜ X Article"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/3/1//h��\u0001\u0018",
+                    "text": "⬜ Discord"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/4/0//hs��[",
+                    "text": "✅ Telegram Stories"
+                  },
+                  {
+                    "callback_data": "settings-default-targets/4/1//hZ��+",
+                    "text": "✅ Instagram Stories RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/5/0//hZ��C",
+                    "text": "✅ Instagram Stories EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-default-targets/6/0//h���Y",
+                    "text": "← Публикация"
+                  }
+                ]
+              ]
+            },
+            "text": "🌐 Площадки по умолчанию\n\nАктивны: *Site RU, Site EN, Threads RU, Threads EN, X (Twitter), Telegram Stories, Instagram Stories RU, Instagram Stories EN*\n\nС этими площадками создаётся каждый новый черновик. Выберите их ниже."
+          }
+        },
+        "update_id": 7
+      }
+    }
+  ]
+}

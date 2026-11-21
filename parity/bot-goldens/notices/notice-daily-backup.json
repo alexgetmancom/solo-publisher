@@ -1,0 +1,65 @@
+{
+  "id": "notice-daily-backup",
+  "seed": [
+    "The backup file's bytes are not recorded (sha256/size written as <sqlite backup>).",
+    "Next day: sendDocument answers 400 'Bad Request: file is too big'."
+  ],
+  "specRef": "§10 #91; §7.7 daily backup document and failure notice",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendDocument",
+          "payload": {
+            "caption": "🗄 2026-08-20 · 0.9 MB",
+            "chat_id": "1001",
+            "disable_notification": "true",
+            "document": {
+              "file": {
+                "contentType": "application/octet-stream",
+                "name": "pipeline-20260820T090000Z.db",
+                "sha256": "<sqlite backup>",
+                "size": "<sqlite backup>"
+              }
+            }
+          },
+          "transport": "multipart"
+        }
+      ],
+      "trigger": "telegram-daily-backup tick (12:00 MSK)"
+    },
+    {
+      "calls": [],
+      "trigger": "telegram-daily-backup tick (again the same day)"
+    },
+    {
+      "calls": [
+        {
+          "method": "sendDocument",
+          "payload": {
+            "caption": "🗄 2026-08-21 · 0.9 MB",
+            "chat_id": "1001",
+            "disable_notification": "true",
+            "document": {
+              "file": {
+                "contentType": "application/octet-stream",
+                "name": "pipeline-20260821T090000Z.db",
+                "sha256": "<sqlite backup>",
+                "size": "<sqlite backup>"
+              }
+            }
+          },
+          "transport": "multipart"
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "🗄 Сегодняшняя копия базы не сделана.\n\nGrammyError: Call to 'sendDocument' failed! (400: Bad Request: file is too big)"
+          }
+        }
+      ],
+      "trigger": "telegram-daily-backup tick (next day)"
+    }
+  ]
+}

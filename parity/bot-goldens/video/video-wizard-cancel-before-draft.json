@@ -1,0 +1,327 @@
+{
+  "id": "video-wizard-cancel-before-draft",
+  "seed": [],
+  "specRef": "§10 #53; §6.4.1 length warning; §6.4.8 cancel_dialog without draft",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 Пришлите видеофайл."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "🎬 Видео"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_target:youtube_shorts",
+                    "text": "✅ YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "intake_target:instagram_reels",
+                    "text": "✅ Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "video": {
+            "duration": 5,
+            "file_id": "long",
+            "file_name": "long.mp4",
+            "file_size": 638128,
+            "file_unique_id": "long-u",
+            "height": 480,
+            "mime_type": "video/mp4",
+            "width": 270
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-cancel-before-draft#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_download:3:ru",
+                    "text": "↻ Повторить загрузку"
+                  },
+                  {
+                    "callback_data": "intake_download:3:cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⏳ Скачиваю видео из Telegram…"
+          }
+        },
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "long"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv2|p:video:length_ok",
+                    "text": "✅ Да, загружаем"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv2|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⚠️ Ролик длится *01:35* — больше 90 с. Обычно это неудачная обрезка. Всё равно загружаем?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "intake_locale:ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-cancel-before-draft#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_target:youtube_shorts",
+                    "text": "✅ YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "intake_target:instagram_reels",
+                    "text": "✅ Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-cancel-before-draft#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv2|p:video:cancel_dialog",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-cancel-before-draft#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv2|p:video:length_ok",
+                    "text": "✅ Да, загружаем"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv2|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⚠️ Ролик длится *01:35* — больше 90 с. Обычно это неудачная обрезка. Всё равно загружаем?"
+          }
+        },
+        "update_id": 4
+      }
+    }
+  ]
+}

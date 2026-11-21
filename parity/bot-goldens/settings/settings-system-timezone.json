@@ -1,0 +1,1364 @@
+{
+  "id": "settings-system-timezone",
+  "seed": [],
+  "specRef": "§10 #77, #78, #82 (tz set / invalid); §4.10.6 time zone; §6.6 timezone",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "☰ Меню"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "main-menu/1/1//f1��{",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-menu/1/0//h\u0000\u001c`1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h}7\b�",
+                    "text": "○ UTC"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h��6�",
+                    "text": "○ Europe/London"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�Xr\"",
+                    "text": "○ Europe/Berlin"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//hQ���",
+                    "text": "● Europe/Moscow"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h\u0019��9",
+                    "text": "○ Asia/Dubai"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�\u000et>",
+                    "text": "○ Asia/Tashkent"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h~�\r�",
+                    "text": "○ Asia/Kolkata"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h��=",
+                    "text": "○ Asia/Bangkok"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//ho.�D",
+                    "text": "○ Asia/Singapore"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h\u001bG\r�",
+                    "text": "○ Asia/Tokyo"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h\\<�",
+                    "text": "○ Australia/Sydney"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//h�VY\u0002",
+                    "text": "○ America/New_York"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h\b&V�",
+                    "text": "○ America/Chicago"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�؈\f",
+                    "text": "○ America/Denver"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//hQ�aX",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//h\u001e�FA",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h\\\u0001��",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🕒 *Часовой пояс*\n\nТекущий: `Europe/Moscow`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-system/0/0//h��R�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#4"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Часовой пояс: Asia/Tokyo"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h}7\b�",
+                    "text": "○ UTC"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h��6�",
+                    "text": "○ Europe/London"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�Xr\"",
+                    "text": "○ Europe/Berlin"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//h��)V",
+                    "text": "○ Europe/Moscow"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h\u0019��9",
+                    "text": "○ Asia/Dubai"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�\u000et>",
+                    "text": "○ Asia/Tashkent"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h~�\r�",
+                    "text": "○ Asia/Kolkata"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h��=",
+                    "text": "○ Asia/Bangkok"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//ho.�D",
+                    "text": "○ Asia/Singapore"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h�\u0010Ү",
+                    "text": "● Asia/Tokyo"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h\\<�",
+                    "text": "○ Australia/Sydney"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//h�VY\u0002",
+                    "text": "○ America/New_York"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h\b&V�",
+                    "text": "○ America/Chicago"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�؈\f",
+                    "text": "○ America/Denver"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//hQ�aX",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//h\u001e�FA",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h\\\u0001��",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🕒 *Часовой пояс*\n\nТекущий: `Asia/Tokyo`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-timezone/4/1//h\u001bG\r�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h}7\b�",
+                    "text": "○ UTC"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h��6�",
+                    "text": "○ Europe/London"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�Xr\"",
+                    "text": "○ Europe/Berlin"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//hQ���",
+                    "text": "● Europe/Moscow"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h\u0019��9",
+                    "text": "○ Asia/Dubai"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�\u000et>",
+                    "text": "○ Asia/Tashkent"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h~�\r�",
+                    "text": "○ Asia/Kolkata"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h��=",
+                    "text": "○ Asia/Bangkok"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//ho.�D",
+                    "text": "○ Asia/Singapore"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h\u001bG\r�",
+                    "text": "○ Asia/Tokyo"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h\\<�",
+                    "text": "○ Australia/Sydney"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//h�VY\u0002",
+                    "text": "○ America/New_York"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h\b&V�",
+                    "text": "○ America/Chicago"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�؈\f",
+                    "text": "○ America/Denver"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//hQ�aX",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//h\u001e�FA",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h\\\u0001��",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🕒 *Часовой пояс*\n\nТекущий: `Europe/Moscow`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h}7\b�",
+                    "text": "○ UTC"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h��6�",
+                    "text": "○ Europe/London"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�Xr\"",
+                    "text": "○ Europe/Berlin"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//h��)V",
+                    "text": "○ Europe/Moscow"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h\u0019��9",
+                    "text": "○ Asia/Dubai"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�\u000et>",
+                    "text": "○ Asia/Tashkent"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h~�\r�",
+                    "text": "○ Asia/Kolkata"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h��=",
+                    "text": "○ Asia/Bangkok"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//ho.�D",
+                    "text": "○ Asia/Singapore"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h�\u0010Ү",
+                    "text": "● Asia/Tokyo"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h\\<�",
+                    "text": "○ Australia/Sydney"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//h�VY\u0002",
+                    "text": "○ America/New_York"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h\b&V�",
+                    "text": "○ America/Chicago"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�؈\f",
+                    "text": "○ America/Denver"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//hQ�aX",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//h\u001e�FA",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h\\\u0001��",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте IANA-пояс, например `America/Sao_Paulo`."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-timezone/8/0//h\u001e�FA",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h}7\b�",
+                    "text": "○ UTC"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h��6�",
+                    "text": "○ Europe/London"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�Xr\"",
+                    "text": "○ Europe/Berlin"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//h��)V",
+                    "text": "○ Europe/Moscow"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h\u0019��9",
+                    "text": "○ Asia/Dubai"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�\u000et>",
+                    "text": "○ Asia/Tashkent"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h~�\r�",
+                    "text": "○ Asia/Kolkata"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h��=",
+                    "text": "○ Asia/Bangkok"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//ho.�D",
+                    "text": "○ Asia/Singapore"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h�\u0010Ү",
+                    "text": "● Asia/Tokyo"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h\\<�",
+                    "text": "○ Australia/Sydney"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//h�VY\u0002",
+                    "text": "○ America/New_York"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h\b&V�",
+                    "text": "○ America/Chicago"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�؈\f",
+                    "text": "○ America/Denver"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//hQ�aX",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//h\u001e�FA",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h\\\u0001��",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🕒 *Часовой пояс*\n\nТекущий: `Asia/Tokyo`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях."
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Такого часового пояса нет."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 4,
+          "text": "Mars/Olympus"
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#6"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-timezone/8/0//h\u001e�FA",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h}7\b�",
+                    "text": "○ UTC"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h��6�",
+                    "text": "○ Europe/London"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�Xr\"",
+                    "text": "○ Europe/Berlin"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//h��)V",
+                    "text": "○ Europe/Moscow"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h\u0019��9",
+                    "text": "○ Asia/Dubai"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�\u000et>",
+                    "text": "○ Asia/Tashkent"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h~�\r�",
+                    "text": "○ Asia/Kolkata"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h��=",
+                    "text": "○ Asia/Bangkok"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//ho.�D",
+                    "text": "○ Asia/Singapore"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h�\u0010Ү",
+                    "text": "● Asia/Tokyo"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h\\<�",
+                    "text": "○ Australia/Sydney"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//h�VY\u0002",
+                    "text": "○ America/New_York"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h\b&V�",
+                    "text": "○ America/Chicago"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�؈\f",
+                    "text": "○ America/Denver"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//hQ�aX",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//h\u001e�FA",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h\\\u0001��",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Отправьте IANA-пояс, например `America/Sao_Paulo`."
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Часовой пояс: Asia/Kathmandu"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h35�6",
+                    "text": "● Asia/Kathmandu"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h����",
+                    "text": "○ UTC"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�1e",
+                    "text": "○ Europe/London"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//hf��\u0007",
+                    "text": "○ Europe/Berlin"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h�Wr;",
+                    "text": "○ Europe/Moscow"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�q��",
+                    "text": "○ Asia/Dubai"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h�w�#",
+                    "text": "○ Asia/Tashkent"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h�w|",
+                    "text": "○ Asia/Kolkata"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//h�{g�",
+                    "text": "○ Asia/Bangkok"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h�f9]",
+                    "text": "○ Asia/Singapore"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h�6�c",
+                    "text": "○ Asia/Tokyo"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//hW9\u001aQ",
+                    "text": "○ Australia/Sydney"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h�R�",
+                    "text": "○ America/New_York"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�-'g",
+                    "text": "○ America/Chicago"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//h�\u0010\u0011%",
+                    "text": "○ America/Denver"
+                  },
+                  {
+                    "callback_data": "settings-timezone/7/1//h\u0007\u0005�%",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//he\u0005��",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h�tg�",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🕒 *Часовой пояс*\n\nТекущий: `Asia/Kathmandu`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 6,
+          "text": "Asia/Kathmandu"
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-timezone#7"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 8,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-timezone/9/0//h�tg�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-timezone#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 8,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-timezone/0/0//h35�6",
+                    "text": "● Asia/Kathmandu"
+                  },
+                  {
+                    "callback_data": "settings-timezone/0/1//h����",
+                    "text": "○ UTC"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/1/0//h�1e",
+                    "text": "○ Europe/London"
+                  },
+                  {
+                    "callback_data": "settings-timezone/1/1//hf��\u0007",
+                    "text": "○ Europe/Berlin"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/2/0//h�Wr;",
+                    "text": "○ Europe/Moscow"
+                  },
+                  {
+                    "callback_data": "settings-timezone/2/1//h�q��",
+                    "text": "○ Asia/Dubai"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/3/0//h�w�#",
+                    "text": "○ Asia/Tashkent"
+                  },
+                  {
+                    "callback_data": "settings-timezone/3/1//h�w|",
+                    "text": "○ Asia/Kolkata"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/4/0//h�{g�",
+                    "text": "○ Asia/Bangkok"
+                  },
+                  {
+                    "callback_data": "settings-timezone/4/1//h�f9]",
+                    "text": "○ Asia/Singapore"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/5/0//h�6�c",
+                    "text": "○ Asia/Tokyo"
+                  },
+                  {
+                    "callback_data": "settings-timezone/5/1//hW9\u001aQ",
+                    "text": "○ Australia/Sydney"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/6/0//h�R�",
+                    "text": "○ America/New_York"
+                  },
+                  {
+                    "callback_data": "settings-timezone/6/1//h�-'g",
+                    "text": "○ America/Chicago"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/7/0//h�\u0010\u0011%",
+                    "text": "○ America/Denver"
+                  },
+                  {
+                    "callback_data": "settings-timezone/7/1//h\u0007\u0005�%",
+                    "text": "○ America/Los_Angeles"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/8/0//he\u0005��",
+                    "text": "✏️ Ввести IANA-пояс"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-timezone/9/0//h�tg�",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🕒 *Часовой пояс*\n\nТекущий: `Asia/Kathmandu`\n\nВыберите пояс, который используется для планирования, очереди и уведомлений о публикациях."
+          }
+        },
+        "update_id": 10
+      }
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "id": "notice-translation-repaint",
+  "seed": ["DEEPSEEK_API_KEY is set; the translator answers 'First post\\n\\nA few words about the launch.'."],
+  "specRef": "§7.3 post preview repaint after translation",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[переводится…\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Первый пост\n\nНемного текста о запуске."
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "http",
+          "payload": {
+            "method": "POST",
+            "url": "https://api.deepseek.com/v1/chat/completions"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: EN queued · RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\nFirst post\n\nA few words about the launch."
+          }
+        }
+      ],
+      "trigger": "telegram-translations tick"
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "intake-photo-large",
+  "seed": [],
+  "specRef": "§10 #37 media-large advice; §6.1.3",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "big-photo"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "⚠️ Файл весит 62 МБ. Рекомендуем до 50 МБ: большие файлы долго готовятся к отправке, а Threads может их вообще отклонить. Опубликовать можно и так — или нажмите «Заменить изображение / видео» на карточке ниже."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 1 RU · 1 EN\n⚠️ EN использует RU-медиа\n\nRU:\nФото в полном разрешении\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "caption": "Фото в полном разрешении",
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "photo": [
+            {
+              "file_id": "big-photo-small",
+              "file_size": 1200,
+              "file_unique_id": "bs",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "big-photo",
+              "file_size": 62000000,
+              "file_unique_id": "bl",
+              "height": 8000,
+              "width": 8000
+            }
+          ]
+        },
+        "update_id": 2
+      }
+    }
+  ]
+}

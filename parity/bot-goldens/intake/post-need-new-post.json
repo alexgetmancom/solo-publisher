@@ -1,0 +1,96 @@
+{
+  "id": "post-need-new-post",
+  "seed": [],
+  "specRef": "§10 #36; §6.2 no open step",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "is_persistent": true,
+              "keyboard": [
+                [
+                  {
+                    "text": "☰ Меню"
+                  }
+                ]
+              ],
+              "resize_keyboard": true
+            },
+            "text": "Сначала выберите «📥 Новый материал» в меню."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "Просто сообщение без открытого сценария"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "is_persistent": true,
+              "keyboard": [
+                [
+                  {
+                    "text": "☰ Меню"
+                  }
+                ]
+              ],
+              "resize_keyboard": true
+            },
+            "text": "Сначала выберите «📥 Новый материал» в меню."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "entities": [
+            {
+              "length": 8,
+              "offset": 0,
+              "type": "bot_command"
+            }
+          ],
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "/unknown"
+        },
+        "update_id": 2
+      }
+    }
+  ]
+}

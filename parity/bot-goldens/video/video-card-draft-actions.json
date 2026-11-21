@@ -1,0 +1,2191 @@
+{
+  "id": "video-card-draft-actions",
+  "seed": [],
+  "specRef": "§10 #46, #47, #49, #50, #51, #64; §5.2.3 publish, publish_confirm, remove_ask, remove, edit_media, edit_field script",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 Пришлите видеофайл."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "🎬 Видео"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_target:youtube_shorts",
+                    "text": "✅ YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "intake_target:instagram_reels",
+                    "text": "✅ Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "video": {
+            "duration": 5,
+            "file_id": "clip",
+            "file_name": "clip.mp4",
+            "file_size": 35977,
+            "file_unique_id": "clip-u",
+            "height": 480,
+            "mime_type": "video/mp4",
+            "width": 270
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_download:3:ru",
+                    "text": "↻ Повторить загрузку"
+                  },
+                  {
+                    "callback_data": "intake_download:3:cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⏳ Скачиваю видео из Telegram…"
+          }
+        },
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "clip"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv2|p:video:script_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv2|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Сценарий этого ролика?\n\nВставьте текст или прикрепите файл .txt или .md, в котором он написан. Если сценария нет — пропустите, его можно добавить позже через «✏️ Редактировать»."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "intake_locale:ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_target:youtube_shorts",
+                    "text": "✅ YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "intake_target:instagram_reels",
+                    "text": "✅ Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv3|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Название для YouTube Shorts?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 5,
+          "text": "Сценарий: показываем, как пройти первый уровень."
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv4|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv4|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Описание для YouTube (отправьте `-`, если не нужно):"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 7,
+          "text": "Первый уровень за минуту"
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv5|p:video:game_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv5|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv5|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📀 Ссылка на Steam или страницу игры?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 9,
+          "text": "Короткое прохождение первого уровня."
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv6|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv6|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Теги YouTube через запятую (или `-`):"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 11,
+          "text": "https:/store.steampowered.com/app/1"
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv7|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv7|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Подпись для Instagram Reels вместе с хэштегами (или `-`)?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 13,
+          "text": "игра, прохождение, shorts"
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv8|p:video:common:1",
+                    "text": "Одно время для всех"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv8|p:video:individual:1",
+                    "text": "Разное время"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv8|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Данные сохранены. Выберите расписание (MSK):"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 15,
+          "text": "Проходим первый уровень #shorts"
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 16,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Первый уровень за минуту*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv8|p:video:cancel_dialog",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 16,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv8|p:video:common:1",
+                    "text": "Одно время для всех"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv8|p:video:individual:1",
+                    "text": "Разное время"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv8|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Данные сохранены. Выберите расписание (MSK):"
+          }
+        },
+        "update_id": 10
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 16,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:label",
+                    "text": "✏️ Изменить имя карточки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:script",
+                    "text": "📝 Сценарий"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_title",
+                    "text": "✏️ Название YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_description",
+                    "text": "✏️ Описание YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_game_url",
+                    "text": "📀 Ссылка на игру"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_tags",
+                    "text": "✏️ Теги YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:instagram_caption",
+                    "text": "✏️ Подпись Instagram"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_media:1",
+                    "text": "🎬 Заменить видеофайл"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ *Что изменить?*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:edit_menu:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 16,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Первый уровень за минуту*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        },
+        "update_id": 11
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 16,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv10|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Введите новую внутреннюю подпись видео:"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:edit_field:1:label",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 16,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:label",
+                    "text": "✏️ Изменить имя карточки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:script",
+                    "text": "📝 Сценарий"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_title",
+                    "text": "✏️ Название YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_description",
+                    "text": "✏️ Описание YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_game_url",
+                    "text": "📀 Ссылка на игру"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_tags",
+                    "text": "✏️ Теги YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:instagram_caption",
+                    "text": "✏️ Подпись Instagram"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_media:1",
+                    "text": "🎬 Заменить видеофайл"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ *Что изменить?*"
+          }
+        },
+        "update_id": 12
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 17,
+          "text": "Ролик про первый уровень"
+        },
+        "update_id": 13
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 18,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:label",
+                    "text": "✏️ Изменить имя карточки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:script",
+                    "text": "📝 Сценарий"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_title",
+                    "text": "✏️ Название YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_description",
+                    "text": "✏️ Описание YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_game_url",
+                    "text": "📀 Ссылка на игру"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_tags",
+                    "text": "✏️ Теги YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:instagram_caption",
+                    "text": "✏️ Подпись Instagram"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_media:1",
+                    "text": "🎬 Заменить видеофайл"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ *Что изменить?*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:edit_menu:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 18,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        },
+        "update_id": 14
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 18,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv12|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Пришлите сценарий — вставьте текст или прикрепите файл .txt или .md, в котором он написан."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:edit_field:1:script",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 18,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:label",
+                    "text": "✏️ Изменить имя карточки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:script",
+                    "text": "📝 Сценарий"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_title",
+                    "text": "✏️ Название YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_description",
+                    "text": "✏️ Описание YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_game_url",
+                    "text": "📀 Ссылка на игру"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_tags",
+                    "text": "✏️ Теги YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:instagram_caption",
+                    "text": "✏️ Подпись Instagram"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_media:1",
+                    "text": "🎬 Заменить видеофайл"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ *Что изменить?*"
+          }
+        },
+        "update_id": 15
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 19,
+          "text": "Новый сценарий"
+        },
+        "update_id": 16
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#7"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 20,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:label",
+                    "text": "✏️ Изменить имя карточки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:script",
+                    "text": "📝 Сценарий"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_title",
+                    "text": "✏️ Название YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_description",
+                    "text": "✏️ Описание YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_game_url",
+                    "text": "📀 Ссылка на игру"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_tags",
+                    "text": "✏️ Теги YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:instagram_caption",
+                    "text": "✏️ Подпись Instagram"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_media:1",
+                    "text": "🎬 Заменить видеофайл"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ *Что изменить?*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:edit_menu:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 20,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        },
+        "update_id": 17
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#8"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 20,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv14|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 Пришлите новый MP4-файл — он заменит текущий:"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:edit_media:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#8",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 20,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:label",
+                    "text": "✏️ Изменить имя карточки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:script",
+                    "text": "📝 Сценарий"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_title",
+                    "text": "✏️ Название YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_description",
+                    "text": "✏️ Описание YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_game_url",
+                    "text": "📀 Ссылка на игру"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:youtube_tags",
+                    "text": "✏️ Теги YouTube"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_field:1:instagram_caption",
+                    "text": "✏️ Подпись Instagram"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_media:1",
+                    "text": "🎬 Заменить видеофайл"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "✏️ *Что изменить?*"
+          }
+        },
+        "update_id": 18
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "replacement"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 21,
+          "video": {
+            "duration": 5,
+            "file_id": "replacement",
+            "file_name": "replacement.mp4",
+            "file_size": 35977,
+            "file_unique_id": "replacement-u",
+            "height": 480,
+            "mime_type": "video/mp4",
+            "width": 270
+          }
+        },
+        "update_id": 19
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#9"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 22,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:remove:1:instagram_reels",
+                    "text": "❌ Да, убрать Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется\n\n⚠️ *Убрать Instagram Reels из этой публикации?*\nЭто затронет только Instagram Reels. Вторая площадка продолжит публиковаться как обычно."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:remove_ask:1:instagram_reels",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#9",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 22,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        },
+        "update_id": 20
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#10"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 22,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:view:1:overview",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#10",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 22,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:remove:1:instagram_reels",
+                    "text": "❌ Да, убрать Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется\n\n⚠️ *Убрать Instagram Reels из этой публикации?*\nЭто затронет только Instagram Reels. Вторая площадка продолжит публиковаться как обычно."
+          }
+        },
+        "update_id": 21
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#11"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 22,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:remove:1:instagram_reels",
+                    "text": "❌ Да, убрать Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется\n\n⚠️ *Убрать Instagram Reels из этой публикации?*\nЭто затронет только Instagram Reels. Вторая площадка продолжит публиковаться как обычно."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:remove_ask:1:instagram_reels",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#11",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 22,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется"
+          }
+        },
+        "update_id": 22
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-card-draft-actions#12"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 22,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *запланировано*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Instagram Reels убрано"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:remove:1:instagram_reels",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-card-draft-actions#12",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 22,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:remove:1:instagram_reels",
+                    "text": "❌ Да, убрать Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Ролик про первый уровень*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Первый уровень за минуту\nОписание: Короткое прохождение первого уровня.\nИгра: https:/store.steampowered.com/app/1\nТеги: игра, прохождение, shorts\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: Проходим первый уровень #shorts\nСостояние: заполняется\n\n⚠️ *Убрать Instagram Reels из этой публикации?*\nЭто затронет только Instagram Reels. Вторая площадка продолжит публиковаться как обычно."
+          }
+        },
+        "update_id": 23
+      }
+    }
+  ]
+}

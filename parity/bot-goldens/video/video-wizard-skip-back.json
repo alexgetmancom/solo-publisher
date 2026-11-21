@@ -1,0 +1,1123 @@
+{
+  "id": "video-wizard-skip-back",
+  "seed": [],
+  "specRef": "§10 #55, #56, #62; §5.2.3 script_skip, game_skip, meta_back; §6.4.3",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 Пришлите видеофайл."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "🎬 Видео"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_target:youtube_shorts",
+                    "text": "✅ YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "intake_target:instagram_reels",
+                    "text": "✅ Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "video": {
+            "duration": 5,
+            "file_id": "clip",
+            "file_name": "clip.mp4",
+            "file_size": 35977,
+            "file_unique_id": "clip-u",
+            "height": 480,
+            "mime_type": "video/mp4",
+            "width": 270
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_download:3:ru",
+                    "text": "↻ Повторить загрузку"
+                  },
+                  {
+                    "callback_data": "intake_download:3:cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⏳ Скачиваю видео из Telegram…"
+          }
+        },
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "clip"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv2|p:video:script_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv2|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Сценарий этого ролика?\n\nВставьте текст или прикрепите файл .txt или .md, в котором он написан. Если сценария нет — пропустите, его можно добавить позже через «✏️ Редактировать»."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "intake_locale:ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_target:youtube_shorts",
+                    "text": "✅ YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "intake_target:instagram_reels",
+                    "text": "✅ Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_locale:ru",
+                    "text": "🇷🇺 RU-видео"
+                  },
+                  {
+                    "callback_data": "intake_locale:en",
+                    "text": "🇬🇧 EN-видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Для какой аудитории это видео?"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv2|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🔴 Не удалось обработать значение: ⌨ Сейчас жду текстовый ответ. Нажмите «☰ Показать меню», чтобы начать другой сценарий."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 5,
+          "photo": [
+            {
+              "file_id": "not-a-script-small",
+              "file_size": 1200,
+              "file_unique_id": "not-a-script-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "not-a-script",
+              "file_size": 287,
+              "file_unique_id": "not-a-script-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "text": "Сценарий пропущен."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv3|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Название для YouTube Shorts?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv2|p:video:script_skip",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv2|p:video:script_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv2|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Сценарий этого ролика?\n\nВставьте текст или прикрепите файл .txt или .md, в котором он написан. Если сценария нет — пропустите, его можно добавить позже через «✏️ Редактировать»."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv3|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🔴 Не удалось обработать значение: В названии 101 символов — на 6 больше, чем помещается: нужно уложиться в 95.\n\n⌨ Название для YouTube Shorts?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 8,
+          "text": "ТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТТ"
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv4|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv4|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Описание для YouTube (отправьте `-`, если не нужно):"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 10,
+          "text": "Заголовок для Shorts"
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 11,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv5|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Название для YouTube Shorts?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv4|p:video:meta_back",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 11,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv4|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv4|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Описание для YouTube (отправьте `-`, если не нужно):"
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv6|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv6|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Описание для YouTube (отправьте `-`, если не нужно):"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 12,
+          "text": "Заголовок, второй вариант"
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv7|p:video:game_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv7|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv7|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📀 Ссылка на Steam или страницу игры?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 14,
+          "text": "-"
+        },
+        "update_id": 10
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 15,
+            "text": "📀 Ссылка на игру пропущена."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv8|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv8|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Теги YouTube через запятую (или `-`):"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv7|p:video:game_skip",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 15,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv7|p:video:game_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv7|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv7|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📀 Ссылка на Steam или страницу игры?"
+          }
+        },
+        "update_id": 11
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 16,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv9|p:video:game_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv9|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv9|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📀 Ссылка на Steam или страницу игры?"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv8|p:video:meta_back",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 16,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv8|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv8|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Теги YouTube через запятую (или `-`):"
+          }
+        },
+        "update_id": 12
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 16,
+            "text": "📀 Ссылка на игру пропущена."
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv10|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv10|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Теги YouTube через запятую (или `-`):"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv9|p:video:game_skip",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 16,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv9|p:video:game_skip",
+                    "text": "⏭ Пропустить"
+                  },
+                  {
+                    "callback_data": "sv9|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv9|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📀 Ссылка на Steam или страницу игры?"
+          }
+        },
+        "update_id": 13
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv11|p:video:meta_back",
+                    "text": "← Назад"
+                  },
+                  {
+                    "callback_data": "sv11|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "⌨ Подпись для Instagram Reels вместе с хэштегами (или `-`)?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 18,
+          "text": "-"
+        },
+        "update_id": 14
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv12|p:video:common:1",
+                    "text": "Одно время для всех"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv12|p:video:individual:1",
+                    "text": "Разное время"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "sv12|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "Данные сохранены. Выберите расписание (MSK):"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 20,
+          "text": "-"
+        },
+        "update_id": 15
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv12|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "На этом шаге ответ выбирается кнопками выше."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 22,
+          "text": "Сообщение на шаге с кнопками"
+        },
+        "update_id": 16
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "video-wizard-skip-back#7"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 23,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:time:1:youtube_shorts",
+                    "text": "🕒 Время YouTube Shorts"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:youtube_shorts",
+                    "text": "❌ Убрать YouTube Shorts"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:time:1:instagram_reels",
+                    "text": "🕒 Время Instagram Reels"
+                  },
+                  {
+                    "callback_data": "p:video:remove_ask:1:instagram_reels",
+                    "text": "❌ Убрать Instagram Reels"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:publish:1",
+                    "text": "✅ Опубликовать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:schedule:1",
+                    "text": "📅 Запланировать"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:edit_menu:1",
+                    "text": "✏️ Изменить данные"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Заголовок, второй вариант*\nЯзык: *RU*\nСтатус: *заполняется*\n\n▶️ *YouTube Shorts*\nНазвание: Заголовок, второй вариант\nСостояние: заполняется\n\n📸 *Instagram Reels*\nОписание: —\nСостояние: заполняется"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "sv12|p:video:cancel_dialog",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "video-wizard-skip-back#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 23,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv12|p:video:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "На этом шаге ответ выбирается кнопками выше."
+          }
+        },
+        "update_id": 17
+      }
+    }
+  ]
+}

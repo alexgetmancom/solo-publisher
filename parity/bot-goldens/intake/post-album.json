@@ -1,0 +1,201 @@
+{
+  "id": "post-album",
+  "seed": [],
+  "specRef": "§10 #35; §6.5 album collector → new draft",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Альбом получен. Создам или обновлю черновик через несколько секунд."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "caption": "Альбом из двух фото",
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "media_group_id": "album-a",
+          "message_id": 3,
+          "photo": [
+            {
+              "file_id": "album-1-small",
+              "file_size": 1200,
+              "file_unique_id": "album-1-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "album-1",
+              "file_size": 287,
+              "file_unique_id": "album-1-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "media_group_id": "album-a",
+          "message_id": 5,
+          "photo": [
+            {
+              "file_id": "album-2-small",
+              "file_size": 1200,
+              "file_unique_id": "album-2-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "album-2",
+              "file_size": 287,
+              "file_unique_id": "album-2-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "album-1"
+          }
+        },
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "album-2"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 2 RU · 2 EN\n⚠️ EN использует RU-медиа\n\nRU:\nАльбом из двух фото\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "trigger": "album worker tick (+5 s)"
+    }
+  ]
+}

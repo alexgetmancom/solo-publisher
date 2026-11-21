@@ -1,0 +1,662 @@
+{
+  "id": "post-cancel-scheduled",
+  "seed": [],
+  "specRef": "§10 #26, #44; §4.5.8 confirm_cancel",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Первый пост\n\nНемного текста о запуске."
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-cancel-scheduled#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:sched_scope:1:ru_now",
+                    "text": "🇷🇺 RU сейчас"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:schedule_ru",
+                    "text": "🕓 RU по расписанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\n📅 *Планирование*\nОпубликуйте сейчас или выберите время."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:schedule:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-cancel-scheduled#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске."
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-cancel-scheduled#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:0800",
+                    "text": "08:00"
+                  },
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:0900",
+                    "text": "09:00"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:1000",
+                    "text": "10:00"
+                  },
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:1100",
+                    "text": "11:00"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:sched_manual:1:ru",
+                    "text": "✏️ Ввести время"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:schedule_ru_day",
+                    "text": "📆 RU День"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:schedule_ru_evening",
+                    "text": "🌆 RU Вечер"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\n📅 *Планирование · RU*\nВыберите слот или введите время."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:view:1:schedule_ru",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-cancel-scheduled#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:sched_scope:1:ru_now",
+                    "text": "🇷🇺 RU сейчас"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:schedule_ru",
+                    "text": "🕓 RU по расписанию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\n📅 *Планирование*\nОпубликуйте сейчас или выберите время."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-cancel-scheduled#3"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Запланировано"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "🕒 Изменить время"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_cancel",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\nЗапланировано RU: 21.08.2026, 10:00 MSK"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:sched_pick:1:ru:1000",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-cancel-scheduled#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:0800",
+                    "text": "08:00"
+                  },
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:0900",
+                    "text": "09:00"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:1000",
+                    "text": "10:00"
+                  },
+                  {
+                    "callback_data": "p:post:sched_pick:1:ru:1100",
+                    "text": "11:00"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:sched_manual:1:ru",
+                    "text": "✏️ Ввести время"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:schedule_ru_day",
+                    "text": "📆 RU День"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:schedule_ru_evening",
+                    "text": "🌆 RU Вечер"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\n📅 *Планирование · RU*\nВыберите слот или введите время."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-cancel-scheduled#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cancel_confirm:1",
+                    "text": "🗑 Отменить публикацию"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\n⚠️ *Отменить эту публикацию?*\nБудут отменены только ожидающие задачи. Уже опубликованные языки останутся опубликованными."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:cancel:1:confirm_cancel",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-cancel-scheduled#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "🕒 Изменить время"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_cancel",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\nЗапланировано RU: 21.08.2026, 10:00 MSK"
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "post-cancel-scheduled#5"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Отменено"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  },
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "🗑 Публикация #1 отменена. Уже опубликованные языки сохранены."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:cancel_confirm:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "post-cancel-scheduled#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cancel_confirm:1",
+                    "text": "🗑 Отменить публикацию"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "← Назад"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *2*\n\n⚠️ *Отменить эту публикацию?*\nБудут отменены только ожидающие задачи. Уже опубликованные языки останутся опубликованными."
+          }
+        },
+        "update_id": 7
+      }
+    }
+  ]
+}

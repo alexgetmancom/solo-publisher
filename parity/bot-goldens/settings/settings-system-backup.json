@@ -1,0 +1,702 @@
+{
+  "id": "settings-system-backup",
+  "seed": [],
+  "specRef": "§10 #77, #81; §4.10.6 backup",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "☰ Меню"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "main-menu/1/1//f1��{",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "✅ Очередь пуста"
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-menu/1/0//h\u0000\u001c`1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#3"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-backup/0/0//hk�\u0011�",
+                    "text": "✅ Ежедневный бэкап"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-backup/1/0//h�~�>",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🗄 *Бэкап базы*\n\nСтатус: *Вкл*\nОтправка: *каждый день, беззвучно, после 04:00*\n\nКопия базы этой Studio приходит сюда ежедневно: посты, расписание, состояние доставки и аналитика. Медиафайлы не входят — они намного больше того, что принимает Telegram, и относятся к бэкапу медиатома."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-system/1/0//hu�j.",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-backup/0/0//hk?2=",
+                    "text": "⬜ Ежедневный бэкап"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-backup/1/0//h�~�>",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🗄 *Бэкап базы*\n\nСтатус: *Выкл*\nОтправка: *каждый день, беззвучно, после 04:00*\n\nКопия базы этой Studio приходит сюда ежедневно: посты, расписание, состояние доставки и аналитика. Медиафайлы не входят — они намного больше того, что принимает Telegram, и относятся к бэкапу медиатома."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-backup/0/0//hk�\u0011�",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-backup/0/0//hk�\u0011�",
+                    "text": "✅ Ежедневный бэкап"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-backup/1/0//h�~�>",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🗄 *Бэкап базы*\n\nСтатус: *Вкл*\nОтправка: *каждый день, беззвучно, после 04:00*\n\nКопия базы этой Studio приходит сюда ежедневно: посты, расписание, состояние доставки и аналитика. Медиафайлы не входят — они намного больше того, что принимает Telegram, и относятся к бэкапу медиатома."
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-backup/0/0//hk�\u0011�",
+                    "text": "✅ Ежедневный бэкап"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-backup/1/0//h�~�>",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🗄 *Бэкап базы*\n\nСтатус: *Вкл*\nОтправка: *каждый день, беззвучно, после 04:00*\n\nКопия базы этой Studio приходит сюда ежедневно: посты, расписание, состояние доставки и аналитика. Медиафайлы не входят — они намного больше того, что принимает Telegram, и относятся к бэкапу медиатома."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-backup/0/0//hk?2=",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-backup/0/0//hk?2=",
+                    "text": "⬜ Ежедневный бэкап"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-backup/1/0//h�~�>",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🗄 *Бэкап базы*\n\nСтатус: *Выкл*\nОтправка: *каждый день, беззвучно, после 04:00*\n\nКопия базы этой Studio приходит сюда ежедневно: посты, расписание, состояние доставки и аналитика. Медиафайлы не входят — они намного больше того, что принимает Telegram, и относятся к бэкапу медиатома."
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-backup/1/0//h�~�>",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-backup/0/0//hk�\u0011�",
+                    "text": "✅ Ежедневный бэкап"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-backup/1/0//h�~�>",
+                    "text": "← Система"
+                  }
+                ]
+              ]
+            },
+            "text": "🗄 *Бэкап базы*\n\nСтатус: *Вкл*\nОтправка: *каждый день, беззвучно, после 04:00*\n\nКопия базы этой Studio приходит сюда ежедневно: посты, расписание, состояние доставки и аналитика. Медиафайлы не входят — они намного больше того, что принимает Telegram, и относятся к бэкапу медиатома."
+          }
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "settings-system-backup#7"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-menu/0/0//hl7�Z",
+                    "text": "📡 Публикация"
+                  },
+                  {
+                    "callback_data": "settings-menu/0/1//hv=[�",
+                    "text": "🔔 Уведомления"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/1/0//h\u0000\u001c`1",
+                    "text": "⚙️ Система"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-menu/2/0//hΝߘ",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Настройки"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "settings-system/2/0//hG��[",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "settings-system-backup#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "settings-system/0/0//h��R�",
+                    "text": "🕒 Часовой пояс"
+                  },
+                  {
+                    "callback_data": "settings-system/0/1//h�v�#",
+                    "text": "🌐 Язык"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/1/0//hu�j.",
+                    "text": "🗄 Бэкап базы"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "settings-system/2/0//hG��[",
+                    "text": "← К настройкам"
+                  }
+                ]
+              ]
+            },
+            "text": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками."
+          }
+        },
+        "update_id": 8
+      }
+    }
+  ]
+}

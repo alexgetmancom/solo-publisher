@@ -1,0 +1,1389 @@
+{
+  "id": "queue-pages",
+  "seed": [
+    "Scheduled through the Studio service: \"Утренний пост, который уже опоздал\" at 2026-08-20T09:10:00.000Z; \"Сегодня в обед\" at 2026-08-20T10:00:00.000Z; \"Сегодня вечером: очень длинный заголовок, который не помещается в кнопку очереди целиком\" at 2026-08-20T16:00:00.000Z; \"Завтра утро\" at 2026-08-21T06:00:00.000Z; \"Завтра день\" at 2026-08-21T09:00:00.000Z; \"Завтра вечер\" at 2026-08-21T15:00:00.000Z; \"Послезавтра 1\" at 2026-08-22T06:00:00.000Z; \"Послезавтра 2\" at 2026-08-22T07:00:00.000Z; \"Послезавтра 3\" at 2026-08-22T08:00:00.000Z; \"Послезавтра 4\" at 2026-08-22T09:00:00.000Z; \"Через неделю\" at 2026-08-27T09:00:00.000Z; \"Через неделю, вечер\" at 2026-08-27T16:00:00.000Z",
+    "Two video drafts without a label (createTestVideoDraft).",
+    "Clock moved to 2026-08-20T09:30:00Z after seeding."
+  ],
+  "specRef": "§10 #2 (headline, count), #11; §4.1 headline; §4.3 paging, overdue, day groups",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь · 14"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "⏰ 12:10 · Утренний пост,..."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787218200,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "☰ Меню"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "⏰ Сегодня, 12:10 · 📝 Утренний пост, который уже опоздал · 2 "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:2:overview",
+                    "text": "Сегодня, 13:00 · 📝 Сегодня в обед · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:3:overview",
+                    "text": "Сегодня, 19:00 · 📝 Сегодня вечером: очень длинный заголов · "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:4:overview",
+                    "text": "Завтра, 09:00 · 📝 Завтра утро · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:5:overview",
+                    "text": "Завтра, 12:00 · 📝 Завтра день · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:6:overview",
+                    "text": "Завтра, 18:00 · 📝 Завтра вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:7:overview",
+                    "text": "22 авг., 09:00 · 📝 Послезавтра 1 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:8:overview",
+                    "text": "22 авг., 10:00 · 📝 Послезавтра 2 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:9:overview",
+                    "text": "22 авг., 11:00 · 📝 Послезавтра 3 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:10:overview",
+                    "text": "22 авг., 12:00 · 📝 Послезавтра 4 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "noop",
+                    "text": "1/2"
+                  },
+                  {
+                    "callback_data": "queue_page:1",
+                    "text": "→"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "main-menu/1/0//f1��{",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "main-menu/0/0//f1��{",
+                    "text": "📝 Текст"
+                  },
+                  {
+                    "callback_data": "main-menu/0/1//f1��{",
+                    "text": "🎬 Видео"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "main-menu/1/0//f1��{",
+                    "text": "📋 Очередь · 14"
+                  },
+                  {
+                    "callback_data": "main-menu/1/1//f1��{",
+                    "text": "⚙️ Настройки"
+                  }
+                ]
+              ]
+            },
+            "text": "⏰ 12:10 · Утренний пост,..."
+          }
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#2"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "queue_page:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#2",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "⏰ Сегодня, 12:10 · 📝 Утренний пост, который уже опоздал · 2 "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:2:overview",
+                    "text": "Сегодня, 13:00 · 📝 Сегодня в обед · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:3:overview",
+                    "text": "Сегодня, 19:00 · 📝 Сегодня вечером: очень длинный заголов · "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:4:overview",
+                    "text": "Завтра, 09:00 · 📝 Завтра утро · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:5:overview",
+                    "text": "Завтра, 12:00 · 📝 Завтра день · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:6:overview",
+                    "text": "Завтра, 18:00 · 📝 Завтра вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:7:overview",
+                    "text": "22 авг., 09:00 · 📝 Послезавтра 1 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:8:overview",
+                    "text": "22 авг., 10:00 · 📝 Послезавтра 2 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:9:overview",
+                    "text": "22 авг., 11:00 · 📝 Послезавтра 3 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:10:overview",
+                    "text": "22 авг., 12:00 · 📝 Послезавтра 4 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "noop",
+                    "text": "1/2"
+                  },
+                  {
+                    "callback_data": "queue_page:1",
+                    "text": "→"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#3"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "noop",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#3",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#4"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "⏰ Сегодня, 12:10 · 📝 Утренний пост, который уже опоздал · 2 "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:2:overview",
+                    "text": "Сегодня, 13:00 · 📝 Сегодня в обед · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:3:overview",
+                    "text": "Сегодня, 19:00 · 📝 Сегодня вечером: очень длинный заголов · "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:4:overview",
+                    "text": "Завтра, 09:00 · 📝 Завтра утро · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:5:overview",
+                    "text": "Завтра, 12:00 · 📝 Завтра день · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:6:overview",
+                    "text": "Завтра, 18:00 · 📝 Завтра вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:7:overview",
+                    "text": "22 авг., 09:00 · 📝 Послезавтра 1 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:8:overview",
+                    "text": "22 авг., 10:00 · 📝 Послезавтра 2 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:9:overview",
+                    "text": "22 авг., 11:00 · 📝 Послезавтра 3 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:10:overview",
+                    "text": "22 авг., 12:00 · 📝 Послезавтра 4 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "noop",
+                    "text": "1/2"
+                  },
+                  {
+                    "callback_data": "queue_page:1",
+                    "text": "→"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "queue_page:0",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#4",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 5
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#5"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "queue_page:9",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#5",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "⏰ Сегодня, 12:10 · 📝 Утренний пост, который уже опоздал · 2 "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:2:overview",
+                    "text": "Сегодня, 13:00 · 📝 Сегодня в обед · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:3:overview",
+                    "text": "Сегодня, 19:00 · 📝 Сегодня вечером: очень длинный заголов · "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:4:overview",
+                    "text": "Завтра, 09:00 · 📝 Завтра утро · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:5:overview",
+                    "text": "Завтра, 12:00 · 📝 Завтра день · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:6:overview",
+                    "text": "Завтра, 18:00 · 📝 Завтра вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:7:overview",
+                    "text": "22 авг., 09:00 · 📝 Послезавтра 1 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:8:overview",
+                    "text": "22 авг., 10:00 · 📝 Послезавтра 2 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:9:overview",
+                    "text": "22 авг., 11:00 · 📝 Послезавтра 3 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:10:overview",
+                    "text": "22 авг., 12:00 · 📝 Послезавтра 4 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "noop",
+                    "text": "1/2"
+                  },
+                  {
+                    "callback_data": "queue_page:1",
+                    "text": "→"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 6
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#6"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:schedule:11",
+                    "text": "🕒 Изменить время"
+                  },
+                  {
+                    "callback_data": "p:post:view:11:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:11",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:cancel:11:confirm_cancel",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #11*\nРежим: *Ручной* · Площадки: *2*\n\nЗапланировано RU: 27.08.2026, 12:00 MSK"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:view:11:overview",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#6",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 7
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#7"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "⏰ Сегодня, 12:10 · 📝 Утренний пост, который уже опоздал · 2 "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:2:overview",
+                    "text": "Сегодня, 13:00 · 📝 Сегодня в обед · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:3:overview",
+                    "text": "Сегодня, 19:00 · 📝 Сегодня вечером: очень длинный заголов · "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:4:overview",
+                    "text": "Завтра, 09:00 · 📝 Завтра утро · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:5:overview",
+                    "text": "Завтра, 12:00 · 📝 Завтра день · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:6:overview",
+                    "text": "Завтра, 18:00 · 📝 Завтра вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:7:overview",
+                    "text": "22 авг., 09:00 · 📝 Послезавтра 1 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:8:overview",
+                    "text": "22 авг., 10:00 · 📝 Послезавтра 2 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:9:overview",
+                    "text": "22 авг., 11:00 · 📝 Послезавтра 3 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:10:overview",
+                    "text": "22 авг., 12:00 · 📝 Послезавтра 4 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "noop",
+                    "text": "1/2"
+                  },
+                  {
+                    "callback_data": "queue_page:1",
+                    "text": "→"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "queue_home",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#7",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:schedule:11",
+                    "text": "🕒 Изменить время"
+                  },
+                  {
+                    "callback_data": "p:post:view:11:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:11",
+                    "text": "Изменить RU"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:cancel:11:confirm_cancel",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #11*\nРежим: *Ручной* · Площадки: *2*\n\nЗапланировано RU: 27.08.2026, 12:00 MSK"
+          }
+        },
+        "update_id": 8
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#8"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "queue_page:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#8",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:1:overview",
+                    "text": "⏰ Сегодня, 12:10 · 📝 Утренний пост, который уже опоздал · 2 "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:2:overview",
+                    "text": "Сегодня, 13:00 · 📝 Сегодня в обед · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:3:overview",
+                    "text": "Сегодня, 19:00 · 📝 Сегодня вечером: очень длинный заголов · "
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:4:overview",
+                    "text": "Завтра, 09:00 · 📝 Завтра утро · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:5:overview",
+                    "text": "Завтра, 12:00 · 📝 Завтра день · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:6:overview",
+                    "text": "Завтра, 18:00 · 📝 Завтра вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:7:overview",
+                    "text": "22 авг., 09:00 · 📝 Послезавтра 1 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:8:overview",
+                    "text": "22 авг., 10:00 · 📝 Послезавтра 2 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:9:overview",
+                    "text": "22 авг., 11:00 · 📝 Послезавтра 3 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:10:overview",
+                    "text": "22 авг., 12:00 · 📝 Послезавтра 4 · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "noop",
+                    "text": "1/2"
+                  },
+                  {
+                    "callback_data": "queue_page:1",
+                    "text": "→"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 9
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "queue-pages#9"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 2,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:video:cancel:1",
+                    "text": "🗑 Отменить публикацию"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_home",
+                    "text": "← К очереди"
+                  }
+                ]
+              ]
+            },
+            "text": "🎬 *Видеопубликация*\nЯзык: *RU*\nСтатус: *заполняется*"
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:video:view:1:overview",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "queue-pages#9",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787218200,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 2,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:view:11:overview",
+                    "text": "27 авг., 12:00 · 📝 Через неделю · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:12:overview",
+                    "text": "27 авг., 19:00 · 📝 Через неделю, вечер · 2 площадок"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:2:overview",
+                    "text": "🎬 Video #2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:video:view:1:overview",
+                    "text": "🎬 Video #1"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "queue_page:0",
+                    "text": "←"
+                  },
+                  {
+                    "callback_data": "noop",
+                    "text": "2/2"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "menu_home",
+                    "text": "← Меню"
+                  }
+                ]
+              ]
+            },
+            "text": "📋 *Очередь*"
+          }
+        },
+        "update_id": 10
+      }
+    }
+  ]
+}
