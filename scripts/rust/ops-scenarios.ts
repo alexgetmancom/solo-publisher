@@ -28,7 +28,9 @@ import { dump } from "./scenario-support.js";
  * $CASE, and every HTTP request the operations made. HTTP is answered from the case's
  * `responses` (`{"method", "url", "status", "headers"?, "body"?: text, "json"?: value}`, each
  * served once, first match by method and exact URL); an unanswered request is a `fetch failed`
- * TypeError. The case directory is `$CASE` in everything recorded.
+ * TypeError. The case directory is `$CASE` in everything recorded, and the spec's `normalize`
+ * pairs (`[regex, replacement]`, over the recorded JSON text) replace what TypeScript leaves
+ * nondeterministic (uuids, lease owners, durations).
  */
 
 type Step = {
@@ -49,7 +51,15 @@ type Step = {
 };
 type Canned = { method?: string; url: string; status?: number; headers?: Record<string, string>; body?: string; json?: unknown };
 type Case = { name: string; env?: Record<string, string>; responses?: Canned[]; steps: Step[] };
-type Spec = { clock: string; env: Record<string, string>; ignoredTables?: string[]; setup?: string[]; cases: Case[] };
+type Spec = {
+  clock: string;
+  env: Record<string, string>;
+  ignoredTables?: string[];
+  /** `[pattern, replacement]` applied to everything recorded, for what TypeScript itself leaves nondeterministic. */
+  normalize?: [string, string][];
+  setup?: string[];
+  cases: Case[];
+};
 
 const repo = path.resolve(import.meta.dir, "../..");
 const specs = path.join(repo, "crates/ops/tests/scenarios");
@@ -241,7 +251,9 @@ export async function recordScenarios(only: string[]): Promise<void> {
     for (const [index, testCase] of spec.cases.entries()) {
       const caseDir = path.join(base, name, String(index));
       const result = await runCase(spec, testCase, caseDir);
-      recorded.push(JSON.parse(JSON.stringify(result).replaceAll(caseDir, "$CASE")));
+      let text = JSON.stringify(result).replaceAll(caseDir, "$CASE");
+      for (const [pattern, replacement] of spec.normalize ?? []) text = text.replace(new RegExp(pattern, "g"), replacement);
+      recorded.push(JSON.parse(text));
     }
     fs.writeFileSync(path.join(out, `${name}.json`), `${JSON.stringify(recorded, null, 2)}\n`);
     console.log(`ops scenarios ${name}: ${recorded.length} cases`);

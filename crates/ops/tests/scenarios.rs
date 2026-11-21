@@ -413,7 +413,24 @@ async fn run_spec(area: &str, spec: &Value, goldens: &[Value], scratch: &Path) -
             db.close().unwrap();
         }
         let name = case["name"].as_str().unwrap();
-        let normalize = |value: &Value| compact(value).replace(&dir.display().to_string(), "$CASE");
+        let patterns: Vec<(regex::Regex, String)> = spec["normalize"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|pair| {
+                (
+                    regex::Regex::new(pair[0].as_str().unwrap()).unwrap(),
+                    pair[1].as_str().unwrap().replace('$', "$$"),
+                )
+            })
+            .collect();
+        let normalize = |value: &Value| {
+            let mut text = compact(value).replace(&dir.display().to_string(), "$CASE");
+            for (pattern, replacement) in &patterns {
+                text = pattern.replace_all(&text, replacement.as_str()).into_owned();
+            }
+            text
+        };
         let mut problems = Vec::new();
         let mut outputs = Vec::new();
         for step in case["steps"].as_array().unwrap() {
