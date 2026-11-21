@@ -1,0 +1,37 @@
+[package]
+name = "ops"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "ops"
+path = "src/main.rs"
+
+[dependencies]
+adapters = { path = "../adapters" }
+bot = { path = "../bot" }
+channels = { path = "../channels" }
+content = { path = "../content" }
+db = { path = "../db" }
+delivery = { path = "../delivery" }
+domain = { path = "../domain" }
+foundation = { path = "../foundation" }
+public_site = { path = "../public_site" }
+runtime = { path = "../runtime" }
+jiff = { version = "0.2", default-features = false, features = ["std"] }
+regex = "1"
+rustix = { version = "1", features = ["fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt", "time", "sync", "macros", "fs", "io-util", "process"] }
+
+[dev-dependencies]
+base64 = "0.22"
+tokio = { version = "1", features = ["rt", "macros", "test-util"] }
+url = "2"

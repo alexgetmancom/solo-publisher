@@ -783,6 +783,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "jiff",
+ "ops",
  "percent-encoding",
  "public_site",
  "runtime",
@@ -1235,6 +1236,31 @@ name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
+
+[[package]]
+name = "ops"
+version = "0.0.0"
+dependencies = [
+ "adapters",
+ "base64 0.22.1",
+ "bot",
+ "channels",
+ "content",
+ "db",
+ "delivery",
+ "domain",
+ "foundation",
+ "jiff",
+ "public_site",
+ "regex",
+ "runtime",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "url",
+]
 
 [[package]]
 name = "percent-encoding"

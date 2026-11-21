@@ -20,6 +20,7 @@ http-body = "1"
 hyper = { version = "1", features = ["server", "http1"] }
 http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["tokio", "service"] }
+ops = { path = "../ops" }
 percent-encoding = "2"
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }

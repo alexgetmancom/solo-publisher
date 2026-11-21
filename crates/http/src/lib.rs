@@ -14,6 +14,7 @@ mod edge;
 mod headers;
 mod health;
 mod local;
+mod mcp;
 mod media_upload;
 mod mime;
 mod ranged_file;
@@ -105,6 +106,7 @@ fn routes() -> Router<Local> {
         .merge(studio::routes())
         .merge(site::routes())
         .merge(discovery::routes())
+        .merge(mcp::routes())
 }
 
 /// The whole HTTP surface (`buildApp`). Starts the local executor, so it must

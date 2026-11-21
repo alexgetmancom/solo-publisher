@@ -53,12 +53,6 @@ pub struct DeliveryProjection {
     pub targets: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none", with = "crate::json::optional_locale")]
     pub locale: Option<Locale>,
-    pub text: String,
-    /// Native Telegram entities retained for a faithful delivery preview.
-    pub entities: Vec<Entity>,
-    pub media: Vec<MediaItem>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub unavailable_targets: Option<Vec<String>>,
     /// The posts after the first when the draft is a thread.
     #[serde(skip_serializing_if = "Option::is_none", serialize_with = "serialize_optional_posts")]
     pub thread: Option<Vec<LocalizedThreadPart>>,
@@ -67,6 +61,12 @@ pub struct DeliveryProjection {
     /// were the sent ones is how a preview lied.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chains: Option<Vec<ThreadChain>>,
+    pub text: String,
+    /// Native Telegram entities retained for a faithful delivery preview.
+    pub entities: Vec<Entity>,
+    pub media: Vec<MediaItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unavailable_targets: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<JsonObject>,
     pub notes: Vec<String>,
