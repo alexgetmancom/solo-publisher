@@ -1,7 +1,7 @@
 //! The one durable job shape a publication source becomes for one target.
 
 use content::message::{Entity, MediaItem, first_line};
-use content::thread::joined_thread;
+use content::thread::{LocalizedThreadPart, joined_thread};
 use serde_json::{Map, Value, json};
 
 use super::media_policy::select_media_for_target;
@@ -188,6 +188,52 @@ pub fn payload_media(payload: &Map<String, Value>) -> Vec<Map<String, Value>> {
                 }
             }
             Some(item)
+        })
+        .collect()
+}
+
+/// `payloadText`: the payload's text, trimmed; empty when the payload does
+/// not parse.
+pub fn payload_text(payload: &Map<String, Value>) -> String {
+    if !publish_payload_parses(payload) {
+        return String::new();
+    }
+    payload
+        .get("text")
+        .and_then(Value::as_str)
+        .map_or("", foundation::js::trim)
+        .to_owned()
+}
+
+/// `payloadThread`: the posts after the first, each with the media a
+/// delivery adapter can send. Empty for an ordinary post.
+pub fn payload_thread(payload: &Map<String, Value>) -> Vec<LocalizedThreadPart> {
+    if !publish_payload_parses(payload) {
+        return Vec::new();
+    }
+    let Some(Value::Array(parts)) = payload.get("thread") else {
+        return Vec::new();
+    };
+    parts
+        .iter()
+        .map(|part| {
+            let mut media = Map::new();
+            if let Some(value) = part.get("media") {
+                media.insert("media".into(), value.clone());
+            }
+            LocalizedThreadPart {
+                text: part["text"].as_str().unwrap_or_default().to_owned(),
+                entities: part["entities"]
+                    .as_array()
+                    .map(|entities| {
+                        entities
+                            .iter()
+                            .filter_map(|entity| entity.as_object().cloned())
+                            .collect()
+                    })
+                    .unwrap_or_default(),
+                media: payload_media(&media),
+            }
         })
         .collect()
 }

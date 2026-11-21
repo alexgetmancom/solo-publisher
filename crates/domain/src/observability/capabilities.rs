@@ -111,6 +111,12 @@ fn video_channel_requirements(platform: &str, locale: &str, provider: &str) -> &
     }
 }
 
+/// The settings of `names` this configuration has no value for, in order:
+/// what `validatePlatformTarget` names when a target is not configured.
+pub fn missing_settings<'a>(config: &Config, names: &[&'a str]) -> Vec<&'a str> {
+    names.iter().copied().filter(|name| !configured(config, name)).collect()
+}
+
 /// `!values[name]` turned around: whether the configuration holds a value
 /// for the setting, the admin list counted by its length. A name the
 /// configuration does not carry reads as missing, as an absent key does.

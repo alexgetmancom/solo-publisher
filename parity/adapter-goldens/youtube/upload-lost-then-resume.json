@@ -1,0 +1,150 @@
+{
+  "name": "upload-lost-then-resume",
+  "operation": "youtube.prepare",
+  "inputs": {
+    "file": "upload.mp4",
+    "metadata": {
+      "title": "Title",
+      "description": "Body",
+      "tags": ["a", "b"]
+    },
+    "publishAt": "2026-12-01T10:00:00.000Z",
+    "locale": "ru"
+  },
+  "config": {
+    "env": {
+      "DATA_DIR": "/data",
+      "CONTROLLER_BOT_TOKEN": "test-token-telegram",
+      "TELEGRAM_API_BASE_URL": "https://bot-api.example/",
+      "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+      "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+      "THREADS_EN_ACCESS_TOKEN": "test-token-threads-en",
+      "X_CLIENT_ID": "test-x-client",
+      "X_CLIENT_SECRET": "test-secret-x-client",
+      "DISCORD_CHANNEL_ID": "555",
+      "DISCORD_GUILD_ID": "777",
+      "INSTAGRAM_RU_ACCESS_TOKEN": "EAtest-token-instagram-ru",
+      "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+      "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+      "INSTAGRAM_EN_USER_ID": "ig-en-user",
+      "YOUTUBE_RU_CLIENT_ID": "test-youtube-ru-client",
+      "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube-ru",
+      "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-ru-refresh",
+      "YOUTUBE_EN_CLIENT_ID": "test-youtube-en-client",
+      "YOUTUBE_EN_CLIENT_SECRET": "test-secret-youtube-en",
+      "YOUTUBE_EN_REFRESH_TOKEN": "test-token-youtube-en-refresh",
+      "MEDIA_PROCESSOR_URL": "https://media-processor.example/",
+      "MEDIA_PROCESSOR_TOKEN": "test-token-media-processor-000000000000"
+    },
+    "credentials": {
+      "X_ACCESS_TOKEN": "test-token-x",
+      "X_REFRESH_TOKEN": "test-token-x-refresh",
+      "ZERNIO_API_KEY": "test-token-zernio",
+      "DISCORD_BOT_TOKEN": "test-token-discord"
+    }
+  },
+  "files": {
+    "photo.jpg": {
+      "fill": "J",
+      "size": 64
+    },
+    "second.png": {
+      "fill": "P",
+      "size": 48
+    },
+    "clip.mp4": {
+      "fill": "V",
+      "size": 96
+    },
+    "big.mp4": {
+      "fill": "B",
+      "size": 2101248
+    },
+    "upload.mp4": {
+      "fill": "U",
+      "size": 32
+    },
+    "story.jpg": {
+      "fill": "S",
+      "size": 40
+    }
+  },
+  "responses": [
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+    },
+    {
+      "status": 200,
+      "headers": [["location", "https://upload.example/session/1?upload_id=u1"]]
+    },
+    {
+      "throws": "connection reset by peer"
+    },
+    {
+      "status": 308,
+      "headers": [["range", "bytes=0-9"]]
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"id\":\"vid4\"}"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "url": "https://oauth2.googleapis.com/token",
+      "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+      "body": {
+        "text": "client_id=test-youtube-ru-client&client_secret={{YOUTUBE_RU_CLIENT_SECRET}}&refresh_token={{YOUTUBE_RU_REFRESH_TOKEN}}&grant_type=refresh_token"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status,recordingDetails",
+      "headers": [
+        ["authorization", "Bearer test-token-youtube-access"],
+        ["content-type", "application/json; charset=utf-8"],
+        ["x-upload-content-length", "32"],
+        ["x-upload-content-type", "video/mp4"]
+      ],
+      "body": {
+        "text": "{\"snippet\":{\"title\":\"Title\",\"description\":\"Body\",\"tags\":[\"a\",\"b\"],\"categoryId\":\"20\",\"defaultLanguage\":\"ru\",\"defaultAudioLanguage\":\"ru\"},\"status\":{\"privacyStatus\":\"private\",\"publishAt\":\"2026-12-01T10:00:00.000Z\",\"selfDeclaredMadeForKids\":false},\"recordingDetails\":{\"recordingDate\":\"2026-12-01T10:00:00.000Z\"}}"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "https://upload.example/session/1?upload_id=u1",
+      "headers": [["content-length", "32"], ["content-range", "bytes 0-31/32"], ["content-type", "video/mp4"]],
+      "body": {
+        "text": "UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "https://upload.example/session/1?upload_id=u1",
+      "headers": [["content-length", "0"], ["content-range", "bytes */32"]],
+      "body": {
+        "text": ""
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "https://upload.example/session/1?upload_id=u1",
+      "headers": [["content-length", "22"], ["content-range", "bytes 10-31/32"], ["content-type", "video/mp4"]],
+      "body": {
+        "text": "UUUUUUUUUUUUUUUUUUUUUU"
+      }
+    }
+  ],
+  "sleptMs": 0,
+  "written": {},
+  "outcome": {
+    "ok": {
+      "id": "vid4",
+      "url": "https://www.youtube.com/watch?v=vid4"
+    }
+  }
+}
