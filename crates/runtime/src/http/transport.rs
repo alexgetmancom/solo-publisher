@@ -80,6 +80,9 @@ pub struct HttpRequest {
     /// (`signal: AbortSignal.timeout(ms)`). The client's ceiling, which ends
     /// at the response headers, applies regardless.
     pub deadline: Option<Duration>,
+    /// `redirect: "follow"`, `fetch`'s default; off is `redirect: "manual"`,
+    /// the 3xx answered as it came.
+    pub follow_redirects: bool,
 }
 
 impl HttpRequest {
@@ -90,6 +93,7 @@ impl HttpRequest {
             headers: Vec::new(),
             body: Body::default(),
             deadline: None,
+            follow_redirects: true,
         }
     }
 
@@ -135,6 +139,12 @@ impl HttpRequest {
 
     pub fn deadline(mut self, deadline: Duration) -> Self {
         self.deadline = Some(deadline);
+        self
+    }
+
+    /// `redirect: "manual"`.
+    pub fn manual_redirect(mut self) -> Self {
+        self.follow_redirects = false;
         self
     }
 
@@ -219,15 +229,21 @@ pub trait Transport {
     fn send(&self, request: HttpRequest) -> Fut<'_, Result<HttpResponse, TransportFailure>>;
 }
 
-/// The real network, over rustls. Redirects are followed, as `fetch` does.
+/// The real network, over rustls. Redirects are followed, as `fetch` does,
+/// unless the request asked for them manually.
 pub struct ReqwestTransport {
     client: reqwest::Client,
+    manual: reqwest::Client,
 }
 
 impl ReqwestTransport {
     pub fn new() -> Result<Self, TransportFailure> {
         let client = reqwest::Client::builder().build().map_err(failure)?;
-        Ok(Self { client })
+        let manual = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .map_err(failure)?;
+        Ok(Self { client, manual })
     }
 }
 
@@ -256,7 +272,12 @@ impl Transport for ReqwestTransport {
                 Method::Patch => reqwest::Method::PATCH,
                 Method::Delete => reqwest::Method::DELETE,
             };
-            let mut builder = self.client.request(method, &request.url);
+            let client = if request.follow_redirects {
+                &self.client
+            } else {
+                &self.manual
+            };
+            let mut builder = client.request(method, &request.url);
             let mut length_given = false;
             for (name, value) in &request.headers {
                 length_given |= name.eq_ignore_ascii_case("content-length");

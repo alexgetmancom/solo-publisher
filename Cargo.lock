@@ -1250,6 +1250,7 @@ dependencies = [
  "delivery",
  "domain",
  "foundation",
+ "futures-util",
  "jiff",
  "public_site",
  "regex",

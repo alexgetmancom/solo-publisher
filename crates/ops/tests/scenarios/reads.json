@@ -1,0 +1,550 @@
+{
+  "clock": "2026-11-01T10:00:00.000Z",
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_ADMIN_IDS": "42,77",
+    "PUBLIC_BASE_URL": "https://studio.example",
+    "TELEGRAM_CHANNEL_USERNAME": "@studiochannel"
+  },
+  "normalize": [
+    ["\"gitRevision\":\"[^\"]*\"", "\"gitRevision\":\"<revision>\""],
+    ["gitRevision\\\\\": \\\\\"[0-9a-f]+\\\\\"", "gitRevision\\\": \\\"<revision>\\\""]
+  ],
+  "setup": ["UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'"],
+  "cases": [
+    {
+      "name": "every report over an empty database",
+      "steps": [
+        {
+          "op": "settings"
+        },
+        {
+          "op": "studio-profile"
+        },
+        {
+          "op": "status"
+        },
+        {
+          "cli": ["status", "--details", "--json"]
+        },
+        {
+          "op": "events"
+        },
+        {
+          "op": "video-library"
+        },
+        {
+          "op": "recent"
+        },
+        {
+          "cli": ["recent"]
+        },
+        {
+          "cli": ["recent", "--json"]
+        },
+        {
+          "cli": ["find", "--query", "Astra"]
+        },
+        {
+          "cli": ["find", "--query", "Astra", "--json"]
+        },
+        {
+          "op": "format-support"
+        },
+        {
+          "op": "channels"
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "video:1"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "draft:1"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "nonsense"
+          }
+        },
+        {
+          "op": "post-text",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "cli": ["post-text", "--ref", "1"]
+        },
+        {
+          "op": "verify",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "find",
+          "args": {
+            "query": "   "
+          }
+        },
+        {
+          "op": "find",
+          "args": {
+            "query": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "recent, find, post text and timeline over delivered posts",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 101, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 102, '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (3, 42, 'published', '{}', 103, '2026-10-29T07:00:00.000Z', '2026-10-29T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (4, 42, 'published', '{}', 104, '2026-10-28T07:00:00.000Z', '2026-10-28T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (5, 42, 'draft', '{}', NULL, '2026-11-01T07:00:00.000Z', '2026-11-01T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (6, 42, 'published', '{}', 106, '2026-10-20T07:00:00.000Z', '2026-10-20T07:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'ru', 'Astra launch day\nBody of the post', NULL, '2026-10-30T08:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'en', 'Astra launch day in English\nBody', NULL, '2026-10-30T08:05:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (2, 'ru', 'Это очень длинный заголовок публикации, который не помещается в шестьдесят символов\nТекст', NULL, '2026-10-31T09:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (2, 'en', '  English copy of a long one  ', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (3, 'ru', 'Только телеграм', NULL, '2026-10-29T10:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (4, 'en', 'Only English here', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (5, 'ru', 'Astra unpublished draft', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (6, 'ru', 'old source', 'Astra again, approved\nsecond line', '2026-10-27T10:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:101', 'telegram', 'published', 'https://t.me/studiochannel/1', NULL, NULL, '2026-10-30T08:00:00.000Z', '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:101', 'x', 'published', 'https://x.com/a/status/1', NULL, NULL, '2026-10-30T08:01:00.000Z', '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:101', 'threads_ru', 'failed', NULL, 'boom', NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:102', 'telegram', 'published', 'https://t.me/studiochannel/2', NULL, NULL, '2026-10-31T09:00:00.000Z', '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:102', 'x', 'failed', NULL, 'thread broke', 'x-1', NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:103', 'telegram', 'published', 'https://t.me/studiochannel/3', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:106', 'telegram', 'queued', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:106', 'x', 'published', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, publish_at, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:101', 'telegram', 'done', 1, '2026-10-30T08:00:00.000Z', '2026-10-30T08:00:01.000Z', NULL, '2026-10-30T07:59:00.000Z', '2026-10-30T08:00:03.500Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, publish_at, locked_at, last_error, created_at, updated_at) VALUES (2, 'post:101', 'threads_ru', 'failed', 3, '2026-10-30T08:00:00.000Z', NULL, 'boom', '2026-10-30T07:59:00.000Z', '2026-10-30T07:58:00.000Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, publish_at, locked_at, last_error, created_at, updated_at) VALUES (3, 'post:101', 'x', 'done', 1, NULL, NULL, NULL, '2026-10-30T07:59:00.000Z', '2026-10-30T08:01:00.000Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, created_at, updated_at) VALUES (4, 'post:102', 'x', 'queued', 0, '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.completed', 'info', 'telegram', 'sent', '{\"messageId\":1,\"nested\":{\"a\":[1,2]}}', '2026-10-30T08:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.failed', 'error', 'threads_ru', 'boom', '[1,2]', '2026-10-30T08:02:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.note', 'warn', NULL, 'plain', 'not json', '2026-10-30T08:02:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.empty', 'info', NULL, 'empty', NULL, '2026-10-30T08:03:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES (NULL, 'runtime.restart', 'warn', NULL, 'restarted', '{\"count\":3}', '2026-10-31T12:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES (NULL, 'mcp.feedback', 'info', NULL, 'feedback', '{\"message\":\"slow\"}', '2026-11-01T09:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:102', 'publish.job.failed', 'error', 'x', 'thread broke', '\"text\"', '2026-10-31T09:05:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('queue', '{\"ok\":true,\"last_heartbeat_at\":\"2026-11-01T09:59:30.000Z\",\"heartbeat_interval_ms\":60000,\"last_run_at\":\"2026-11-01T09:59:00.000Z\"}', '2026-11-01T09:59:30.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('video', '{\"ok\":false,\"last_error\":\"ffmpeg died\"}', '2026-11-01T09:00:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('site', '{\"heartbeat_interval_ms\":60000}', '2026-11-01T08:00:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('notifications', '{\"scheduler_error\":\"cron broke\",\"last_error\":\"older\"}', '2026-11-01T09:58:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('retired-loop', '{\"ok\":false}', '2026-11-01T09:58:00.000Z'); INSERT INTO metric_schedule (publication_key, target, next_check_at, last_checked_at, frozen_at, last_error, updated_at) VALUES ('post:101', 'telegram', '2026-11-01T09:00:00.000Z', '2026-10-31T09:00:00.000Z', NULL, NULL, '2026-10-31T09:00:00.000Z'); INSERT INTO metric_schedule (publication_key, target, next_check_at, last_checked_at, frozen_at, last_error, updated_at) VALUES ('post:101', 'x', '2026-11-02T09:00:00.000Z', '2026-10-31T10:00:00.000Z', NULL, 'rate limited', '2026-10-31T10:00:00.000Z'); INSERT INTO metric_schedule (publication_key, target, next_check_at, last_checked_at, frozen_at, last_error, updated_at) VALUES ('post:102', 'telegram', NULL, NULL, '2026-10-31T11:00:00.000Z', 'old', '2026-10-31T11:00:00.000Z'); INSERT INTO metric_samples (publication_key, target, metric_name, value, sampled_at) VALUES ('post:101', 'telegram', 'views', 10, '2026-10-31T09:00:00.000Z'); INSERT INTO metric_samples (publication_key, target, metric_name, value, sampled_at) VALUES ('post:101', 'x', 'views', 4, '2026-10-31T10:00:00.000Z'); INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:101', 'publish', 'done', '2026-10-30T08:00:00.000Z', '2026-10-30T08:00:00.000Z'); INSERT INTO site_jobs (publication_key, reason, status, last_error, created_at, updated_at) VALUES ('post:102', 'publish', 'failed', 'render', '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z');"
+        },
+        {
+          "op": "recent"
+        },
+        {
+          "op": "recent",
+          "args": {
+            "limit": 2
+          }
+        },
+        {
+          "cli": ["recent", "--limit", "10"]
+        },
+        {
+          "cli": ["recent", "--limit", "51"]
+        },
+        {
+          "cli": ["find", "--query", "ASTRA"]
+        },
+        {
+          "cli": ["find", "--query", "astra", "--json"]
+        },
+        {
+          "cli": ["find", "--query", "nothing \"here\""]
+        },
+        {
+          "op": "post-text",
+          "args": {
+            "ref": "post:101"
+          }
+        },
+        {
+          "cli": ["post-text", "--ref", "102"]
+        },
+        {
+          "cli": ["post-text", "--ref", "post:104"]
+        },
+        {
+          "cli": ["post-text", "--ref", "post:999"]
+        },
+        {
+          "op": "post-text",
+          "args": {
+            "ref": "post:abc"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "post:101"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "post:102"
+          }
+        },
+        {
+          "cli": ["timeline", "--ref", "101"]
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "ops_recent",
+              "arguments": {
+                "limit": 3
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "events and status over a populated journal",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 101, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 102, '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (3, 42, 'published', '{}', 103, '2026-10-29T07:00:00.000Z', '2026-10-29T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (4, 42, 'published', '{}', 104, '2026-10-28T07:00:00.000Z', '2026-10-28T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (5, 42, 'draft', '{}', NULL, '2026-11-01T07:00:00.000Z', '2026-11-01T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (6, 42, 'published', '{}', 106, '2026-10-20T07:00:00.000Z', '2026-10-20T07:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'ru', 'Astra launch day\nBody of the post', NULL, '2026-10-30T08:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'en', 'Astra launch day in English\nBody', NULL, '2026-10-30T08:05:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (2, 'ru', 'Это очень длинный заголовок публикации, который не помещается в шестьдесят символов\nТекст', NULL, '2026-10-31T09:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (2, 'en', '  English copy of a long one  ', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (3, 'ru', 'Только телеграм', NULL, '2026-10-29T10:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (4, 'en', 'Only English here', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (5, 'ru', 'Astra unpublished draft', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (6, 'ru', 'old source', 'Astra again, approved\nsecond line', '2026-10-27T10:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:101', 'telegram', 'published', 'https://t.me/studiochannel/1', NULL, NULL, '2026-10-30T08:00:00.000Z', '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:101', 'x', 'published', 'https://x.com/a/status/1', NULL, NULL, '2026-10-30T08:01:00.000Z', '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:101', 'threads_ru', 'failed', NULL, 'boom', NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:102', 'telegram', 'published', 'https://t.me/studiochannel/2', NULL, NULL, '2026-10-31T09:00:00.000Z', '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:102', 'x', 'failed', NULL, 'thread broke', 'x-1', NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:103', 'telegram', 'published', 'https://t.me/studiochannel/3', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:106', 'telegram', 'queued', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:106', 'x', 'published', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, publish_at, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:101', 'telegram', 'done', 1, '2026-10-30T08:00:00.000Z', '2026-10-30T08:00:01.000Z', NULL, '2026-10-30T07:59:00.000Z', '2026-10-30T08:00:03.500Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, publish_at, locked_at, last_error, created_at, updated_at) VALUES (2, 'post:101', 'threads_ru', 'failed', 3, '2026-10-30T08:00:00.000Z', NULL, 'boom', '2026-10-30T07:59:00.000Z', '2026-10-30T07:58:00.000Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, publish_at, locked_at, last_error, created_at, updated_at) VALUES (3, 'post:101', 'x', 'done', 1, NULL, NULL, NULL, '2026-10-30T07:59:00.000Z', '2026-10-30T08:01:00.000Z'); INSERT INTO publish_jobs (job_id, publication_key, target, status, attempt_count, created_at, updated_at) VALUES (4, 'post:102', 'x', 'queued', 0, '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.completed', 'info', 'telegram', 'sent', '{\"messageId\":1,\"nested\":{\"a\":[1,2]}}', '2026-10-30T08:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.failed', 'error', 'threads_ru', 'boom', '[1,2]', '2026-10-30T08:02:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.note', 'warn', NULL, 'plain', 'not json', '2026-10-30T08:02:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:101', 'publish.job.empty', 'info', NULL, 'empty', NULL, '2026-10-30T08:03:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES (NULL, 'runtime.restart', 'warn', NULL, 'restarted', '{\"count\":3}', '2026-10-31T12:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES (NULL, 'mcp.feedback', 'info', NULL, 'feedback', '{\"message\":\"slow\"}', '2026-11-01T09:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('post:102', 'publish.job.failed', 'error', 'x', 'thread broke', '\"text\"', '2026-10-31T09:05:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('queue', '{\"ok\":true,\"last_heartbeat_at\":\"2026-11-01T09:59:30.000Z\",\"heartbeat_interval_ms\":60000,\"last_run_at\":\"2026-11-01T09:59:00.000Z\"}', '2026-11-01T09:59:30.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('video', '{\"ok\":false,\"last_error\":\"ffmpeg died\"}', '2026-11-01T09:00:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('site', '{\"heartbeat_interval_ms\":60000}', '2026-11-01T08:00:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('notifications', '{\"scheduler_error\":\"cron broke\",\"last_error\":\"older\"}', '2026-11-01T09:58:00.000Z'); INSERT INTO worker_state (name, state_json, updated_at) VALUES ('retired-loop', '{\"ok\":false}', '2026-11-01T09:58:00.000Z'); INSERT INTO metric_schedule (publication_key, target, next_check_at, last_checked_at, frozen_at, last_error, updated_at) VALUES ('post:101', 'telegram', '2026-11-01T09:00:00.000Z', '2026-10-31T09:00:00.000Z', NULL, NULL, '2026-10-31T09:00:00.000Z'); INSERT INTO metric_schedule (publication_key, target, next_check_at, last_checked_at, frozen_at, last_error, updated_at) VALUES ('post:101', 'x', '2026-11-02T09:00:00.000Z', '2026-10-31T10:00:00.000Z', NULL, 'rate limited', '2026-10-31T10:00:00.000Z'); INSERT INTO metric_schedule (publication_key, target, next_check_at, last_checked_at, frozen_at, last_error, updated_at) VALUES ('post:102', 'telegram', NULL, NULL, '2026-10-31T11:00:00.000Z', 'old', '2026-10-31T11:00:00.000Z'); INSERT INTO metric_samples (publication_key, target, metric_name, value, sampled_at) VALUES ('post:101', 'telegram', 'views', 10, '2026-10-31T09:00:00.000Z'); INSERT INTO metric_samples (publication_key, target, metric_name, value, sampled_at) VALUES ('post:101', 'x', 'views', 4, '2026-10-31T10:00:00.000Z'); INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:101', 'publish', 'done', '2026-10-30T08:00:00.000Z', '2026-10-30T08:00:00.000Z'); INSERT INTO site_jobs (publication_key, reason, status, last_error, created_at, updated_at) VALUES ('post:102', 'publish', 'failed', 'render', '2026-10-31T08:00:00.000Z', '2026-10-31T08:00:00.000Z');"
+        },
+        {
+          "op": "events"
+        },
+        {
+          "op": "events",
+          "args": {
+            "type": "runtime."
+          }
+        },
+        {
+          "op": "events",
+          "args": {
+            "severity": "error"
+          }
+        },
+        {
+          "op": "events",
+          "args": {
+            "ref": "post:101",
+            "limit": 2
+          }
+        },
+        {
+          "op": "events",
+          "args": {
+            "since": "2026-10-31T00:00:00Z"
+          }
+        },
+        {
+          "op": "events",
+          "args": {
+            "type": "publish.job.",
+            "severity": "warn",
+            "ref": "101"
+          }
+        },
+        {
+          "op": "events",
+          "args": {
+            "since": "yesterday"
+          }
+        },
+        {
+          "op": "events",
+          "args": {
+            "limit": 0
+          }
+        },
+        {
+          "op": "status"
+        },
+        {
+          "op": "status",
+          "args": {
+            "details": true
+          }
+        },
+        {
+          "cli": ["status", "--json"]
+        }
+      ]
+    },
+    {
+      "name": "status with the Telegram loops expected",
+      "env": {
+        "CONTROLLER_BOT_TOKEN": "123456:fake-token-for-tests"
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO worker_state (name, state_json, updated_at) VALUES ('telegram-alerts', '{\"ok\":true}', '2026-11-01T09:59:00.000Z');"
+        },
+        {
+          "op": "status"
+        }
+      ]
+    },
+    {
+      "name": "video library and video timeline",
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, status, scheduled_at, game, script, script_source, opening_line, created_at, updated_at) VALUES (1, 42, 'ru', 'Обзор Astra', 'published', '2026-10-30T12:00:00.000Z', 'Astra', 'Сценарий целиком', 'operator', 'Первая строка', '2026-10-29T12:00:00.000Z', '2026-10-30T12:30:00.000Z'); INSERT INTO video_drafts (id, actor_id, locale, label, status, created_at, updated_at) VALUES (2, 42, 'en', 'Draft video', 'draft', '2026-10-31T12:00:00.000Z', '2026-10-31T12:00:00.000Z'); INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_post_id, external_id, external_url, published_at, confirmation_source, verified_at, last_error, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\":\"Astra\",\"tags\":[\"a\",\"b\"]}', 'published', 'native', NULL, 'yt-1', 'https://youtube.com/shorts/yt-1', '2026-10-30T12:01:00.000Z', 'api', '2026-10-30T12:05:00.000Z', NULL, '2026-10-29T12:00:00.000Z', '2026-10-30T12:05:00.000Z'); INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_post_id, last_error, created_at, updated_at) VALUES (2, 1, 'instagram_reels', '{}', 'failed', 'zernio', 'z-9', 'tag refused', '2026-10-29T12:00:00.000Z', '2026-10-30T12:02:00.000Z'); INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, created_at, updated_at) VALUES (3, 2, 'youtube_shorts', '{}', 'draft', '2026-10-31T12:00:00.000Z', '2026-10-31T12:00:00.000Z'); INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_at, last_error, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-10-30T12:00:00.000Z', 'done', 1, '2026-10-30T12:00:10.000Z', NULL, '2026-10-29T12:00:00.000Z', '2026-10-30T12:01:00.000Z'); INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_at, last_error, created_at, updated_at) VALUES (2, 1, 2, 'publish', '2026-10-30T12:00:00.000Z', 'failed', 2, NULL, 'tag refused', '2026-10-29T12:00:00.000Z', '2026-10-30T12:02:00.000Z'); INSERT INTO video_metric_schedule (video_target_id, checkpoint_index, next_check_at, last_checked_at, last_error, frozen_at, updated_at) VALUES (1, 2, '2026-11-02T12:00:00.000Z', '2026-11-01T06:00:00.000Z', NULL, '2026-11-01T07:00:00.000Z', '2026-11-01T07:00:00.000Z'); INSERT INTO games (name, steam_app_id, genres, player_modes, release_date, developer, source, captured_at) VALUES ('Astra', '123', '[\"RPG\",\"Indie\"]', '[\"single\"]', '2026-01-01', 'Studio A', 'steam', '2026-10-01T00:00:00.000Z'); INSERT INTO games (name, steam_app_id, genres, player_modes, release_date, developer, source, captured_at) VALUES ('Bravo', NULL, NULL, NULL, NULL, NULL, 'manual', '2026-10-02T00:00:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('video:1', 'video.job.completed', 'info', 'youtube_shorts', 'uploaded', '{\"id\":\"yt-1\"}', '2026-10-30T12:01:00.000Z'); INSERT INTO publication_events (publication_key, event_type, severity, target, message, details_json, created_at) VALUES ('video:1', 'video.job.failed', 'error', 'instagram_reels', 'tag refused', NULL, '2026-10-30T12:02:00.000Z');"
+        },
+        {
+          "op": "video-library"
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "video:1"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "video:2"
+          }
+        },
+        {
+          "op": "timeline",
+          "args": {
+            "ref": "video:01"
+          }
+        },
+        {
+          "op": "status"
+        }
+      ]
+    },
+    {
+      "name": "verify asks every published address without following redirects",
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://discord.com/channels/1/2",
+          "status": 200,
+          "body": ""
+        },
+        {
+          "method": "GET",
+          "url": "https://t.me/studiochannel/5",
+          "status": 404,
+          "body": ""
+        },
+        {
+          "method": "GET",
+          "url": "https://www.threads.net/@a/post/1",
+          "status": 301,
+          "headers": {
+            "location": "https://www.threads.com/@a/post/1"
+          },
+          "body": ""
+        },
+        {
+          "method": "GET",
+          "url": "https://www.threads.net/@a/post/2",
+          "status": 302,
+          "body": ""
+        },
+        {
+          "method": "GET",
+          "url": "https://bsky.app/profile/a/post/1",
+          "status": 503,
+          "body": ""
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 201, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 0, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'ru', 'Verify me', NULL, '2026-10-30T08:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'discord', 'published', 'https://discord.com/channels/1/2', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'telegram', 'published', 'https://t.me/studiochannel/5', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'threads_ru', 'published', 'https://www.threads.net/@a/post/1', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'threads_en', 'published', 'https://www.threads.net/@a/post/2', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'x', 'published', 'https://x.com/a/status/9', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'bluesky', 'published', 'https://bsky.app/profile/a/post/1', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'site_ru', 'published', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'site_en', 'published', 'http://studio.example/x', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'instagram_ru', 'published', 'https://127.0.0.1/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'instagram_en', 'published', 'https://[::1]/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'facebook', 'published', 'https://box.local/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'linkedin', 'published', 'https://intranet/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'mastodon', 'published', 'not a url', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'threads_x', 'failed', NULL, 'denied', NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'vk', 'failed', NULL, 'chain', 'vk-7', NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'youtube', 'queued', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z');"
+        },
+        {
+          "op": "verify",
+          "args": {
+            "ref": "post:201"
+          }
+        },
+        {
+          "op": "verify",
+          "args": {
+            "ref": "post:999"
+          }
+        },
+        {
+          "op": "verify",
+          "args": {
+            "ref": "abc"
+          }
+        },
+        {
+          "op": "verify",
+          "args": {
+            "ref": "post:0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify by a bare number",
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://discord.com/channels/1/2",
+          "status": 200,
+          "body": ""
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 201, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 0, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'ru', 'Verify me', NULL, '2026-10-30T08:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'discord', 'published', 'https://discord.com/channels/1/2', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'telegram', 'published', 'https://t.me/studiochannel/5', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'threads_ru', 'published', 'https://www.threads.net/@a/post/1', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'threads_en', 'published', 'https://www.threads.net/@a/post/2', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'x', 'published', 'https://x.com/a/status/9', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'bluesky', 'published', 'https://bsky.app/profile/a/post/1', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'site_ru', 'published', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'site_en', 'published', 'http://studio.example/x', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'instagram_ru', 'published', 'https://127.0.0.1/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'instagram_en', 'published', 'https://[::1]/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'facebook', 'published', 'https://box.local/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'linkedin', 'published', 'https://intranet/p', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'mastodon', 'published', 'not a url', NULL, NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'threads_x', 'failed', NULL, 'denied', NULL, NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'vk', 'failed', NULL, 'chain', 'vk-7', NULL, '2026-10-30T09:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, url, error, external_id, published_at, updated_at) VALUES ('post:201', 'youtube', 'queued', NULL, NULL, NULL, NULL, '2026-10-30T09:00:00.000Z');"
+        },
+        {
+          "cli": ["verify", "--ref", "201", "--json"]
+        }
+      ]
+    },
+    {
+      "name": "post text in a Russian-only Studio",
+      "steps": [
+        {
+          "sql": "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z'); INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_shorts', 0, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z'); INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', 'acct-x', 'x', 'x', 0, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 301, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'ru', '  Только по-русски\nвторая строка  ', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO post_locales (draft_id, locale, source_text, approved_text, published_at, updated_at) VALUES (1, 'en', 'English is not served', NULL, NULL, '2026-10-01T00:00:00.000Z'); INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 302, '2026-10-30T07:00:00.000Z', '2026-10-30T07:00:00.000Z');"
+        },
+        {
+          "op": "post-text",
+          "args": {
+            "ref": "post:301"
+          }
+        },
+        {
+          "cli": ["post-text", "--ref", "post:301"]
+        },
+        {
+          "cli": ["post-text", "--ref", "302"]
+        },
+        {
+          "op": "channels"
+        },
+        {
+          "cli": ["channels", "--json"]
+        }
+      ]
+    },
+    {
+      "name": "studio profile set, read back and journalled",
+      "steps": [
+        {
+          "op": "studio-profile-set",
+          "args": {
+            "timezone": " Europe/Berlin ",
+            "timezone_label": "CET",
+            "site_enabled": true,
+            "prepare_lead_minutes": "30",
+            "retention_hours": 48,
+            "name": "{\"en\":\"Alex\",\"ru\":\"Алекс\"}",
+            "site_timezone": "{\"en\":\"\",\"ru\":\"Europe/Moscow\"}",
+            "profiles": "{\"en\":[{\"label\":\"Telegram\",\"url\":\"https://t.me/example\"}],\"ru\":[]}"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "studio-profile"
+        },
+        {
+          "op": "settings"
+        },
+        {
+          "cli": ["studio-profile-set", "--timezone-label", "UTC+1", "--about", "{\"en\":\"About\",\"ru\":\"О себе\"}"]
+        },
+        {
+          "op": "studio-profile-set",
+          "args": {
+            "timezone": "Mars/Base"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "studio-profile-set",
+          "args": {
+            "site_timezone": "{\"en\":\"Nowhere/Land\",\"ru\":\"\"}"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "studio-profile-set",
+          "args": {
+            "retention_hours": "10"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "studio-profile-set",
+          "args": {
+            "prepare_lead_minutes": "1.5"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "studio-profile-set",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "status"
+        },
+        {
+          "query": "SELECT publication_key, event_type, message, details_json FROM publication_events ORDER BY id"
+        }
+      ]
+    },
+    {
+      "name": "settings with stored owner choices",
+      "steps": [
+        {
+          "sql": "INSERT INTO studio_notification_settings (actor_id, video_reminders_enabled, post_reminders_enabled, reminder_minutes, completion_enabled, updated_at) VALUES (77, 0, 1, 15, 0, '2026-10-01T00:00:00.000Z');"
+        },
+        {
+          "op": "settings"
+        }
+      ]
+    },
+    {
+      "name": "format support summary",
+      "steps": [
+        {
+          "sql": "INSERT INTO media_test_cases (test_id, format_key, title, input_recipe, expected_targets_json, status, last_message_id, created_at, updated_at) VALUES ('T01', 'text_only', 'Text only', 'Send a plain text message.', '[\"telegram\"]', 'pass', 101, '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO media_test_cases (test_id, format_key, title, input_recipe, expected_targets_json, created_at, updated_at) VALUES ('T02', 'text_picture', 'Text + picture', 'Send 1 photo with caption.', '[]', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z'); INSERT INTO format_support (target, format_key, status, evidence_test_id, evidence_message_id, updated_at) VALUES ('telegram', 'text_only', 'supported', 'T01', 101, '2026-10-01T00:00:00.000Z'); INSERT INTO format_support (target, format_key, status, updated_at) VALUES ('site_ru', 'text_only', 'unknown', '2026-10-01T00:00:00.000Z');"
+        },
+        {
+          "op": "format-support"
+        },
+        {
+          "cli": ["format-support"]
+        }
+      ]
+    },
+    {
+      "name": "usage over the default window",
+      "steps": [
+        {
+          "sql": "INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.post.create', '2026-11-01', 3, 2, 1, 301, '2026-11-01T01:00:00.000Z', '2026-11-01T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.post.create', '2026-10-20', 5, 3, 2, 50, '2026-10-20T01:00:00.000Z', '2026-10-20T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.post.create', '2026-10-25', 2, 0, 2, 7, '2026-10-25T01:00:00.000Z', '2026-10-25T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.queue.read', '2026-08-01', 9, 9, 0, 90, '2026-08-01T01:00:00.000Z', '2026-08-01T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('custom.feature', '2026-06-01', 1, 1, 0, 3, '2026-06-01T01:00:00.000Z', '2026-06-01T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a_b.x', '2026-10-31', 1, 1, 0, 1, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a-b.x', '2026-10-31', 1, 1, 0, 2, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a.b', '2026-10-31', 1, 1, 0, 2, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a0', '2026-10-31', 1, 0, 1, 2, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z');"
+        },
+        {
+          "op": "usage"
+        }
+      ]
+    },
+    {
+      "name": "usage over a narrow window",
+      "steps": [
+        {
+          "sql": "INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.post.create', '2026-11-01', 3, 2, 1, 301, '2026-11-01T01:00:00.000Z', '2026-11-01T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.post.create', '2026-10-20', 5, 3, 2, 50, '2026-10-20T01:00:00.000Z', '2026-10-20T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.post.create', '2026-10-25', 2, 0, 2, 7, '2026-10-25T01:00:00.000Z', '2026-10-25T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('studio.queue.read', '2026-08-01', 9, 9, 0, 90, '2026-08-01T01:00:00.000Z', '2026-08-01T09:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('custom.feature', '2026-06-01', 1, 1, 0, 3, '2026-06-01T01:00:00.000Z', '2026-06-01T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a_b.x', '2026-10-31', 1, 1, 0, 1, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a-b.x', '2026-10-31', 1, 1, 0, 2, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a.b', '2026-10-31', 1, 1, 0, 2, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z'); INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a0', '2026-10-31', 1, 0, 1, 2, '2026-10-31T01:00:00.000Z', '2026-10-31T01:00:00.000Z');"
+        },
+        {
+          "op": "usage",
+          "args": {
+            "days": 3,
+            "unused_days": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "usage refuses a window past a year",
+      "steps": [
+        {
+          "cli": ["usage", "--days", "400"]
+        },
+        {
+          "op": "usage",
+          "args": {
+            "unused_days": 0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -154,4 +154,8 @@ impl<C: Clock> UsageMeter for UsageRecorder<C> {
             self.flush(sqlite);
         }
     }
+
+    fn flush(&self, sqlite: &Connection) {
+        UsageRecorder::flush(self, sqlite);
+    }
 }

@@ -23,6 +23,7 @@ domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 regex = "1"
 rustix = { version = "1", features = ["fs"] }
@@ -30,8 +31,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 sha2 = "0.10"
 tokio = { version = "1", features = ["rt", "time", "sync", "macros", "fs", "io-util", "process"] }
+url = "2"
 
 [dev-dependencies]
 base64 = "0.22"
 tokio = { version = "1", features = ["rt", "macros", "test-util"] }
-url = "2"
