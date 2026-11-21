@@ -6,7 +6,7 @@ import * as ts from "../tools/layer-checker/node_modules/typescript/lib/typescri
 
 const root = path.resolve(import.meta.dirname, "..");
 const configPath = path.join(root, ".dependency-cruiser.jsonc");
-const sourceRoots = ["apps/backend/src", "scripts", "deploy", "shared"];
+const sourceRoots = ["apps/backend/src", "scripts", "deploy", "shared", "sidecars"];
 const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage"]);
 const sourceExtensions = new Set([".ts"]);
 

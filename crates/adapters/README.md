@@ -42,12 +42,14 @@ Wiring for the integrator: `PreparedMedia::new(Rc<dyn MediaPreparation>)` is the
 implements `MediaPreparation` with `prepareMediaItems` and `awaitPreparedStoryMedia`); `ProviderCalls::new(client,
 config)` implements `VideoProvider` and `YoutubeUploads`, so `AppAdapters` forwards `post_outcome`,
 `publish_instagram_reel` and `keep_youtube_private` to it (`zernio_accounts` is `channels::zernio::ZernioAccounts`);
-`HttpStoriesSidecar::new(client, base_url)` is the `stories`.
+`HttpStoriesSidecar::new(client, STORIES_SIDECAR_URL, STORIES_SIDECAR_TOKEN)` is the `stories` (the container
+entrypoint sets both variables for the Studio; see `crates/entrypoint`).
 
 ## Stories sidecar contract
 
-`POST {base}/v1/stories`, `Content-Type: application/json`, no credentials: the sidecar reads
-`TELEGRAM_CHANNEL_STORIES_*` itself and the media path from the shared data volume.
+The sidecar is `sidecars/stories` (Bun, mtcute). `POST {base}/v1/stories`, `Content-Type: application/json`,
+`Authorization: Bearer <STORIES_SIDECAR_TOKEN>`; no Telegram credentials travel: the sidecar reads
+`TELEGRAM_CHANNEL_STORIES_*` itself and the media path from the same filesystem (one container).
 
 ```json
 {"peer": "channelname", "periodSeconds": 86400,
@@ -61,7 +63,9 @@ TypeScript used (connect 30 s, `getMe` 30 s, `sendStory` 120 s, teardown 5 s, be
 
 - `200 {"id": <story id>}` — posted.
 - `{"error": {"message": "<TypeScript's message, e.g. telegram_channel_story_connect_timeout>", "sent": false}}` (any
-  status) — `sendStory` never went out (connect, identity, or Telegram's own RPC refusal): a plain failure.
+  status) — `sendStory` never went out: bad token (401), invalid body (400, `invalid_story_request: …`), credentials
+  unset (503, `missing_channel_story_credentials`), media file missing (422), connect or identity failure (502), or
+  Telegram's own RPC refusal / mtcute rejecting the arguments (502, mtcute's message): a plain failure.
 - `{"error": {"message": …, "sent": true}}`, any other answer, or no answer within 200 s — the Story may be up:
   `Ambiguous("telegram_stories")`.
 
@@ -94,4 +98,4 @@ error kind, message, class, status and Retry-After, virtual sleep time for X, an
   first message again. The retry sends only the remaining parts. A lost answer is ambiguous, as before.
 
 Not here: the video worker loop and the publish workflow (`delivery`), `prepareMediaItems` / story derivatives (behind
-`MediaPreparation`), the mtcute sidecar itself.
+`MediaPreparation`), the mtcute sidecar itself (`sidecars/stories`).
