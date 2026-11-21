@@ -345,7 +345,7 @@
   "settings.channels-unsupported": "Скрыто аккаунтов: {count} — в их платформу публикация пока не поддерживается.",
   "settings.category-publishing-body": "📡 Публикация\n\nКуда уходят посты и что к ним добавляется.",
   "settings.category-notifications-body": "🔔 Уведомления\n\nЧто бот сообщает и когда.",
-  "settings.category-system-body": "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками.",
+  "settings.category-system-body": "⚙️ Система\n\nЧасы, копия базы и цифры, которые вводятся руками.",
   "settings.back-to-publishing": "← Публикация",
   "settings.back-to-notifications": "← Уведомления",
   "settings.back-to-news-digest": "← Новостной дайджест",

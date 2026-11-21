@@ -12,7 +12,9 @@
 //! 9. the message router (settings input, intake, the publication flows),
 //! 10. the callback router (publication namespace, screen buttons, else "Unknown action").
 
+use std::any::Any;
 use std::cell::{Cell, RefCell};
+use std::panic::AssertUnwindSafe;
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -25,6 +27,7 @@ use domain::studio::boundaries::{StudioBoundaries, YoutubeUploads, ZernioAccount
 use foundation::config::{Config, SharedConfig};
 use foundation::i18n::{Key, t};
 use foundation::logger::{LogLevel, log};
+use futures_util::FutureExt as _;
 use serde_json::{Value, json};
 use tokio::sync::Notify;
 use tokio::task::JoinHandle;
@@ -132,6 +135,38 @@ pub struct BotDeps {
 struct Tasks {
     running: Cell<usize>,
     idle: Notify,
+    /// The first background panic nobody has taken yet ([`Bot::take_panic`]).
+    panic: RefCell<Option<String>>,
+}
+
+/// One counted task: counted while its future exists, so a task that
+/// panics, or is dropped unpolled, still lets [`Bot::settled`] resolve.
+struct Running(Rc<Inner>);
+
+impl Running {
+    fn new(inner: Rc<Inner>) -> Self {
+        inner.tasks.running.set(inner.tasks.running.get() + 1);
+        Self(inner)
+    }
+}
+
+impl Drop for Running {
+    fn drop(&mut self) {
+        let tasks = &self.0.tasks;
+        let running = tasks.running.get() - 1;
+        tasks.running.set(running);
+        if running == 0 {
+            tasks.idle.notify_waiters();
+        }
+    }
+}
+
+fn panic_message(panic: &(dyn Any + Send)) -> String {
+    panic
+        .downcast_ref::<&str>()
+        .map(|message| (*message).to_owned())
+        .or_else(|| panic.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "a panic without a message".to_owned())
 }
 
 struct Inner {
@@ -224,23 +259,64 @@ impl Bot {
     }
 
     /// Starts background work the bot owns (an acknowledgement, a download, a
-    /// deploy request), counted until it ends.
+    /// deploy request), counted by [`Bot::settled`] until it ends.
     pub fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
         F: Future + 'static,
         F::Output: 'static,
     {
-        let tasks = Rc::clone(&self.inner);
-        tasks.tasks.running.set(tasks.tasks.running.get() + 1);
+        let running = Running::new(Rc::clone(&self.inner));
+        let watched = self.watched(future);
         tokio::task::spawn_local(async move {
-            let output = future.await;
-            let running = tasks.tasks.running.get() - 1;
-            tasks.tasks.running.set(running);
-            if running == 0 {
-                tasks.tasks.idle.notify_waiters();
-            }
-            output
+            let _running = running;
+            watched.await
         })
+    }
+
+    /// Starts background work no caller waits for and [`Bot::settled`] does
+    /// not count (a Story-card waiter outlives the update that started it).
+    pub fn spawn_detached<F>(&self, future: F) -> JoinHandle<F::Output>
+    where
+        F: Future + 'static,
+        F::Output: 'static,
+    {
+        tokio::task::spawn_local(self.watched(future))
+    }
+
+    /// The future, with a panic logged and kept for [`Bot::take_panic`]
+    /// before it unwinds into the task's `JoinHandle` as before.
+    fn watched<F: Future>(&self, future: F) -> impl Future<Output = F::Output> + use<F> {
+        let inner = Rc::clone(&self.inner);
+        async move {
+            match AssertUnwindSafe(future).catch_unwind().await {
+                Ok(output) => output,
+                Err(panic) => {
+                    let message = panic_message(&*panic);
+                    log(
+                        LogLevel::Error,
+                        "background task panicked",
+                        Some(json!({"error": message})),
+                    );
+                    inner.tasks.panic.borrow_mut().get_or_insert(message);
+                    std::panic::resume_unwind(panic)
+                }
+            }
+        }
+    }
+
+    /// The first background task panic since the last call. Tokio keeps a
+    /// task's panic in a `JoinHandle` nobody awaits; this is how a caller
+    /// waiting for quiet learns that the quiet came from a crash.
+    pub fn take_panic(&self) -> Option<String> {
+        self.inner.tasks.panic.borrow_mut().take()
+    }
+
+    /// The dependencies back once this is the last handle on the bot (the
+    /// runner stopped, its tasks gone): how the owner closes the database.
+    pub fn into_deps(self) -> Result<BotDeps, Self> {
+        Rc::try_unwrap(self.inner)
+            .map(|inner| inner.deps)
+            .map_err(|inner| Self { inner })
     }
 
     /// Resolves once no background task of this bot is running.

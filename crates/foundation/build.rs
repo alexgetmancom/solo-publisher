@@ -1,4 +1,4 @@
-//! Compiles `locales/ru.json` (written by `scripts/rust/export-ru-catalog.ts`)
+//! Compiles `locales/ru.json` (the catalog's source of truth; see `src/i18n.rs`)
 //! into a `Key` enum and its text table, so a misspelled message key is a
 //! compile error rather than a missing string on a screen.
 

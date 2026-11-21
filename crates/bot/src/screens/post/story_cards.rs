@@ -114,7 +114,9 @@ fn queue_story_card_choice(ctx: &Ctx, actor_id: i64, draft_id: i64, intent: Inte
         return;
     }
     let waiter = Ctx::new(ctx.bot.clone(), ctx.update.clone());
-    tokio::task::spawn_local(async move {
+    let key = WaiterKey(key);
+    ctx.bot.spawn_detached(async move {
+        let _key = key;
         if let Err(error) = wait_for_story_cards(&waiter, actor_id, draft_id, intent).await {
             log(
                 LogLevel::Error,
@@ -122,14 +124,24 @@ fn queue_story_card_choice(ctx: &Ctx, actor_id: i64, draft_id: i64, intent: Inte
                 Some(json!({"actorId": actor_id, "draftId": draft_id, "error": error.to_string()})),
             );
         }
-        WAITERS.with(|waiters| {
+    });
+}
+
+/// A running waiter's key, released when its task ends however it ends, so
+/// a waiter that panicked does not keep [`story_card_waiters_settled`] waiting.
+struct WaiterKey(String);
+
+impl Drop for WaiterKey {
+    fn drop(&mut self) {
+        // The thread-local is gone only when the thread itself is ending.
+        let _ = WAITERS.try_with(|waiters| {
             let mut keys = waiters.keys.borrow_mut();
-            keys.remove(&key);
+            keys.remove(&self.0);
             if keys.is_empty() {
                 waiters.idle.notify_waiters();
             }
         });
-    });
+    }
 }
 
 async fn wait_for_story_cards(ctx: &Ctx, actor_id: i64, draft_id: i64, intent: Intent) -> crate::Result<()> {

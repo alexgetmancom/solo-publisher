@@ -30,12 +30,19 @@ const MAX_RETRY_TIME: Duration = Duration::from_secs(15 * 60 * 60);
 pub struct Runner {
     running: Rc<Cell<bool>>,
     stop: Rc<Notify>,
+    ended: Rc<Notify>,
     task: JoinHandle<crate::Result<()>>,
 }
 
 impl Runner {
     pub fn is_running(&self) -> bool {
         self.running.get()
+    }
+
+    /// Resolves once polling has ended, by [`Runner::stop`] or on its own (a
+    /// wrong token, another poller); `stop` then returns what it ended with.
+    pub async fn ended(&self) {
+        self.ended.notified().await;
     }
 
     /// Stops fetching and waits for the poll loop to end; updates already
@@ -53,13 +60,27 @@ pub async fn start(bot: &Bot) -> crate::Result<Runner> {
     bot.init().await?;
     let running = Rc::new(Cell::new(true));
     let stop = Rc::new(Notify::new());
-    let task = tokio::task::spawn_local(poll(bot.clone(), Rc::clone(&running), Rc::clone(&stop)));
+    let ended = Rc::new(Notify::new());
+    let polling = poll(bot.clone(), Rc::clone(&running), Rc::clone(&stop));
+    let task = tokio::task::spawn_local({
+        let ended = Rc::clone(&ended);
+        async move {
+            let result = polling.await;
+            ended.notify_one();
+            result
+        }
+    });
     log(
         LogLevel::Info,
         "grammY runner started",
         Some(json!({"username": bot.info().and_then(|me| me.username)})),
     );
-    Ok(Runner { running, stop, task })
+    Ok(Runner {
+        running,
+        stop,
+        ended,
+        task,
+    })
 }
 
 async fn poll(bot: Bot, running: Rc<Cell<bool>>, stop: Rc<Notify>) -> crate::Result<()> {

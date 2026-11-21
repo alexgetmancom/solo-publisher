@@ -253,6 +253,33 @@ fn deliberate_deviations(area: &str, case: &str, steps: &mut [Value]) {
         *description = json!(t(Key::BotCommandStart, &[]));
     }
     without_language_button(steps);
+    without_language_in_system_body(steps);
+}
+
+/// The System screen's body no longer names the language setting
+/// (plans/rust/DECISIONS.md): every recorded body carries the TypeScript text,
+/// and the Rust bot sends the catalog's, in the calls and in the updates that
+/// tap a message showing it.
+fn without_language_in_system_body(steps: &mut [Value]) {
+    const RECORDED: &str = "⚙️ Система\n\nЧасы, язык, копия базы и цифры, которые вводятся руками.";
+    const RUST: &str = "⚙️ Система\n\nЧасы, копия базы и цифры, которые вводятся руками.";
+    assert_eq!(
+        t(Key::SettingsCategorySystemBody, &[]),
+        RUST,
+        "ru.json carries the new System body"
+    );
+    fn replace(value: &mut Value) {
+        match value {
+            Value::Array(items) => items.iter_mut().for_each(replace),
+            Value::Object(object) => object.values_mut().for_each(replace),
+            Value::String(text) if text.starts_with("⚙️ Система\n\n") => {
+                assert_eq!(text, RECORDED, "the recorded System body is the TypeScript one");
+                *text = RUST.to_owned();
+            }
+            _ => {}
+        }
+    }
+    steps.iter_mut().for_each(replace);
 }
 
 /// The System menu has no 🌐 Language button in Rust (Russian only): every
@@ -385,6 +412,9 @@ impl Harness {
         info["supports_inline_queries"] = json!(false);
         bot.set_info(serde_json::from_value(info).unwrap());
         bot.settled().await;
+        if let Some(panic) = bot.take_panic() {
+            return Err(format!("a background task panicked while the bot was built: {panic}"));
+        }
         let construction = telegram.take_calls();
         Ok(Self {
             bot,
@@ -508,25 +538,44 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
         if let Some(reseed_file) = meta["reseed"].as_str() {
             reseed(db::unsafe_db(&harness.bot.deps().db), &seeds.join(reseed_file));
         }
-        let actual = match (&expected["update"], expected["trigger"].as_str()) {
-            (Value::Null, Some("createBot")) if index == 0 => harness.construction.clone(),
-            (Value::Null, Some(name)) => match triggers::find(name) {
-                Some(trigger) => trigger(&harness).await?,
-                None => {
-                    return Err(format!(
-                        "step {index}: trigger {name:?} has no row in support/triggers.rs"
-                    ));
-                }
-            },
-            (Value::Array(updates), _) => harness.feed(updates).await?,
-            (update, _) => harness.feed(std::slice::from_ref(update)).await?,
+        let step = async {
+            let actual = match (&expected["update"], expected["trigger"].as_str()) {
+                (Value::Null, Some("createBot")) if index == 0 => harness.construction.clone(),
+                (Value::Null, Some(name)) => match triggers::find(name) {
+                    Some(trigger) => trigger(&harness).await?,
+                    None => {
+                        return Err(format!(
+                            "step {index}: trigger {name:?} has no row in support/triggers.rs"
+                        ));
+                    }
+                },
+                (Value::Array(updates), _) => harness.feed(updates).await?,
+                (update, _) => harness.feed(std::slice::from_ref(update)).await?,
+            };
+            if fast_story_wait {
+                bot::screens::post::story_card_waiters_settled().await;
+                return Ok([actual, harness.telegram.take_calls()].concat());
+            }
+            Ok(actual)
         };
-        let actual = if fast_story_wait {
-            bot::screens::post::story_card_waiters_settled().await;
-            [actual, harness.telegram.take_calls()].concat()
-        } else {
-            actual
+        // A background task that panicked or never ends would otherwise keep
+        // the step waiting for quiet forever.
+        let actual = match tokio::time::timeout(STEP_TIMEOUT, step).await {
+            Ok(actual) => actual?,
+            Err(_) => {
+                return Err(format!(
+                    "{area}/{case} step {index}: no quiet after {}s ({})",
+                    STEP_TIMEOUT.as_secs(),
+                    describe_step(expected)
+                ));
+            }
         };
+        if let Some(panic) = harness.bot.take_panic() {
+            return Err(format!(
+                "{area}/{case} step {index}: a background task panicked ({}): {panic}",
+                describe_step(expected)
+            ));
+        }
         let expected_calls = expected["calls"].as_array().cloned().unwrap_or_default();
         let same = if expected["update"].is_array() {
             by_chat(&expected_calls) == by_chat(&actual)
@@ -541,6 +590,24 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
         }
     }
     Ok(())
+}
+
+/// How long one step may take before the case fails as hung.
+const STEP_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// A step as a failure names it: its trigger, or the update it fed.
+fn describe_step(step: &Value) -> String {
+    match step["trigger"].as_str() {
+        Some(trigger) => format!("trigger {trigger}"),
+        None => {
+            let updates = match &step["update"] {
+                Value::Array(updates) => updates.iter().collect(),
+                update => vec![update],
+            };
+            let ids: Vec<String> = updates.iter().map(|update| update["update_id"].to_string()).collect();
+            format!("update {}", ids.join(", "))
+        }
+    }
 }
 
 /// What one area's run found.

@@ -1,6 +1,6 @@
-//! The Russian interface catalog (`locales/ru.json`, exported from the
-//! TypeScript catalog by `scripts/rust/export-ru-catalog.ts`) and the functions
-//! that render it.
+//! The Russian interface catalog (`locales/ru.json`, exported once from the
+//! TypeScript catalog by `scripts/rust/export-ru-catalog.ts` and edited by
+//! hand since) and the functions that render it.
 
 use std::error::Error;
 use std::fmt::Display;
