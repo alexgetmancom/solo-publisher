@@ -22,4 +22,6 @@ areas! {
     deploy,
     settings,
     post,
+    video,
+    notices,
 }

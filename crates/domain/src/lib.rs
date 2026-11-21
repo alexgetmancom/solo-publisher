@@ -11,6 +11,7 @@ pub mod application;
 pub mod channels;
 mod error;
 pub mod json;
+pub mod observability;
 pub mod publishing;
 pub mod repositories;
 pub mod studio;

@@ -58,6 +58,23 @@ impl Ctx {
         }
     }
 
+    /// A context for work no update started (a worker tick): no tapped
+    /// message and no chat of its own, only the bot's dependencies.
+    pub(crate) fn worker(bot: &Bot) -> Self {
+        Self::new(
+            bot.clone(),
+            Update {
+                update_id: 0,
+                message: None,
+                edited_message: None,
+                channel_post: None,
+                edited_channel_post: None,
+                callback_query: None,
+                extra: serde_json::Map::new(),
+            },
+        )
+    }
+
     // ---- dependencies ----
 
     pub fn db(&self) -> &Connection {

@@ -83,6 +83,20 @@ pub fn is_safe_integer(value: f64) -> bool {
     is_integer(value) && value.abs() <= MAX_SAFE_INTEGER
 }
 
+/// `String.prototype.slice(0, end)`: the first `end` UTF-16 code units. A
+/// surrogate pair the cut would split is dropped whole (Rust has no lone
+/// surrogates).
+pub fn slice_utf16(value: &str, end: usize) -> &str {
+    let mut units = 0;
+    for (index, c) in value.char_indices() {
+        units += c.len_utf16();
+        if units > end {
+            return &value[..index];
+        }
+    }
+    value
+}
+
 /// `String(number)`.
 pub fn number_to_string(value: f64) -> String {
     if value.is_nan() {

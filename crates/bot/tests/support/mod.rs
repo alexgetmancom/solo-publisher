@@ -7,20 +7,29 @@
 //! are written by `bun scripts/rust/bot-goldens.ts --seeds`, which this
 //! harness runs itself when they are missing or no longer match the committed
 //! goldens.
+//!
+//! The seeds are shared and only read. Everything a case writes — its copy of
+//! the database, its `DATA_DIR` — is in a [`Scratch`] directory of its own
+//! (`_trash-rust/tmp/bot-tests/<pid>-<n>-<label>/`, removed when the case is
+//! done), so test threads and concurrent `cargo test` runs never share a file.
 
 pub mod deploy_agent;
 pub mod host;
+pub mod media_probe;
 pub mod pending;
 pub mod reminders;
 pub mod story_cards;
 pub mod telegram;
+pub mod translations;
 pub mod triggers;
+pub mod video_completion;
 pub mod zernio;
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
@@ -123,6 +132,12 @@ pub fn ensure_seeds() {
     static RECORDING: Mutex<()> = Mutex::new(());
     let ready = READY.get_or_init(|| {
         let _recording = RECORDING.lock().unwrap();
+        // Another `cargo test` may be checking or recording the same seeds.
+        let lock_path = repo_root().join("_trash-rust/tmp/bot-goldens-seeds.lock");
+        std::fs::create_dir_all(lock_path.parent().unwrap()).map_err(|error| error.to_string())?;
+        let lock = std::fs::File::create(&lock_path).map_err(|error| format!("{}: {error}", lock_path.display()))?;
+        lock.lock()
+            .map_err(|error| format!("{}: {error}", lock_path.display()))?;
         if seeds_match_goldens().is_ok() {
             return Ok(());
         }
@@ -336,12 +351,17 @@ pub struct Harness {
     pub zernio: Rc<GoldenZernio>,
     /// What the bot sent while it was built (`setMyCommands`).
     pub construction: Vec<Value>,
+    /// The case's seed notes: what the recorder put in place outside the bot.
+    pub seed: Value,
+    /// Where this bot's database and `DATA_DIR` live; last, so it is removed
+    /// after the bot is gone.
+    _scratch: Scratch,
 }
 
 impl Harness {
     /// Must run inside a `LocalSet`.
-    pub async fn new(db: BackendDb, data_dir: &Path, case_env: &Value, at: Timestamp) -> Result<Self, String> {
-        let config = load_config(env(data_dir, case_env)).map_err(|error| error.to_string())?;
+    pub async fn new(scratch: Scratch, db: BackendDb, case_env: &Value, at: Timestamp) -> Result<Self, String> {
+        let config = load_config(env(&scratch.data_dir(), case_env)).map_err(|error| error.to_string())?;
         let clock = Rc::new(FixedClock(Cell::new(at)));
         let telegram = Rc::new(FakeTelegram::new(&recorder_tmp().display().to_string(), bot_user()));
         let deploy_agent = Rc::new(GoldenDeployAgent::new(telegram.clone()));
@@ -373,6 +393,8 @@ impl Harness {
             deploy_agent,
             zernio,
             construction,
+            seed: Value::Null,
+            _scratch: scratch,
         })
     }
 
@@ -408,16 +430,40 @@ pub fn on_bot_thread<F: Future>(test: F) -> F::Output {
     tokio::task::LocalSet::new().block_on(&runtime, test)
 }
 
-/// A case's seed database, copied where the Rust bot may write to it.
-pub fn seed_database(area: &str, case: &str, file: &str) -> BackendDb {
-    let work = repo_root().join("_trash-rust/tmp/bot-goldens-rust").join(area);
-    std::fs::create_dir_all(&work).unwrap();
-    let db_path = work.join(format!("{case}.db"));
-    for suffix in ["", "-wal", "-shm"] {
-        let _ = std::fs::remove_file(format!("{}{suffix}", db_path.display()));
+/// A directory only one test owns: `<pid>-<n>-<label>` under
+/// `_trash-rust/tmp/bot-tests/`, removed when dropped.
+pub struct Scratch(PathBuf);
+
+impl Scratch {
+    pub fn new(label: &str) -> Self {
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        let path = repo_root()
+            .join("_trash-rust/tmp/bot-tests")
+            .join(format!("{}-{n}-{label}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&path);
+        std::fs::create_dir_all(path.join("data")).unwrap();
+        Self(path)
     }
-    std::fs::copy(seeds_dir().join(area).join(file), &db_path).unwrap();
-    BackendDb::open(&db_path).unwrap()
+
+    /// The bot's `DATA_DIR`.
+    pub fn data_dir(&self) -> PathBuf {
+        self.0.join("data")
+    }
+
+    /// A seed database (`<area>/<file>` of the shared seeds), copied here
+    /// where the Rust bot may write to it.
+    pub fn seed_database(&self, area: &str, file: &str) -> BackendDb {
+        let db_path = self.0.join("seed.db");
+        std::fs::copy(seeds_dir().join(area).join(file), &db_path).unwrap();
+        BackendDb::open(&db_path).unwrap()
+    }
+}
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
 }
 
 /// Replays one case; `Err` carries the first difference.
@@ -443,12 +489,11 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
         "{area}/{case}: meta and golden disagree on the steps"
     );
 
-    let data_dir = recorder_tmp().join("cases").join(case);
-    let _ = std::fs::remove_dir_all(&data_dir);
-    std::fs::create_dir_all(&data_dir).unwrap();
-    let db = seed_database(area, case, &format!("{case}.db"));
+    let scratch = Scratch::new(&format!("{area}-{case}"));
+    let db = scratch.seed_database(area, &format!("{case}.db"));
     let first_at = step_meta.first().and_then(|step| step["at"].as_str()).unwrap_or(NOW);
-    let harness = Harness::new(db, &data_dir, &meta["env"], instant(first_at)).await?;
+    let mut harness = Harness::new(scratch, db, &meta["env"], instant(first_at)).await?;
+    harness.seed = golden["seed"].clone();
     harness.deploy_agent.script(&golden["seed"]);
     harness.zernio.script(&golden["seed"], &harness.bot.deps().config);
     // The Story-card waiter outlives the tap that started it; with the
@@ -541,10 +586,10 @@ pub fn run_area(area: &str) -> Report {
 /// The registrations of a bot built the way the harness builds one.
 pub fn missing_registrations() -> Vec<(&'static str, String)> {
     on_bot_thread(async {
-        let work = repo_root().join("_trash-rust/tmp/bot-goldens-rust");
-        std::fs::create_dir_all(&work).unwrap();
         let db = BackendDb::open(":memory:").unwrap();
-        let harness = Harness::new(db, &work, &json!({}), instant(NOW)).await.unwrap();
+        let harness = Harness::new(Scratch::new("registry"), db, &json!({}), instant(NOW))
+            .await
+            .unwrap();
         harness.bot.registry().missing()
     })
 }

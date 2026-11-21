@@ -348,6 +348,15 @@ pub fn format_zoned_date_time(value: Option<Timestamp>, zone: &Zone, label: &str
     )
 }
 
+/// `date.toLocaleString("ru-RU", { timeZone })`: `20.08.2026, 18:00:00`.
+pub fn format_zoned_locale_string(at: Timestamp, zone: &Zone) -> String {
+    let civil = zone.wall_clock(at.as_millisecond());
+    format!(
+        "{:02}.{:02}.{}, {:02}:{:02}:{:02}",
+        civil.day, civil.month, civil.year, civil.hour, civil.minute, civil.second
+    )
+}
+
 /// Sortable `YYYY-MM-DD HH:MM` in `zone`, for machine-friendly summaries.
 pub fn format_zoned_sortable(at: Timestamp, zone: &Zone) -> String {
     let civil = zone.wall_clock(at.as_millisecond());

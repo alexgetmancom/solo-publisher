@@ -13,7 +13,7 @@ use db::rusqlite::Connection;
 use domain::application::ports::Clock;
 use domain::publishing::Boundaries;
 use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Jitter, MediaMetadata, ProviderOutcome, UsageMeter, VideoCompletion, WorkerBell,
+    AuthCircuit, AuthCircuitState, Jitter, MediaMetadata, ProviderOutcome, UsageMeter, WorkerBell,
 };
 use domain::publishing::platform_profiles::platform_profile;
 use domain::studio::boundaries::{
@@ -82,12 +82,6 @@ impl AuthCircuit for GoldenHost {
 /// Usage counters are observability rows no golden shows.
 impl UsageMeter for GoldenHost {
     fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
-}
-
-impl VideoCompletion for GoldenHost {
-    fn record_if_final(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        not_in_host("video completion")
-    }
 }
 
 impl StoryDerivatives for GoldenHost {
@@ -408,14 +402,18 @@ pub struct GoldenAdapters {
 }
 
 impl Adapters for GoldenAdapters {
-    fn probe<'a>(&'a self, _: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
-        not_in_host("ffprobe")
+    fn probe<'a>(&'a self, path: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
+        Box::pin(async move { super::media_probe::probe(path) })
     }
-    fn audio_stats<'a>(&'a self, _: &'a str) -> Fut<'a, Result<String, String>> {
-        not_in_host("ffmpeg")
+    fn audio_stats<'a>(&'a self, path: &'a str) -> Fut<'a, Result<String, String>> {
+        Box::pin(async move { super::media_probe::audio_stats(path) })
     }
-    fn post_outcome<'a>(&'a self, _: &'a str, _: &'a str) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        not_in_host("the video provider")
+    fn post_outcome<'a>(
+        &'a self,
+        provider_post_id: &'a str,
+        platform: &'a str,
+    ) -> Fut<'a, domain::Result<ProviderOutcome>> {
+        Box::pin(async move { self.zernio.post_outcome(provider_post_id, platform) })
     }
     fn publish_instagram_reel<'a>(
         &'a self,

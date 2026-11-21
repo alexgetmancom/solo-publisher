@@ -21,7 +21,6 @@ use jiff::{SignedDuration, Timestamp};
 use serde_json::{Value, json};
 
 use crate::api::payload::{InlineKeyboard, Payload};
-use crate::api::types::Update;
 use crate::bot::Bot;
 use crate::callback::publication_callback;
 use crate::cards::set_post_card;
@@ -152,26 +151,9 @@ struct Finalized {
     thread_step: Option<String>,
 }
 
-/// A context for work no update started: the worker has no tapped message
-/// and no chat of its own, only the bot's dependencies.
-fn worker_context(bot: &Bot) -> Ctx {
-    Ctx::new(
-        bot.clone(),
-        Update {
-            update_id: 0,
-            message: None,
-            edited_message: None,
-            channel_post: None,
-            edited_channel_post: None,
-            callback_query: None,
-            extra: serde_json::Map::new(),
-        },
-    )
-}
-
 /// `finalizePendingAlbums`: one worker pass; how many albums it completed.
 pub async fn finalize_pending_albums(bot: &Bot) -> crate::Result<usize> {
-    let ctx = worker_context(bot);
+    let ctx = Ctx::worker(bot);
     let sqlite = ctx.db();
     let now = ctx.now();
     let now_iso = to_iso_string(now);

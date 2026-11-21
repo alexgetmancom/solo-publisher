@@ -7,7 +7,7 @@ mod support;
 
 use bot::menu::tiny_hash;
 use serde_json::{Value, json};
-use support::{Harness, ensure_seeds, on_bot_thread, seed_database};
+use support::{Harness, Scratch, ensure_seeds, on_bot_thread};
 
 const ADMIN: i64 = 1001;
 
@@ -48,11 +48,10 @@ fn texts(calls: &[Value]) -> Vec<String> {
 
 /// A bot on the default seeded Studio with the main menu sent as message 2.
 async fn with_menu() -> Harness {
-    let dir = support::repo_root().join("_trash-rust/tmp/bot-goldens/cases/boundary");
-    std::fs::create_dir_all(&dir).unwrap();
-    let db = seed_database("entry", "boundary-start", "start.db");
+    let scratch = Scratch::new("boundary");
+    let db = scratch.seed_database("entry", "start.db");
     let at = foundation::time::parse_iso_instant("2026-08-20T09:00:00.000Z").unwrap();
-    let harness = Harness::new(db, &dir, &json!({}), at).await.unwrap();
+    let harness = Harness::new(scratch, db, &json!({}), at).await.unwrap();
     harness.telegram.prepare(&json!({"files": {}}), at.as_second());
     let calls = harness.feed(&[text(1, 1, "☰ Меню")]).await.unwrap();
     assert_eq!(texts(&calls), ["✅ Очередь пуста"]);

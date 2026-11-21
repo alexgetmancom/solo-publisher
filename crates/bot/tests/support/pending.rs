@@ -7,7 +7,7 @@
 //! area that still misses a registration).
 
 /// Areas of the bot (`crates/bot/src/screens/<area>.rs`) not ported yet.
-pub const PENDING_AREAS: &[&str] = &["video", "notices"];
+pub const PENDING_AREAS: &[&str] = &[];
 
 /// Areas a case reaches beyond its own directory (callbacks/ and entry/ belong
 /// to the core), derived from the updates each case feeds: the screens its
