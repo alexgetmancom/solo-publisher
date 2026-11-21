@@ -67,6 +67,32 @@ fn instant_ms(value: Option<&Value>) -> Option<i64> {
     }
 }
 
+/// `isTargetAuthBlocked`: checked before a publish call is attempted.
+pub fn is_target_auth_blocked(sqlite: &Connection, clock: &dyn Clock, target: &str) -> Result<bool> {
+    let Some(row) = details_of(sqlite, target)? else {
+        return Ok(false);
+    };
+    let details = parse_details(row.as_deref());
+    // `!details.blockedUntil`: an empty or absent value blocks nothing.
+    match details.get("blockedUntil") {
+        None | Some(Value::Null | Value::Bool(false)) => return Ok(false),
+        Some(Value::String(text)) if text.is_empty() => return Ok(false),
+        _ => {}
+    }
+    Ok(instant_ms(details.get("blockedUntil")).is_some_and(|until| until > clock.now().as_millisecond()))
+}
+
+/// `providerAnsweredAt`: when this target's provider last answered anything.
+pub fn provider_answered_at(sqlite: &Connection, target: &str) -> Result<Option<String>> {
+    let Some(row) = details_of(sqlite, target)? else {
+        return Ok(None);
+    };
+    Ok(parse_details(row.as_deref())
+        .get("lastAnswerAt")
+        .and_then(Value::as_str)
+        .map(str::to_owned))
+}
+
 impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
     /// `recordAuthFailure`: called after a publish attempt fails with
     /// errorClass `auth`.

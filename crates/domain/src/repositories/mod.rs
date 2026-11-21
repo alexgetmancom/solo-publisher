@@ -91,14 +91,14 @@ pub fn random_uuid() -> String {
 /// bun:sqlite's `db.transaction(work)` as Drizzle calls it: `BEGIN` (deferred)
 /// on a connection in autocommit, a savepoint inside a transaction the caller
 /// already holds. Any error, or a panic, rolls the work back.
-pub(crate) fn transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T>) -> Result<T> {
+pub fn transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T>) -> Result<T> {
     run_transaction(sqlite, "BEGIN", work)
 }
 
 /// Drizzle's `transaction(work, { behavior: "immediate" })`: `BEGIN IMMEDIATE`
 /// takes the write lock up front, so what the work reads still holds when it
 /// writes. Nested, it is a savepoint like any other.
-pub(crate) fn immediate_transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T>) -> Result<T> {
+pub fn immediate_transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T>) -> Result<T> {
     run_transaction(sqlite, "BEGIN IMMEDIATE", work)
 }
 

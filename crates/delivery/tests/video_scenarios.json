@@ -1,0 +1,1251 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "jitter": 0.25,
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "PUBLIC_BASE_URL": "https://studio.example",
+    "INSTAGRAM_RU_ACCESS_TOKEN": "EAtest-token-instagram-ru",
+    "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+    "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+    "INSTAGRAM_EN_USER_ID": "ig-en-user",
+    "YOUTUBE_RU_CLIENT_ID": "test-youtube-ru-client",
+    "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube-ru",
+    "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-ru-refresh"
+  },
+  "credentials": {
+    "X_ACCESS_TOKEN": "test-token-x",
+    "X_REFRESH_TOKEN": "test-token-x-refresh",
+    "ZERNIO_API_KEY": "test-token-zernio",
+    "DISCORD_BOT_TOKEN": "test-token-discord"
+  },
+  "ignoredTables": [],
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_shorts', 1, 'config', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram:ru', 'instagram', 'ru', 'native', NULL, NULL, 'instagram_reels', 1, 'config', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+  ],
+  "beforeDump": [],
+  "scenarios": [
+    {
+      "name": "youtube prepare uploads, publish settles, completion is journalled",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["location", "https://upload.example/session/1?upload_id=u1"]]
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"vid1\",\"snippet\":{}}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO studio_youtube_settings (id, signature, updated_at) VALUES (1, '  — Signature  ', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:30.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-02T10:00:01.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "exists",
+          "args": ["video-media/clip.mp4"]
+        }
+      ]
+    },
+    {
+      "name": "youtube session unauthorized fails for good and trips the credential",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 401,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"error\":{\"code\":401,\"message\":\"Invalid Credentials\"}}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "youtube transient refusal retries with backoff, then fails and cancels the publish",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 503,
+          "headers": [["content-type", "application/json"]],
+          "body": "backend unavailable"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 503,
+          "headers": [["content-type", "application/json"]],
+          "body": "backend unavailable"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "sql": "UPDATE video_jobs SET next_attempt_at = '2026-03-01T09:59:59.000Z', attempt_count = 3 WHERE id = 1"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "youtube upload loses its answer twice and waits for verification",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["location", "https://upload.example/session/1?upload_id=u1"]]
+        },
+        {
+          "throws": "connection reset by peer"
+        },
+        {
+          "status": 308,
+          "headers": [["range", "bytes=0-9"]]
+        },
+        {
+          "throws": "connection reset by peer"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:10:00.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "youtube source removed before prepare fails without uploading",
+      "files": {},
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "sql": "UPDATE video_jobs SET next_attempt_at = NULL WHERE id = 1"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "cancelled during the upload keeps the youtube video private",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["location", "https://upload.example/session/1?upload_id=u1"]]
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"vid9\"}",
+          "sql": "UPDATE video_jobs SET status = 'cancelled', locked_by = NULL, locked_at = NULL WHERE id = 1; UPDATE video_targets SET status = 'cancelled' WHERE id = 1"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"items\":[{\"status\":{\"privacyStatus\":\"private\",\"publishAt\":\"2026-03-01T11:00:00.000Z\",\"license\":\"youtube\",\"embeddable\":true}}]}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"vid9\"}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "cancelled during the upload with the video gone journals a warning",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["location", "https://upload.example/session/1?upload_id=u1"]]
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"vid9\"}",
+          "sql": "UPDATE video_jobs SET status = 'cancelled', locked_by = NULL, locked_at = NULL WHERE id = 1; UPDATE video_targets SET status = 'cancelled' WHERE id = 1"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"items\":[]}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "native reels prepare a container, publish it once ready and verify it",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"rc1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel1\",\"permalink\":\"https://www.instagram.com/reel/abc/\"}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:30.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "english reels use the english account and publish unverified",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"rc2\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel2\"}"
+        },
+        {
+          "status": 500,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"error\":{\"message\":\"temporarily down\"}}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'en', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:30.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "reels container still processing requeues the publish 30 s later",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"IN_PROGRESS\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel1\",\"permalink\":\"https://www.instagram.com/reel/abc/\"}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'native', NULL, NULL, 'rc1', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:00:20.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:00:31.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "reels container invalid sends the target back to preparation",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"ERROR\",\"status\":\"Error: bad media\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"rc2\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"reel1\",\"permalink\":\"https://www.instagram.com/reel/abc/\"}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'native', NULL, NULL, 'rc1', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:01:01.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "reels publish refused for an expired creation id fails for good",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}"
+        },
+        {
+          "status": 400,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"error\":{\"message\":\"The creation_id is not valid\",\"error_subcode\":2207006}}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'native', NULL, NULL, 'rc1', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T11:30:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "reels publish losing its answer waits for verification",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}"
+        },
+        {
+          "throws": "connection reset by peer"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'native', NULL, NULL, 'rc1', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "lease taken over while the container was asked stops before media_publish",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\":\"FINISHED\"}",
+          "sql": "UPDATE video_jobs SET locked_by = 'other-worker' WHERE status = 'running'"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'native', NULL, NULL, 'rc1', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "lease taken over during the youtube upload refuses the settlement",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["location", "https://upload.example/session/1?upload_id=u1"]]
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"vid7\"}",
+          "sql": "UPDATE video_jobs SET locked_by = 'other-worker' WHERE status = 'running'"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\":\"test-token-youtube-access\",\"expires_in\":3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"items\":[{\"status\":{\"privacyStatus\":\"private\"}}]}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"vid7\"}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "zernio prepare is a checkpoint and the linked publication is published",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"post\":{\"_id\":\"zp1\",\"platforms\":[{\"platform\":\"instagram\",\"platformPostId\":\"ig1\",\"platformPostUrl\":\"https://instagram.com/reel/ig1\"}]}}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'zernio', 'acc-ig', NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:30.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "zernio publication without a platform link waits and is never sent again",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"post\":{\"_id\":\"zp1\",\"platforms\":[{\"platform\":\"instagram\"}]}}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'zernio', 'acc-ig', NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "zernio lease taken over during the publication writes nothing",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"post\":{\"_id\":\"zp1\",\"platforms\":[{\"platform\":\"instagram\"}]}}",
+          "sql": "UPDATE video_jobs SET locked_by = 'other-worker' WHERE status = 'running'"
+        }
+      ],
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'zernio', 'acc-ig', NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'completed', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "zernio target without an account fails its prepare",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'zernio', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 1, 1, 'publish', '2026-03-01T11:00:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "a blocked credential defers the job five minutes",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\":\"rc1\"}"
+        }
+      ],
+      "steps": [
+        {
+          "call": "authFailure",
+          "args": ["instagram:ru"]
+        },
+        {
+          "call": "authFailure",
+          "args": ["instagram:ru"]
+        },
+        {
+          "call": "authFailure",
+          "args": ["instagram:ru"]
+        },
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:40:00.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "a cancelled target is skipped and its job completed",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'cancelled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'queued', 0, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "stale locks recover: prepare retries, audience steps wait for verification",
+      "files": {
+        "video-media/clip.mp4": {
+          "fill": "V",
+          "size": 32
+        }
+      },
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/clip.mp4", "video", "sha001"]
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-03-01T09:59:00.000Z', 'running', 0, 'dead:1', '2026-03-01T09:55:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (2, 42, 'ru', 'Clip 2', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (2, 2, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'prepared', 'native', NULL, NULL, 'rc1', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (2, 2, 2, 'publish', '2026-03-01T09:59:00.000Z', 'running', 0, 'dead:2', '2026-03-01T09:57:59.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (3, 42, 'ru', 'Clip 3', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (3, 3, 'youtube_shorts', '{\"title\": \"Title\", \"description\": \"  Body  \", \"tags\": [\"a\", \"b\"], \"gameUrl\": \"https://store.steampowered.com/app/1\"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (3, 3, 3, 'prepare', '2026-03-01T09:59:00.000Z', 'running', 0, 'dead:3', '2026-03-01T09:50:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (4, 42, 'ru', 'Clip 4', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (4, 4, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (4, 4, 4, 'prepare', '2026-03-01T09:59:00.000Z', 'running', 0, 'live:4', '2026-03-01T09:58:30.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (5, 42, 'ru', 'Clip 5', 1, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, provider_account_id, provider_post_id, external_id, confirmation_source, created_at, updated_at) VALUES (5, 5, 'instagram_reels', '{\"caption\": \"  Cap  \"}', '2026-03-01T11:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (5, 5, 5, 'prepare', '2026-03-01T09:59:00.000Z', 'running', 1, 'dead:5', '2026-03-01T09:40:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "recover"
+        },
+        {
+          "call": "recover"
+        }
+      ]
+    },
+    {
+      "name": "retention reclaims expired sources once and keeps shared ones",
+      "files": {
+        "video-media/a1.mp4": {
+          "fill": "A",
+          "size": 8
+        },
+        "story-media/a1-story-standard.mp4": {
+          "fill": "S",
+          "size": 4
+        },
+        "story-media/a1-story-telegram.mp4": {
+          "fill": "T",
+          "size": 4
+        },
+        "video-media/b2.mp4": {
+          "fill": "B",
+          "size": 8
+        },
+        "video-media/c3.mp4": {
+          "fill": "C",
+          "size": 8
+        },
+        "video-media/d5.mp4": {
+          "fill": "D",
+          "size": 8
+        },
+        "other/e6.mp4": {
+          "fill": "E",
+          "size": 8
+        },
+        "video-media/f7.mp4": {
+          "fill": "F",
+          "size": 8
+        },
+        "video-media/g8.mp4": {
+          "fill": "G",
+          "size": 8
+        },
+        "video-media/h9.jpg": {
+          "fill": "H",
+          "size": 8
+        },
+        "story-media/h9-story-standard.jpg": {
+          "fill": "I",
+          "size": 4
+        }
+      },
+      "steps": [
+        {
+          "call": "asset",
+          "args": [1, "video-media/a1.mp4", "video", "sha001"]
+        },
+        {
+          "call": "asset",
+          "args": [2, "video-media/b2.mp4", "video", "sha002"]
+        },
+        {
+          "call": "asset",
+          "args": [3, "video-media/c3.mp4", "video", "sha003"]
+        },
+        {
+          "call": "asset",
+          "args": [5, "video-media/d5.mp4", "video", "sha005"]
+        },
+        {
+          "call": "asset",
+          "args": [6, "other/e6.mp4", "video", "sha006"]
+        },
+        {
+          "call": "asset",
+          "args": [7, "video-media/f7.mp4", "video", "sha007"]
+        },
+        {
+          "call": "asset",
+          "args": [8, "video-media/g8.mp4", "video", "sha008"]
+        },
+        {
+          "call": "asset",
+          "args": [9, "video-media/h9.jpg", "image", "sha009"]
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, created_at, updated_at) VALUES (77, 42, 'draft', '{\"telegram\":true}', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, media_json, updated_at) VALUES (77, 'ru', '[{\"asset_id\":\"2\",\"type\":\"video\"}]', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (1, 42, 'ru', 'Clip 1', 1, 'published', '2026-03-01T11:00:00.000Z', '2026-03-01T09:00:00.000Z', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (2, 42, 'ru', 'Clip 2', 2, 'cancelled', '2026-03-01T11:00:00.000Z', '2026-03-01T09:30:00.000Z', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (3, 42, 'ru', 'Clip 3', 3, 'published', '2026-03-01T11:00:00.000Z', '2026-03-01T09:00:00.000Z', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (4, 42, 'ru', 'Clip 4', 3, 'scheduled', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (5, 42, 'ru', 'Clip 5', 5, 'published', '2026-03-01T11:00:00.000Z', '2026-03-02T09:00:00.000Z', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (6, 42, 'ru', 'Clip 6', 6, 'editing', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-02-01T09:00:00.000Z', '2026-02-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (7, 42, 'ru', 'Clip 7', 7, 'partial', '2026-03-01T11:00:00.000Z', NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-02-20T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (8, 42, 'ru', 'Clip 8', 8, 'published', '2026-03-01T11:00:00.000Z', '2026-03-01T09:00:00.000Z', '2026-02-28T09:00:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (9, 42, 'ru', 'Clip 9', 9, 'editing', '2026-03-01T11:00:00.000Z', '2026-03-01T09:00:00.000Z', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, scheduled_at, retention_until, source_pruned_at, created_at, updated_at) VALUES (10, 42, 'ru', 'Clip 10', NULL, 'published', '2026-03-01T11:00:00.000Z', '2026-03-01T09:00:00.000Z', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "references",
+          "args": [2]
+        },
+        {
+          "call": "references",
+          "args": [3]
+        },
+        {
+          "call": "prune"
+        },
+        {
+          "call": "exists",
+          "args": [
+            "video-media/a1.mp4",
+            "story-media/a1-story-standard.mp4",
+            "story-media/a1-story-telegram.mp4",
+            "video-media/b2.mp4",
+            "video-media/c3.mp4",
+            "video-media/d5.mp4",
+            "other/e6.mp4",
+            "video-media/f7.mp4",
+            "video-media/g8.mp4",
+            "video-media/h9.jpg",
+            "story-media/h9-story-standard.jpg"
+          ]
+        },
+        {
+          "call": "prune"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1215 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "jitter": 0.25,
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_BOT_TOKEN": "test-token-telegram",
+    "TELEGRAM_API_BASE_URL": "https://bot-api.example/",
+    "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+    "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+    "THREADS_EN_ACCESS_TOKEN": "test-token-threads-en",
+    "X_CLIENT_ID": "test-x-client",
+    "X_CLIENT_SECRET": "test-secret-x-client",
+    "DISCORD_CHANNEL_ID": "555",
+    "DISCORD_GUILD_ID": "777",
+    "INSTAGRAM_RU_ACCESS_TOKEN": "EAtest-token-instagram-ru",
+    "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+    "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+    "INSTAGRAM_EN_USER_ID": "ig-en-user",
+    "YOUTUBE_RU_CLIENT_ID": "test-youtube-ru-client",
+    "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube-ru",
+    "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-ru-refresh",
+    "PUBLIC_BASE_URL": "https://studio.example"
+  },
+  "credentials": {
+    "X_ACCESS_TOKEN": "test-token-x",
+    "X_REFRESH_TOKEN": "test-token-x-refresh",
+    "ZERNIO_API_KEY": "test-token-zernio",
+    "DISCORD_BOT_TOKEN": "test-token-discord"
+  },
+  "ignoredTables": [],
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', NULL, 'x', 'x', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('discord', 'discord', 'en', 'native', NULL, 'discord', 'discord', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_ru', 'threads_ru', 'ru', 'native', NULL, 'threads_ru', 'threads_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram_stories', 'instagram_stories', 'en', 'native', NULL, 'instagram_stories', 'instagram_stories', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_shorts', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram:ru', 'instagram', 'ru', 'zernio', 'acc-1', NULL, 'instagram_reels', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+  ],
+  "beforeDump": [],
+  "scenarios": [
+    {
+      "name": "telegram published and verified",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": {\"message_id\": 42}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": true}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'telegram', 'queued', NULL, 0, '{\"text\": \"hello\", \"locale\": \"ru\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "transient failure retried with backoff, then published",
+      "responses": [
+        {
+          "status": 502,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": false, \"description\": \"Bad Gateway\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": {\"message_id\": 43}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": true}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'telegram', 'queued', NULL, 0, '{\"text\": \"hello\", \"locale\": \"ru\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "permanent failure is terminal",
+      "responses": [
+        {
+          "status": 400,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": false, \"description\": \"Bad Request: chat not found\"}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'telegram', 'queued', NULL, 0, '{\"text\": \"hello\", \"locale\": \"ru\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T12:00:00.000Z"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "answer lost after send is settled ambiguous, never re-sent",
+      "responses": [
+        {
+          "throws": "connection reset by peer"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'queued', NULL, 0, '{\"text\": \"hello world\", \"locale\": \"en\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T12:00:00.000Z"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "lease taken over mid-publish refuses every later write",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"900\", \"text\": \"t\"}}",
+          "sql": "UPDATE publish_jobs SET locked_by = 'thief', locked_at = '2026-03-01T10:00:00.000Z' WHERE job_id = 1"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'queued', NULL, 0, '{\"text\": \"hello world\", \"locale\": \"en\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "lease taken over before the provider call is never sent",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'discord', 'queued', NULL, 0, '{\"text\": \"hello discord\", \"locale\": \"en\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'discord', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "unsupported target fails",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'myspace', 'queued', NULL, 0, '{\"text\": \"hello\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'myspace', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "auth circuit open pauses the target",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'queued', NULL, 0, '{\"text\": \"hello\", \"locale\": \"en\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO credential_checks (target, status, required_env_json, missing_env_json, last_checked_at, details_json) VALUES ('x', 'ok', '[]', '[]', '2026-03-01T09:00:00.000Z', '{\"authFailureStreak\":3,\"blockedUntil\":\"2026-03-01T10:30:00.000Z\"}')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "x thread partial publication resumes from what went out",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"200\", \"text\": \"t\"}}"
+        },
+        {
+          "status": 503,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"title\": \"Service Unavailable\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"201\", \"text\": \"t\"}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"202\", \"text\": \"t\"}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"200\", \"text\": \"One\"}}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'queued', NULL, 0, '{\"text\": \"One\", \"locale\": \"en\", \"thread\": [{\"text\": \"Two\", \"entities\": [], \"media\": []}, {\"text\": \"Three\", \"entities\": [], \"media\": []}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "several jobs of one target run in turn",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": {\"message_id\": 50}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": true}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": {\"message_id\": 51}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": true}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 13, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'telegram', 'queued', NULL, 0, '{\"text\": \"first\", \"locale\": \"ru\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (2, 'post:13', 'telegram', 'queued', NULL, 0, '{\"text\": \"second\", \"locale\": \"ru\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:13', 'telegram', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "watchdog recovers stale locks by phase",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 13, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (3, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 14, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'telegram', 'publishing', 'provider.publish', 0, '{\"text\": \"a\"}', 0, NULL, 'gone', '2026-03-01T09:00:00.000Z', NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'publishing', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (2, 'post:13', 'x', 'publishing', 'prepare', 0, '{\"text\": \"b\"}', 0, NULL, 'gone', '2026-03-01T09:00:00.000Z', NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:13', 'x', 'publishing', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (3, 'post:14', 'discord', 'publishing', 'provider.publish', 0, '{\"text\": \"c\"}', 0, NULL, 'alive', '2026-03-01T09:59:00.000Z', NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:14', 'discord', 'publishing', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "recoverStale",
+          "args": []
+        },
+        {
+          "call": "recoverStale",
+          "args": [30]
+        }
+      ]
+    },
+    {
+      "name": "discord split post settles every message",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"d4\", \"channel_id\": \"555\"}"
+        },
+        {
+          "status": 200,
+          "body": "{}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"d5\", \"channel_id\": \"555\"}"
+        },
+        {
+          "status": 200,
+          "body": "{}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"d4\", \"channel_id\": \"555\"}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'discord', 'queued', NULL, 0, '{\"text\": \"Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. Paragraph one is here. \\n\\nSecond part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. Second part. \", \"locale\": \"en\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'discord', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation confirms an ambiguous post by its id",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"555\", \"text\": \"hello\"}}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'verification_required', NULL, 0, '{\"text\": \"hello\"}', 1, NULL, NULL, NULL, 'verification_required: x may have published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'verification_required', '555', NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation without an id defers and alerts",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'verification_required', NULL, 0, '{\"text\": \"hello\"}', 1, NULL, NULL, NULL, 'verification_required: x may have published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'verification_required', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation finds the post absent and keeps asking",
+      "responses": [
+        {
+          "status": 404,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"message\": \"Unknown Message\", \"code\": 10008}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'discord', 'verification_required', NULL, 0, '{\"text\": \"hello\"}', 1, NULL, NULL, NULL, 'verification_required: x may have published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'discord', 'verification_required', 'd9', NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation records an auth refusal on the breaker",
+      "responses": [
+        {
+          "status": 401,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"title\": \"Unauthorized\"}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'verification_required', NULL, 0, '{\"text\": \"hello\"}', 1, NULL, NULL, NULL, 'verification_required: x may have published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'verification_required', '556', NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation leaves a job a live worker holds",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'verification_required', NULL, 0, '{\"text\": \"hello\"}', 1, NULL, 'other', '2026-03-01T09:59:00.000Z', NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'verification_required', '557', NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation stops at its budget",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'verification_required', NULL, 7, '{\"text\": \"hello\"}', 1, NULL, NULL, NULL, 'verification_required: x may have published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'verification_required', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T12:00:00.000Z"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation asks Zernio about a routed Threads post",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"_id\": \"zp1\", \"platforms\": [{\"platform\": \"threads\", \"platformPostId\": \"th1\", \"platformPostUrl\": \"https://threads.net/t/th1\"}]}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "UPDATE channel_connections SET provider = 'zernio', provider_account_id = 'acc-t' WHERE id = 'threads_ru'"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'threads_ru', 'verification_required', NULL, 0, '{\"text\": \"hello\"}', 1, NULL, NULL, NULL, 'verification_required: x may have published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'threads_ru', 'verification_required', 'zp1', NULL, NULL, NULL, '{\"providerPostId\": \"zp1\"}', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation confirms a YouTube upload gone public",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\": \"test-token-youtube-access\", \"expires_in\": 3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"items\": [{\"id\": \"vid4\", \"status\": {\"privacyStatus\": \"public\"}}]}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, status, created_at, updated_at) VALUES (1, 42, 'ru', 'clip', 'publishing', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, external_url, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\":\"t\",\"description\":\"d\",\"tags\":[],\"caption\":\"c\"}', 'verification_required', 'native', NULL, NULL, 'vid4', NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, reconcile_attempt_count, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-03-01T10:00:00.000Z', 'verification_required', 0, 1, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation keeps a private YouTube upload unconfirmed",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"access_token\": \"test-token-youtube-access\", \"expires_in\": 3599}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"items\": [{\"id\": \"vid5\", \"status\": {\"privacyStatus\": \"private\"}}]}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, status, created_at, updated_at) VALUES (1, 42, 'ru', 'clip', 'publishing', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, external_url, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\":\"t\",\"description\":\"d\",\"tags\":[],\"caption\":\"c\"}', 'verification_required', 'native', NULL, NULL, 'vid5', NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, reconcile_attempt_count, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-03-01T10:00:00.000Z', 'verification_required', 0, 1, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation confirms a Zernio reel",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"post\": {\"_id\": \"zp/1\", \"status\": \"published\", \"platforms\": [{\"platform\": \"instagram\", \"platformPostId\": \"ig5\", \"platformPostUrl\": \"u5\"}]}}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, status, created_at, updated_at) VALUES (1, 42, 'ru', 'clip', 'publishing', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, external_url, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"title\":\"t\",\"description\":\"d\",\"tags\":[],\"caption\":\"c\"}', 'verification_required', 'zernio', 'acc-1', 'zp/1', NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, reconcile_attempt_count, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-03-01T10:00:00.000Z', 'verification_required', 0, 1, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation escalates a provider refusal at the end of its budget",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"_id\": \"zp6\", \"status\": \"failed\", \"platforms\": [{\"platform\": \"instagram\", \"status\": \"failed\", \"error\": \"Media too short\"}]}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, status, created_at, updated_at) VALUES (1, 42, 'ru', 'clip', 'publishing', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, external_url, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"title\":\"t\",\"description\":\"d\",\"tags\":[],\"caption\":\"c\"}', 'verification_required', 'zernio', 'acc-1', 'zp6', NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, reconcile_attempt_count, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-03-01T10:00:00.000Z', 'verification_required', 7, 1, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "reconciliation reports a video nobody answered for",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, status, created_at, updated_at) VALUES (1, 42, 'ru', 'clip', 'publishing', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, external_url, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"title\":\"t\",\"description\":\"d\",\"tags\":[],\"caption\":\"c\"}', 'verification_required', 'zernio', 'acc-1', 'zp7', NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, reconcile_attempt_count, attempt_count, locked_by, locked_at, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-03-01T10:00:00.000Z', 'verification_required', 8, 1, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "reconcile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "edits reach the targets that have an edit port",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": true}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_enabled, updated_at) VALUES (1, 'ru', 'old', '[{\"type\":\"photo\",\"file_id\":\"F1\"}]', 0, '2026-03-01T10:00:00.000Z'), (1, 'en', 'old', '[]', 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'published', '42', '[\"42\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'published', '555', '[\"555\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'threads_ru', 'failed', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "editTargets",
+          "args": [
+            {
+              "publicationKey": "post:12",
+              "textRu": "новый текст",
+              "textEn": "new text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edits skip a split Discord post and filter by locale",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_enabled, updated_at) VALUES (1, 'ru', 'old', '[{\"type\":\"photo\",\"file_id\":\"F1\"}]', 0, '2026-03-01T10:00:00.000Z'), (1, 'en', 'old', '[]', 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'published', '42', '[\"42\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'discord', 'published', 'd1', '[\"d1\", \"d2\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "editTargets",
+          "args": [
+            {
+              "publicationKey": "post:12",
+              "textRu": "новый",
+              "textEn": "new",
+              "locale": "en"
+            }
+          ]
+        },
+        {
+          "call": "editTargets",
+          "args": [
+            {
+              "publicationKey": "post:12",
+              "textRu": "новый",
+              "textEn": "",
+              "target": "discord"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "edits report a refused edit",
+      "responses": [
+        {
+          "status": 403,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"message\": \"Missing Access\", \"code\": 50001}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_enabled, updated_at) VALUES (1, 'ru', 'old', '[{\"type\":\"photo\",\"file_id\":\"F1\"}]', 0, '2026-03-01T10:00:00.000Z'), (1, 'en', 'old', '[]', 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'discord', 'published', 'd1', '[\"d1\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "editTargets",
+          "args": [
+            {
+              "publicationKey": "post:12",
+              "textRu": null,
+              "textEn": "new text"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "removals settle only what still names the removed object",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": true, \"result\": true}"
+        },
+        {
+          "status": 400,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"ok\": false, \"description\": \"Bad Request: message can't be deleted\"}"
+        },
+        {
+          "status": 204,
+          "sql": "UPDATE publication_targets SET external_id = 'd2' WHERE target = 'discord'"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"success\": true}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'telegram', 'published', '42', '[\"42\", \"43\"]', 'https://t.me/studiochannel/42', NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'discord', 'published', 'd1', '[\"d1\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'published', '555', '[\"555\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'threads_ru', 'published', 'th1', '[\"th1\"]', NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'telegram', 'published', NULL, 0, '{\"text\": \"a\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (2, 'post:12', 'discord', 'published', NULL, 0, '{\"text\": \"a\"}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "removeTargets",
+          "args": [
+            {
+              "publicationKey": "post:12"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "maintenance prunes history under its lock",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO publication_events (event_type, severity, message, details_json, created_at) VALUES ('old.info', 'info', 'm', '{}', '2025-01-01T00:00:00.000Z'), ('old.warn', 'warn', 'm', '{}', '2025-01-01T00:00:00.000Z'), ('analytics.milestone.reached', 'info', 'm', '{}', '2025-01-01T00:00:00.000Z'), ('new.info', 'info', 'm', '{}', '2026-02-01T00:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_pageviews (day, path, count, updated_at) VALUES ('2023-01-01', '/a', 1, '2023-01-01T00:00:00.000Z'), ('2026-01-01', '/b', 1, '2026-01-01T00:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO runtime_usage (feature_key, bucket_day, calls, successes, failures, total_duration_ms, first_seen_at, last_seen_at) VALUES ('a', '2024-01-01', 1, 1, 0, 1, '2024-01-01T00:00:00.000Z', '2024-01-01T00:00:00.000Z'), ('b', '2026-02-27', 1, 1, 0, 1, '2026-02-27T00:00:00.000Z', '2026-02-27T00:00:00.000Z')"
+        },
+        {
+          "call": "maintenance",
+          "args": []
+        },
+        {
+          "sql": "INSERT INTO maintenance_locks (name, owner, expires_at, created_at) VALUES ('metrics_maintenance', 'other:1', '2026-03-01T11:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "maintenance",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "media is staged before the provider sees it",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"m1\", \"media_key\": \"3_m1\"}}"
+        },
+        {
+          "status": 204
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"m1\"}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"300\", \"text\": \"t\"}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"300\", \"text\": \"pic\"}}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'queued', NULL, 0, '{\"text\": \"pic\", \"locale\": \"en\", \"media\": [{\"type\": \"IMAGE\", \"localPath\": \"$DATA/in/photo.jpg\"}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "in/photo.jpg": {
+          "fill": "J",
+          "size": 64
+        }
+      }
+    },
+    {
+      "name": "a Story without its prepared variant is refused, never rendered on the way",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'instagram_stories', 'queued', NULL, 0, '{\"text\": \"story\", \"locale\": \"en\", \"media\": [{\"type\": \"IMAGE\", \"localPath\": \"$DATA/video-media/abc.jpg\"}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'instagram_stories', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "video-media/abc.jpg": {
+          "fill": "J",
+          "size": 64
+        }
+      }
+    },
+    {
+      "name": "a Story takes its prepared variant",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"c1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\": \"FINISHED\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"st1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"st1\", \"permalink\": \"https://instagram.com/stories/st1\"}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'instagram_stories', 'queued', NULL, 0, '{\"text\": \"story\", \"locale\": \"en\", \"media\": [{\"type\": \"IMAGE\", \"localPath\": \"$DATA/video-media/abc.jpg\"}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'instagram_stories', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:00:01.000Z"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ],
+      "files": {
+        "video-media/abc.jpg": {
+          "fill": "J",
+          "size": 64
+        },
+        "story-media/abc-story-standard.jpg": {
+          "fill": "S",
+          "size": 64
+        }
+      }
+    },
+    {
+      "name": "Story derivatives render once per source",
+      "responses": [],
+      "steps": [
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/wide.jpg", false]
+        },
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/wide.jpg", false]
+        },
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/clip.mp4", true]
+        },
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/missing.mp4", true]
+        },
+        {
+          "call": "preparedStory",
+          "args": [
+            {
+              "type": "VIDEO",
+              "localPath": "$DATA/video-media/clip.mp4"
+            }
+          ]
+        },
+        {
+          "call": "preparedStory",
+          "args": [
+            {
+              "type": "photo",
+              "localPath": "$DATA/video-media/none.jpg"
+            }
+          ]
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "video-media/wide.jpg": {
+          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=640x360:rate=1", "-frames:v", "1"]
+        },
+        "video-media/clip.mp4": {
+          "ffmpeg": [
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc=size=320x180:rate=10",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000",
+            "-t",
+            "1",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            "-shortest"
+          ]
+        }
+      }
+    },
+    {
+      "name": "media cache sweep removes only expired cache files",
+      "responses": [],
+      "steps": [
+        {
+          "call": "pruneMediaCache",
+          "args": []
+        },
+        {
+          "clock": "2026-03-03T10:00:00.000Z"
+        },
+        {
+          "call": "pruneMediaCache",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "media-cache/abc.jpg": {
+          "fill": "A",
+          "size": 8
+        },
+        "media/cache-abc.jpg": {
+          "fill": "A",
+          "size": 8
+        },
+        "media/posted.jpg": {
+          "fill": "P",
+          "size": 8
+        },
+        "story-media/.x-story-standard.tmp-1-2.mp4": {
+          "fill": "S",
+          "size": 8
+        },
+        "story-media/x-story-standard.mp4": {
+          "fill": "S",
+          "size": 8
+        },
+        "video-media/.incoming/upload": {
+          "fill": "U",
+          "size": 8
+        },
+        "video-media/kept.mp4": {
+          "fill": "V",
+          "size": 8
+        }
+      }
+    }
+  ]
+}
