@@ -66,6 +66,9 @@ pub trait AuthCircuit {
 /// Runtime usage telemetry (`observability/usage.ts`, `trackUsageSync`).
 pub trait UsageMeter {
     fn record(&self, sqlite: &Connection, feature_key: &str, success: bool, duration_ms: u64);
+    /// `flushUsage`: what is buffered, written now. A meter that buffers
+    /// nothing has nothing to write.
+    fn flush(&self, _sqlite: &Connection) {}
 }
 
 /// A draft's generated Story cards, one per locale, as Story media items.

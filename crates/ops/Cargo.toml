@@ -23,6 +23,7 @@ domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 regex = "1"
 rusqlite = { version = "0.43", features = ["serialize"] }
