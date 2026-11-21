@@ -61,8 +61,16 @@ fn text_limit() -> usize {
         .unwrap_or(DEFAULT_TEXT_LIMIT)
 }
 
+/// Where a split post's already-published message ids travel on its job.
+const MESSAGES_RESUME_KEY: &str = "_discordMessageIds";
+
 /// `publishToDiscord`. Every id is returned: a two-part post is two objects
 /// to verify, edit or delete later.
+///
+/// Deliberate deviation from TypeScript, which threw when a later part was
+/// refused after the first was already in the channel, so the retry posted
+/// the first again: the ids that went out are handed back as a partial
+/// publication (as X and Threads do), and the retry sends only the rest.
 pub async fn publish_to_discord(ctx: &AdapterContext, payload: &Map<String, Value>) -> Result<PublishResult> {
     let credentials = credentials(ctx)?;
     let parts = split_text(&payload_text(payload), text_limit());
@@ -71,16 +79,46 @@ pub async fn publish_to_discord(ctx: &AdapterContext, payload: &Map<String, Valu
         .filter(|item| field(item, "localPath").is_some_and(exists))
         .take(MAX_ATTACHMENTS)
         .collect();
+    // The queue stores a resume under its key as the id list it settled with.
+    let mut ids: Vec<String> = match payload.get(MESSAGES_RESUME_KEY) {
+        Some(Value::Array(ids)) => ids
+            .iter()
+            .filter_map(Value::as_str)
+            .filter(|id| !id.is_empty())
+            .map(str::to_owned)
+            .collect(),
+        _ => Vec::new(),
+    };
 
-    let mut ids = Vec::new();
-    for (index, part) in parts.iter().enumerate() {
+    let resumed = ids.len();
+    for (index, part) in parts.iter().enumerate().skip(resumed) {
         let last = index == parts.len() - 1;
-        let message = create_message(ctx, &credentials, part, if last { &media } else { &[] }).await?;
-        let Some(id) = message.get("id").and_then(Value::as_str).filter(|id| !id.is_empty()) else {
-            return Err(AdapterError::message_text("Discord message create returned no id"));
+        let sent = async {
+            let message = create_message(ctx, &credentials, part, if last { &media } else { &[] }).await?;
+            match message.get("id").and_then(Value::as_str).filter(|id| !id.is_empty()) {
+                Some(id) => Ok(id.to_owned()),
+                None => Err(AdapterError::message_text("Discord message create returned no id")),
+            }
+        }
+        .await;
+        let id = match sent {
+            Ok(id) => id,
+            // A lost answer may be a message in the channel: verification,
+            // never a resend. Nothing out yet: an ordinary failure.
+            Err(error) if error.is_ambiguous() || ids.is_empty() => return Err(error),
+            Err(error) => {
+                let mut result = Map::new();
+                result.insert("ok".into(), false.into());
+                result.insert("partial".into(), true.into());
+                result.insert("retryable".into(), true.into());
+                result.insert("resumeKey".into(), MESSAGES_RESUME_KEY.into());
+                result.insert("ids".into(), json!(ids));
+                result.insert("error".into(), error.message().into());
+                return Ok(result);
+            }
         };
-        ids.push(id.to_owned());
-        crosspost(ctx, &credentials, id).await;
+        crosspost(ctx, &credentials, &id).await;
+        ids.push(id);
     }
 
     let first = ids.first().cloned();
