@@ -1,0 +1,257 @@
+{
+  "id": "loop-albums",
+  "seed": ["Clock moved to 2026-08-20T09:00:05.000Z."],
+  "specRef": "§6.5 album collector: nothing before the settle window, one draft after it",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "Альбом получен. Создам или обновлю черновик через несколько секунд."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "caption": "Альбом в цикле",
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "media_group_id": "loop-album",
+          "message_id": 3,
+          "photo": [
+            {
+              "file_id": "loop-album-1-small",
+              "file_size": 1200,
+              "file_unique_id": "loop-album-1-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "loop-album-1",
+              "file_size": 287,
+              "file_unique_id": "loop-album-1-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "media_group_id": "loop-album",
+          "message_id": 5,
+          "photo": [
+            {
+              "file_id": "loop-album-2-small",
+              "file_size": 1200,
+              "file_unique_id": "loop-album-2-s",
+              "height": 90,
+              "width": 90
+            },
+            {
+              "file_id": "loop-album-2",
+              "file_size": 287,
+              "file_unique_id": "loop-album-2-l",
+              "height": 1280,
+              "width": 1280
+            }
+          ]
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [
+            {
+              "attempt_count": 0,
+              "draft_id": null,
+              "media_group_id": "loop-album",
+              "notified": 1,
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            }
+          ],
+          "sql": "SELECT media_group_id, notified, draft_id, attempt_count, updated_at FROM pending_albums ORDER BY media_group_id"
+        },
+        {
+          "rows": [],
+          "sql": "SELECT id, status FROM drafts ORDER BY id"
+        }
+      ],
+      "trigger": "telegram-albums loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "loop-album-1"
+          }
+        },
+        {
+          "method": "getFile",
+          "payload": {
+            "file_id": "loop-album-2"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nМедиа: 2 RU · 2 EN\n⚠️ EN использует RU-медиа\n\nRU:\nАльбом в цикле\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [],
+          "sql": "SELECT media_group_id, notified, draft_id, attempt_count, updated_at FROM pending_albums ORDER BY media_group_id"
+        },
+        {
+          "rows": [
+            {
+              "id": 1,
+              "status": "needs_review"
+            }
+          ],
+          "sql": "SELECT id, status FROM drafts ORDER BY id"
+        }
+      ],
+      "trigger": "telegram-albums loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [],
+          "sql": "SELECT media_group_id, notified, draft_id, attempt_count, updated_at FROM pending_albums ORDER BY media_group_id"
+        },
+        {
+          "rows": [
+            {
+              "id": 1,
+              "status": "needs_review"
+            }
+          ],
+          "sql": "SELECT id, status FROM drafts ORDER BY id"
+        }
+      ],
+      "trigger": "telegram-albums loop"
+    }
+  ]
+}

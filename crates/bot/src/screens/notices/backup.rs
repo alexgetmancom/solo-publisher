@@ -32,6 +32,18 @@ pub enum BackupDeliveryStatus {
     Failed,
 }
 
+impl BackupDeliveryStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::NotDue => "not_due",
+            Self::Disabled => "disabled",
+            Self::NoAdmins => "no_admins",
+            Self::Sent => "sent",
+            Self::Failed => "failed",
+        }
+    }
+}
+
 /// `sendDailyBackup`: one tick of the daily-backup loop.
 pub async fn send_daily_backup(bot: &Bot) -> crate::Result<BackupDeliveryStatus> {
     let ctx = Ctx::worker(bot);

@@ -1,0 +1,287 @@
+{
+  "id": "loop-daily-backup",
+  "seed": [
+    "The backup file's bytes are not recorded (sha256/size written as <sqlite backup>).",
+    "Clock moved to 2026-08-20T00:30:00.000Z.",
+    "Clock moved to 2026-08-20T09:00:00.000Z.",
+    "Backup switched off.",
+    "Backup switched on.",
+    "Clock moved to 2026-08-21T00:59:00.000Z.",
+    "Clock moved to 2026-08-21T01:00:00.000Z."
+  ],
+  "specRef": "§7.7 daily backup: before 04:00, switched off, sent once a day",
+  "steps": [
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [],
+          "sql": "SELECT source, last_synced_at, last_success_at, last_error, locked_by, locked_at FROM analytics_sync ORDER BY source"
+        }
+      ],
+      "trigger": "telegram-daily-backup loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [],
+          "sql": "SELECT source, last_synced_at, last_success_at, last_error, locked_by, locked_at FROM analytics_sync ORDER BY source"
+        }
+      ],
+      "trigger": "telegram-daily-backup loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "sendDocument",
+          "payload": {
+            "caption": "🗄 2026-08-20 · 0.9 MB",
+            "chat_id": "1001",
+            "disable_notification": "true",
+            "document": {
+              "file": {
+                "contentType": "application/octet-stream",
+                "integrity": "ok",
+                "name": "pipeline-20260820T090000Z.db",
+                "sha256": "<sqlite backup>",
+                "size": "<sqlite backup>",
+                "tables": [
+                  "__drizzle_migrations",
+                  "alert_dedup",
+                  "analytics_rollups",
+                  "analytics_sync",
+                  "article_locales",
+                  "articles",
+                  "audience_activity",
+                  "audience_demographics",
+                  "bot_ui_settings",
+                  "channel_connections",
+                  "conversation_sessions",
+                  "creator_profile_snapshots",
+                  "creator_profiles",
+                  "credential_checks",
+                  "draft_entity_candidates",
+                  "draft_entity_links",
+                  "draft_story_cards",
+                  "draft_thread_parts",
+                  "draft_translations",
+                  "drafts",
+                  "format_support",
+                  "games",
+                  "interface_bindings",
+                  "knowledge_entities",
+                  "knowledge_entity_aliases",
+                  "maintenance_locks",
+                  "media_test_cases",
+                  "metric_samples",
+                  "metric_schedule",
+                  "pending_albums",
+                  "platform_tokens",
+                  "post_comments",
+                  "post_locales",
+                  "post_metrics",
+                  "publication_cancellations",
+                  "publication_events",
+                  "publication_targets",
+                  "publish_jobs",
+                  "runtime_usage",
+                  "site_jobs",
+                  "site_pageviews",
+                  "social_comments",
+                  "sqlite_sequence",
+                  "studio_backup_settings",
+                  "studio_media_assets",
+                  "studio_milestone_settings",
+                  "studio_news_digest_settings",
+                  "studio_notification_jobs",
+                  "studio_notification_settings",
+                  "studio_profile",
+                  "studio_weekly_digest_settings",
+                  "studio_youtube_settings",
+                  "telegram_discussion_threads",
+                  "video_drafts",
+                  "video_frame_features",
+                  "video_jobs",
+                  "video_metric_schedule",
+                  "video_metric_snapshots",
+                  "video_targets",
+                  "worker_state",
+                  "x_activity_imports",
+                  "x_activity_items",
+                  "x_activity_metric_snapshots"
+                ]
+              }
+            }
+          },
+          "transport": "multipart"
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "last_error": null,
+              "last_success_at": "2026-08-20T09:00:00.000Z",
+              "last_synced_at": "2026-08-20T09:00:00.000Z",
+              "locked_at": null,
+              "locked_by": null,
+              "source": "daily_backup:2026-08-20"
+            }
+          ],
+          "sql": "SELECT source, last_synced_at, last_success_at, last_error, locked_by, locked_at FROM analytics_sync ORDER BY source"
+        }
+      ],
+      "trigger": "telegram-daily-backup loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [
+            {
+              "last_error": null,
+              "last_success_at": "2026-08-20T09:00:00.000Z",
+              "last_synced_at": "2026-08-20T09:00:00.000Z",
+              "locked_at": null,
+              "locked_by": null,
+              "source": "daily_backup:2026-08-20"
+            }
+          ],
+          "sql": "SELECT source, last_synced_at, last_success_at, last_error, locked_by, locked_at FROM analytics_sync ORDER BY source"
+        }
+      ],
+      "trigger": "telegram-daily-backup loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [
+            {
+              "last_error": null,
+              "last_success_at": "2026-08-20T09:00:00.000Z",
+              "last_synced_at": "2026-08-20T09:00:00.000Z",
+              "locked_at": null,
+              "locked_by": null,
+              "source": "daily_backup:2026-08-20"
+            }
+          ],
+          "sql": "SELECT source, last_synced_at, last_success_at, last_error, locked_by, locked_at FROM analytics_sync ORDER BY source"
+        }
+      ],
+      "trigger": "telegram-daily-backup loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "sendDocument",
+          "payload": {
+            "caption": "🗄 2026-08-21 · 0.9 MB",
+            "chat_id": "1001",
+            "disable_notification": "true",
+            "document": {
+              "file": {
+                "contentType": "application/octet-stream",
+                "integrity": "ok",
+                "name": "pipeline-20260821T010000Z.db",
+                "sha256": "<sqlite backup>",
+                "size": "<sqlite backup>",
+                "tables": [
+                  "__drizzle_migrations",
+                  "alert_dedup",
+                  "analytics_rollups",
+                  "analytics_sync",
+                  "article_locales",
+                  "articles",
+                  "audience_activity",
+                  "audience_demographics",
+                  "bot_ui_settings",
+                  "channel_connections",
+                  "conversation_sessions",
+                  "creator_profile_snapshots",
+                  "creator_profiles",
+                  "credential_checks",
+                  "draft_entity_candidates",
+                  "draft_entity_links",
+                  "draft_story_cards",
+                  "draft_thread_parts",
+                  "draft_translations",
+                  "drafts",
+                  "format_support",
+                  "games",
+                  "interface_bindings",
+                  "knowledge_entities",
+                  "knowledge_entity_aliases",
+                  "maintenance_locks",
+                  "media_test_cases",
+                  "metric_samples",
+                  "metric_schedule",
+                  "pending_albums",
+                  "platform_tokens",
+                  "post_comments",
+                  "post_locales",
+                  "post_metrics",
+                  "publication_cancellations",
+                  "publication_events",
+                  "publication_targets",
+                  "publish_jobs",
+                  "runtime_usage",
+                  "site_jobs",
+                  "site_pageviews",
+                  "social_comments",
+                  "sqlite_sequence",
+                  "studio_backup_settings",
+                  "studio_media_assets",
+                  "studio_milestone_settings",
+                  "studio_news_digest_settings",
+                  "studio_notification_jobs",
+                  "studio_notification_settings",
+                  "studio_profile",
+                  "studio_weekly_digest_settings",
+                  "studio_youtube_settings",
+                  "telegram_discussion_threads",
+                  "video_drafts",
+                  "video_frame_features",
+                  "video_jobs",
+                  "video_metric_schedule",
+                  "video_metric_snapshots",
+                  "video_targets",
+                  "worker_state",
+                  "x_activity_imports",
+                  "x_activity_items",
+                  "x_activity_metric_snapshots"
+                ]
+              }
+            }
+          },
+          "transport": "multipart"
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "last_error": null,
+              "last_success_at": "2026-08-20T09:00:00.000Z",
+              "last_synced_at": "2026-08-20T09:00:00.000Z",
+              "locked_at": null,
+              "locked_by": null,
+              "source": "daily_backup:2026-08-20"
+            },
+            {
+              "last_error": null,
+              "last_success_at": "2026-08-21T01:00:00.000Z",
+              "last_synced_at": "2026-08-21T01:00:00.000Z",
+              "locked_at": null,
+              "locked_by": null,
+              "source": "daily_backup:2026-08-21"
+            }
+          ],
+          "sql": "SELECT source, last_synced_at, last_success_at, last_error, locked_by, locked_at FROM analytics_sync ORDER BY source"
+        }
+      ],
+      "trigger": "telegram-daily-backup loop"
+    }
+  ]
+}

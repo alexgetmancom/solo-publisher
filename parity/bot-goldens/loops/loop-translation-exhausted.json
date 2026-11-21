@@ -1,0 +1,393 @@
+{
+  "id": "loop-translation-exhausted",
+  "seed": [
+    "POST https://api.deepseek.com/v1/chat/completions answers, in order: [{\"status\":200,\"body\":{\"choices\":[{\"message\":{\"content\":\"Please provide the text you would like me to translate.\"}}]}},{\"status\":500,\"body\":{\"error\":{\"message\":\"Service overloaded\"}}},{\"status\":200,\"body\":{\"choices\":[]}}].",
+    "Clock moved to 2026-08-20T09:00:05.000Z.",
+    "Clock moved to 2026-08-20T09:00:15.000Z."
+  ],
+  "specRef": "§7.3 translation retries: refusal, HTTP error and empty answer, then no English",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[переводится…\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Первый пост\n\nНемного текста о запуске."
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "http",
+          "payload": {
+            "method": "POST",
+            "url": "https://api.deepseek.com/v1/chat/completions"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "attempt_count": 1,
+              "draft_id": 1,
+              "last_error": "translation produced no English text",
+              "locked_at": null,
+              "locked_by": null,
+              "next_attempt_at": "2026-08-20T09:00:05.000Z",
+              "status": "queued",
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": ""
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске."
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text FROM post_locales ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [
+            {
+              "attempt_count": 1,
+              "draft_id": 1,
+              "last_error": "translation produced no English text",
+              "locked_at": null,
+              "locked_by": null,
+              "next_attempt_at": "2026-08-20T09:00:05.000Z",
+              "status": "queued",
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": ""
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске."
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text FROM post_locales ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "http",
+          "payload": {
+            "method": "POST",
+            "url": "https://api.deepseek.com/v1/chat/completions"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "attempt_count": 2,
+              "draft_id": 1,
+              "last_error": "translation produced no English text",
+              "locked_at": null,
+              "locked_by": null,
+              "next_attempt_at": "2026-08-20T09:00:15.000Z",
+              "status": "queued",
+              "updated_at": "2026-08-20T09:00:05.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": ""
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске."
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text FROM post_locales ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "http",
+          "payload": {
+            "method": "POST",
+            "url": "https://api.deepseek.com/v1/chat/completions"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[не переведено\\]"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "attempt_count": 3,
+              "draft_id": 1,
+              "last_error": "translation produced no English text",
+              "locked_at": null,
+              "locked_by": null,
+              "next_attempt_at": null,
+              "status": "failed",
+              "updated_at": "2026-08-20T09:00:15.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": ""
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске."
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text FROM post_locales ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [
+            {
+              "attempt_count": 3,
+              "draft_id": 1,
+              "last_error": "translation produced no English text",
+              "locked_at": null,
+              "locked_by": null,
+              "next_attempt_at": null,
+              "status": "failed",
+              "updated_at": "2026-08-20T09:00:15.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": ""
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске."
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text FROM post_locales ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    }
+  ]
+}

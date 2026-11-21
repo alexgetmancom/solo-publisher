@@ -42,6 +42,15 @@ Byte-exact rules: build `Payload` options in the TypeScript call-site order (the
 serialised payloads); menus return their rows exactly as the plugin renders them (keep an empty row TS produces).
 Studio services come from `ctx.services()`; boundaries Studio needs but the bot does not own come from the `Host`.
 
+## Worker loops
+
+`workers.rs` is `interfaces/telegram/worker.ts`: one task per loop (`telegram_events`, `telegram_translations`,
+`telegram_albums`, `telegram_alerts`, `telegram_daily_backup`) and `start_telegram_workers(bot, http, loops)`, which
+starts them through `runtime`'s `HeartbeatLoops` with the TypeScript intervals (1 s, 1 s, idle poll, idle poll, 60 s)
+and wires the event loop's wake: `domain::repositories::set_event_bell` rings it whenever an event is journalled.
+`http` is the client DeepSeek is reached through (`workers/translations.rs`, `runTranslationCycle`). The
+`notifications` loop is a core worker: its task is `domain::notifications::run_notification_cycle`.
+
 ## Goldens
 
 ```
@@ -59,4 +68,7 @@ are implemented in `tests/support/host.rs` (unimplemented ones panic with their 
 (`method: "http"` in goldens) is recorded by the fakes beneath it: Telegram file downloads go through
 `Transport::download` (the fake serves the local file, as the recorder's `fileDownload` did), the deploy agent through
 its own boundary. Steps feeding several updates at once compare per chat.
+Loop cases (`loops/`) replay each loop's task and also compare the database effects the
+recorder watched (`db` in a step: the same SQL run on the Rust database, rows with sorted keys); the translator is the
+golden DeepSeek behind the workers' `HttpClient` (`tests/support/deepseek.rs`), scripted by the case's seed notes.
 `entry/bootstrap` differs on purpose (`setMyCommands` description in Russian) and is asserted as such.

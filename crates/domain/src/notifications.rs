@@ -1,16 +1,16 @@
 //! Publication reminders (`notifications/jobs.ts`): the
 //! `studio_notification_jobs` rows scheduling a publication queues and
-//! cancelling it retires. Turning a due row into its journal event is the
-//! Notifications worker's (`runNotificationCycle`), which is not here.
+//! cancelling it retires, and the Notifications worker's cycle that turns a
+//! due row into its journal event (`runNotificationCycle`).
 
 use db::rusqlite::{Connection, params};
 use foundation::time::to_iso_string;
 use jiff::Timestamp;
-use serde_json::json;
+use serde_json::{Map, Value, json};
 
 use crate::Result;
-use crate::application::ports::Clock;
-use crate::repositories::stamp;
+use crate::application::ports::{Clock, DomainEventInput, Severity};
+use crate::repositories::{record_event, stamp, transaction};
 use crate::studio::boundaries::{Reminder, Reminders};
 
 /// The reminder scheduler on the connection a caller hands it.
@@ -66,4 +66,60 @@ impl<C: Clock> Reminders for ReminderJobs<C> {
         )?;
         Ok(())
     }
+}
+
+/// `runNotificationCycle` (the `notifications` loop): every due queued job
+/// becomes a `studio.notification.reminder.due` event, which the Telegram
+/// event loop delivers. Claim and event are one transaction: marking the job
+/// delivered first let a failing event write swallow the reminder.
+pub fn run_notification_cycle(sqlite: &Connection, clock: &dyn Clock) -> Result<usize> {
+    let now = to_iso_string(clock.now());
+    let jobs: Vec<(i64, i64, String, String, String)> = sqlite
+        .prepare(
+            r#"select "id", "actor_id", "ref", "kind", "payload_json" from "studio_notification_jobs" where ("studio_notification_jobs"."status" = 'queued' and "studio_notification_jobs"."run_at" <= ?) order by "studio_notification_jobs"."run_at" asc, "studio_notification_jobs"."id" asc limit 50"#,
+        )?
+        .query_map([&now], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)))?
+        .collect::<db::rusqlite::Result<_>>()?;
+    let mut delivered = 0;
+    for (id, actor_id, publication_ref, kind, payload) in jobs {
+        let emitted = transaction(sqlite, || {
+            let claimed = sqlite.execute(
+                r#"update "studio_notification_jobs" set "status" = 'delivered', "updated_at" = ? where ("studio_notification_jobs"."id" = ? and "studio_notification_jobs"."status" = 'queued')"#,
+                params![now, id],
+            )?;
+            if claimed == 0 {
+                return Ok(false);
+            }
+            let payload: Map<String, Value> = serde_json::from_str(&payload).unwrap_or_default();
+            // `String(payload.title ?? job.ref)`.
+            let title = match payload.get("title") {
+                Some(Value::String(title)) => title.clone(),
+                Some(other) if !other.is_null() => other.to_string(),
+                _ => publication_ref.clone(),
+            };
+            let mut details = Map::new();
+            details.insert("actor_id".into(), json!(actor_id));
+            details.insert("notification_job_id".into(), json!(id));
+            details.insert("kind".into(), json!(kind));
+            details.extend(payload);
+            record_event(
+                sqlite,
+                clock,
+                &DomainEventInput {
+                    publication_ref: Some(publication_ref.clone()),
+                    event_type: "studio.notification.reminder.due".into(),
+                    severity: Severity::Info,
+                    target: None,
+                    message: format!("Publication reminder: {title}"),
+                    details: Some(details),
+                    cooldown_seconds: None,
+                },
+            )?;
+            Ok(true)
+        })?;
+        if emitted {
+            delivered += 1;
+        }
+    }
+    Ok(delivered)
 }

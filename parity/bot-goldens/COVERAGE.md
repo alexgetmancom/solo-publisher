@@ -100,7 +100,7 @@ what state was put in place outside the bot. All screens use the actor locale `r
 | 88 | Video failure notice | notices/notice-video-failed | recorded |
 | 89 | Video unresolved notice | notices/notice-video-unresolved | recorded |
 | 90 | Alert | notices/notice-post-failed | recorded |
-| 91 | Daily backup document / failure notice | notices/notice-daily-backup | recorded (backup bytes opaque, see harness header) |
+| 91 | Daily backup document / failure notice | notices/notice-daily-backup, loops/loop-daily-backup | recorded (backup bytes opaque: integrity and tables instead, see harness header) |
 | 92 | Album give-up | intake/post-album-give-up | recorded |
 | 93 | Unknown action / Already running… / error message | callbacks/callback-unknown, callbacks/callback-action-lock, callbacks/callback-publication-stale, post/post-preflight-toast | recorded |
 
@@ -128,6 +128,20 @@ what state was put in place outside the bot. All screens use the actor locale `r
 | 7.5 video failure / unresolved | notices/notice-video-failed, notices/notice-video-unresolved, notices/video-settle-accepted |
 | 7.6 delivery previews | post/post-confirm-publish, post/post-previews-with-media, video/video-wizard-common |
 | 7.7 alerts, daily backup, album give-up, Story follow-up, download result, deploy result | notices/notice-post-failed, notices/notice-daily-backup, intake/post-album-give-up, post/story-cards-wait, video/video-intake-destination, deploy/deploy-promote |
+
+## Worker loops (`loops/`)
+
+Each trigger runs one loop's task exactly as `interfaces/telegram/worker.ts` (and `notifications` in
+`runtime/workers.ts`) starts it; every step after `h.watch(…)` also records what the watched queries return (`db`).
+
+| Loop | Case file(s) |
+|---|---|
+| telegram-events (every event type, age windows, unknown publications, at-most-once reservation) | loops/loop-events-post, loops/loop-events-video |
+| notifications → telegram-events (due / not due / cancelled jobs, reminder text without title or targets) | loops/loop-notification-jobs |
+| telegram-translations (thread parts, English Story card, settled row; refusal, HTTP 500, empty answer, exhausted) | loops/loop-translation-settled, loops/loop-translation-exhausted |
+| telegram-alerts (severity filter, cooldown suppression and expiry, 4000-unit cut, failed send stays settled) | loops/loop-alerts |
+| telegram-albums (before / after the settle window) | loops/loop-albums |
+| telegram-daily-backup (before 04:00, switched off, once a day, next day) | loops/loop-daily-backup |
 
 ## §5 callback data (stale and foreign)
 

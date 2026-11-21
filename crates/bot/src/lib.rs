@@ -35,6 +35,7 @@ pub mod screens;
 mod sequentialize;
 pub mod session;
 pub mod tap;
+pub mod workers;
 
 use std::future::Future;
 use std::pin::Pin;

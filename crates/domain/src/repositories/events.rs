@@ -1,9 +1,24 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use db::rusqlite::{Connection, OptionalExtension, params};
 
 use super::{stamp, stamp_offset};
 use crate::Result;
 use crate::application::ports::{Clock, DomainEventInput};
 use crate::json;
+
+thread_local! {
+    static EVENT_BELL: RefCell<Option<Rc<dyn Fn()>>> = const { RefCell::new(None) };
+}
+
+/// What [`record_event`] rings once a row is written (`ringWorker("telegram-events")`
+/// in TypeScript): every stored event reaches the Telegram consumer, which
+/// otherwise waits out its poll. Set by whoever starts that loop; `None`
+/// unhooks it. Per thread, as the process's single-threaded runtime is.
+pub fn set_event_bell(bell: Option<Rc<dyn Fn()>>) {
+    EVENT_BELL.with_borrow_mut(|current| *current = bell);
+}
 
 /// The durable event journal behind the application event port.
 pub struct EventStore<'a> {
@@ -62,5 +77,14 @@ pub fn record_event(sqlite: &Connection, clock: &dyn Clock, input: &DomainEventI
             |row| row.get::<_, i64>(0),
         )
         .optional()?;
-    Ok(inserted == Some(1))
+    let inserted = inserted == Some(1);
+    // A suppressed duplicate has nothing to wake the consumer for.
+    if inserted {
+        // Cloned out first: the bell may journal again.
+        let bell = EVENT_BELL.with_borrow(Clone::clone);
+        if let Some(bell) = bell {
+            bell();
+        }
+    }
+    Ok(inserted)
 }

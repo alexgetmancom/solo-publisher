@@ -1,0 +1,451 @@
+{
+  "id": "loop-translation-settled",
+  "seed": [
+    "POST https://api.deepseek.com/v1/chat/completions answers, in order: [{\"status\":200,\"body\":{\"choices\":[{\"message\":{\"content\":\"First post\\n\\nA few words about the launch.\"}}]}},{\"status\":200,\"body\":{\"choices\":[{\"message\":{\"content\":\"Second post of the thread\"}}]}}]."
+  ],
+  "specRef": "§7.3 translation: every thread part, the English Story card queued, the card repainted",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "intake_cancel",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 Пришлите текст, фото или файл .md."
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 1,
+          "text": "📝 Текст"
+        },
+        "update_id": 1
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[переводится…\\]"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 3,
+          "text": "Первый пост\n\nНемного текста о запуске."
+        },
+        "update_id": 2
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "answerCallbackQuery",
+          "payload": {
+            "callback_query_id": "loop-translation-settled#1"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "sv1|p:post:cancel_dialog",
+                    "text": "← Отмена"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Пришлите пост 2: текст, фото или видео."
+          }
+        }
+      ],
+      "update": {
+        "callback_query": {
+          "chat_instance": "chat-instance-1001",
+          "data": "p:post:thread_add:1",
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "id": "loop-translation-settled#1",
+          "message": {
+            "chat": {
+              "first_name": "Admin",
+              "id": 1001,
+              "type": "private"
+            },
+            "date": 1787216400,
+            "from": {
+              "first_name": "Studio",
+              "id": 123456,
+              "is_bot": true,
+              "username": "studio_test_bot"
+            },
+            "message_id": 4,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\nКарточки stories: RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\n\\[переводится…\\]"
+          }
+        },
+        "update_id": 3
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Дополнить"
+                  },
+                  {
+                    "callback_data": "p:post:thread_done:1",
+                    "text": "✅ Это конец"
+                  }
+                ]
+              ]
+            },
+            "text": "🧵 Постов в треде: 2. Дополнить или закончить?"
+          }
+        }
+      ],
+      "update": {
+        "message": {
+          "chat": {
+            "first_name": "Admin",
+            "id": 1001,
+            "type": "private"
+          },
+          "date": 1787216400,
+          "from": {
+            "first_name": "Admin",
+            "id": 1001,
+            "is_bot": false,
+            "language_code": "ru"
+          },
+          "message_id": 5,
+          "text": "Второй пост цепочки"
+        },
+        "update_id": 4
+      }
+    },
+    {
+      "calls": [
+        {
+          "method": "http",
+          "payload": {
+            "method": "POST",
+            "url": "https://api.deepseek.com/v1/chat/completions"
+          }
+        },
+        {
+          "method": "http",
+          "payload": {
+            "method": "POST",
+            "url": "https://api.deepseek.com/v1/chat/completions"
+          }
+        },
+        {
+          "method": "editMessageText",
+          "payload": {
+            "chat_id": 1001,
+            "message_id": 4,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+              "inline_keyboard": [
+                [
+                  {
+                    "callback_data": "p:post:cycle_mode:1",
+                    "text": "🛞 Режим: Ручной"
+                  },
+                  {
+                    "callback_data": "p:post:view:1:platforms",
+                    "text": "🌐 Выбрать площадки"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:edit_ru:1",
+                    "text": "Изменить RU"
+                  },
+                  {
+                    "callback_data": "p:post:edit_en:1",
+                    "text": "Изменить EN"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:view:1:thread",
+                    "text": "🧵 Тред · 2"
+                  },
+                  {
+                    "callback_data": "p:post:thread_add:1",
+                    "text": "➕ Часть"
+                  }
+                ],
+                [
+                  {
+                    "callback_data": "p:post:publish:1",
+                    "text": "▶️ Опубликовать"
+                  },
+                  {
+                    "callback_data": "p:post:schedule:1",
+                    "text": "📅 Запланировать"
+                  },
+                  {
+                    "callback_data": "p:post:cancel:1:confirm_delete",
+                    "text": "🗑 Удалить"
+                  }
+                ]
+              ]
+            },
+            "text": "📝 *Пост #1*\nРежим: *Ручной* · Площадки: *5*\n🧵 Telegram — одним сообщением · Threads RU — 2 поста · Threads EN — 2 поста\nКарточки stories: EN queued · RU queued\n\nRU:\nПервый пост\n\nНемного текста о запуске.\n\nEN:\nFirst post\n\nA few words about the launch."
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": "First post\n\nA few words about the launch.",
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске.",
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text, updated_at FROM post_locales ORDER BY draft_id, locale"
+        },
+        {
+          "rows": [
+            {
+              "draft_id": 1,
+              "position": 2,
+              "text_en": "Second post of the thread"
+            }
+          ],
+          "sql": "SELECT draft_id, position, text_en FROM draft_thread_parts ORDER BY draft_id, position"
+        },
+        {
+          "rows": [
+            {
+              "draft_id": 1,
+              "locale": "en",
+              "status": "queued"
+            },
+            {
+              "draft_id": 1,
+              "locale": "ru",
+              "status": "queued"
+            }
+          ],
+          "sql": "SELECT draft_id, locale, status FROM draft_story_cards ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [],
+          "sql": "SELECT draft_id, status, attempt_count, next_attempt_at, locked_by, locked_at, last_error, updated_at FROM draft_translations ORDER BY draft_id"
+        },
+        {
+          "rows": [
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "en",
+              "source_text": "First post\n\nA few words about the launch.",
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            },
+            {
+              "approved_text": null,
+              "draft_id": 1,
+              "locale": "ru",
+              "source_text": "Первый пост\n\nНемного текста о запуске.",
+              "updated_at": "2026-08-20T09:00:00.000Z"
+            }
+          ],
+          "sql": "SELECT draft_id, locale, source_text, approved_text, updated_at FROM post_locales ORDER BY draft_id, locale"
+        },
+        {
+          "rows": [
+            {
+              "draft_id": 1,
+              "position": 2,
+              "text_en": "Second post of the thread"
+            }
+          ],
+          "sql": "SELECT draft_id, position, text_en FROM draft_thread_parts ORDER BY draft_id, position"
+        },
+        {
+          "rows": [
+            {
+              "draft_id": 1,
+              "locale": "en",
+              "status": "queued"
+            },
+            {
+              "draft_id": 1,
+              "locale": "ru",
+              "status": "queued"
+            }
+          ],
+          "sql": "SELECT draft_id, locale, status FROM draft_story_cards ORDER BY draft_id, locale"
+        }
+      ],
+      "trigger": "telegram-translations loop"
+    }
+  ]
+}

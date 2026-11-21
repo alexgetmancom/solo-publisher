@@ -1,6 +1,7 @@
 import { CALLBACK_CASES } from "./cases-callbacks.ts";
 import { ENTRY_CASES } from "./cases-entry.ts";
 import { INTAKE_CASES } from "./cases-intake.ts";
+import { LOOP_CASES } from "./cases-loops.ts";
 import { NOTICE_CASES } from "./cases-notices.ts";
 import { OPS_CASES } from "./cases-ops.ts";
 import { POST_CASES } from "./cases-post.ts";
@@ -20,6 +21,7 @@ export const CASES: Case[] = [
   ...QUEUE_CASES,
   ...SETTINGS_CASES,
   ...NOTICE_CASES,
+  ...LOOP_CASES,
   ...OPS_CASES,
   ...CALLBACK_CASES,
 ];
