@@ -1,0 +1,1158 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "setup": ["UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'"],
+  "scenarios": [
+    {
+      "name": "drafts: create, read, list",
+      "steps": [
+        { "call": "drafts.list", "args": [[], 10] },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Привет",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[\"telegram\"]",
+              "mediaRuJson": "[ {\"w\": 1.0, \"2\": 1, \"a\": 1.50, \"1\": [1e21, 0.0000001, 123456789012345680000, -0.0]} ]",
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "clock": "2026-03-01T10:01:00.000Z" },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 2,
+              "textRu": "",
+              "textEnMachine": "",
+              "textEnApproved": "Approved",
+              "targetsJson": "[]",
+              "mediaRuJson": "{\"not\": \"an array\"}",
+              "textRuEntitiesJson": "[{\"type\":\"bold\",\"offset\":0,\"length\":1}]",
+              "storyPublishMode": "site_only"
+            }
+          ]
+        },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Третий",
+              "textEnMachine": "Third",
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]",
+              "storyPublishMode": "all"
+            }
+          ]
+        },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Broken",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": "[{",
+              "textRuEntitiesJson": "[]"
+            }
+          ],
+          "error": "any"
+        },
+        { "sql": "UPDATE post_locales SET media_json = 'null', entities_json = '[ ]' WHERE draft_id = 3 AND locale = 'ru'" },
+        { "sql": "UPDATE post_locales SET media_json = '[ {\"b\": 2.50e0, \"a\": \"\\u00e9\"} ]' WHERE draft_id = 3 AND locale = 'en'" },
+        { "sql": "DELETE FROM post_locales WHERE draft_id = 2 AND locale = 'ru'" },
+        { "call": "drafts.get", "args": [1] },
+        { "call": "drafts.get", "args": [2] },
+        { "call": "drafts.get", "args": [3] },
+        { "call": "drafts.get", "args": [99] },
+        { "call": "drafts.list", "args": [[1, 2], 10] },
+        { "call": "drafts.list", "args": [[1], 1] },
+        { "call": "drafts.list", "args": [[7], 5] }
+      ]
+    },
+    {
+      "name": "drafts: update and conditional update",
+      "steps": [
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Один",
+              "textEnMachine": "One",
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "clock": "2026-03-01T10:05:00.000Z" },
+        { "call": "drafts.update", "args": [1, { "targetsJson": "[\"telegram\"]" }] },
+        { "clock": "2026-03-01T10:06:00.000Z" },
+        {
+          "call": "drafts.update",
+          "args": [
+            1,
+            {
+              "textRu": "Два",
+              "mediaRuJson": "[{\"file\":\"a.jpg\",\"size\":10.0}]",
+              "textEnApproved": "Two",
+              "mediaEnJson": "{}",
+              "textEnEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "clock": "2026-03-01T10:07:00.000Z" },
+        {
+          "call": "drafts.update",
+          "args": [1, { "textEnApproved": null, "textRuEntitiesJson": null, "mediaRuJson": null, "textEnMachine": "Two (machine)" }]
+        },
+        { "call": "drafts.update", "args": [1, { "updatedAt": "2026-03-01T09:00:00.000Z", "textRu": "Явное время" }] },
+        { "clock": "2026-03-01T10:08:00.000Z" },
+        { "call": "drafts.update", "args": [1, { "textRu": "Не сохранится", "mediaEnJson": "[" }], "error": "any" },
+        { "call": "drafts.update", "args": [42, { "textRu": "Нет черновика" }] },
+        { "call": "drafts.updateIfCurrent", "args": [1, "needs_review", "2026-03-01T10:07:00.000Z", { "textRu": "Устаревшее чтение" }] },
+        { "sql": "UPDATE drafts SET status = 'scheduled' WHERE id = 1" },
+        { "call": "drafts.updateIfCurrent", "args": [1, "needs_review", "2026-03-01T09:00:00.000Z", { "textRu": "Статус уже другой" }] },
+        {
+          "call": "drafts.updateIfCurrent",
+          "args": [1, "scheduled", "2026-03-01T09:00:00.000Z", { "textRu": "Текущий", "targetsJson": "[\"site_ru\"]" }]
+        },
+        { "call": "drafts.updateIfCurrent", "args": [1, "scheduled", "2026-03-01T09:00:00.000Z", { "textRu": "Повтор того же чтения" }] },
+        { "call": "drafts.get", "args": [1] }
+      ]
+    },
+    {
+      "name": "drafts and thread parts: writes join a caller's transaction",
+      "steps": [
+        { "sql": "BEGIN" },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Откатится",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "call": "threadParts.append", "args": [1, { "textRu": "Часть", "entitiesRu": [], "media": [] }] },
+        { "sql": "ROLLBACK" },
+        { "sql": "BEGIN" },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Останется",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "clock": "2026-03-01T10:01:00.000Z" },
+        { "call": "drafts.update", "args": [1, { "textRu": "Откат точки сохранения", "mediaRuJson": "nope" }], "error": "any" },
+        { "call": "threadParts.append", "args": [1, { "textRu": "Часть", "entitiesRu": [], "media": [] }] },
+        { "sql": "COMMIT" },
+        { "call": "drafts.get", "args": [1] }
+      ]
+    },
+    {
+      "name": "thread parts: append, edit, renumber, replace",
+      "steps": [
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Корень",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "call": "threadParts.list", "args": [1] },
+        {
+          "call": "threadParts.append",
+          "args": [1, { "textRu": "Вторая", "entitiesRu": [{ "type": "bold", "offset": 0, "length": 6 }], "media": [] }]
+        },
+        { "clock": "2026-03-01T10:01:00.000Z" },
+        {
+          "call": "threadParts.append",
+          "args": [
+            1,
+            {
+              "textRu": "Третья",
+              "entitiesRu": [],
+              "media": [{ "kind": "photo", "path": "/media/3.jpg", "width": 1080.0 }],
+              "textEn": "Third"
+            }
+          ]
+        },
+        {
+          "call": "threadParts.append",
+          "args": [1, { "textRu": "Четвёртая", "entitiesRu": [], "media": [], "textEn": "Fourth", "textEnApproved": "Fourth!" }]
+        },
+        { "clock": "2026-03-01T10:02:00.000Z" },
+        { "call": "threadParts.update", "args": [1, 3, { "textRu": "Третья, правка", "entitiesRu": [], "media": [] }] },
+        { "call": "threadParts.update", "args": [1, 9, { "textRu": "Нет такой", "entitiesRu": [], "media": [] }] },
+        { "call": "threadParts.approveEnglish", "args": [1, 2, "Second, by hand"] },
+        { "call": "threadParts.approveEnglish", "args": [1, 9, "Missing"] },
+        { "clock": "2026-03-01T10:03:00.000Z" },
+        {
+          "call": "threadParts.setEnglish",
+          "args": [
+            1,
+            [{ "position": 2, "textEn": "Second" }, { "position": 4, "textEn": "Fourth (machine)" }, { "position": 9, "textEn": "Missing" }]
+          ]
+        },
+        { "call": "drafts.get", "args": [1] },
+        { "clock": "2026-03-01T10:04:00.000Z" },
+        { "call": "threadParts.remove", "args": [1, 2] },
+        { "call": "threadParts.remove", "args": [1, 9] },
+        { "call": "threadParts.list", "args": [1] },
+        { "clock": "2026-03-01T10:05:00.000Z" },
+        {
+          "call": "threadParts.replace",
+          "args": [
+            1,
+            [
+              { "textRu": "Новая вторая", "entitiesRu": [], "media": [], "textEn": "New second" },
+              { "textRu": "Новая третья", "entitiesRu": [{ "type": "italic" }], "media": [{ "kind": "video" }] }
+            ]
+          ]
+        },
+        { "call": "threadParts.list", "args": [1] },
+        { "call": "threadParts.replace", "args": [1, []] },
+        { "call": "threadParts.append", "args": [1, { "textRu": "Снова вторая", "entitiesRu": [], "media": [] }] },
+        { "call": "threadParts.append", "args": [2, { "textRu": "У другого черновика", "entitiesRu": [], "media": [] }] }
+      ]
+    },
+    {
+      "name": "draft translations: lease, lost lease, retries",
+      "nondeterministic": ["first.lockedBy", "second.lockedBy", "third.lockedBy", "fourth.lockedBy", "fifth.lockedBy"],
+      "steps": [
+        { "call": "draftTranslations.pending", "args": [1] },
+        { "call": "draftTranslations.claimDue", "args": [60000] },
+        { "call": "draftTranslations.queue", "args": [1] },
+        { "clock": "2026-03-01T10:00:01.000Z" },
+        { "call": "draftTranslations.queue", "args": [2] },
+        { "call": "draftTranslations.pending", "args": [1] },
+        { "call": "draftTranslations.claimDue", "args": [60000], "bind": "first" },
+        { "call": "draftTranslations.claimDue", "args": [60000], "bind": "second" },
+        { "call": "draftTranslations.claimDue", "args": [60000] },
+        { "call": "draftTranslations.fail", "args": [1, "translation:0:someone-else", "ignored", 3] },
+        { "call": "draftTranslations.settle", "args": [1, "translation:0:someone-else"] },
+        { "call": "draftTranslations.fail", "args": [1, { "$": "first.lockedBy" }, "model timed out", 3] },
+        { "call": "draftTranslations.claimDue", "args": [60000] },
+        { "clock": "2026-03-01T10:00:06.000Z" },
+        { "call": "draftTranslations.claimDue", "args": [60000], "bind": "third" },
+        { "clock": "2026-03-01T10:01:07.000Z" },
+        { "call": "draftTranslations.claimDue", "args": [60000], "bind": "fourth" },
+        { "call": "draftTranslations.settle", "args": [2, { "$": "second.lockedBy" }] },
+        { "call": "draftTranslations.settle", "args": [1, { "$": "third.lockedBy" }] },
+        { "call": "draftTranslations.fail", "args": [1, { "$": "third.lockedBy" }, "lost lease", 3] },
+        {
+          "call": "draftTranslations.fail",
+          "args": [
+            1,
+            { "$": "fourth.lockedBy" },
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 cut through a surrogate pair",
+            2
+          ]
+        },
+        { "call": "draftTranslations.pending", "args": [1] },
+        { "call": "draftTranslations.pending", "args": [2] },
+        { "call": "draftTranslations.queue", "args": [1] },
+        { "call": "draftTranslations.pending", "args": [1] },
+        {
+          "sql": "UPDATE draft_translations SET status = 'translating', locked_by = 'translation:1:abandoned', locked_at = NULL WHERE draft_id = 1"
+        },
+        { "call": "draftTranslations.claimDue", "args": [60000], "bind": "fifth" },
+        { "call": "draftTranslations.settle", "args": [1, { "$": "fifth.lockedBy" }] },
+        { "call": "draftTranslations.pending", "args": [1] }
+      ]
+    },
+    {
+      "name": "events: journal and cooldown",
+      "steps": [
+        { "call": "events.record", "args": [{ "type": "publish.failed", "severity": "error", "message": "Нет связи" }] },
+        {
+          "call": "events.record",
+          "args": [
+            {
+              "ref": "post:1",
+              "type": "publish.failed",
+              "severity": "warn",
+              "target": "telegram",
+              "message": "Повтор",
+              "details": { "attempt": 1.0, "nested": { "z": [true, null], "10": "x", "2": "y" } },
+              "cooldownSeconds": 3600
+            }
+          ]
+        },
+        { "clock": "2026-03-01T10:30:00.000Z" },
+        {
+          "call": "events.record",
+          "args": [
+            {
+              "ref": "post:1",
+              "type": "publish.failed",
+              "severity": "warn",
+              "target": "telegram",
+              "message": "Подавлено",
+              "cooldownSeconds": 3600
+            }
+          ]
+        },
+        {
+          "call": "events.record",
+          "args": [
+            {
+              "ref": "post:1",
+              "type": "publish.failed",
+              "severity": "warn",
+              "target": "threads_ru",
+              "message": "Другая цель",
+              "cooldownSeconds": 3600
+            }
+          ]
+        },
+        {
+          "call": "events.record",
+          "args": [{ "type": "publish.failed", "severity": "error", "message": "Без публикации, с паузой", "cooldownSeconds": 3600 }]
+        },
+        {
+          "call": "events.record",
+          "args": [
+            {
+              "ref": "post:1",
+              "type": "publish.failed",
+              "severity": "info",
+              "target": "telegram",
+              "message": "Без паузы",
+              "cooldownSeconds": 0
+            }
+          ]
+        },
+        { "clock": "2026-03-01T11:30:00.000Z" },
+        {
+          "call": "events.record",
+          "args": [
+            {
+              "ref": "post:1",
+              "type": "publish.failed",
+              "severity": "warn",
+              "target": "telegram",
+              "message": "Ровно на границе",
+              "cooldownSeconds": 3600
+            }
+          ]
+        },
+        { "clock": "2026-03-01T11:30:00.001Z" },
+        {
+          "call": "events.record",
+          "args": [
+            {
+              "ref": "post:1",
+              "type": "publish.failed",
+              "severity": "warn",
+              "target": "telegram",
+              "message": "Снова подавлено",
+              "cooldownSeconds": 3600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "studio posts: entity candidates",
+      "steps": [
+        {
+          "call": "studioPosts.replaceEntityCandidates",
+          "args": [
+            1,
+            [
+              { "kind": "company", "slug": "openai", "titleRu": "OpenAI", "titleEn": "OpenAI" },
+              { "kind": "model", "slug": "gpt", "titleRu": "GPT", "titleEn": null }
+            ],
+            "2026-03-01T10:00:00.000Z"
+          ]
+        },
+        {
+          "call": "studioPosts.replaceEntityCandidates",
+          "args": [2, [{ "kind": "topic", "slug": "ai", "titleRu": "ИИ", "titleEn": null }], "2026-03-01T10:00:00.000Z"]
+        },
+        { "call": "studioPosts.acceptEntityCandidates", "args": [1, "2026-03-01T10:01:00.000Z"] },
+        {
+          "call": "studioPosts.replaceEntityCandidates",
+          "args": [
+            1,
+            [{ "kind": "company", "slug": "anthropic", "titleRu": "Anthropic", "titleEn": "Anthropic" }],
+            "2026-03-01T10:02:00.000Z"
+          ]
+        },
+        {
+          "call": "studioPosts.replaceEntityCandidates",
+          "args": [
+            2,
+            [
+              { "kind": "topic", "slug": "ai", "titleRu": "ИИ", "titleEn": null },
+              { "kind": "topic", "slug": "ai", "titleRu": "Дубль", "titleEn": null }
+            ],
+            "2026-03-01T10:03:00.000Z"
+          ]
+        },
+        { "call": "studioPosts.replaceEntityCandidates", "args": [3, [], "2026-03-01T10:03:00.000Z"] },
+        { "call": "studioPosts.acceptEntityCandidates", "args": [9, "2026-03-01T10:04:00.000Z"] }
+      ]
+    },
+    {
+      "name": "studio posts: history, progress, failed targets",
+      "steps": [
+        { "call": "studioPosts.progress", "args": [1] },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Пост",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[\"telegram\",\"site_ru\"]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "call": "studioPosts.progress", "args": [1] },
+        { "call": "events.record", "args": [{ "ref": "draft:1", "type": "draft.created", "severity": "info", "message": "Создан" }] },
+        { "clock": "2026-03-01T10:01:00.000Z" },
+        {
+          "call": "events.record",
+          "args": [{ "ref": "post:7", "type": "publish.done", "severity": "info", "target": "telegram", "message": "Опубликовано" }]
+        },
+        { "call": "events.record", "args": [{ "ref": "draft:1", "type": "draft.edited", "severity": "info", "message": "Та же секунда" }] },
+        { "call": "events.record", "args": [{ "ref": "draft:2", "type": "draft.created", "severity": "info", "message": "Чужой" }] },
+        { "call": "studioPosts.history", "args": [1, null, 10] },
+        { "call": "studioPosts.history", "args": [1, 7, 10] },
+        { "call": "studioPosts.history", "args": [1, 7, 2] },
+        { "sql": "UPDATE drafts SET post_id = 7 WHERE id = 1" },
+        {
+          "sql": "INSERT INTO publish_jobs (publication_key, target, status, last_error, created_at, updated_at) VALUES ('post:7', 'telegram', 'failed', 'old failure', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('post:7', 'telegram', 'done', NULL, '2026-03-01T10:01:00.000Z', '2026-03-01T10:01:00.000Z'), ('post:7', 'threads_ru', 'queued', NULL, '2026-03-01T10:01:00.000Z', '2026-03-01T10:01:00.000Z'), ('post:7', 'threads_ru', 'verification_required', 'no proof', '2026-03-01T10:02:00.000Z', '2026-03-01T10:02:00.000Z'), ('post:7', 'x', 'failed', 'rate limited', '2026-03-01T10:02:00.000Z', '2026-03-01T10:02:00.000Z'), ('post:8', 'x', 'failed', 'other post', '2026-03-01T10:02:00.000Z', '2026-03-01T10:02:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, last_error, created_at, updated_at) VALUES ('post:7', 'site_ru', 'failed', 'render', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('post:7', 'refresh', 'failed', 'not a target', '2026-03-01T10:01:00.000Z', '2026-03-01T10:01:00.000Z'), ('post:7', 'site_en', 'done', NULL, '2026-03-01T10:01:00.000Z', '2026-03-01T10:01:00.000Z'), ('post:7', 'site_ru', 'failed', 'render again', '2026-03-01T10:02:00.000Z', '2026-03-01T10:02:00.000Z')"
+        },
+        { "call": "studioPosts.progress", "args": [1] },
+        { "call": "studioPosts.failedPublicationTargets", "args": [7] },
+        { "call": "studioPosts.failedPublicationTargets", "args": [9] }
+      ]
+    },
+    {
+      "name": "conversation sessions: revisions and conditional clear",
+      "steps": [
+        { "call": "conversationSessions.get", "args": [1, "post"] },
+        {
+          "call": "conversationSessions.save",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "edit_text",
+              "data": { "locale": "ru", "2": 2.0, "1": { "b": 1, "a": 2 } },
+              "controlMessageId": 100,
+              "active": 1,
+              "updatedAt": "2026-03-01T10:00:00.000Z",
+              "expiresAt": "2026-03-01T11:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.save",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "schedule_manual",
+              "data": { "locale": "en" },
+              "controlMessageId": 100,
+              "active": 1,
+              "expectedRevision": 1,
+              "updatedAt": "2026-03-01T10:01:00.000Z",
+              "expiresAt": null
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.save",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "edit_text",
+              "data": {},
+              "controlMessageId": 100,
+              "active": 1,
+              "expectedRevision": 1,
+              "updatedAt": "2026-03-01T10:02:00.000Z",
+              "expiresAt": null
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.save",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "schedule_manual",
+              "data": { "locale": "en", "value": "2026-03-02T09:00:00.000Z" },
+              "controlMessageId": 101,
+              "active": 1,
+              "preserveRevision": true,
+              "updatedAt": "2026-03-01T10:03:00.000Z",
+              "expiresAt": null
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.save",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "video",
+              "draftId": null,
+              "step": "asset",
+              "data": {},
+              "controlMessageId": null,
+              "active": 1,
+              "expectedRevision": 4,
+              "preserveRevision": true,
+              "updatedAt": "2026-03-01T10:03:00.000Z",
+              "expiresAt": null
+            }
+          ]
+        },
+        { "call": "conversationSessions.get", "args": [1, "post"] },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            { "actorId": 1, "kind": "post", "draftId": 5, "step": null, "expectedRevision": 2, "updatedAt": "2026-03-01T10:04:00.000Z" }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            { "actorId": 1, "kind": "post", "draftId": 5, "step": "", "expectedRevision": 2, "updatedAt": "2026-03-01T10:04:00.000Z" }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "edit_text",
+              "expectedRevision": 2,
+              "updatedAt": "2026-03-01T10:04:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 6,
+              "step": "schedule_manual",
+              "expectedRevision": 2,
+              "updatedAt": "2026-03-01T10:04:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": null,
+              "step": "schedule_manual",
+              "expectedRevision": 2,
+              "updatedAt": "2026-03-01T10:04:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "schedule_manual",
+              "expectedRevision": 1,
+              "updatedAt": "2026-03-01T10:04:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "post",
+              "draftId": 5,
+              "step": "schedule_manual",
+              "expectedRevision": 2,
+              "updatedAt": "2026-03-01T10:04:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "conversationSessions.clearIfCurrent",
+          "args": [{ "actorId": 1, "kind": "video", "draftId": null, "step": "asset", "updatedAt": "2026-03-01T10:05:00.000Z" }]
+        },
+        {
+          "call": "conversationSessions.save",
+          "args": [
+            {
+              "actorId": 2,
+              "kind": "settings",
+              "draftId": null,
+              "step": "timezone",
+              "data": { "back": "main" },
+              "controlMessageId": 7,
+              "active": 1,
+              "updatedAt": "2026-03-01T10:06:00.000Z",
+              "expiresAt": null
+            }
+          ]
+        },
+        { "call": "conversationSessions.retire", "args": [2, "settings", "2026-03-01T10:07:00.000Z"] },
+        { "call": "conversationSessions.retire", "args": [3, "intake", "2026-03-01T10:07:00.000Z"] },
+        { "call": "conversationSessions.get", "args": [2, "settings"] },
+        { "call": "conversationSessions.get", "args": [1, "video"] }
+      ]
+    },
+    {
+      "name": "studio queue: posts, videos, latest published",
+      "steps": [
+        { "call": "studioQueue.latestPublished", "args": [[1]] },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Первый",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 2,
+              "textRu": "Второй",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Третий",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "sql": "UPDATE drafts SET post_id = id + 100, scheduled_at = '2026-03-02T09:00:00.000Z' WHERE id IN (1, 2)" },
+        {
+          "sql": "INSERT INTO video_drafts (actor_id, label, status, created_at, updated_at) VALUES (1, 'Видео один', 'scheduled', '2026-03-01T09:00:00.000Z', '2026-03-01T10:00:00.000Z'), (2, 'Видео два', 'published', '2026-03-01T09:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'Видео три', 'draft', '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (video_draft_id, target, metadata_json, scheduled_at, status, published_at, created_at, updated_at) VALUES (1, 'youtube', '{}', '2026-03-02T09:00:00.000Z', 'published', '2026-03-01T12:00:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T12:00:00.000Z'), (1, 'tiktok', '{}', NULL, 'scheduled', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (2, 'youtube', '{}', NULL, 'published', '2026-03-01T13:00:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T13:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, published_at, updated_at) VALUES ('post:101', 'telegram', 'published', '2026-03-01T11:00:00.000Z', '2026-03-01T11:00:00.000Z'), ('post:101', 'threads_ru', 'failed', NULL, '2026-03-01T11:00:00.000Z'), ('post:102', 'telegram', 'published', '2026-03-01T14:00:00.000Z', '2026-03-01T14:00:00.000Z')"
+        },
+        { "call": "studioQueue.posts", "args": [[1, 2], 10] },
+        { "call": "studioQueue.posts", "args": [[1], 1] },
+        { "call": "studioQueue.posts", "args": [[], 10] },
+        { "call": "studioQueue.videos", "args": [[1, 2], 10] },
+        { "call": "studioQueue.videos", "args": [[1], 1] },
+        { "call": "studioQueue.latestPublished", "args": [[1]] },
+        { "call": "studioQueue.latestPublished", "args": [[1, 2]] },
+        { "call": "studioQueue.latestPublished", "args": [[2]] },
+        { "sql": "UPDATE video_targets SET published_at = '2026-03-01T11:00:00.000Z' WHERE id = 1" },
+        { "call": "studioQueue.latestPublished", "args": [[1]] },
+        { "sql": "UPDATE publication_targets SET published_at = NULL WHERE publication_key = 'post:101'" },
+        { "call": "studioQueue.latestPublished", "args": [[1]] },
+        { "call": "studioQueue.latestPublished", "args": [[]] },
+        { "call": "studioQueue.videoTargets", "args": [[]] },
+        { "call": "studioQueue.videoTargets", "args": [[1, 2, 3]] }
+      ]
+    },
+    {
+      "name": "actionable issues: the one definition of needs attention",
+      "steps": [
+        { "call": "actionableIssues.list", "args": [] },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Пост один",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 2,
+              "textRu": "Пост два",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Без публикации",
+              "textEnMachine": null,
+              "textEnApproved": null,
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "sql": "UPDATE drafts SET post_id = id + 10 WHERE id IN (1, 2)" },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, updated_at) VALUES ('post:11', 'telegram', 'failed', '2026-03-01T10:05:00.000Z'), ('post:11', 'threads_ru', 'verification_required', '2026-03-01T10:06:00.000Z'), ('post:11', 'site_ru', 'failed', '2026-03-01T10:07:00.000Z'), ('post:11', 'x', 'published', '2026-03-01T10:08:00.000Z'), ('post:12', 'telegram', 'failed', '2026-03-01T10:04:00.000Z'), ('post:99', 'telegram', 'failed', '2026-03-01T10:09:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:11', 'site_ru', 'failed', '2026-03-01T10:00:00.000Z', '2026-03-01T10:05:00.000Z'), ('post:12', 'refresh', 'failed', '2026-03-01T10:00:00.000Z', '2026-03-01T10:03:00.000Z'), ('post:12', 'site_en', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:10:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, status, template_version, created_at, updated_at) VALUES (1, 'ru', 'h1', 'Заголовок', 'failed', 'v1', '2026-03-01T10:00:00.000Z', '2026-03-01T10:05:00.000Z'), (3, 'en', 'h3', 'Headline', 'failed', 'v1', '2026-03-01T10:00:00.000Z', '2026-03-01T10:02:00.000Z'), (2, 'ru', 'h2', 'Готово', 'ready', 'v1', '2026-03-01T10:00:00.000Z', '2026-03-01T10:11:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_drafts (actor_id, label, status, created_at, updated_at) VALUES (1, 'Пишется', 'draft', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (2, 'Запланировано', 'scheduled', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 'Отменено', 'cancelled', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (video_draft_id, target, metadata_json, status, created_at, updated_at) VALUES (1, 'youtube', '{}', 'failed', '2026-03-01T09:00:00.000Z', '2026-03-01T10:12:00.000Z'), (2, 'youtube', '{}', 'verification_required', '2026-03-01T09:00:00.000Z', '2026-03-01T10:05:00.000Z'), (2, 'tiktok', '{}', 'failed', '2026-03-01T09:00:00.000Z', '2026-03-01T10:01:00.000Z'), (3, 'youtube', '{}', 'failed', '2026-03-01T09:00:00.000Z', '2026-03-01T10:13:00.000Z')"
+        },
+        { "call": "actionableIssues.list", "args": [] },
+        { "call": "actionableIssues.list", "args": [[]] },
+        { "call": "actionableIssues.list", "args": [[1]] },
+        { "call": "actionableIssues.list", "args": [[2, 3]] }
+      ]
+    },
+    {
+      "name": "studio settings: profile, preferences, reminders",
+      "steps": [
+        { "call": "studioSettings.profile", "args": [] },
+        { "call": "studioSettings.saveProfile", "args": [{ "timezone": "Europe/Moscow", "updatedAt": "2026-03-01T10:00:00.000Z" }] },
+        {
+          "call": "studioSettings.saveProfile",
+          "args": [
+            {
+              "timezoneLabel": "Москва",
+              "siteEnabled": 1,
+              "videoPrepareLeadMinutes": 30,
+              "videoRetentionHours": 48,
+              "nameJson": { "en": "Alex", "ru": "Алекс" },
+              "taglineJson": { "en": "Notes", "ru": "Заметки" },
+              "aboutJson": { "en": "About", "ru": "О себе" },
+              "bioJson": { "en": "Bio \"quoted\"", "ru": "Био\nстроки" },
+              "siteTimezoneJson": { "en": "America/New_York", "ru": "" },
+              "profilesJson": { "en": [{ "label": "X", "url": "https://x.com/a" }], "ru": [] },
+              "defaultTargetsJson": ["telegram", "site_ru"],
+              "updatedAt": "2026-03-01T10:01:00.000Z"
+            }
+          ]
+        },
+        { "call": "studioSettings.profile", "args": [] },
+        { "call": "studioSettings.notifications", "args": [1] },
+        {
+          "call": "studioSettings.saveNotifications",
+          "args": [
+            {
+              "actorId": 1,
+              "videoRemindersEnabled": 1,
+              "postRemindersEnabled": 0,
+              "reminderMinutes": 10,
+              "completionEnabled": 1,
+              "updatedAt": "2026-03-01T10:02:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "studioSettings.saveNotifications",
+          "args": [
+            {
+              "actorId": 1,
+              "videoRemindersEnabled": 0,
+              "postRemindersEnabled": 1,
+              "reminderMinutes": 15,
+              "completionEnabled": 0,
+              "updatedAt": "2026-03-01T10:03:00.000Z"
+            }
+          ]
+        },
+        { "call": "studioSettings.notifications", "args": [1] },
+        { "call": "studioSettings.locale", "args": [1] },
+        { "call": "studioSettings.timezone", "args": [1] },
+        { "call": "studioSettings.saveLocale", "args": [{ "actorId": 1, "locale": "ru", "updatedAt": "2026-03-01T10:04:00.000Z" }] },
+        { "call": "studioSettings.timezone", "args": [1] },
+        {
+          "call": "studioSettings.saveTimezone",
+          "args": [{ "actorId": 1, "timezone": "Asia/Tbilisi", "updatedAt": "2026-03-01T10:05:00.000Z" }]
+        },
+        { "call": "studioSettings.saveTimezone", "args": [{ "actorId": 2, "timezone": "UTC", "updatedAt": "2026-03-01T10:05:00.000Z" }] },
+        { "call": "studioSettings.saveLocale", "args": [{ "actorId": 2, "locale": "ru", "updatedAt": "2026-03-01T10:06:00.000Z" }] },
+        { "call": "studioSettings.locale", "args": [1] },
+        { "call": "studioSettings.timezone", "args": [1] },
+        { "call": "studioSettings.locale", "args": [2] },
+        { "call": "studioSettings.backup", "args": [] },
+        { "call": "studioSettings.saveBackup", "args": [{ "enabled": 0, "updatedAt": "2026-03-01T10:07:00.000Z" }] },
+        { "call": "studioSettings.saveBackup", "args": [{ "enabled": 1, "updatedAt": "2026-03-01T10:08:00.000Z" }] },
+        { "call": "studioSettings.backup", "args": [] },
+        { "call": "studioSettings.youtubeSettings", "args": [] },
+        { "call": "studioSettings.saveYoutubeSettings", "args": [{ "signature": "— подписка", "updatedAt": "2026-03-01T10:09:00.000Z" }] },
+        { "call": "studioSettings.saveYoutubeSettings", "args": [{ "signature": "", "updatedAt": "2026-03-01T10:10:00.000Z" }] },
+        { "call": "studioSettings.youtubeSettings", "args": [] },
+        {
+          "sql": "INSERT INTO studio_notification_jobs (actor_id, ref, kind, run_at, status, created_at, updated_at) VALUES (1, 'draft:1', 'post.reminder', '2026-03-01T11:00:00.000Z', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'draft:1', 'post.completion', '2026-03-01T11:00:00.000Z', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'draft:2', 'post.reminder', '2026-03-01T11:00:00.000Z', 'sent', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'video:1', 'video.reminder', '2026-03-01T11:00:00.000Z', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (2, 'draft:3', 'post.reminder', '2026-03-01T11:00:00.000Z', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'draft:4', 'POST.reminder', '2026-03-01T11:00:00.000Z', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'draft:5', 'postscript', '2026-03-01T11:00:00.000Z', 'queued', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        { "call": "studioSettings.cancelQueuedReminders", "args": [1, "post", "2026-03-01T10:11:00.000Z"] },
+        { "call": "studioSettings.cancelQueuedReminders", "args": [1, "post", "2026-03-01T10:12:00.000Z"] },
+        { "call": "studioSettings.cancelQueuedReminders", "args": [1, "video", "2026-03-01T10:13:00.000Z"] },
+        { "sql": "DELETE FROM studio_profile" },
+        { "call": "studioSettings.profile", "args": [] }
+      ]
+    },
+    {
+      "name": "studio media assets: content-addressed per owner",
+      "steps": [
+        { "call": "studioMediaAssets.list", "args": [[1], 10] },
+        {
+          "call": "studioMediaAssets.insertIfAbsent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "photo",
+              "mimeType": "image/jpeg",
+              "filename": "a.jpg",
+              "localPath": "/data/a.jpg",
+              "byteSize": 1024,
+              "sha256": "aaa",
+              "source": "telegram",
+              "createdAt": "2026-03-01T10:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "studioMediaAssets.insertIfAbsent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "photo",
+              "mimeType": "image/jpeg",
+              "filename": "again.jpg",
+              "localPath": "/data/again.jpg",
+              "byteSize": 1024,
+              "sha256": "aaa",
+              "source": "upload",
+              "createdAt": "2026-03-01T10:01:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "studioMediaAssets.insertIfAbsent",
+          "args": [
+            {
+              "actorId": 2,
+              "kind": "photo",
+              "mimeType": "image/jpeg",
+              "filename": "a.jpg",
+              "localPath": "/data/b.jpg",
+              "byteSize": 1024,
+              "sha256": "aaa",
+              "source": "telegram",
+              "createdAt": "2026-03-01T10:02:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "studioMediaAssets.insertIfAbsent",
+          "args": [
+            {
+              "actorId": 1,
+              "kind": "video",
+              "mimeType": "video/mp4",
+              "filename": "v.mp4",
+              "localPath": "/data/v.mp4",
+              "byteSize": 9000000000,
+              "sha256": "bbb",
+              "source": "upload",
+              "createdAt": "2026-03-01T10:03:00.000Z"
+            }
+          ]
+        },
+        { "call": "studioMediaAssets.findByOwnerHash", "args": [1, "aaa"] },
+        { "call": "studioMediaAssets.findByOwnerHash", "args": [3, "aaa"] },
+        { "call": "studioMediaAssets.get", "args": [3] },
+        { "call": "studioMediaAssets.get", "args": [2] },
+        { "call": "studioMediaAssets.get", "args": [9] },
+        { "call": "studioMediaAssets.list", "args": [[1, 2], 10] },
+        { "call": "studioMediaAssets.list", "args": [[1], 1] },
+        { "call": "studioMediaAssets.list", "args": [[], 10] },
+        { "call": "studioMediaAssets.require", "args": [[1], []] },
+        { "call": "studioMediaAssets.require", "args": [[1], [4, 1, 4]] },
+        { "call": "studioMediaAssets.require", "args": [[1], [1, 3]] },
+        { "call": "studioMediaAssets.require", "args": [[], [1]] },
+        { "call": "studioMediaAssets.require", "args": [[1, 2], [3, 1]] }
+      ]
+    },
+    {
+      "name": "studio videos: drafts, targets, jobs, history",
+      "steps": [
+        { "call": "studioVideos.get", "args": [1] },
+        {
+          "sql": "INSERT INTO video_drafts (actor_id, locale, label, status, scheduled_at, game, hook, script, script_source, opening_line, control_chat_id, control_message_id, created_at, updated_at) VALUES (1, 'en', 'Clip', 'scheduled', '2026-03-02T09:00:00.000Z', 'chess', 'Wait for it', 'Line one', 'author', 'Line one', 555, 42, '2026-03-01T09:00:00.000Z', '2026-03-01T10:00:00.000Z'), (1, 'ru', 'Ролик', 'draft', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (2, 'ru', 'Чужой', 'draft', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T11:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (video_draft_id, target, metadata_json, scheduled_at, status, delivery_provider, external_id, external_url, published_at, last_error, created_at, updated_at) VALUES (1, 'youtube', '{\"title\": \"Clip\", \"tags\": [\"a\", \"b\"], \"duration\": 12.0, \"ratio\": 0.1e1, \"views\": 123456789012345680000}', '2026-03-02T09:00:00.000Z', 'scheduled', 'native', NULL, NULL, NULL, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 'tiktok', '{}', NULL, 'failed', 'upload-post', 'tt1', 'https://t.tt/1', NULL, 'quota', '2026-03-01T09:00:00.000Z', '2026-03-01T09:10:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_jobs (video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (1, 1, 'prepare', '2026-03-02T08:45:00.000Z', 'queued', 0, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 2, 'publish', '2026-03-02T09:00:00.000Z', 'failed', 3, '2026-03-01T09:00:00.000Z', '2026-03-01T09:10:00.000Z'), (1, NULL, 'retention', '2026-03-03T09:00:00.000Z', 'queued', 0, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "events.record",
+          "args": [{ "ref": "video:1", "type": "video.scheduled", "severity": "info", "message": "Запланировано" }]
+        },
+        {
+          "call": "events.record",
+          "args": [{ "ref": "video:01", "type": "video.legacy", "severity": "warn", "target": "youtube", "message": "Старый ключ" }]
+        },
+        { "call": "events.record", "args": [{ "ref": "video:2", "type": "video.scheduled", "severity": "info", "message": "Другое" }] },
+        { "call": "studioVideos.get", "args": [1] },
+        { "call": "studioVideos.list", "args": [[1], 10] },
+        { "call": "studioVideos.list", "args": [[1, 2], 2] },
+        { "call": "studioVideos.list", "args": [[], 2] },
+        { "call": "studioVideos.targets", "args": [1] },
+        { "call": "studioVideos.targets", "args": [2] },
+        { "call": "studioVideos.jobs", "args": [1] },
+        { "call": "studioVideos.history", "args": ["video:1", 10] },
+        { "call": "studioVideos.history", "args": ["video:01", 10] },
+        { "call": "studioVideos.history", "args": ["video:1", 1] },
+        { "call": "studioVideos.history", "args": ["legacy", 10] }
+      ]
+    },
+    {
+      "name": "entity enrichment: catalogue and links",
+      "steps": [
+        {
+          "call": "drafts.create",
+          "args": [
+            {
+              "actorId": 1,
+              "textRu": "Про OpenAI",
+              "textEnMachine": "About OpenAI",
+              "textEnApproved": "About OpenAI, reviewed",
+              "targetsJson": "[]",
+              "mediaRuJson": null,
+              "textRuEntitiesJson": "[]"
+            }
+          ]
+        },
+        { "call": "entityEnrichment.locales", "args": [1] },
+        { "call": "entityEnrichment.locales", "args": [2] },
+        {
+          "sql": "INSERT INTO knowledge_entities (kind, parent_entity_id, slug, title_ru, title_en, created_at, updated_at) VALUES ('company', NULL, 'acme-ai', 'Acme AI', 'Acme AI', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), ('model', 11, 'acme-5', 'GPT-5', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), ('person', NULL, 'someone', 'Кто-то', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), ('topic', NULL, 'ai', 'ИИ', 'AI', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO knowledge_entity_aliases (entity_id, alias, created_at) VALUES (12, 'acme5', '2026-03-01T09:00:00.000Z'), (11, 'acme ai', '2026-03-01T09:00:00.000Z')"
+        },
+        { "call": "entityEnrichment.entities", "args": [] },
+        { "call": "entityEnrichment.aliases", "args": [] },
+        { "call": "entityEnrichment.link", "args": [1, 11, "focus", "2026-03-01T10:00:00.000Z"] },
+        { "call": "entityEnrichment.link", "args": [1, 12, "mention", "2026-03-01T10:00:00.000Z"] },
+        { "call": "entityEnrichment.link", "args": [1, 11, "mention", "2026-03-01T10:05:00.000Z"] }
+      ]
+    },
+    {
+      "name": "channels: routing registry",
+      "steps": [
+        { "call": "channels.list", "args": [false] },
+        {
+          "call": "channels.upsert",
+          "args": [
+            {
+              "id": "youtube:ru:main",
+              "platform": "youtube",
+              "locale": "ru",
+              "provider": "native",
+              "providerAccountId": "UC1",
+              "targetId": null,
+              "label": "Основной",
+              "enabled": 1,
+              "source": "config"
+            },
+            "2026-03-01T10:00:00.000Z"
+          ]
+        },
+        {
+          "call": "channels.upsert",
+          "args": [
+            {
+              "id": "youtube:ru:second",
+              "platform": "youtube",
+              "locale": "ru",
+              "provider": "native",
+              "providerAccountId": "UC2",
+              "targetId": null,
+              "label": "Второй",
+              "enabled": 1,
+              "source": "operator"
+            },
+            "2026-03-01T10:01:00.000Z"
+          ]
+        },
+        {
+          "call": "channels.upsert",
+          "args": [
+            {
+              "id": "telegram:ru",
+              "platform": "telegram",
+              "locale": "ru",
+              "provider": "native",
+              "providerAccountId": null,
+              "targetId": "telegram",
+              "label": "Канал",
+              "enabled": 1,
+              "source": "config"
+            },
+            "2026-03-01T10:01:00.000Z"
+          ]
+        },
+        {
+          "call": "channels.upsert",
+          "args": [
+            {
+              "id": "threads:en",
+              "platform": "threads",
+              "locale": "en",
+              "provider": "native",
+              "providerAccountId": null,
+              "targetId": "threads_en",
+              "label": "Threads",
+              "enabled": 0,
+              "source": "config"
+            },
+            "2026-03-01T10:01:00.000Z"
+          ]
+        },
+        { "call": "channels.find", "args": ["youtube", "ru"] },
+        {
+          "call": "channels.upsert",
+          "args": [
+            {
+              "id": "youtube:ru:main",
+              "platform": "youtube",
+              "locale": "ru",
+              "provider": "native",
+              "providerAccountId": "UC1",
+              "targetId": null,
+              "label": "Основной, переподключён",
+              "enabled": 1,
+              "source": "operator"
+            },
+            "2026-03-01T10:02:00.000Z"
+          ]
+        },
+        { "call": "channels.find", "args": ["youtube", "ru"] },
+        { "call": "channels.disable", "args": ["youtube:ru:main", "2026-03-01T10:03:00.000Z"] },
+        { "call": "channels.disable", "args": ["missing", "2026-03-01T10:03:00.000Z"] },
+        { "call": "channels.find", "args": ["youtube", "ru"] },
+        { "call": "channels.find", "args": ["threads", "en"] },
+        { "call": "channels.get", "args": ["youtube:ru:main"] },
+        { "call": "channels.get", "args": ["missing"] },
+        { "call": "channels.list", "args": [true] },
+        { "call": "channels.list", "args": [false] },
+        {
+          "call": "channels.upsert",
+          "args": [
+            {
+              "id": "telegram:ru:copy",
+              "platform": "telegram",
+              "locale": "ru",
+              "provider": "native",
+              "providerAccountId": null,
+              "targetId": "telegram",
+              "label": "Копия",
+              "enabled": 1,
+              "source": "config"
+            },
+            "2026-03-01T10:04:00.000Z"
+          ]
+        }
+      ]
+    }
+  ]
+}

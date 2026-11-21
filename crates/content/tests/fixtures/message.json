@@ -1,0 +1,147 @@
+{
+  "first_line": [
+    { "text": null, "result": "fallback" },
+    { "text": "", "result": "fallback" },
+    { "text": "\n\n", "result": "fallback" },
+    { "text": "  Первая строка  \nвторая", "result": "Первая строка" },
+    { "text": "\r\n\r\n  третья\r\n", "result": "fallback" },
+    { "text": "один\rдва\nтри", "result": "один\rдва" },
+    { "text": " \n﻿x", "result": "fallback" },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "result": "🚀 Claude Code получил встроенный браузер"
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "result": "Claude Code now ships a built-in browser"
+    },
+    { "text": "", "result": "fallback" },
+    { "text": "   ", "result": "fallback" },
+    { "text": " ﻿ текст 　", "result": "текст" },
+    { "text": "начало с U+0085", "result": "начало с U+0085" },
+    { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "result": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb" },
+    {
+      "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+      "result": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+    },
+    { "text": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱", "result": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱" },
+    {
+      "text": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.",
+      "result": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь."
+    }
+  ],
+  "first_non_empty_line": [
+    { "text": null, "result": "fallback", "empty": "" },
+    { "text": "", "result": "fallback", "empty": "" },
+    { "text": "\n\n", "result": "fallback", "empty": "" },
+    { "text": "  Первая строка  \nвторая", "result": "Первая строка", "empty": "Первая строка" },
+    { "text": "\r\n\r\n  третья\r\n", "result": "третья", "empty": "третья" },
+    { "text": "один\rдва\nтри", "result": "один\rдва", "empty": "один\rдва" },
+    { "text": " \n﻿x", "result": "x", "empty": "x" },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "result": "🚀 Claude Code получил встроенный браузер",
+      "empty": "🚀 Claude Code получил встроенный браузер"
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "result": "Claude Code now ships a built-in browser",
+      "empty": "Claude Code now ships a built-in browser"
+    },
+    { "text": "", "result": "fallback", "empty": "" },
+    { "text": "   ", "result": "fallback", "empty": "" },
+    { "text": " ﻿ текст 　", "result": "текст", "empty": "текст" },
+    { "text": "начало с U+0085", "result": "начало с U+0085", "empty": "начало с U+0085" },
+    { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "result": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "empty": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb" },
+    {
+      "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+      "result": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+      "empty": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦"
+    },
+    {
+      "text": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱",
+      "result": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱",
+      "empty": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱"
+    },
+    {
+      "text": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.",
+      "result": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.",
+      "empty": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь."
+    }
+  ],
+  "fix_url_slashes": [
+    { "text": "https:\\\\example.com\\path\\file see C:\\Windows\\path", "fixed": "https://example.com/path/file see C:\\Windows\\path" },
+    { "text": "HTTP:/\\host\\a and http:\\\\x.y\\z\tnext\\word", "fixed": "HTTP://host/a and http://x.y/z\tnext\\word" },
+    { "text": "no url here \\ backslash", "fixed": "no url here \\ backslash" },
+    { "text": "hTtPs:\\ſ\\x ſtart", "fixed": "hTtPs:/ſ/x ſtart" },
+    { "text": "https:\\\\a.b\\c \\d", "fixed": "https://a.b/c \\d" },
+    { "text": "httpss:\\\\x", "fixed": "httpss:\\\\x" }
+  ],
+  "slugify": [
+    { "text": "Claude Code получил встроенный браузер", "post_id": 100, "slug": "claude-code-получил-встроенный-браузер" },
+    { "text": "Ёлки и йога", "post_id": 101, "slug": "ёлки-и-йога" },
+    { "text": "", "post_id": 102, "slug": "post-102" },
+    { "text": "!!!", "post_id": 103, "slug": "post-103" },
+    { "text": "😀 эмодзи 👨‍👩‍👧 и всё", "post_id": 104, "slug": "эмодзи-и-всё" },
+    { "text": "Лйнейка с combining breve", "post_id": 105, "slug": "лйнейка-с-combining-breve" },
+    { "text": "ÄÖÜ ß İstanbul ΣΊΣΥΦΟΣ", "post_id": 106, "slug": "i-stanbul" },
+    { "text": "--- dashes --- around ---", "post_id": 107, "slug": "dashes-around" },
+    {
+      "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "post_id": 108,
+      "slug": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "text": "слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово конец",
+      "post_id": 109,
+      "slug": "слово-слово-слово-слово-слово-слово-слово-слово-слово-слово-слово-слово-слово-сл"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "post_id": 110,
+      "slug": "claude-code-получил-встроенный-браузер-теперь-агент-сам-открывает-страницу-т-е-н"
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "post_id": 111,
+      "slug": "claude-code-now-ships-a-built-in-browser-the-agent-opens-the-page-itself-e-g-no-"
+    },
+    { "text": "", "post_id": 112, "slug": "post-112" },
+    { "text": "   ", "post_id": 113, "slug": "post-113" },
+    { "text": " ﻿ текст 　", "post_id": 114, "slug": "текст" },
+    { "text": "начало с U+0085", "post_id": 115, "slug": "начало-с-u-0085" },
+    { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "post_id": 116, "slug": "aaaaaaaaa-bbbbbbbbb" },
+    {
+      "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+      "post_id": 117,
+      "slug": "post-117"
+    },
+    { "text": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱", "post_id": 118, "slug": "post-118" },
+    {
+      "text": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.",
+      "post_id": 119,
+      "slug": "конец-фразы-deseret-после-точки-ещё-одна-фраза-здесь"
+    },
+    {
+      "text": "Он сказал: «Готово!» Потом ушёл. И т.д. и т.п. Вот так.",
+      "post_id": 120,
+      "slug": "он-сказал-готово-потом-ушёл-и-т-д-и-т-п-вот-так"
+    },
+    { "text": "Wait... what?! (Really.) \"Yes.\" Okay then, fine.", "post_id": 121, "slug": "wait-what-really-yes-okay-then-fine" },
+    {
+      "text": "Первый абзац.\n\nВторой абзац, длинный, очень длинный.\n\nТретий.",
+      "post_id": 122,
+      "slug": "первый-абзац-второй-абзац-длинный-очень-длинный-третий"
+    },
+    {
+      "text": "line one\nline two\nline three\nline four\nline five",
+      "post_id": 123,
+      "slug": "line-one-line-two-line-three-line-four-line-five"
+    },
+    {
+      "text": "https://example.com/a/very/long/path/that/never/breaks/and/keeps/going/on/and/on/forever",
+      "post_id": 124,
+      "slug": "https-example-com-a-very-long-path-that-never-breaks-and-keeps-going-on-and-on-f"
+    }
+  ]
+}

@@ -1,0 +1,964 @@
+{
+  "wanted": [
+    { "text": "", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "   ", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "  Русский текст  ", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "English only", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "Смешанный text", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "Ёж", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "123 🚀", "has_translator": false, "publishes_english": true, "wanted": false },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "publishes_english": true,
+      "wanted": false
+    },
+    { "text": "", "has_translator": true, "publishes_english": true, "wanted": false },
+    { "text": "   ", "has_translator": true, "publishes_english": true, "wanted": false },
+    { "text": "  Русский текст  ", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "English only", "has_translator": true, "publishes_english": true, "wanted": false },
+    { "text": "Смешанный text", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "Ёж", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "123 🚀", "has_translator": true, "publishes_english": true, "wanted": false },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "publishes_english": true,
+      "wanted": true
+    },
+    { "text": "", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "   ", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "  Русский текст  ", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "English only", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "Смешанный text", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "Ёж", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "publishes_english": false, "wanted": false },
+    { "text": "123 🚀", "has_translator": false, "publishes_english": false, "wanted": false },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "publishes_english": false,
+      "wanted": false
+    },
+    { "text": "", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "   ", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "  Русский текст  ", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "English only", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "Смешанный text", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "Ёж", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": true, "publishes_english": false, "wanted": false },
+    { "text": "123 🚀", "has_translator": true, "publishes_english": false, "wanted": false },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "publishes_english": false,
+      "wanted": false
+    },
+    { "text": "", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "   ", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "  Русский текст  ", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "English only", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "Смешанный text", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "Ёж", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "publishes_english": true, "wanted": false },
+    { "text": "123 🚀", "has_translator": false, "publishes_english": true, "wanted": false },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "publishes_english": true,
+      "wanted": false
+    },
+    { "text": "", "has_translator": true, "publishes_english": true, "wanted": false },
+    { "text": "   ", "has_translator": true, "publishes_english": true, "wanted": false },
+    { "text": "  Русский текст  ", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "English only", "has_translator": true, "publishes_english": true, "wanted": false },
+    { "text": "Смешанный text", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "Ёж", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": true, "publishes_english": true, "wanted": true },
+    { "text": "123 🚀", "has_translator": true, "publishes_english": true, "wanted": false },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "publishes_english": true,
+      "wanted": true
+    }
+  ],
+  "translations": [
+    { "text": "", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "   ", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "Please provide the text", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "" },
+    { "text": "", "has_translator": false, "response": "Fine.", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "   ", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "Please provide the text", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "" },
+    { "text": "   ", "has_translator": false, "response": "Fine.", "request": null, "result": "" },
+    { "text": "  Русский текст  ", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "Русский текст" },
+    { "text": "  Русский текст  ", "has_translator": false, "response": "", "request": null, "result": "Русский текст" },
+    { "text": "  Русский текст  ", "has_translator": false, "response": "   ", "request": null, "result": "Русский текст" },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": false,
+      "response": "Please provide the text",
+      "request": null,
+      "result": "Русский текст"
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": false,
+      "response": "I'd be happy to help!",
+      "request": null,
+      "result": "Русский текст"
+    },
+    { "text": "  Русский текст  ", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "Русский текст" },
+    { "text": "  Русский текст  ", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "Русский текст" },
+    { "text": "  Русский текст  ", "has_translator": false, "response": "Fine.", "request": null, "result": "Русский текст" },
+    { "text": "English only", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "   ", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "Please provide the text", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": false, "response": "Fine.", "request": null, "result": "English only" },
+    { "text": "Смешанный text", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "Смешанный text" },
+    { "text": "Смешанный text", "has_translator": false, "response": "", "request": null, "result": "Смешанный text" },
+    { "text": "Смешанный text", "has_translator": false, "response": "   ", "request": null, "result": "Смешанный text" },
+    {
+      "text": "Смешанный text",
+      "has_translator": false,
+      "response": "Please provide the text",
+      "request": null,
+      "result": "Смешанный text"
+    },
+    { "text": "Смешанный text", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "Смешанный text" },
+    { "text": "Смешанный text", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "Смешанный text" },
+    { "text": "Смешанный text", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "Смешанный text" },
+    { "text": "Смешанный text", "has_translator": false, "response": "Fine.", "request": null, "result": "Смешанный text" },
+    { "text": "Ёж", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "   ", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "Please provide the text", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "Ёж" },
+    { "text": "Ёж", "has_translator": false, "response": "Fine.", "request": null, "result": "Ёж" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "   ", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "Please provide the text", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "Ѐ ѐ Ӿ", "has_translator": false, "response": "Fine.", "request": null, "result": "Ѐ ѐ Ӿ" },
+    { "text": "123 🚀", "has_translator": false, "response": "  Russian text  ", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "   ", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "Please provide the text", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "I'd be happy to help!", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "PLEASE PROVIDE", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "Pleaſe provide", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": false, "response": "Fine.", "request": null, "result": "123 🚀" },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "  Russian text  ",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "   ",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "Please provide the text",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "I'd be happy to help!",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "PLEASE PROVIDE",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "Pleaſe provide",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": false,
+      "response": "Fine.",
+      "request": null,
+      "result": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+    },
+    { "text": "", "has_translator": true, "response": "  Russian text  ", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "   ", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "Please provide the text", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "I'd be happy to help!", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "PLEASE PROVIDE", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "Pleaſe provide", "request": null, "result": "" },
+    { "text": "", "has_translator": true, "response": "Fine.", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "  Russian text  ", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "   ", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "Please provide the text", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "I'd be happy to help!", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "PLEASE PROVIDE", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "Pleaſe provide", "request": null, "result": "" },
+    { "text": "   ", "has_translator": true, "response": "Fine.", "request": null, "result": "" },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "  Russian text  ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Russian text"
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "   ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "Please provide the text",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "I'd be happy to help!",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "PLEASE PROVIDE",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "Pleaſe provide",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Pleaſe provide"
+    },
+    {
+      "text": "  Русский текст  ",
+      "has_translator": true,
+      "response": "Fine.",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Русский текст" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Fine."
+    },
+    { "text": "English only", "has_translator": true, "response": "  Russian text  ", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "   ", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "Please provide the text", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "I'd be happy to help!", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "PLEASE PROVIDE", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "Pleaſe provide", "request": null, "result": "English only" },
+    { "text": "English only", "has_translator": true, "response": "Fine.", "request": null, "result": "English only" },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "  Russian text  ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Russian text"
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "   ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "Please provide the text",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "I'd be happy to help!",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "PLEASE PROVIDE",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "Pleaſe provide",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Pleaſe provide"
+    },
+    {
+      "text": "Смешанный text",
+      "has_translator": true,
+      "response": "Fine.",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Смешанный text" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Fine."
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "  Russian text  ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Russian text"
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "   ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "Please provide the text",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "I'd be happy to help!",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "PLEASE PROVIDE",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "Pleaſe provide",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Pleaſe provide"
+    },
+    {
+      "text": "Ёж",
+      "has_translator": true,
+      "response": "Fine.",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ёж" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Fine."
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "  Russian text  ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Russian text"
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "   ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "Please provide the text",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "I'd be happy to help!",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "PLEASE PROVIDE",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "Pleaſe provide",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Pleaſe provide"
+    },
+    {
+      "text": "Ѐ ѐ Ӿ",
+      "has_translator": true,
+      "response": "Fine.",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          { "role": "user", "content": "Ѐ ѐ Ӿ" }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Fine."
+    },
+    { "text": "123 🚀", "has_translator": true, "response": "  Russian text  ", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "   ", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "Please provide the text", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "I'd be happy to help!", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "PLEASE PROVIDE", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "Pleaſe provide", "request": null, "result": "123 🚀" },
+    { "text": "123 🚀", "has_translator": true, "response": "Fine.", "request": null, "result": "123 🚀" },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "  Russian text  ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Russian text"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "   ",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "Please provide the text",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "I'd be happy to help!",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "PLEASE PROVIDE",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": null
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "Pleaſe provide",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Pleaſe provide"
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "has_translator": true,
+      "response": "Fine.",
+      "request": {
+        "model": "deepseek-chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Translate the user message into English, adapted for Twitter: informal and natural, the way someone who knows the subject writes for an audience that follows it.\nTranslate only. Keep the author's structure, order, length, facts and numbers. Do not rewrite, reorder, shorten, expand, or add anything of your own.\nOutput only the translation. No explanations, no hashtags, no commentary, no asking for more input.\nPreserve product names, version numbers, commands, URLs, emojis, paragraph breaks, and the bullet character •.\nKeep lowercase list items lowercase. Avoid em dashes and word-for-word phrasing that reads translated.\nFor every term, use the established English word that people in that subject already use, whatever the subject is. Never invent a term and never translate a term literally when the field has its own name for it."
+          },
+          {
+            "role": "user",
+            "content": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude"
+          }
+        ],
+        "temperature": 0.1
+      },
+      "result": "Fine."
+    }
+  ]
+}

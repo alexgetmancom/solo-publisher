@@ -1,0 +1,539 @@
+{
+  "cases": [
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [],
+      "result": [{ "type": "bold", "offset": 0, "length": 27 }]
+    },
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 27 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 27 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 27 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "🚨 OpenAI возвращает лимиты\n\nСо следующей недели.",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 27 }, { "type": "bold", "length": 3 }]
+    },
+    { "text": "Заголовок\n\nТело с ссылкой на что-то тут", "entities": [], "result": [{ "type": "bold", "offset": 0, "length": 9 }] },
+    {
+      "text": "Заголовок\n\nТело с ссылкой на что-то тут",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 9 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "Заголовок\n\nТело с ссылкой на что-то тут",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Заголовок\n\nТело с ссылкой на что-то тут",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Заголовок\n\nТело с ссылкой на что-то тут",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Заголовок\n\nТело с ссылкой на что-то тут",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "Заголовок\n\nТело с ссылкой на что-то тут",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "bold", "length": 3 }]
+    },
+    { "text": "Одна строка без тела", "entities": [], "result": [] },
+    {
+      "text": "Одна строка без тела",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "Одна строка без тела",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Одна строка без тела",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Одна строка без тела",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Одна строка без тела",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    { "text": "Одна строка без тела", "entities": [{ "type": "bold", "length": 3 }], "result": [{ "type": "bold", "length": 3 }] },
+    { "text": "Строка\nсразу тело без пустой строки", "entities": [], "result": [] },
+    {
+      "text": "Строка\nсразу тело без пустой строки",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "Строка\nсразу тело без пустой строки",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Строка\nсразу тело без пустой строки",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Строка\nсразу тело без пустой строки",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Строка\nсразу тело без пустой строки",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "Строка\nсразу тело без пустой строки",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "length": 3 }]
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [],
+      "result": []
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "ддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "length": 3 }]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [],
+      "result": [{ "type": "bold", "offset": 0, "length": 120 }]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 120 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 120 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "дддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд\n\nТело",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 120 }, { "type": "bold", "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [],
+      "result": [{ "type": "bold", "offset": 0, "length": 120 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 120 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 120 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 120 }, { "type": "bold", "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [],
+      "result": []
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\n\nТело",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "length": 3 }]
+    },
+    { "text": "Заголовок\n\nТело", "entities": [], "result": [{ "type": "bold", "offset": 0, "length": 9 }] },
+    {
+      "text": "Заголовок\n\nТело",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 9 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "Заголовок\n\nТело",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Заголовок\n\nТело",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Заголовок\n\nТело",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Заголовок\n\nТело",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "Заголовок\n\nТело",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "bold", "length": 3 }]
+    },
+    { "text": "Title with spaces   \r\n \t \r\n  body", "entities": [], "result": [{ "type": "bold", "offset": 0, "length": 17 }] },
+    {
+      "text": "Title with spaces   \r\n \t \r\n  body",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 17 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "Title with spaces   \r\n \t \r\n  body",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Title with spaces   \r\n \t \r\n  body",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 17 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Title with spaces   \r\n \t \r\n  body",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Title with spaces   \r\n \t \r\n  body",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 17 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "Title with spaces   \r\n \t \r\n  body",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 17 }, { "type": "bold", "length": 3 }]
+    },
+    { "text": "Title\n\n   ", "entities": [], "result": [] },
+    {
+      "text": "Title\n\n   ",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "Title\n\n   ",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Title\n\n   ",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Title\n\n   ",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Title\n\n   ",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    { "text": "Title\n\n   ", "entities": [{ "type": "bold", "length": 3 }], "result": [{ "type": "bold", "length": 3 }] },
+    { "text": "Title\n\n x", "entities": [], "result": [{ "type": "bold", "offset": 0, "length": 5 }] },
+    {
+      "text": "Title\n\n x",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 5 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "Title\n\n x",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Title\n\n x",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 5 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Title\n\n x",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Title\n\n x",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 5 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "Title\n\n x",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 5 }, { "type": "bold", "length": 3 }]
+    },
+    { "text": "   \n\nbody", "entities": [], "result": [] },
+    {
+      "text": "   \n\nbody",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "   \n\nbody",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "   \n\nbody",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "   \n\nbody",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "   \n\nbody",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    { "text": "   \n\nbody", "entities": [{ "type": "bold", "length": 3 }], "result": [{ "type": "bold", "length": 3 }] },
+    { "text": "\nTitle\n\nbody", "entities": [], "result": [] },
+    {
+      "text": "\nTitle\n\nbody",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }]
+    },
+    {
+      "text": "\nTitle\n\nbody",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "\nTitle\n\nbody",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "\nTitle\n\nbody",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "\nTitle\n\nbody",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "italic", "offset": 0, "length": 3 }]
+    },
+    { "text": "\nTitle\n\nbody", "entities": [{ "type": "bold", "length": 3 }], "result": [{ "type": "bold", "length": 3 }] },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [],
+      "result": [{ "type": "bold", "offset": 0, "length": 41 }]
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 41 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 41 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 41 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 41 }, { "type": "bold", "length": 3 }]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [],
+      "result": [{ "type": "bold", "offset": 0, "length": 40 }]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [{ "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }],
+      "result": [
+        { "type": "bold", "offset": 0, "length": 40 },
+        { "type": "text_link", "offset": 30, "length": 4, "url": "https://example.com" }
+      ]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [{ "type": "bold", "offset": 0, "length": 9 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 9 }]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [{ "type": "bold", "offset": 50, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 40 }, { "type": "bold", "offset": 50, "length": 3 }]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [{ "type": "bold", "offset": "2", "length": 3 }],
+      "result": [{ "type": "bold", "offset": "2", "length": 3 }]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [{ "type": "italic", "offset": 0, "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 40 }, { "type": "italic", "offset": 0, "length": 3 }]
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "entities": [{ "type": "bold", "length": 3 }],
+      "result": [{ "type": "bold", "offset": 0, "length": 40 }, { "type": "bold", "length": 3 }]
+    }
+  ]
+}

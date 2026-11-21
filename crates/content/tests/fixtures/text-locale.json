@@ -1,0 +1,273 @@
+{
+  "cases": [
+    { "text": "Сегодня разобрал, как мы используем React, TypeScript и Bun в проде — вышло короче, чем ожидал", "locale": "ru" },
+    { "text": "Разбор кейса: как Threads API, Instagram Graph и YouTube Data API считают просмотры по-разному", "locale": "ru" },
+    { "text": "Вышел новый пост про Threads: https://alexgetman.com/blog/threads-api #threads @alexgetman", "locale": "ru" },
+    { "text": "Today I shipped the new analytics dashboard and it finally reads the way I wanted", "locale": "en" },
+    { "text": "New analytics dashboard shipped today", "locale": "en" },
+    { "text": "Astra: Bun, Drizzle, SQLite, Hono, Astro, Biome, Lefthook, GitHub Actions", "locale": null },
+    { "text": "Astra, Bun, Threads API, YouTube Shorts, Instagram Reels — 2026", "locale": null },
+    { "text": "🔥🔥🔥", "locale": null },
+    { "text": "https://alexgetman.com @alexgetman #release", "locale": null },
+    { "text": "The channel «Алекс Гетман» is now live in English too, same posts, translated", "locale": null },
+    { "text": "`const x = 1` and `let y` are code, not prose at all here", "locale": "en" },
+    { "text": "www.example.com/path www.other.example/x and then some words follow here", "locale": "en" },
+    { "text": "Ελληνικά γράμματα δεν είναι ούτε κυριλλικά ούτε λατινικά εδώ", "locale": null },
+    { "text": "Smart 𝐛𝐨𝐥𝐝 𝐥𝐞𝐭𝐭𝐞𝐫𝐬 and the rest of an ordinary sentence", "locale": "en" },
+    { "text": "snake_case_words 9lives _under scored words making the count low", "locale": "en" },
+    { "text": "ÀÉÎÕÜ àéîõü çñ — Latin with diacritics written as a sentence here", "locale": "en" },
+    {
+      "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+      "locale": "ru"
+    },
+    {
+      "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+      "locale": "en"
+    },
+    { "text": "", "locale": null },
+    { "text": "   ", "locale": null },
+    { "text": " ﻿ текст 　", "locale": null },
+    { "text": "начало с U+0085", "locale": null },
+    { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "locale": null },
+    { "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", "locale": null },
+    { "text": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱", "locale": null },
+    { "text": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.", "locale": "ru" },
+    { "text": "Он сказал: «Готово!» Потом ушёл. И т.д. и т.п. Вот так.", "locale": "ru" },
+    { "text": "Wait... what?! (Really.) \"Yes.\" Okay then, fine.", "locale": null },
+    { "text": "Первый абзац.\n\nВторой абзац, длинный, очень длинный.\n\nТретий.", "locale": "ru" },
+    { "text": "line one\nline two\nline three\nline four\nline five", "locale": "en" },
+    { "text": "https://example.com/a/very/long/path/that/never/breaks/and/keeps/going/on/and/on/forever", "locale": null },
+    { "text": "Цена 3.5 руб. за шт. и 4.2 руб. за кг. Вот.", "locale": null },
+    { "text": "Ёлки и йога! Ёжик? Да… Нет.", "locale": null },
+    { "text": "x y z. Next sentence. Another.", "locale": null },
+    { "text": "Tab\tseparated\twords\tare\there and there", "locale": "en" },
+    {
+      "text": "…! 𝐁𝐨𝐥𝐝:\n• длинный\n\nт.е. Привет\n\nдлинный. 😀. мир.) мир.\n(скобки) — и? 😀 это — т.е..» ёжик https://example.com/путь?q=1.) и агентов:\n• 👨‍💻 𝐁𝐨𝐥𝐝? Code.» йога.» … агентов это Claude\n\nт.е.. 👍🏽, 👍🏽 пост.» API… https://example.com/путь?q=1 …, и длинный Привет:\n• 👍🏽:\n• ёжик — Claude.\n𝐁𝐨𝐥𝐝 Threads\n\nПривет, т.е..» пост.) агентов.) длинный 𝐁𝐨𝐥𝐝 — Claude? 𝐁𝐨𝐥𝐝? про\n\n… Dr., https://example.com/путь?q=1 Code… йога, 👨‍💻\n\nAPI:\n• мир… Claude — и\n\nTelegram! 𝐁𝐨𝐥𝐝.» Telegram… e.g.. мир.\n«цитата»… API",
+      "locale": "ru"
+    },
+    {
+      "text": "https://example.com/путь?q=1, т.е.… 🇷🇺 — «цитата» 👨‍💻? 👍🏽. ёжик\n\nдлинный. 𝐁𝐨𝐥𝐝.» Dr..» snake_case! агентов — https://example.com/путь?q=1 https://example.com/путь?q=1 пост «цитата»:\n• API, Claude.» Claude.) 😀\n\nйога Threads.) пост. это? API.» e.g. — e.g. Code! агентов? «цитата» про (скобки)… агентов… @alexgetman! Привет про snake_case! 👨‍💻:\n• длинный… ёжик — про? это! https://example.com/путь?q=1 и… Привет! это.) API.\n👍🏽:\n• Threads:\n• Telegram.» агентов… API — «цитата» snake_case — длинный Telegram\n\nдлинный? Threads Привет.» @alexgetman! длинный и Claude — 👨‍💻.) йога.\nт.е. — про, «цитата».) 👍🏽… e.g..\n«цитата» Claude т.е.! «цитата» #тег Code… Claude! Telegram, Threads. про про:\n• 🇷🇺 snake_case. агентов",
+      "locale": "ru"
+    },
+    {
+      "text": "https://example.com/путь?q=1:\n• ёжик. e.g. #тег агентов это. (скобки). 2*3. Threads 🇷🇺 — пост! 👍🏽.\nи:\n• ёжик\n\nПривет… (скобки)? https://example.com/путь?q=1… 😀.) 👍🏽… #тег — 👍🏽 Code:\n• https://example.com/путь?q=1 👨‍💻.) Claude Code.\n«цитата».) e.g. snake_case\n\nПривет мир.» 😀 Claude.» e.g.:\n• Threads? Привет\n\nПривет.» @alexgetman… 2*3? «цитата» 𝐁𝐨𝐥𝐝. API? 𝐁𝐨𝐥𝐝, API.\nпост? 🇷🇺, 𝐁𝐨𝐥𝐝! e.g.\n\nпост 🇷🇺 Dr., (скобки)! про 👨‍💻, агентов мир\n\n(скобки), «цитата» Привет… Telegram.» йога Telegram.) Claude. пост, т.е. https://example.com/путь?q=1.\nClaude Claude — API? Threads\n\nи? агентов\n\nёжик, …:\n• йога т.е.. API длинный! snake_case.\n2*3.) Claude.\nAPI.\nпост — пост:\n• …:\n• т.е. мир? т.е. т.е.? API, Threads https://example.com/путь?q=1 это.) 🇷🇺! 🇷🇺 Telegram? «цитата».» т.е..» https://example.com/путь?q=1. «цитата». @alexgetman. #тег.» пост\n\nDr. snake_case\n\n𝐁𝐨𝐥𝐝 — это.) snake_case. Привет Привет. йога — v2.1… 𝐁𝐨𝐥𝐝\n\nпост.\nагентов? мир Telegram (скобки). 𝐁𝐨𝐥𝐝! snake_case.) Dr..\n(скобки) «цитата» — 𝐁𝐨𝐥𝐝 ёжик? Code 😀.) про. Telegram.» мир",
+      "locale": "ru"
+    },
+    {
+      "text": "Code! 😀 Dr.\n\n👍🏽 йога… йога @alexgetman.» 👍🏽 — ….) e.g.. …\n\nйога.\nи т.е.:\n• пост! 👨‍💻 Threads — Telegram",
+      "locale": null
+    },
+    {
+      "text": "(скобки) — про… и! 🇷🇺 𝐁𝐨𝐥𝐝:\n• API «цитата»… Threads? 2*3.\nTelegram. Dr.. это 👨‍💻! 👍🏽. 😀.» про:\n• Telegram.\n2*3 ёжик, и! длинный.) Telegram, про. Telegram пост.) 🇷🇺 2*3.» 👍🏽 ёжик\n\nClaude ёжик, длинный.\nCode? «цитата» e.g. длинный и, ёжик — #тег e.g..\nCode. Threads. мир Claude! т.е.? v2.1.» это.\nт.е.? 2*3… v2.1\n\n2*3! и #тег API. агентов v2.1:\n• …:\n• длинный:\n• 😀 Привет.\n#тег, 👨‍💻 и.) 𝐁𝐨𝐥𝐝\n\nTelegram — 𝐁𝐨𝐥𝐝? #тег\n\nт.е.… 2*3 — длинный @alexgetman.» мир, API. пост:\n• Telegram? мир — ёжик пост\n\nт.е..\n… — йога.) 🇷🇺 snake_case:\n• Threads ёжик\n\n#тег:\n• 😀",
+      "locale": "ru"
+    },
+    {
+      "text": "@alexgetman:\n• ёжик Привет\n\ne.g.! «цитата»! «цитата»! v2.1 — 👍🏽.\nпро! 😀.» йога, https://example.com/путь?q=1… ёжик\n\n2*3! Dr., Dr.\n\nпро — Привет! @alexgetman @alexgetman — йога! Привет — Telegram длинный, пост! Telegram — Dr. Привет",
+      "locale": "ru"
+    },
+    {
+      "text": "2*3.) т.е.\n\nThreads\n\nv2.1. «цитата».» ёжик! пост snake_case. https://example.com/путь?q=1\n\n(скобки) 👍🏽.\n𝐁𝐨𝐥𝐝:\n• Code мир… Claude… пост пост. @alexgetman, йога\n\n…, (скобки).» 𝐁𝐨𝐥𝐝.\n…. Code! 𝐁𝐨𝐥𝐝 — пост:\n• Threads v2.1 https://example.com/путь?q=1! https://example.com/путь?q=1 … — 👨‍💻… v2.1 2*3.) Telegram.) #тег https://example.com/путь?q=1 — агентов:\n• @alexgetman.\nт.е., snake_case — #тег — ёжик! про — агентов? e.g.? ёжик 👍🏽, Dr..) Code ёжик? API:\n• длинный @alexgetman API Claude, 2*3 ёжик.\n…. про @alexgetman Code #тег.\nмир Threads! API длинный агентов v2.1… пост.) 😀.) мир это. ёжик. т.е.? 👨‍💻. https://example.com/путь?q=1\n\n… — т.е., API Claude snake_case, v2.1:\n• пост.» Code. API Threads:\n• (скобки)… Claude агентов! …\n\nsnake_case… длинный длинный… #тег.» 🇷🇺\n\n𝐁𝐨𝐥𝐝! … 😀, v2.1\n\ne.g. и e.g.. 🇷🇺\n\nмир… (скобки).» 2*3 😀 👍🏽 @alexgetman — Telegram — Code… и.\nагентов @alexgetman …! … Threads #тег 2*3 e.g., 👨‍💻 Привет Dr.\n\nйога",
+      "locale": "ru"
+    },
+    {
+      "text": "«цитата».) это? Threads.\n#тег агентов… #тег, Claude и.\n👨‍💻.» и йога #тег Dr.… 👨‍💻! e.g.… e.g.:\n• «цитата», 😀 🇷🇺! и! Claude, Dr. Code.» 2*3.) Привет\n\nи.\nэто.\n👍🏽… API. 👍🏽. пост — Dr. v2.1 Telegram.\nпост e.g. это «цитата»? Threads\n\ne.g.… это.» Dr..) 𝐁𝐨𝐥𝐝 про, @alexgetman — 👍🏽 …:\n• ёжик\n\n….» пост. мир.\nпро.) мир! https://example.com/путь?q=1:\n• и. пост… мир v2.1:\n• длинный! Threads Code — snake_case длинный.) #тег.) v2.1, v2.1.) пост… API:\n• Dr. — про «цитата» пост:\n• про — 👍🏽.\nёжик… https://example.com/путь?q=1 Telegram:\n• https://example.com/путь?q=1.\n@alexgetman 👍🏽? и snake_case Threads.\nи Dr.. 🇷🇺 и… API.) Привет.\nмир, (скобки) т.е.\n\ne.g.\n\n𝐁𝐨𝐥𝐝 агентов\n\n(скобки).) 🇷🇺 2*3 2*3 мир.\n…? …\n\nи? https://example.com/путь?q=1 ёжик v2.1! snake_case. Привет … …\n\n👍🏽\n\nдлинный? т.е.! длинный.) 2*3 Привет «цитата»! пост, 😀:\n• @alexgetman @alexgetman.) пост 👍🏽.) Claude.\n(скобки).\nClaude Threads.» (скобки)! v2.1 API.) API, … — Claude. 2*3 агентов? snake_case 🇷🇺 — йога… Привет Claude. API, (скобки) и Threads! v2.1? API пост.» Telegram 2*3, ёжик — Telegram.\nПривет длинный.» 🇷🇺 e.g..» API? 2*3, про\n\nйога это 🇷🇺.) про\n\nпро т.е. snake_case … Dr.. Telegram e.g.. API агентов? e.g.",
+      "locale": "ru"
+    },
+    {
+      "text": "ёжик:\n• мир.) 👍🏽 длинный:\n• 👨‍💻.) Привет, https://example.com/путь?q=1 API.) (скобки), API. Claude.» Threads это — snake_case про\n\nAPI. @alexgetman:\n• API, Dr.! Code.) v2.1.» т.е..) API — #тег… это… «цитата»… про, пост? про — Dr.! 🇷🇺! e.g. йога 𝐁𝐨𝐥𝐝? 👍🏽 — «цитата» e.g. и — мир.» «цитата»… «цитата»… 😀.\nдлинный! «цитата», т.е..) e.g. Telegram 2*3.» 👨‍💻. 2*3 Claude, e.g.! Code\n\n#тег. про? Dr. https://example.com/путь?q=1\n\nи.\n… — (скобки) 2*3 👨‍💻. 🇷🇺! Claude ёжик.\nTelegram длинный 👨‍💻.» @alexgetman ….\nThreads.» мир агентов.) 2*3 Dr.\n\nйога. и v2.1:\n• Dr. ёжик.) Привет.\nv2.1 Привет, мир\n\nи.\nи v2.1:\n• snake_case snake_case — Code. т.е.\n\n👨‍💻 👨‍💻. 2*3 #тег т.е. — Claude (скобки)… агентов! т.е..» мир агентов.\n👨‍💻 йога:\n• 👨‍💻… 😀\n\nпро… 😀.\nv2.1.) пост.» 👍🏽 ёжик! 2*3.) йога.» 𝐁𝐨𝐥𝐝, пост. и\n\n𝐁𝐨𝐥𝐝 — (скобки) — 😀 про — это\n\n👍🏽:\n• … мир Telegram… это. 😀 v2.1… ёжик — мир… 2*3\n\nэто",
+      "locale": "ru"
+    },
+    {
+      "text": "Threads.» #тег. длинный:\n• и.\n«цитата» v2.1.) агентов.) Telegram\n\ne.g. snake_case snake_case, это — «цитата».) 👍🏽 https://example.com/путь?q=1.) это:\n• мир 😀:\n• «цитата»:\n• Dr. Привет длинный Code Claude:\n• 🇷🇺 https://example.com/путь?q=1:\n• Code длинный 🇷🇺:\n• это? @alexgetman мир, про! 🇷🇺, пост.» #тег @alexgetman? Привет агентов.) 😀 Привет. Привет:\n• Claude\n\nпро:\n• 👍🏽 𝐁𝐨𝐥𝐝:\n• 2*3 — snake_case 2*3 …? 2*3 йога. v2.1 (скобки) 😀 йога. Claude, @alexgetman:\n• API! про.» 𝐁𝐨𝐥𝐝? это.» Threads т.е., 😀 — 𝐁𝐨𝐥𝐝 Claude Dr. snake_case? 😀.) длинный «цитата»\n\nдлинный т.е. — 🇷🇺. Привет.) и. Claude? 𝐁𝐨𝐥𝐝 👨‍💻 snake_case Code… про… 🇷🇺. длинный\n\nагентов.) 2*3! Code.) Привет ёжик.\nдлинный.» длинный Threads:\n• про.) агентов ёжик — Code\n\nTelegram.) 👍🏽! и:\n• Dr..) https://example.com/путь?q=1:\n• пост e.g., API — про:\n• (скобки).» @alexgetman длинный.) @alexgetman\n\nTelegram Threads\n\n@alexgetman:\n• Telegram? 👍🏽.\nsnake_case\n\nsnake_case\n\n«цитата» snake_case (скобки)\n\nAPI e.g.:\n• 👨‍💻 Dr., 🇷🇺.» пост! 😀! Привет:\n• @alexgetman.\n«цитата», ёжик Threads «цитата»\n\nйога:\n• 👍🏽 это",
+      "locale": "ru"
+    },
+    {
+      "text": "v2.1.\nйога.» Dr.! пост:\n• йога.» 😀.) v2.1:\n• (скобки)? про. v2.1… snake_case? мир! e.g., длинный:\n• пост:\n• т.е., Claude\n\nпост! 𝐁𝐨𝐥𝐝. 👨‍💻 мир.) v2.1 👍🏽:\n• … e.g. про.) 👨‍💻, йога:\n• длинный про… (скобки) т.е., т.е. — ёжик.» https://example.com/путь?q=1. 2*3 Claude. Code\n\n#тег агентов пост длинный, Threads 👨‍💻. https://example.com/путь?q=1 #тег, Dr. Привет… Code:\n• йога API. и 𝐁𝐨𝐥𝐝… v2.1.) йога — https://example.com/путь?q=1 Claude.\nт.е.! йога.\ne.g.? Telegram #тег! Telegram.\nhttps://example.com/путь?q=1:\n• «цитата»! Threads ёжик:\n• и.) и! API — …. #тег snake_case Привет.) т.е. (скобки) #тег 🇷🇺 𝐁𝐨𝐥𝐝 — агентов\n\n👍🏽.» 👍🏽. и:\n• @alexgetman, Claude v2.1.» Claude это.» длинный.» 👍🏽:\n• 🇷🇺.\nsnake_case:\n• т.е. — Dr..\nTelegram, e.g.\n\nAPI. Code? йога? e.g..» агентов.\n#тег.» #тег! про! про Dr..) «цитата» 😀.) длинный ёжик (скобки)… 𝐁𝐨𝐥𝐝.» это.» 👨‍💻.\nDr., 𝐁𝐨𝐥𝐝? Code.» … — йога — про\n\nдлинный\n\n😀.\nмир… @alexgetman …\n\n…. @alexgetman\n\nпост",
+      "locale": "ru"
+    },
+    {
+      "text": "Привет Code про… Привет! e.g.\n\nйога! snake_case, 𝐁𝐨𝐥𝐝 https://example.com/путь?q=1.» 🇷🇺… v2.1 — Dr. v2.1. ёжик:\n• ….\nмир… мир 𝐁𝐨𝐥𝐝 «цитата», ёжик @alexgetman\n\nэто:\n• e.g., «цитата»… snake_case про, и агентов пост… ёжик! йога… про.» 👨‍💻\n\nйога.) 👨‍💻 — йога #тег! v2.1 — Claude? Telegram ёжик, агентов… 👍🏽\n\nПривет.\nдлинный. ёжик:\n• API 😀 это мир! это. 🇷🇺 йога, длинный Threads длинный v2.1.) йога! v2.1 Telegram 👍🏽.\nCode! 😀 snake_case 👍🏽.» и — и Claude:\n• это — ёжик агентов Code! Claude. 𝐁𝐨𝐥𝐝.\n2*3.» @alexgetman — Code\n\nAPI Threads, 👍🏽 👨‍💻… ёжик! про, Привет, v2.1 Threads @alexgetman.\nhttps://example.com/путь?q=1.\nмир? Telegram.» мир. #тег.\n2*3 — 👨‍💻… Dr. агентов Привет #тег… 𝐁𝐨𝐥𝐝.» йога т.е. Code! #тег. мир #тег #тег. Code. Threads.) https://example.com/путь?q=1? (скобки)\n\nт.е.… Привет snake_case… 2*3 👍🏽.\nпост! 👍🏽.\nAPI мир.) 2*3:\n• @alexgetman https://example.com/путь?q=1 длинный",
+      "locale": "ru"
+    },
+    {
+      "text": "Dr.. Threads\n\n👍🏽.» (скобки).) про:\n• @alexgetman.\n🇷🇺 мир\n\nэто\n\n👨‍💻 v2.1 — ёжик.) #тег 😀? Привет.» йога т.е. — 👨‍💻:\n• 🇷🇺? (скобки) — Code, 🇷🇺 мир? https://example.com/путь?q=1 и, мир? Claude? и мир. 👨‍💻\n\nпост, т.е. Code… snake_case. Threads? «цитата».) API… 2*3 … @alexgetman 𝐁𝐨𝐥𝐝. про. Dr.? пост Claude, v2.1.\nпост 🇷🇺? про Telegram Threads:\n• мир\n\nдлинный, йога, Dr.",
+      "locale": "ru"
+    },
+    {
+      "text": "агентов.» 😀.) 𝐁𝐨𝐥𝐝 и т.е..» йога — ёжик Привет e.g.! (скобки) Telegram. @alexgetman Привет — 👍🏽 — https://example.com/путь?q=1… это …",
+      "locale": "ru"
+    },
+    {
+      "text": "и.\nпост, 👍🏽.» 👍🏽. https://example.com/путь?q=1:\n• Telegram т.е. это! v2.1 Threads. 🇷🇺.) 👨‍💻 пост\n\nагентов, 🇷🇺 агентов — https://example.com/путь?q=1 и — e.g.. Claude Telegram.» Code Dr..\n(скобки) — йога мир.\nTelegram, Code. и, 🇷🇺. #тег агентов, Threads… Code? Telegram API, https://example.com/путь?q=1:\n• Threads.\n#тег.\n🇷🇺, https://example.com/путь?q=1… «цитата».\n@alexgetman — т.е. e.g..\n#тег! «цитата» (скобки):\n• … 👍🏽 — API т.е.? API, v2.1.» длинный.) snake_case 😀 2*3.\nдлинный! Dr. @alexgetman… Claude:\n• 2*3 (скобки).) «цитата»\n\n👨‍💻! API! и. Threads API ёжик.\nмир.\nThreads API — длинный… про 🇷🇺 Привет.» ёжик, snake_case:\n• Telegram 😀! мир — snake_case API! #тег\n\nv2.1 API… «цитата».» Привет… т.е.",
+      "locale": null
+    },
+    {
+      "text": "(скобки), 👨‍💻. #тег.» Code? это! e.g.\n\nsnake_case\n\nпост… пост пост… (скобки). ёжик:\n• 2*3 …! йога snake_case.\nи https://example.com/путь?q=1:\n• (скобки)! API? @alexgetman snake_case! и …! 𝐁𝐨𝐥𝐝:\n• snake_case — Code, (скобки), @alexgetman! (скобки)… @alexgetman e.g. Claude 👍🏽 — API.» йога? … длинный Telegram Code? это! это:\n• 2*3. API? https://example.com/путь?q=1.» snake_case… пост т.е., т.е.… Threads, v2.1 — т.е. ёжик e.g. snake_case, длинный Привет\n\nПривет это? …. e.g.. #тег! йога (скобки).\n…! агентов\n\nт.е. 𝐁𝐨𝐥𝐝. Claude:\n• про… и — Dr. 👍🏽 йога? 😀 пост.» «цитата»:\n• Dr. 👨‍💻 пост! Claude",
+      "locale": "ru"
+    },
+    {
+      "text": "snake_case Dr.… Code! йога пост мир, 🇷🇺.) (скобки)… 😀. 🇷🇺:\n• 🇷🇺.» 👍🏽 Привет? Привет.» т.е..) т.е.? Claude\n\nsnake_case.» ёжик… Claude! (скобки), про! 😀! т.е. https://example.com/путь?q=1 Telegram, «цитата» (скобки).» Claude — 🇷🇺… агентов:\n• #тег… e.g. — Claude! Dr. йога — 2*3, и, @alexgetman… #тег.» … агентов.» 👨‍💻 — это.) v2.1! ёжик! пост… Claude… snake_case\n\nCode Code.» 2*3 (скобки)! https://example.com/путь?q=1 Threads, про.) snake_case @alexgetman 👨‍💻.\nv2.1 — 👨‍💻. Threads:\n• ёжик. (скобки)! йога «цитата»\n\nDr..\nCode! длинный.\nThreads.» API «цитата» «цитата».» Threads\n\nsnake_case.» мир API. 👨‍💻.\n🇷🇺",
+      "locale": null
+    },
+    {
+      "text": "йога:\n• Claude 2*3.\nт.е. — Telegram — Telegram\n\nTelegram 😀 #тег. длинный, т.е.… 👍🏽.) 🇷🇺! 👍🏽! snake_case! т.е.! Привет.\nThreads.\nAPI — e.g. про? «цитата» и — 👨‍💻? Code.» Threads! e.g., т.е.. https://example.com/путь?q=1.\n(скобки) Code — 🇷🇺.\ne.g..\nCode:\n• Dr. Привет:\n• 🇷🇺? API, 👨‍💻. йога? API! т.е.! 𝐁𝐨𝐥𝐝.» …:\n• snake_case? Telegram:\n• 👍🏽.\nмир:\n• e.g. ёжик… Claude — длинный.» 😀\n\nагентов:\n• 2*3.\nTelegram! Dr. — https://example.com/путь?q=1.\n(скобки)… …… про, 🇷🇺\n\n… 😀! Claude 𝐁𝐨𝐥𝐝.» …? Привет",
+      "locale": null
+    },
+    {
+      "text": "2*3.» 🇷🇺. мир мир.) про… API — 2*3 т.е., …! про 👨‍💻.» 2*3… Dr., Threads — 👍🏽\n\nмир! Dr. snake_case и… пост — Claude? snake_case… Code 👨‍💻\n\nCode и\n\nПривет! 2*3 — Code — 👨‍💻, агентов! @alexgetman? 𝐁𝐨𝐥𝐝.\ne.g.:\n• Привет.» 𝐁𝐨𝐥𝐝? Привет. мир.» «цитата», это — Telegram… (скобки) — 👍🏽\n\nThreads 𝐁𝐨𝐥𝐝 Claude\n\nv2.1 — Dr.? про:\n• https://example.com/путь?q=1:\n• ёжик:\n• v2.1! про\n\n𝐁𝐨𝐥𝐝! https://example.com/путь?q=1:\n• Code:\n• 🇷🇺? 𝐁𝐨𝐥𝐝, API, Code.) т.е..\nDr. «цитата» (скобки) — и! йога — и.» агентов.» …, про #тег.» (скобки) и йога? мир Dr.! 2*3 — и:\n• Привет, 👨‍💻:\n• v2.1.» это. @alexgetman.» йога:\n• #тег:\n• йога? 👨‍💻.» v2.1 Claude\n\n@alexgetman.) агентов! 👍🏽 👨‍💻, 😀.» Claude.» Claude йога, Code, агентов — e.g.\n\n…, (скобки)… 😀 😀, API, 𝐁𝐨𝐥𝐝 «цитата».\nhttps://example.com/путь?q=1:\n• и @alexgetman:\n• 😀 — API — Code… snake_case? snake_case #тег.» 😀. агентов @alexgetman.» …. … — Telegram агентов e.g.. мир\n\nsnake_case\n\n(скобки)\n\nv2.1.) snake_case #тег, e.g. 🇷🇺, 👍🏽 — «цитата»\n\nClaude.) Code Code… snake_case… агентов! v2.1 это это ….» (скобки), ёжик.\n👍🏽! Threads! агентов? мир? @alexgetman т.е.:\n• 🇷🇺:\n• #тег и.) https://example.com/путь?q=1.) 𝐁𝐨𝐥𝐝 Telegram… Code это т.е. 2*3 — 😀? мир",
+      "locale": "ru"
+    },
+    {
+      "text": "𝐁𝐨𝐥𝐝 и… про? Claude? …? Telegram, Claude, …… Привет …\n\n😀! Telegram v2.1, это — мир… йога Claude «цитата» агентов — e.g.! длинный.) «цитата»:\n• Code, Threads.» и 😀 https://example.com/путь?q=1 мир — 🇷🇺… @alexgetman? snake_case Telegram? 𝐁𝐨𝐥𝐝 йога.» Code snake_case:\n• это, «цитата»… Dr. API.\nПривет… Threads? #тег.» ….) ….\nдлинный 😀? про? пост длинный.\nмир.) …… длинный.\nПривет! 👍🏽 т.е.\n\n«цитата» — 👍🏽:\n• Dr..» длинный… 𝐁𝐨𝐥𝐝.» API.) Telegram API.» Threads.) мир! т.е. про:\n• Привет.) т.е.… «цитата». про мир? агентов:\n• Claude\n\nAPI.\nThreads. пост Code. «цитата». йога.» 😀.» @alexgetman\n\nмир.» 👍🏽! это. v2.1\n\n👍🏽:\n• ёжик.) 😀! «цитата».» Claude:\n• 𝐁𝐨𝐥𝐝:\n• Claude\n\nт.е. @alexgetman\n\nv2.1… 👍🏽! агентов https://example.com/путь?q=1… йога.\n@alexgetman snake_case? ….) пост! это.» йога, «цитата»? это. API:\n• Claude… …… 😀.\nт.е. ёжик:\n• snake_case. т.е.! Dr. — т.е.:\n• ёжик? т.е.. Code, и:\n• Привет:\n• и — v2.1! v2.1! e.g.",
+      "locale": "ru"
+    },
+    {
+      "text": "🇷🇺 Telegram.) #тег.» и\n\nПривет\n\nv2.1 агентов — т.е., Dr.? snake_case snake_case? 𝐁𝐨𝐥𝐝 Dr. 𝐁𝐨𝐥𝐝 длинный… пост.\nпро #тег.» 😀:\n• ёжик.\n#тег\n\nёжик? (скобки), йога … Code — пост 𝐁𝐨𝐥𝐝, API:\n• и… йога. v2.1 👨‍💻:\n• 👨‍💻 Dr..» Code\n\nDr.? 👍🏽 #тег? 👍🏽. (скобки) — пост — «цитата».» про API! Telegram. мир! …… 👨‍💻 — про.) https://example.com/путь?q=1:\n• Threads это! Code! …… мир 👍🏽.) 👨‍💻\n\nйога.\n👨‍💻 Telegram\n\n«цитата» мир #тег — мир! Code — Привет — 👍🏽. 𝐁𝐨𝐥𝐝… Dr. snake_case Привет\n\n@alexgetman:\n• длинный #тег.) ёжик. https://example.com/путь?q=1.» т.е. e.g..» это.» и:\n• (скобки)! Telegram. пост\n\n2*3\n\n…:\n• Dr.\n\nCode v2.1? API.) …\n\nйога.\nПривет йога\n\nClaude\n\n… …:\n• v2.1.\nsnake_case 👍🏽… #тег про? 𝐁𝐨𝐥𝐝:\n• https://example.com/путь?q=1… 🇷🇺 … пост… 😀 Dr..) Threads длинный Привет, 𝐁𝐨𝐥𝐝 https://example.com/путь?q=1 это\n\n… агентов — (скобки)\n\nмир:\n• и, Code https://example.com/путь?q=1 https://example.com/путь?q=1? агентов 🇷🇺\n\nёжик. про… это длинный.) «цитата» это.» пост. v2.1. Threads. Threads. v2.1? ёжик.» агентов.» #тег! Code Dr..) и:\n• (скобки)! Code пост.) snake_case… 😀! т.е.? ёжик. 👨‍💻! @alexgetman.» 😀? e.g..\nsnake_case.» … Threads Code (скобки). длинный.» 2*3\n\nAPI это? Привет, @alexgetman! длинный … Telegram https://example.com/путь?q=1:\n• агентов",
+      "locale": "ru"
+    },
+    {
+      "text": "👨‍💻 Dr. e.g. ёжик.) (скобки)? 2*3 — 2*3? длинный длинный\n\nйога. Claude Code API, …? Threads.) ёжик:\n• т.е.… 👍🏽 мир! мир… Привет:\n• Threads 𝐁𝐨𝐥𝐝\n\n(скобки) — про.) мир.) мир\n\nпро пост.) и #тег — Threads длинный, e.g.\n\nClaude, Code.» 😀, #тег.» Threads, ёжик — 👨‍💻.\nи.» e.g. про. мир.) мир — Привет! (скобки) https://example.com/путь?q=1? и! Привет — https://example.com/путь?q=1? это Telegram.\nдлинный.» Привет.\n… …\n\nThreads — Telegram.) 🇷🇺 — пост… Привет, Threads, длинный.\nПривет\n\nTelegram.\nDr. 🇷🇺 и? e.g. и. про API.\n2*3! Telegram:\n• 🇷🇺.) 👍🏽.\nTelegram.) snake_case пост.) …, йога Claude.\nTelegram? ёжик",
+      "locale": "ru"
+    },
+    {
+      "text": "https://example.com/путь?q=1 — ёжик API агентов snake_case.\nПривет e.g.\n\nsnake_case:\n• ёжик… 😀\n\nпост, и. …… … — 2*3, 🇷🇺:\n• т.е.\n\nёжик пост e.g. — и. … 🇷🇺! Code — 𝐁𝐨𝐥𝐝 #тег v2.1\n\n#тег.» Telegram это. Threads:\n• ёжик.\nAPI Claude API API.) 😀 агентов.) т.е. 👍🏽 — ёжик.\n@alexgetman snake_case:\n• длинный! «цитата» #тег? пост. 👍🏽 🇷🇺.) e.g..\n#тег.) Claude e.g..» длинный, йога — (скобки).» ёжик. йога API! Telegram, API Telegram 👍🏽 v2.1? …! про! Threads\n\nAPI? v2.1, 👨‍💻 😀 — v2.1 🇷🇺.) (скобки)! snake_case мир.) Привет… т.е..» 𝐁𝐨𝐥𝐝. Code.) Dr..» Telegram\n\nПривет? длинный API — Привет e.g..) Threads — т.е., 👨‍💻 𝐁𝐨𝐥𝐝:\n• 😀, 2*3:\n• #тег Telegram 2*3 @alexgetman:\n• Привет 𝐁𝐨𝐥𝐝:\n• длинный.) Code? API\n\nмир\n\nпост.) про.» 👍🏽? Code Привет:\n• e.g.! т.е., и — «цитата» — Привет… Code «цитата» — пост Code\n\nv2.1\n\n#тег! snake_case.) про.\nи, e.g..) Telegram e.g..) ёжик Dr.… 𝐁𝐨𝐥𝐝 v2.1:\n• агентов.» мир e.g., 2*3.» Threads.) агентов. (скобки).) … йога.) про «цитата» 👨‍💻 https://example.com/путь?q=1:\n• про, это… v2.1. Claude агентов\n\n🇷🇺… про https://example.com/путь?q=1 Code\n\nThreads. про, 😀\n\nи:\n• 2*3 — 2*3… пост. Dr..» (скобки) 𝐁𝐨𝐥𝐝? … и Dr..\nsnake_case https://example.com/путь?q=1.\nhttps://example.com/путь?q=1… …, йога.) ёжик — Привет\n\nsnake_case",
+      "locale": "ru"
+    },
+    {
+      "text": "@alexgetman\n\nйога e.g.! йога… 𝐁𝐨𝐥𝐝.» 😀:\n• Claude — агентов\n\nт.е. (скобки):\n• v2.1? 👨‍💻.» это\n\n(скобки)\n\nэто? e.g. 🇷🇺.» Dr.",
+      "locale": "ru"
+    },
+    { "text": "https://example.com/путь?q=1 👨‍💻:\n• это.\nTelegram 👨‍💻 Telegram:\n• Привет, Code", "locale": null },
+    {
+      "text": "https://example.com/путь?q=1.) йога? https://example.com/путь?q=1… ….\nэто, 2*3.) мир (скобки)? Привет.) 😀 ёжик.» и, Telegram это? ….\nDr..» агентов.\nClaude #тег.\n👨‍💻! Привет. Claude? йога Telegram (скобки) — 😀. 😀… пост 2*3.\nsnake_case\n\nи v2.1, Dr..) v2.1.» «цитата»… (скобки)… 𝐁𝐨𝐥𝐝? йога v2.1:\n• 👨‍💻 — API.\n(скобки) 🇷🇺. пост.» API 😀.\nDr..» Привет агентов.» «цитата» Threads 🇷🇺… 2*3 2*3.\nAPI, @alexgetman.» т.е.\n\nйога.» пост, и.\n@alexgetman:\n• про — это длинный.» Привет длинный API.) Привет. Telegram, йога.» (скобки). 👨‍💻 v2.1… 👨‍💻 Привет 𝐁𝐨𝐥𝐝 — https://example.com/путь?q=1.» Привет\n\n🇷🇺 — 👨‍💻.) Threads? ёжик. и. 😀.) длинный… 😀 длинный\n\nПривет v2.1.» ….» 👨‍💻 Claude:\n• мир — https://example.com/путь?q=1 — #тег Code т.е.? 2*3 🇷🇺! Привет Привет\n\nдлинный, v2.1.\n😀 v2.1 — Claude.) v2.1",
+      "locale": "ru"
+    },
+    {
+      "text": "e.g.\n\n👨‍💻 это Claude! пост! 𝐁𝐨𝐥𝐝.) e.g.. т.е.… Threads! Claude:\n• 👍🏽 это #тег йога Dr. v2.1 ёжик API:\n• @alexgetman? про.» ….\nйога, e.g.:\n• Привет.) 2*3? Claude.) (скобки):\n• мир (скобки)\n\nт.е. snake_case… пост:\n• 𝐁𝐨𝐥𝐝 @alexgetman — йога.) и 👍🏽 — 👍🏽.\nDr. — Dr.! https://example.com/путь?q=1\n\n😀 и? @alexgetman — 😀, 👍🏽 йога! @alexgetman — 👨‍💻! API snake_case.) 🇷🇺… мир:\n• Telegram. Claude? #тег 👍🏽 т.е.. Dr. — ёжик\n\nёжик, йога. про? snake_case 🇷🇺 👍🏽:\n• 👨‍💻.) 👍🏽? пост.» 😀 e.g. Привет.) длинный? мир.) 😀.\nhttps://example.com/путь?q=1\n\nёжик… @alexgetman. v2.1.) 👨‍💻 — 2*3.\n𝐁𝐨𝐥𝐝! Threads snake_case. snake_case. v2.1 — Code… (скобки), Claude ёжик, e.g. т.е..\nйога (скобки).\nhttps://example.com/путь?q=1 Dr. ёжик.) Threads.» @alexgetman.\ne.g..» @alexgetman? Привет. про @alexgetman. мир! …… и.) snake_case Привет.) …",
+      "locale": "ru"
+    },
+    {
+      "text": "Привет.) про! @alexgetman:\n• e.g..» 😀.\nDr.. Привет. длинный йога? (скобки) API Привет\n\nпост.) 👍🏽.\nDr.? т.е.… 👨‍💻 #тег.\nCode! Code Привет, Threads ….) e.g.? ….) агентов Claude — v2.1.\nAPI Telegram мир. 2*3 2*3.» e.g.. агентов — Claude, агентов",
+      "locale": "ru"
+    },
+    {
+      "text": "@alexgetman… мир.) #тег! йога Telegram https://example.com/путь?q=1.» API — 2*3… v2.1 — 😀.) агентов, Code… v2.1! ёжик? …… @alexgetman.) ….» @alexgetman ёжик… и про\n\n«цитата», 👨‍💻 — Telegram 2*3. snake_case! Claude, Telegram! 🇷🇺, @alexgetman.\nsnake_case! т.е. ….» (скобки) про, snake_case 👨‍💻.\ne.g., https://example.com/путь?q=1. мир 👍🏽.\nдлинный — 👍🏽? 🇷🇺. длинный.) пост.) ёжик про, 2*3! …… это (скобки)… агентов 😀… API 👍🏽 ёжик? это.» ёжик:\n• Telegram.\nCode Привет.» Claude! Dr. 𝐁𝐨𝐥𝐝 e.g. — мир snake_case.) API. длинный.» мир — 𝐁𝐨𝐥𝐝 — длинный.» Привет. snake_case Привет. v2.1\n\n@alexgetman это. «цитата»? длинный snake_case",
+      "locale": "ru"
+    },
+    {
+      "text": "Code.\nsnake_case! «цитата»\n\n😀, это… и.» «цитата».» API… https://example.com/путь?q=1.\nпро\n\n(скобки).» 😀.) длинный «цитата».» ёжик, Привет.\nCode.» «цитата»! ёжик.\nClaude! Claude\n\nv2.1… пост.» пост.» мир:\n• Code\n\nдлинный? v2.1 — Telegram… e.g..) API, т.е. — API… Dr.… 𝐁𝐨𝐥𝐝.» 𝐁𝐨𝐥𝐝\n\nhttps://example.com/путь?q=1. Threads … Code… Claude длинный\n\n(скобки), про Code это.» 2*3\n\n😀. 👨‍💻 😀? (скобки)\n\nагентов:\n• т.е..» v2.1.» snake_case! e.g.\n\n…, e.g. мир.) 😀 ….» Code\n\nClaude Dr.. 2*3\n\nагентов… мир.\nAPI? snake_case API — Привет? Claude 2*3\n\nAPI? API, @alexgetman\n\nAPI… «цитата»",
+      "locale": "ru"
+    },
+    {
+      "text": "ёжик? v2.1? пост.\nCode:\n• Threads\n\n𝐁𝐨𝐥𝐝… «цитата».) агентов @alexgetman! (скобки) и.) (скобки) — Dr.. …, 👨‍💻.\nClaude. йога про\n\nhttps://example.com/путь?q=1 — про:\n• Telegram #тег… ёжик:\n• @alexgetman и! Привет — v2.1? 👨‍💻\n\n#тег\n\nмир, 2*3.» API! про:\n• e.g.\n\nThreads… 𝐁𝐨𝐥𝐝… v2.1 😀.» Telegram Dr. Telegram Привет:\n• Code, snake_case — пост:\n• Telegram мир.\nTelegram\n\nи про? пост — Code\n\nи! йога. это, Telegram? https://example.com/путь?q=1. API\n\nёжик… длинный — ёжик\n\n😀. …, @alexgetman? длинный:\n• пост\n\n«цитата», snake_case агентов v2.1! мир.» Threads\n\nTelegram? т.е..» snake_case.\n«цитата». 👍🏽? агентов? пост… про, про! пост. Claude… мир …. #тег.\nAPI:\n• https://example.com/путь?q=1 Telegram.» Code Code\n\nт.е..) API\n\nПривет пост\n\n«цитата» пост. #тег v2.1 т.е.. Code.\n(скобки). про «цитата» Telegram? e.g. — 𝐁𝐨𝐥𝐝 — длинный! Code.) e.g.",
+      "locale": "ru"
+    },
+    {
+      "text": "длинный — API про Telegram\n\nэто Dr.? #тег.» длинный! https://example.com/путь?q=1… #тег? агентов Claude агентов.» 👨‍💻 𝐁𝐨𝐥𝐝. Telegram @alexgetman e.g.… …, Threads.» Threads, 𝐁𝐨𝐥𝐝 👨‍💻 т.е. #тег 🇷🇺 #тег e.g. — 𝐁𝐨𝐥𝐝.» ёжик 2*3 Claude. Telegram 🇷🇺, про\n\n👨‍💻:\n• Telegram йога… API, мир 👍🏽? пост. 2*3 👨‍💻 — 👨‍💻… Code, (скобки). Code:\n• 😀. 😀.» «цитата»:\n• т.е..\nhttps://example.com/путь?q=1 Code:\n• 👨‍💻… v2.1? это.\nCode! ёжик мир …, 😀. длинный! 👨‍💻 #тег — т.е. — 👨‍💻.\nпро — 𝐁𝐨𝐥𝐝:\n• Telegram.\n👨‍💻, т.е.! 2*3, 😀.) йога Claude Claude.) йога:\n• Telegram. это snake_case агентов.» Привет… про и! (скобки).) мир — https://example.com/путь?q=1 ёжик Привет",
+      "locale": "ru"
+    },
+    {
+      "text": "v2.1! мир! Code https://example.com/путь?q=1.) пост — Dr..) 👍🏽.\nAPI\n\nагентов.\nClaude.) 👍🏽… @alexgetman. мир e.g.\n\nт.е.! ёжик",
+      "locale": "ru"
+    },
+    {
+      "text": "v2.1, длинный агентов! длинный.» Dr..) 👨‍💻.\ne.g., йога.) @alexgetman.) длинный.» 𝐁𝐨𝐥𝐝? https://example.com/путь?q=1 — https://example.com/путь?q=1… Code. Привет. Привет — Dr.",
+      "locale": "ru"
+    },
+    {
+      "text": "йога? йога! … Dr.… API, 𝐁𝐨𝐥𝐝, Привет.\nTelegram.» 👨‍💻 — 2*3. Telegram? 2*3 — йога 🇷🇺.» https://example.com/путь?q=1 2*3:\n• агентов! e.g.? Привет e.g..) ёжик.) 2*3 йога Threads.) snake_case. Claude.\nDr.:\n• Dr.. про.) Привет. Threads.) Claude, 2*3 т.е..) мир:\n• агентов — Привет 😀:\n• 🇷🇺 агентов.\ne.g.\n\n👍🏽 … https://example.com/путь?q=1 ёжик.\nAPI.» Dr.:\n• длинный. про.\n2*3 — snake_case:\n• ёжик 𝐁𝐨𝐥𝐝\n\nт.е. v2.1:\n• https://example.com/путь?q=1:\n• 😀? 😀\n\ne.g.… v2.1 и. ….) #тег\n\nпост? мир\n\n…… агентов 😀 ёжик https://example.com/путь?q=1 @alexgetman — мир. Code Threads! агентов 𝐁𝐨𝐥𝐝 ёжик:\n• Threads …? …! агентов… Telegram. Threads — https://example.com/путь?q=1. «цитата» т.е.. @alexgetman! ёжик мир.» про 👨‍💻? Dr. Threads. т.е. Code.) агентов\n\nт.е.:\n• ёжик\n\n@alexgetman (скобки) …? https://example.com/путь?q=1.) (скобки)\n\nhttps://example.com/путь?q=1 «цитата» Dr.:\n• Claude — агентов.) ёжик, @alexgetman… v2.1 ёжик? API… агентов.\nмир? «цитата».) snake_case.» йога.\nагентов т.е. Telegram… @alexgetman Dr..» 👍🏽… Dr. про. 👍🏽 — «цитата» — ёжик 2*3 (скобки) 𝐁𝐨𝐥𝐝.» #тег:\n• «цитата».\nAPI:\n• это 👨‍💻 — https://example.com/путь?q=1 API, про:\n• 👍🏽 — пост\n\nПривет:\n• «цитата»… Code! агентов.) #тег.» e.g..\nsnake_case\n\nAPI\n\nпро? 😀! Code! это Привет Code\n\n😀",
+      "locale": "ru"
+    },
+    {
+      "text": "это\n\nдлинный\n\nAPI — 👨‍💻. @alexgetman! пост 2*3.\nClaude? Code — 🇷🇺.) длинный.) Code! йога ёжик Code, и, Claude.) т.е.… Threads.\nёжик.\n(скобки) 👨‍💻 e.g.. Claude\n\nCode 👍🏽, длинный 😀 — и.» https://example.com/путь?q=1 — 🇷🇺 Telegram… 👨‍💻! йога… мир. и! 👨‍💻.» Code 2*3, 2*3? Code длинный 😀. про, API Claude, 2*3 😀:\n• … ёжик это, про.» длинный.» Привет @alexgetman.\n👨‍💻\n\nDr.? т.е.? Привет… йога.) т.е..» https://example.com/путь?q=1 — v2.1… (скобки).» агентов.\nёжик, 2*3 — Code:\n• (скобки), Threads.) Threads… e.g. Привет? и. пост? … 👍🏽.» и… длинный:\n• ёжик — 🇷🇺 длинный, #тег — Claude. Привет. Dr. 𝐁𝐨𝐥𝐝? Привет 2*3. 𝐁𝐨𝐥𝐝:\n• #тег:\n• @alexgetman «цитата» йога\n\nдлинный! про! Telegram.» …:\n• https://example.com/путь?q=1 агентов, e.g.",
+      "locale": "ru"
+    },
+    { "text": "йога\n\n@alexgetman — длинный. «цитата» 𝐁𝐨𝐥𝐝 агентов… Code @alexgetman… v2.1", "locale": "ru" },
+    {
+      "text": "😀 Claude …! 😀.) пост:\n• ёжик! ёжик.) Claude:\n• Dr. — v2.1 v2.1.» «цитата» пост:\n• Code 👨‍💻.» пост.\nDr., https://example.com/путь?q=1? Telegram:\n• @alexgetman йога… 2*3:\n• 2*3? v2.1… про Claude. ёжик йога Threads:\n• мир:\n• Code.\nэто… это:\n• Threads. @alexgetman v2.1 @alexgetman и:\n• @alexgetman, v2.1. ….» Code… т.е..) 👨‍💻 — т.е. @alexgetman! 😀 (скобки)? 🇷🇺 😀 и.\nт.е. Dr.\n\nv2.1? …! пост\n\n2*3, e.g. — длинный и.) про.» Threads:\n• агентов.) snake_case 👨‍💻.» e.g..» 👨‍💻 Claude… 🇷🇺.) Claude.) 2*3 Привет! v2.1. агентов.) 👨‍💻! ёжик! т.е.:\n• длинный, т.е. https://example.com/путь?q=1? т.е.? мир 🇷🇺 — @alexgetman (скобки) мир\n\n👨‍💻.» 👍🏽 (скобки)… агентов — Threads.» Telegram.\nпро, длинный… йога\n\nClaude Telegram — e.g.:\n• @alexgetman — https://example.com/путь?q=1 длинный.) https://example.com/путь?q=1 v2.1… v2.1 2*3.» Threads.\nпост …:\n• и — 2*3 https://example.com/путь?q=1 🇷🇺.» ёжик, e.g.? https://example.com/путь?q=1… и — (скобки)… Code! #тег 😀.» ёжик e.g. snake_case Telegram «цитата». длинный.) агентов и! API. ёжик:\n• йога! 👨‍💻.\nDr. 👨‍💻! Dr.. 2*3 👨‍💻 Threads? мир… e.g. 2*3\n\n@alexgetman\n\nмир v2.1 …… Claude. API",
+      "locale": "ru"
+    },
+    {
+      "text": "@alexgetman.\n(скобки).) API\n\nhttps://example.com/путь?q=1.\nThreads #тег Threads. йога v2.1.» Code\n\n👍🏽 пост йога! Привет! и, т.е.! это — ёжик — 2*3 — (скобки) пост — Привет… @alexgetman.) 👨‍💻. ёжик.) 👍🏽 Threads. Claude.» 👍🏽 🇷🇺.) Dr..\nПривет! Threads… мир. 🇷🇺 @alexgetman.\nдлинный… e.g.… агентов, мир.» это… «цитата»\n\n👍🏽 Threads мир\n\nпро.\nClaude… йога… йога Threads? т.е. Привет API… #тег:\n• Claude! 😀 2*3! 😀, 😀\n\nsnake_case:\n• 𝐁𝐨𝐥𝐝 Привет.» мир. Claude. 𝐁𝐨𝐥𝐝… ёжик Привет.\n🇷🇺? т.е.:\n• Привет, ёжик.\n#тег.» Code… 👍🏽 snake_case.» т.е. — пост — (скобки) — мир — Dr..» @alexgetman, 🇷🇺.» длинный? v2.1.\nAPI.» «цитата» 2*3 — длинный 😀, и? 👨‍💻 Claude Привет\n\nПривет «цитата»\n\nт.е. — Dr.\n\nCode:\n• v2.1 про:\n• #тег API.» @alexgetman.) ёжик… Threads Привет, … йога, #тег… йога. Dr., Code:\n• @alexgetman длинный «цитата»! мир 2*3. Threads.» Claude, 🇷🇺 агентов… 𝐁𝐨𝐥𝐝.) и:\n• Dr.\n\nПривет — Telegram Code",
+      "locale": "ru"
+    },
+    {
+      "text": "Telegram и. 😀 про.\n@alexgetman — пост… длинный! и! агентов snake_case:\n• 🇷🇺? пост, агентов\n\nTelegram:\n• «цитата» и? Telegram.) https://example.com/путь?q=1\n\n😀 ёжик? #тег.) Привет, 🇷🇺 ёжик длинный.\nёжик\n\nэто 𝐁𝐨𝐥𝐝\n\n#тег! @alexgetman! про.» 𝐁𝐨𝐥𝐝.\n👨‍💻 Claude.» ёжик 𝐁𝐨𝐥𝐝.) e.g.. 🇷🇺 — про.» v2.1 — про.» https://example.com/путь?q=1. «цитата».\n@alexgetman и — Threads.) Threads и.\nv2.1 Dr.\n\nThreads https://example.com/путь?q=1 Dr.? т.е., Привет v2.1 e.g.… это.» т.е.\n\n…? т.е. — и.» 👍🏽.) 2*3 «цитата» мир.» 👨‍💻 👨‍💻\n\nпро:\n• про\n\nдлинный. агентов! Dr., 🇷🇺.\nv2.1 агентов. 𝐁𝐨𝐥𝐝, Threads — #тег\n\nмир. 👨‍💻 🇷🇺.» API про ёжик.\nПривет 😀\n\nи\n\nClaude. йога.» API … Привет\n\nCode\n\nПривет:\n• Telegram — e.g. Dr..» #тег.\nагентов пост? йога.» 😀 https://example.com/путь?q=1.) 👍🏽:\n• 🇷🇺 @alexgetman.» (скобки), e.g. @alexgetman? и Threads… длинный «цитата».) йога.» длинный — 𝐁𝐨𝐥𝐝 — @alexgetman? … йога 👨‍💻.) 😀\n\n…\n\ne.g.:\n• 👨‍💻, 👨‍💻.) пост. v2.1.) мир 👍🏽.\n2*3 пост.» 😀 𝐁𝐨𝐥𝐝.\nдлинный\n\n«цитата»? длинный.) 👍🏽 агентов",
+      "locale": "ru"
+    },
+    {
+      "text": "API Telegram т.е..» Telegram:\n• 🇷🇺! длинный #тег… …. v2.1.\nпост — (скобки).» v2.1 Claude, e.g. 🇷🇺 т.е.. Claude — 👍🏽, йога. 👍🏽 про.\n𝐁𝐨𝐥𝐝.\n🇷🇺 Dr.\n\nйога.\nhttps://example.com/путь?q=1 Telegram — API, мир 👨‍💻. мир:\n• snake_case:\n• мир @alexgetman «цитата»? 👍🏽 Привет Telegram 🇷🇺 🇷🇺.» 🇷🇺.\n😀. т.е.:\n• ёжик\n\n«цитата» Telegram.\nагентов? https://example.com/путь?q=1 Dr.? (скобки) мир агентов! 😀! (скобки).» e.g. — 👍🏽 👨‍💻.» e.g. Code? ёжик.) ёжик. (скобки):\n• API:\n• #тег.» 🇷🇺.» агентов йога.» пост… т.е.! Claude.\nCode… v2.1.) Dr.… …\n\nмир\n\n2*3:\n• API.\nCode v2.1 длинный …, 2*3? про 👨‍💻\n\nйога? ёжик? 👍🏽 😀! e.g.:\n• snake_case. #тег.) ёжик, 𝐁𝐨𝐥𝐝? «цитата»? «цитата».) @alexgetman, и. агентов! Dr.:\n• т.е..) 𝐁𝐨𝐥𝐝 это йога длинный:\n• Threads, v2.1.» (скобки).» «цитата» 👍🏽? API… Dr..» Telegram #тег e.g. 👨‍💻.) Code… Threads Claude? 🇷🇺 агентов v2.1! длинный:\n• API (скобки)? т.е.:\n• API пост.) и 👍🏽 👨‍💻, ёжик, йога Claude",
+      "locale": "ru"
+    },
+    {
+      "text": "и. … Привет.\n@alexgetman… 👍🏽 😀.\nт.е.:\n• Code API мир! 2*3? 👨‍💻.\n𝐁𝐨𝐥𝐝 — длинный т.е..\n(скобки) йога\n\n😀.) пост.\nCode.\n«цитата»! 😀 йога. @alexgetman. 𝐁𝐨𝐥𝐝 — 👍🏽 Dr. Привет.» API, Привет? т.е.? про.» агентов. 2*3 … т.е. (скобки), 2*3! длинный! Dr..) это.\n#тег\n\n👍🏽, #тег.\n👨‍💻 ёжик, Threads\n\nпро.» Threads 2*3? e.g..\nи — API\n\n2*3:\n• и.\n@alexgetman.) Threads? агентов.) snake_case, агентов — Dr.! (скобки), ёжик… 2*3! Telegram. Threads? 😀. т.е.. Dr.? v2.1.) это «цитата». v2.1, #тег e.g.\n\n«цитата»:\n• Привет.\nClaude.\nагентов? 👍🏽 — snake_case. e.g. — … 👨‍💻.\n𝐁𝐨𝐥𝐝 API 👍🏽 Dr.… @alexgetman.) пост, @alexgetman #тег API длинный… snake_case e.g., мир.\nПривет:\n• https://example.com/путь?q=1:\n• Claude длинный? Threads Code пост\n\nпост! 𝐁𝐨𝐥𝐝 snake_case e.g. Telegram\n\nэто. @alexgetman.» #тег? Привет #тег.» (скобки)… v2.1.) (скобки)? Привет Threads, Telegram 2*3 про, v2.1… пост 😀.\nт.е. т.е. — API\n\nдлинный.) snake_case… это! … — 𝐁𝐨𝐥𝐝:\n• мир это\n\nDr. мир\n\nsnake_case про 👨‍💻 https://example.com/путь?q=1 @alexgetman.) https://example.com/путь?q=1, ….» Threads? йога… йога? ёжик? мир? Привет:\n• Claude? Claude — пост:\n• йога.) Code 𝐁𝐨𝐥𝐝.) Привет йога… йога:\n• Threads Telegram. API… т.е.… агентов\n\nsnake_case.» (скобки).» (скобки).\n… длинный:\n• т.е. ….) …. пост e.g.… snake_case. 😀 Telegram.\n@alexgetman… 2*3:\n• Привет",
+      "locale": "ru"
+    },
+    {
+      "text": "это Threads.) (скобки)\n\nагентов.\nэто! Code, мир — Threads\n\nэто! e.g..\n…:\n• 🇷🇺? 👍🏽 агентов? API… 🇷🇺, @alexgetman.\nт.е. Привет Claude ёжик",
+      "locale": "ru"
+    },
+    {
+      "text": "Привет? 2*3.\n2*3! Telegram:\n• #тег:\n• «цитата», про… snake_case Привет, Claude пост:\n• длинный Code:\n• т.е.\n\nsnake_case\n\n«цитата»? 😀.\nhttps://example.com/путь?q=1.\nClaude\n\ne.g. длинный:\n• «цитата». …… API 𝐁𝐨𝐥𝐝 это:\n• т.е.? 2*3. https://example.com/путь?q=1 «цитата».» ёжик? Dr. длинный.» «цитата»! … v2.1… Telegram, (скобки)\n\nv2.1\n\nThreads Telegram https://example.com/путь?q=1.\ne.g.… «цитата».» 👨‍💻. мир, длинный? Claude! ёжик.\nTelegram\n\nэто «цитата».\n@alexgetman «цитата»:\n• это ёжик, #тег, йога, snake_case 👍🏽\n\nThreads ….) 👨‍💻.) 👨‍💻 — (скобки) — API! Code… пост:\n• про! и… v2.1 e.g..) ёжик! и.\nйога — Code агентов v2.1 длинный\n\nёжик:\n• 👨‍💻… Telegram, агентов, 👨‍💻 Claude про.) 👨‍💻 Telegram… ёжик.» https://example.com/путь?q=1.\nёжик… 😀! про, ёжик агентов.\nClaude 🇷🇺.» длинный. #тег? ….) 𝐁𝐨𝐥𝐝 и — мир:\n• йога:\n• Threads:\n• пост … — e.g..» https://example.com/путь?q=1 — Привет! пост 𝐁𝐨𝐥𝐝 Claude\n\n👍🏽:\n• Threads? Claude. Telegram! #тег Threads? #тег.» 🇷🇺.) «цитата»! Привет! «цитата»:\n• т.е. 2*3 🇷🇺 2*3\n\n𝐁𝐨𝐥𝐝. длинный.» Dr..) пост.) 👍🏽.» мир! Claude\n\n🇷🇺! 🇷🇺 … e.g. и (скобки).) snake_case.» snake_case! @alexgetman? йога.» …… Threads это… @alexgetman 𝐁𝐨𝐥𝐝.\n👍🏽 API, Привет! Привет. Dr. — Dr. 2*3… Code snake_case snake_case (скобки).) т.е.. Telegram\n\nПривет.» https://example.com/путь?q=1. https://example.com/путь?q=1? snake_case @alexgetman — «цитата», v2.1… 🇷🇺 Привет 👍🏽 https://example.com/путь?q=1? 👨‍💻. ёжик",
+      "locale": "ru"
+    },
+    { "text": "Привет.) 😀.\nClaude (скобки):\n• @alexgetman мир.» и", "locale": null },
+    {
+      "text": "snake_case.\ne.g., @alexgetman! Dr.… 🇷🇺\n\nпро — 🇷🇺 — Threads, т.е. — @alexgetman, агентов. API.\nагентов! Привет (скобки) snake_case.» 👍🏽.) ёжик, пост.» и.) агентов 😀 😀, …? мир? (скобки) — 😀… 2*3.) 😀 — Dr.! Dr.\n\n👨‍💻 🇷🇺.) Claude API! Telegram, Threads:\n• (скобки)! пост.) Dr.. Threads https://example.com/путь?q=1\n\nи API… API — 🇷🇺.) API:\n• (скобки) v2.1 e.g..» Claude.) ёжик… 𝐁𝐨𝐥𝐝.) т.е.. e.g.\n\n…… «цитата»… 👍🏽! Code 🇷🇺 @alexgetman. Claude:\n• мир 😀? т.е.… e.g.… #тег.» 🇷🇺 v2.1 #тег.» v2.1. агентов API.\n#тег.) 🇷🇺 это… 🇷🇺 про… Привет ….) т.е..\n👍🏽 Привет.» агентов.» 𝐁𝐨𝐥𝐝? агентов мир API, мир.» это про — 🇷🇺… @alexgetman… @alexgetman. Threads\n\n(скобки) «цитата» — API, #тег — длинный 👨‍💻 Привет… v2.1.» ёжик API:\n• агентов! 👍🏽 https://example.com/путь?q=1 … (скобки). ёжик.) и. 🇷🇺 — это:\n• 🇷🇺 …, Threads.\nмир.» 𝐁𝐨𝐥𝐝.) 👍🏽… т.е. — Привет — Dr. — https://example.com/путь?q=1? @alexgetman, #тег «цитата» 👨‍💻 йога.\nhttps://example.com/путь?q=1. Code? 𝐁𝐨𝐥𝐝\n\nAPI\n\n👍🏽\n\nTelegram — т.е.. Code:\n• 2*3 😀 мир.» 𝐁𝐨𝐥𝐝 Привет e.g., https://example.com/путь?q=1! и\n\n… 𝐁𝐨𝐥𝐝! (скобки). пост… Привет.» 👨‍💻, Привет Привет.\nдлинный — @alexgetman — https://example.com/путь?q=1.» @alexgetman 2*3… длинный… Telegram, snake_case Code! snake_case https://example.com/путь?q=1? https://example.com/путь?q=1",
+      "locale": "ru"
+    },
+    {
+      "text": "2*3:\n• https://example.com/путь?q=1.) 2*3 Telegram:\n• ёжик\n\nэто. e.g.. 👨‍💻.) API.) 🇷🇺? …? v2.1 Threads.) агентов Code #тег? йога.\nsnake_case, пост «цитата» (скобки)? ёжик? про! ёжик Dr. мир #тег e.g. snake_case… #тег.) (скобки) Code.» длинный v2.1! Claude\n\n👨‍💻… https://example.com/путь?q=1 — 👍🏽.» e.g. 👨‍💻:\n• про\n\nClaude.) Code:\n• (скобки) ёжик 2*3? длинный.» длинный.) это пост.\nDr..» https://example.com/путь?q=1. snake_case:\n• @alexgetman:\n• и, это.\n@alexgetman! e.g..» йога (скобки) Claude 🇷🇺\n\nAPI… йога snake_case длинный. snake_case.) v2.1:\n• Threads… (скобки). йога.) snake_case, https://example.com/путь?q=1… пост про? https://example.com/путь?q=1, Telegram 2*3 — Code! Telegram.\n«цитата»\n\n@alexgetman! пост! мир.) Привет Dr.… (скобки) 🇷🇺. Claude — https://example.com/путь?q=1! e.g. … длинный… 2*3, #тег API… 😀. 𝐁𝐨𝐥𝐝? 👨‍💻! snake_case, 2*3, API «цитата» 𝐁𝐨𝐥𝐝! 😀\n\n«цитата».» 👍🏽! v2.1… https://example.com/путь?q=1. 🇷🇺 API 👍🏽.\n@alexgetman.» …! Dr.? и, API. API, это… Привет? Threads. snake_case e.g. — @alexgetman? йога… snake_case Claude, 😀, мир Claude… это Claude, пост.) Code. 😀 Code.\nAPI… агентов йога — 👨‍💻? ёжик… 😀. #тег:\n• мир",
+      "locale": null
+    },
+    {
+      "text": "(скобки)… Привет.» https://example.com/путь?q=1 Telegram.) Code… …. 👍🏽? ёжик:\n• мир? про.» 🇷🇺! 👨‍💻 👍🏽! агентов — https://example.com/путь?q=1 snake_case:\n• 🇷🇺? #тег «цитата»! это это… и:\n• 𝐁𝐨𝐥𝐝 про? т.е..» snake_case, это 👨‍💻.\nйога.\n«цитата»:\n• «цитата»… Dr.… 👨‍💻, @alexgetman — https://example.com/путь?q=1.» @alexgetman Dr. Threads и.\nThreads? Привет? йога. 𝐁𝐨𝐥𝐝:\n• 🇷🇺 snake_case? это.» v2.1… длинный — 👍🏽.\nэто (скобки) … 😀:\n• ….\nПривет? это. мир ёжик, Claude «цитата»\n\nёжик.) #тег\n\nCode API.» 🇷🇺 e.g.! snake_case:\n• длинный 🇷🇺 🇷🇺… т.е..» Dr..\nhttps://example.com/путь?q=1.» 👍🏽\n\nv2.1.» (скобки) это — это, про? https://example.com/путь?q=1… …, йога — Привет Telegram Claude.» Dr.\n\nПривет. и\n\nAPI:\n• ёжик «цитата»! агентов ёжик 👍🏽, йога — Telegram Привет 2*3… https://example.com/путь?q=1.) «цитата»\n\nhttps://example.com/путь?q=1 пост — мир.» 🇷🇺.) т.е. 👍🏽.» 🇷🇺.) Привет — e.g.:\n• Claude\n\nёжик — Dr.… агентов. длинный #тег\n\nёжик… (скобки).\nПривет? т.е.\n\n👍🏽.» #тег e.g..» Dr. 👍🏽 т.е. e.g..» пост:\n• пост.» Code.) Threads:\n• (скобки)! и Code — Привет.) 2*3.\n2*3, ёжик! e.g. 2*3 Привет.\nCode.» …\n\nйога! snake_case. ёжик? т.е., (скобки) 𝐁𝐨𝐥𝐝:\n• Code? «цитата»… v2.1? про\n\nClaude.) (скобки). Claude 2*3! snake_case\n\nпост, Code — Code Threads длинный! Threads\n\nThreads пост:\n• 👍🏽.) длинный 👍🏽",
+      "locale": "ru"
+    },
+    {
+      "text": "#тег (скобки).» 👍🏽 Telegram (скобки). ….) Привет — e.g. 😀.\nCode e.g.? и\n\nCode.\n(скобки) мир… про.\nПривет 𝐁𝐨𝐥𝐝, ….) Привет:\n• v2.1 агентов. 🇷🇺 — «цитата»? мир. Привет, 😀 👨‍💻? Привет. 𝐁𝐨𝐥𝐝.\nэто агентов.) #тег — Привет — API это:\n• Threads\n\nагентов.» Dr.! API\n\n🇷🇺. … snake_case.» API.» Threads https://example.com/путь?q=1\n\nПривет …:\n• про #тег:\n• длинный. v2.1 👍🏽.» Привет… Telegram (скобки).\nт.е. e.g..\ne.g.? «цитата».) пост Claude Claude. Dr.? длинный Dr. https://example.com/путь?q=1… (скобки), Code v2.1? Claude\n\nёжик 2*3.) пост, #тег! #тег, длинный\n\nhttps://example.com/путь?q=1:\n• про.) это. snake_case:\n• Telegram.\n@alexgetman e.g. длинный\n\nэто Привет! Telegram snake_case … агентов\n\nйога! Telegram Telegram\n\nдлинный, 👍🏽 пост — 😀! йога? v2.1, ёжик Telegram:\n• 🇷🇺.) Telegram\n\nDr.. 𝐁𝐨𝐥𝐝 https://example.com/путь?q=1 — 👍🏽.» Dr. — @alexgetman.» (скобки)? про 😀 Claude.» Claude. 🇷🇺 йога, e.g. длинный.» …:\n• @alexgetman… @alexgetman ёжик e.g.? Code\n\ne.g., Code:\n• Code (скобки).) (скобки), т.е. про длинный.) @alexgetman? #тег — ёжик.) это",
+      "locale": "ru"
+    },
+    {
+      "text": "Telegram йога 𝐁𝐨𝐥𝐝\n\nhttps://example.com/путь?q=1 — пост — йога.) мир… это:\n• v2.1? @alexgetman — snake_case:\n• длинный.» 👨‍💻 Code йога ёжик.) 𝐁𝐨𝐥𝐝, пост. Dr. пост, т.е.:\n• это.) «цитата»\n\nsnake_case, @alexgetman:\n• …, https://example.com/путь?q=1.\n𝐁𝐨𝐥𝐝.) …, snake_case:\n• «цитата».» йога! 😀. йога.) про Threads! агентов.) и.\nsnake_case.) Привет\n\nAPI:\n• Claude 😀 ….» и.\nёжик:\n• Привет https://example.com/путь?q=1:\n• (скобки).) про:\n• https://example.com/путь?q=1 — агентов.) т.е. @alexgetman\n\nмир.\n«цитата»! https://example.com/путь?q=1 Привет. Claude! мир\n\n🇷🇺? Claude.» Threads — #тег\n\nагентов! 2*3.» длинный! Threads:\n• это. e.g..» длинный:\n• 𝐁𝐨𝐥𝐝! длинный.) (скобки) — (скобки), Threads:\n• Привет.» API т.е. 👨‍💻… Claude",
+      "locale": "ru"
+    },
+    {
+      "text": "(скобки)… ёжик Claude.\n#тег? т.е.. 🇷🇺! про #тег …? про! 2*3, 𝐁𝐨𝐥𝐝 «цитата»! API\n\n«цитата».) Привет… т.е.:\n• длинный.» Claude.\n👍🏽, про пост — длинный.\n#тег… (скобки), ёжик 👨‍💻? длинный! йога, 👍🏽 e.g.? 𝐁𝐨𝐥𝐝, @alexgetman.» и API (скобки) мир 😀 — Привет это\n\nhttps://example.com/путь?q=1.) йога… Привет про ёжик… @alexgetman… 𝐁𝐨𝐥𝐝? @alexgetman и.» мир.» 2*3 #тег.) https://example.com/путь?q=1 ёжик:\n• 👨‍💻, Threads? @alexgetman. это — это? т.е. Привет\n\n#тег. API! т.е.. йога\n\nмир:\n• v2.1 и? длинный.\nTelegram:\n• агентов 👍🏽:\n• v2.1 «цитата».) это… (скобки).» длинный, API, API:\n• Telegram! snake_case! (скобки) — Threads Telegram агентов. про\n\n@alexgetman! API агентов и мир Dr..\nsnake_case… API? Threads.\n😀.» (скобки)… йога …:\n• Code\n\nмир:\n• e.g. про, это! API.\nПривет. v2.1! это ёжик про:\n• e.g. — @alexgetman\n\n…, (скобки)? т.е. — Telegram.) 👨‍💻 ёжик.) длинный! 👍🏽 про агентов т.е.… мир это:\n• API @alexgetman\n\nClaude.\nTelegram Claude это… Claude.» длинный? Telegram пост.» Code e.g., v2.1:\n• Dr. йога, мир… йога.\n👨‍💻 это:\n• Telegram\n\n@alexgetman. Threads 👨‍💻 Telegram? @alexgetman! snake_case… https://example.com/путь?q=1 «цитата».\nпост (скобки) это:\n• «цитата» «цитата» 🇷🇺 https://example.com/путь?q=1.) API",
+      "locale": "ru"
+    },
+    {
+      "text": "🇷🇺\n\nCode.) #тег.» ….» и.\n(скобки)… 😀:\n• длинный 👍🏽 — snake_case.\n… т.е.! и\n\nCode… 𝐁𝐨𝐥𝐝.) API! про v2.1.» длинный:\n• (скобки) API Claude:\n• и, «цитата».) Привет! это\n\nэто! @alexgetman.» 👍🏽 «цитата»? 👍🏽.) агентов.\nагентов\n\nDr. v2.1… и! Dr..) Dr. — 👨‍💻, Telegram Threads? Telegram! агентов. «цитата» 2*3.» e.g.… API.\ne.g.:\n• Threads т.е.. 𝐁𝐨𝐥𝐝:\n• 🇷🇺 Claude? длинный.» длинный! v2.1? 𝐁𝐨𝐥𝐝.» это.» Threads:\n• API длинный:\n• snake_case? агентов.» @alexgetman.\nClaude пост, 👍🏽.) агентов йога, ….\nv2.1 Code.» Threads! snake_case! API Threads\n\n😀.\n😀 длинный про.» ёжик. 2*3.\nCode 2*3, мир\n\nAPI и! snake_case! (скобки)… йога, 😀\n\nпост. 👍🏽 v2.1\n\nhttps://example.com/путь?q=1, пост.» про! Claude e.g. — 🇷🇺 это? Threads — https://example.com/путь?q=1 (скобки) … Claude? т.е.! 𝐁𝐨𝐥𝐝.» т.е.? т.е.. про йога! @alexgetman? длинный, 👨‍💻.) API:\n• йога? snake_case 👨‍💻… https://example.com/путь?q=1 — агентов! (скобки)? агентов 😀\n\nAPI.» длинный. «цитата»\n\nпост … — Telegram\n\nhttps://example.com/путь?q=1, Dr.! Claude:\n• API про. Telegram\n\n👨‍💻… 👍🏽.\nи «цитата». 👨‍💻 API т.е. e.g. йога.\nмир длинный.\nйога (скобки), 2*3 «цитата»! ёжик! API… «цитата»… йога.\nмир? 👨‍💻.\nт.е.… 𝐁𝐨𝐥𝐝 API и т.е., Claude? 😀.\nпро 2*3… пост! e.g.:\n• ёжик… @alexgetman — …… йога! Threads\n\n…",
+      "locale": "ru"
+    },
+    {
+      "text": "#тег? ёжик #тег Code! Telegram Threads v2.1 https://example.com/путь?q=1 — т.е.… 👨‍💻 Telegram — v2.1! snake_case https://example.com/путь?q=1 https://example.com/путь?q=1:\n• 𝐁𝐨𝐥𝐝 Dr..» ёжик! e.g., Claude 👍🏽\n\nhttps://example.com/путь?q=1, Привет.) мир Dr..» 👨‍💻.) @alexgetman.\n😀… 👨‍💻 йога.) (скобки)… Threads\n\nпро, snake_case:\n• и… 2*3 — йога.\n😀.\nClaude! Claude.) Claude.) e.g..\nагентов:\n• 🇷🇺, про\n\nTelegram 2*3 — мир… v2.1:\n• Привет snake_case (скобки) пост 👨‍💻 Dr..» snake_case:\n• Code.) #тег\n\nдлинный? это. @alexgetman мир\n\nи\n\nTelegram, длинный.» 👍🏽.\nПривет 👍🏽 йога:\n• API! т.е.… API! … Code.\nмир? e.g..\nThreads Привет (скобки) мир\n\n𝐁𝐨𝐥𝐝, пост — …, длинный\n\nTelegram! ёжик… агентов\n\nпро… йога:\n• ёжик:\n• snake_case 🇷🇺… https://example.com/путь?q=1.\n𝐁𝐨𝐥𝐝, Code.) ёжик.» API.» @alexgetman ёжик. 👍🏽. 🇷🇺\n\nTelegram… «цитата».) Telegram — длинный. мир API? ….» 👨‍💻… snake_case.\n👍🏽! 👨‍💻.\n🇷🇺 … пост.) 🇷🇺.) это? e.g. v2.1.) и (скобки).) API 2*3.» 👨‍💻? Code… Telegram! https://example.com/путь?q=1! Telegram, v2.1:\n• e.g..\n«цитата» Claude т.е.! «цитата» #тег Code… Claude! Telegram, Threads. про про:\n• 🇷🇺 snake_case. агентов\n\nhttps://example.com/путь?q=1:\n• ёжик. e.g. #тег агентов это. (скобки). 2*3. Threads 🇷🇺 — пост! 👍🏽.\nи:\n• ёжик\n\nПривет… (скобки)? https://example.com/путь?q=1… 😀.) 👍🏽… #тег — 👍🏽 Code:\n• https://example.com/путь?q=1 👨‍💻",
+      "locale": null
+    },
+    {
+      "text": "Claude Code.\n«цитата».) e.g. snake_case\n\nПривет мир.» 😀 Claude.» e.g.:\n• Threads? Привет\n\nПривет.» @alexgetman… 2*3? «цитата» 𝐁𝐨𝐥𝐝. API? 𝐁𝐨𝐥𝐝, API.\nпост? 🇷🇺, 𝐁𝐨𝐥𝐝! e.g.\n\nпост 🇷🇺 Dr., (скобки)! про 👨‍💻, агентов мир\n\n(скобки), «цитата» Привет… Telegram.» йога Telegram.) Claude. пост, т.е. https://example.com/путь?q=1.\nClaude Claude — API? Threads\n\nи? агентов\n\nёжик, …:\n• йога т.е.. API длинный! snake_case.\n2*3.) Claude.\nAPI.\nпост — пост:\n• …:\n• т.е. мир? т.е. т.е.? API, Threads https://example.com/путь?q=1 это.) 🇷🇺! 🇷🇺 Telegram? «цитата».» т.е..» https://example.com/путь?q=1. «цитата». @alexgetman. #тег.» пост\n\nDr. snake_case\n\n𝐁𝐨𝐥𝐝 — это.) snake_case. Привет Привет. йога — v2.1… 𝐁𝐨𝐥𝐝\n\nпост.\nагентов? мир Telegram (скобки). 𝐁𝐨𝐥𝐝! snake_case.) Dr..\n(скобки) «цитата» — 𝐁𝐨𝐥𝐝 ёжик? Code 😀.) про. Telegram.» мир Code! 😀 Dr.\n\n👍🏽 йога… йога @alexgetman.» 👍🏽 — ….) e.g.. …\n\nйога.\nи т.е.:\n• пост! 👨‍💻 Threads — Telegram? (скобки) — про… и! 🇷🇺 𝐁𝐨𝐥𝐝:\n• API «цитата»… Threads? 2*3.\nTelegram. Dr.. это 👨‍💻! 👍🏽. 😀.» про:\n• Telegram.\n2*3 ёжик, и! длинный.) Telegram, про. Telegram пост.) 🇷🇺 2*3.» 👍🏽 ёжик\n\nClaude ёжик, длинный.\nCode? «цитата» e.g.",
+      "locale": "ru"
+    },
+    {
+      "text": "длинный и, ёжик — #тег e.g..\nCode. Threads. мир Claude! т.е.? v2.1.» это.\nт.е.? 2*3… v2.1\n\n2*3! и #тег API. агентов v2.1:\n• …:\n• длинный:\n• 😀 Привет.\n#тег, 👨‍💻 и.) 𝐁𝐨𝐥𝐝\n\nTelegram — 𝐁𝐨𝐥𝐝? #тег\n\nт.е.… 2*3 — длинный @alexgetman.» мир, API. пост:\n• Telegram? мир — ёжик пост\n\nт.е..\n… — йога.) 🇷🇺 snake_case",
+      "locale": "ru"
+    },
+    {
+      "text": "Threads ёжик\n\n#тег:\n• 😀 @alexgetman:\n• ёжик Привет\n\ne.g.! «цитата»! «цитата»! v2.1 — 👍🏽.\nпро! 😀.» йога, https://example.com/путь?q=1… ёжик\n\n2*3! Dr., Dr.\n\nпро — Привет! @alexgetman @alexgetman — йога! Привет — Telegram длинный, пост! Telegram — Dr. Привет\n\n2*3.) т.е.\n\nThreads\n\nv2.1. «цитата».» ёжик! пост snake_case. https://example.com/путь?q=1\n\n(скобки) 👍🏽.\n𝐁𝐨𝐥𝐝:\n• Code мир… Claude… пост пост. @alexgetman, йога\n\n…, (скобки).» 𝐁𝐨𝐥𝐝.\n…. Code! 𝐁𝐨𝐥𝐝 — пост:\n• Threads v2.1 https://example.com/путь?q=1! https://example.com/путь?q=1 … — 👨‍💻… v2.1 2*3.) Telegram.) #тег https://example.com/путь?q=1 — агентов:\n• @alexgetman.\nт.е., snake_case — #тег — ёжик! про — агентов? e.g.? ёжик 👍🏽, Dr..) Code ёжик? API:\n• длинный @alexgetman API Claude, 2*3 ёжик.\n…. про @alexgetman Code #тег.\nмир Threads! API длинный агентов v2.1… пост.) 😀.) мир это. ёжик. т.е.? 👨‍💻. https://example.com/путь?q=1\n\n… — т.е., API Claude snake_case, v2.1:\n• пост.» Code. API Threads:\n• (скобки)… Claude агентов! …\n\nsnake_case… длинный длинный… #тег.» 🇷🇺\n\n𝐁𝐨𝐥𝐝! … 😀, v2.1\n\ne.g. и e.g.. 🇷🇺\n\nмир… (скобки).» 2*3 😀 👍🏽 @alexgetman — Telegram — Code… и.\nагентов @alexgetman …! … Threads #тег 2*3 e.g., 👨‍💻 Привет Dr.\n\nйога:\n• «цитата».) это? Threads.\n#тег агентов… #тег, Claude и.\n👨‍💻.» и йога #тег Dr.",
+      "locale": "ru"
+    },
+    {
+      "text": "👨‍💻! e.g.… e.g.:\n• «цитата», 😀 🇷🇺! и! Claude, Dr. Code.» 2*3.) Привет\n\nи.\nэто.\n👍🏽… API. 👍🏽. пост — Dr. v2.1 Telegram.\nпост e.g. это «цитата»? Threads\n\ne.g.… это.» Dr..) 𝐁𝐨𝐥𝐝 про, @alexgetman — 👍🏽 …:\n• ёжик\n\n….» пост. мир.\nпро.) мир! https://example.com/путь?q=1:\n• и. пост… мир v2.1:\n• длинный! Threads Code — snake_case длинный.) #тег.) v2.1, v2.1.) пост… API:\n• Dr. — про «цитата» пост:\n• про — 👍🏽.\nёжик… https://example.com/путь?q=1 Telegram:\n• https://example.com/путь?q=1.\n@alexgetman 👍🏽? и snake_case Threads.\nи Dr.. 🇷🇺 и… API.) Привет.\nмир, (скобки) т.е.\n\ne.g.\n\n𝐁𝐨𝐥𝐝 агентов\n\n(скобки).) 🇷🇺 2*3 2*3 мир.\n…? …\n\nи? https://example.com/путь?q=1 ёжик v2.1! snake_case. Привет … …\n\n👍🏽\n\nдлинный? т.е.! длинный.) 2*3 Привет «цитата»! пост, 😀:\n• @alexgetman",
+      "locale": "ru"
+    },
+    {
+      "text": "@alexgetman.) пост 👍🏽.) Claude.\n(скобки).\nClaude Threads.» (скобки)! v2.1 API.) API, … — Claude. 2*3 агентов? snake_case",
+      "locale": null
+    },
+    { "text": "🇷🇺 — йога… Привет Claude. API, (скобки)", "locale": "ru" },
+    {
+      "text": "и Threads! v2.1? API пост.» Telegram 2*3, ёжик — Telegram.\nПривет длинный.» 🇷🇺 e.g..» API? 2*3, про\n\nйога это 🇷🇺.) про\n\nпро т.е. snake_case … Dr.. Telegram e.g.. API агентов? e.g.\n\nёжик:\n• мир.) 👍🏽 длинный:\n• 👨‍💻.) Привет, https://example.com/путь?q=1 API.) (скобки), API. Claude.» Threads",
+      "locale": null
+    }
+  ]
+}

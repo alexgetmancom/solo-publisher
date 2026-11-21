@@ -1,0 +1,106 @@
+{
+  "cases": [
+    {
+      "source": {
+        "text_ru": "Привет",
+        "text_en_machine": "Hello",
+        "text_ru_entities_json": "[{\"type\":\"bold\",\"offset\":0,\"length\":6}]",
+        "media_ru_json": "[{\"type\":\"photo\",\"fileId\":\"a\"}]"
+      },
+      "locale": "ru",
+      "content": {
+        "text": "Привет",
+        "entities": [{ "type": "bold", "offset": 0, "length": 6 }],
+        "media": [{ "type": "photo", "fileId": "a" }],
+        "ownMedia": [{ "type": "photo", "fileId": "a" }]
+      }
+    },
+    {
+      "source": {
+        "text_ru": "Привет",
+        "text_en_machine": "Hello",
+        "text_ru_entities_json": "[{\"type\":\"bold\",\"offset\":0,\"length\":6}]",
+        "media_ru_json": "[{\"type\":\"photo\",\"fileId\":\"a\"}]"
+      },
+      "locale": "en",
+      "content": { "text": "Hello", "entities": [], "media": [{ "type": "photo", "fileId": "a" }], "ownMedia": [] }
+    },
+    {
+      "source": {
+        "text_ru": "Привет",
+        "text_en_approved": "Hi",
+        "text_en_machine": "Hello",
+        "media_en_json": "[{\"type\":\"photo\",\"fileId\":\"en\"}]",
+        "text_en_entities_json": "[{\"type\":\"italic\",\"offset\":0,\"length\":2}]"
+      },
+      "locale": "ru",
+      "content": { "text": "Привет", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": {
+        "text_ru": "Привет",
+        "text_en_approved": "Hi",
+        "text_en_machine": "Hello",
+        "media_en_json": "[{\"type\":\"photo\",\"fileId\":\"en\"}]",
+        "text_en_entities_json": "[{\"type\":\"italic\",\"offset\":0,\"length\":2}]"
+      },
+      "locale": "en",
+      "content": {
+        "text": "Hi",
+        "entities": [{ "type": "italic", "offset": 0, "length": 2 }],
+        "media": [{ "type": "photo", "fileId": "en" }],
+        "ownMedia": [{ "type": "photo", "fileId": "en" }]
+      }
+    },
+    {
+      "source": { "text_ru": null, "text_en_approved": "", "text_en_machine": "Machine" },
+      "locale": "ru",
+      "content": { "text": "", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": { "text_ru": null, "text_en_approved": "", "text_en_machine": "Machine" },
+      "locale": "en",
+      "content": { "text": "", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": { "text_ru": "Без английского", "media_ru_json": "[]", "media_en_json": "" },
+      "locale": "ru",
+      "content": { "text": "Без английского", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": { "text_ru": "Без английского", "media_ru_json": "[]", "media_en_json": "" },
+      "locale": "en",
+      "content": { "text": "", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": { "text_ru": "Сломанный JSON", "text_ru_entities_json": "[{", "media_ru_json": "{\"type\":\"photo\"}" },
+      "locale": "ru",
+      "content": { "text": "Сломанный JSON", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": { "text_ru": "Сломанный JSON", "text_ru_entities_json": "[{", "media_ru_json": "{\"type\":\"photo\"}" },
+      "locale": "en",
+      "content": { "text": "", "entities": [], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": {
+        "text_ru": "Смешанный массив",
+        "text_ru_entities_json": "[1, null, \"x\", [], {\"type\":\"bold\",\"offset\":0,\"length\":1}]",
+        "media_ru_json": "null"
+      },
+      "locale": "ru",
+      "content": { "text": "Смешанный массив", "entities": [{ "type": "bold", "offset": 0, "length": 1 }], "media": [], "ownMedia": [] }
+    },
+    {
+      "source": {
+        "text_ru": "Смешанный массив",
+        "text_ru_entities_json": "[1, null, \"x\", [], {\"type\":\"bold\",\"offset\":0,\"length\":1}]",
+        "media_ru_json": "null"
+      },
+      "locale": "en",
+      "content": { "text": "", "entities": [], "media": [], "ownMedia": [] }
+    },
+    { "source": {}, "locale": "ru", "content": { "text": "", "entities": [], "media": [], "ownMedia": [] } },
+    { "source": {}, "locale": "en", "content": { "text": "", "entities": [], "media": [], "ownMedia": [] } }
+  ]
+}

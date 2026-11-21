@@ -1,0 +1,26 @@
+{
+  "size_advice": [
+    { "media": [], "advice": null },
+    { "media": [{ "type": "video", "file_size": 50000000 }], "advice": null },
+    { "media": [{ "type": "video", "file_size": 50000001 }], "advice": { "megabytes": 50, "recommendedMegabytes": 50 } },
+    {
+      "media": [{ "type": "photo", "file_size": 120499999 }, { "type": "video", "file_size": 87500000 }],
+      "advice": { "megabytes": 120, "recommendedMegabytes": 50 }
+    },
+    { "media": [{ "type": "photo" }, { "type": "video", "file_size": "huge" }], "advice": null },
+    {
+      "media": [{ "type": "video", "file_size": -5 }, { "type": "video", "file_size": 1999999999.5 }],
+      "advice": { "megabytes": 2000, "recommendedMegabytes": 50 }
+    },
+    {
+      "media": [{ "type": "video", "file_size": null }, { "type": "video", "file_size": 64500000 }],
+      "advice": { "megabytes": 65, "recommendedMegabytes": 50 }
+    }
+  ],
+  "naming": [
+    { "kind": "url_prefix", "value": "media/posts" },
+    { "kind": "responsive_widths", "value": [360, 480, 640, 720, 800, 960, 1280] },
+    { "kind": "filenames", "value": [1200, "ru", 0, "jpg", "1200-ru-0.jpg", "1200-ru-0-original-poster.jpg"] },
+    { "kind": "filenames", "value": [7, "en", 3, "mp4", "7-en-3.mp4", "7-en-3-original-poster.jpg"] }
+  ]
+}

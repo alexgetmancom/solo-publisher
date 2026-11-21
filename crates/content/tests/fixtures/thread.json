@@ -1,0 +1,2772 @@
+{
+  "localized": [
+    {
+      "locale": "ru",
+      "thread": [
+        {
+          "position": 2,
+          "textRu": "Второй",
+          "entitiesRu": [{ "type": "bold", "offset": 0, "length": 6 }],
+          "textEn": "Second",
+          "textEnApproved": null,
+          "media": []
+        },
+        {
+          "position": 3,
+          "textRu": "Третий",
+          "entitiesRu": [],
+          "textEn": "Third",
+          "textEnApproved": "Third, approved",
+          "media": [{ "type": "photo", "fileId": "f" }]
+        },
+        { "position": 4, "textRu": "Четвёртый", "entitiesRu": [], "textEn": null, "textEnApproved": null, "media": [] },
+        { "position": 5, "textRu": "Пятый", "entitiesRu": [], "textEn": "Fifth", "textEnApproved": "", "media": [] }
+      ],
+      "parts": [
+        { "text": "Второй", "entities": [{ "type": "bold", "offset": 0, "length": 6 }], "media": [] },
+        { "text": "Третий", "entities": [], "media": [{ "type": "photo", "fileId": "f" }] },
+        { "text": "Четвёртый", "entities": [], "media": [] },
+        { "text": "Пятый", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "locale": "en",
+      "thread": [
+        {
+          "position": 2,
+          "textRu": "Второй",
+          "entitiesRu": [{ "type": "bold", "offset": 0, "length": 6 }],
+          "textEn": "Second",
+          "textEnApproved": null,
+          "media": []
+        },
+        {
+          "position": 3,
+          "textRu": "Третий",
+          "entitiesRu": [],
+          "textEn": "Third",
+          "textEnApproved": "Third, approved",
+          "media": [{ "type": "photo", "fileId": "f" }]
+        },
+        { "position": 4, "textRu": "Четвёртый", "entitiesRu": [], "textEn": null, "textEnApproved": null, "media": [] },
+        { "position": 5, "textRu": "Пятый", "entitiesRu": [], "textEn": "Fifth", "textEnApproved": "", "media": [] }
+      ],
+      "parts": [
+        { "text": "Second", "entities": [], "media": [] },
+        { "text": "Third, approved", "entities": [], "media": [{ "type": "photo", "fileId": "f" }] },
+        { "text": "", "entities": [], "media": [] },
+        { "text": "", "entities": [], "media": [] }
+      ]
+    }
+  ],
+  "joined": [
+    {
+      "first": { "text": "Первый пост  \n", "entities": [{ "type": "bold", "offset": 0, "length": 6 }] },
+      "rest": [
+        {
+          "text": "  \n Второй 😀 пост  ",
+          "entities": [{ "type": "italic", "offset": 4, "length": 6 }, { "type": "bold", "offset": 1, "length": 2 }],
+          "media": []
+        },
+        { "text": "   ", "entities": [{ "type": "bold", "offset": 0, "length": 1 }], "media": [] },
+        {
+          "text": "Третий",
+          "entities": [{ "type": "bold", "offset": 0, "length": 7 }, { "type": "code", "offset": "2", "length": "3" }],
+          "media": []
+        },
+        {
+          "text": " Четвёртый",
+          "entities": [{ "type": "url", "offset": 1, "length": 9, "extra": true }, { "type": "bold", "length": 1 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Первый пост\n\nВторой 😀 пост\n\nТретий\n\nЧетвёртый",
+        "entities": [
+          { "type": "bold", "offset": 0, "length": 6 },
+          { "type": "italic", "offset": 13, "length": 6 },
+          { "type": "code", "offset": 31, "length": "3" },
+          { "type": "url", "offset": 37, "length": 9, "extra": true }
+        ]
+      }
+    },
+    {
+      "first": { "text": "", "entities": [] },
+      "rest": [{ "text": "Только второй", "entities": [{ "type": "bold", "offset": 0, "length": 6 }], "media": [] }],
+      "joined": { "text": "\n\nТолько второй", "entities": [{ "type": "bold", "offset": 2, "length": 6 }] }
+    },
+    { "first": { "text": "Один", "entities": [] }, "rest": [], "joined": { "text": "Один", "entities": [] } },
+    {
+      "first": {
+        "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+        "entities": [{ "type": "strikethrough", "offset": "279", "length": 33 }]
+      },
+      "rest": [{ "text": " про.\n@alexgetman — пост… длинный ", "entities": [{ "type": "pre", "offset": 9, "length": -1 }], "media": [] }],
+      "joined": {
+        "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude\n\nпро.\n@alexgetman — пост… длинный",
+        "entities": [{ "type": "strikethrough", "offset": "279", "length": 33 }, { "type": "pre", "offset": 373, "length": -1 }]
+      }
+    },
+    {
+      "first": {
+        "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+        "entities": [{ "type": "list_item", "offset": 136, "length": 19 }]
+      },
+      "rest": [
+        {
+          "text": " «цитата» и? Telegram.) https://example.com/путь?q=1\n\n😀 ёжик? #тег.) Привет, 🇷🇺 ёжик длинный.\nёжик\n\nэто 𝐁𝐨𝐥𝐝\n\n#тег! @alexgetman! про.» 𝐁𝐨𝐥𝐝.\n👨‍💻",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "\n\nПривет\n\n@alexgetman… йога\n\n𝐁𝐨𝐥𝐝 https://example.com/путь?q=1? 𝐁𝐨𝐥𝐝 (скобки)\n",
+          "entities": [{ "type": "mention", "offset": 55, "length": 28 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code\n\n«цитата» и? Telegram.) https://example.com/путь?q=1\n\n😀 ёжик? #тег.) Привет, 🇷🇺 ёжик длинный.\nёжик\n\nэто 𝐁𝐨𝐥𝐝\n\n#тег! @alexgetman! про.» 𝐁𝐨𝐥𝐝.\n👨‍💻\n\nПривет\n\n@alexgetman… йога\n\n𝐁𝐨𝐥𝐝 https://example.com/путь?q=1? 𝐁𝐨𝐥𝐝 (скобки)",
+        "entities": [{ "type": "list_item", "offset": 136, "length": 19 }, { "type": "mention", "offset": 495, "length": 28 }]
+      }
+    },
+    {
+      "first": { "text": "", "entities": [{ "type": "mention", "offset": 0, "length": 2 }] },
+      "rest": [
+        {
+          "text": " и… 👨‍💻! и.» Привет… т.е.? агентов это? Привет… Dr. https://example.com/путь?q=1 ",
+          "entities": [{ "type": "blockquote", "offset": 40, "length": 23 }, { "type": "hashtag", "offset": 53, "length": 30 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "\n\nи… 👨‍💻! и.» Привет… т.е.? агентов это? Привет… Dr. https://example.com/путь?q=1",
+        "entities": [{ "type": "mention", "offset": 0, "length": 2 }, { "type": "blockquote", "offset": 41, "length": 23 }]
+      }
+    },
+    {
+      "first": { "text": "   ", "entities": [{ "type": "mention", "offset": -1, "length": -1 }] },
+      "rest": [],
+      "joined": { "text": "", "entities": [{ "type": "mention", "offset": -1, "length": -1 }] }
+    },
+    {
+      "first": { "text": " ﻿ текст 　", "entities": [{ "type": "quote", "offset": 7, "length": 0 }] },
+      "rest": [
+        { "text": "агентов! Dr., 🇷🇺.\nv2.1 агентов. 𝐁𝐨𝐥𝐝, Threads — #тег\n", "entities": [], "media": [] },
+        {
+          "text": " мир\n\nhttps://example.com/путь?q=1! мир Claude, 😀 про.\n👨‍💻, 👨‍💻 ёжик. https://example.com/путь?q=1! пост:\n• пост 🇷🇺 🇷🇺",
+          "entities": [
+            { "type": "pre", "offset": 96, "length": 18 },
+            { "type": "hashtag", "offset": 115, "length": 9 },
+            { "type": "underline", "offset": 61, "length": 23 }
+          ],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": " ﻿ текст\n\nагентов! Dr., 🇷🇺.\nv2.1 агентов. 𝐁𝐨𝐥𝐝, Threads — #тег\n\nмир\n\nhttps://example.com/путь?q=1! мир Claude, 😀 про.\n👨‍💻, 👨‍💻 ёжик. https://example.com/путь?q=1! пост:\n• пост 🇷🇺 🇷🇺",
+        "entities": [
+          { "type": "quote", "offset": 7, "length": 0 },
+          { "type": "pre", "offset": 165, "length": 18 },
+          { "type": "hashtag", "offset": 184, "length": 9 },
+          { "type": "underline", "offset": 130, "length": 23 }
+        ]
+      }
+    },
+    {
+      "first": { "text": "начало с U+0085", "entities": [{ "type": "underline", "offset": 14, "length": 4 }] },
+      "rest": [
+        {
+          "text": "@alexgetman — ёжик… это.) т.е. это! e.g. Привет — #тег. (скобки) 𝐁𝐨𝐥𝐝\n\n(скобки).) v2.1:\n• это. пост\n\n#тег… 𝐁𝐨𝐥𝐝:\n• 🇷🇺… …\n",
+          "entities": [{ "type": "quote", "offset": 118, "length": 1 }],
+          "media": []
+        },
+        {
+          "text": "\n\nClaude ",
+          "entities": [{ "type": "blockquote", "offset": -1, "length": 0 }, { "type": "underline", "offset": 7, "length": 2 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "начало с U+0085\n\n@alexgetman — ёжик… это.) т.е. это! e.g. Привет — #тег. (скобки) 𝐁𝐨𝐥𝐝\n\n(скобки).) v2.1:\n• это. пост\n\n#тег… 𝐁𝐨𝐥𝐝:\n• 🇷🇺… …\n\nClaude",
+        "entities": [{ "type": "underline", "offset": 14, "length": 4 }, { "type": "quote", "offset": 136, "length": 1 }]
+      }
+    },
+    {
+      "first": { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "entities": [{ "type": "mention", "offset": 13, "length": 0 }] },
+      "rest": [],
+      "joined": { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "entities": [{ "type": "mention", "offset": 13, "length": 0 }] }
+    },
+    {
+      "first": {
+        "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+        "entities": [{ "type": "spoiler", "offset": 98, "length": 16 }]
+      },
+      "rest": [],
+      "joined": {
+        "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
+        "entities": [{ "type": "spoiler", "offset": 98, "length": 16 }]
+      }
+    },
+    {
+      "first": { "text": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱", "entities": [{ "type": "url", "offset": 79, "length": 7 }] },
+      "rest": [
+        {
+          "text": "#тег… …. v2.1.\nпост\n",
+          "entities": [
+            { "type": "hashtag", "offset": 9, "length": 0 },
+            { "type": "url", "offset": -1, "length": 16 },
+            { "type": "pre", "offset": 3, "length": 14 }
+          ],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱🇷🇺🇺🇸🇮🇱\n\n#тег… …. v2.1.\nпост",
+        "entities": [
+          { "type": "url", "offset": 79, "length": 7 },
+          { "type": "hashtag", "offset": 107, "length": 0 },
+          { "type": "pre", "offset": 101, "length": 14 }
+        ]
+      }
+    },
+    {
+      "first": {
+        "text": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.",
+        "entities": [{ "type": "code", "offset": 22, "length": 24 }]
+      },
+      "rest": [
+        {
+          "text": "\n\n🇷🇺 Dr.\n\nйога.\nhttps://example.com/путь?q=1 Telegram — API, мир 👨‍💻. мир:\n• snake_case:\n• мир @alexgetman «цитата» ",
+          "entities": [{ "type": "bold", "offset": 2, "length": 29 }, { "type": "list_item", "offset": 23, "length": 70 }],
+          "media": []
+        },
+        {
+          "text": " йога? 2*3, 🇷🇺 — мир. 👍🏽, v2.1.» про… т.е. — пост пост, API.\nAPI.» (скобки) ",
+          "entities": [
+            { "type": "quote", "offset": 12, "length": 48 },
+            { "type": "strikethrough", "offset": 17, "length": 31 },
+            { "type": "code", "offset": 31, "length": 41 }
+          ],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Конец фразы. 𐐨 deseret после точки. Ещё одна фраза здесь.\n\n🇷🇺 Dr.\n\nйога.\nhttps://example.com/путь?q=1 Telegram — API, мир 👨‍💻. мир:\n• snake_case:\n• мир @alexgetman «цитата»\n\nйога? 2*3, 🇷🇺 — мир. 👍🏽, v2.1.» про… т.е. — пост пост, API.\nAPI.» (скобки)",
+        "entities": [
+          { "type": "code", "offset": 22, "length": 24 },
+          { "type": "bold", "offset": 60, "length": 29 },
+          { "type": "list_item", "offset": 81, "length": 70 },
+          { "type": "quote", "offset": 190, "length": 48 },
+          { "type": "strikethrough", "offset": 195, "length": 31 },
+          { "type": "code", "offset": 209, "length": 41 }
+        ]
+      }
+    },
+    {
+      "first": {
+        "text": "Он сказал: «Готово!» Потом ушёл. И т.д. и т.п. Вот так.",
+        "entities": [{ "type": "blockquote", "offset": 51, "length": 5 }]
+      },
+      "rest": [
+        {
+          "text": "https://example.com/путь?q=1 Dr.? Threads 😀 Dr.? snake_case… e.g.\n",
+          "entities": [{ "type": "bold", "offset": 49, "length": 20 }, { "type": "quote", "length": 10 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Он сказал: «Готово!» Потом ушёл. И т.д. и т.п. Вот так.\n\nhttps://example.com/путь?q=1 Dr.? Threads 😀 Dr.? snake_case… e.g.",
+        "entities": [{ "type": "blockquote", "offset": 51, "length": 5 }]
+      }
+    },
+    {
+      "first": {
+        "text": "Wait... what?! (Really.) \"Yes.\" Okay then, fine.",
+        "entities": [{ "type": "italic", "offset": 7, "length": 43 }]
+      },
+      "rest": [
+        {
+          "text": "👨‍💻\n\nйога? ёжик? 👍🏽",
+          "entities": [{ "type": "pre", "offset": 12, "length": 13 }, { "type": "custom_emoji", "offset": 22, "length": 0 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Wait... what?! (Really.) \"Yes.\" Okay then, fine.\n\n👨‍💻\n\nйога? ёжик? 👍🏽",
+        "entities": [{ "type": "italic", "offset": 7, "length": 43 }, { "type": "custom_emoji", "offset": 72, "length": 0 }]
+      }
+    },
+    {
+      "first": {
+        "text": "Первый абзац.\n\nВторой абзац, длинный, очень длинный.\n\nТретий.",
+        "entities": [{ "type": "url", "offset": 47, "length": 7 }]
+      },
+      "rest": [
+        { "text": "ёжик, API… snake_case? #тег\n\nдлинный пост ", "entities": [], "media": [] },
+        {
+          "text": "Threads, v2.1.» (скобки).» «цитата» 👍🏽? API… Dr..» Telegram #тег e.g. 👨‍💻.) Code… Threads Claude? 🇷🇺 агентов v2.1! длинный:\n• API",
+          "entities": [
+            { "type": "text_link", "offset": 69, "length": 66, "url": "javascript:alert(1)" },
+            { "type": "spoiler", "offset": -1, "length": 87 },
+            { "type": "spoiler", "offset": 42, "length": 26 }
+          ],
+          "media": []
+        },
+        {
+          "text": "и. … Привет.\n@alexgetman… 👍🏽 😀.\nт.е.:\n• Code API мир! 2*3? 👨‍💻.\n𝐁𝐨𝐥𝐝 — длинный т.е..\n(скобки) йога\n\n😀.) пост.\nCode ",
+          "entities": [
+            { "type": "pre", "offset": 76, "length": 3 },
+            { "type": "hashtag", "offset": 47, "length": 57 },
+            { "type": "spoiler", "offset": "73", "length": 1 }
+          ],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Первый абзац.\n\nВторой абзац, длинный, очень длинный.\n\nТретий.\n\nёжик, API… snake_case? #тег\n\nдлинный пост\n\nThreads, v2.1.» (скобки).» «цитата» 👍🏽? API… Dr..» Telegram #тег e.g. 👨‍💻.) Code… Threads Claude? 🇷🇺 агентов v2.1! длинный:\n• API\n\nи. … Привет.\n@alexgetman… 👍🏽 😀.\nт.е.:\n• Code API мир! 2*3? 👨‍💻.\n𝐁𝐨𝐥𝐝 — длинный т.е..\n(скобки) йога\n\n😀.) пост.\nCode",
+        "entities": [
+          { "type": "url", "offset": 47, "length": 7 },
+          { "type": "text_link", "offset": 175, "length": 66, "url": "javascript:alert(1)" },
+          { "type": "spoiler", "offset": 148, "length": 26 },
+          { "type": "pre", "offset": 319, "length": 3 },
+          { "type": "hashtag", "offset": 290, "length": 57 },
+          { "type": "spoiler", "offset": 316, "length": 1 }
+        ]
+      }
+    },
+    {
+      "first": {
+        "text": "line one\nline two\nline three\nline four\nline five",
+        "entities": [{ "type": "text_link", "offset": 13, "length": -1, "url": "https://" }]
+      },
+      "rest": [
+        {
+          "text": "2*3 … т.е. (скобки), 2*3! длинный! Dr..) это ",
+          "entities": [
+            { "type": "list_item", "offset": 29, "length": 4 },
+            { "type": "quote", "offset": 7, "length": 12 },
+            { "type": "list_item", "offset": 7, "length": 33 }
+          ],
+          "media": []
+        },
+        {
+          "text": "\n\ne.g..\nи — API\n\n2*3:\n• и.\n@alexgetman.) Threads? агентов.) snake_case, агентов — Dr. ",
+          "entities": [
+            { "type": "spoiler", "offset": 28, "length": 33 },
+            { "type": "pre", "offset": 30, "length": 23 },
+            { "type": "pre", "offset": 43, "length": 16 }
+          ],
+          "media": []
+        },
+        {
+          "text": " это «цитата». v2.1, #тег e.g.\n\n«цитата»:\n• Привет.\nClaude.\nагентов? 👍🏽 — snake_case. e.g. — … 👨‍💻.\n𝐁𝐨𝐥𝐝 API 👍🏽 Dr.… @alexgetman\n",
+          "entities": [],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "line one\nline two\nline three\nline four\nline five\n\n2*3 … т.е. (скобки), 2*3! длинный! Dr..) это\n\ne.g..\nи — API\n\n2*3:\n• и.\n@alexgetman.) Threads? агентов.) snake_case, агентов — Dr.\n\nэто «цитата». v2.1, #тег e.g.\n\n«цитата»:\n• Привет.\nClaude.\nагентов? 👍🏽 — snake_case. e.g. — … 👨‍💻.\n𝐁𝐨𝐥𝐝 API 👍🏽 Dr.… @alexgetman",
+        "entities": [
+          { "type": "text_link", "offset": 13, "length": -1, "url": "https://" },
+          { "type": "list_item", "offset": 79, "length": 4 },
+          { "type": "quote", "offset": 57, "length": 12 },
+          { "type": "list_item", "offset": 57, "length": 33 },
+          { "type": "spoiler", "offset": 122, "length": 33 },
+          { "type": "pre", "offset": 124, "length": 23 },
+          { "type": "pre", "offset": 137, "length": 16 }
+        ]
+      }
+    },
+    {
+      "first": {
+        "text": "https://example.com/a/very/long/path/that/never/breaks/and/keeps/going/on/and/on/forever",
+        "entities": [{ "type": "spoiler", "offset": 76, "length": 1 }]
+      },
+      "rest": [
+        {
+          "text": "e.g.:\n• это… агентов",
+          "entities": [{ "type": "bold", "offset": 21, "length": 1 }, { "type": "bold", "offset": 1, "length": 10 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "https://example.com/a/very/long/path/that/never/breaks/and/keeps/going/on/and/on/forever\n\ne.g.:\n• это… агентов",
+        "entities": [{ "type": "spoiler", "offset": 76, "length": 1 }, { "type": "bold", "offset": 91, "length": 10 }]
+      }
+    },
+    {
+      "first": {
+        "text": "Цена 3.5 руб. за шт. и 4.2 руб. за кг. Вот.",
+        "entities": [{ "type": "strikethrough", "offset": 1, "length": 4 }]
+      },
+      "rest": [
+        {
+          "text": "\n\nsnake_case",
+          "entities": [{ "type": "strikethrough", "offset": 4, "length": 7 }, { "type": "hashtag", "length": 3 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Цена 3.5 руб. за шт. и 4.2 руб. за кг. Вот.\n\nsnake_case",
+        "entities": [{ "type": "strikethrough", "offset": 1, "length": 4 }, { "type": "strikethrough", "offset": 47, "length": 7 }]
+      }
+    },
+    {
+      "first": { "text": "Ёлки и йога! Ёжик? Да… Нет.", "entities": [{ "type": "italic", "offset": 25, "length": 4 }] },
+      "rest": [
+        {
+          "text": "\n\nv2.1 мир! агентов. длинный:\n• про ёжик? e.g. Привет.\n👍🏽? длинный? «цитата»! 🇷🇺 #тег.) e.g. API:\n• «цитата»\n\n…",
+          "entities": [],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Ёлки и йога! Ёжик? Да… Нет.\n\nv2.1 мир! агентов. длинный:\n• про ёжик? e.g. Привет.\n👍🏽? длинный? «цитата»! 🇷🇺 #тег.) e.g. API:\n• «цитата»\n\n…",
+        "entities": [{ "type": "italic", "offset": 25, "length": 4 }]
+      }
+    },
+    {
+      "first": { "text": "x y z. Next sentence. Another.", "entities": [{ "type": "italic", "offset": "21", "length": 6 }] },
+      "rest": [
+        {
+          "text": "\n\nпро 👨‍💻 https://example.com/путь?q=1 @alexgetman.) https://example.com/путь?q=1",
+          "entities": [
+            { "type": "mention", "offset": 36, "length": 22 },
+            { "type": "code", "offset": 42, "length": 13 },
+            { "type": "text_link", "offset": -1, "length": 84, "url": "example.com" }
+          ],
+          "media": []
+        },
+        {
+          "text": "йога.) Code 𝐁𝐨𝐥𝐝.) Привет йога… йога:\n• Threads Telegram. API… т.е.… агентов\n\nsnake_case.» (скобки).» (скобки).\n… длинный:\n• т.е. ….) …. пост",
+          "entities": [{ "type": "heading", "offset": 134, "length": 4, "level": 2 }, { "type": "hashtag", "length": 61 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "x y z. Next sentence. Another.\n\nпро 👨‍💻 https://example.com/путь?q=1 @alexgetman.) https://example.com/путь?q=1\n\nйога.) Code 𝐁𝐨𝐥𝐝.) Привет йога… йога:\n• Threads Telegram. API… т.е.… агентов\n\nsnake_case.» (скобки).» (скобки).\n… длинный:\n• т.е. ….) …. пост",
+        "entities": [
+          { "type": "italic", "offset": "21", "length": 6 },
+          { "type": "mention", "offset": 66, "length": 22 },
+          { "type": "code", "offset": 72, "length": 13 },
+          { "type": "heading", "offset": 249, "length": 4, "level": 2 }
+        ]
+      }
+    },
+    {
+      "first": { "text": "Tab\tseparated\twords\tare\there and there", "entities": [{ "type": "italic", "offset": 1, "length": 1 }] },
+      "rest": [
+        {
+          "text": "\n\n👍🏽 Threads агентов 𝐁𝐨𝐥𝐝! 🇷🇺 Telegram ",
+          "entities": [{ "type": "blockquote", "offset": 47, "length": 1 }, { "type": "bold", "offset": 13, "length": 16 }],
+          "media": []
+        },
+        {
+          "text": "\n\n@alexgetman.\nт.е. Привет Claude ёжик:\n• Привет ",
+          "entities": [
+            { "type": "quote", "offset": 48, "length": 1 },
+            { "type": "custom_emoji", "offset": 48, "length": 2 },
+            { "type": "url", "offset": "47", "length": 0 }
+          ],
+          "media": []
+        },
+        {
+          "text": "пост:\n• длинный Code\n",
+          "entities": [{ "type": "quote", "offset": 21, "length": 1 }, { "type": "heading", "offset": 13, "length": 8, "level": 2 }],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "Tab\tseparated\twords\tare\there and there\n\n👍🏽 Threads агентов 𝐁𝐨𝐥𝐝! 🇷🇺 Telegram\n\n@alexgetman.\nт.е. Привет Claude ёжик:\n• Привет\n\nпост:\n• длинный Code",
+        "entities": [
+          { "type": "italic", "offset": 1, "length": 1 },
+          { "type": "bold", "offset": 51, "length": 16 },
+          { "type": "url", "offset": 131, "length": 0 }
+        ]
+      }
+    },
+    {
+      "first": {
+        "text": "…! 𝐁𝐨𝐥𝐝:\n• длинный\n\nт.е. Привет\n\nдлинный. 😀. мир.) мир.\n(скобки) — и? 😀 это — т.е..» ёжик https://example.com/путь?q=1.) и агентов:\n• 👨‍💻 𝐁𝐨𝐥𝐝? Code.» йога.» … агентов это Claude\n\nт.е.. 👍🏽, 👍🏽 пост.» API… https://example.com/путь?q=1 …, и длинный Привет:\n• 👍🏽:\n• ёжик — Claude.\n𝐁𝐨𝐥𝐝 Threads\n\nПривет, т.е..» пост.) агентов.) длинный 𝐁𝐨𝐥𝐝 — Claude? 𝐁𝐨𝐥𝐝? про\n\n… Dr., https://example.com/путь?q=1 Code… йога, 👨‍💻\n\nAPI:\n• мир… Claude — и\n\nTelegram! 𝐁𝐨𝐥𝐝.» Telegram… e.g.. мир.\n«цитата»… API",
+        "entities": [{ "type": "spoiler", "offset": 63, "length": 459 }]
+      },
+      "rest": [
+        {
+          "text": " это\n\nи 2*3? e.g.:\n• Telegram.» длинный — https://example.com/путь?q=1. т.е.… мир https://example.com/путь?q=1\n",
+          "entities": [{ "type": "blockquote", "offset": 21, "length": 45 }],
+          "media": []
+        },
+        {
+          "text": "👨‍💻? 🇷🇺! Code. Claude.» 😀… 😀 — @alexgetman\n\nTelegram агентов v2.1 API, 👨‍💻. 𝐁𝐨𝐥𝐝 Привет — 👍🏽.» Code — …",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "#тег, йога, snake_case 👍🏽\n\nThreads …\n",
+          "entities": [
+            { "type": "custom_emoji", "offset": 27, "length": 10 },
+            { "type": "text_link", "offset": 17, "length": 5, "url": "http://пример.рф/путь" }
+          ],
+          "media": []
+        }
+      ],
+      "joined": {
+        "text": "…! 𝐁𝐨𝐥𝐝:\n• длинный\n\nт.е. Привет\n\nдлинный. 😀. мир.) мир.\n(скобки) — и? 😀 это — т.е..» ёжик https://example.com/путь?q=1.) и агентов:\n• 👨‍💻 𝐁𝐨𝐥𝐝? Code.» йога.» … агентов это Claude\n\nт.е.. 👍🏽, 👍🏽 пост.» API… https://example.com/путь?q=1 …, и длинный Привет:\n• 👍🏽:\n• ёжик — Claude.\n𝐁𝐨𝐥𝐝 Threads\n\nПривет, т.е..» пост.) агентов.) длинный 𝐁𝐨𝐥𝐝 — Claude? 𝐁𝐨𝐥𝐝? про\n\n… Dr., https://example.com/путь?q=1 Code… йога, 👨‍💻\n\nAPI:\n• мир… Claude — и\n\nTelegram! 𝐁𝐨𝐥𝐝.» Telegram… e.g.. мир.\n«цитата»… API\n\nэто\n\nи 2*3? e.g.:\n• Telegram.» длинный — https://example.com/путь?q=1. т.е.… мир https://example.com/путь?q=1\n\n👨‍💻? 🇷🇺! Code. Claude.» 😀… 😀 — @alexgetman\n\nTelegram агентов v2.1 API, 👨‍💻. 𝐁𝐨𝐥𝐝 Привет — 👍🏽.» Code — …\n\n#тег, йога, snake_case 👍🏽\n\nThreads …",
+        "entities": [
+          { "type": "spoiler", "offset": 63, "length": 459 },
+          { "type": "blockquote", "offset": 544, "length": 45 },
+          { "type": "custom_emoji", "offset": 781, "length": 10 },
+          { "type": "text_link", "offset": 771, "length": 5, "url": "http://пример.рф/путь" }
+        ]
+      }
+    }
+  ],
+  "chains": [
+    {
+      "posts": [
+        {
+          "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa tail",
+          "entities": [{ "type": "bold", "offset": 0, "length": 4 }],
+          "media": ["photo"]
+        }
+      ],
+      "limit": 500,
+      "chain": [
+        {
+          "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "entities": [{ "type": "bold", "offset": 0, "length": 4 }],
+          "media": ["photo"]
+        },
+        { "text": "tail", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+          "entities": [{ "type": "bold", "offset": 0, "length": 41 }, { "type": "url", "offset": 400, "length": 10 }],
+          "media": [{ "type": "photo" }]
+        },
+        {
+          "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr. Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.\n\nRead more at https://alexgetman.com/blog/claude-code",
+          "entities": [{ "type": "italic", "offset": "0", "length": 5 }, { "type": "bold" }],
+          "media": []
+        }
+      ],
+      "limit": 140,
+      "chain": [
+        {
+          "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright.",
+          "entities": [{ "type": "bold", "offset": 0, "length": 41 }],
+          "media": [{ "type": "photo" }]
+        },
+        {
+          "text": "Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "Claude Code now ships a built-in browser\n\nThe agent opens the page itself, e.g. no separate Playwright setup. Dr.",
+          "entities": [{ "type": "italic", "offset": "0", "length": 5 }],
+          "media": []
+        },
+        {
+          "text": "Smith (U.S. team) said it works vs. the old flow.\nIt runs on v2.1+ and the screenshots land in context. That's it.",
+          "entities": [],
+          "media": []
+        },
+        { "text": "Read more at https://alexgetman.com/blog/claude-code", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "https://example.com/путь?q=1, т.е.… 🇷🇺 — «цитата» 👨‍💻? 👍🏽. ёжик\n\nдлинный. 𝐁𝐨𝐥𝐝.» Dr..» snake_case! агентов — https://example.com/путь?q=1 https://example.com/путь?q=1 пост «цитата»:\n• API, Claude.» Claude.) 😀\n\nйога Threads.) пост. это? API.» e.g. — e.g. Code! агентов? «цитата» про (скобки)… агентов… @alexgetman! Привет про snake_case! 👨‍💻:\n• длинный… ёжик — про? это! https://example.com/путь?q=1 и… Привет! это.) API.\n👍🏽:\n• Threads:\n• Telegram.» агентов… API — «цитата» snake_case — длинный Telegram\n\nдлинный? Threads Привет.» @alexgetman! длинный и Claude — 👨‍💻.) йога.\nт.е. — про, «цитата».) 👍🏽… e.g..\n«цитата» Claude т.е.! «цитата» #тег Code… Claude! Telegram, Threads. про про:\n• 🇷🇺 snake_case. агентов",
+          "entities": [
+            { "type": "text_link", "offset": 199, "length": 309, "url": "http://пример.рф/путь" },
+            { "type": "code", "offset": 334, "length": 106 },
+            { "type": "mention", "offset": 164, "length": 16 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 64,
+      "chain": [
+        { "text": "https://example.com/путь?q=1, т.е.… 🇷🇺 — «цитата» 👨‍💻? 👍🏽.", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "ёжик\n\nдлинный. 𝐁𝐨𝐥𝐝.» Dr..» snake_case! агентов —", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1 https://example.com/путь?q=1 пост", "entities": [], "media": [] },
+        { "text": "«цитата»:\n• API, Claude.» Claude.) 😀", "entities": [], "media": [] },
+        { "text": "йога Threads.) пост. это? API.» e.g. — e.g. Code! агентов?", "entities": [], "media": [] },
+        { "text": "«цитата» про (скобки)… агентов… @alexgetman!", "entities": [], "media": [] },
+        { "text": "Привет про snake_case! 👨‍💻:\n• длинный… ёжик — про? это!", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1 и… Привет! это.) API.", "entities": [], "media": [] },
+        { "text": "👍🏽:\n• Threads:\n• Telegram.» агентов…", "entities": [], "media": [] },
+        { "text": "API — «цитата» snake_case — длинный Telegram", "entities": [], "media": [] },
+        { "text": "длинный? Threads Привет.» @alexgetman! длинный и Claude —", "entities": [], "media": [] },
+        { "text": "👨‍💻.) йога.\nт.е. — про, «цитата».) 👍🏽… e.g..", "entities": [], "media": [] },
+        { "text": "«цитата» Claude т.е.! «цитата» #тег Code… Claude!", "entities": [], "media": [] },
+        { "text": "Telegram, Threads. про про:\n• 🇷🇺 snake_case. агентов", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "https://example.com/путь?q=1:\n• ёжик. e.g. #тег агентов это. (скобки). 2*3. Threads 🇷🇺 — пост! 👍🏽.\nи:\n• ёжик\n\nПривет… (скобки)? https://example.com/путь?q=1… 😀.) 👍🏽… #тег — 👍🏽 Code:\n• https://example.com/путь?q=1 👨‍💻.) Claude Code.\n«цитата».) e.g. snake_case\n\nПривет мир.» 😀 Claude.» e.g.:\n• Threads? Привет\n\nПривет.» @alexgetman… 2*3? «цитата» 𝐁𝐨𝐥𝐝. API? 𝐁𝐨𝐥𝐝, API.\nпост? 🇷🇺, 𝐁𝐨𝐥𝐝! e.g.\n\nпост 🇷🇺 Dr., (скобки)! про 👨‍💻, агентов мир\n\n(скобки), «цитата» Привет… Telegram.» йога Telegram.) Claude. пост, т.е. https://example.com/путь?q=1.\nClaude Claude — API? Threads\n\nи? агентов\n\nёжик, …:\n• йога т.е.. API длинный! snake_case.\n2*3.) Claude.\nAPI.\nпост — пост:\n• …:\n• т.е. мир? т.е. т.е.? API, Threads https://example.com/путь?q=1 это.) 🇷🇺! 🇷🇺 Telegram? «цитата».» т.е..» https://example.com/путь?q=1. «цитата». @alexgetman. #тег.» пост\n\nDr. snake_case\n\n𝐁𝐨𝐥𝐝 — это.) snake_case. Привет Привет. йога — v2.1… 𝐁𝐨𝐥𝐝\n\nпост.\nагентов? мир Telegram (скобки). 𝐁𝐨𝐥𝐝! snake_case.) Dr..\n(скобки) «цитата» — 𝐁𝐨𝐥𝐝 ёжик? Code 😀.) про. Telegram.» мир",
+          "entities": [
+            { "type": "strikethrough", "offset": 122, "length": 663 },
+            { "type": "quote", "offset": 598, "length": 194 },
+            { "type": "code", "offset": 727, "length": 83 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 10,
+      "chain": [
+        { "text": "https://ex", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1:", "entities": [], "media": [] },
+        { "text": "• ёжик.", "entities": [], "media": [] },
+        { "text": "e.g. #тег", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": "это. (скоб", "entities": [], "media": [] },
+        { "text": "ки). 2*3.", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "🇷🇺 —", "entities": [], "media": [] },
+        { "text": "пост! 👍🏽", "entities": [], "media": [] },
+        { "text": ".\nи:\n•", "entities": [], "media": [] },
+        { "text": "ёжик\n\nПрив", "entities": [], "media": [] },
+        { "text": "ет… (скобк", "entities": [], "media": [] },
+        { "text": "и)? https:", "entities": [], "media": [] },
+        { "text": "//example.", "entities": [], "media": [] },
+        { "text": "com/путь?q", "entities": [], "media": [] },
+        { "text": "=1… 😀.)", "entities": [], "media": [] },
+        { "text": "👍🏽… #тег", "entities": [], "media": [] },
+        { "text": "— 👍🏽", "entities": [], "media": [] },
+        { "text": "Code:\n•", "entities": [], "media": [] },
+        { "text": "https://ex", "entities": [], "media": [] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1", "entities": [], "media": [] },
+        { "text": "👨‍💻.)", "entities": [], "media": [] },
+        { "text": "Claude", "entities": [], "media": [] },
+        { "text": "Code.\n«цит", "entities": [], "media": [] },
+        { "text": "ата».)", "entities": [], "media": [] },
+        { "text": "e.g. snake", "entities": [], "media": [] },
+        { "text": "_case", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "мир.» 😀", "entities": [], "media": [] },
+        { "text": "Claude.»", "entities": [], "media": [] },
+        { "text": "e.g.:\n•", "entities": [], "media": [] },
+        { "text": "Threads?", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "Привет.»", "entities": [], "media": [] },
+        { "text": "@alexgetma", "entities": [], "media": [] },
+        { "text": "n… 2*3?", "entities": [], "media": [] },
+        { "text": "«цитата»", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝.", "entities": [], "media": [] },
+        { "text": "API? 𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝, API.", "entities": [], "media": [] },
+        { "text": "пост? 🇷🇺", "entities": [], "media": [] },
+        { "text": ", 𝐁𝐨𝐥𝐝", "entities": [], "media": [] },
+        { "text": "! e.g.", "entities": [], "media": [] },
+        { "text": "пост 🇷🇺", "entities": [], "media": [] },
+        { "text": "Dr., (скоб", "entities": [], "media": [] },
+        { "text": "ки)! про", "entities": [], "media": [] },
+        { "text": "👨‍💻,", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": "мир\n\n(скоб", "entities": [], "media": [] },
+        { "text": "ки), «цита", "entities": [], "media": [] },
+        { "text": "та» Привет", "entities": [], "media": [] },
+        { "text": "… Telegram", "entities": [], "media": [] },
+        { "text": ".» йога", "entities": [], "media": [] },
+        { "text": "Telegram.)", "entities": [], "media": [] },
+        { "text": "Claude.", "entities": [], "media": [] },
+        { "text": "пост, т.е.", "entities": [], "media": [] },
+        { "text": "https://ex", "entities": [], "media": [] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1.", "entities": [], "media": [] },
+        { "text": "Claude", "entities": [], "media": [] },
+        { "text": "Claude —", "entities": [], "media": [] },
+        { "text": "API? Threa", "entities": [], "media": [] },
+        { "text": "ds\n\nи?", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": "ёжик, …:", "entities": [], "media": [] },
+        { "text": "• йога", "entities": [], "media": [] },
+        { "text": "т.е.. API", "entities": [], "media": [] },
+        { "text": "длинный!", "entities": [], "media": [] },
+        { "text": "snake_case", "entities": [], "media": [] },
+        { "text": ".\n2*3.)", "entities": [], "media": [] },
+        { "text": "Claude.", "entities": [], "media": [] },
+        { "text": "API.\nпост", "entities": [], "media": [] },
+        { "text": "— пост:", "entities": [], "media": [] },
+        { "text": "• …:\n•", "entities": [], "media": [] },
+        { "text": "т.е. мир?", "entities": [], "media": [] },
+        { "text": "т.е. т.е.?", "entities": [], "media": [] },
+        { "text": "API, Threa", "entities": [], "media": [] },
+        { "text": "ds https:/", "entities": [], "media": [] },
+        { "text": "/example.c", "entities": [], "media": [] },
+        { "text": "om/путь?q=", "entities": [], "media": [] },
+        { "text": "1 это.)", "entities": [], "media": [] },
+        { "text": "🇷🇺! 🇷🇺", "entities": [], "media": [] },
+        { "text": "Telegram?", "entities": [], "media": [] },
+        { "text": "«цитата».»", "entities": [], "media": [] },
+        { "text": "т.е..»", "entities": [], "media": [] },
+        { "text": "https://ex", "entities": [], "media": [] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1.", "entities": [], "media": [] },
+        { "text": "«цитата».", "entities": [], "media": [] },
+        { "text": "@alexgetma", "entities": [], "media": [] },
+        { "text": "n. #тег.»", "entities": [], "media": [] },
+        { "text": "пост\n\nDr.", "entities": [], "media": [] },
+        { "text": "snake_case", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝 —", "entities": [], "media": [] },
+        { "text": "это.) snak", "entities": [], "media": [] },
+        { "text": "e_case.", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "Привет.", "entities": [], "media": [] },
+        { "text": "йога —", "entities": [], "media": [] },
+        { "text": "v2.1… 𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝\n\nпост", "entities": [], "media": [] },
+        { "text": ".\nагентов?", "entities": [], "media": [] },
+        { "text": "мир Telegr", "entities": [], "media": [] },
+        { "text": "am (скобки", "entities": [], "media": [] },
+        { "text": "). 𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝! snake_", "entities": [], "media": [] },
+        { "text": "case.)", "entities": [], "media": [] },
+        { "text": "Dr..\n(скоб", "entities": [], "media": [] },
+        { "text": "ки) «цитат", "entities": [], "media": [] },
+        { "text": "а» — 𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝 ёжик?", "entities": [], "media": [] },
+        { "text": "Code 😀.)", "entities": [], "media": [] },
+        { "text": "про. Teleg", "entities": [], "media": [] },
+        { "text": "ram.» мир", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Code! 😀 Dr.\n\n👍🏽 йога… йога @alexgetman.» 👍🏽 — ….) e.g.. …\n\nйога.\nи т.е.:\n• пост! 👨‍💻 Threads — Telegram",
+          "entities": [
+            { "type": "custom_emoji", "offset": 76, "length": 1 },
+            { "type": "code", "offset": 91, "length": 18 },
+            { "type": "heading", "offset": 66, "length": 21, "level": 2 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 16,
+      "chain": [
+        { "text": "Code! 😀 Dr.", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "👍🏽 йога… йога", "entities": [], "media": [] },
+        { "text": "@alexgetman.»", "entities": [], "media": [] },
+        { "text": "👍🏽 — ….) e.g..", "entities": [], "media": [] },
+        { "text": "…\n\nйога.\nи т.е.:", "entities": [], "media": [] },
+        { "text": "• пост! 👨‍💻", "entities": [], "media": [] },
+        { "text": "Threads —", "entities": [], "media": [] },
+        { "text": "Telegram", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "(скобки) — про… и! 🇷🇺 𝐁𝐨𝐥𝐝:\n• API «цитата»… Threads? 2*3.\nTelegram. Dr.. это 👨‍💻! 👍🏽. 😀.» про:\n• Telegram.\n2*3 ёжик, и! длинный.) Telegram, про. Telegram пост.) 🇷🇺 2*3.» 👍🏽 ёжик\n\nClaude ёжик, длинный.\nCode? «цитата» e.g. длинный и, ёжик — #тег e.g..\nCode. Threads. мир Claude! т.е.? v2.1.» это.\nт.е.? 2*3… v2.1\n\n2*3! и #тег API. агентов v2.1:\n• …:\n• длинный:\n• 😀 Привет.\n#тег, 👨‍💻 и.) 𝐁𝐨𝐥𝐝\n\nTelegram — 𝐁𝐨𝐥𝐝? #тег\n\nт.е.… 2*3 — длинный @alexgetman.» мир, API. пост:\n• Telegram? мир — ёжик пост\n\nт.е..\n… — йога.) 🇷🇺 snake_case:\n• Threads ёжик\n\n#тег:\n• 😀",
+          "entities": [
+            { "type": "heading", "offset": 109, "length": 121, "level": "x" },
+            { "type": "custom_emoji", "offset": 291, "length": 287 },
+            { "type": "strikethrough", "offset": 147, "length": 344 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 33,
+      "chain": [
+        { "text": "(скобки) — про… и!", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "🇷🇺 𝐁𝐨𝐥𝐝:\n• API «цитата»…", "entities": [], "media": [] },
+        { "text": "Threads? 2*3.\nTelegram.", "entities": [], "media": [] },
+        { "text": "Dr.. это 👨‍💻! 👍🏽.", "entities": [], "media": [] },
+        { "text": "😀.» про:\n• Telegram.", "entities": [], "media": [] },
+        { "text": "2*3 ёжик, и! длинный.)", "entities": [], "media": [] },
+        { "text": "Telegram, про. Telegram пост.)", "entities": [], "media": [] },
+        { "text": "🇷🇺 2*3.» 👍🏽 ёжик", "entities": [], "media": [] },
+        { "text": "Claude ёжик, длинный.\nCode?", "entities": [], "media": [] },
+        { "text": "«цитата» e.g. длинный и, ёжик —", "entities": [], "media": [] },
+        { "text": "#тег e.g..\nCode. Threads. мир", "entities": [], "media": [] },
+        { "text": "Claude! т.е.? v2.1.» это.\nт.е.?", "entities": [], "media": [] },
+        { "text": "2*3… v2.1\n\n2*3! и #тег API.", "entities": [], "media": [] },
+        { "text": "агентов v2.1:\n• …:\n• длинный:", "entities": [], "media": [] },
+        { "text": "• 😀 Привет.\n#тег, 👨‍💻 и.)", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝\n\nTelegram — 𝐁𝐨𝐥𝐝?", "entities": [], "media": [] },
+        { "text": "#тег\n\nт.е.… 2*3 — длинный", "entities": [], "media": [] },
+        { "text": "@alexgetman.» мир, API. пост:", "entities": [], "media": [] },
+        { "text": "• Telegram? мир — ёжик пост", "entities": [], "media": [] },
+        { "text": "т.е..\n… — йога.) 🇷🇺 snake_case:", "entities": [], "media": [] },
+        { "text": "• Threads ёжик\n\n#тег:\n• 😀", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "@alexgetman:\n• ёжик Привет\n\ne.g.! «цитата»! «цитата»! v2.1 — 👍🏽.\nпро! 😀.» йога, https://example.com/путь?q=1… ёжик\n\n2*3! Dr., Dr.\n\nпро — Привет! @alexgetman @alexgetman — йога! Привет — Telegram длинный, пост! Telegram — Dr. Привет",
+          "entities": [
+            { "type": "blockquote", "offset": 100, "length": 130 },
+            { "type": "blockquote", "offset": 188, "length": 26 },
+            { "type": "list_item", "offset": 3, "length": 93 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 280,
+      "chain": [
+        {
+          "text": "@alexgetman:\n• ёжик Привет\n\ne.g.! «цитата»! «цитата»! v2.1 — 👍🏽.\nпро! 😀.» йога, https://example.com/путь?q=1… ёжик\n\n2*3! Dr., Dr.\n\nпро — Привет! @alexgetman @alexgetman — йога! Привет — Telegram длинный, пост! Telegram — Dr. Привет",
+          "entities": [
+            { "type": "blockquote", "offset": 100, "length": 130 },
+            { "type": "blockquote", "offset": 188, "length": 26 },
+            { "type": "list_item", "offset": 3, "length": 93 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "2*3.) т.е.\n\nThreads\n\nv2.1. «цитата».» ёжик! пост snake_case. https://example.com/путь?q=1\n\n(скобки) 👍🏽.\n𝐁𝐨𝐥𝐝:\n• Code мир… Claude… пост пост. @alexgetman, йога\n\n…, (скобки).» 𝐁𝐨𝐥𝐝.\n…. Code! 𝐁𝐨𝐥𝐝 — пост:\n• Threads v2.1 https://example.com/путь?q=1! https://example.com/путь?q=1 … — 👨‍💻… v2.1 2*3.) Telegram.) #тег https://example.com/путь?q=1 — агентов:\n• @alexgetman.\nт.е., snake_case — #тег — ёжик! про — агентов? e.g.? ёжик 👍🏽, Dr..) Code ёжик? API:\n• длинный @alexgetman API Claude, 2*3 ёжик.\n…. про @alexgetman Code #тег.\nмир Threads! API длинный агентов v2.1… пост.) 😀.) мир это. ёжик. т.е.? 👨‍💻. https://example.com/путь?q=1\n\n… — т.е., API Claude snake_case, v2.1:\n• пост.» Code. API Threads:\n• (скобки)… Claude агентов! …\n\nsnake_case… длинный длинный… #тег.» 🇷🇺\n\n𝐁𝐨𝐥𝐝! … 😀, v2.1\n\ne.g. и e.g.. 🇷🇺\n\nмир… (скобки).» 2*3 😀 👍🏽 @alexgetman — Telegram — Code… и.\nагентов @alexgetman …! … Threads #тег 2*3 e.g., 👨‍💻 Привет Dr.\n\nйога",
+          "entities": [
+            { "type": "underline", "offset": 202, "length": 558 },
+            { "type": "pre", "offset": 464, "length": 102 },
+            { "type": "pre", "offset": 856, "length": 15 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 1000,
+      "chain": [
+        {
+          "text": "2*3.) т.е.\n\nThreads\n\nv2.1. «цитата».» ёжик! пост snake_case. https://example.com/путь?q=1\n\n(скобки) 👍🏽.\n𝐁𝐨𝐥𝐝:\n• Code мир… Claude… пост пост. @alexgetman, йога\n\n…, (скобки).» 𝐁𝐨𝐥𝐝.\n…. Code! 𝐁𝐨𝐥𝐝 — пост:\n• Threads v2.1 https://example.com/путь?q=1! https://example.com/путь?q=1 … — 👨‍💻… v2.1 2*3.) Telegram.) #тег https://example.com/путь?q=1 — агентов:\n• @alexgetman.\nт.е., snake_case — #тег — ёжик! про — агентов? e.g.? ёжик 👍🏽, Dr..) Code ёжик? API:\n• длинный @alexgetman API Claude, 2*3 ёжик.\n…. про @alexgetman Code #тег.\nмир Threads! API длинный агентов v2.1… пост.) 😀.) мир это. ёжик. т.е.? 👨‍💻. https://example.com/путь?q=1\n\n… — т.е., API Claude snake_case, v2.1:\n• пост.» Code. API Threads:\n• (скобки)… Claude агентов! …\n\nsnake_case… длинный длинный… #тег.» 🇷🇺\n\n𝐁𝐨𝐥𝐝! … 😀, v2.1\n\ne.g. и e.g.. 🇷🇺\n\nмир… (скобки).» 2*3 😀 👍🏽 @alexgetman — Telegram — Code… и.\nагентов @alexgetman …! … Threads #тег 2*3 e.g., 👨‍💻 Привет Dr.\n\nйога",
+          "entities": [
+            { "type": "underline", "offset": 202, "length": 558 },
+            { "type": "pre", "offset": 464, "length": 102 },
+            { "type": "pre", "offset": 856, "length": 15 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "«цитата».) это? Threads.\n#тег агентов… #тег, Claude и.\n👨‍💻.» и йога #тег Dr.… 👨‍💻! e.g.… e.g.:\n• «цитата», 😀 🇷🇺! и! Claude, Dr. Code.» 2*3.) Привет\n\nи.\nэто.\n👍🏽… API. 👍🏽. пост — Dr. v2.1 Telegram.\nпост e.g. это «цитата»? Threads\n\ne.g.… это.» Dr..) 𝐁𝐨𝐥𝐝 про, @alexgetman — 👍🏽 …:\n• ёжик\n\n….» пост. мир.\nпро.) мир! https://example.com/путь?q=1:\n• и. пост… мир v2.1:\n• длинный! Threads Code — snake_case длинный.) #тег.) v2.1, v2.1.) пост… API:\n• Dr. — про «цитата» пост:\n• про — 👍🏽.\nёжик… https://example.com/путь?q=1 Telegram:\n• https://example.com/путь?q=1.\n@alexgetman 👍🏽? и snake_case Threads.\nи Dr.. 🇷🇺 и… API.) Привет.\nмир, (скобки) т.е.\n\ne.g.\n\n𝐁𝐨𝐥𝐝 агентов\n\n(скобки).) 🇷🇺 2*3 2*3 мир.\n…? …\n\nи? https://example.com/путь?q=1 ёжик v2.1! snake_case. Привет … …\n\n👍🏽\n\nдлинный? т.е.! длинный.) 2*3 Привет «цитата»! пост, 😀:\n• @alexgetman @alexgetman.) пост 👍🏽.) Claude.\n(скобки).\nClaude Threads.» (скобки)! v2.1 API.) API, … — Claude. 2*3 агентов? snake_case 🇷🇺 — йога… Привет Claude. API, (скобки) и Threads! v2.1? API пост.» Telegram 2*3, ёжик — Telegram.\nПривет длинный.» 🇷🇺 e.g..» API? 2*3, про\n\nйога это 🇷🇺.) про\n\nпро т.е. snake_case … Dr.. Telegram e.g.. API агентов? e.g.",
+          "entities": [
+            { "type": "hashtag", "offset": 850, "length": 333 },
+            { "type": "bold", "offset": 490, "length": 560 },
+            { "type": "italic", "offset": 1165, "length": 4 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 4096,
+      "chain": [
+        {
+          "text": "«цитата».) это? Threads.\n#тег агентов… #тег, Claude и.\n👨‍💻.» и йога #тег Dr.… 👨‍💻! e.g.… e.g.:\n• «цитата», 😀 🇷🇺! и! Claude, Dr. Code.» 2*3.) Привет\n\nи.\nэто.\n👍🏽… API. 👍🏽. пост — Dr. v2.1 Telegram.\nпост e.g. это «цитата»? Threads\n\ne.g.… это.» Dr..) 𝐁𝐨𝐥𝐝 про, @alexgetman — 👍🏽 …:\n• ёжик\n\n….» пост. мир.\nпро.) мир! https://example.com/путь?q=1:\n• и. пост… мир v2.1:\n• длинный! Threads Code — snake_case длинный.) #тег.) v2.1, v2.1.) пост… API:\n• Dr. — про «цитата» пост:\n• про — 👍🏽.\nёжик… https://example.com/путь?q=1 Telegram:\n• https://example.com/путь?q=1.\n@alexgetman 👍🏽? и snake_case Threads.\nи Dr.. 🇷🇺 и… API.) Привет.\nмир, (скобки) т.е.\n\ne.g.\n\n𝐁𝐨𝐥𝐝 агентов\n\n(скобки).) 🇷🇺 2*3 2*3 мир.\n…? …\n\nи? https://example.com/путь?q=1 ёжик v2.1! snake_case. Привет … …\n\n👍🏽\n\nдлинный? т.е.! длинный.) 2*3 Привет «цитата»! пост, 😀:\n• @alexgetman @alexgetman.) пост 👍🏽.) Claude.\n(скобки).\nClaude Threads.» (скобки)! v2.1 API.) API, … — Claude. 2*3 агентов? snake_case 🇷🇺 — йога… Привет Claude. API, (скобки) и Threads! v2.1? API пост.» Telegram 2*3, ёжик — Telegram.\nПривет длинный.» 🇷🇺 e.g..» API? 2*3, про\n\nйога это 🇷🇺.) про\n\nпро т.е. snake_case … Dr.. Telegram e.g.. API агентов? e.g.",
+          "entities": [
+            { "type": "hashtag", "offset": 850, "length": 333 },
+            { "type": "bold", "offset": 490, "length": 560 },
+            { "type": "italic", "offset": 1165, "length": 4 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "ёжик:\n• мир.) 👍🏽 длинный:\n• 👨‍💻.) Привет, https://example.com/путь?q=1 API.) (скобки), API. Claude.» Threads это — snake_case про\n\nAPI. @alexgetman:\n• API, Dr.! Code.) v2.1.» т.е..) API — #тег… это… «цитата»… про, пост? про — Dr.! 🇷🇺! e.g. йога 𝐁𝐨𝐥𝐝? 👍🏽 — «цитата» e.g. и — мир.» «цитата»… «цитата»… 😀.\nдлинный! «цитата», т.е..) e.g. Telegram 2*3.» 👨‍💻. 2*3 Claude, e.g.! Code\n\n#тег. про? Dr. https://example.com/путь?q=1\n\nи.\n… — (скобки) 2*3 👨‍💻. 🇷🇺! Claude ёжик.\nTelegram длинный 👨‍💻.» @alexgetman ….\nThreads.» мир агентов.) 2*3 Dr.\n\nйога. и v2.1:\n• Dr. ёжик.) Привет.\nv2.1 Привет, мир\n\nи.\nи v2.1:\n• snake_case snake_case — Code. т.е.\n\n👨‍💻 👨‍💻. 2*3 #тег т.е. — Claude (скобки)… агентов! т.е..» мир агентов.\n👨‍💻 йога:\n• 👨‍💻… 😀\n\nпро… 😀.\nv2.1.) пост.» 👍🏽 ёжик! 2*3.) йога.» 𝐁𝐨𝐥𝐝, пост. и\n\n𝐁𝐨𝐥𝐝 — (скобки) — 😀 про — это\n\n👍🏽:\n• … мир Telegram… это. 😀 v2.1… ёжик — мир… 2*3\n\nэто",
+          "entities": [
+            { "type": "list_item", "offset": 666, "length": 99 },
+            { "type": "heading", "offset": 849, "length": 9 },
+            { "type": "bold", "offset": 414, "length": 96 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 64,
+      "chain": [
+        { "text": "ёжик:\n• мир.) 👍🏽 длинный:\n• 👨‍💻.)", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "Привет, https://example.com/путь?q=1 API.) (скобки), API.", "entities": [], "media": [] },
+        { "text": "Claude.» Threads это — snake_case про", "entities": [], "media": [] },
+        { "text": "API. @alexgetman:\n• API, Dr.! Code.) v2.1.» т.е..)", "entities": [], "media": [] },
+        { "text": "API — #тег… это… «цитата»… про, пост? про — Dr.!", "entities": [], "media": [] },
+        { "text": "🇷🇺! e.g. йога 𝐁𝐨𝐥𝐝? 👍🏽 — «цитата» e.g. и — мир.»", "entities": [], "media": [] },
+        { "text": "«цитата»… «цитата»… 😀.\nдлинный! «цитата», т.е..) e.g.", "entities": [], "media": [] },
+        { "text": "Telegram 2*3.» 👨‍💻. 2*3 Claude, e.g.! Code", "entities": [], "media": [] },
+        { "text": "#тег. про? Dr. https://example.com/путь?q=1", "entities": [], "media": [] },
+        { "text": "и.\n… — (скобки) 2*3 👨‍💻. 🇷🇺! Claude ёжик.", "entities": [], "media": [] },
+        { "text": "Telegram длинный 👨‍💻.» @alexgetman ….\nThreads.» мир агентов.)", "entities": [], "media": [] },
+        { "text": "2*3 Dr.\n\nйога. и v2.1:\n• Dr. ёжик.) Привет.\nv2.1 Привет, мир", "entities": [], "media": [] },
+        { "text": "и.\nи v2.1:\n• snake_case snake_case — Code. т.е.", "entities": [], "media": [] },
+        { "text": "👨‍💻 👨‍💻. 2*3 #тег т.е. — Claude (скобки)… агентов! т.е..»", "entities": [], "media": [] },
+        { "text": "мир агентов.\n👨‍💻 йога:\n• 👨‍💻… 😀", "entities": [], "media": [] },
+        { "text": "про… 😀.\nv2.1.) пост.» 👍🏽 ёжик! 2*3.) йога.»", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝, пост. и\n\n𝐁𝐨𝐥𝐝 — (скобки) — 😀 про — это", "entities": [], "media": [] },
+        { "text": "👍🏽:\n• … мир Telegram… это. 😀 v2.1… ёжик — мир… 2*3\n\nэто", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Threads.» #тег. длинный:\n• и.\n«цитата» v2.1.) агентов.) Telegram\n\ne.g. snake_case snake_case, это — «цитата».) 👍🏽 https://example.com/путь?q=1.) это:\n• мир 😀:\n• «цитата»:\n• Dr. Привет длинный Code Claude:\n• 🇷🇺 https://example.com/путь?q=1:\n• Code длинный 🇷🇺:\n• это? @alexgetman мир, про! 🇷🇺, пост.» #тег @alexgetman? Привет агентов.) 😀 Привет. Привет:\n• Claude\n\nпро:\n• 👍🏽 𝐁𝐨𝐥𝐝:\n• 2*3 — snake_case 2*3 …? 2*3 йога. v2.1 (скобки) 😀 йога. Claude, @alexgetman:\n• API! про.» 𝐁𝐨𝐥𝐝? это.» Threads т.е., 😀 — 𝐁𝐨𝐥𝐝 Claude Dr. snake_case? 😀.) длинный «цитата»\n\nдлинный т.е. — 🇷🇺. Привет.) и. Claude? 𝐁𝐨𝐥𝐝 👨‍💻 snake_case Code… про… 🇷🇺. длинный\n\nагентов.) 2*3! Code.) Привет ёжик.\nдлинный.» длинный Threads:\n• про.) агентов ёжик — Code\n\nTelegram.) 👍🏽! и:\n• Dr..) https://example.com/путь?q=1:\n• пост e.g., API — про:\n• (скобки).» @alexgetman длинный.) @alexgetman\n\nTelegram Threads\n\n@alexgetman:\n• Telegram? 👍🏽.\nsnake_case\n\nsnake_case\n\n«цитата» snake_case (скобки)\n\nAPI e.g.:\n• 👨‍💻 Dr., 🇷🇺.» пост! 😀! Привет:\n• @alexgetman.\n«цитата», ёжик Threads «цитата»\n\nйога:\n• 👍🏽 это",
+          "entities": [
+            { "type": "list_item", "offset": 64, "length": 1017 },
+            { "type": "underline", "offset": 287, "length": 154 },
+            { "type": "custom_emoji", "offset": 889, "length": 199 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 64,
+      "chain": [
+        { "text": "Threads.» #тег. длинный:\n• и.\n«цитата» v2.1.) агентов.)", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "Telegram\n\ne.g. snake_case snake_case, это — «цитата».)", "entities": [], "media": [] },
+        { "text": "👍🏽 https://example.com/путь?q=1.) это:\n• мир 😀:\n• «цитата»:", "entities": [], "media": [] },
+        { "text": "• Dr. Привет длинный Code Claude:", "entities": [], "media": [] },
+        { "text": "• 🇷🇺 https://example.com/путь?q=1:\n• Code длинный 🇷🇺:\n• это?", "entities": [], "media": [] },
+        { "text": "@alexgetman мир, про! 🇷🇺, пост.» #тег @alexgetman?", "entities": [], "media": [] },
+        { "text": "Привет агентов.) 😀 Привет. Привет:\n• Claude", "entities": [], "media": [] },
+        { "text": "про:\n• 👍🏽 𝐁𝐨𝐥𝐝:\n• 2*3 — snake_case 2*3 …?", "entities": [], "media": [] },
+        { "text": "2*3 йога. v2.1 (скобки) 😀 йога. Claude, @alexgetman:", "entities": [], "media": [] },
+        { "text": "• API! про.» 𝐁𝐨𝐥𝐝? это.» Threads т.е., 😀 — 𝐁𝐨𝐥𝐝 Claude", "entities": [], "media": [] },
+        { "text": "Dr. snake_case? 😀.) длинный «цитата»", "entities": [], "media": [] },
+        { "text": "длинный т.е. — 🇷🇺. Привет.) и. Claude?", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝 👨‍💻 snake_case Code… про… 🇷🇺. длинный", "entities": [], "media": [] },
+        { "text": "агентов.) 2*3! Code.) Привет ёжик.\nдлинный.» длинный Threads:", "entities": [], "media": [] },
+        { "text": "• про.) агентов ёжик — Code\n\nTelegram.)", "entities": [], "media": [] },
+        { "text": "👍🏽! и:\n• Dr..) https://example.com/путь?q=1:", "entities": [], "media": [] },
+        { "text": "• пост e.g., API — про:\n• (скобки).» @alexgetman длинный.)", "entities": [], "media": [] },
+        { "text": "@alexgetman\n\nTelegram Threads\n\n@alexgetman:\n• Telegram?", "entities": [], "media": [] },
+        { "text": "👍🏽.\nsnake_case\n\nsnake_case\n\n«цитата» snake_case (скобки)", "entities": [], "media": [] },
+        { "text": "API e.g.:\n• 👨‍💻 Dr., 🇷🇺.» пост! 😀! Привет:\n• @alexgetman.", "entities": [], "media": [] },
+        { "text": "«цитата», ёжик Threads «цитата»\n\nйога:\n• 👍🏽 это", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "v2.1.\nйога.» Dr.! пост:\n• йога.» 😀.) v2.1:\n• (скобки)? про. v2.1… snake_case? мир! e.g., длинный:\n• пост:\n• т.е., Claude\n\nпост! 𝐁𝐨𝐥𝐝. 👨‍💻 мир.) v2.1 👍🏽:\n• … e.g. про.) 👨‍💻, йога:\n• длинный про… (скобки) т.е., т.е. — ёжик.» https://example.com/путь?q=1. 2*3 Claude. Code\n\n#тег агентов пост длинный, Threads 👨‍💻. https://example.com/путь?q=1 #тег, Dr. Привет… Code:\n• йога API. и 𝐁𝐨𝐥𝐝… v2.1.) йога — https://example.com/путь?q=1 Claude.\nт.е.! йога.\ne.g.? Telegram #тег! Telegram.\nhttps://example.com/путь?q=1:\n• «цитата»! Threads ёжик:\n• и.) и! API — …. #тег snake_case Привет.) т.е. (скобки) #тег 🇷🇺 𝐁𝐨𝐥𝐝 — агентов\n\n👍🏽.» 👍🏽. и:\n• @alexgetman, Claude v2.1.» Claude это.» длинный.» 👍🏽:\n• 🇷🇺.\nsnake_case:\n• т.е. — Dr..\nTelegram, e.g.\n\nAPI. Code? йога? e.g..» агентов.\n#тег.» #тег! про! про Dr..) «цитата» 😀.) длинный ёжик (скобки)… 𝐁𝐨𝐥𝐝.» это.» 👨‍💻.\nDr., 𝐁𝐨𝐥𝐝? Code.» … — йога — про\n\nдлинный\n\n😀.\nмир… @alexgetman …\n\n…. @alexgetman\n\nпост",
+          "entities": [
+            { "type": "code", "offset": 832, "length": 145 },
+            { "type": "strikethrough", "offset": 71, "length": 485 },
+            { "type": "list_item", "offset": "635", "length": 220 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 16,
+      "chain": [
+        { "text": "v2.1.\nйога.»", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "Dr.! пост:", "entities": [], "media": [] },
+        { "text": "• йога.» 😀.)", "entities": [], "media": [] },
+        { "text": "v2.1:\n• (скобки)", "entities": [], "media": [] },
+        { "text": "? про. v2.1…", "entities": [], "media": [] },
+        { "text": "snake_case? мир!", "entities": [], "media": [] },
+        { "text": "e.g., длинный:", "entities": [], "media": [] },
+        { "text": "• пост:\n• т.е.,", "entities": [], "media": [] },
+        { "text": "Claude\n\nпост!", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝.", "entities": [], "media": [] },
+        { "text": "👨‍💻 мир.) v2.1", "entities": [], "media": [] },
+        { "text": "👍🏽:\n• … e.g.", "entities": [], "media": [] },
+        { "text": "про.) 👨‍💻,", "entities": [], "media": [] },
+        { "text": "йога:\n• длинный", "entities": [], "media": [] },
+        { "text": "про… (скобки)", "entities": [], "media": [] },
+        { "text": "т.е., т.е.", "entities": [], "media": [] },
+        { "text": "— ёжик.» https:/", "entities": [], "media": [] },
+        { "text": "/example.com/пут", "entities": [], "media": [] },
+        { "text": "ь?q=1. 2*3", "entities": [], "media": [] },
+        { "text": "Claude. Code", "entities": [], "media": [] },
+        { "text": "#тег агентов", "entities": [], "media": [] },
+        { "text": "пост длинный,", "entities": [], "media": [] },
+        { "text": "Threads 👨‍💻.", "entities": [], "media": [] },
+        { "text": "https://example.", "entities": [], "media": [] },
+        { "text": "com/путь?q=1", "entities": [], "media": [] },
+        { "text": "#тег, Dr.", "entities": [], "media": [] },
+        { "text": "Привет… Code:", "entities": [], "media": [] },
+        { "text": "• йога API. и", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝… v2.1.)", "entities": [], "media": [] },
+        { "text": "йога — https://e", "entities": [], "media": [] },
+        { "text": "xample.com/путь?", "entities": [], "media": [] },
+        { "text": "q=1 Claude.", "entities": [], "media": [] },
+        { "text": "т.е.! йога.", "entities": [], "media": [] },
+        { "text": "e.g.? Telegram", "entities": [], "media": [] },
+        { "text": "#тег! Telegram.", "entities": [], "media": [] },
+        { "text": "https://example.", "entities": [], "media": [] },
+        { "text": "com/путь?q=1:", "entities": [], "media": [] },
+        { "text": "• «цитата»!", "entities": [], "media": [] },
+        { "text": "Threads ёжик:", "entities": [], "media": [] },
+        { "text": "• и.) и! API —", "entities": [], "media": [] },
+        { "text": "…. #тег snake_ca", "entities": [], "media": [] },
+        { "text": "se Привет.) т.е.", "entities": [], "media": [] },
+        { "text": "(скобки) #тег", "entities": [], "media": [] },
+        { "text": "🇷🇺 𝐁𝐨𝐥𝐝 —", "entities": [], "media": [] },
+        { "text": "агентов\n\n👍🏽.»", "entities": [], "media": [] },
+        { "text": "👍🏽. и:\n•", "entities": [], "media": [] },
+        { "text": "@alexgetman,", "entities": [], "media": [] },
+        { "text": "Claude v2.1.»", "entities": [], "media": [] },
+        { "text": "Claude это.»", "entities": [], "media": [] },
+        { "text": "длинный.»", "entities": [], "media": [] },
+        { "text": "👍🏽:\n• 🇷🇺.", "entities": [], "media": [] },
+        { "text": "snake_case:", "entities": [], "media": [] },
+        { "text": "• т.е. — Dr..", "entities": [], "media": [] },
+        { "text": "Telegram, e.g.", "entities": [], "media": [] },
+        { "text": "API. Code? йога?", "entities": [], "media": [] },
+        { "text": "e.g..» агентов.", "entities": [], "media": [] },
+        { "text": "#тег.» #тег!", "entities": [], "media": [] },
+        { "text": "про! про Dr..)", "entities": [], "media": [] },
+        { "text": "«цитата» 😀.)", "entities": [], "media": [] },
+        { "text": "длинный ёжик", "entities": [], "media": [] },
+        { "text": "(скобки)…", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝.» это.»", "entities": [], "media": [] },
+        { "text": "👨‍💻.\nDr.,", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝? Code.»", "entities": [], "media": [] },
+        { "text": "… — йога — про", "entities": [], "media": [] },
+        { "text": "длинный\n\n😀.", "entities": [], "media": [] },
+        { "text": "мир… @alexgetman", "entities": [], "media": [] },
+        { "text": "…\n\n…. @alexgetma", "entities": [], "media": [] },
+        { "text": "n\n\nпост", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Привет Code про… Привет! e.g.\n\nйога! snake_case, 𝐁𝐨𝐥𝐝 https://example.com/путь?q=1.» 🇷🇺… v2.1 — Dr. v2.1. ёжик:\n• ….\nмир… мир 𝐁𝐨𝐥𝐝 «цитата», ёжик @alexgetman\n\nэто:\n• e.g., «цитата»… snake_case про, и агентов пост… ёжик! йога… про.» 👨‍💻\n\nйога.) 👨‍💻 — йога #тег! v2.1 — Claude? Telegram ёжик, агентов… 👍🏽\n\nПривет.\nдлинный. ёжик:\n• API 😀 это мир! это. 🇷🇺 йога, длинный Threads длинный v2.1.) йога! v2.1 Telegram 👍🏽.\nCode! 😀 snake_case 👍🏽.» и — и Claude:\n• это — ёжик агентов Code! Claude. 𝐁𝐨𝐥𝐝.\n2*3.» @alexgetman — Code\n\nAPI Threads, 👍🏽 👨‍💻… ёжик! про, Привет, v2.1 Threads @alexgetman.\nhttps://example.com/путь?q=1.\nмир? Telegram.» мир. #тег.\n2*3 — 👨‍💻… Dr. агентов Привет #тег… 𝐁𝐨𝐥𝐝.» йога т.е. Code! #тег. мир #тег #тег. Code. Threads.) https://example.com/путь?q=1? (скобки)\n\nт.е.… Привет snake_case… 2*3 👍🏽.\nпост! 👍🏽.\nAPI мир.) 2*3:\n• @alexgetman https://example.com/путь?q=1 длинный",
+          "entities": [
+            { "type": "bold", "offset": 394, "length": 15 },
+            { "type": "list_item", "offset": 527, "length": 62 },
+            { "type": "strikethrough", "offset": 208, "length": 664 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 5,
+      "chain": [
+        { "text": "Приве", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "т Cod", "entities": [], "media": [] },
+        { "text": "e про", "entities": [], "media": [] },
+        { "text": "… При", "entities": [], "media": [] },
+        { "text": "вет!", "entities": [], "media": [] },
+        { "text": "e.g.", "entities": [], "media": [] },
+        { "text": "йога!", "entities": [], "media": [] },
+        { "text": "snake", "entities": [], "media": [] },
+        { "text": "_case", "entities": [], "media": [] },
+        { "text": ", 𝐁", "entities": [], "media": [] },
+        { "text": "𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝 ht", "entities": [], "media": [] },
+        { "text": "tps:/", "entities": [], "media": [] },
+        { "text": "/exam", "entities": [], "media": [] },
+        { "text": "ple.c", "entities": [], "media": [] },
+        { "text": "om/пу", "entities": [], "media": [] },
+        { "text": "ть?q=", "entities": [], "media": [] },
+        { "text": "1.»", "entities": [], "media": [] },
+        { "text": "🇷🇺…", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "— Dr.", "entities": [], "media": [] },
+        { "text": "v2.1.", "entities": [], "media": [] },
+        { "text": "ёжик:", "entities": [], "media": [] },
+        { "text": "• ….", "entities": [], "media": [] },
+        { "text": "мир…", "entities": [], "media": [] },
+        { "text": "мир", "entities": [], "media": [] },
+        { "text": "𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝", "entities": [], "media": [] },
+        { "text": "«цита", "entities": [], "media": [] },
+        { "text": "та»,", "entities": [], "media": [] },
+        { "text": "ёжик", "entities": [], "media": [] },
+        { "text": "@alex", "entities": [], "media": [] },
+        { "text": "getma", "entities": [], "media": [] },
+        { "text": "n\n\nэт", "entities": [], "media": [] },
+        { "text": "о:\n•", "entities": [], "media": [] },
+        { "text": "e.g.,", "entities": [], "media": [] },
+        { "text": "«цита", "entities": [], "media": [] },
+        { "text": "та»…", "entities": [], "media": [] },
+        { "text": "snake", "entities": [], "media": [] },
+        { "text": "_case", "entities": [], "media": [] },
+        { "text": "про,", "entities": [], "media": [] },
+        { "text": "и аге", "entities": [], "media": [] },
+        { "text": "нтов", "entities": [], "media": [] },
+        { "text": "пост…", "entities": [], "media": [] },
+        { "text": "ёжик!", "entities": [], "media": [] },
+        { "text": "йога…", "entities": [], "media": [] },
+        { "text": "про.»", "entities": [], "media": [] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "йога.", "entities": [], "media": [] },
+        { "text": ") 👨‍", "entities": [], "media": [] },
+        { "text": "💻 —", "entities": [], "media": [] },
+        { "text": "йога", "entities": [], "media": [] },
+        { "text": "#тег!", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "— Cla", "entities": [], "media": [] },
+        { "text": "ude?", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram", "entities": [], "media": [] },
+        { "text": "ёжик,", "entities": [], "media": [] },
+        { "text": "агент", "entities": [], "media": [] },
+        { "text": "ов…", "entities": [], "media": [] },
+        { "text": "👍🏽", "entities": [], "media": [] },
+        { "text": "Приве", "entities": [], "media": [] },
+        { "text": "т.\nдл", "entities": [], "media": [] },
+        { "text": "инный", "entities": [], "media": [] },
+        { "text": ". ёжи", "entities": [], "media": [] },
+        { "text": "к:\n•", "entities": [], "media": [] },
+        { "text": "API", "entities": [], "media": [] },
+        { "text": "😀 эт", "entities": [], "media": [] },
+        { "text": "о мир", "entities": [], "media": [] },
+        { "text": "! это", "entities": [], "media": [] },
+        { "text": ". 🇷", "entities": [], "media": [] },
+        { "text": "🇺 йо", "entities": [], "media": [] },
+        { "text": "га,", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый Th", "entities": [], "media": [] },
+        { "text": "reads", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый v2", "entities": [], "media": [] },
+        { "text": ".1.)", "entities": [], "media": [] },
+        { "text": "йога!", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram", "entities": [], "media": [] },
+        { "text": "👍🏽.", "entities": [], "media": [] },
+        { "text": "Code!", "entities": [], "media": [] },
+        { "text": "😀 sn", "entities": [], "media": [] },
+        { "text": "ake_c", "entities": [], "media": [] },
+        { "text": "ase", "entities": [], "media": [] },
+        { "text": "👍🏽.", "entities": [], "media": [] },
+        { "text": "» и —", "entities": [], "media": [] },
+        { "text": "и Cla", "entities": [], "media": [] },
+        { "text": "ude:", "entities": [], "media": [] },
+        { "text": "• это", "entities": [], "media": [] },
+        { "text": "— ёжи", "entities": [], "media": [] },
+        { "text": "к аге", "entities": [], "media": [] },
+        { "text": "нтов", "entities": [], "media": [] },
+        { "text": "Code!", "entities": [], "media": [] },
+        { "text": "Claud", "entities": [], "media": [] },
+        { "text": "e. 𝐁", "entities": [], "media": [] },
+        { "text": "𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝.", "entities": [], "media": [] },
+        { "text": "2*3.»", "entities": [], "media": [] },
+        { "text": "@alex", "entities": [], "media": [] },
+        { "text": "getma", "entities": [], "media": [] },
+        { "text": "n —", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] },
+        { "text": "API", "entities": [], "media": [] },
+        { "text": "Threa", "entities": [], "media": [] },
+        { "text": "ds,", "entities": [], "media": [] },
+        { "text": "👍🏽", "entities": [], "media": [] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "… ёжи", "entities": [], "media": [] },
+        { "text": "к! пр", "entities": [], "media": [] },
+        { "text": "о, Пр", "entities": [], "media": [] },
+        { "text": "ивет,", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "Threa", "entities": [], "media": [] },
+        { "text": "ds @a", "entities": [], "media": [] },
+        { "text": "lexge", "entities": [], "media": [] },
+        { "text": "tman.", "entities": [], "media": [] },
+        { "text": "https", "entities": [], "media": [] },
+        { "text": "://ex", "entities": [], "media": [] },
+        { "text": "ample", "entities": [], "media": [] },
+        { "text": ".com/", "entities": [], "media": [] },
+        { "text": "путь?", "entities": [], "media": [] },
+        { "text": "q=1.", "entities": [], "media": [] },
+        { "text": "мир?", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram.»", "entities": [], "media": [] },
+        { "text": "мир.", "entities": [], "media": [] },
+        { "text": "#тег.", "entities": [], "media": [] },
+        { "text": "2*3 —", "entities": [], "media": [] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "… Dr.", "entities": [], "media": [] },
+        { "text": "агент", "entities": [], "media": [] },
+        { "text": "ов Пр", "entities": [], "media": [] },
+        { "text": "ивет", "entities": [], "media": [] },
+        { "text": "#тег…", "entities": [], "media": [] },
+        { "text": "𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝.", "entities": [], "media": [] },
+        { "text": "» йог", "entities": [], "media": [] },
+        { "text": "а т.е", "entities": [], "media": [] },
+        { "text": ". Cod", "entities": [], "media": [] },
+        { "text": "e! #т", "entities": [], "media": [] },
+        { "text": "ег.", "entities": [], "media": [] },
+        { "text": "мир", "entities": [], "media": [] },
+        { "text": "#тег", "entities": [], "media": [] },
+        { "text": "#тег.", "entities": [], "media": [] },
+        { "text": "Code.", "entities": [], "media": [] },
+        { "text": "Threa", "entities": [], "media": [] },
+        { "text": "ds.)", "entities": [], "media": [] },
+        { "text": "https", "entities": [], "media": [] },
+        { "text": "://ex", "entities": [], "media": [] },
+        { "text": "ample", "entities": [], "media": [] },
+        { "text": ".com/", "entities": [], "media": [] },
+        { "text": "путь?", "entities": [], "media": [] },
+        { "text": "q=1?", "entities": [], "media": [] },
+        { "text": "(скоб", "entities": [], "media": [] },
+        { "text": "ки)", "entities": [], "media": [] },
+        { "text": "т.е.…", "entities": [], "media": [] },
+        { "text": "Приве", "entities": [], "media": [] },
+        { "text": "т sna", "entities": [], "media": [] },
+        { "text": "ke_ca", "entities": [], "media": [] },
+        { "text": "se…", "entities": [], "media": [] },
+        { "text": "2*3", "entities": [], "media": [] },
+        { "text": "👍🏽.", "entities": [], "media": [] },
+        { "text": "пост!", "entities": [], "media": [] },
+        { "text": "👍🏽.", "entities": [], "media": [] },
+        { "text": "API", "entities": [], "media": [] },
+        { "text": "мир.)", "entities": [], "media": [] },
+        { "text": "2*3:", "entities": [], "media": [] },
+        { "text": "• @al", "entities": [], "media": [] },
+        { "text": "exget", "entities": [], "media": [] },
+        { "text": "man", "entities": [], "media": [] },
+        { "text": "https", "entities": [], "media": [] },
+        { "text": "://ex", "entities": [], "media": [] },
+        { "text": "ample", "entities": [], "media": [] },
+        { "text": ".com/", "entities": [], "media": [] },
+        { "text": "путь?", "entities": [], "media": [] },
+        { "text": "q=1", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Dr.. Threads\n\n👍🏽.» (скобки).) про:\n• @alexgetman.\n🇷🇺 мир\n\nэто\n\n👨‍💻 v2.1 — ёжик.) #тег 😀? Привет.» йога т.е. — 👨‍💻:\n• 🇷🇺? (скобки) — Code, 🇷🇺 мир? https://example.com/путь?q=1 и, мир? Claude? и мир. 👨‍💻\n\nпост, т.е. Code… snake_case. Threads? «цитата».) API… 2*3 … @alexgetman 𝐁𝐨𝐥𝐝. про. Dr.? пост Claude, v2.1.\nпост 🇷🇺? про Telegram Threads:\n• мир\n\nдлинный, йога, Dr.",
+          "entities": [
+            { "type": "mention", "offset": 358, "length": 16 },
+            { "type": "quote", "offset": 10, "length": 323 },
+            { "type": "hashtag", "offset": 183, "length": 189 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 500,
+      "chain": [
+        {
+          "text": "Dr.. Threads\n\n👍🏽.» (скобки).) про:\n• @alexgetman.\n🇷🇺 мир\n\nэто\n\n👨‍💻 v2.1 — ёжик.) #тег 😀? Привет.» йога т.е. — 👨‍💻:\n• 🇷🇺? (скобки) — Code, 🇷🇺 мир? https://example.com/путь?q=1 и, мир? Claude? и мир. 👨‍💻\n\nпост, т.е. Code… snake_case. Threads? «цитата».) API… 2*3 … @alexgetman 𝐁𝐨𝐥𝐝. про. Dr.? пост Claude, v2.1.\nпост 🇷🇺? про Telegram Threads:\n• мир\n\nдлинный, йога, Dr.",
+          "entities": [
+            { "type": "mention", "offset": 358, "length": 16 },
+            { "type": "quote", "offset": 10, "length": 323 },
+            { "type": "hashtag", "offset": 183, "length": 189 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "агентов.» 😀.) 𝐁𝐨𝐥𝐝 и т.е..» йога — ёжик Привет e.g.! (скобки) Telegram. @alexgetman Привет — 👍🏽 — https://example.com/путь?q=1… это …",
+          "entities": [
+            { "type": "mention", "offset": 46, "length": 47 },
+            { "type": "bold", "offset": 1, "length": 4 },
+            { "type": "hashtag", "offset": 71, "length": 48 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 5,
+      "chain": [
+        { "text": "агент", "entities": [{ "type": "bold", "offset": 1, "length": 4 }], "media": [{ "type": "video" }] },
+        { "text": "ов.»", "entities": [], "media": [] },
+        { "text": "😀.)", "entities": [], "media": [] },
+        { "text": "𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝", "entities": [], "media": [] },
+        { "text": "и т.е", "entities": [], "media": [] },
+        { "text": "..»", "entities": [], "media": [] },
+        { "text": "йога", "entities": [], "media": [] },
+        { "text": "— ёжи", "entities": [], "media": [] },
+        { "text": "к При", "entities": [], "media": [] },
+        { "text": "вет", "entities": [], "media": [] },
+        { "text": "e.g.!", "entities": [], "media": [] },
+        { "text": "(скоб", "entities": [], "media": [] },
+        { "text": "ки)", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram.", "entities": [], "media": [] },
+        { "text": "@alex", "entities": [], "media": [] },
+        { "text": "getma", "entities": [], "media": [] },
+        { "text": "n При", "entities": [], "media": [] },
+        { "text": "вет —", "entities": [], "media": [] },
+        { "text": "👍🏽", "entities": [], "media": [] },
+        { "text": "— htt", "entities": [], "media": [] },
+        { "text": "ps://", "entities": [], "media": [] },
+        { "text": "examp", "entities": [], "media": [] },
+        { "text": "le.co", "entities": [], "media": [] },
+        { "text": "m/пут", "entities": [], "media": [] },
+        { "text": "ь?q=1", "entities": [], "media": [] },
+        { "text": "… это", "entities": [], "media": [] },
+        { "text": "…", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "и.\nпост, 👍🏽.» 👍🏽. https://example.com/путь?q=1:\n• Telegram т.е. это! v2.1 Threads. 🇷🇺.) 👨‍💻 пост\n\nагентов, 🇷🇺 агентов — https://example.com/путь?q=1 и — e.g.. Claude Telegram.» Code Dr..\n(скобки) — йога мир.\nTelegram, Code. и, 🇷🇺. #тег агентов, Threads… Code? Telegram API, https://example.com/путь?q=1:\n• Threads.\n#тег.\n🇷🇺, https://example.com/путь?q=1… «цитата».\n@alexgetman — т.е. e.g..\n#тег! «цитата» (скобки):\n• … 👍🏽 — API т.е.? API, v2.1.» длинный.) snake_case 😀 2*3.\nдлинный! Dr. @alexgetman… Claude:\n• 2*3 (скобки).) «цитата»\n\n👨‍💻! API! и. Threads API ёжик.\nмир.\nThreads API — длинный… про 🇷🇺 Привет.» ёжик, snake_case:\n• Telegram 😀! мир — snake_case API! #тег\n\nv2.1 API… «цитата».» Привет… т.е.",
+          "entities": [
+            { "type": "bold", "offset": 649, "length": 47 },
+            { "type": "bold", "length": 132 },
+            { "type": "bold", "offset": 623, "length": 28 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 140,
+      "chain": [
+        {
+          "text": "и.\nпост, 👍🏽.» 👍🏽. https://example.com/путь?q=1:\n• Telegram т.е. это! v2.1 Threads. 🇷🇺.) 👨‍💻 пост",
+          "entities": [],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "агентов, 🇷🇺 агентов — https://example.com/путь?q=1 и — e.g.. Claude Telegram.» Code Dr..\n(скобки) — йога мир.\nTelegram, Code. и, 🇷🇺.",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "#тег агентов, Threads… Code? Telegram API, https://example.com/путь?q=1:\n• Threads.\n#тег.\n🇷🇺, https://example.com/путь?q=1… «цитата».",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "@alexgetman — т.е. e.g..\n#тег! «цитата» (скобки):\n• … 👍🏽 — API т.е.? API, v2.1.» длинный.) snake_case 😀 2*3.\nдлинный! Dr. @alexgetman…",
+          "entities": [],
+          "media": []
+        },
+        { "text": "Claude:\n• 2*3 (скобки).) «цитата»\n\n👨‍💻! API! и. Threads API ёжик.\nмир.", "entities": [], "media": [] },
+        {
+          "text": "Threads API — длинный… про 🇷🇺 Привет.» ёжик, snake_case:\n• Telegram 😀! мир — snake_case API! #тег\n\nv2.1 API… «цитата».» Привет… т.е.",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "(скобки), 👨‍💻. #тег.» Code? это! e.g.\n\nsnake_case\n\nпост… пост пост… (скобки). ёжик:\n• 2*3 …! йога snake_case.\nи https://example.com/путь?q=1:\n• (скобки)! API? @alexgetman snake_case! и …! 𝐁𝐨𝐥𝐝:\n• snake_case — Code, (скобки), @alexgetman! (скобки)… @alexgetman e.g. Claude 👍🏽 — API.» йога? … длинный Telegram Code? это! это:\n• 2*3. API? https://example.com/путь?q=1.» snake_case… пост т.е., т.е.… Threads, v2.1 — т.е. ёжик e.g. snake_case, длинный Привет\n\nПривет это? …. e.g.. #тег! йога (скобки).\n…! агентов\n\nт.е. 𝐁𝐨𝐥𝐝. Claude:\n• про… и — Dr. 👍🏽 йога? 😀 пост.» «цитата»:\n• Dr. 👨‍💻 пост! Claude",
+          "entities": [
+            { "type": "url", "offset": 171, "length": 377 },
+            { "type": "heading", "offset": 435, "length": 120, "level": "x" },
+            { "type": "pre", "offset": 196, "length": 219 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 16,
+      "chain": [
+        { "text": "(скобки), 👨‍💻.", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "#тег.» Code?", "entities": [], "media": [] },
+        { "text": "это! e.g.", "entities": [], "media": [] },
+        { "text": "snake_case", "entities": [], "media": [] },
+        { "text": "пост… пост пост…", "entities": [], "media": [] },
+        { "text": "(скобки). ёжик:", "entities": [], "media": [] },
+        { "text": "• 2*3 …! йога", "entities": [], "media": [] },
+        { "text": "snake_case.", "entities": [], "media": [] },
+        { "text": "и https://exampl", "entities": [], "media": [] },
+        { "text": "e.com/путь?q=1:", "entities": [], "media": [] },
+        { "text": "• (скобки)! API?", "entities": [], "media": [] },
+        { "text": "@alexgetman", "entities": [], "media": [] },
+        { "text": "snake_case! и …!", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝:", "entities": [], "media": [] },
+        { "text": "• snake_case —", "entities": [], "media": [] },
+        { "text": "Code, (скобки),", "entities": [], "media": [] },
+        { "text": "@alexgetman!", "entities": [], "media": [] },
+        { "text": "(скобки)…", "entities": [], "media": [] },
+        { "text": "@alexgetman e.g.", "entities": [], "media": [] },
+        { "text": "Claude 👍🏽 —", "entities": [], "media": [] },
+        { "text": "API.» йога?", "entities": [], "media": [] },
+        { "text": "… длинный", "entities": [], "media": [] },
+        { "text": "Telegram Code?", "entities": [], "media": [] },
+        { "text": "это! это:\n• 2*3.", "entities": [], "media": [] },
+        { "text": "API? https://exa", "entities": [], "media": [] },
+        { "text": "mple.com/путь?q=", "entities": [], "media": [] },
+        { "text": "1.» snake_case…", "entities": [], "media": [] },
+        { "text": "пост т.е., т.е.…", "entities": [], "media": [] },
+        { "text": "Threads, v2.1 —", "entities": [], "media": [] },
+        { "text": "т.е. ёжик e.g.", "entities": [], "media": [] },
+        { "text": "snake_case,", "entities": [], "media": [] },
+        { "text": "длинный Привет", "entities": [], "media": [] },
+        { "text": "Привет это?", "entities": [], "media": [] },
+        { "text": "…. e.g.. #тег!", "entities": [], "media": [] },
+        { "text": "йога (скобки).", "entities": [], "media": [] },
+        { "text": "…! агентов", "entities": [], "media": [] },
+        { "text": "т.е. 𝐁𝐨𝐥𝐝.", "entities": [], "media": [] },
+        { "text": "Claude:\n• про… и", "entities": [], "media": [] },
+        { "text": "— Dr. 👍🏽 йога?", "entities": [], "media": [] },
+        { "text": "😀 пост.»", "entities": [], "media": [] },
+        { "text": "«цитата»:\n• Dr.", "entities": [], "media": [] },
+        { "text": "👨‍💻 пост!", "entities": [], "media": [] },
+        { "text": "Claude", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "snake_case Dr.… Code! йога пост мир, 🇷🇺.) (скобки)… 😀. 🇷🇺:\n• 🇷🇺.» 👍🏽 Привет? Привет.» т.е..) т.е.? Claude\n\nsnake_case.» ёжик… Claude! (скобки), про! 😀! т.е. https://example.com/путь?q=1 Telegram, «цитата» (скобки).» Claude — 🇷🇺… агентов:\n• #тег… e.g. — Claude! Dr. йога — 2*3, и, @alexgetman… #тег.» … агентов.» 👨‍💻 — это.) v2.1! ёжик! пост… Claude… snake_case\n\nCode Code.» 2*3 (скобки)! https://example.com/путь?q=1 Threads, про.) snake_case @alexgetman 👨‍💻.\nv2.1 — 👨‍💻. Threads:\n• ёжик. (скобки)! йога «цитата»\n\nDr..\nCode! длинный.\nThreads.» API «цитата» «цитата».» Threads\n\nsnake_case.» мир API. 👨‍💻.\n🇷🇺",
+          "entities": [
+            { "type": "spoiler", "offset": 241, "length": 180 },
+            { "type": "text_link", "offset": 15, "length": 129, "url": "https://example.com/?a=1&b=2" },
+            { "type": "quote", "offset": 546, "length": 26 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 500,
+      "chain": [
+        {
+          "text": "snake_case Dr.… Code! йога пост мир, 🇷🇺.) (скобки)… 😀. 🇷🇺:\n• 🇷🇺.» 👍🏽 Привет? Привет.» т.е..) т.е.? Claude\n\nsnake_case.» ёжик… Claude! (скобки), про! 😀! т.е. https://example.com/путь?q=1 Telegram, «цитата» (скобки).» Claude — 🇷🇺… агентов:\n• #тег… e.g. — Claude! Dr. йога — 2*3, и, @alexgetman… #тег.» … агентов.» 👨‍💻 — это.) v2.1! ёжик! пост… Claude… snake_case",
+          "entities": [{ "type": "text_link", "offset": 15, "length": 129, "url": "https://example.com/?a=1&b=2" }],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "Code Code.» 2*3 (скобки)! https://example.com/путь?q=1 Threads, про.) snake_case @alexgetman 👨‍💻.\nv2.1 — 👨‍💻. Threads:\n• ёжик. (скобки)! йога «цитата»\n\nDr..\nCode! длинный.\nThreads.» API «цитата» «цитата».» Threads\n\nsnake_case.» мир API. 👨‍💻.\n🇷🇺",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "йога:\n• Claude 2*3.\nт.е. — Telegram — Telegram\n\nTelegram 😀 #тег. длинный, т.е.… 👍🏽.) 🇷🇺! 👍🏽! snake_case! т.е.! Привет.\nThreads.\nAPI — e.g. про? «цитата» и — 👨‍💻? Code.» Threads! e.g., т.е.. https://example.com/путь?q=1.\n(скобки) Code — 🇷🇺.\ne.g..\nCode:\n• Dr. Привет:\n• 🇷🇺? API, 👨‍💻. йога? API! т.е.! 𝐁𝐨𝐥𝐝.» …:\n• snake_case? Telegram:\n• 👍🏽.\nмир:\n• e.g. ёжик… Claude — длинный.» 😀\n\nагентов:\n• 2*3.\nTelegram! Dr. — https://example.com/путь?q=1.\n(скобки)… …… про, 🇷🇺\n\n… 😀! Claude 𝐁𝐨𝐥𝐝.» …? Привет",
+          "entities": [
+            { "type": "spoiler", "offset": 454, "length": 20 },
+            { "type": "italic", "offset": 314, "length": 66 },
+            { "type": "bold", "offset": 246, "length": 218 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 100,
+      "chain": [
+        {
+          "text": "йога:\n• Claude 2*3.\nт.е. — Telegram — Telegram\n\nTelegram 😀 #тег. длинный, т.е.… 👍🏽.) 🇷🇺!",
+          "entities": [],
+          "media": [{ "type": "video" }]
+        },
+        { "text": "👍🏽! snake_case! т.е.! Привет.\nThreads.\nAPI — e.g. про? «цитата» и — 👨‍💻? Code.»", "entities": [], "media": [] },
+        {
+          "text": "Threads! e.g., т.е.. https://example.com/путь?q=1.\n(скобки) Code — 🇷🇺.\ne.g..\nCode:\n• Dr.",
+          "entities": [],
+          "media": []
+        },
+        { "text": "Привет:\n• 🇷🇺? API, 👨‍💻. йога? API! т.е.! 𝐁𝐨𝐥𝐝.» …:\n• snake_case?", "entities": [], "media": [] },
+        { "text": "Telegram:\n• 👍🏽.\nмир:\n• e.g. ёжик… Claude — длинный.» 😀", "entities": [], "media": [] },
+        { "text": "агентов:\n• 2*3.\nTelegram! Dr. — https://example.com/путь?q=1.\n(скобки)… …… про, 🇷🇺", "entities": [], "media": [] },
+        { "text": "… 😀! Claude 𝐁𝐨𝐥𝐝.» …? Привет", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "2*3.» 🇷🇺. мир мир.) про… API — 2*3 т.е., …! про 👨‍💻.» 2*3… Dr., Threads — 👍🏽\n\nмир! Dr. snake_case и… пост — Claude? snake_case… Code 👨‍💻\n\nCode и\n\nПривет! 2*3 — Code — 👨‍💻, агентов! @alexgetman? 𝐁𝐨𝐥𝐝.\ne.g.:\n• Привет.» 𝐁𝐨𝐥𝐝? Привет. мир.» «цитата», это — Telegram… (скобки) — 👍🏽\n\nThreads 𝐁𝐨𝐥𝐝 Claude\n\nv2.1 — Dr.? про:\n• https://example.com/путь?q=1:\n• ёжик:\n• v2.1! про\n\n𝐁𝐨𝐥𝐝! https://example.com/путь?q=1:\n• Code:\n• 🇷🇺? 𝐁𝐨𝐥𝐝, API, Code.) т.е..\nDr. «цитата» (скобки) — и! йога — и.» агентов.» …, про #тег.» (скобки) и йога? мир Dr.! 2*3 — и:\n• Привет, 👨‍💻:\n• v2.1.» это. @alexgetman.» йога:\n• #тег:\n• йога? 👨‍💻.» v2.1 Claude\n\n@alexgetman.) агентов! 👍🏽 👨‍💻, 😀.» Claude.» Claude йога, Code, агентов — e.g.\n\n…, (скобки)… 😀 😀, API, 𝐁𝐨𝐥𝐝 «цитата».\nhttps://example.com/путь?q=1:\n• и @alexgetman:\n• 😀 — API — Code… snake_case? snake_case #тег.» 😀. агентов @alexgetman.» …. … — Telegram агентов e.g.. мир\n\nsnake_case\n\n(скобки)\n\nv2.1.) snake_case #тег, e.g. 🇷🇺, 👍🏽 — «цитата»\n\nClaude.) Code Code… snake_case… агентов! v2.1 это это ….» (скобки), ёжик.\n👍🏽! Threads! агентов? мир? @alexgetman т.е.:\n• 🇷🇺:\n• #тег и.) https://example.com/путь?q=1.) 𝐁𝐨𝐥𝐝 Telegram… Code это т.е. 2*3 — 😀? мир",
+          "entities": [
+            { "type": "blockquote", "offset": 1133, "length": 64 },
+            { "type": "pre", "offset": 732, "length": 358 },
+            { "type": "list_item", "offset": 1116, "length": 23 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 64,
+      "chain": [
+        { "text": "2*3.» 🇷🇺. мир мир.) про… API — 2*3 т.е., …! про 👨‍💻.» 2*3…", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "Dr., Threads — 👍🏽\n\nмир! Dr. snake_case и… пост — Claude?", "entities": [], "media": [] },
+        { "text": "snake_case… Code 👨‍💻\n\nCode и\n\nПривет!", "entities": [], "media": [] },
+        { "text": "2*3 — Code — 👨‍💻, агентов! @alexgetman?", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝.\ne.g.:\n• Привет.» 𝐁𝐨𝐥𝐝? Привет. мир.»", "entities": [], "media": [] },
+        { "text": "«цитата», это — Telegram… (скобки) — 👍🏽", "entities": [], "media": [] },
+        { "text": "Threads 𝐁𝐨𝐥𝐝 Claude\n\nv2.1 — Dr.? про:", "entities": [], "media": [] },
+        { "text": "• https://example.com/путь?q=1:\n• ёжик:\n• v2.1! про", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝! https://example.com/путь?q=1:\n• Code:\n• 🇷🇺?", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝, API, Code.) т.е..\nDr. «цитата» (скобки) — и! йога —", "entities": [], "media": [] },
+        { "text": "и.» агентов.» …, про #тег.» (скобки) и йога? мир Dr.!", "entities": [], "media": [] },
+        { "text": "2*3 — и:\n• Привет, 👨‍💻:\n• v2.1.» это.", "entities": [], "media": [] },
+        { "text": "@alexgetman.» йога:\n• #тег:\n• йога? 👨‍💻.» v2.1 Claude", "entities": [], "media": [] },
+        { "text": "@alexgetman.) агентов! 👍🏽 👨‍💻, 😀.» Claude.»", "entities": [], "media": [] },
+        { "text": "Claude йога, Code, агентов — e.g.", "entities": [], "media": [] },
+        { "text": "…, (скобки)… 😀 😀, API, 𝐁𝐨𝐥𝐝 «цитата».", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1:\n• и @alexgetman:", "entities": [], "media": [] },
+        { "text": "• 😀 — API — Code… snake_case? snake_case #тег.»", "entities": [], "media": [] },
+        { "text": "😀. агентов @alexgetman.» …. … — Telegram агентов e.g.. мир", "entities": [], "media": [] },
+        { "text": "snake_case\n\n(скобки)\n\nv2.1.) snake_case #тег, e.g.", "entities": [], "media": [] },
+        { "text": "🇷🇺, 👍🏽 — «цитата»\n\nClaude.) Code Code… snake_case… агентов!", "entities": [], "media": [] },
+        { "text": "v2.1 это это ….» (скобки), ёжик.\n👍🏽! Threads! агентов? мир?", "entities": [], "media": [] },
+        { "text": "@alexgetman т.е.:\n• 🇷🇺:\n• #тег и.)", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1.) 𝐁𝐨𝐥𝐝 Telegram… Code это т.е.", "entities": [], "media": [] },
+        { "text": "2*3 — 😀? мир", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "𝐁𝐨𝐥𝐝 и… про? Claude? …? Telegram, Claude, …… Привет …\n\n😀! Telegram v2.1, это — мир… йога Claude «цитата» агентов — e.g.! длинный.) «цитата»:\n• Code, Threads.» и 😀 https://example.com/путь?q=1 мир — 🇷🇺… @alexgetman? snake_case Telegram? 𝐁𝐨𝐥𝐝 йога.» Code snake_case:\n• это, «цитата»… Dr. API.\nПривет… Threads? #тег.» ….) ….\nдлинный 😀? про? пост длинный.\nмир.) …… длинный.\nПривет! 👍🏽 т.е.\n\n«цитата» — 👍🏽:\n• Dr..» длинный… 𝐁𝐨𝐥𝐝.» API.) Telegram API.» Threads.) мир! т.е. про:\n• Привет.) т.е.… «цитата». про мир? агентов:\n• Claude\n\nAPI.\nThreads. пост Code. «цитата». йога.» 😀.» @alexgetman\n\nмир.» 👍🏽! это. v2.1\n\n👍🏽:\n• ёжик.) 😀! «цитата».» Claude:\n• 𝐁𝐨𝐥𝐝:\n• Claude\n\nт.е. @alexgetman\n\nv2.1… 👍🏽! агентов https://example.com/путь?q=1… йога.\n@alexgetman snake_case? ….) пост! это.» йога, «цитата»? это. API:\n• Claude… …… 😀.\nт.е. ёжик:\n• snake_case. т.е.! Dr. — т.е.:\n• ёжик? т.е.. Code, и:\n• Привет:\n• и — v2.1! v2.1! e.g.",
+          "entities": [
+            { "type": "pre", "offset": 273, "length": 283 },
+            { "type": "text_link", "offset": 141, "length": 701, "url": "ftp://example.com" },
+            { "type": "hashtag", "offset": 639, "length": 81 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 140,
+      "chain": [
+        {
+          "text": "𝐁𝐨𝐥𝐝 и… про? Claude? …? Telegram, Claude, …… Привет …\n\n😀! Telegram v2.1, это — мир… йога Claude «цитата» агентов — e.g.! длинный.)",
+          "entities": [],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "«цитата»:\n• Code, Threads.» и 😀 https://example.com/путь?q=1 мир — 🇷🇺… @alexgetman? snake_case Telegram? 𝐁𝐨𝐥𝐝 йога.»",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "Code snake_case:\n• это, «цитата»… Dr. API.\nПривет… Threads? #тег.» ….) ….\nдлинный 😀? про? пост длинный.\nмир.) …… длинный.\nПривет! 👍🏽 т.е.",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "«цитата» — 👍🏽:\n• Dr..» длинный… 𝐁𝐨𝐥𝐝.» API.) Telegram API.» Threads.) мир! т.е. про:\n• Привет.) т.е.…",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "«цитата». про мир? агентов:\n• Claude\n\nAPI.\nThreads. пост Code. «цитата». йога.» 😀.» @alexgetman\n\nмир.» 👍🏽! это. v2.1",
+          "entities": [],
+          "media": []
+        },
+        { "text": "👍🏽:\n• ёжик.) 😀! «цитата».» Claude:\n• 𝐁𝐨𝐥𝐝:\n• Claude\n\nт.е. @alexgetman", "entities": [], "media": [] },
+        {
+          "text": "v2.1… 👍🏽! агентов https://example.com/путь?q=1… йога.\n@alexgetman snake_case? ….) пост! это.» йога, «цитата»? это. API:\n• Claude… ……",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "😀.\nт.е. ёжик:\n• snake_case. т.е.! Dr. — т.е.:\n• ёжик? т.е.. Code, и:\n• Привет:\n• и — v2.1! v2.1! e.g.",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "🇷🇺 Telegram.) #тег.» и\n\nПривет\n\nv2.1 агентов — т.е., Dr.? snake_case snake_case? 𝐁𝐨𝐥𝐝 Dr. 𝐁𝐨𝐥𝐝 длинный… пост.\nпро #тег.» 😀:\n• ёжик.\n#тег\n\nёжик? (скобки), йога … Code — пост 𝐁𝐨𝐥𝐝, API:\n• и… йога. v2.1 👨‍💻:\n• 👨‍💻 Dr..» Code\n\nDr.? 👍🏽 #тег? 👍🏽. (скобки) — пост — «цитата».» про API! Telegram. мир! …… 👨‍💻 — про.) https://example.com/путь?q=1:\n• Threads это! Code! …… мир 👍🏽.) 👨‍💻\n\nйога.\n👨‍💻 Telegram\n\n«цитата» мир #тег — мир! Code — Привет — 👍🏽. 𝐁𝐨𝐥𝐝… Dr. snake_case Привет\n\n@alexgetman:\n• длинный #тег.) ёжик. https://example.com/путь?q=1.» т.е. e.g..» это.» и:\n• (скобки)! Telegram. пост\n\n2*3\n\n…:\n• Dr.\n\nCode v2.1? API.) …\n\nйога.\nПривет йога\n\nClaude\n\n… …:\n• v2.1.\nsnake_case 👍🏽… #тег про? 𝐁𝐨𝐥𝐝:\n• https://example.com/путь?q=1… 🇷🇺 … пост… 😀 Dr..) Threads длинный Привет, 𝐁𝐨𝐥𝐝 https://example.com/путь?q=1 это\n\n… агентов — (скобки)\n\nмир:\n• и, Code https://example.com/путь?q=1 https://example.com/путь?q=1? агентов 🇷🇺\n\nёжик. про… это длинный.) «цитата» это.» пост. v2.1. Threads. Threads. v2.1? ёжик.» агентов.» #тег! Code Dr..) и:\n• (скобки)! Code пост.) snake_case… 😀! т.е.? ёжик. 👨‍💻! @alexgetman.» 😀? e.g..\nsnake_case.» … Threads Code (скобки). длинный.» 2*3\n\nAPI это? Привет, @alexgetman! длинный … Telegram https://example.com/путь?q=1:\n• агентов",
+          "entities": [
+            { "type": "text_link", "offset": 1040, "length": 187, "url": "example.com" },
+            { "type": "underline", "offset": 646, "length": 5 },
+            { "type": "strikethrough", "offset": 1192, "length": 37 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 1000,
+      "chain": [
+        {
+          "text": "🇷🇺 Telegram.) #тег.» и\n\nПривет\n\nv2.1 агентов — т.е., Dr.? snake_case snake_case? 𝐁𝐨𝐥𝐝 Dr. 𝐁𝐨𝐥𝐝 длинный… пост.\nпро #тег.» 😀:\n• ёжик.\n#тег\n\nёжик? (скобки), йога … Code — пост 𝐁𝐨𝐥𝐝, API:\n• и… йога. v2.1 👨‍💻:\n• 👨‍💻 Dr..» Code\n\nDr.? 👍🏽 #тег? 👍🏽. (скобки) — пост — «цитата».» про API! Telegram. мир! …… 👨‍💻 — про.) https://example.com/путь?q=1:\n• Threads это! Code! …… мир 👍🏽.) 👨‍💻\n\nйога.\n👨‍💻 Telegram\n\n«цитата» мир #тег — мир! Code — Привет — 👍🏽. 𝐁𝐨𝐥𝐝… Dr. snake_case Привет\n\n@alexgetman:\n• длинный #тег.) ёжик. https://example.com/путь?q=1.» т.е. e.g..» это.» и:\n• (скобки)! Telegram. пост\n\n2*3\n\n…:\n• Dr.\n\nCode v2.1? API.) …\n\nйога.\nПривет йога\n\nClaude\n\n… …:\n• v2.1.\nsnake_case 👍🏽… #тег про? 𝐁𝐨𝐥𝐝:\n• https://example.com/путь?q=1… 🇷🇺 … пост… 😀 Dr..) Threads длинный Привет, 𝐁𝐨𝐥𝐝 https://example.com/путь?q=1 это\n\n… агентов — (скобки)\n\nмир:\n• и, Code https://example.com/путь?q=1 https://example.com/путь?q=1? агентов 🇷🇺",
+          "entities": [{ "type": "underline", "offset": 646, "length": 5 }],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "ёжик. про… это длинный.) «цитата» это.» пост. v2.1. Threads. Threads. v2.1? ёжик.» агентов.» #тег! Code Dr..) и:\n• (скобки)! Code пост.) snake_case… 😀! т.е.? ёжик. 👨‍💻! @alexgetman.» 😀? e.g..\nsnake_case.» … Threads Code (скобки). длинный.» 2*3\n\nAPI это? Привет, @alexgetman! длинный … Telegram https://example.com/путь?q=1:\n• агентов",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "👨‍💻 Dr. e.g. ёжик.) (скобки)? 2*3 — 2*3? длинный длинный\n\nйога. Claude Code API, …? Threads.) ёжик:\n• т.е.… 👍🏽 мир! мир… Привет:\n• Threads 𝐁𝐨𝐥𝐝\n\n(скобки) — про.) мир.) мир\n\nпро пост.) и #тег — Threads длинный, e.g.\n\nClaude, Code.» 😀, #тег.» Threads, ёжик — 👨‍💻.\nи.» e.g. про. мир.) мир — Привет! (скобки) https://example.com/путь?q=1? и! Привет — https://example.com/путь?q=1? это Telegram.\nдлинный.» Привет.\n… …\n\nThreads — Telegram.) 🇷🇺 — пост… Привет, Threads, длинный.\nПривет\n\nTelegram.\nDr. 🇷🇺 и? e.g. и. про API.\n2*3! Telegram:\n• 🇷🇺.) 👍🏽.\nTelegram.) snake_case пост.) …, йога Claude.\nTelegram? ёжик",
+          "entities": [
+            { "type": "url", "offset": 215, "length": 221 },
+            { "type": "url", "offset": 478, "length": 81 },
+            { "type": "strikethrough", "offset": "163", "length": 325 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 33,
+      "chain": [
+        { "text": "👨‍💻 Dr. e.g. ёжик.) (скобки)?", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "2*3 — 2*3? длинный длинный", "entities": [], "media": [] },
+        { "text": "йога. Claude Code API, …?", "entities": [], "media": [] },
+        { "text": "Threads.) ёжик:\n• т.е.… 👍🏽 мир!", "entities": [], "media": [] },
+        { "text": "мир… Привет:\n• Threads 𝐁𝐨𝐥𝐝", "entities": [], "media": [] },
+        { "text": "(скобки) — про.) мир.) мир", "entities": [], "media": [] },
+        { "text": "про пост.) и #тег — Threads", "entities": [], "media": [] },
+        { "text": "длинный, e.g.\n\nClaude, Code.»", "entities": [], "media": [] },
+        { "text": "😀, #тег.» Threads, ёжик — 👨‍💻.", "entities": [], "media": [] },
+        { "text": "и.» e.g. про. мир.) мир — Привет!", "entities": [], "media": [] },
+        { "text": "(скобки) https://example.com/путь", "entities": [], "media": [] },
+        { "text": "?q=1? и! Привет —", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1? это", "entities": [], "media": [] },
+        { "text": "Telegram.\nдлинный.» Привет.\n… …", "entities": [], "media": [] },
+        { "text": "Threads — Telegram.) 🇷🇺 — пост…", "entities": [], "media": [] },
+        { "text": "Привет, Threads, длинный.\nПривет", "entities": [], "media": [] },
+        { "text": "Telegram.\nDr. 🇷🇺 и? e.g. и. про", "entities": [], "media": [] },
+        { "text": "API.\n2*3! Telegram:\n• 🇷🇺.)", "entities": [], "media": [] },
+        { "text": "👍🏽.\nTelegram.) snake_case", "entities": [], "media": [] },
+        { "text": "пост.) …, йога Claude.", "entities": [], "media": [] },
+        { "text": "Telegram? ёжик", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "https://example.com/путь?q=1 — ёжик API агентов snake_case.\nПривет e.g.\n\nsnake_case:\n• ёжик… 😀\n\nпост, и. …… … — 2*3, 🇷🇺:\n• т.е.\n\nёжик пост e.g. — и. … 🇷🇺! Code — 𝐁𝐨𝐥𝐝 #тег v2.1\n\n#тег.» Telegram это. Threads:\n• ёжик.\nAPI Claude API API.) 😀 агентов.) т.е. 👍🏽 — ёжик.\n@alexgetman snake_case:\n• длинный! «цитата» #тег? пост. 👍🏽 🇷🇺.) e.g..\n#тег.) Claude e.g..» длинный, йога — (скобки).» ёжик. йога API! Telegram, API Telegram 👍🏽 v2.1? …! про! Threads\n\nAPI? v2.1, 👨‍💻 😀 — v2.1 🇷🇺.) (скобки)! snake_case мир.) Привет… т.е..» 𝐁𝐨𝐥𝐝. Code.) Dr..» Telegram\n\nПривет? длинный API — Привет e.g..) Threads — т.е., 👨‍💻 𝐁𝐨𝐥𝐝:\n• 😀, 2*3:\n• #тег Telegram 2*3 @alexgetman:\n• Привет 𝐁𝐨𝐥𝐝:\n• длинный.) Code? API\n\nмир\n\nпост.) про.» 👍🏽? Code Привет:\n• e.g.! т.е., и — «цитата» — Привет… Code «цитата» — пост Code\n\nv2.1\n\n#тег! snake_case.) про.\nи, e.g..) Telegram e.g..) ёжик Dr.… 𝐁𝐨𝐥𝐝 v2.1:\n• агентов.» мир e.g., 2*3.» Threads.) агентов. (скобки).) … йога.) про «цитата» 👨‍💻 https://example.com/путь?q=1:\n• про, это… v2.1. Claude агентов\n\n🇷🇺… про https://example.com/путь?q=1 Code\n\nThreads. про, 😀\n\nи:\n• 2*3 — 2*3… пост. Dr..» (скобки) 𝐁𝐨𝐥𝐝? … и Dr..\nsnake_case https://example.com/путь?q=1.\nhttps://example.com/путь?q=1… …, йога.) ёжик — Привет\n\nsnake_case",
+          "entities": [
+            { "type": "strikethrough", "offset": 1254, "length": 0 },
+            { "type": "text_link", "offset": 672, "length": 367, "url": "https://" },
+            { "type": "list_item", "offset": 17, "length": 620 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 500,
+      "chain": [
+        {
+          "text": "https://example.com/путь?q=1 — ёжик API агентов snake_case.\nПривет e.g.\n\nsnake_case:\n• ёжик… 😀\n\nпост, и. …… … — 2*3, 🇷🇺:\n• т.е.\n\nёжик пост e.g. — и. … 🇷🇺! Code — 𝐁𝐨𝐥𝐝 #тег v2.1\n\n#тег.» Telegram это. Threads:\n• ёжик.\nAPI Claude API API.) 😀 агентов.) т.е. 👍🏽 — ёжик.\n@alexgetman snake_case:\n• длинный! «цитата» #тег? пост. 👍🏽 🇷🇺.) e.g..\n#тег.) Claude e.g..» длинный, йога — (скобки).» ёжик. йога API! Telegram, API Telegram 👍🏽 v2.1? …! про! Threads",
+          "entities": [],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "API? v2.1, 👨‍💻 😀 — v2.1 🇷🇺.) (скобки)! snake_case мир.) Привет… т.е..» 𝐁𝐨𝐥𝐝. Code.) Dr..» Telegram\n\nПривет? длинный API — Привет e.g..) Threads — т.е., 👨‍💻 𝐁𝐨𝐥𝐝:\n• 😀, 2*3:\n• #тег Telegram 2*3 @alexgetman:\n• Привет 𝐁𝐨𝐥𝐝:\n• длинный.) Code? API\n\nмир\n\nпост.) про.» 👍🏽? Code Привет:\n• e.g.! т.е., и — «цитата» — Привет… Code «цитата» — пост Code\n\nv2.1",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "#тег! snake_case.) про.\nи, e.g..) Telegram e.g..) ёжик Dr.… 𝐁𝐨𝐥𝐝 v2.1:\n• агентов.» мир e.g., 2*3.» Threads.) агентов. (скобки).) … йога.) про «цитата» 👨‍💻 https://example.com/путь?q=1:\n• про, это… v2.1. Claude агентов\n\n🇷🇺… про https://example.com/путь?q=1 Code\n\nThreads. про, 😀\n\nи:\n• 2*3 — 2*3… пост. Dr..» (скобки) 𝐁𝐨𝐥𝐝? … и Dr..\nsnake_case https://example.com/путь?q=1.\nhttps://example.com/путь?q=1… …, йога.) ёжик — Привет\n\nsnake_case",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "@alexgetman\n\nйога e.g.! йога… 𝐁𝐨𝐥𝐝.» 😀:\n• Claude — агентов\n\nт.е. (скобки):\n• v2.1? 👨‍💻.» это\n\n(скобки)\n\nэто? e.g. 🇷🇺.» Dr.",
+          "entities": [
+            { "type": "text_link", "offset": 45, "length": 26, "url": 42 },
+            { "type": "custom_emoji", "offset": 116, "length": 12 },
+            { "type": "heading", "offset": "93", "length": 0, "level": "4" }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 4096,
+      "chain": [
+        {
+          "text": "@alexgetman\n\nйога e.g.! йога… 𝐁𝐨𝐥𝐝.» 😀:\n• Claude — агентов\n\nт.е. (скобки):\n• v2.1? 👨‍💻.» это\n\n(скобки)\n\nэто? e.g. 🇷🇺.» Dr.",
+          "entities": [
+            { "type": "text_link", "offset": 45, "length": 26, "url": 42 },
+            { "type": "custom_emoji", "offset": 116, "length": 12 },
+            { "type": "heading", "offset": "93", "length": 0, "level": "4" }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "https://example.com/путь?q=1 👨‍💻:\n• это.\nTelegram 👨‍💻 Telegram:\n• Привет, Code",
+          "entities": [
+            { "type": "custom_emoji", "offset": 41, "length": 26 },
+            { "type": "bold", "offset": 71, "length": 3 },
+            { "type": "text_link", "offset": 22, "length": 13, "url": 42 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 16,
+      "chain": [
+        { "text": "https://example.", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "com/путь?q=1", "entities": [], "media": [] },
+        { "text": "👨‍💻:\n• это.", "entities": [], "media": [] },
+        { "text": "Telegram 👨‍💻", "entities": [], "media": [] },
+        { "text": "Telegram:", "entities": [], "media": [] },
+        { "text": "• Привет, Code", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "https://example.com/путь?q=1.) йога? https://example.com/путь?q=1… ….\nэто, 2*3.) мир (скобки)? Привет.) 😀 ёжик.» и, Telegram это? ….\nDr..» агентов.\nClaude #тег.\n👨‍💻! Привет. Claude? йога Telegram (скобки) — 😀. 😀… пост 2*3.\nsnake_case\n\nи v2.1, Dr..) v2.1.» «цитата»… (скобки)… 𝐁𝐨𝐥𝐝? йога v2.1:\n• 👨‍💻 — API.\n(скобки) 🇷🇺. пост.» API 😀.\nDr..» Привет агентов.» «цитата» Threads 🇷🇺… 2*3 2*3.\nAPI, @alexgetman.» т.е.\n\nйога.» пост, и.\n@alexgetman:\n• про — это длинный.» Привет длинный API.) Привет. Telegram, йога.» (скобки). 👨‍💻 v2.1… 👨‍💻 Привет 𝐁𝐨𝐥𝐝 — https://example.com/путь?q=1.» Привет\n\n🇷🇺 — 👨‍💻.) Threads? ёжик. и. 😀.) длинный… 😀 длинный\n\nПривет v2.1.» ….» 👨‍💻 Claude:\n• мир — https://example.com/путь?q=1 — #тег Code т.е.? 2*3 🇷🇺! Привет Привет\n\nдлинный, v2.1.\n😀 v2.1 — Claude.) v2.1",
+          "entities": [
+            { "type": "bold", "offset": 688, "length": 9 },
+            { "type": "list_item", "offset": 587, "length": 130 },
+            { "type": "hashtag", "offset": 319, "length": 206 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 10,
+      "chain": [
+        { "text": "https://ex", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1.)", "entities": [], "media": [] },
+        { "text": "йога? http", "entities": [], "media": [] },
+        { "text": "s://exampl", "entities": [], "media": [] },
+        { "text": "e.com/путь", "entities": [], "media": [] },
+        { "text": "?q=1… ….", "entities": [], "media": [] },
+        { "text": "это, 2*3.)", "entities": [], "media": [] },
+        { "text": "мир (скобк", "entities": [], "media": [] },
+        { "text": "и)? Привет", "entities": [], "media": [] },
+        { "text": ".) 😀 ёжик", "entities": [], "media": [] },
+        { "text": ".» и, Tele", "entities": [], "media": [] },
+        { "text": "gram это?", "entities": [], "media": [] },
+        { "text": "….\nDr..»", "entities": [], "media": [] },
+        { "text": "агентов.", "entities": [], "media": [] },
+        { "text": "Claude", "entities": [], "media": [] },
+        { "text": "#тег.\n👨‍", "entities": [], "media": [] },
+        { "text": "💻! Привет", "entities": [], "media": [] },
+        { "text": ". Claude?", "entities": [], "media": [] },
+        { "text": "йога Teleg", "entities": [], "media": [] },
+        { "text": "ram (скобк", "entities": [], "media": [] },
+        { "text": "и) — 😀.", "entities": [], "media": [] },
+        { "text": "😀… пост", "entities": [], "media": [] },
+        { "text": "2*3.\nsnake", "entities": [], "media": [] },
+        { "text": "_case", "entities": [], "media": [] },
+        { "text": "и v2.1,", "entities": [], "media": [] },
+        { "text": "Dr..) v2.1", "entities": [], "media": [] },
+        { "text": ".» «цитата", "entities": [], "media": [] },
+        { "text": "»… (скобки", "entities": [], "media": [] },
+        { "text": ")… 𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝? йога", "entities": [], "media": [] },
+        { "text": "v2.1:\n•", "entities": [], "media": [] },
+        { "text": "👨‍💻 —", "entities": [], "media": [] },
+        { "text": "API.\n(скоб", "entities": [], "media": [] },
+        { "text": "ки) 🇷🇺.", "entities": [], "media": [] },
+        { "text": "пост.»", "entities": [], "media": [] },
+        { "text": "API 😀.", "entities": [], "media": [] },
+        { "text": "Dr..» Прив", "entities": [], "media": [] },
+        { "text": "ет агентов", "entities": [], "media": [] },
+        { "text": ".» «цитата", "entities": [], "media": [] },
+        { "text": "» Threads", "entities": [], "media": [] },
+        { "text": "🇷🇺… 2*3", "entities": [], "media": [] },
+        { "text": "2*3.\nAPI,", "entities": [], "media": [] },
+        { "text": "@alexgetma", "entities": [], "media": [] },
+        { "text": "n.» т.е.", "entities": [], "media": [] },
+        { "text": "йога.»", "entities": [], "media": [] },
+        { "text": "пост, и.", "entities": [], "media": [] },
+        { "text": "@alexgetma", "entities": [], "media": [] },
+        { "text": "n:\n• про —", "entities": [], "media": [] },
+        { "text": "это длинны", "entities": [], "media": [] },
+        { "text": "й.» Привет", "entities": [], "media": [] },
+        { "text": "длинный", "entities": [], "media": [] },
+        { "text": "API.) Прив", "entities": [], "media": [] },
+        { "text": "ет. Telegr", "entities": [], "media": [] },
+        { "text": "am, йога.»", "entities": [], "media": [] },
+        { "text": "(скобки).", "entities": [], "media": [] },
+        { "text": "👨‍💻 v2.1", "entities": [], "media": [] },
+        { "text": "… 👨‍💻", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝 —", "entities": [], "media": [] },
+        { "text": "https://ex", "entities": [], "media": [] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1.»", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "🇷🇺 —", "entities": [], "media": [] },
+        { "text": "👨‍💻.)", "entities": [], "media": [] },
+        { "text": "Threads?", "entities": [], "media": [] },
+        { "text": "ёжик. и.", "entities": [], "media": [] },
+        { "text": "😀.) длинн", "entities": [], "media": [] },
+        { "text": "ый… 😀", "entities": [], "media": [] },
+        { "text": "длинный", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "v2.1.» ….»", "entities": [], "media": [] },
+        { "text": "👨‍💻 Clau", "entities": [], "media": [] },
+        { "text": "de:\n• мир", "entities": [], "media": [] },
+        { "text": "— https://", "entities": [], "media": [] },
+        { "text": "example.co", "entities": [], "media": [] },
+        { "text": "m/путь?q=1", "entities": [], "media": [] },
+        { "text": "— #тег", "entities": [], "media": [] },
+        { "text": "Code т.е.?", "entities": [], "media": [] },
+        { "text": "2*3 🇷🇺!", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "длинный,", "entities": [], "media": [] },
+        { "text": "v2.1.\n😀", "entities": [], "media": [] },
+        { "text": "v2.1 —", "entities": [], "media": [] },
+        { "text": "Claude.)", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "e.g.\n\n👨‍💻 это Claude! пост! 𝐁𝐨𝐥𝐝.) e.g.. т.е.… Threads! Claude:\n• 👍🏽 это #тег йога Dr. v2.1 ёжик API:\n• @alexgetman? про.» ….\nйога, e.g.:\n• Привет.) 2*3? Claude.) (скобки):\n• мир (скобки)\n\nт.е. snake_case… пост:\n• 𝐁𝐨𝐥𝐝 @alexgetman — йога.) и 👍🏽 — 👍🏽.\nDr. — Dr.! https://example.com/путь?q=1\n\n😀 и? @alexgetman — 😀, 👍🏽 йога! @alexgetman — 👨‍💻! API snake_case.) 🇷🇺… мир:\n• Telegram. Claude? #тег 👍🏽 т.е.. Dr. — ёжик\n\nёжик, йога. про? snake_case 🇷🇺 👍🏽:\n• 👨‍💻.) 👍🏽? пост.» 😀 e.g. Привет.) длинный? мир.) 😀.\nhttps://example.com/путь?q=1\n\nёжик… @alexgetman. v2.1.) 👨‍💻 — 2*3.\n𝐁𝐨𝐥𝐝! Threads snake_case. snake_case. v2.1 — Code… (скобки), Claude ёжик, e.g. т.е..\nйога (скобки).\nhttps://example.com/путь?q=1 Dr. ёжик.) Threads.» @alexgetman.\ne.g..» @alexgetman? Привет. про @alexgetman. мир! …… и.) snake_case Привет.) …",
+          "entities": [
+            { "type": "mention", "offset": 660, "length": 86 },
+            { "type": "mention", "offset": 82, "length": 25 },
+            { "type": "bold", "offset": 511, "length": 161 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 7,
+      "chain": [
+        { "text": "e.g.", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "это Cla", "entities": [], "media": [] },
+        { "text": "ude!", "entities": [], "media": [] },
+        { "text": "пост!", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝.)", "entities": [], "media": [] },
+        { "text": "e.g..", "entities": [], "media": [] },
+        { "text": "т.е.…", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "! Claud", "entities": [], "media": [] },
+        { "text": "e:\n•", "entities": [], "media": [] },
+        { "text": "👍🏽", "entities": [], "media": [] },
+        { "text": "это #те", "entities": [], "media": [] },
+        { "text": "г йога", "entities": [], "media": [] },
+        { "text": "Dr. v2.", "entities": [], "media": [] },
+        { "text": "1 ёжик", "entities": [], "media": [] },
+        { "text": "API:", "entities": [], "media": [] },
+        { "text": "• @alex", "entities": [], "media": [] },
+        { "text": "getman?", "entities": [], "media": [] },
+        { "text": "про.»", "entities": [], "media": [] },
+        { "text": "….\nйога", "entities": [], "media": [] },
+        { "text": ", e.g.:", "entities": [], "media": [] },
+        { "text": "• Приве", "entities": [], "media": [] },
+        { "text": "т.) 2*3", "entities": [], "media": [] },
+        { "text": "? Claud", "entities": [], "media": [] },
+        { "text": "e.) (ск", "entities": [], "media": [] },
+        { "text": "обки):", "entities": [], "media": [] },
+        { "text": "• мир", "entities": [], "media": [] },
+        { "text": "(скобки", "entities": [], "media": [] },
+        { "text": ")\n\nт.е.", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase…", "entities": [], "media": [] },
+        { "text": "пост:", "entities": [], "media": [] },
+        { "text": "• 𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman —", "entities": [], "media": [] },
+        { "text": "йога.)", "entities": [], "media": [] },
+        { "text": "и 👍🏽", "entities": [], "media": [] },
+        { "text": "— 👍🏽.", "entities": [], "media": [] },
+        { "text": "Dr. —", "entities": [], "media": [] },
+        { "text": "Dr.!", "entities": [], "media": [] },
+        { "text": "https:/", "entities": [], "media": [] },
+        { "text": "/exampl", "entities": [], "media": [] },
+        { "text": "e.com/п", "entities": [], "media": [] },
+        { "text": "уть?q=1", "entities": [], "media": [] },
+        { "text": "😀 и?", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman —", "entities": [], "media": [] },
+        { "text": "😀, 👍", "entities": [], "media": [] },
+        { "text": "🏽 йога", "entities": [], "media": [] },
+        { "text": "! @alex", "entities": [], "media": [] },
+        { "text": "getman", "entities": [], "media": [] },
+        { "text": "— 👨‍💻", "entities": [], "media": [] },
+        { "text": "! API", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase.)", "entities": [], "media": [] },
+        { "text": "🇷🇺…", "entities": [], "media": [] },
+        { "text": "мир:", "entities": [], "media": [] },
+        { "text": "• Teleg", "entities": [], "media": [] },
+        { "text": "ram.", "entities": [], "media": [] },
+        { "text": "Claude?", "entities": [], "media": [] },
+        { "text": "#тег", "entities": [], "media": [] },
+        { "text": "👍🏽", "entities": [], "media": [] },
+        { "text": "т.е..", "entities": [], "media": [] },
+        { "text": "Dr. —", "entities": [], "media": [] },
+        { "text": "ёжик", "entities": [], "media": [] },
+        { "text": "ёжик,", "entities": [], "media": [] },
+        { "text": "йога.", "entities": [], "media": [] },
+        { "text": "про?", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase 🇷", "entities": [], "media": [] },
+        { "text": "🇺 👍🏽", "entities": [], "media": [] },
+        { "text": ":\n• 👨‍", "entities": [], "media": [] },
+        { "text": "💻.)", "entities": [], "media": [] },
+        { "text": "👍🏽?", "entities": [], "media": [] },
+        { "text": "пост.»", "entities": [], "media": [] },
+        { "text": "😀 e.g.", "entities": [], "media": [] },
+        { "text": "Привет.", "entities": [], "media": [] },
+        { "text": ") длинн", "entities": [], "media": [] },
+        { "text": "ый? мир", "entities": [], "media": [] },
+        { "text": ".) 😀.", "entities": [], "media": [] },
+        { "text": "https:/", "entities": [], "media": [] },
+        { "text": "/exampl", "entities": [], "media": [] },
+        { "text": "e.com/п", "entities": [], "media": [] },
+        { "text": "уть?q=1", "entities": [], "media": [] },
+        { "text": "ёжик…", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman.", "entities": [], "media": [] },
+        { "text": "v2.1.)", "entities": [], "media": [] },
+        { "text": "👨‍💻 —", "entities": [], "media": [] },
+        { "text": "2*3.", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝! Thr", "entities": [], "media": [] },
+        { "text": "eads", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase.", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase.", "entities": [], "media": [] },
+        { "text": "v2.1 —", "entities": [], "media": [] },
+        { "text": "Code…", "entities": [], "media": [] },
+        { "text": "(скобки", "entities": [], "media": [] },
+        { "text": "), Clau", "entities": [], "media": [] },
+        { "text": "de ёжик", "entities": [], "media": [] },
+        { "text": ", e.g.", "entities": [], "media": [] },
+        { "text": "т.е..", "entities": [], "media": [] },
+        { "text": "йога", "entities": [], "media": [] },
+        { "text": "(скобки", "entities": [], "media": [] },
+        { "text": ").\nhttp", "entities": [], "media": [] },
+        { "text": "s://exa", "entities": [], "media": [] },
+        { "text": "mple.co", "entities": [], "media": [] },
+        { "text": "m/путь?", "entities": [], "media": [] },
+        { "text": "q=1 Dr.", "entities": [], "media": [] },
+        { "text": "ёжик.)", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": ".» @ale", "entities": [], "media": [] },
+        { "text": "xgetman", "entities": [], "media": [] },
+        { "text": ".\ne.g..", "entities": [], "media": [] },
+        { "text": "» @alex", "entities": [], "media": [] },
+        { "text": "getman?", "entities": [], "media": [] },
+        { "text": "Привет.", "entities": [], "media": [] },
+        { "text": "про @al", "entities": [], "media": [] },
+        { "text": "exgetma", "entities": [], "media": [] },
+        { "text": "n. мир!", "entities": [], "media": [] },
+        { "text": "…… и.)", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase При", "entities": [], "media": [] },
+        { "text": "вет.) …", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Привет.) про! @alexgetman:\n• e.g..» 😀.\nDr.. Привет. длинный йога? (скобки) API Привет\n\nпост.) 👍🏽.\nDr.? т.е.… 👨‍💻 #тег.\nCode! Code Привет, Threads ….) e.g.? ….) агентов Claude — v2.1.\nAPI Telegram мир. 2*3 2*3.» e.g.. агентов — Claude, агентов",
+          "entities": [
+            { "type": "text_link", "offset": 232, "length": 4, "url": " https://padded.example " },
+            { "type": "strikethrough", "offset": 246, "length": -1 },
+            { "type": "code", "offset": 227, "length": 5 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 500,
+      "chain": [
+        {
+          "text": "Привет.) про! @alexgetman:\n• e.g..» 😀.\nDr.. Привет. длинный йога? (скобки) API Привет\n\nпост.) 👍🏽.\nDr.? т.е.… 👨‍💻 #тег.\nCode! Code Привет, Threads ….) e.g.? ….) агентов Claude — v2.1.\nAPI Telegram мир. 2*3 2*3.» e.g.. агентов — Claude, агентов",
+          "entities": [
+            { "type": "text_link", "offset": 232, "length": 4, "url": " https://padded.example " },
+            { "type": "strikethrough", "offset": 246, "length": -1 },
+            { "type": "code", "offset": 227, "length": 5 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "@alexgetman… мир.) #тег! йога Telegram https://example.com/путь?q=1.» API — 2*3… v2.1 — 😀.) агентов, Code… v2.1! ёжик? …… @alexgetman.) ….» @alexgetman ёжик… и про\n\n«цитата», 👨‍💻 — Telegram 2*3. snake_case! Claude, Telegram! 🇷🇺, @alexgetman.\nsnake_case! т.е. ….» (скобки) про, snake_case 👨‍💻.\ne.g., https://example.com/путь?q=1. мир 👍🏽.\nдлинный — 👍🏽? 🇷🇺. длинный.) пост.) ёжик про, 2*3! …… это (скобки)… агентов 😀… API 👍🏽 ёжик? это.» ёжик:\n• Telegram.\nCode Привет.» Claude! Dr. 𝐁𝐨𝐥𝐝 e.g. — мир snake_case.) API. длинный.» мир — 𝐁𝐨𝐥𝐝 — длинный.» Привет. snake_case Привет. v2.1\n\n@alexgetman это. «цитата»? длинный snake_case",
+          "entities": [
+            { "type": "italic", "offset": 635, "length": 10 },
+            { "type": "code", "offset": "282", "length": 236 },
+            { "type": "list_item", "offset": 592, "length": 35 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 500,
+      "chain": [
+        {
+          "text": "@alexgetman… мир.) #тег! йога Telegram https://example.com/путь?q=1.» API — 2*3… v2.1 — 😀.) агентов, Code… v2.1! ёжик? …… @alexgetman.) ….» @alexgetman ёжик… и про\n\n«цитата», 👨‍💻 — Telegram 2*3. snake_case! Claude, Telegram! 🇷🇺, @alexgetman.\nsnake_case! т.е. ….» (скобки) про, snake_case 👨‍💻.\ne.g., https://example.com/путь?q=1. мир 👍🏽.\nдлинный — 👍🏽? 🇷🇺. длинный.) пост.) ёжик про, 2*3! …… это (скобки)… агентов 😀… API 👍🏽 ёжик? это.» ёжик:\n• Telegram.\nCode Привет.» Claude! Dr.",
+          "entities": [],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "𝐁𝐨𝐥𝐝 e.g. — мир snake_case.) API. длинный.» мир — 𝐁𝐨𝐥𝐝 — длинный.» Привет. snake_case Привет. v2.1\n\n@alexgetman это. «цитата»? длинный snake_case",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Code.\nsnake_case! «цитата»\n\n😀, это… и.» «цитата».» API… https://example.com/путь?q=1.\nпро\n\n(скобки).» 😀.) длинный «цитата».» ёжик, Привет.\nCode.» «цитата»! ёжик.\nClaude! Claude\n\nv2.1… пост.» пост.» мир:\n• Code\n\nдлинный? v2.1 — Telegram… e.g..) API, т.е. — API… Dr.… 𝐁𝐨𝐥𝐝.» 𝐁𝐨𝐥𝐝\n\nhttps://example.com/путь?q=1. Threads … Code… Claude длинный\n\n(скобки), про Code это.» 2*3\n\n😀. 👨‍💻 😀? (скобки)\n\nагентов:\n• т.е..» v2.1.» snake_case! e.g.\n\n…, e.g. мир.) 😀 ….» Code\n\nClaude Dr.. 2*3\n\nагентов… мир.\nAPI? snake_case API — Привет? Claude 2*3\n\nAPI? API, @alexgetman\n\nAPI… «цитата»",
+          "entities": [
+            { "type": "bold", "offset": 465, "length": 71 },
+            { "type": "text_link", "offset": 495, "length": 28, "url": "http://пример.рф/путь" },
+            { "type": "quote", "offset": 113, "length": 175 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 33,
+      "chain": [
+        { "text": "Code.\nsnake_case! «цитата»", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "😀, это… и.» «цитата».»", "entities": [], "media": [] },
+        { "text": "API… https://example.com/путь?q=1", "entities": [], "media": [] },
+        { "text": ".\nпро\n\n(скобки).»", "entities": [], "media": [] },
+        { "text": "😀.) длинный «цитата».» ёжик,", "entities": [], "media": [] },
+        { "text": "Привет.\nCode.» «цитата»! ёжик.", "entities": [], "media": [] },
+        { "text": "Claude! Claude\n\nv2.1… пост.»", "entities": [], "media": [] },
+        { "text": "пост.» мир:\n• Code", "entities": [], "media": [] },
+        { "text": "длинный? v2.1 — Telegram… e.g..)", "entities": [], "media": [] },
+        { "text": "API, т.е. — API… Dr.… 𝐁𝐨𝐥𝐝.»", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝\n\nhttps://example.com/пут", "entities": [], "media": [] },
+        { "text": "ь?q=1. Threads … Code…", "entities": [], "media": [] },
+        { "text": "Claude длинный\n\n(скобки), про", "entities": [], "media": [] },
+        { "text": "Code это.» 2*3\n\n😀. 👨‍💻 😀?", "entities": [], "media": [] },
+        { "text": "(скобки)\n\nагентов:", "entities": [], "media": [] },
+        { "text": "• т.е..» v2.1.» snake_case! e.g.", "entities": [], "media": [] },
+        { "text": "…, e.g. мир.) 😀 ….» Code", "entities": [], "media": [] },
+        { "text": "Claude Dr.. 2*3\n\nагентов… мир.", "entities": [], "media": [] },
+        { "text": "API? snake_case API — Привет?", "entities": [], "media": [] },
+        { "text": "Claude 2*3\n\nAPI? API, @alexgetman", "entities": [], "media": [] },
+        { "text": "API… «цитата»", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "ёжик? v2.1? пост.\nCode:\n• Threads\n\n𝐁𝐨𝐥𝐝… «цитата».) агентов @alexgetman! (скобки) и.) (скобки) — Dr.. …, 👨‍💻.\nClaude. йога про\n\nhttps://example.com/путь?q=1 — про:\n• Telegram #тег… ёжик:\n• @alexgetman и! Привет — v2.1? 👨‍💻\n\n#тег\n\nмир, 2*3.» API! про:\n• e.g.\n\nThreads… 𝐁𝐨𝐥𝐝… v2.1 😀.» Telegram Dr. Telegram Привет:\n• Code, snake_case — пост:\n• Telegram мир.\nTelegram\n\nи про? пост — Code\n\nи! йога. это, Telegram? https://example.com/путь?q=1. API\n\nёжик… длинный — ёжик\n\n😀. …, @alexgetman? длинный:\n• пост\n\n«цитата», snake_case агентов v2.1! мир.» Threads\n\nTelegram? т.е..» snake_case.\n«цитата». 👍🏽? агентов? пост… про, про! пост. Claude… мир …. #тег.\nAPI:\n• https://example.com/путь?q=1 Telegram.» Code Code\n\nт.е..) API\n\nПривет пост\n\n«цитата» пост. #тег v2.1 т.е.. Code.\n(скобки). про «цитата» Telegram? e.g. — 𝐁𝐨𝐥𝐝 — длинный! Code.) e.g.",
+          "entities": [
+            { "type": "strikethrough", "offset": 450, "length": 296 },
+            { "type": "quote", "offset": 552, "length": 204 },
+            { "type": "url", "offset": 299, "length": 130 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 5,
+      "chain": [
+        { "text": "ёжик?", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "v2.1?", "entities": [], "media": [] },
+        { "text": "пост.", "entities": [], "media": [] },
+        { "text": "Code:", "entities": [], "media": [] },
+        { "text": "• Thr", "entities": [], "media": [] },
+        { "text": "eads", "entities": [], "media": [] },
+        { "text": "𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝…", "entities": [], "media": [] },
+        { "text": "«цита", "entities": [], "media": [] },
+        { "text": "та».)", "entities": [], "media": [] },
+        { "text": "агент", "entities": [], "media": [] },
+        { "text": "ов @a", "entities": [], "media": [] },
+        { "text": "lexge", "entities": [], "media": [] },
+        { "text": "tman!", "entities": [], "media": [] },
+        { "text": "(скоб", "entities": [], "media": [] },
+        { "text": "ки)", "entities": [], "media": [] },
+        { "text": "и.)", "entities": [], "media": [] },
+        { "text": "(скоб", "entities": [], "media": [] },
+        { "text": "ки) —", "entities": [], "media": [] },
+        { "text": "Dr..", "entities": [], "media": [] },
+        { "text": "…, 👨", "entities": [], "media": [] },
+        { "text": "‍💻.", "entities": [], "media": [] },
+        { "text": "Claud", "entities": [], "media": [] },
+        { "text": "e. йо", "entities": [], "media": [] },
+        { "text": "га пр", "entities": [], "media": [] },
+        { "text": "о\n\nht", "entities": [], "media": [] },
+        { "text": "tps:/", "entities": [], "media": [] },
+        { "text": "/exam", "entities": [], "media": [] },
+        { "text": "ple.c", "entities": [], "media": [] },
+        { "text": "om/пу", "entities": [], "media": [] },
+        { "text": "ть?q=", "entities": [], "media": [] },
+        { "text": "1 —", "entities": [], "media": [] },
+        { "text": "про:", "entities": [], "media": [] },
+        { "text": "• Tel", "entities": [], "media": [] },
+        { "text": "egram", "entities": [], "media": [] },
+        { "text": "#тег…", "entities": [], "media": [] },
+        { "text": "ёжик:", "entities": [], "media": [] },
+        { "text": "• @al", "entities": [], "media": [] },
+        { "text": "exget", "entities": [], "media": [] },
+        { "text": "man", "entities": [], "media": [] },
+        { "text": "и! Пр", "entities": [], "media": [] },
+        { "text": "ивет", "entities": [], "media": [] },
+        { "text": "— v2.", "entities": [], "media": [] },
+        { "text": "1? 👨", "entities": [], "media": [] },
+        { "text": "‍💻", "entities": [], "media": [] },
+        { "text": "#тег", "entities": [], "media": [] },
+        { "text": "мир,", "entities": [], "media": [] },
+        { "text": "2*3.»", "entities": [], "media": [] },
+        { "text": "API!", "entities": [], "media": [] },
+        { "text": "про:", "entities": [], "media": [] },
+        { "text": "• e.g", "entities": [], "media": [] },
+        { "text": ".\n\nTh", "entities": [], "media": [] },
+        { "text": "reads", "entities": [], "media": [] },
+        { "text": "… 𝐁", "entities": [], "media": [] },
+        { "text": "𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝…", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "😀.»", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram", "entities": [], "media": [] },
+        { "text": "Dr.", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram", "entities": [], "media": [] },
+        { "text": "Приве", "entities": [], "media": [] },
+        { "text": "т:\n•", "entities": [], "media": [] },
+        { "text": "Code,", "entities": [], "media": [] },
+        { "text": "snake", "entities": [], "media": [] },
+        { "text": "_case", "entities": [], "media": [] },
+        { "text": "— пос", "entities": [], "media": [] },
+        { "text": "т:\n•", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram", "entities": [], "media": [] },
+        { "text": "мир.", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram", "entities": [], "media": [] },
+        { "text": "и про", "entities": [], "media": [] },
+        { "text": "? пос", "entities": [], "media": [] },
+        { "text": "т —", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] },
+        { "text": "и! йо", "entities": [], "media": [] },
+        { "text": "га.", "entities": [], "media": [] },
+        { "text": "это,", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram?", "entities": [], "media": [] },
+        { "text": "https", "entities": [], "media": [] },
+        { "text": "://ex", "entities": [], "media": [] },
+        { "text": "ample", "entities": [], "media": [] },
+        { "text": ".com/", "entities": [], "media": [] },
+        { "text": "путь?", "entities": [], "media": [] },
+        { "text": "q=1.", "entities": [], "media": [] },
+        { "text": "API", "entities": [], "media": [] },
+        { "text": "ёжик…", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый —", "entities": [], "media": [] },
+        { "text": "ёжик", "entities": [], "media": [] },
+        { "text": "😀.", "entities": [], "media": [] },
+        { "text": "…, @a", "entities": [], "media": [] },
+        { "text": "lexge", "entities": [], "media": [] },
+        { "text": "tman?", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый:", "entities": [], "media": [] },
+        { "text": "• пос", "entities": [], "media": [] },
+        { "text": "т\n\n«ц", "entities": [], "media": [] },
+        { "text": "итата", "entities": [], "media": [] },
+        { "text": "», sn", "entities": [], "media": [] },
+        { "text": "ake_c", "entities": [], "media": [] },
+        { "text": "ase", "entities": [], "media": [] },
+        { "text": "агент", "entities": [], "media": [] },
+        { "text": "ов v2", "entities": [], "media": [] },
+        { "text": ".1!", "entities": [], "media": [] },
+        { "text": "мир.»", "entities": [], "media": [] },
+        { "text": "Threa", "entities": [], "media": [] },
+        { "text": "ds", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram?", "entities": [], "media": [] },
+        { "text": "т.е..", "entities": [], "media": [] },
+        { "text": "» sna", "entities": [], "media": [] },
+        { "text": "ke_ca", "entities": [], "media": [] },
+        { "text": "se.", "entities": [], "media": [] },
+        { "text": "«цита", "entities": [], "media": [] },
+        { "text": "та».", "entities": [], "media": [] },
+        { "text": "👍🏽?", "entities": [], "media": [] },
+        { "text": "агент", "entities": [], "media": [] },
+        { "text": "ов?", "entities": [], "media": [] },
+        { "text": "пост…", "entities": [], "media": [] },
+        { "text": "про,", "entities": [], "media": [] },
+        { "text": "про!", "entities": [], "media": [] },
+        { "text": "пост.", "entities": [], "media": [] },
+        { "text": "Claud", "entities": [], "media": [] },
+        { "text": "e… ми", "entities": [], "media": [] },
+        { "text": "р ….", "entities": [], "media": [] },
+        { "text": "#тег.", "entities": [], "media": [] },
+        { "text": "API:", "entities": [], "media": [] },
+        { "text": "• htt", "entities": [], "media": [] },
+        { "text": "ps://", "entities": [], "media": [] },
+        { "text": "examp", "entities": [], "media": [] },
+        { "text": "le.co", "entities": [], "media": [] },
+        { "text": "m/пут", "entities": [], "media": [] },
+        { "text": "ь?q=1", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram.»", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] },
+        { "text": "т.е..", "entities": [], "media": [] },
+        { "text": ") API", "entities": [], "media": [] },
+        { "text": "Приве", "entities": [], "media": [] },
+        { "text": "т пос", "entities": [], "media": [] },
+        { "text": "т\n\n«ц", "entities": [], "media": [] },
+        { "text": "итата", "entities": [], "media": [] },
+        { "text": "» пос", "entities": [], "media": [] },
+        { "text": "т. #т", "entities": [], "media": [] },
+        { "text": "ег v2", "entities": [], "media": [] },
+        { "text": ".1 т.", "entities": [], "media": [] },
+        { "text": "е..", "entities": [], "media": [] },
+        { "text": "Code.", "entities": [], "media": [] },
+        { "text": "(скоб", "entities": [], "media": [] },
+        { "text": "ки).", "entities": [], "media": [] },
+        { "text": "про", "entities": [], "media": [] },
+        { "text": "«цита", "entities": [], "media": [] },
+        { "text": "та»", "entities": [], "media": [] },
+        { "text": "Teleg", "entities": [], "media": [] },
+        { "text": "ram?", "entities": [], "media": [] },
+        { "text": "e.g.", "entities": [], "media": [] },
+        { "text": "— 𝐁", "entities": [], "media": [] },
+        { "text": "𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝 —", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый!", "entities": [], "media": [] },
+        { "text": "Code.", "entities": [], "media": [] },
+        { "text": ") e.g", "entities": [], "media": [] },
+        { "text": ".", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "длинный — API про Telegram\n\nэто Dr.? #тег.» длинный! https://example.com/путь?q=1… #тег? агентов Claude агентов.» 👨‍💻 𝐁𝐨𝐥𝐝. Telegram @alexgetman e.g.… …, Threads.» Threads, 𝐁𝐨𝐥𝐝 👨‍💻 т.е. #тег 🇷🇺 #тег e.g. — 𝐁𝐨𝐥𝐝.» ёжик 2*3 Claude. Telegram 🇷🇺, про\n\n👨‍💻:\n• Telegram йога… API, мир 👍🏽? пост. 2*3 👨‍💻 — 👨‍💻… Code, (скобки). Code:\n• 😀. 😀.» «цитата»:\n• т.е..\nhttps://example.com/путь?q=1 Code:\n• 👨‍💻… v2.1? это.\nCode! ёжик мир …, 😀. длинный! 👨‍💻 #тег — т.е. — 👨‍💻.\nпро — 𝐁𝐨𝐥𝐝:\n• Telegram.\n👨‍💻, т.е.! 2*3, 😀.) йога Claude Claude.) йога:\n• Telegram. это snake_case агентов.» Привет… про и! (скобки).) мир — https://example.com/путь?q=1 ёжик Привет",
+          "entities": [
+            { "type": "heading", "offset": 9, "length": 24 },
+            { "type": "bold", "offset": 174, "length": 273 },
+            { "type": "pre", "offset": 187, "length": 346 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 280,
+      "chain": [
+        {
+          "text": "длинный — API про Telegram\n\nэто Dr.? #тег.» длинный! https://example.com/путь?q=1… #тег? агентов Claude агентов.» 👨‍💻 𝐁𝐨𝐥𝐝. Telegram @alexgetman e.g.… …, Threads.» Threads, 𝐁𝐨𝐥𝐝 👨‍💻 т.е. #тег 🇷🇺 #тег e.g. — 𝐁𝐨𝐥𝐝.» ёжик 2*3 Claude. Telegram 🇷🇺, про",
+          "entities": [{ "type": "heading", "offset": 9, "length": 24 }],
+          "media": [{ "type": "video" }]
+        },
+        {
+          "text": "👨‍💻:\n• Telegram йога… API, мир 👍🏽? пост. 2*3 👨‍💻 — 👨‍💻… Code, (скобки). Code:\n• 😀. 😀.» «цитата»:\n• т.е..\nhttps://example.com/путь?q=1 Code:\n• 👨‍💻… v2.1? это.\nCode! ёжик мир …, 😀. длинный! 👨‍💻 #тег — т.е. — 👨‍💻.\nпро — 𝐁𝐨𝐥𝐝:\n• Telegram.\n👨‍💻, т.е.!",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "2*3, 😀.) йога Claude Claude.) йога:\n• Telegram. это snake_case агентов.» Привет… про и! (скобки).) мир — https://example.com/путь?q=1 ёжик Привет",
+          "entities": [],
+          "media": []
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "v2.1! мир! Code https://example.com/путь?q=1.) пост — Dr..) 👍🏽.\nAPI\n\nагентов.\nClaude.) 👍🏽… @alexgetman. мир e.g.\n\nт.е.! ёжик",
+          "entities": [
+            { "type": "text_link", "offset": "104", "length": 10, "url": "https://" },
+            { "type": "quote", "length": 1 },
+            { "type": "heading", "offset": 15, "length": 90 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 1000,
+      "chain": [
+        {
+          "text": "v2.1! мир! Code https://example.com/путь?q=1.) пост — Dr..) 👍🏽.\nAPI\n\nагентов.\nClaude.) 👍🏽… @alexgetman. мир e.g.\n\nт.е.! ёжик",
+          "entities": [
+            { "type": "text_link", "offset": "104", "length": 10, "url": "https://" },
+            { "type": "heading", "offset": 15, "length": 90 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "v2.1, длинный агентов! длинный.» Dr..) 👨‍💻.\ne.g., йога.) @alexgetman.) длинный.» 𝐁𝐨𝐥𝐝? https://example.com/путь?q=1 — https://example.com/путь?q=1… Code. Привет. Привет — Dr.",
+          "entities": [
+            { "type": "hashtag", "offset": 11, "length": 161 },
+            { "type": "heading", "offset": 71, "length": 30 },
+            { "type": "text_link", "offset": 167, "length": 0, "url": "https://" }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 4096,
+      "chain": [
+        {
+          "text": "v2.1, длинный агентов! длинный.» Dr..) 👨‍💻.\ne.g., йога.) @alexgetman.) длинный.» 𝐁𝐨𝐥𝐝? https://example.com/путь?q=1 — https://example.com/путь?q=1… Code. Привет. Привет — Dr.",
+          "entities": [
+            { "type": "hashtag", "offset": 11, "length": 161 },
+            { "type": "heading", "offset": 71, "length": 30 },
+            { "type": "text_link", "offset": 167, "length": 0, "url": "https://" }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "йога? йога! … Dr.… API, 𝐁𝐨𝐥𝐝, Привет.\nTelegram.» 👨‍💻 — 2*3. Telegram? 2*3 — йога 🇷🇺.» https://example.com/путь?q=1 2*3:\n• агентов! e.g.? Привет e.g..) ёжик.) 2*3 йога Threads.) snake_case. Claude.\nDr.:\n• Dr.. про.) Привет. Threads.) Claude, 2*3 т.е..) мир:\n• агентов — Привет 😀:\n• 🇷🇺 агентов.\ne.g.\n\n👍🏽 … https://example.com/путь?q=1 ёжик.\nAPI.» Dr.:\n• длинный. про.\n2*3 — snake_case:\n• ёжик 𝐁𝐨𝐥𝐝\n\nт.е. v2.1:\n• https://example.com/путь?q=1:\n• 😀? 😀\n\ne.g.… v2.1 и. ….) #тег\n\nпост? мир\n\n…… агентов 😀 ёжик https://example.com/путь?q=1 @alexgetman — мир. Code Threads! агентов 𝐁𝐨𝐥𝐝 ёжик:\n• Threads …? …! агентов… Telegram. Threads — https://example.com/путь?q=1. «цитата» т.е.. @alexgetman! ёжик мир.» про 👨‍💻? Dr. Threads. т.е. Code.) агентов\n\nт.е.:\n• ёжик\n\n@alexgetman (скобки) …? https://example.com/путь?q=1.) (скобки)\n\nhttps://example.com/путь?q=1 «цитата» Dr.:\n• Claude — агентов.) ёжик, @alexgetman… v2.1 ёжик? API… агентов.\nмир? «цитата».) snake_case.» йога.\nагентов т.е. Telegram… @alexgetman Dr..» 👍🏽… Dr. про. 👍🏽 — «цитата» — ёжик 2*3 (скобки) 𝐁𝐨𝐥𝐝.» #тег:\n• «цитата».\nAPI:\n• это 👨‍💻 — https://example.com/путь?q=1 API, про:\n• 👍🏽 — пост\n\nПривет:\n• «цитата»… Code! агентов.) #тег.» e.g..\nsnake_case\n\nAPI\n\nпро? 😀! Code! это Привет Code\n\n😀",
+          "entities": [
+            { "type": "blockquote", "length": 202 },
+            { "type": "pre", "offset": 1199, "length": 27 },
+            { "type": "pre", "offset": 717, "length": 219 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 64,
+      "chain": [
+        { "text": "йога? йога! … Dr.… API, 𝐁𝐨𝐥𝐝, Привет.\nTelegram.»", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "👨‍💻 — 2*3. Telegram? 2*3 — йога 🇷🇺.»", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1 2*3:\n• агентов! e.g.? Привет e.g..)", "entities": [], "media": [] },
+        { "text": "ёжик.) 2*3 йога Threads.) snake_case. Claude.\nDr.:\n• Dr.. про.)", "entities": [], "media": [] },
+        { "text": "Привет. Threads.) Claude, 2*3 т.е..) мир:\n• агентов — Привет 😀:", "entities": [], "media": [] },
+        { "text": "• 🇷🇺 агентов.\ne.g.\n\n👍🏽 … https://example.com/путь?q=1 ёжик.", "entities": [], "media": [] },
+        { "text": "API.» Dr.:\n• длинный. про.\n2*3 — snake_case:\n• ёжик 𝐁𝐨𝐥𝐝", "entities": [], "media": [] },
+        { "text": "т.е. v2.1:\n• https://example.com/путь?q=1:\n• 😀? 😀", "entities": [], "media": [] },
+        { "text": "e.g.… v2.1 и. ….) #тег\n\nпост? мир", "entities": [], "media": [] },
+        { "text": "…… агентов 😀 ёжик https://example.com/путь?q=1 @alexgetman —", "entities": [], "media": [] },
+        { "text": "мир. Code Threads! агентов 𝐁𝐨𝐥𝐝 ёжик:\n• Threads …?", "entities": [], "media": [] },
+        { "text": "…! агентов… Telegram. Threads — https://example.com/путь?q=1.", "entities": [], "media": [] },
+        { "text": "«цитата» т.е.. @alexgetman! ёжик мир.» про 👨‍💻? Dr.", "entities": [], "media": [] },
+        { "text": "Threads. т.е. Code.) агентов\n\nт.е.:\n• ёжик", "entities": [], "media": [] },
+        { "text": "@alexgetman (скобки) …? https://example.com/путь?q=1.) (скобки)", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1 «цитата» Dr.:", "entities": [], "media": [] },
+        { "text": "• Claude — агентов.) ёжик, @alexgetman… v2.1 ёжик? API… агентов.", "entities": [], "media": [] },
+        { "text": "мир? «цитата».) snake_case.» йога.\nагентов т.е. Telegram…", "entities": [], "media": [] },
+        { "text": "@alexgetman Dr..» 👍🏽… Dr. про. 👍🏽 — «цитата» — ёжик 2*3", "entities": [], "media": [] },
+        { "text": "(скобки) 𝐁𝐨𝐥𝐝.» #тег:\n• «цитата».", "entities": [], "media": [] },
+        { "text": "API:\n• это 👨‍💻 — https://example.com/путь?q=1 API, про:", "entities": [], "media": [] },
+        { "text": "• 👍🏽 — пост\n\nПривет:\n• «цитата»… Code! агентов.)", "entities": [], "media": [] },
+        { "text": "#тег.» e.g..\nsnake_case\n\nAPI\n\nпро? 😀! Code! это Привет Code\n\n😀", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "это\n\nдлинный\n\nAPI — 👨‍💻. @alexgetman! пост 2*3.\nClaude? Code — 🇷🇺.) длинный.) Code! йога ёжик Code, и, Claude.) т.е.… Threads.\nёжик.\n(скобки) 👨‍💻 e.g.. Claude\n\nCode 👍🏽, длинный 😀 — и.» https://example.com/путь?q=1 — 🇷🇺 Telegram… 👨‍💻! йога… мир. и! 👨‍💻.» Code 2*3, 2*3? Code длинный 😀. про, API Claude, 2*3 😀:\n• … ёжик это, про.» длинный.» Привет @alexgetman.\n👨‍💻\n\nDr.? т.е.? Привет… йога.) т.е..» https://example.com/путь?q=1 — v2.1… (скобки).» агентов.\nёжик, 2*3 — Code:\n• (скобки), Threads.) Threads… e.g. Привет? и. пост? … 👍🏽.» и… длинный:\n• ёжик — 🇷🇺 длинный, #тег — Claude. Привет. Dr. 𝐁𝐨𝐥𝐝? Привет 2*3. 𝐁𝐨𝐥𝐝:\n• #тег:\n• @alexgetman «цитата» йога\n\nдлинный! про! Telegram.» …:\n• https://example.com/путь?q=1 агентов, e.g.",
+          "entities": [
+            { "type": "custom_emoji", "offset": 541, "length": 105 },
+            { "type": "text_link", "offset": 23, "length": 313, "url": "javascript:alert(1)" },
+            { "type": "strikethrough", "offset": 670, "length": 43 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 4096,
+      "chain": [
+        {
+          "text": "это\n\nдлинный\n\nAPI — 👨‍💻. @alexgetman! пост 2*3.\nClaude? Code — 🇷🇺.) длинный.) Code! йога ёжик Code, и, Claude.) т.е.… Threads.\nёжик.\n(скобки) 👨‍💻 e.g.. Claude\n\nCode 👍🏽, длинный 😀 — и.» https://example.com/путь?q=1 — 🇷🇺 Telegram… 👨‍💻! йога… мир. и! 👨‍💻.» Code 2*3, 2*3? Code длинный 😀. про, API Claude, 2*3 😀:\n• … ёжик это, про.» длинный.» Привет @alexgetman.\n👨‍💻\n\nDr.? т.е.? Привет… йога.) т.е..» https://example.com/путь?q=1 — v2.1… (скобки).» агентов.\nёжик, 2*3 — Code:\n• (скобки), Threads.) Threads… e.g. Привет? и. пост? … 👍🏽.» и… длинный:\n• ёжик — 🇷🇺 длинный, #тег — Claude. Привет. Dr. 𝐁𝐨𝐥𝐝? Привет 2*3. 𝐁𝐨𝐥𝐝:\n• #тег:\n• @alexgetman «цитата» йога\n\nдлинный! про! Telegram.» …:\n• https://example.com/путь?q=1 агентов, e.g.",
+          "entities": [
+            { "type": "custom_emoji", "offset": 541, "length": 105 },
+            { "type": "text_link", "offset": 23, "length": 313, "url": "javascript:alert(1)" },
+            { "type": "strikethrough", "offset": 670, "length": 43 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "йога\n\n@alexgetman — длинный. «цитата» 𝐁𝐨𝐥𝐝 агентов… Code @alexgetman… v2.1",
+          "entities": [
+            { "type": "spoiler", "offset": 10, "length": 10 },
+            { "type": "mention", "offset": 40, "length": 12 },
+            { "type": "pre", "length": -1 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 5,
+      "chain": [
+        { "text": "йога", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "@alex", "entities": [], "media": [] },
+        { "text": "getma", "entities": [], "media": [] },
+        { "text": "n —", "entities": [], "media": [] },
+        { "text": "длинн", "entities": [], "media": [] },
+        { "text": "ый.", "entities": [], "media": [] },
+        { "text": "«цита", "entities": [], "media": [] },
+        { "text": "та»", "entities": [], "media": [] },
+        { "text": "𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝", "entities": [], "media": [] },
+        { "text": "агент", "entities": [], "media": [] },
+        { "text": "ов…", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] },
+        { "text": "@alex", "entities": [], "media": [] },
+        { "text": "getma", "entities": [], "media": [] },
+        { "text": "n… v2", "entities": [], "media": [] },
+        { "text": ".1", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "😀 Claude …! 😀.) пост:\n• ёжик! ёжик.) Claude:\n• Dr. — v2.1 v2.1.» «цитата» пост:\n• Code 👨‍💻.» пост.\nDr., https://example.com/путь?q=1? Telegram:\n• @alexgetman йога… 2*3:\n• 2*3? v2.1… про Claude. ёжик йога Threads:\n• мир:\n• Code.\nэто… это:\n• Threads. @alexgetman v2.1 @alexgetman и:\n• @alexgetman, v2.1. ….» Code… т.е..) 👨‍💻 — т.е. @alexgetman! 😀 (скобки)? 🇷🇺 😀 и.\nт.е. Dr.\n\nv2.1? …! пост\n\n2*3, e.g. — длинный и.) про.» Threads:\n• агентов.) snake_case 👨‍💻.» e.g..» 👨‍💻 Claude… 🇷🇺.) Claude.) 2*3 Привет! v2.1. агентов.) 👨‍💻! ёжик! т.е.:\n• длинный, т.е. https://example.com/путь?q=1? т.е.? мир 🇷🇺 — @alexgetman (скобки) мир\n\n👨‍💻.» 👍🏽 (скобки)… агентов — Threads.» Telegram.\nпро, длинный… йога\n\nClaude Telegram — e.g.:\n• @alexgetman — https://example.com/путь?q=1 длинный.) https://example.com/путь?q=1 v2.1… v2.1 2*3.» Threads.\nпост …:\n• и — 2*3 https://example.com/путь?q=1 🇷🇺.» ёжик, e.g.? https://example.com/путь?q=1… и — (скобки)… Code! #тег 😀.» ёжик e.g. snake_case Telegram «цитата». длинный.) агентов и! API. ёжик:\n• йога! 👨‍💻.\nDr. 👨‍💻! Dr.. 2*3 👨‍💻 Threads? мир… e.g. 2*3\n\n@alexgetman\n\nмир v2.1 …… Claude. API",
+          "entities": [
+            { "type": "bold", "offset": 1030, "length": 2 },
+            { "type": "custom_emoji", "offset": 649, "length": 450 },
+            { "type": "italic", "offset": 268, "length": 756 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 64,
+      "chain": [
+        { "text": "😀 Claude …! 😀.) пост:\n• ёжик! ёжик.) Claude:\n• Dr.", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "— v2.1 v2.1.» «цитата» пост:\n• Code 👨‍💻.» пост.", "entities": [], "media": [] },
+        { "text": "Dr., https://example.com/путь?q=1? Telegram:\n• @alexgetman йога…", "entities": [], "media": [] },
+        { "text": "2*3:\n• 2*3? v2.1… про Claude. ёжик йога Threads:\n• мир:\n• Code.", "entities": [], "media": [] },
+        { "text": "это… это:\n• Threads. @alexgetman v2.1 @alexgetman и:", "entities": [], "media": [] },
+        { "text": "• @alexgetman, v2.1. ….» Code… т.е..) 👨‍💻 — т.е. @alexgetman!", "entities": [], "media": [] },
+        { "text": "😀 (скобки)? 🇷🇺 😀 и.\nт.е. Dr.\n\nv2.1? …! пост", "entities": [], "media": [] },
+        { "text": "2*3, e.g. — длинный и.) про.» Threads:", "entities": [], "media": [] },
+        { "text": "• агентов.) snake_case 👨‍💻.» e.g..» 👨‍💻 Claude… 🇷🇺.)", "entities": [], "media": [] },
+        { "text": "Claude.) 2*3 Привет! v2.1. агентов.)", "entities": [], "media": [] },
+        { "text": "👨‍💻! ёжик! т.е.:\n• длинный, т.е. https://example.com/путь?q=1?", "entities": [], "media": [] },
+        { "text": "т.е.? мир 🇷🇺 — @alexgetman (скобки) мир", "entities": [], "media": [] },
+        { "text": "👨‍💻.» 👍🏽 (скобки)… агентов — Threads.»", "entities": [], "media": [] },
+        { "text": "Telegram.\nпро, длинный… йога\n\nClaude Telegram — e.g.:", "entities": [], "media": [] },
+        { "text": "• @alexgetman — https://example.com/путь?q=1 длинный.)", "entities": [], "media": [] },
+        { "text": "https://example.com/путь?q=1 v2.1… v2.1 2*3.»", "entities": [], "media": [] },
+        { "text": "Threads.\nпост …:\n• и — 2*3 https://example.com/путь?q=1 🇷🇺.»", "entities": [], "media": [] },
+        { "text": "ёжик, e.g.? https://example.com/путь?q=1… и — (скобки)… Code!", "entities": [], "media": [] },
+        { "text": "#тег 😀.» ёжик e.g. snake_case Telegram «цитата». длинный.)", "entities": [], "media": [] },
+        { "text": "агентов и! API. ёжик:\n• йога! 👨‍💻.\nDr. 👨‍💻! Dr..", "entities": [], "media": [] },
+        { "text": "2*3 👨‍💻 Threads? мир… e.g. 2*3\n\n@alexgetman", "entities": [], "media": [] },
+        { "text": "мир v2.1 …… Claude. API", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "@alexgetman.\n(скобки).) API\n\nhttps://example.com/путь?q=1.\nThreads #тег Threads. йога v2.1.» Code\n\n👍🏽 пост йога! Привет! и, т.е.! это — ёжик — 2*3 — (скобки) пост — Привет… @alexgetman.) 👨‍💻. ёжик.) 👍🏽 Threads. Claude.» 👍🏽 🇷🇺.) Dr..\nПривет! Threads… мир. 🇷🇺 @alexgetman.\nдлинный… e.g.… агентов, мир.» это… «цитата»\n\n👍🏽 Threads мир\n\nпро.\nClaude… йога… йога Threads? т.е. Привет API… #тег:\n• Claude! 😀 2*3! 😀, 😀\n\nsnake_case:\n• 𝐁𝐨𝐥𝐝 Привет.» мир. Claude. 𝐁𝐨𝐥𝐝… ёжик Привет.\n🇷🇺? т.е.:\n• Привет, ёжик.\n#тег.» Code… 👍🏽 snake_case.» т.е. — пост — (скобки) — мир — Dr..» @alexgetman, 🇷🇺.» длинный? v2.1.\nAPI.» «цитата» 2*3 — длинный 😀, и? 👨‍💻 Claude Привет\n\nПривет «цитата»\n\nт.е. — Dr.\n\nCode:\n• v2.1 про:\n• #тег API.» @alexgetman.) ёжик… Threads Привет, … йога, #тег… йога. Dr., Code:\n• @alexgetman длинный «цитата»! мир 2*3. Threads.» Claude, 🇷🇺 агентов… 𝐁𝐨𝐥𝐝.) и:\n• Dr.\n\nПривет — Telegram Code",
+          "entities": [
+            { "type": "pre", "offset": 192, "length": 526 },
+            { "type": "hashtag", "offset": 686, "length": 152 },
+            { "type": "strikethrough", "offset": 632, "length": 297 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 10,
+      "chain": [
+        { "text": "@alexgetma", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "n.\n(скобки", "entities": [], "media": [] },
+        { "text": ").) API", "entities": [], "media": [] },
+        { "text": "https://ex", "entities": [], "media": [] },
+        { "text": "ample.com/", "entities": [], "media": [] },
+        { "text": "путь?q=1.", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "#тег Threa", "entities": [], "media": [] },
+        { "text": "ds. йога", "entities": [], "media": [] },
+        { "text": "v2.1.»", "entities": [], "media": [] },
+        { "text": "Code\n\n👍🏽", "entities": [], "media": [] },
+        { "text": "пост йога!", "entities": [], "media": [] },
+        { "text": "Привет! и,", "entities": [], "media": [] },
+        { "text": "т.е.! это", "entities": [], "media": [] },
+        { "text": "— ёжик —", "entities": [], "media": [] },
+        { "text": "2*3 — (ско", "entities": [], "media": [] },
+        { "text": "бки) пост", "entities": [], "media": [] },
+        { "text": "— Привет…", "entities": [], "media": [] },
+        { "text": "@alexgetma", "entities": [], "media": [] },
+        { "text": "n.) 👨‍💻.", "entities": [], "media": [] },
+        { "text": "ёжик.)", "entities": [], "media": [] },
+        { "text": "👍🏽 Threa", "entities": [], "media": [] },
+        { "text": "ds. Claude", "entities": [], "media": [] },
+        { "text": ".» 👍🏽", "entities": [], "media": [] },
+        { "text": "🇷🇺.)", "entities": [], "media": [] },
+        { "text": "Dr..\nПриве", "entities": [], "media": [] },
+        { "text": "т! Threads", "entities": [], "media": [] },
+        { "text": "… мир.", "entities": [], "media": [] },
+        { "text": "🇷🇺 @alex", "entities": [], "media": [] },
+        { "text": "getman.", "entities": [], "media": [] },
+        { "text": "длинный…", "entities": [], "media": [] },
+        { "text": "e.g.… аген", "entities": [], "media": [] },
+        { "text": "тов, мир.»", "entities": [], "media": [] },
+        { "text": "это… «цита", "entities": [], "media": [] },
+        { "text": "та»\n\n👍🏽", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "мир\n\nпро.", "entities": [], "media": [] },
+        { "text": "Claude…", "entities": [], "media": [] },
+        { "text": "йога… йога", "entities": [], "media": [] },
+        { "text": "Threads?", "entities": [], "media": [] },
+        { "text": "т.е. Приве", "entities": [], "media": [] },
+        { "text": "т API…", "entities": [], "media": [] },
+        { "text": "#тег:\n•", "entities": [], "media": [] },
+        { "text": "Claude!", "entities": [], "media": [] },
+        { "text": "😀 2*3!", "entities": [], "media": [] },
+        { "text": "😀, 😀", "entities": [], "media": [] },
+        { "text": "snake_case", "entities": [], "media": [] },
+        { "text": ":\n• 𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝 Привет.", "entities": [], "media": [] },
+        { "text": "» мир.", "entities": [], "media": [] },
+        { "text": "Claude.", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥𝐝…", "entities": [], "media": [] },
+        { "text": "ёжик Приве", "entities": [], "media": [] },
+        { "text": "т.\n🇷🇺?", "entities": [], "media": [] },
+        { "text": "т.е.:\n•", "entities": [], "media": [] },
+        { "text": "Привет,", "entities": [], "media": [] },
+        { "text": "ёжик.\n#тег", "entities": [], "media": [] },
+        { "text": ".» Code…", "entities": [], "media": [] },
+        { "text": "👍🏽 snake", "entities": [], "media": [] },
+        { "text": "_case.»", "entities": [], "media": [] },
+        { "text": "т.е. —", "entities": [], "media": [] },
+        { "text": "пост —", "entities": [], "media": [] },
+        { "text": "(скобки) —", "entities": [], "media": [] },
+        { "text": "мир — Dr..", "entities": [], "media": [] },
+        { "text": "» @alexget", "entities": [], "media": [] },
+        { "text": "man, 🇷🇺.", "entities": [], "media": [] },
+        { "text": "» длинный?", "entities": [], "media": [] },
+        { "text": "v2.1.\nAPI.", "entities": [], "media": [] },
+        { "text": "» «цитата»", "entities": [], "media": [] },
+        { "text": "2*3 — длин", "entities": [], "media": [] },
+        { "text": "ный 😀, и?", "entities": [], "media": [] },
+        { "text": "👨‍💻 Clau", "entities": [], "media": [] },
+        { "text": "de Привет", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "«цитата»", "entities": [], "media": [] },
+        { "text": "т.е. — Dr.", "entities": [], "media": [] },
+        { "text": "Code:\n•", "entities": [], "media": [] },
+        { "text": "v2.1 про:", "entities": [], "media": [] },
+        { "text": "• #тег", "entities": [], "media": [] },
+        { "text": "API.» @ale", "entities": [], "media": [] },
+        { "text": "xgetman.)", "entities": [], "media": [] },
+        { "text": "ёжик… Thre", "entities": [], "media": [] },
+        { "text": "ads Привет", "entities": [], "media": [] },
+        { "text": ", … йога,", "entities": [], "media": [] },
+        { "text": "#тег… йога", "entities": [], "media": [] },
+        { "text": ". Dr.,", "entities": [], "media": [] },
+        { "text": "Code:\n•", "entities": [], "media": [] },
+        { "text": "@alexgetma", "entities": [], "media": [] },
+        { "text": "n длинный", "entities": [], "media": [] },
+        { "text": "«цитата»!", "entities": [], "media": [] },
+        { "text": "мир 2*3.", "entities": [], "media": [] },
+        { "text": "Threads.»", "entities": [], "media": [] },
+        { "text": "Claude,", "entities": [], "media": [] },
+        { "text": "🇷🇺 агент", "entities": [], "media": [] },
+        { "text": "ов… 𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝.) и:", "entities": [], "media": [] },
+        { "text": "• Dr.", "entities": [], "media": [] },
+        { "text": "Привет —", "entities": [], "media": [] },
+        { "text": "Telegram", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "Telegram и. 😀 про.\n@alexgetman — пост… длинный! и! агентов snake_case:\n• 🇷🇺? пост, агентов\n\nTelegram:\n• «цитата» и? Telegram.) https://example.com/путь?q=1\n\n😀 ёжик? #тег.) Привет, 🇷🇺 ёжик длинный.\nёжик\n\nэто 𝐁𝐨𝐥𝐝\n\n#тег! @alexgetman! про.» 𝐁𝐨𝐥𝐝.\n👨‍💻 Claude.» ёжик 𝐁𝐨𝐥𝐝.) e.g.. 🇷🇺 — про.» v2.1 — про.» https://example.com/путь?q=1. «цитата».\n@alexgetman и — Threads.) Threads и.\nv2.1 Dr.\n\nThreads https://example.com/путь?q=1 Dr.? т.е., Привет v2.1 e.g.… это.» т.е.\n\n…? т.е. — и.» 👍🏽.) 2*3 «цитата» мир.» 👨‍💻 👨‍💻\n\nпро:\n• про\n\nдлинный. агентов! Dr., 🇷🇺.\nv2.1 агентов. 𝐁𝐨𝐥𝐝, Threads — #тег\n\nмир. 👨‍💻 🇷🇺.» API про ёжик.\nПривет 😀\n\nи\n\nClaude. йога.» API … Привет\n\nCode\n\nПривет:\n• Telegram — e.g. Dr..» #тег.\nагентов пост? йога.» 😀 https://example.com/путь?q=1.) 👍🏽:\n• 🇷🇺 @alexgetman.» (скобки), e.g. @alexgetman? и Threads… длинный «цитата».) йога.» длинный — 𝐁𝐨𝐥𝐝 — @alexgetman? … йога 👨‍💻.) 😀\n\n…\n\ne.g.:\n• 👨‍💻, 👨‍💻.) пост. v2.1.) мир 👍🏽.\n2*3 пост.» 😀 𝐁𝐨𝐥𝐝.\nдлинный\n\n«цитата»? длинный.) 👍🏽 агентов",
+          "entities": [
+            { "type": "custom_emoji", "offset": 239, "length": 788 },
+            { "type": "code", "offset": 36, "length": 987 },
+            { "type": "mention", "offset": 111, "length": 866 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 7,
+      "chain": [
+        { "text": "Telegra", "entities": [], "media": [{ "type": "video" }] },
+        { "text": "m и.", "entities": [], "media": [] },
+        { "text": "😀 про.", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman —", "entities": [], "media": [] },
+        { "text": "пост…", "entities": [], "media": [] },
+        { "text": "длинный", "entities": [], "media": [] },
+        { "text": "! и!", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": "snake_c", "entities": [], "media": [] },
+        { "text": "ase:", "entities": [], "media": [] },
+        { "text": "• 🇷🇺?", "entities": [], "media": [] },
+        { "text": "пост,", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": "Telegra", "entities": [], "media": [] },
+        { "text": "m:\n•", "entities": [], "media": [] },
+        { "text": "«цитата", "entities": [], "media": [] },
+        { "text": "» и?", "entities": [], "media": [] },
+        { "text": "Telegra", "entities": [], "media": [] },
+        { "text": "m.) htt", "entities": [], "media": [] },
+        { "text": "ps://ex", "entities": [], "media": [] },
+        { "text": "ample.c", "entities": [], "media": [] },
+        { "text": "om/путь", "entities": [], "media": [] },
+        { "text": "?q=1", "entities": [], "media": [] },
+        { "text": "😀 ёжик", "entities": [], "media": [] },
+        { "text": "? #тег.", "entities": [], "media": [] },
+        { "text": ") Приве", "entities": [], "media": [] },
+        { "text": "т, 🇷🇺", "entities": [], "media": [] },
+        { "text": "ёжик", "entities": [], "media": [] },
+        { "text": "длинный", "entities": [], "media": [] },
+        { "text": ".\nёжик", "entities": [], "media": [] },
+        { "text": "это 𝐁", "entities": [], "media": [] },
+        { "text": "𝐨𝐥𝐝", "entities": [], "media": [] },
+        { "text": "#тег!", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman!", "entities": [], "media": [] },
+        { "text": "про.»", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝.\n👨‍", "entities": [], "media": [] },
+        { "text": "💻 Clau", "entities": [], "media": [] },
+        { "text": "de.»", "entities": [], "media": [] },
+        { "text": "ёжик", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝.)", "entities": [], "media": [] },
+        { "text": "e.g..", "entities": [], "media": [] },
+        { "text": "🇷🇺 —", "entities": [], "media": [] },
+        { "text": "про.»", "entities": [], "media": [] },
+        { "text": "v2.1 —", "entities": [], "media": [] },
+        { "text": "про.»", "entities": [], "media": [] },
+        { "text": "https:/", "entities": [], "media": [] },
+        { "text": "/exampl", "entities": [], "media": [] },
+        { "text": "e.com/п", "entities": [], "media": [] },
+        { "text": "уть?q=1", "entities": [], "media": [] },
+        { "text": ". «цита", "entities": [], "media": [] },
+        { "text": "та».", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman и", "entities": [], "media": [] },
+        { "text": "— Threa", "entities": [], "media": [] },
+        { "text": "ds.)", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "и.\nv2.1", "entities": [], "media": [] },
+        { "text": "Dr.", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "https:/", "entities": [], "media": [] },
+        { "text": "/exampl", "entities": [], "media": [] },
+        { "text": "e.com/п", "entities": [], "media": [] },
+        { "text": "уть?q=1", "entities": [], "media": [] },
+        { "text": "Dr.?", "entities": [], "media": [] },
+        { "text": "т.е.,", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "e.g.…", "entities": [], "media": [] },
+        { "text": "это.»", "entities": [], "media": [] },
+        { "text": "т.е.", "entities": [], "media": [] },
+        { "text": "…? т.е.", "entities": [], "media": [] },
+        { "text": "— и.»", "entities": [], "media": [] },
+        { "text": "👍🏽.)", "entities": [], "media": [] },
+        { "text": "2*3 «ци", "entities": [], "media": [] },
+        { "text": "тата»", "entities": [], "media": [] },
+        { "text": "мир.»", "entities": [], "media": [] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "про:", "entities": [], "media": [] },
+        { "text": "• про", "entities": [], "media": [] },
+        { "text": "длинный", "entities": [], "media": [] },
+        { "text": ". агент", "entities": [], "media": [] },
+        { "text": "ов! Dr.", "entities": [], "media": [] },
+        { "text": ", 🇷🇺.", "entities": [], "media": [] },
+        { "text": "v2.1", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": ". 𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝,", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "— #тег", "entities": [], "media": [] },
+        { "text": "мир.", "entities": [], "media": [] },
+        { "text": "👨‍💻", "entities": [], "media": [] },
+        { "text": "🇷🇺.»", "entities": [], "media": [] },
+        { "text": "API про", "entities": [], "media": [] },
+        { "text": "ёжик.", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "😀\n\nи", "entities": [], "media": [] },
+        { "text": "Claude.", "entities": [], "media": [] },
+        { "text": "йога.»", "entities": [], "media": [] },
+        { "text": "API …", "entities": [], "media": [] },
+        { "text": "Привет", "entities": [], "media": [] },
+        { "text": "Code", "entities": [], "media": [] },
+        { "text": "Привет:", "entities": [], "media": [] },
+        { "text": "• Teleg", "entities": [], "media": [] },
+        { "text": "ram —", "entities": [], "media": [] },
+        { "text": "e.g.", "entities": [], "media": [] },
+        { "text": "Dr..»", "entities": [], "media": [] },
+        { "text": "#тег.", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] },
+        { "text": "пост?", "entities": [], "media": [] },
+        { "text": "йога.»", "entities": [], "media": [] },
+        { "text": "😀 http", "entities": [], "media": [] },
+        { "text": "s://exa", "entities": [], "media": [] },
+        { "text": "mple.co", "entities": [], "media": [] },
+        { "text": "m/путь?", "entities": [], "media": [] },
+        { "text": "q=1.)", "entities": [], "media": [] },
+        { "text": "👍🏽:", "entities": [], "media": [] },
+        { "text": "• 🇷🇺", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman.»", "entities": [], "media": [] },
+        { "text": "(скобки", "entities": [], "media": [] },
+        { "text": "), e.g.", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman? и", "entities": [], "media": [] },
+        { "text": "Threads", "entities": [], "media": [] },
+        { "text": "… длинн", "entities": [], "media": [] },
+        { "text": "ый «цит", "entities": [], "media": [] },
+        { "text": "ата».)", "entities": [], "media": [] },
+        { "text": "йога.»", "entities": [], "media": [] },
+        { "text": "длинный", "entities": [], "media": [] },
+        { "text": "— 𝐁𝐨", "entities": [], "media": [] },
+        { "text": "𝐥𝐝 —", "entities": [], "media": [] },
+        { "text": "@alexge", "entities": [], "media": [] },
+        { "text": "tman? …", "entities": [], "media": [] },
+        { "text": "йога", "entities": [], "media": [] },
+        { "text": "👨‍💻.)", "entities": [], "media": [] },
+        { "text": "😀\n\n…", "entities": [], "media": [] },
+        { "text": "e.g.:", "entities": [], "media": [] },
+        { "text": "• 👨‍💻", "entities": [], "media": [] },
+        { "text": ", 👨‍💻", "entities": [], "media": [] },
+        { "text": ".) пост", "entities": [], "media": [] },
+        { "text": ". v2.1.", "entities": [], "media": [] },
+        { "text": ") мир", "entities": [], "media": [] },
+        { "text": "👍🏽.", "entities": [], "media": [] },
+        { "text": "2*3 пос", "entities": [], "media": [] },
+        { "text": "т.» 😀", "entities": [], "media": [] },
+        { "text": "𝐁𝐨𝐥", "entities": [], "media": [] },
+        { "text": "𝐝.\nдли", "entities": [], "media": [] },
+        { "text": "нный", "entities": [], "media": [] },
+        { "text": "«цитата", "entities": [], "media": [] },
+        { "text": "»? длин", "entities": [], "media": [] },
+        { "text": "ный.)", "entities": [], "media": [] },
+        { "text": "👍🏽", "entities": [], "media": [] },
+        { "text": "агентов", "entities": [], "media": [] }
+      ]
+    },
+    {
+      "posts": [
+        {
+          "text": "API Telegram т.е..» Telegram:\n• 🇷🇺! длинный #тег… …. v2.1.\nпост — (скобки).» v2.1 Claude, e.g. 🇷🇺 т.е.. Claude — 👍🏽, йога. 👍🏽 про.\n𝐁𝐨𝐥𝐝.\n🇷🇺 Dr.\n\nйога.\nhttps://example.com/путь?q=1 Telegram — API, мир 👨‍💻. мир:\n• snake_case:\n• мир @alexgetman «цитата»? 👍🏽 Привет Telegram 🇷🇺 🇷🇺.» 🇷🇺.\n😀. т.е.:\n• ёжик\n\n«цитата» Telegram.\nагентов? https://example.com/путь?q=1 Dr.? (скобки) мир агентов! 😀! (скобки).» e.g. — 👍🏽 👨‍💻.» e.g. Code? ёжик.) ёжик. (скобки):\n• API:\n• #тег.» 🇷🇺.» агентов йога.» пост… т.е.! Claude.\nCode… v2.1.) Dr.… …\n\nмир\n\n2*3:\n• API.\nCode v2.1 длинный …, 2*3? про 👨‍💻\n\nйога? ёжик? 👍🏽 😀! e.g.:\n• snake_case. #тег.) ёжик, 𝐁𝐨𝐥𝐝? «цитата»? «цитата».) @alexgetman, и. агентов! Dr.:\n• т.е..) 𝐁𝐨𝐥𝐝 это йога длинный:\n• Threads, v2.1.» (скобки).» «цитата» 👍🏽? API… Dr..» Telegram #тег e.g. 👨‍💻.) Code… Threads Claude? 🇷🇺 агентов v2.1! длинный:\n• API (скобки)? т.е.:\n• API пост.) и 👍🏽 👨‍💻, ёжик, йога Claude",
+          "entities": [
+            { "type": "quote", "offset": 559, "length": 325 },
+            { "type": "custom_emoji", "offset": 945, "length": 15 },
+            { "type": "spoiler", "offset": 84, "length": 578 }
+          ],
+          "media": [{ "type": "video" }]
+        }
+      ],
+      "limit": 100,
+      "chain": [
+        {
+          "text": "API Telegram т.е..» Telegram:\n• 🇷🇺! длинный #тег… …. v2.1.\nпост — (скобки).» v2.1 Claude, e.g.",
+          "entities": [],
+          "media": [{ "type": "video" }]
+        },
+        { "text": "🇷🇺 т.е.. Claude — 👍🏽, йога. 👍🏽 про.\n𝐁𝐨𝐥𝐝.\n🇷🇺 Dr.", "entities": [], "media": [] },
+        { "text": "йога.\nhttps://example.com/путь?q=1 Telegram — API, мир 👨‍💻. мир:\n• snake_case:", "entities": [], "media": [] },
+        { "text": "• мир @alexgetman «цитата»? 👍🏽 Привет Telegram 🇷🇺 🇷🇺.» 🇷🇺.\n😀. т.е.:\n• ёжик", "entities": [], "media": [] },
+        { "text": "«цитата» Telegram.\nагентов? https://example.com/путь?q=1 Dr.? (скобки) мир агентов! 😀!", "entities": [], "media": [] },
+        { "text": "(скобки).» e.g. — 👍🏽 👨‍💻.» e.g. Code? ёжик.) ёжик. (скобки):\n• API:\n• #тег.»", "entities": [], "media": [] },
+        { "text": "🇷🇺.» агентов йога.» пост… т.е.! Claude.\nCode… v2.1.) Dr.… …\n\nмир", "entities": [], "media": [] },
+        {
+          "text": "2*3:\n• API.\nCode v2.1 длинный …, 2*3? про 👨‍💻\n\nйога? ёжик? 👍🏽 😀! e.g.:\n• snake_case.",
+          "entities": [],
+          "media": []
+        },
+        { "text": "#тег.) ёжик, 𝐁𝐨𝐥𝐝? «цитата»? «цитата».) @alexgetman, и. агентов! Dr.:\n• т.е..)", "entities": [], "media": [] },
+        {
+          "text": "𝐁𝐨𝐥𝐝 это йога длинный:\n• Threads, v2.1.» (скобки).» «цитата» 👍🏽? API… Dr..» Telegram #тег e.g.",
+          "entities": [],
+          "media": []
+        },
+        { "text": "👨‍💻.) Code… Threads Claude? 🇷🇺 агентов v2.1! длинный:\n• API (скобки)? т.е.:", "entities": [], "media": [] },
+        { "text": "• API пост.) и 👍🏽 👨‍💻, ёжик, йога Claude", "entities": [], "media": [] }
+      ]
+    }
+  ]
+}

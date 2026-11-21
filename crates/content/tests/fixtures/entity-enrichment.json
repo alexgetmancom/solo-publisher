@@ -1,0 +1,113 @@
+{
+  "catalog": [
+    {
+      "entities": [
+        { "id": 1, "kind": "company", "parentEntityId": null, "slug": "openai", "titleRu": "OpenAI", "titleEn": "OpenAI" },
+        { "id": 2, "kind": "model", "parentEntityId": 1, "slug": "gpt-5", "titleRu": "GPT-5", "titleEn": null },
+        { "id": 3, "kind": "company", "parentEntityId": null, "slug": "meta", "titleRu": "Meta", "titleEn": "Meta" },
+        { "id": 4, "kind": "company", "parentEntityId": null, "slug": "anthropic", "titleRu": "Anthropic", "titleEn": "Anthropic" },
+        { "id": 5, "kind": "model", "parentEntityId": 4, "slug": "claude-code", "titleRu": "Клод Код", "titleEn": "Claude Code" },
+        { "id": 6, "kind": "topic", "parentEntityId": null, "slug": "codex", "titleRu": "Codex", "titleEn": "Codex" },
+        { "id": 7, "kind": "topic", "parentEntityId": null, "slug": "agents", "titleRu": "Агенты", "titleEn": "Agents" },
+        { "id": 8, "kind": "model", "parentEntityId": 1, "slug": "gpt", "titleRu": "GPT", "titleEn": "GPT" },
+        { "id": 9, "kind": "model", "parentEntityId": 10, "slug": "gemini", "titleRu": "Джемини", "titleEn": "Gemini" },
+        { "id": 10, "kind": "company", "parentEntityId": null, "slug": "google", "titleRu": "Гугл", "titleEn": "Google" },
+        { "id": 11, "kind": "company", "parentEntityId": null, "slug": "x", "titleRu": "X", "titleEn": null },
+        { "id": 12, "kind": "model", "parentEntityId": 4, "slug": "claude-opus", "titleRu": "Claude Opus", "titleEn": "Claude Opus" }
+      ],
+      "aliases": [
+        { "entityId": 1, "alias": "ОпенЭйАй" },
+        { "entityId": 5, "alias": "claude code" },
+        { "entityId": 5, "alias": " CC " },
+        { "entityId": 9, "alias": "gemini 3" },
+        { "entityId": 12, "alias": "Опус" }
+      ]
+    }
+  ],
+  "drafts": [
+    {
+      "draft_id": 500,
+      "locales": [{ "locale": "ru", "text": "Claude Code получил браузер\n\nAnthropic выпустила обновление." }],
+      "linked": 2,
+      "links": [
+        { "draft_id": 500, "entity_id": 4, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 500, "entity_id": 5, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }
+      ]
+    },
+    {
+      "draft_id": 501,
+      "locales": [{ "locale": "ru", "text": "ChatGPT и метаданные: ничего не должно совпасть с gpt или meta" }],
+      "linked": 3,
+      "links": [
+        { "draft_id": 501, "entity_id": 3, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 501, "entity_id": 1, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 501, "entity_id": 8, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }
+      ]
+    },
+    {
+      "draft_id": 502,
+      "locales": [
+        { "locale": "ru", "text": "GPT-5 против Gemini\n\nСравнение моделей OpenAI и Google" },
+        { "locale": "en", "text": "GPT-5 vs Gemini\n\nComparing OpenAI and Google" }
+      ],
+      "linked": 5,
+      "links": [
+        { "draft_id": 502, "entity_id": 1, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 502, "entity_id": 2, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 502, "entity_id": 8, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 502, "entity_id": 9, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 502, "entity_id": 10, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" }
+      ]
+    },
+    {
+      "draft_id": 503,
+      "locales": [{ "locale": "ru", "text": "Собрал сайт с помощью Codex\n\nи это было быстро" }],
+      "linked": 1,
+      "links": [{ "draft_id": 503, "entity_id": 6, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }]
+    },
+    {
+      "draft_id": 504,
+      "locales": [
+        { "locale": "en", "text": "Weekend notes\n\nI built a small CLI tool over the weekend, mostly using codex for the boring parts" }
+      ],
+      "linked": 1,
+      "links": [{ "draft_id": 504, "entity_id": 6, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }]
+    },
+    {
+      "draft_id": 505,
+      "locales": [{ "locale": "en", "text": "Notes\n\nI built 🚀🚀🚀 the thing with codex" }],
+      "linked": 1,
+      "links": [{ "draft_id": 505, "entity_id": 6, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }]
+    },
+    {
+      "draft_id": 506,
+      "locales": [{ "locale": "ru", "text": "Codex — новый агент\n\nот OpenAI" }],
+      "linked": 2,
+      "links": [
+        { "draft_id": 506, "entity_id": 1, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 506, "entity_id": 6, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }
+      ]
+    },
+    { "draft_id": 507, "locales": [{ "locale": "ru", "text": "   " }, { "locale": "en", "text": null }], "linked": 0, "links": [] },
+    {
+      "draft_id": 508,
+      "locales": [{ "locale": "ru", "text": "Опус и CC в деле\n\nКлод Код и Claude Opus пишут код, а Агенты ждут" }],
+      "linked": 3,
+      "links": [
+        { "draft_id": 508, "entity_id": 5, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 508, "entity_id": 4, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 508, "entity_id": 12, "role": "focus", "created_at": "2026-11-21T10:00:00.000Z" }
+      ]
+    },
+    {
+      "draft_id": 509,
+      "locales": [{ "locale": "ru", "text": "МЕТА и OPENAI заглавными\r\nвторая строка про GPT" }],
+      "linked": 2,
+      "links": [
+        { "draft_id": 509, "entity_id": 1, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" },
+        { "draft_id": 509, "entity_id": 8, "role": "mention", "created_at": "2026-11-21T10:00:00.000Z" }
+      ]
+    },
+    { "draft_id": 510, "locales": [], "linked": 0, "links": [] }
+  ]
+}

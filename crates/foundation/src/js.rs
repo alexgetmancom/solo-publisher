@@ -9,7 +9,7 @@ use regex::Regex;
 
 /// ECMAScript WhiteSpace and LineTerminator: what `trim()` and `Number()` strip.
 /// Unlike `char::is_whitespace` it includes U+FEFF and excludes U+0085.
-pub(crate) fn is_whitespace(c: char) -> bool {
+pub fn is_whitespace(c: char) -> bool {
     matches!(
         c,
         '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
@@ -18,8 +18,18 @@ pub(crate) fn is_whitespace(c: char) -> bool {
 }
 
 /// `String.prototype.trim`.
-pub(crate) fn trim(value: &str) -> &str {
+pub fn trim(value: &str) -> &str {
     value.trim_matches(is_whitespace)
+}
+
+/// `String.prototype.trimStart`.
+pub fn trim_start(value: &str) -> &str {
+    value.trim_start_matches(is_whitespace)
+}
+
+/// `String.prototype.trimEnd`.
+pub fn trim_end(value: &str) -> &str {
+    value.trim_end_matches(is_whitespace)
 }
 
 static DECIMAL: LazyLock<Regex> =
@@ -27,7 +37,7 @@ static DECIMAL: LazyLock<Regex> =
 
 /// `Number(string)`: blank is 0, `0x`/`0o`/`0b` prefixes, `Infinity`, and NaN
 /// for anything else — including the `inf`/`nan` spellings Rust would accept.
-pub(crate) fn number(value: &str) -> f64 {
+pub fn number(value: &str) -> f64 {
     let value = trim(value);
     if value.is_empty() {
         return 0.0;
@@ -62,19 +72,19 @@ pub(crate) fn number(value: &str) -> f64 {
 }
 
 /// `Number.isInteger`.
-pub(crate) fn is_integer(value: f64) -> bool {
+pub fn is_integer(value: f64) -> bool {
     value.is_finite() && value.trunc() == value
 }
 
-pub(crate) const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
+pub const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
 
 /// `Number.isSafeInteger`.
-pub(crate) fn is_safe_integer(value: f64) -> bool {
+pub fn is_safe_integer(value: f64) -> bool {
     is_integer(value) && value.abs() <= MAX_SAFE_INTEGER
 }
 
 /// `String(number)`.
-pub(crate) fn number_to_string(value: f64) -> String {
+pub fn number_to_string(value: f64) -> String {
     if value.is_nan() {
         return "NaN".into();
     }

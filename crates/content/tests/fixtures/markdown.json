@@ -1,0 +1,795 @@
+{
+  "articles": [
+    {
+      "source": "# Real title\n\nFirst paragraph.",
+      "parsed": { "title": "Real title", "body": { "text": "First paragraph.", "media": [], "entities": [] } }
+    },
+    {
+      "source": "Just prose, no heading.",
+      "parsed": { "title": "", "body": { "text": "Just prose, no heading.", "media": [], "entities": [] } }
+    },
+    {
+      "source": "# T\n\nplain **bold** tail",
+      "parsed": {
+        "title": "T",
+        "body": { "text": "plain bold tail", "media": [], "entities": [{ "type": "bold", "offset": 6, "length": 4 }] }
+      }
+    },
+    {
+      "source": "**one** and *two*",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "one and two",
+          "media": [],
+          "entities": [{ "type": "bold", "offset": 0, "length": 3 }, { "type": "italic", "offset": 8, "length": 3 }]
+        }
+      }
+    },
+    {
+      "source": "see [the notes](https://example.com/n) here",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "see the notes here",
+          "media": [],
+          "entities": [{ "type": "text_link", "offset": 4, "length": 9, "url": "https://example.com/n" }]
+        }
+      }
+    },
+    { "source": "[click](javascript:alert)", "parsed": { "title": "", "body": { "text": "click", "media": [], "entities": [] } } },
+    {
+      "source": "## Section\n\n- first\n2. second",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Section\n\nfirst\nsecond",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 0, "length": 7, "level": 2 },
+            { "type": "list_item", "offset": 9, "length": 5 },
+            { "type": "list_item", "offset": 15, "length": 6 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "## Section\n\nA **bold** [link](https://example.com).",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Section\n\nA bold link.",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 0, "length": 7, "level": 2 },
+            { "type": "bold", "offset": 11, "length": 4 },
+            { "type": "text_link", "offset": 16, "length": 4, "url": "https://example.com" }
+          ]
+        }
+      }
+    },
+    { "source": "", "parsed": { "title": "", "body": { "text": "", "media": [], "entities": [] } } },
+    { "source": "\n\n   \n", "parsed": { "title": "", "body": { "text": "", "media": [], "entities": [] } } },
+    {
+      "source": "#no-space title\n\nbody",
+      "parsed": { "title": "", "body": { "text": "#no-space title\n\nbody", "media": [], "entities": [] } }
+    },
+    {
+      "source": "#   Spaced title   \n\n\n  \nbody\n\n  \n",
+      "parsed": { "title": "Spaced title", "body": { "text": "body", "media": [], "entities": [] } }
+    },
+    {
+      "source": "intro line\n# Late title\nafter",
+      "parsed": { "title": "Late title", "body": { "text": "intro line\nafter", "media": [], "entities": [] } }
+    },
+    {
+      "source": "# First\n# Second\nbody",
+      "parsed": {
+        "title": "First",
+        "body": { "text": "Second\nbody", "media": [], "entities": [{ "type": "heading", "offset": 0, "length": 6, "level": 1 }] }
+      }
+    },
+    {
+      "source": "###### six\n####### seven\n#",
+      "parsed": {
+        "title": "",
+        "body": { "text": "six\n####### seven\n#", "media": [], "entities": [{ "type": "heading", "offset": 0, "length": 3, "level": 6 }] }
+      }
+    },
+    {
+      "source": "> quote\n>tight\n>",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "quote\ntight\n",
+          "media": [],
+          "entities": [
+            { "type": "quote", "offset": 0, "length": 5 },
+            { "type": "quote", "offset": 6, "length": 5 },
+            { "type": "quote", "offset": 12, "length": 0 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "  - indented\n* star\n+ plus\n-not item",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "indented\nstar\nplus\n-not item",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 8 },
+            { "type": "list_item", "offset": 9, "length": 4 },
+            { "type": "list_item", "offset": 14, "length": 4 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "1) first\n10. tenth\n3.no space",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "first\ntenth\n3.no space",
+          "media": [],
+          "entities": [{ "type": "list_item", "offset": 0, "length": 5 }, { "type": "list_item", "offset": 6, "length": 5 }]
+        }
+      }
+    },
+    {
+      "source": "Windows\r\nline\r\nendings\rold mac",
+      "parsed": { "title": "", "body": { "text": "Windows\nline\nendings\nold mac", "media": [], "entities": [] } }
+    },
+    {
+      "source": "😀 **жирный** и *курсив* 👨‍👩‍👧 [ссылка](https://пример.рф/путь) `код`",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "😀 жирный и курсив 👨‍👩‍👧 ссылка код",
+          "media": [],
+          "entities": [
+            { "type": "bold", "offset": 3, "length": 6 },
+            { "type": "italic", "offset": 12, "length": 6 },
+            { "type": "text_link", "offset": 28, "length": 6, "url": "https://пример.рф/путь" },
+            { "type": "code", "offset": 35, "length": 3 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "**bold *nested italic* bold**",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "bold nested italic bold",
+          "media": [],
+          "entities": [{ "type": "italic", "offset": 3, "length": 13 }, { "type": "bold", "offset": 0, "length": 23 }]
+        }
+      }
+    },
+    {
+      "source": "***both***",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "both",
+          "media": [],
+          "entities": [{ "type": "bold", "offset": -1, "length": 4 }, { "type": "italic", "offset": 0, "length": 4 }]
+        }
+      }
+    },
+    {
+      "source": "_a_b_ and snake_case_word and __dunder__",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "ab_ and snake_case_word and dunder",
+          "media": [],
+          "entities": [{ "type": "italic", "offset": 0, "length": 1 }, { "type": "bold", "offset": 28, "length": 6 }]
+        }
+      }
+    },
+    {
+      "source": "2*3*4 = 24 and a * b * c",
+      "parsed": {
+        "title": "",
+        "body": { "text": "2*3*4 = 24 and a  b  c", "media": [], "entities": [{ "type": "italic", "offset": 17, "length": 3 }] }
+      }
+    },
+    {
+      "source": "*unclosed and **unclosed bold",
+      "parsed": { "title": "", "body": { "text": "*unclosed and **unclosed bold", "media": [], "entities": [] } }
+    },
+    {
+      "source": "`**not bold**` then **bold**",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "not bold then bold",
+          "media": [],
+          "entities": [
+            { "type": "code", "offset": 0, "length": 12 },
+            { "type": "bold", "offset": 0, "length": 8 },
+            { "type": "bold", "offset": 14, "length": 4 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "~~strike~~ ~~ not ~~",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "strike  not ",
+          "media": [],
+          "entities": [{ "type": "strikethrough", "offset": 0, "length": 6 }, { "type": "strikethrough", "offset": 7, "length": 5 }]
+        }
+      }
+    },
+    {
+      "source": "[a](https://x.example/(paren)) [b](https://y.example \"title\")",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "a) [b](https://y.example \"title\")",
+          "media": [],
+          "entities": [{ "type": "text_link", "offset": 0, "length": 1, "url": "https://x.example/(paren" }]
+        }
+      }
+    },
+    {
+      "source": "[ftp](ftp://a.example) [ok](http://b.example)",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "ftp ok",
+          "media": [],
+          "entities": [{ "type": "text_link", "offset": 4, "length": 2, "url": "http://b.example" }]
+        }
+      }
+    },
+    {
+      "source": "line separator ## not heading",
+      "parsed": { "title": "", "body": { "text": "line separator ## not heading", "media": [], "entities": [] } }
+    },
+    { "source": "# weird", "parsed": { "title": "weird", "body": { "text": "", "media": [], "entities": [] } } },
+    {
+      "source": "  - nbsp item",
+      "parsed": {
+        "title": "",
+        "body": { "text": "nbsp item", "media": [], "entities": [{ "type": "list_item", "offset": 0, "length": 9 }] }
+      }
+    },
+    {
+      "source": "**a** **b** **c** *d* _e_ `f` ~~g~~ [h](https://h.example)",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "a b c d e f g h",
+          "media": [],
+          "entities": [
+            { "type": "bold", "offset": 0, "length": 1 },
+            { "type": "bold", "offset": 2, "length": 1 },
+            { "type": "bold", "offset": 4, "length": 1 },
+            { "type": "italic", "offset": 6, "length": 1 },
+            { "type": "italic", "offset": 8, "length": 1 },
+            { "type": "code", "offset": 10, "length": 1 },
+            { "type": "strikethrough", "offset": 12, "length": 1 },
+            { "type": "text_link", "offset": 14, "length": 1, "url": "https://h.example" }
+          ]
+        }
+      }
+    },
+    { "source": "**multi\nline**", "parsed": { "title": "", "body": { "text": "**multi\nline**", "media": [], "entities": [] } } },
+    {
+      "source": "**🚀 Запуск**: _быстро_",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "🚀 Запуск: быстро",
+          "media": [],
+          "entities": [{ "type": "bold", "offset": 0, "length": 9 }, { "type": "italic", "offset": 11, "length": 6 }]
+        }
+      }
+    },
+    {
+      "source": "*a **b** c*",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "a b c",
+          "media": [],
+          "entities": [{ "type": "bold", "offset": 1, "length": 1 }, { "type": "italic", "offset": 0, "length": 5 }]
+        }
+      }
+    },
+    {
+      "source": "**x `y` z** and *a `**b**` c*",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "x y z and a b c",
+          "media": [],
+          "entities": [
+            { "type": "bold", "offset": 0, "length": 7 },
+            { "type": "code", "offset": 2, "length": 1 },
+            { "type": "code", "offset": 11, "length": 5 },
+            { "type": "bold", "offset": 11, "length": 1 },
+            { "type": "italic", "offset": 10, "length": 5 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "[**bold link**](https://x.example) **[link](https://y.example)**",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "bold link link",
+          "media": [],
+          "entities": [
+            { "type": "text_link", "offset": 0, "length": 13, "url": "https://x.example" },
+            { "type": "bold", "offset": 0, "length": 9 },
+            { "type": "bold", "offset": 10, "length": 25 },
+            { "type": "text_link", "offset": 10, "length": 4, "url": "https://y.example" }
+          ]
+        }
+      }
+    },
+    {
+      "source": "# Заголовок статьи\n\nПервый абзац с **жирным** текстом.\n\n## Раздел\n\n> Цитата с [ссылкой](https://example.com)\n\n- пункт один\n- пункт *два*\n\n1. первый\n2. второй",
+      "parsed": {
+        "title": "Заголовок статьи",
+        "body": {
+          "text": "Первый абзац с жирным текстом.\n\nРаздел\n\nЦитата с ссылкой\n\nпункт один\nпункт два\n\nпервый\nвторой",
+          "media": [],
+          "entities": [
+            { "type": "bold", "offset": 15, "length": 6 },
+            { "type": "heading", "offset": 32, "length": 6, "level": 2 },
+            { "type": "quote", "offset": 40, "length": 16 },
+            { "type": "text_link", "offset": 49, "length": 7, "url": "https://example.com" },
+            { "type": "list_item", "offset": 58, "length": 10 },
+            { "type": "list_item", "offset": 69, "length": 9 },
+            { "type": "italic", "offset": 75, "length": 3 },
+            { "type": "list_item", "offset": 80, "length": 6 },
+            { "type": "list_item", "offset": 87, "length": 6 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "  * Telegram это. Threads:\n• ёжик.\nAPI Claude API API.) 😀 агентов.) _т.е.~~\nт.е. йога.\nCode\n\n#тег… 👨‍💻.) _#тег_ Привет… https://example.com/путь?q=1 агентов. _𝐁𝐨𝐥𝐝.»** @alexgetman\nv2.1:\n• API API! 𝐁𝐨𝐥𝐝! т.е.? ~~агентов`\n1. snake_case мир.) Привет… т.е..» 𝐁𝐨𝐥𝐝. __Code**\n(скобки) это… @alexgetman! «цитата»? агентов.\nПривет\n  * мир! Claude:\n• и.» … Code\n\n… **#тег` v2.1! 🇷🇺 👨‍💻 snake_case",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Telegram это. Threads:\n• ёжик.\nAPI Claude API API.) 😀 агентов.) _т.е.~~\nт.е. йога.\nCode\n\n#тег… 👨‍💻.) #тег Привет… https://example.com/путь?q=1 агентов. _𝐁𝐨𝐥𝐝.»** @alexgetman\nv2.1:\n• API API! 𝐁𝐨𝐥𝐝! т.е.? ~~агентов`\nsnake_case мир.) Привет… т.е..» 𝐁𝐨𝐥𝐝. __Code**\n(скобки) это… @alexgetman! «цитата»? агентов.\nПривет\nмир! Claude:\n• и.» … Code\n\n… **#тег` v2.1! 🇷🇺 👨‍💻 snake_case",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 22 },
+            { "type": "italic", "offset": 104, "length": 4 },
+            { "type": "list_item", "offset": 225, "length": 50 },
+            { "type": "list_item", "offset": 329, "length": 12 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "1. Привет… Code «цитата» — пост Code\n\nv2.1\n\n#тег! snake_case.) про.\nи\n\n😀 — и? …, https://example.com/путь?q=1 Claude… агентов:\n• (скобки)! #тег\n\nClaude.\nПривет.» *2*3~~ ёжик Dr.? Telegram мир, 👨‍💻\n\n😀 Claude\n\n# 2*3 — 2*3… пост. Dr..» (скобки) 𝐁𝐨𝐥𝐝? ~~…` `и~~ Dr..\nsnake_case https://example.com/путь?q=1.\nhttps://example.com/путь?q=1\n\n> ~~йога…` 𝐁𝐨𝐥𝐝.» 😀:\n• Claude — ~~агентов\n\nт.е.~~\n\n- v2.1\n\n(скобки)… Привет.» Привет\n\n2*3 👍🏽. это\n\nдлинный. 2*3 ёжик",
+      "parsed": {
+        "title": "2*3 — 2*3… пост. Dr..» (скобки) 𝐁𝐨𝐥𝐝? ~~…` `и~~ Dr..",
+        "body": {
+          "text": "Привет… Code «цитата» — пост Code\n\nv2.1\n\n#тег! snake_case.) про.\nи\n\n😀 — и? …, https://example.com/путь?q=1 Claude… агентов:\n• (скобки)! #тег\n\nClaude.\nПривет.» 23~~ ёжик Dr.? Telegram мир, 👨‍💻\n\n😀 Claude\n\nsnake_case https://example.com/путь?q=1.\nhttps://example.com/путь?q=1\n\n~~йога…` 𝐁𝐨𝐥𝐝.» 😀:\n• Claude — ~~агентов\n\nт.е.~~\n\nv2.1\n\n(скобки)… Привет.» Привет\n\n2*3 👍🏽. это\n\nдлинный. 2*3 ёжик",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 33 },
+            { "type": "italic", "offset": 160, "length": 1 },
+            { "type": "quote", "offset": 278, "length": 23 },
+            { "type": "list_item", "offset": 332, "length": 4 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "- агентов\n  * Claude\n> #тег\nhttps://example.com/путь?q=1, агентов! и т.е.\n# Claude #тег.\n👨‍💻! Привет. Claude? йога *Telegram` (скобки)\n  * и v2.1, Dr..) v2.1.» «цитата»… (скобки)… ~~𝐁𝐨𝐥𝐝?_ ~~йога_ __v2.1__\n> Привет *агентов.»* «цитата» Threads 🇷🇺… 2*3 2*3.\nAPI, **@alexgetman.»** т.е.\n\nйога\nдлинный API.) Привет",
+      "parsed": {
+        "title": "Claude #тег.",
+        "body": {
+          "text": "агентов\nClaude\n#тег\nhttps://example.com/путь?q=1, агентов! и т.е.\n👨‍💻! Привет. Claude? йога *Telegram` (скобки)\nи v2.1, Dr..) v2.1.» «цитата»… (скобки)… 𝐁𝐨𝐥𝐝? йога v2.1\nПривет агентов.» «цитата» Threads 🇷🇺… 2*3 2*3.\nAPI, @alexgetman.» т.е.\n\nйога\nдлинный API.) Привет",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 7 },
+            { "type": "list_item", "offset": 8, "length": 6 },
+            { "type": "quote", "offset": 15, "length": 4 },
+            { "type": "list_item", "offset": 114, "length": 60 },
+            { "type": "strikethrough", "offset": 155, "length": 11 },
+            { "type": "italic", "offset": 164, "length": 5 },
+            { "type": "bold", "offset": 170, "length": 4 },
+            { "type": "quote", "offset": 175, "length": 48 },
+            { "type": "italic", "offset": 182, "length": 9 },
+            { "type": "bold", "offset": 229, "length": 13 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "1. 👨‍💻 v2.1… 👨‍💻 ~~Привет~~ 𝐁𝐨𝐥𝐝\n- *Threads?` ~~ёжик.~~ и. 😀.) *длинный…* 😀 длинный\n\nПривет v2.1.» ~~….»_ *👨‍💻**\n- агентов? _😀~~\nv2.1… e.g.\n\n👨‍💻 **это** Claude! пост! 𝐁𝐨𝐥𝐝.) __e.g..* т.е.… *Threads!** Claude\n  * т.е. `(скобки):\n•__ 👍🏽. и… … @alexgetman:\n• v2.1 @alexgetman — 2*3 Claude __—~~ 🇷🇺\n- «цитата»… API.» 🇷🇺.\nпост v2.1.» «цитата».\nагентов\n1. Threads! Code.) snake_case\n\nDr. …. йога т.е..) Claude.\nмир",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "👨‍💻 v2.1… 👨‍💻 Привет 𝐁𝐨𝐥𝐝\nThreads?` ёжик. и. 😀.) длинный…* 😀 длинный\n\nПривет v2.1.» ~~….»_ *👨‍💻**\nагентов? _😀~~\nv2.1… e.g.\n\n👨‍💻 это Claude! пост! 𝐁𝐨𝐥𝐝.) __e.g.. т.е.… Threads!** Claude\nт.е. `(скобки):\n•__ 👍🏽. и… … @alexgetman:\n• v2.1 @alexgetman — 2*3 Claude __—~~ 🇷🇺\n«цитата»… API.» 🇷🇺.\nпост v2.1.» «цитата».\nагентов\nThreads! Code.) snake_case\n\nDr. …. йога т.е..) Claude.\nмир",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 33 },
+            { "type": "strikethrough", "offset": 18, "length": 6 },
+            { "type": "list_item", "offset": 34, "length": 44 },
+            { "type": "italic", "offset": 34, "length": 28 },
+            { "type": "strikethrough", "offset": 44, "length": 5 },
+            { "type": "list_item", "offset": 110, "length": 14 },
+            { "type": "bold", "offset": 143, "length": 3 },
+            { "type": "italic", "offset": 179, "length": 7 },
+            { "type": "list_item", "offset": 204, "length": 15 },
+            { "type": "list_item", "offset": 291, "length": 21 },
+            { "type": "list_item", "offset": 343, "length": 26 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "## т.е..) длинный\n\nClaude\n\n- 👍🏽? пост.» 😀 e.g. Привет.) длинный? мир.) 😀.\nhttps://example.com/путь?q=1\n\nёжик… @alexgetman\n\n## snake_case",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "т.е..) длинный\n\nClaude\n\n👍🏽? пост.» 😀 e.g. Привет.) длинный? мир.) 😀.\nhttps://example.com/путь?q=1\n\nёжик… @alexgetman\n\nsnake_case",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 0, "length": 14, "level": 2 },
+            { "type": "list_item", "offset": 24, "length": 48 },
+            { "type": "heading", "offset": 122, "length": 10, "level": 2 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "## __Code…* (скобки), Claude ёжик, e.g. т.е..\nйога (скобки).\nhttps://example.com/путь?q=1\n> @alexgetman? Привет. про @alexgetman. мир! …… и.) snake_case Привет.) … Привет\nдлинный `йога?__ (скобки) API Привет\n> 👨‍💻 #тег.\nCode! Code Привет, *Threads~~ ….) e.g.",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "__Code…* (скобки), Claude ёжик, e.g. т.е..\nйога (скобки).\nhttps://example.com/путь?q=1\n@alexgetman? Привет. про @alexgetman. мир! …… и.) snake_case Привет.) … Привет\nдлинный `йога?__ (скобки) API Привет\n👨‍💻 #тег.\nCode! Code Привет, *Threads~~ ….) e.g.",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 0, "length": 42, "level": 2 },
+            { "type": "quote", "offset": 87, "length": 78 },
+            { "type": "quote", "offset": 203, "length": 11 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "## мир\n\n  * 2*3",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "мир\n\n2*3",
+          "media": [],
+          "entities": [{ "type": "heading", "offset": 0, "length": 3, "level": 2 }, { "type": "list_item", "offset": 5, "length": 3 }]
+        }
+      }
+    },
+    {
+      "source": "# Claude, агентов! @alexgetman… мир.) #тег! йога Telegram https://example.com/путь?q=1.» API — 2*3\n# *……~~ @alexgetman.) ….» @alexgetman ёжик… и\nйога.) API ёжик. API\n\nагентов.» 👍🏽.) API? **и:\n•__ @alexgetman.» ~~длинный__ ёжик.) Привет\n# @alexgetman #тег",
+      "parsed": {
+        "title": "Claude, агентов! @alexgetman… мир.) #тег! йога Telegram https://example.com/путь?q=1.» API — 2*3",
+        "body": {
+          "text": "*……~~ @alexgetman.) ….» @alexgetman ёжик… и\nйога.) API ёжик. API\n\nагентов.» 👍🏽.) API? **и:\n• @alexgetman.» ~~длинный ёжик.) Привет\n@alexgetman #тег",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 0, "length": 43, "level": 1 },
+            { "type": "bold", "offset": 94, "length": 24 },
+            { "type": "heading", "offset": 133, "length": 16, "level": 1 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "  * __……** это (скобки)… `агентов* 😀… API\n\n- Code ~~@alexgetman** API\n\n1. длинный",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "__……** это (скобки)… `агентов* 😀… API\n\nCode ~~@alexgetman** API\n\nдлинный",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 38 },
+            { "type": "list_item", "offset": 40, "length": 24 },
+            { "type": "list_item", "offset": 66, "length": 7 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "# https://example.com/путь?q=1 𝐁𝐨𝐥𝐝\n\nПривет. snake_case Привет. v2.1\n\n@alexgetman это. __«цитата»?* длинный snake_case! Code.\nsnake_case\n\n## https://example.com/путь?q=1.\nпро\n\n(скобки).» __😀.)* длинный «цитата».» ёжик\n\n# Claude! Claude\n\nv2.1… пост.» пост.» мир:\n• Code\n\nдлинный",
+      "parsed": {
+        "title": "https://example.com/путь?q=1 𝐁𝐨𝐥𝐝",
+        "body": {
+          "text": "Привет. snake_case Привет. v2.1\n\n@alexgetman это. __«цитата»?* длинный snake_case! Code.\nsnake_case\n\nhttps://example.com/путь?q=1.\nпро\n\n(скобки).» __😀.)* длинный «цитата».» ёжик\n\nClaude! Claude\n\nv2.1… пост.» пост.» мир:\n• Code\n\nдлинный",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 101, "length": 29, "level": 2 },
+            { "type": "heading", "offset": 180, "length": 14, "level": 1 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "# «цитата»! Dr.… 😀 — https://example.com/путь?q=1 **—~~ 🇷🇺.» Telegram! длинный\n\nClaude https://example.com/путь?q=1:\n• 👨‍💻\n\nv2.1 **—` 𝐁𝐨𝐥𝐝, `…?` (скобки)? https://example.com/путь?q=1:\n• Threads… 🇷🇺:\n• ёжик\n\n# 𝐁𝐨𝐥𝐝, e.g. 😀! v2.1.) это! «цитата» v2.1 Code:\n• __𝐁𝐨𝐥𝐝!* v2.1! агентов.» 🇷🇺",
+      "parsed": {
+        "title": "«цитата»! Dr.… 😀 — https://example.com/путь?q=1 **—~~ 🇷🇺.» Telegram! длинный",
+        "body": {
+          "text": "Claude https://example.com/путь?q=1:\n• 👨‍💻\n\nv2.1 **— 𝐁𝐨𝐥𝐝, …?` (скобки)? https://example.com/путь?q=1:\n• Threads… 🇷🇺:\n• ёжик\n\n𝐁𝐨𝐥𝐝, e.g. 😀! v2.1.) это! «цитата» v2.1 Code:\n• __𝐁𝐨𝐥𝐝!* v2.1! агентов.» 🇷🇺",
+          "media": [],
+          "entities": [{ "type": "code", "offset": 54, "length": 11 }, { "type": "heading", "offset": 134, "length": 50, "level": 1 }]
+        }
+      }
+    },
+    {
+      "source": "1. агентов @alexgetman! (скобки) и.) (скобки) — Dr.. …, 👨‍💻.\nClaude. йога про\n1. и! Привет\n## 🇷🇺.) 👨‍💻 агентов:\n• __https://example.com/путь?q=1!~~ API 2*3… 𝐁𝐨𝐥𝐝! _Dr.*\nCode, *snake_case_ — пост:\n• Telegram мир.\nTelegram\n\nи про? пост — ~~Code\n\nи!* йога\n> …, @alexgetman? *длинный:\n•** пост\n\n«цитата»",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "агентов @alexgetman! (скобки) и.) (скобки) — Dr.. …, 👨‍💻.\nClaude. йога про\nи! Привет\n🇷🇺.) 👨‍💻 агентов:\n• __https://example.com/путь?q=1!~~ API 2*3… 𝐁𝐨𝐥𝐝! _Dr.*\nCode, *snake_case_ — пост:\n• Telegram мир.\nTelegram\n\nи про? пост — ~~Code\n\nи!* йога\n…, @alexgetman? *длинный:\n•** пост\n\n«цитата»",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 59 },
+            { "type": "list_item", "offset": 77, "length": 9 },
+            { "type": "heading", "offset": 87, "length": 21, "level": 2 },
+            { "type": "quote", "offset": 254, "length": 25 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "1. 👨‍💻. v2.1? @alexgetman.) 👨‍💻 __—* йога",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "👨‍💻. v2.1? @alexgetman.) 👨‍💻 __—* йога",
+          "media": [],
+          "entities": [{ "type": "list_item", "offset": 0, "length": 42 }]
+        }
+      }
+    },
+    {
+      "source": "Claude… мир _….~~ #тег.\nAPI\n\n*🇷🇺?** #тег! 👨‍💻\n\nйога.) Привет\n\n> Code.\n(скобки). про «цитата» Telegram",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Claude… мир _….~~ #тег.\nAPI\n\n*🇷🇺?** #тег! 👨‍💻\n\nйога.) Привет\n\nCode.\n(скобки). про «цитата» Telegram",
+          "media": [],
+          "entities": [{ "type": "quote", "offset": 66, "length": 5 }]
+        }
+      }
+    },
+    {
+      "source": "## #тег… *v2.1** 𝐁𝐨𝐥𝐝",
+      "parsed": {
+        "title": "",
+        "body": { "text": "#тег… *v2.1** 𝐁𝐨𝐥𝐝", "media": [], "entities": [{ "type": "heading", "offset": 0, "length": 22, "level": 2 }] }
+      }
+    },
+    {
+      "source": "# v2.1.) https://example.com/путь?q=1 Threads.» Dr..) v2.1, это Code",
+      "parsed": {
+        "title": "v2.1.) https://example.com/путь?q=1 Threads.» Dr..) v2.1, это Code",
+        "body": { "text": "", "media": [], "entities": [] }
+      }
+    },
+    {
+      "source": "Dr.:\n• агентов! (скобки)! `ёжик\n\nПривет\n\nClaude?** пост\n- @alexgetman, Code:\n• про Telegram. **мир\n\nагентов__ 👨‍💻\n\n2*3. _мир`\n«цитата»\n\ne.g. агентов — *Telegram` ….\nйога.\nhttps://example.com/путь?q=1 — 2*3\n## 👨‍💻\n## Code это:\n• агентов.\nTelegram API\n> *👨‍💻.\nпро` — 𝐁𝐨𝐥𝐝:\n• Telegram.\n👨‍💻, т.е.! **2*3,` *😀.)~~ __йога* *Claude_\n1. мир — https://example.com/путь?q=1 ёжик Привет v2.1! мир! Code https://example.com/путь?q=1.) **пост__ — Dr..) 👍🏽.\nAPI",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Dr.:\n• агентов! (скобки)! `ёжик\n\nПривет\n\nClaude?** пост\n@alexgetman, Code:\n• про Telegram. **мир\n\nагентов__ 👨‍💻\n\n2*3. _мир`\n«цитата»\n\ne.g. агентов — *Telegram` ….\nйога.\nhttps://example.com/путь?q=1 — 2*3\n👨‍💻\nCode это:\n• агентов.\nTelegram API\n*👨‍💻.\nпро` — 𝐁𝐨𝐥𝐝:\n• Telegram.\n👨‍💻, т.е.! **2*3,` 😀.)~~ __йога *Claude_\nмир — https://example.com/путь?q=1 ёжик Привет v2.1! мир! Code https://example.com/путь?q=1.) **пост__ — Dr..) 👍🏽.\nAPI",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 56, "length": 18 },
+            { "type": "heading", "offset": 206, "length": 5, "level": 2 },
+            { "type": "heading", "offset": 212, "length": 9, "level": 2 },
+            { "type": "quote", "offset": 246, "length": 7 },
+            { "type": "italic", "offset": 304, "length": 13 },
+            { "type": "list_item", "offset": 327, "length": 116 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "## длинный агентов! длинный.» Dr.",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "длинный агентов! длинный.» Dr.",
+          "media": [],
+          "entities": [{ "type": "heading", "offset": 0, "length": 30, "level": 2 }]
+        }
+      }
+    },
+    {
+      "source": "  * snake_case (скобки) — v2.1.» «цитата».» Dr. Telegram йога __«цитата»…_ @alexgetman. v2.1. API\n\n  * Telegram? 2*3 — йога 🇷🇺.» https://example.com/путь?q=1\n\n## это",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "snake_case (скобки) — v2.1.» «цитата».» Dr. Telegram йога __«цитата»…_ @alexgetman. v2.1. API\n\nTelegram? 2*3 — йога 🇷🇺.» https://example.com/путь?q=1\n\nэто",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 93 },
+            { "type": "list_item", "offset": 95, "length": 56 },
+            { "type": "heading", "offset": 153, "length": 3, "level": 2 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "  * Claude. Claude! `snake_case.)* Telegram *😀…__ snake_case… ёжик *snake_case__ йога! #тег агентов:\n• `про**\n\n1. ёжик.\nAPI\n\n> длинный. про.\n2*3 — snake_case:\n• ёжик 𝐁𝐨𝐥𝐝\n\nт.е. v2.1:\n• https://example.com/путь?q=1:\n• 😀? _😀\n\ne.g.**",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Claude. Claude! `snake_case.) Telegram 😀…__ snake_case… ёжик *snake_case__ йога! #тег агентов:\n• `про**\n\nёжик.\nAPI\n\nдлинный. про.\n2*3 — snake_case:\n• ёжик 𝐁𝐨𝐥𝐝\n\nт.е. v2.1:\n• https://example.com/путь?q=1:\n• 😀? _😀\n\ne.g.**",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 95 },
+            { "type": "italic", "offset": 29, "length": 10 },
+            { "type": "list_item", "offset": 106, "length": 5 },
+            { "type": "quote", "offset": 117, "length": 13 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "> мир.\nПривет. Привет.» _длинный*\nAPI, Привет — про. 2*3! про:\n• т.е.\n1. йога — длинный? ёжик.) Threads. Claude https://example.com/путь?q=1 Code\n\nv2.1… про! ёжик\n1. (скобки)\n  * https://example.com/путь?q=1.) (скобки)\n\nhttps://example.com/путь?q=1 «цитата» Dr.:\n• Claude — *агентов_\n## агентов.\nмир? «цитата».) snake_case.» йога.\nагентов т.е. Telegram\n> мир Telegram.\n«цитата» — 𝐁𝐨𝐥𝐝, мир:\n• пост.» Code\n  * Code.\n𝐁𝐨𝐥𝐝",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "мир.\nПривет. Привет.» _длинный*\nAPI, Привет — про. 2*3! про:\n• т.е.\nйога — длинный? ёжик.) Threads. Claude https://example.com/путь?q=1 Code\n\nv2.1… про! ёжик\n(скобки)\nhttps://example.com/путь?q=1.) (скобки)\n\nhttps://example.com/путь?q=1 «цитата» Dr.:\n• Claude — *агентов_\nагентов.\nмир? «цитата».) snake_case.» йога.\nагентов т.е. Telegram\nмир Telegram.\n«цитата» — 𝐁𝐨𝐥𝐝, мир:\n• пост.» Code\nCode.\n𝐁𝐨𝐥𝐝",
+          "media": [],
+          "entities": [
+            { "type": "quote", "offset": 0, "length": 4 },
+            { "type": "list_item", "offset": 68, "length": 72 },
+            { "type": "list_item", "offset": 158, "length": 8 },
+            { "type": "list_item", "offset": 167, "length": 39 },
+            { "type": "heading", "offset": 272, "length": 8, "level": 2 },
+            { "type": "quote", "offset": 338, "length": 13 },
+            { "type": "list_item", "offset": 392, "length": 5 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "# `2*3.\n«цитата»~~ 🇷🇺\n\nагентов.) #тег.» e.g..\nsnake_case\n\nAPI\n\nпро\n\nэто Привет Code\n\n😀… это\n\nдлинный\n\n## Threads длинный:\n• 👍🏽 т.е. (скобки)\n\nsnake_case snake_case API. про, пост агентов",
+      "parsed": {
+        "title": "`2*3.",
+        "body": {
+          "text": "«цитата»~~ 🇷🇺\n\nагентов.) #тег.» e.g..\nsnake_case\n\nAPI\n\nпро\n\nэто Привет Code\n\n😀… это\n\nдлинный\n\nThreads длинный:\n• 👍🏽 т.е. (скобки)\n\nsnake_case snake_case API. про, пост агентов",
+          "media": [],
+          "entities": [{ "type": "heading", "offset": 97, "length": 16, "level": 2 }]
+        }
+      }
+    },
+    {
+      "source": "- e.g.",
+      "parsed": { "title": "", "body": { "text": "e.g.", "media": [], "entities": [{ "type": "list_item", "offset": 0, "length": 4 }] } }
+    },
+    {
+      "source": "👍🏽\n\n😀\n\n# https://example.com/путь?q=1 — 🇷🇺 Telegram… 👨‍💻! **йога…__ мир. и! 👨‍💻.» Code *2*3*\n\n  * 😀\n\n  * ёжик\n\nпро.» длинный.» Привет @alexgetman",
+      "parsed": {
+        "title": "https://example.com/путь?q=1 — 🇷🇺 Telegram… 👨‍💻! **йога…__ мир. и! 👨‍💻.» Code *2*3*",
+        "body": {
+          "text": "👍🏽\n\n😀\n\n\n😀\n\nёжик\n\nпро.» длинный.» Привет @alexgetman",
+          "media": [],
+          "entities": [{ "type": "list_item", "offset": 11, "length": 2 }, { "type": "list_item", "offset": 15, "length": 4 }]
+        }
+      }
+    },
+    {
+      "source": "> Dr.\n  * https://example.com/путь?q=1.» (скобки)? Dr..» https://example.com/путь?q=1, 👍🏽. ёжик:\n• «цитата»\n> `пост* т.е. йога v2.1:\n• *мир.\n@alexgetman` Dr.\nПривет. Dr. 𝐁𝐨𝐥𝐝? Привет 2*3\n1. «цитата» _йога**",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "Dr.\nhttps://example.com/путь?q=1.» (скобки)? Dr..» https://example.com/путь?q=1, 👍🏽. ёжик:\n• «цитата»\n`пост* т.е. йога v2.1:\n• *мир.\n@alexgetman` Dr.\nПривет. Dr. 𝐁𝐨𝐥𝐝? Привет 2*3\n«цитата» _йога**",
+          "media": [],
+          "entities": [
+            { "type": "quote", "offset": 0, "length": 3 },
+            { "type": "list_item", "offset": 4, "length": 88 },
+            { "type": "quote", "offset": 104, "length": 22 },
+            { "type": "list_item", "offset": 185, "length": 16 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "1. ….» Привет, агентов… *мир.* 👨‍💻.) (скобки) йога — `Code_ — длинный, Dr. про.» e.g.\n\n> v2.1 v2.1.» «цитата» пост:\n• Code 👨‍💻.» пост.\nDr., https://example.com/путь?q=1\n\n  * v2.1? _e.g.** Claude ёжик, Привет. пост! 2*3 2*3 😀 Dr. …! Telegram\n\nт.е..) 👨‍💻 — т.е. @alexgetman! 😀 (скобки)? 🇷🇺 😀",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "….» Привет, агентов… мир. 👨‍💻.) (скобки) йога — `Code_ — длинный, Dr. про.» e.g.\n\nv2.1 v2.1.» «цитата» пост:\n• Code 👨‍💻.» пост.\nDr., https://example.com/путь?q=1\n\nv2.1? _e.g.** Claude ёжик, Привет. пост! 2*3 2*3 😀 Dr. …! Telegram\n\nт.е..) 👨‍💻 — т.е. @alexgetman! 😀 (скобки)? 🇷🇺 😀",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 82 },
+            { "type": "italic", "offset": 21, "length": 4 },
+            { "type": "quote", "offset": 84, "length": 26 },
+            { "type": "list_item", "offset": 167, "length": 67 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "2*3, e.g. — длинный и.) про.» Threads:\n• агентов.) snake_case 👨‍💻\n\n  * Claude Threads? Telegram, ~~snake_case\n\nAPI.** ~~Threads?~~ 2*3 агентов? мир.» v2.1? e.g. мир\n\n- @alexgetman. 😀 агентов Dr.. 🇷🇺 это\n\n1. длинный",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "2*3, e.g. — длинный и.) про.» Threads:\n• агентов.) snake_case 👨‍💻\n\nClaude Threads? Telegram, ~~snake_case\n\nAPI.** Threads? 2*3 агентов? мир.» v2.1? e.g. мир\n\n@alexgetman. 😀 агентов Dr.. 🇷🇺 это\n\nдлинный",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 69, "length": 38 },
+            { "type": "strikethrough", "offset": 116, "length": 8 },
+            { "type": "list_item", "offset": 160, "length": 37 },
+            { "type": "list_item", "offset": 199, "length": 7 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "## ~~v2.1** 2*3.» Threads.\nпост …:\n• и — 2*3\n1. _и* — (скобки)… `Code!* #тег 😀.» ёжик e.g. snake_case",
+      "parsed": {
+        "title": "",
+        "body": {
+          "text": "~~v2.1** 2*3.» Threads.\nпост …:\n• и — 2*3\nи — (скобки)… `Code! #тег 😀.» ёжик e.g. snakecase",
+          "media": [],
+          "entities": [
+            { "type": "heading", "offset": 0, "length": 23, "level": 2 },
+            { "type": "list_item", "offset": 42, "length": 50 },
+            { "type": "italic", "offset": 42, "length": 48 },
+            { "type": "italic", "offset": 43, "length": 19 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "# 👨‍💻.\nDr. 👨‍💻! Dr.. __2*3__ 👨‍💻\n\n  * @alexgetman\n\nмир v2.1 …… Claude. `API\n\n@alexgetman.\n(скобки).)* API\n\n# и? https://example.com/путь?q=1 _🇷🇺.\nпро* пост\n\n> это — ёжик — 2*3 — (скобки) пост — Привет\n\n## @alexgetman.\nмир\n\nsnake_case\n\n- API\n\n> йога\n\n👨‍💻 Dr.… e.g., агентов https://example.com/путь?q=1 Dr. — 🇷🇺.\nClaude! Claude **👨‍💻** 😀",
+      "parsed": {
+        "title": "👨‍💻.",
+        "body": {
+          "text": "Dr. 👨‍💻! Dr.. 2*3 👨‍💻\n\n@alexgetman\n\nмир v2.1 …… Claude. `API\n\n@alexgetman.\n(скобки).)* API\n\nи? https://example.com/путь?q=1 _🇷🇺.\nпро* пост\n\nэто — ёжик — 2*3 — (скобки) пост — Привет\n\n@alexgetman.\nмир\n\nsnake_case\n\nAPI\n\nйога\n\n👨‍💻 Dr.… e.g., агентов https://example.com/путь?q=1 Dr. — 🇷🇺.\nClaude! Claude 👨‍💻 😀",
+          "media": [],
+          "entities": [
+            { "type": "bold", "offset": 16, "length": 3 },
+            { "type": "list_item", "offset": 27, "length": 11 },
+            { "type": "heading", "offset": 96, "length": 38, "level": 1 },
+            { "type": "quote", "offset": 146, "length": 41 },
+            { "type": "heading", "offset": 189, "length": 12, "level": 2 },
+            { "type": "list_item", "offset": 219, "length": 3 },
+            { "type": "quote", "offset": 224, "length": 4 },
+            { "type": "bold", "offset": 311, "length": 5 }
+          ]
+        }
+      }
+    },
+    {
+      "source": "  * API.\nClaude:\n• Threads\n> snake_case:\n• 𝐁𝐨𝐥𝐝 Привет.» *мир._ Claude. 𝐁𝐨𝐥𝐝… ёжик Привет.\n🇷🇺\n> Привет.) @alexgetman? _(скобки)_ «цитата» — «цитата» 𝐁𝐨𝐥𝐝… @alexgetman.) агентов\n1. Привет.\nагентов\n> Привет пост 𝐁𝐨𝐥𝐝 мир — 𝐁𝐨𝐥𝐝? (скобки)… 𝐁𝐨𝐥𝐝 2*3? про\n## Привет, … йога\n# Dr., **Code:\n•` @alexgetman длинный «цитата»\n🇷🇺 агентов… 𝐁𝐨𝐥𝐝.) ~~и_",
+      "parsed": {
+        "title": "Dr., **Code:",
+        "body": {
+          "text": "API.\nClaude:\n• Threads\nsnake_case:\n• 𝐁𝐨𝐥𝐝 Привет.» *мир._ Claude. 𝐁𝐨𝐥𝐝… ёжик Привет.\n🇷🇺\nПривет.) @alexgetman? (скобки) «цитата» — «цитата» 𝐁𝐨𝐥𝐝… @alexgetman.) агентов\nПривет.\nагентов\nПривет пост 𝐁𝐨𝐥𝐝 мир — 𝐁𝐨𝐥𝐝? (скобки)… 𝐁𝐨𝐥𝐝 2*3? про\nПривет, … йога\n•` @alexgetman длинный «цитата»\n🇷🇺 агентов… 𝐁𝐨𝐥𝐝.) ~~и_",
+          "media": [],
+          "entities": [
+            { "type": "list_item", "offset": 0, "length": 4 },
+            { "type": "quote", "offset": 23, "length": 11 },
+            { "type": "quote", "offset": 98, "length": 82 },
+            { "type": "italic", "offset": 120, "length": 8 },
+            { "type": "list_item", "offset": 181, "length": 7 },
+            { "type": "quote", "offset": 197, "length": 64 },
+            { "type": "heading", "offset": 262, "length": 14, "level": 2 }
+          ]
+        }
+      }
+    }
+  ]
+}
