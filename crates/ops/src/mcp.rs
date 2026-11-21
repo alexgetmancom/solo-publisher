@@ -30,12 +30,17 @@ use crate::schema::{
     Issue, ParseError, Schema, Transform, array, boolean, enumeration, number, object, record, string,
 };
 
-/// The metadata `initialize` returns and discovery advertises (`mcp-protocol.ts`).
+/// `MCP_SERVER_METADATA` (`mcp-protocol.ts`): what `initialize` returns and
+/// discovery advertises must agree.
+pub const MCP_PROTOCOL_VERSION: &str = "2024-11-05";
+pub const MCP_SERVER_NAME: &str = "solo-publisher-studio-mcp";
+pub const MCP_SERVER_VERSION: &str = "2.1.0";
+
 pub fn server_metadata() -> Value {
     json!({
-        "protocolVersion": "2024-11-05",
+        "protocolVersion": MCP_PROTOCOL_VERSION,
         "capabilities": {"tools": {}},
-        "serverInfo": {"name": "solo-publisher-studio-mcp", "version": "2.1.0"},
+        "serverInfo": {"name": MCP_SERVER_NAME, "version": MCP_SERVER_VERSION},
     })
 }
 

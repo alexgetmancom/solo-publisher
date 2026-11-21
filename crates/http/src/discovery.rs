@@ -6,16 +6,12 @@ use axum::Router;
 use axum::extract::State;
 use axum::response::Response;
 use axum::routing::get;
+use ops::mcp::{MCP_PROTOCOL_VERSION, MCP_SERVER_NAME, MCP_SERVER_VERSION};
 use serde_json::{Value, json};
 use url::Url;
 
 use crate::local::Local;
 use crate::response::{HandlerResult, json_response, on_local, set};
-
-/// `MCP_SERVER_METADATA` (`interfaces/mcp-protocol.ts`).
-pub(crate) const MCP_PROTOCOL_VERSION: &str = "2024-11-05";
-pub(crate) const MCP_SERVER_NAME: &str = "solo-publisher-studio-mcp";
-pub(crate) const MCP_SERVER_VERSION: &str = "2.1.0";
 
 pub(crate) fn routes() -> Router<Local> {
     Router::new()
