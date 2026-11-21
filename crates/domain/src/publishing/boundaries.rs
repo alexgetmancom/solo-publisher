@@ -6,9 +6,11 @@
 use std::future::Future;
 
 use db::rusqlite::Connection;
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::Result;
+use crate::application::ports::StoryPublishMode;
 
 /// Process randomness for retry jitter (`Math.random()`): a value in `[0, 1)`.
 pub trait Jitter {
@@ -37,11 +39,28 @@ pub trait WorkerBell {
     fn ring_publish_after(&self, delay_ms: u64);
 }
 
+/// What the breaker holds for one target's credential (`AuthCircuitState`).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthCircuitState {
+    pub target: String,
+    /// Publishing to this target is paused until the breaker closes.
+    pub blocked: bool,
+    pub blocked_until: Option<String>,
+    pub auth_failure_streak: i64,
+    pub last_auth_failure_at: Option<String>,
+    pub last_ping_at: Option<String>,
+    pub token_expires_at: Option<String>,
+}
+
 /// The credential circuit breaker (`observability/auth-circuit.ts`), told how
-/// each settled attempt went. It writes its own table on the connection given.
+/// each settled attempt went and asked what it holds. It owns its table and
+/// works on the connection given.
 pub trait AuthCircuit {
     fn record_failure(&self, sqlite: &Connection, target: &str) -> Result<()>;
     fn record_success(&self, sqlite: &Connection, target: &str) -> Result<()>;
+    /// `authCircuitStates`: every target the breaker has a record for.
+    fn states(&self, sqlite: &Connection) -> Result<Vec<AuthCircuitState>>;
 }
 
 /// Runtime usage telemetry (`observability/usage.ts`, `trackUsageSync`).
@@ -56,15 +75,27 @@ pub struct StoryCardMedia {
     pub en: content::message::MediaItem,
 }
 
+/// One generated Story card as a caller reads it: only the fields anyone reads.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StoryCardState {
+    pub locale: String,
+    pub status: String,
+    pub local_path: Option<String>,
+}
+
 /// Generated Story cards (`story-cards/store.ts`), on the connection given so
 /// a caller's transaction covers them.
 pub trait StoryCards {
     /// `queueDraftStoryCards`.
     fn queue(&self, sqlite: &Connection, draft_id: i64) -> Result<()>;
+    /// `storyCardsForDraft`: every card the draft has.
+    fn for_draft(&self, sqlite: &Connection, draft_id: i64) -> Result<Vec<StoryCardState>>;
     /// `readyStoryCardMedia`: both cards, only when both are rendered.
     fn ready_media(&self, sqlite: &Connection, draft_id: i64) -> Result<Option<StoryCardMedia>>;
-    /// Whether any card of the draft failed to render (`storyCardsForDraft`).
-    fn any_failed(&self, sqlite: &Connection, draft_id: i64) -> Result<bool>;
+    /// `setStoryPublishMode`: the operator's answer to where a text-only
+    /// post's Story goes, written on the draft.
+    fn set_publish_mode(&self, sqlite: &Connection, draft_id: i64, mode: StoryPublishMode) -> Result<()>;
     /// `discardDraftStoryCards`: the rows and their files.
     fn discard(&self, sqlite: &Connection, draft_id: i64) -> Result<()>;
 }

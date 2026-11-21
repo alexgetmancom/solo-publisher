@@ -15,10 +15,10 @@ use std::task::{Context, Poll, Waker};
 
 use db::rusqlite::{Connection, OptionalExtension};
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::DraftPatch;
+use domain::application::ports::{DraftPatch, StoryPublishMode};
 use domain::publishing::boundaries::{
-    AuthCircuit, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia, StoryCards,
-    UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
+    AuthCircuit, AuthCircuitState, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia,
+    StoryCardState, StoryCards, UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
 };
 use domain::publishing::delivery_payload::{
     deferred_delivery_payload, has_resume_state, new_delivery_payload, resumed_delivery_payload,
@@ -90,6 +90,9 @@ impl AuthCircuit for Recorder {
         self.push(format!("auth success {target}"));
         Ok(())
     }
+    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
+        Ok(Vec::new())
+    }
 }
 
 impl UsageMeter for Recorder {
@@ -106,8 +109,11 @@ impl StoryCards for Recorder {
     fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
         Ok(None)
     }
-    fn any_failed(&self, _: &Connection, _: i64) -> domain::Result<bool> {
-        Ok(false)
+    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
+        Ok(Vec::new())
+    }
+    fn set_publish_mode(&self, _: &Connection, _: i64, _: StoryPublishMode) -> domain::Result<()> {
+        panic!("no scenario sets a Story publish mode")
     }
     fn discard(&self, _: &Connection, draft_id: i64) -> domain::Result<()> {
         self.push(format!("story cards discarded {draft_id}"));

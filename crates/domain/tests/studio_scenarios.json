@@ -1,0 +1,2039 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "config": {
+    "STUDIO_ACTOR_IDS": "42,43",
+    "CONTROLLER_ADMIN_IDS": "42",
+    "DEEPSEEK_API_KEY": "test-key",
+    "YOUTUBE_RU_CLIENT_ID": "yt-id",
+    "YOUTUBE_RU_CLIENT_SECRET": "yt-secret",
+    "YOUTUBE_RU_REFRESH_TOKEN": "yt-refresh",
+    "INSTAGRAM_RU_ACCESS_TOKEN": "ig-token",
+    "INSTAGRAM_RU_USER_ID": "ig-user"
+  },
+  "zernioApiKey": "zzzzzzzzzzzzzzzz",
+  "zernioAccounts": [
+    {
+      "_id": "account-1",
+      "platform": "Instagram",
+      "username": "alex",
+      "followersCount": 1200
+    },
+    {
+      "_id": "account-2",
+      "platform": " Threads ",
+      "displayName": "Alex T"
+    },
+    {
+      "_id": "account-3",
+      "platform": "TikTok"
+    },
+    {
+      "platform": "instagram",
+      "username": "no-id"
+    }
+  ],
+  "ignoredTables": ["runtime_usage"],
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "UPDATE studio_profile SET timezone = 'Europe/Moscow', timezone_label = 'MSK', default_targets_json = '[\"telegram\",\"threads_ru\",\"threads_en\",\"x\"]', updated_at = '2026-03-01T10:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_ru', 'threads_ru', 'ru', 'native', NULL, 'threads_ru', 'threads_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_en', 'threads_en', 'en', 'native', NULL, 'threads_en', 'threads_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', NULL, 'x', 'x', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('discord', 'discord', 'en', 'native', NULL, 'discord', 'discord', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube_ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram_ru', 'instagram', 'ru', 'native', NULL, NULL, 'instagram_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+  ],
+  "beforeDump": [
+    "UPDATE post_locales SET site_updated_at = '1970-01-01T00:00:00.000Z' WHERE site_updated_at >= strftime('%Y-%m-%d', 'now')"
+  ],
+  "scenarios": [
+    {
+      "name": "settings: profile, locale, zone, notifications, backup, signature, default targets",
+      "steps": [
+        {
+          "call": "settings.studioProfile",
+          "args": []
+        },
+        {
+          "call": "settings.setStudioProfile",
+          "args": [
+            {
+              "timezone": " Europe/Berlin ",
+              "timezoneLabel": " CET ",
+              "siteEnabled": true,
+              "prepareLeadMinutes": 20,
+              "retentionHours": 48,
+              "name": {
+                "en": "Alex",
+                "ru": "Алекс"
+              },
+              "siteTimezone": {
+                "en": "America/New_York",
+                "ru": ""
+              },
+              "profiles": {
+                "en": [
+                  {
+                    "label": "X",
+                    "url": "https://x.com/a"
+                  }
+                ],
+                "ru": []
+              }
+            }
+          ]
+        },
+        {
+          "call": "settings.setStudioProfile",
+          "args": [
+            {
+              "timezone": "Mars/Base"
+            }
+          ]
+        },
+        {
+          "call": "settings.setStudioProfile",
+          "args": [
+            {
+              "siteTimezone": {
+                "en": "Nope/Zone",
+                "ru": ""
+              }
+            }
+          ]
+        },
+        {
+          "call": "settings.setStudioProfile",
+          "args": [
+            {
+              "prepareLeadMinutes": 1.5
+            }
+          ]
+        },
+        {
+          "call": "settings.setStudioProfile",
+          "args": [
+            {
+              "retentionHours": 10
+            }
+          ]
+        },
+        {
+          "call": "config.view",
+          "args": []
+        },
+        {
+          "call": "settings.locale",
+          "args": [42]
+        },
+        {
+          "call": "settings.setLocale",
+          "args": [42, "ru"]
+        },
+        {
+          "call": "settings.locale",
+          "args": [42]
+        },
+        {
+          "call": "settings.timezone",
+          "args": [42, "Europe/Moscow"]
+        },
+        {
+          "call": "settings.setTimezone",
+          "args": [42, " America/New_York "]
+        },
+        {
+          "call": "settings.setTimezone",
+          "args": [42, "Bad/Zone"]
+        },
+        {
+          "call": "settings.timezone",
+          "args": [42, "Europe/Moscow"]
+        },
+        {
+          "call": "settings.timeConfig",
+          "args": [42]
+        },
+        {
+          "call": "settings.timeConfig",
+          "args": [43]
+        },
+        {
+          "call": "settings.notifications",
+          "args": [42]
+        },
+        {
+          "call": "settings.setNotifications",
+          "args": [
+            42,
+            {
+              "reminderMinutes": 0
+            }
+          ]
+        },
+        {
+          "call": "settings.setNotifications",
+          "args": [
+            42,
+            {
+              "videoRemindersEnabled": false,
+              "reminderMinutes": 10
+            }
+          ]
+        },
+        {
+          "call": "settings.notifications",
+          "args": [42]
+        },
+        {
+          "call": "settings.backup",
+          "args": []
+        },
+        {
+          "call": "settings.setBackup",
+          "args": [
+            {
+              "enabled": false
+            }
+          ]
+        },
+        {
+          "call": "settings.backup",
+          "args": []
+        },
+        {
+          "call": "settings.youtubeSignature",
+          "args": []
+        },
+        {
+          "call": "settings.setYoutubeSignature",
+          "args": ["Play: https:\\\\example.com\\game"]
+        },
+        {
+          "call": "settings.youtubeSignature",
+          "args": []
+        },
+        {
+          "call": "settings.clearYoutubeSignature",
+          "args": []
+        },
+        {
+          "call": "settings.youtubeSignature",
+          "args": []
+        },
+        {
+          "call": "settings.defaultTargets",
+          "args": []
+        },
+        {
+          "call": "settings.toggleDefaultTarget",
+          "args": ["discord"]
+        },
+        {
+          "call": "settings.toggleDefaultTarget",
+          "args": ["telegram"]
+        },
+        {
+          "call": "settings.toggleDefaultTarget",
+          "args": ["x_article"]
+        },
+        {
+          "call": "settings.toggleDefaultTarget",
+          "args": ["nope"]
+        },
+        {
+          "call": "settings.defaultTargets",
+          "args": []
+        },
+        {
+          "call": "settings.studioProfile",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "posts: create, read, edit, media, targets and modes",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Привет мир\nвторая строка",
+              "media": [],
+              "entities": [
+                {
+                  "type": "bold",
+                  "offset": 0,
+                  "length": 6
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Hi there",
+              "media": [],
+              "entities": [],
+              "textEn": "Hi there"
+            },
+            {
+              "targets": ["telegram", "x", "x"]
+            }
+          ]
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Сайт",
+              "media": [],
+              "entities": []
+            },
+            {
+              "targets": ["site_ru"]
+            }
+          ]
+        },
+        {
+          "call": "posts.get",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.get",
+          "args": [7, 1]
+        },
+        {
+          "call": "posts.get",
+          "args": [42, 99]
+        },
+        {
+          "call": "posts.list",
+          "args": [43]
+        },
+        {
+          "call": "posts.list",
+          "args": [7]
+        },
+        {
+          "call": "posts.list",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.validate",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.preview",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.preview",
+          "args": [42, 2]
+        },
+        {
+          "call": "posts.progress",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.history",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.hasLocaleTargets",
+          "args": [42, 1, "en"]
+        },
+        {
+          "call": "posts.hasLocaleTargets",
+          "args": [42, 2, "ru"]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "Новый текст поста",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "en",
+              "text": "English copy",
+              "entities": [
+                {
+                  "type": "italic",
+                  "offset": 0,
+                  "length": 7
+                }
+              ],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "игнор",
+              "entities": [],
+              "media": [
+                {
+                  "type": "photo",
+                  "file_id": "F1",
+                  "file_size": 100,
+                  "asset_id": 1
+                }
+              ],
+              "replaceMediaOnly": true
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "",
+              "entities": [],
+              "media": [],
+              "clearMedia": true
+            }
+          ]
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (1, 42, 'photo', 'image/jpeg', 'f1', '/m/a.jpg', 100, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'ops_upload', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (2, 7, 'photo', 'image/jpeg', 'f2', '/m/b.jpg', 100, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'ops_upload', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "posts.mediaAssets",
+          "args": [42]
+        },
+        {
+          "call": "posts.mediaAssets",
+          "args": [7, 1]
+        },
+        {
+          "call": "posts.attachMediaAssets",
+          "args": [42, 1, "ru", [1], false]
+        },
+        {
+          "call": "posts.attachMediaAssets",
+          "args": [42, 1, "ru", [2], false]
+        },
+        {
+          "call": "posts.attachMediaAssets",
+          "args": [42, 1, "en", [1, 1], true]
+        },
+        {
+          "call": "posts.removeMedia",
+          "args": [42, 1, "ru", [1]]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "",
+              "entities": [],
+              "media": [
+                {
+                  "type": "photo",
+                  "file_id": "F2",
+                  "asset_id": 5
+                }
+              ],
+              "replaceMediaOnly": true
+            }
+          ]
+        },
+        {
+          "call": "posts.removeMedia",
+          "args": [42, 1, "ru", [5]]
+        },
+        {
+          "call": "posts.toggleTarget",
+          "args": [42, 1, "discord"]
+        },
+        {
+          "call": "posts.toggleTarget",
+          "args": [42, 1, "site_ru"]
+        },
+        {
+          "call": "posts.toggleTarget",
+          "args": [42, 1, "nope"]
+        },
+        {
+          "call": "posts.removeTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.removeTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.setStoryPublishMode",
+          "args": [42, 1, "all"]
+        },
+        {
+          "call": "posts.replaceEntityCandidates",
+          "args": [
+            42,
+            1,
+            [
+              {
+                "kind": "company",
+                "slug": "acme",
+                "titleRu": "Акме",
+                "titleEn": "Acme"
+              },
+              {
+                "kind": "topic",
+                "slug": "games",
+                "titleRu": "Игры",
+                "titleEn": null
+              }
+            ]
+          ]
+        },
+        {
+          "call": "posts.acceptEntityCandidates",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.deliveryPlan",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.resendableTargets",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.retryTarget",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.skipTarget",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.resendTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.pendingTargets",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cancel",
+          "args": [7, 1]
+        },
+        {
+          "call": "posts.cancel",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "После отмены",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T12:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "posts.history",
+          "args": [42, 1, 3]
+        }
+      ]
+    },
+    {
+      "name": "posts: a Studio without English refuses English copy",
+      "steps": [
+        {
+          "sql": "DELETE FROM channel_connections WHERE locale = 'en'"
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Только русский",
+              "media": [],
+              "entities": [],
+              "textEn": "Only English"
+            }
+          ]
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Только русский",
+              "media": [],
+              "entities": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "en",
+              "text": "EN",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "Снова",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cycleMode",
+          "args": [42, 1]
+        }
+      ]
+    },
+    {
+      "name": "posts: threads",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении. Это длинный пост о большом обновлении.",
+              "media": [],
+              "entities": [
+                {
+                  "type": "bold",
+                  "offset": 0,
+                  "length": 3
+                },
+                {
+                  "type": "italic",
+                  "offset": 700,
+                  "length": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "call": "posts.makeThread",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.appendThreadPart",
+          "args": [
+            42,
+            1,
+            {
+              "textRu": "Ещё одна часть",
+              "entitiesRu": [],
+              "media": [
+                {
+                  "type": "photo",
+                  "file_id": "P"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "call": "posts.appendThreadPart",
+          "args": [
+            42,
+            1,
+            {
+              "textRu": "   ",
+              "entitiesRu": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.editThreadPart",
+          "args": [
+            42,
+            1,
+            2,
+            {
+              "textRu": "Исправлено",
+              "entitiesRu": [
+                {
+                  "type": "bold",
+                  "offset": 0,
+                  "length": 4
+                }
+              ],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.editThreadPart",
+          "args": [
+            42,
+            1,
+            9,
+            {
+              "textRu": "Нет",
+              "entitiesRu": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.editThreadPart",
+          "args": [
+            42,
+            1,
+            2,
+            {
+              "textRu": "  ",
+              "entitiesRu": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.editThreadPartEnglish",
+          "args": [42, 1, 2, " Fixed "]
+        },
+        {
+          "call": "posts.editThreadPartEnglish",
+          "args": [42, 1, 2, " "]
+        },
+        {
+          "call": "posts.editThreadPartEnglish",
+          "args": [42, 1, 9, "Nope"]
+        },
+        {
+          "call": "posts.removeThreadPart",
+          "args": [42, 1, 3]
+        },
+        {
+          "call": "posts.removeThreadPart",
+          "args": [42, 1, 9]
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Коротко",
+              "media": [],
+              "entities": []
+            }
+          ]
+        },
+        {
+          "call": "posts.makeThread",
+          "args": [42, 2]
+        },
+        {
+          "call": "posts.get",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.deliveryPlan",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.preview",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.validate",
+          "args": [42, 1]
+        }
+      ]
+    },
+    {
+      "name": "posts: schedule, reminders, scheduled edits, cancel the rest",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Запланировано\nдальше",
+              "media": [],
+              "entities": [],
+              "textEn": "Scheduled"
+            },
+            {
+              "targets": ["telegram", "threads_en"]
+            }
+          ]
+        },
+        {
+          "call": "posts.slotTime",
+          "args": [42, "18:30"]
+        },
+        {
+          "call": "posts.slotTime",
+          "args": [42, "09:00"]
+        },
+        {
+          "call": "posts.slotTime",
+          "args": [42, "25:00"]
+        },
+        {
+          "call": "posts.manualSchedule",
+          "args": [42, 1, "both", "15:00"]
+        },
+        {
+          "call": "posts.manualSchedule",
+          "args": [42, 1, "ru", "bad"]
+        },
+        {
+          "call": "posts.manualSchedule",
+          "args": [7, 1, "ru", "15:00"]
+        },
+        {
+          "call": "posts.scheduleAt",
+          "args": [42, 1, "en", "2026-03-01T15:00:00.000Z"]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T09:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-05-01T09:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T12:00:00.000Z",
+              "enAt": "2026-03-01T14:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "posts.get",
+          "args": [42, 1]
+        },
+        {
+          "call": "queue.snapshot",
+          "args": [42]
+        },
+        {
+          "call": "queue.headline",
+          "args": [42]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "Изменено",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.toggleTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.preview",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "This text is definitely written only in English.",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "en",
+              "text": "Это русский текст под английской площадкой.",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.get",
+          "args": [42, 1]
+        },
+        {
+          "sql": "UPDATE drafts SET updated_at = '2026-03-01T10:00:00.001Z' WHERE id = 1"
+        },
+        {
+          "clock": "2026-03-01T11:59:00.000Z"
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "ru",
+              "text": "Поздно",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.edit",
+          "args": [
+            42,
+            1,
+            {
+              "locale": "en",
+              "text": "Still fine",
+              "entities": [],
+              "media": []
+            }
+          ]
+        },
+        {
+          "call": "posts.toggleTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.replanAfterStoryCards",
+          "args": [1]
+        },
+        {
+          "call": "posts.replanAfterStoryCardFailure",
+          "args": [1]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T12:00:00.000Z",
+              "enAt": "2026-03-01T16:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "settings.setNotifications",
+          "args": [
+            42,
+            {
+              "postRemindersEnabled": false
+            }
+          ]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T13:00:00.000Z",
+              "immediateLocale": "en"
+            }
+          ]
+        },
+        {
+          "call": "posts.pendingTargets",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.cancelRemaining",
+          "args": [7, 1]
+        },
+        {
+          "call": "posts.cancelRemaining",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.progress",
+          "args": [42, 1]
+        },
+        {
+          "call": "queue.snapshot",
+          "args": [42]
+        }
+      ]
+    },
+    {
+      "name": "posts: publish now, retry, skip, resend, article",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Сейчас",
+              "media": [],
+              "entities": [],
+              "textEn": "Now"
+            },
+            {
+              "targets": ["telegram", "threads_en"]
+            }
+          ]
+        },
+        {
+          "call": "posts.publish",
+          "args": [7, 1]
+        },
+        {
+          "call": "posts.publish",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.publish",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.progress",
+          "args": [42, 1]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'failed', last_error = 'boom', attempt_count = 1"
+        },
+        {
+          "call": "posts.retryTarget",
+          "args": [42, 1, "telegram"]
+        },
+        {
+          "call": "posts.retryTarget",
+          "args": [42, 1, "telegram"]
+        },
+        {
+          "call": "posts.skipTarget",
+          "args": [42, 1, "telegram"]
+        },
+        {
+          "call": "posts.skipTarget",
+          "args": [42, 1, "threads_en"]
+        },
+        {
+          "call": "posts.skipTarget",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.resendableTargets",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.resendTarget",
+          "args": [42, 1, "site_ru"]
+        },
+        {
+          "call": "posts.resendTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.resendTarget",
+          "args": [42, 1, "x"]
+        },
+        {
+          "call": "posts.resendTarget",
+          "args": [42, 1, "threads_ru"]
+        },
+        {
+          "call": "posts.progress",
+          "args": [42, 1]
+        },
+        {
+          "call": "queue.snapshot",
+          "args": [42]
+        },
+        {
+          "call": "queue.headline",
+          "args": [42]
+        },
+        {
+          "call": "posts.history",
+          "args": [42, 1]
+        },
+        {
+          "call": "posts.publishArticle",
+          "args": [
+            42,
+            {
+              "locale": "en",
+              "targets": ["x_article"],
+              "markdown": "# Big title\n\nBody text."
+            }
+          ]
+        },
+        {
+          "call": "posts.publishArticle",
+          "args": [
+            42,
+            {
+              "locale": "ru",
+              "targets": ["x_article"],
+              "markdown": "# Заголовок"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "queue: overdue, gaps, drafts and attention",
+      "steps": [
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Первый",
+              "media": [],
+              "entities": [],
+              "textEn": "First"
+            },
+            {
+              "targets": ["telegram", "threads_en"]
+            }
+          ]
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            43,
+            {
+              "text": "Второй пост с очень длинной первой строкой для обрезки   и пробелами",
+              "media": [],
+              "entities": [],
+              "textEn": "Second"
+            }
+          ]
+        },
+        {
+          "call": "posts.create",
+          "args": [
+            42,
+            {
+              "text": "Третий",
+              "media": [],
+              "entities": [],
+              "textEn": "Third"
+            },
+            {
+              "targets": ["telegram"]
+            }
+          ]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "ruAt": "2026-03-01T12:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "posts.schedule",
+          "args": [
+            42,
+            2,
+            {
+              "ruAt": "2026-03-01T11:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "posts.publish",
+          "args": [42, 3]
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'failed', last_error = 'boom' WHERE publication_key = 'post:3'"
+        },
+        {
+          "clock": "2026-03-01T13:00:00.000Z"
+        },
+        {
+          "call": "queue.snapshot",
+          "args": [42]
+        },
+        {
+          "call": "queue.snapshot",
+          "args": [42, 1]
+        },
+        {
+          "call": "queue.headline",
+          "args": [43]
+        },
+        {
+          "call": "queue.headline",
+          "args": [7]
+        }
+      ]
+    },
+    {
+      "name": "videos: draft, wizard metadata, schedule, publish, cancel",
+      "steps": [
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (1, 42, 'video', 'video/mp4', 'f1', '{MEDIA}/clip.mp4', 100, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'ops_upload', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (2, 42, 'photo', 'image/jpeg', 'f2', '/m/p.jpg', 100, 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'ops_upload', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (id, actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (3, 7, 'video', 'video/mp4', 'f3', '{MEDIA}/clip.mp4', 100, 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'ops_upload', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "videos.create",
+          "args": [42, 2]
+        },
+        {
+          "call": "videos.create",
+          "args": [42, 3]
+        },
+        {
+          "call": "videos.create",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.create",
+          "args": [42, 1, "en"]
+        },
+        {
+          "call": "videos.get",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.get",
+          "args": [7, 1]
+        },
+        {
+          "call": "videos.get",
+          "args": [42, 99]
+        },
+        {
+          "call": "videos.assetTechnicalCheck",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.assetTechnicalCheck",
+          "args": [42, 2]
+        },
+        {
+          "call": "videos.publish",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.replaceTargets",
+          "args": [42, 1, ["youtube_shorts", "instagram_reels"]]
+        },
+        {
+          "call": "videos.toggleTarget",
+          "args": [42, 1, "instagram_reels"]
+        },
+        {
+          "call": "videos.toggleTarget",
+          "args": [42, 1, "instagram_reels"]
+        },
+        {
+          "call": "videos.completeWizardTarget",
+          "args": [
+            42,
+            1,
+            "youtube_shorts",
+            {
+              "youtube_title": "My short",
+              "youtube_description": "",
+              "youtube_tags": ["a", "b"],
+              "youtube_game_url": "https://game.example"
+            },
+            ["youtube_shorts", "instagram_reels"]
+          ]
+        },
+        {
+          "call": "videos.completeWizardTarget",
+          "args": [
+            42,
+            1,
+            "instagram_reels",
+            {
+              "instagram_caption": "Cap"
+            },
+            ["youtube_shorts", "instagram_reels"]
+          ]
+        },
+        {
+          "call": "videos.completeWizardTarget",
+          "args": [42, 2, "instagram_reels", {}, ["instagram_reels"]]
+        },
+        {
+          "call": "videos.editMetadataField",
+          "args": [42, 1, "youtube_title", "New title"]
+        },
+        {
+          "call": "videos.editMetadataField",
+          "args": [42, 1, "youtube_title", ""]
+        },
+        {
+          "call": "videos.editMetadataField",
+          "args": [42, 1, "youtube_game_url", ""]
+        },
+        {
+          "call": "videos.editMetadataField",
+          "args": [42, 1, "youtube_tags", ["x", "y"]]
+        },
+        {
+          "call": "videos.editMetadataField",
+          "args": [42, 1, "youtube_description", "Desc"]
+        },
+        {
+          "call": "videos.editMetadataField",
+          "args": [42, 1, "instagram_caption", "New cap"]
+        },
+        {
+          "call": "videos.updateMetadata",
+          "args": [
+            42,
+            1,
+            "instagram_reels",
+            {
+              "caption": "Final"
+            }
+          ]
+        },
+        {
+          "call": "videos.updateMetadata",
+          "args": [
+            42,
+            1,
+            "youtube_shorts",
+            {
+              "title": "<b>",
+              "description": "",
+              "tags": []
+            }
+          ]
+        },
+        {
+          "call": "videos.rename",
+          "args": [42, 1, "Renamed"]
+        },
+        {
+          "call": "videos.setScript",
+          "args": [42, 1, "Capcom (Кáпком) is back.\n\nSecond part"]
+        },
+        {
+          "call": "videos.sourceReplaceable",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.metadataEditableTargets",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.replaceSource",
+          "args": [42, 1, 1]
+        },
+        {
+          "call": "videos.replaceSource",
+          "args": [42, 1, 2]
+        },
+        {
+          "call": "videos.validate",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.technicalCheck",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.manualSchedule",
+          "args": [42, 1, "12:00"]
+        },
+        {
+          "call": "videos.manualSchedule",
+          "args": [42, 1, "1.1 12:00"]
+        },
+        {
+          "call": "videos.slotTime",
+          "args": [42, "18:00"]
+        },
+        {
+          "call": "videos.immediateTime",
+          "args": []
+        },
+        {
+          "call": "videos.isImmediate",
+          "args": ["2026-03-01T10:00:30.000Z"]
+        },
+        {
+          "call": "videos.isImmediate",
+          "args": ["2026-03-01T10:05:00.000Z"]
+        },
+        {
+          "call": "videos.schedule",
+          "args": [
+            42,
+            1,
+            {
+              "youtube_shorts": "2026-03-01T12:00:00.000Z",
+              "instagram_reels": "2026-03-01T12:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "videos.status",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.preview",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.history",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.list",
+          "args": [42]
+        },
+        {
+          "call": "videos.list",
+          "args": [7]
+        },
+        {
+          "call": "queue.snapshot",
+          "args": [42]
+        },
+        {
+          "call": "videos.removeTarget",
+          "args": [42, 1, "instagram_reels"]
+        },
+        {
+          "call": "videos.replaceTargets",
+          "args": [42, 2, ["youtube_shorts"]]
+        },
+        {
+          "call": "videos.publish",
+          "args": [42, 2]
+        },
+        {
+          "call": "videos.settleTarget",
+          "args": [42, 1, "youtube_shorts"]
+        },
+        {
+          "call": "videos.retryTarget",
+          "args": [42, 1, "youtube_shorts"]
+        },
+        {
+          "call": "videos.cancel",
+          "args": [7, 1]
+        },
+        {
+          "call": "videos.cancel",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.sourceReplaceable",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.history",
+          "args": [42, 1, 2]
+        },
+        {
+          "call": "videos.create",
+          "args": [42, 1]
+        },
+        {
+          "call": "videos.replaceTargets",
+          "args": [42, 3, ["youtube_shorts"]]
+        },
+        {
+          "call": "videos.publish",
+          "args": [42, 3]
+        },
+        {
+          "call": "videos.status",
+          "args": [42, 3]
+        },
+        {
+          "call": "queue.headline",
+          "args": [42]
+        }
+      ]
+    },
+    {
+      "name": "video workflow steps",
+      "steps": [
+        {
+          "call": "fsm.firstMetadataStep",
+          "args": [["youtube_shorts", "instagram_reels"]]
+        },
+        {
+          "call": "fsm.firstMetadataStep",
+          "args": [["instagram_reels"]]
+        },
+        {
+          "call": "fsm.isWizardStep",
+          "args": ["youtube_tags"]
+        },
+        {
+          "call": "fsm.isWizardStep",
+          "args": ["schedule_common"]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "asset",
+            5,
+            {
+              "selectedTargets": ["youtube_shorts"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "script",
+            "Script text",
+            {
+              "selectedTargets": ["instagram_reels"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["label", "Name", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["youtube_title", "My short", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["youtube_title", "Bad <title>", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "youtube_description",
+            "-",
+            {
+              "youtube_title": "My short"
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["youtube_game_url", "https:\\\\game.example\\x", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "youtube_tags",
+            "game, devlog, ,",
+            {
+              "selectedTargets": ["youtube_shorts"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "youtube_tags",
+            "-",
+            {
+              "selectedTargets": ["youtube_shorts", "instagram_reels"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["youtube_tags", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["instagram_caption", "-", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["schedule_choice", "common", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["schedule_choice", "target", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "schedule_common",
+            "2026-07-15T10:00:00.000Z",
+            {
+              "selectedTargets": ["youtube_shorts", "instagram_reels"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "schedule_target",
+            "2026-07-15T10:00:00.000Z",
+            {
+              "selectedTargets": ["youtube_shorts", "instagram_reels"],
+              "target": "youtube_shorts"
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "schedule_target",
+            "2026-07-15T11:00:00.000Z",
+            {
+              "selectedTargets": ["youtube_shorts", "instagram_reels"],
+              "target": "instagram_reels",
+              "schedule": {
+                "youtube_shorts": "2026-07-15T10:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": [
+            "schedule_target",
+            "2026-07-15T11:00:00.000Z",
+            {
+              "selectedTargets": ["youtube_shorts"],
+              "target": "instagram_reels"
+            }
+          ]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["schedule_confirm", "x", {}]
+        },
+        {
+          "call": "fsm.accept",
+          "args": ["missing", "x", {}]
+        },
+        {
+          "call": "fsm.back",
+          "args": [
+            "youtube_description",
+            {
+              "selectedTargets": ["youtube_shorts"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.back",
+          "args": [
+            "youtube_title",
+            {
+              "selectedTargets": ["youtube_shorts"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.back",
+          "args": [
+            "instagram_caption",
+            {
+              "selectedTargets": ["youtube_shorts", "instagram_reels"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.back",
+          "args": [
+            "instagram_caption",
+            {
+              "selectedTargets": ["instagram_reels"]
+            }
+          ]
+        },
+        {
+          "call": "fsm.advanceMetadata",
+          "args": [
+            "youtube_game_url",
+            "-",
+            {
+              "a": 1
+            }
+          ]
+        },
+        {
+          "call": "fsm.scheduleDates",
+          "args": [
+            {
+              "youtube_shorts": "2026-07-15T10:00:00.000Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "channels: connect, report, disable, Zernio, links, capabilities",
+      "steps": [
+        {
+          "call": "channels.list",
+          "args": [true]
+        },
+        {
+          "call": "capabilities.report",
+          "args": []
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "instagram",
+              "locale": "en",
+              "provider": "native",
+              "providerAccountId": "account-1"
+            }
+          ]
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "mastodon",
+              "locale": "en",
+              "provider": "native"
+            }
+          ]
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "tiktok",
+              "locale": "ru",
+              "provider": "zernio",
+              "label": "TT"
+            },
+            "ops"
+          ]
+        },
+        {
+          "call": "channels.connectTarget",
+          "args": ["telegram_stories"]
+        },
+        {
+          "call": "channels.connectTarget",
+          "args": ["instagram_stories_ru", "zernio", "acc-9", "Stories", "cli"]
+        },
+        {
+          "call": "channels.connectTarget",
+          "args": ["nope"]
+        },
+        {
+          "call": "channels.report",
+          "args": [true]
+        },
+        {
+          "call": "channels.disable",
+          "args": ["telegram_stories"]
+        },
+        {
+          "call": "channels.disable",
+          "args": ["nope"]
+        },
+        {
+          "call": "channels.report",
+          "args": [true]
+        },
+        {
+          "call": "channels.report",
+          "args": [false]
+        },
+        {
+          "call": "channels.list",
+          "args": [false]
+        },
+        {
+          "call": "channels.nativeConnectUrl",
+          "args": ["threads", "ru"]
+        },
+        {
+          "call": "channels.nativeConnectPath",
+          "args": ["instagram", "en"]
+        },
+        {
+          "call": "channels.xConnectUrl",
+          "args": []
+        },
+        {
+          "call": "channels.xConnectPath",
+          "args": []
+        },
+        {
+          "call": "channels.startConnect",
+          "args": ["x", "ru"]
+        },
+        {
+          "call": "channels.discoverZernioAccounts",
+          "args": []
+        },
+        {
+          "call": "channels.discoverZernioConnections",
+          "args": ["ru"]
+        },
+        {
+          "call": "channels.discoverZernioConnections",
+          "args": ["en"]
+        },
+        {
+          "call": "channels.connectZernio",
+          "args": ["account-1", "ru", "instagram_stories"]
+        },
+        {
+          "call": "channels.connectZernio",
+          "args": ["account-2", "en", "threads"]
+        },
+        {
+          "call": "channels.connectZernio",
+          "args": ["missing", "ru", "threads"]
+        },
+        {
+          "call": "channels.connectZernio",
+          "args": ["account-2", "ru", "instagram_reels"]
+        },
+        {
+          "call": "channels.list",
+          "args": [true]
+        },
+        {
+          "call": "capabilities.report",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "media: import bytes and files, deduplicated by content",
+      "steps": [
+        {
+          "file": "{MEDIA}/incoming.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        },
+        {
+          "file": "{MEDIA}/empty.png",
+          "base64": ""
+        },
+        {
+          "file": "{MEDIA}/clip.txt",
+          "base64": "bm90IG1lZGlh"
+        },
+        {
+          "call": "media.import",
+          "args": [
+            42,
+            {
+              "filename": "first.jpg",
+              "contentType": "image/jpeg",
+              "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+              "source": "ops_upload"
+            }
+          ]
+        },
+        {
+          "call": "media.importFile",
+          "args": [
+            42,
+            {
+              "filename": "second.png",
+              "contentType": "image/png",
+              "localPath": "{MEDIA}/incoming.png",
+              "source": "http_upload"
+            }
+          ]
+        },
+        {
+          "call": "media.importFile",
+          "args": [
+            43,
+            {
+              "filename": "Фото (1).png",
+              "contentType": "",
+              "localPath": "{MEDIA}/incoming.png",
+              "source": "telegram_upload"
+            }
+          ]
+        },
+        {
+          "call": "media.importFile",
+          "args": [
+            42,
+            {
+              "filename": "clip.mp4",
+              "contentType": "video/mp4",
+              "localPath": "{MEDIA}/clip.mp4",
+              "source": "http_upload"
+            }
+          ]
+        },
+        {
+          "call": "media.importFile",
+          "args": [
+            42,
+            {
+              "filename": "empty.png",
+              "contentType": "image/png",
+              "localPath": "{MEDIA}/empty.png",
+              "source": "http_upload"
+            }
+          ]
+        },
+        {
+          "call": "media.importFile",
+          "args": [
+            42,
+            {
+              "filename": "clip.txt",
+              "contentType": "text/plain",
+              "localPath": "{MEDIA}/clip.txt",
+              "source": "http_upload"
+            }
+          ]
+        },
+        {
+          "call": "media.import",
+          "args": [
+            42,
+            {
+              "filename": "e.jpg",
+              "contentType": "image/jpeg",
+              "base64": "",
+              "source": "ops_upload"
+            }
+          ]
+        },
+        {
+          "call": "posts.mediaAssets",
+          "args": [42]
+        },
+        {
+          "call": "posts.mediaAssets",
+          "args": [43]
+        }
+      ]
+    }
+  ]
+}

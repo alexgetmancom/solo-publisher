@@ -18,10 +18,10 @@ use std::task::{Context, Poll, Waker};
 use content::Locale;
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::{DomainEventInput, DraftPatch, DraftRecord, Severity};
+use domain::application::ports::{DomainEventInput, DraftPatch, DraftRecord, Severity, StoryPublishMode};
 use domain::publishing::boundaries::{
-    AuthCircuit, Boundaries, Jitter, ProviderOutcome, StoryCardMedia, StoryCards, UsageMeter, VideoCompletion,
-    VideoProvider, WorkerBell,
+    AuthCircuit, AuthCircuitState, Boundaries, Jitter, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards,
+    UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
 };
 use domain::publishing::errors::PublishFailure;
 use domain::publishing::extra_delivery::ExtraDeliveryScope;
@@ -67,6 +67,9 @@ impl AuthCircuit for Silent {
     fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
         Ok(())
     }
+    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
+        Ok(Vec::new())
+    }
 }
 
 impl UsageMeter for Silent {
@@ -81,8 +84,11 @@ impl StoryCards for Silent {
     fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
         Ok(None)
     }
-    fn any_failed(&self, _: &Connection, _: i64) -> domain::Result<bool> {
-        Ok(false)
+    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
+        Ok(Vec::new())
+    }
+    fn set_publish_mode(&self, _: &Connection, _: i64, _: StoryPublishMode) -> domain::Result<()> {
+        panic!("no scenario sets a Story publish mode")
     }
     fn discard(&self, _: &Connection, _: i64) -> domain::Result<()> {
         Ok(())

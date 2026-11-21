@@ -6,6 +6,7 @@
 
 use content::text_locale::text_locale;
 use db::rusqlite::{Connection, OptionalExtension, params};
+use serde::Serialize;
 use serde_json::{Map, Value, json};
 
 use super::Publishing;
@@ -22,7 +23,8 @@ use crate::Result;
 use crate::repositories::transaction;
 use crate::targets::{is_site_target, target_locale};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RequeueOutcome {
     Requeued,
     AlreadyQueued,
@@ -40,7 +42,8 @@ impl RequeueOutcome {
 }
 
 /// Why a target was left alone when the state alone does not say it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RequeueRefusal {
     Empty,
     Language,
@@ -57,11 +60,12 @@ impl RequeueRefusal {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct RequeueResult {
     pub target: String,
     pub outcome: RequeueOutcome,
     pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<RequeueRefusal>,
 }
 

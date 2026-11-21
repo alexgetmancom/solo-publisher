@@ -15,7 +15,7 @@ use super::queue::{EnqueuePublishJob, enqueue_publish_job_tx};
 use crate::application::publication_ref::{PublicationRefKind, publication_ref};
 use crate::channels::effective_post_targets;
 use crate::repositories::immediate_transaction;
-use crate::studio_access::primary_studio_actor_id;
+use crate::studio::access::primary_studio_actor_id;
 use crate::targets::{PublicationForm, TargetMap, target_locale, targets_for};
 use crate::{Error, Result};
 

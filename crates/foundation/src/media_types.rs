@@ -10,6 +10,22 @@ pub fn file_extension(value: &str) -> String {
     }
 }
 
+/// The content type a file name's extension implies, for the media this
+/// Studio stores and serves.
+pub fn media_content_type(value: &str) -> Option<&'static str> {
+    match file_extension(value).as_str() {
+        ".jpg" | ".jpeg" => Some("image/jpeg"),
+        ".png" => Some("image/png"),
+        ".webp" => Some("image/webp"),
+        ".gif" => Some("image/gif"),
+        ".avif" => Some("image/avif"),
+        ".mp4" => Some("video/mp4"),
+        ".mov" => Some("video/quicktime"),
+        ".webm" => Some("video/webm"),
+        _ => None,
+    }
+}
+
 /// The canonical image extension of a file name (`.jpeg` reads as `.jpg`).
 pub fn image_extension(value: &str) -> Option<&'static str> {
     match file_extension(value).as_str() {

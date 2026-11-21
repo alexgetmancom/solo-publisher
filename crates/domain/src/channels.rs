@@ -4,6 +4,7 @@
 //! takes. Registering and disabling channels belongs to the Studio's channel
 //! service.
 
+use content::Locale;
 use db::rusqlite::Connection;
 
 use crate::Result;
@@ -11,7 +12,20 @@ use crate::application::ports::ChannelConnectionRecord;
 use crate::publishing::preflight::UploadLimits;
 use crate::publishing::video_types::VideoTarget;
 use crate::repositories::ChannelStore;
-use crate::targets::{TARGETS, TargetMap, story_targets_enabled, target_connection};
+use crate::targets::{TARGETS, TargetMap, story_targets_enabled, target_connection, target_locale};
+
+/// `listChannels`: every connection (or only the enabled ones), by platform
+/// and then locale.
+pub fn list_channels(sqlite: &Connection, enabled_only: bool) -> Result<Vec<ChannelConnectionRecord>> {
+    let mut channels = ChannelStore::new(sqlite).list(enabled_only)?;
+    channels.sort_by(|left, right| {
+        left.connection
+            .platform
+            .cmp(&right.connection.platform)
+            .then_with(|| left.connection.locale.cmp(&right.connection.locale))
+    });
+    Ok(channels)
+}
 
 /// Every publication target this Studio publishes text or Stories to. A
 /// connection delivers every target that names it: one connected X account
@@ -26,6 +40,20 @@ pub fn registered_post_target_ids(sqlite: &Connection) -> Result<Vec<String>> {
         .iter()
         .filter(|target| connections.iter().any(|id| id == target_connection(target.id)))
         .map(|target| target.id.to_owned())
+        .collect())
+}
+
+/// `postLocales`: the languages this Studio publishes in, derived from what
+/// it has connected, in reading order. A Studio with nothing connected is a
+/// fresh install rather than a monolingual one, so it is offered both.
+pub fn post_locales(sqlite: &Connection) -> Result<Vec<Locale>> {
+    let connected: Vec<Locale> = registered_post_target_ids(sqlite)?
+        .iter()
+        .filter_map(|target| target_locale(target))
+        .collect();
+    Ok([Locale::Ru, Locale::En]
+        .into_iter()
+        .filter(|locale| connected.is_empty() || connected.contains(locale))
         .collect())
 }
 

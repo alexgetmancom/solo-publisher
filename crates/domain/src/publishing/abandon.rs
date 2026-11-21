@@ -5,6 +5,7 @@
 //! which is ambiguous and settled here as such.
 
 use db::rusqlite::{Connection, OptionalExtension, params};
+use serde::Serialize;
 use serde_json::json;
 
 use super::Publishing;
@@ -14,7 +15,8 @@ use crate::Result;
 use crate::repositories::transaction;
 use crate::targets::is_site_target;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AbandonOutcome {
     Abandoned,
     NotAbandonable,
@@ -29,7 +31,7 @@ impl AbandonOutcome {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct AbandonResult {
     pub target: String,
     pub outcome: AbandonOutcome,

@@ -5,6 +5,7 @@ use std::future::Future;
 
 use content::Locale;
 use jiff::Timestamp;
+use serde::Serialize;
 
 use super::conversation_flow::PublicationKind;
 use crate::Result;
@@ -41,12 +42,17 @@ pub struct PublicationView {
     pub status: String,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct Issue {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", with = "crate::json::optional_locale")]
     pub locale: Option<Locale>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 
@@ -63,9 +69,16 @@ pub trait PublicationPipeline {
     fn preview(&self, actor_id: i64, publication_id: i64) -> Result<PreviewModel>;
     /// Asynchronous because a video asks its platforms what they accept.
     fn validate(&self, actor_id: i64, publication_id: i64) -> impl Future<Output = Result<Vec<Issue>>>;
-    fn schedule(&self, actor_id: i64, publication_id: i64, schedule: &PublicationSchedule) -> Result<()>;
-    fn publish(&self, actor_id: i64, publication_id: i64) -> Result<()>;
-    fn cancel(&self, actor_id: i64, publication_id: i64) -> Result<()>;
+    /// Asynchronous, as publish and cancel are, because a video checks its
+    /// source file and holds its YouTube uploads private on the way.
+    fn schedule(
+        &self,
+        actor_id: i64,
+        publication_id: i64,
+        schedule: &PublicationSchedule,
+    ) -> impl Future<Output = Result<()>>;
+    fn publish(&self, actor_id: i64, publication_id: i64) -> impl Future<Output = Result<()>>;
+    fn cancel(&self, actor_id: i64, publication_id: i64) -> impl Future<Output = Result<()>>;
     /// Asynchronous because a provider route asks the provider what became of
     /// the publication before it repeats it; the post path answers from its
     /// own tables.

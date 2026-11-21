@@ -144,6 +144,47 @@ pub fn double_option<'de, T: Deserialize<'de>, D: Deserializer<'de>>(
     Option::<T>::deserialize(deserializer).map(Some)
 }
 
+/// A content locale as its code (`"ru"`, `"en"`), for `#[serde(with)]`.
+pub mod locale {
+    use content::Locale;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(locale: &Locale, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(locale.as_str())
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Locale, D::Error> {
+        match String::deserialize(deserializer)?.as_str() {
+            "ru" => Ok(Locale::Ru),
+            "en" => Ok(Locale::En),
+            other => Err(serde::de::Error::custom(format!("unknown locale {other}"))),
+        }
+    }
+}
+
+/// An optional content locale, absent or its code.
+pub mod optional_locale {
+    use content::Locale;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(locale: &Option<Locale>, serializer: S) -> Result<S::Ok, S::Error> {
+        match locale {
+            Some(locale) => serializer.serialize_str(locale.as_str()),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Locale>, D::Error> {
+        Option::<String>::deserialize(deserializer)?
+            .map(|code| match code.as_str() {
+                "ru" => Ok(Locale::Ru),
+                "en" => Ok(Locale::En),
+                other => Err(serde::de::Error::custom(format!("unknown locale {other}"))),
+            })
+            .transpose()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;

@@ -1,12 +1,14 @@
 //! A read-only projection of the delivery contract declared in platform
 //! profiles: what each target does with the media it is given.
 
+use serde::Serialize;
 use serde_json::Value;
 
 use super::platform_profiles::{MediaRule, platform_profile};
 use crate::json::js_string;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum MediaPolicyMode {
     All,
     Limited,
@@ -14,7 +16,8 @@ pub enum MediaPolicyMode {
     StoryFirst,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MediaPolicy {
     pub target: String,
     pub input_count: usize,

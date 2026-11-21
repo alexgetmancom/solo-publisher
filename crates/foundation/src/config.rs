@@ -67,6 +67,15 @@ pub enum MediaProcessorProvider {
     RemoteHttp,
 }
 
+impl MediaProcessorProvider {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Local => "local",
+            Self::RemoteHttp => "remote_http",
+        }
+    }
+}
+
 /// What .env said each renewable Meta token was, captured before any renewal
 /// replaced it, so a later comparison is against the operator's value and not
 /// against the renewal.

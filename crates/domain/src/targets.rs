@@ -209,6 +209,13 @@ impl TargetMap {
     }
 }
 
+/// As the object `JSON.stringify` writes.
+impl serde::Serialize for TargetMap {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_map(self.0.iter().map(|(key, enabled)| (key, enabled)))
+    }
+}
+
 impl FromIterator<(String, bool)> for TargetMap {
     fn from_iter<I: IntoIterator<Item = (String, bool)>>(iter: I) -> Self {
         let mut map = Self::default();

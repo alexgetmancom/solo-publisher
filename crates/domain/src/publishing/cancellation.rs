@@ -4,6 +4,7 @@
 //! no longer depends on catching the queue at the right instant.
 
 use db::rusqlite::{Connection, OptionalExtension, params};
+use serde::Serialize;
 use serde_json::json;
 
 use super::Publishing;
@@ -15,14 +16,14 @@ use crate::repositories::transaction;
 
 /// What cancelling did, in the operator's terms: which targets will not be
 /// delivered, and which were already far enough along to be finished instead.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct CancellationReport {
     pub stopped: Vec<String>,
     pub finishing: Vec<String>,
 }
 
 /// A target still to be delivered, and whether cancelling would stop it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct PendingTarget {
     pub target: String,
     pub started: bool,

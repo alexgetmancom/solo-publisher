@@ -2,6 +2,7 @@
 //! but a new draft must never become a partial publication merely because a
 //! selected target cannot accept what it carries.
 
+use serde::Serialize;
 use std::collections::BTreeMap;
 
 use content::Locale;
@@ -22,7 +23,8 @@ use crate::Result;
 use crate::application::ports::DraftRecord;
 use crate::targets::{TargetMap, target_locale};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum PreflightKind {
     TextLimit,
     CaptionLimit,
@@ -45,21 +47,28 @@ impl PreflightKind {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PublicationPreflightIssue {
     pub target: String,
+    #[serde(with = "crate::json::locale")]
     pub locale: Locale,
     /// What is wrong, for surfaces to word in their own locale.
     pub kind: PreflightKind,
     pub label: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub actual: Option<f64>,
     /// The language the text is actually written in, on a `language` issue.
+    #[serde(skip_serializing_if = "Option::is_none", with = "crate::json::optional_locale")]
     pub written: Option<Locale>,
     /// Which post of a thread is at fault; absent for the first post.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub part: Option<usize>,
     /// How many posts the text would make as a thread, on a first post that
     /// goes to a platform carrying one: the "make it a thread" button keys off it.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub thread_parts: Option<usize>,
 }
 

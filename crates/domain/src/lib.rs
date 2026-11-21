@@ -13,7 +13,7 @@ mod error;
 pub mod json;
 pub mod publishing;
 pub mod repositories;
-pub mod studio_access;
+pub mod studio;
 pub mod targets;
 
 pub use error::{Error, Result};

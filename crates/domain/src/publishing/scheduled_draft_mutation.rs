@@ -69,7 +69,10 @@ impl Publishing<'_> {
         Ok(matches!(draft.story_publish_mode.as_deref(), Some("all" | "site_only"))
             && has_story_target
             && !has_media
-            && !cards.any_failed(self.sqlite, draft.id)?
+            && !cards
+                .for_draft(self.sqlite, draft.id)?
+                .iter()
+                .any(|card| card.status == "failed")
             && cards.ready_media(self.sqlite, draft.id)?.is_none())
     }
 
