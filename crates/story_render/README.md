@@ -13,8 +13,7 @@ line breaks, bold lines) is `domain::story_cards::story_card_copy`; the store th
   (publishing boundaries with the real `StoryCardStore` and usage meter; Studio boundaries for the replan's reminders
   and readiness). Record its `StoryCardCycle { state, error }` with `recordWorkerState("story-cards", state, error)`.
   An `Err` is the database's and fails the tick, as a throw did.
-- The `StoryCards` boundary is the store itself: once this loop runs, a queued card is no longer "left for the
-  renderer", so the host's `queue` drops its warning and `STORY_CARD_RENDERER` leaves `unported.rs`.
+- The `StoryCards` boundary is the store itself (`app/src/host.rs` hands `StoryCardStore` to publishing).
 - Configuration: `STORY_CARD_ASSETS_DIR` (background, `Manrope-Variable.ttf`, `NotoColorEmoji.ttf`, `emoji/*.svg`)
   and `$DATA_DIR/story-cards` for the output. `STORY_CARD_RENDERER_ENTRY` is not read: there is no renderer process.
 
