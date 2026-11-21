@@ -1,6 +1,7 @@
 import { setSystemTime } from "bun:test";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { openBackendDb, type UnsafeBackendDb, unsafeDb } from "../../apps/backend/src/db/client.js";
 import { type BackendConfig, loadConfig, withStudioProfile } from "../../apps/backend/src/foundation/config.js";
@@ -16,8 +17,9 @@ import { dump, resolve } from "./scenario-support.js";
  * taken over, a target edited while the provider was being asked.
  *
  * The output is every step's result, every request as it went out, and every
- * non-empty table. Credentials appear as `{{NAME}}` and the scenario's data
- * directory as `$DATA`, so both sides record the same text.
+ * non-empty table. Credentials appear as `{{NAME}}`, the scenario's data
+ * directory as `$DATA`, and lease owners as `$HOST` / `$PID` / `$UUID`, so
+ * both sides record the same text.
  *
  *   {"clock": "<ISO>"} | {"sql": "<statement>"} | {"call": "<name>", "args": [...], "bind"?: "<name>"}
  */
@@ -47,6 +49,7 @@ export type Call = (context: Context, name: string, args: unknown[]) => Promise<
 const root = path.join(import.meta.dir, "../..");
 const SECRET_NAME = /TOKEN|SECRET|KEY/;
 const MAX_TEXT_BODY = 16 * 1024;
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;
 
 const sha256 = (bytes: Uint8Array) => crypto.createHash("sha256").update(bytes).digest("hex");
 
@@ -57,7 +60,9 @@ function scrubber(spec: Spec, data: string): (value: string) => string {
   return (value) => {
     let text = value.replaceAll(data, "$DATA");
     for (const [name, secret] of secrets) text = text.replaceAll(secret, `{{${name}}}`);
-    return text;
+    // Lease owners name this host, this process and a random UUID.
+    text = text.replaceAll(`:${os.hostname()}:${process.pid}`, ":$HOST").replaceAll(`${process.pid}:`, "$PID:");
+    return text.replace(UUID, "$UUID");
   };
 }
 

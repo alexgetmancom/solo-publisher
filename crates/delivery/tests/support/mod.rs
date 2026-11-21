@@ -11,7 +11,7 @@ use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use adapters::AdapterContext;
 use db::rusqlite::Connection;
@@ -26,11 +26,14 @@ use domain::story_cards::StoryCardStore;
 use foundation::config::{Config, load_config};
 use futures_util::future::LocalBoxFuture;
 use jiff::Timestamp;
+use regex::Regex;
 use runtime::http::{BodyPart, Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 use serde_json::{Map, Value, json};
 use sha2::{Digest as _, Sha256};
 
 const MAX_TEXT_BODY: usize = 16 * 1024;
+static UUID: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap());
 
 pub fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -150,7 +153,13 @@ impl Scrubber {
         for (name, secret) in &self.secrets {
             text = text.replace(secret.as_str(), &format!("{{{{{name}}}}}"));
         }
-        text
+        // Lease owners name this host, this process and a random UUID.
+        let host = std::fs::read_to_string("/proc/sys/kernel/hostname").unwrap_or_default();
+        let pid = std::process::id();
+        text = text
+            .replace(&format!(":{}:{pid}", host.trim()), ":$HOST")
+            .replace(&format!("{pid}:"), "$PID:");
+        UUID.replace_all(&text, "$$UUID").into_owned()
     }
 
     pub fn deep(&self, value: &Value) -> Value {
@@ -278,6 +287,10 @@ impl Transport for Recorder {
             };
             if let Some(sql) = next.get("sql").and_then(Value::as_str) {
                 unsafe_db(&self.db).execute_batch(sql).unwrap();
+            }
+            // Rust-only: an answer that never comes, for the timeout paths.
+            if next.get("hang").is_some() {
+                return std::future::pending().await;
             }
             if let Some(message) = next.get("throws") {
                 return Err(TransportFailure {
@@ -526,7 +539,21 @@ async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
 /// Every scenario of the spec through `call`, on a single-threaded runtime
 /// with a `LocalSet`, as the Studio runs.
 pub fn rust_side(spec: &Value, call: Call, label: &str) -> Vec<Value> {
-    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    run_on(tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap(), spec, call, label)
+}
+
+/// [`rust_side`] with tokio's clock paused: a timer fires as soon as nothing
+/// else can run, so a ten-minute timeout costs nothing.
+pub fn rust_side_paused(spec: &Value, call: Call, label: &str) -> Vec<Value> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .start_paused(true)
+        .build()
+        .unwrap();
+    run_on(runtime, spec, call, label)
+}
+
+fn run_on(runtime: tokio::runtime::Runtime, spec: &Value, call: Call, label: &str) -> Vec<Value> {
     let local = tokio::task::LocalSet::new();
     local.block_on(&runtime, async {
         let mut out = Vec::new();
@@ -612,7 +639,7 @@ pub fn compare(spec_file: &str, script: &str, call: Call, label: &str) {
     let failures = differences(&expected, &actual);
     assert!(
         failures.is_empty(),
-        "{} of {} scenarios differ:\n{}",
+        "{} differences across {} scenarios:\n{}",
         failures.len(),
         expected.len(),
         failures.join("\n\n")

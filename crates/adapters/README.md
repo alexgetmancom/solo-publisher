@@ -89,12 +89,9 @@ error kind, message, class, status and Retry-After, virtual sleep time for X, an
 - Result objects match TypeScript's fields and values, not always their key order (a Threads/Instagram progress
   record whose `containerId` is added later lists it earlier); only the stored JSON's layout differs.
 - A body that does not parse as JSON after a 2xx reports `JSON Parse error: <serde's reason>`, not JavaScriptCore's.
-
-## Found, not changed (owner decision)
-
-- Discord: a post split over several messages that fails on a later part (an HTTP refusal, e.g. 429) throws after the
-  first message is already in the channel; the retry posts the first message again. X and Threads hand published ids
-  back as a resume for exactly this; Discord does not.
+- Discord: a split post whose later part is refused after the first is in the channel returns a partial publication
+  (`resumeKey: "_discordMessageIds"`, the ids sent), as X and Threads do; TypeScript threw, and the retry posted the
+  first message again. The retry sends only the remaining parts. A lost answer is ambiguous, as before.
 
 Not here: the video worker loop and the publish workflow (`delivery`), `prepareMediaItems` / story derivatives (behind
 `MediaPreparation`), the mtcute sidecar itself.
