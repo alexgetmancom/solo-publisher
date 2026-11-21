@@ -6,18 +6,23 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use bot::Bot;
-use db::unsafe_db;
+use bot::workers::start_telegram_workers;
+use db::{BackendDb, unsafe_db};
 use domain::application::ports::Clock;
+use domain::notifications::run_notification_cycle;
 use domain::publishing::Publishing;
 use domain::studio::Studio;
 use foundation::logger::{LogLevel, log};
+use runtime::http::HttpClient;
 use runtime::scheduler::ScheduledLoop;
 use runtime::worker_state::{HeartbeatLoops, record_worker_state};
 use serde_json::json;
 use story_render::{STORY_CARD_WORKER, recover_story_card_jobs, run_story_card_cycle};
 
-/// Recovers what a previous process left locked, then starts the loops.
-pub fn start(bot: &Bot) -> Vec<ScheduledLoop> {
+/// Recovers what a previous process left locked, then starts the core loops
+/// and the Telegram ones, in TypeScript's order.
+/// `flush_usage` runs on every heartbeat, as `heartbeatLoop`'s hook does.
+pub fn start(bot: &Bot, http: HttpClient, flush_usage: impl Fn(&BackendDb) + 'static) -> Vec<ScheduledLoop> {
     let deps = bot.deps();
     let sqlite = unsafe_db(&deps.db);
     match recover_story_card_jobs(sqlite, &*deps.clock) {
@@ -33,12 +38,31 @@ pub fn start(bot: &Bot) -> Vec<ScheduledLoop> {
             Some(json!({"error": error.to_string()})),
         ),
     }
-    let loops = HeartbeatLoops::new(Rc::new(bot.clone()), |bot: &Bot| &bot.deps().db);
+    let loops = HeartbeatLoops::new(Rc::new(bot.clone()), |bot: &Bot| &bot.deps().db).on_heartbeat(flush_usage);
     let idle_poll = Duration::from_secs(deps.config.load().idle_poll_interval_seconds);
-    vec![loops.start(STORY_CARD_WORKER, idle_poll, {
-        let bot = bot.clone();
-        move || story_cards(bot.clone())
-    })]
+    let mut started = vec![
+        loops.start(STORY_CARD_WORKER, idle_poll, {
+            let bot = bot.clone();
+            move || story_cards(bot.clone())
+        }),
+        loops.start("notifications", idle_poll, {
+            let bot = bot.clone();
+            move || notifications(bot.clone())
+        }),
+    ];
+    started.extend(start_telegram_workers(bot, http, &loops));
+    started
+}
+
+async fn notifications(bot: Bot) -> Result<(), String> {
+    let deps = bot.deps();
+    let delivered = run_notification_cycle(unsafe_db(&deps.db), &*deps.clock).map_err(|error| error.to_string())?;
+    log(
+        LogLevel::Debug,
+        "notification loop tick",
+        Some(json!({"delivered": delivered})),
+    );
+    Ok(())
 }
 
 async fn story_cards(bot: Bot) -> Result<(), String> {

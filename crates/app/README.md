@@ -3,7 +3,11 @@
 The Studio process (`apps/backend/src/runtime/server.ts`) restricted to what is ported: configuration from the
 environment (`foundation::config`, the same variables as TypeScript), the database at `PIPELINE_DB` (migrations and
 date guards), and the Telegram bot on long polling (`setMyCommands` at startup). SIGINT/SIGTERM stop polling, wait for
-updates in hand (10 s at most, then exit 1) and close the database. No HTTP server and no workers yet.
+updates in hand (10 s at most, then exit 1) and close the database. No HTTP server yet.
+
+Workers (`src/workers.rs`, `runtime/workers.ts` + `interfaces/telegram/worker.ts`): story-cards, notifications and the
+Telegram loops (`bot::workers`: translations, albums, events, alerts, daily backup), each with its heartbeat row and the
+usage flush. Publishing, video, site, channels and observability loops come with their slices.
 
 The boundaries that are database state run on their ported stores: Story cards (`domain::story_cards`; queued cards
 wait, as the renderer is not here), reminders (`domain::notifications`; queued, not delivered without the worker), the

@@ -19,6 +19,7 @@ use db::BackendDb;
 use domain::application::ports::SystemClock;
 use foundation::config::{SharedConfig, load_config};
 use foundation::logger::{LogLevel, configure_logging, log};
+use runtime::http::{HttpClient, ReqwestTransport};
 use runtime::scheduler::ScheduledLoop;
 use serde_json::json;
 use tokio::signal::unix::{Signal, SignalKind, signal};
@@ -115,7 +116,7 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         db,
         clock: Rc::new(SystemClock),
         config,
-        host,
+        host: Rc::clone(&host) as _,
         adapters: DynAdapters(Box::new(AppAdapters)),
         transport: Rc::new(transport),
         deploy_agent: Rc::new(deploy_agent),
@@ -138,7 +139,14 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         Ok(runner) => runner,
         Err(error) => return failed(Some(bot), "Telegram bot could not start", &error.to_string()),
     };
-    let loops = workers::start(&bot);
+    let http = match ReqwestTransport::new() {
+        Ok(transport) => HttpClient::new(Rc::new(transport)),
+        Err(error) => return failed(Some(bot), "HTTP transport could not be built", &error.message),
+    };
+    let loops = workers::start(&bot, http, {
+        let host = Rc::clone(&host);
+        move |db| host.flush_usage(db::unsafe_db(db))
+    });
     let not_in_this_build = [
         [
             "http server",
