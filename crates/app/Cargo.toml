@@ -18,6 +18,7 @@ content = { path = "../content" }
 db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
+runtime = { path = "../runtime" }
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 tokio = { version = "1", features = ["rt", "time", "signal", "macros"] }

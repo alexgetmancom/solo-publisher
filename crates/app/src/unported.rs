@@ -18,7 +18,7 @@ use domain::observability::capabilities::CapabilityReadiness;
 use domain::observability::usage::UsageRecorder;
 use domain::publishing::Boundaries;
 use domain::publishing::boundaries::{
-    MediaMetadata, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter, WorkerBell,
+    MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter, WorkerBell,
 };
 use domain::story_cards::StoryCardStore;
 use domain::studio::boundaries::{
@@ -28,23 +28,22 @@ use domain::studio::boundaries::{
 use foundation::config::{Config, SharedConfig};
 use foundation::logger::{LogLevel, log};
 use jiff::Timestamp;
+use runtime::ffmpeg::FfmpegMediaProbe;
 use serde_json::{Value, json};
 
 const PUBLISH_WORKER: &str = "publish worker";
 const STORY_CARD_RENDERER: &str = "Story card renderer";
 const STORY_DERIVATIVES: &str = "Story derivatives (media runtime)";
 const CONNECT_LINKS: &str = "channel connect links (channels)";
-const MEDIA_PROBE: &str = "media probe (ffprobe/ffmpeg)";
 const ZERNIO: &str = "Zernio";
 const YOUTUBE: &str = "YouTube uploads";
 
 /// Every area above, for the startup line.
-pub const AREAS: [&str; 7] = [
+pub const AREAS: [&str; 6] = [
     PUBLISH_WORKER,
     STORY_CARD_RENDERER,
     STORY_DERIVATIVES,
     CONNECT_LINKS,
-    MEDIA_PROBE,
     ZERNIO,
     YOUTUBE,
 ];
@@ -190,15 +189,16 @@ impl ChannelConnectLinks for AppHost {
     }
 }
 
-/// The adapters Studio waits on; none is ported yet.
+/// The adapters Studio waits on: the media probe is ffprobe/ffmpeg; the
+/// provider calls are not ported yet.
 pub struct AppAdapters;
 
 impl Adapters for AppAdapters {
-    fn probe<'a>(&'a self, _: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
-        Box::pin(async { Err(message(MEDIA_PROBE)) })
+    fn probe<'a>(&'a self, path: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
+        Box::pin(FfmpegMediaProbe.probe(path))
     }
-    fn audio_stats<'a>(&'a self, _: &'a str) -> Fut<'a, Result<String, String>> {
-        Box::pin(async { Err(message(MEDIA_PROBE)) })
+    fn audio_stats<'a>(&'a self, path: &'a str) -> Fut<'a, Result<String, String>> {
+        Box::pin(FfmpegMediaProbe.audio_stats(path))
     }
     fn post_outcome<'a>(&'a self, _: &'a str, _: &'a str) -> Fut<'a, domain::Result<ProviderOutcome>> {
         Box::pin(async { refuse(ZERNIO) })
