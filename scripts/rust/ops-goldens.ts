@@ -39,7 +39,12 @@ const config = withStudioProfile(loadConfig({ DATA_DIR: path.join(tmp, "data"), 
 
 const normalize = (value: string): string => value.replaceAll(tmp, "$TMP");
 
-const schemas = Object.fromEntries(operationCatalog().map((entry) => [entry.name, inputJsonSchema(operationDef(entry.name)!.schema)]));
+const schemas = Object.fromEntries(
+  operationCatalog().flatMap((entry) => {
+    const def = operationDef(entry.name);
+    return def ? [[entry.name, inputJsonSchema(def.schema)]] : [];
+  }),
+);
 const toolsList = await mcpResponse(backendDb, config, { jsonrpc: "2.0", id: 1, method: "tools/list" }, "client", 1);
 const toolsListAnonymous = await mcpResponse(backendDb, config, { jsonrpc: "2.0", id: 2, method: "tools/list" }, "client", null);
 backendDb.close();
