@@ -175,7 +175,8 @@
           },
           "body": {
             "text": "ok\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -189,7 +190,8 @@
           },
           "body": {
             "text": "ok\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -203,7 +205,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -215,7 +218,8 @@
           "headers": {
             "content-type": "text/plain; charset=utf-8"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -229,7 +233,8 @@
           },
           "body": {
             "text": "ok\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -243,7 +248,8 @@
           },
           "body": {
             "text": "ok\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -257,7 +263,8 @@
           },
           "body": {
             "text": "ok\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -271,7 +278,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -285,7 +293,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -299,7 +308,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -313,7 +323,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -327,7 +338,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -339,7 +351,8 @@
           "headers": {
             "content-type": "text/plain; charset=utf-8"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -353,7 +366,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -369,7 +383,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -385,7 +400,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -401,7 +417,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -415,7 +432,8 @@
             "content-type": "text/plain; charset=utf-8",
             "x-robots-tag": "noindex, nofollow"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -429,7 +447,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -445,7 +464,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -461,7 +481,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -477,7 +498,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -491,7 +513,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -505,7 +528,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -519,11 +543,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "public site contract mounted",
@@ -583,7 +624,8 @@
           },
           "body": {
             "text": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -597,7 +639,8 @@
             "content-type": "application/json; charset=utf-8",
             "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -613,7 +656,8 @@
           },
           "body": {
             "text": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -627,7 +671,8 @@
             "content-type": "application/json; charset=utf-8",
             "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -641,11 +686,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "discovery documents",
@@ -701,7 +763,8 @@
           },
           "body": {
             "text": "{\"resource\":\"https://studio.example.com/api/mcp\",\"bearer_methods_supported\":[\"header\"]}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -716,7 +779,8 @@
           },
           "body": {
             "text": "{\"resource\":\"https://studio.example.com/api/mcp\",\"bearer_methods_supported\":[\"header\"]}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -729,7 +793,8 @@
             "cache-control": "public, max-age=3600",
             "content-type": "application/json; charset=utf-8"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -744,7 +809,8 @@
           },
           "body": {
             "text": "{\"version\":\"1.0\",\"protocolVersion\":\"2024-11-05\",\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"solo-publisher-studio-mcp\",\"version\":\"2.1.0\"},\"description\":\"Operator tools for the studio.example.com Studio. Studio tools require an operator-provisioned bearer token. Read public site content through /feed-ai.json and /llms.txt.\",\"transport\":{\"type\":\"streamable-http\",\"endpoint\":\"/api/mcp\"},\"authentication\":{\"required\":true,\"schemes\":[\"bearer\"]}}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -758,11 +824,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "discovery documents with a port and a trailing slash",
@@ -799,7 +882,8 @@
           },
           "body": {
             "text": "{\"resource\":\"https://Studio.Example.com:8443/api/mcp\",\"bearer_methods_supported\":[\"header\"]}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -814,11 +898,28 @@
           },
           "body": {
             "text": "{\"version\":\"1.0\",\"protocolVersion\":\"2024-11-05\",\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"solo-publisher-studio-mcp\",\"version\":\"2.1.0\"},\"description\":\"Operator tools for the studio.example.com:8443 Studio. Studio tools require an operator-provisioned bearer token. Read public site content through /feed-ai.json and /llms.txt.\",\"transport\":{\"type\":\"streamable-http\",\"endpoint\":\"/api/mcp\"},\"authentication\":{\"required\":true,\"schemes\":[\"bearer\"]}}"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "readiness with heartbeats",
@@ -867,7 +968,8 @@
           },
           "body": {
             "text": "{\"ok\":true,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true},\"media_cache_dir_writable\":{\"ok\":true}},\"workers\":{\"queue\":{\"updated_at\":\"2026-11-01T09:59:58.400Z\",\"ageSeconds\":2,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T09:59:58.400Z\"},\"video\":{\"updated_at\":\"2026-11-01T09:50:00.000Z\",\"ageSeconds\":600,\"stale\":true,\"lastHeartbeatAt\":\"2026-11-01T09:50:00.000Z\"},\"site\":{\"updated_at\":\"2026-11-01T09:00:00.000Z\",\"ageSeconds\":null,\"stale\":false,\"lastHeartbeatAt\":\"not a date\"},\"notifications\":{\"updated_at\":\"2026-11-01T10:00:01.000Z\",\"ageSeconds\":0,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T10:00:01.000Z\"},\"alerts\":{\"updated_at\":\"2026-11-01T10:00:00.000Z\",\"ageSeconds\":86400,\"stale\":false,\"lastHeartbeatAt\":\"2026-10-31T10:00:00.000Z\"}}}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -881,7 +983,8 @@
           },
           "body": {
             "text": "{\"ok\":true,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true},\"media_cache_dir_writable\":{\"ok\":true}},\"workers\":{\"queue\":{\"updated_at\":\"2026-11-01T09:59:58.400Z\",\"ageSeconds\":2,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T09:59:58.400Z\"},\"video\":{\"updated_at\":\"2026-11-01T09:50:00.000Z\",\"ageSeconds\":600,\"stale\":true,\"lastHeartbeatAt\":\"2026-11-01T09:50:00.000Z\"},\"site\":{\"updated_at\":\"2026-11-01T09:00:00.000Z\",\"ageSeconds\":null,\"stale\":false,\"lastHeartbeatAt\":\"not a date\"},\"notifications\":{\"updated_at\":\"2026-11-01T10:00:01.000Z\",\"ageSeconds\":0,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T10:00:01.000Z\"},\"alerts\":{\"updated_at\":\"2026-11-01T10:00:00.000Z\",\"ageSeconds\":86400,\"stale\":false,\"lastHeartbeatAt\":\"2026-10-31T10:00:00.000Z\"}}}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -893,11 +996,28 @@
           "headers": {
             "content-type": "application/json; charset=utf-8"
           },
-          "body": null
+          "body": null,
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "readiness fails on unwritable media directories",
@@ -947,11 +1067,28 @@
           },
           "body": {
             "text": "{\"ok\":false,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true},\"media_cache_dir_writable\":{\"ok\":false,\"detail\":\"EACCES: permission denied, access '$DATA_DIR/media-cache'\"},\"studio_media_dir_writable\":{\"ok\":true},\"site_public_dir_writable\":{\"ok\":false,\"detail\":\"EACCES: permission denied, access '$DATA_DIR/site'\"}},\"workers\":{}}"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "readiness ignores the site directory of a Studio without a site",
@@ -988,11 +1125,28 @@
           },
           "body": {
             "text": "{\"ok\":true,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true}},\"workers\":{}}"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "readiness fails on an unwritable data directory",
@@ -1030,11 +1184,28 @@
           },
           "body": {
             "text": "{\"ok\":false,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":false,\"detail\":\"EACCES: permission denied, access '$DATA_DIR'\"}},\"workers\":{}}"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "readiness without the worker table is a handler error",
@@ -1067,11 +1238,28 @@
           },
           "body": {
             "text": "Internal Server Error"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "staging media",
@@ -1461,7 +1649,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1479,7 +1668,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1494,7 +1684,8 @@
             "content-length": "1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1512,7 +1703,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1530,7 +1722,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1548,7 +1741,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1567,7 +1761,8 @@
           "body": {
             "sha256": "1f825aa2f0020ef7cf91dfa30da4668d791c5d4824fc8e41354b89ec05795ab3",
             "length": 10
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1586,7 +1781,8 @@
           "body": {
             "sha256": "6737ed0a85815aa969b08b516e519975c9cb59b5d8db5aea0728b04caa5c6eb6",
             "length": 990
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1605,7 +1801,8 @@
           "body": {
             "sha256": "60bdf10257a4ad4a1f5d5db1d8ed67bf68e0f6289c6b41ff68a175aadbfdbc99",
             "length": 100
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1624,7 +1821,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1643,7 +1841,8 @@
           "body": {
             "sha256": "035c161c9c5fdc898bb41e41fca0d8b199ee6fadbab54568c46cc2a81bcf60f1",
             "length": 10
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1662,7 +1861,8 @@
           "body": {
             "sha256": "d0752b60adb148ca0b3b4d2591874e2dabd346373e731c27463d65b449cc234c",
             "length": 1
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1681,7 +1881,8 @@
           "body": {
             "sha256": "b413f47d13ee2fe6c845b2ee141af81de858df4ec549a58b7970bb96645bc8d2",
             "length": 2
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1696,7 +1897,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1711,7 +1913,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1726,7 +1929,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1741,7 +1945,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1756,7 +1961,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1771,7 +1977,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1786,7 +1993,8 @@
             "content-range": "bytes */1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1805,7 +2013,8 @@
           "body": {
             "sha256": "a12871fee210fb8619291eaea194581cbd2531e4b23759d225f6806923f63222",
             "length": 2
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1823,7 +2032,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1839,7 +2049,8 @@
             "content-range": "bytes 0-9/1000",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1854,7 +2065,8 @@
             "content-range": "bytes */0",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1869,7 +2081,8 @@
             "content-length": "0",
             "content-type": "video/mp4"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -1887,7 +2100,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1905,7 +2119,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1923,7 +2138,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1940,7 +2156,8 @@
           },
           "body": {
             "text": "bytes"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1957,7 +2174,8 @@
           },
           "body": {
             "text": "bytes"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1975,7 +2193,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -1993,7 +2212,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2011,7 +2231,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2029,7 +2250,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2047,7 +2269,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2065,7 +2288,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2079,7 +2303,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2093,7 +2318,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2107,7 +2333,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2121,7 +2348,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2135,7 +2363,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2149,7 +2378,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2167,7 +2397,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2181,7 +2412,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2195,7 +2427,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2209,7 +2442,8 @@
           },
           "body": {
             "text": "Internal Server Error"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2223,7 +2457,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2237,7 +2472,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2251,7 +2487,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2265,7 +2502,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2279,7 +2517,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2293,11 +2532,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "site media",
@@ -2431,7 +2687,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2449,7 +2706,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2467,7 +2725,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2485,7 +2744,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2503,7 +2763,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2521,7 +2782,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2536,7 +2798,8 @@
             "content-length": "5",
             "content-type": "image/jpeg"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -2555,7 +2818,8 @@
           "body": {
             "sha256": "3d40f99acd3b0e84749b6e7117480b41f14c4f84aead9bf4f579edf96fcbab40",
             "length": 2
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2573,7 +2837,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2587,7 +2852,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2601,7 +2867,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2615,7 +2882,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2629,7 +2897,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2643,7 +2912,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2657,11 +2927,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "video assets",
@@ -2783,7 +3070,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2798,7 +3086,8 @@
             "content-type": "video/quicktime",
             "x-robots-tag": "noindex, nofollow"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -2816,7 +3105,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2834,7 +3124,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2852,7 +3143,8 @@
           "body": {
             "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
             "length": 1000
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2866,7 +3158,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2880,7 +3173,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2894,7 +3188,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2908,7 +3203,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2922,7 +3218,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2936,7 +3233,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2950,7 +3248,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -2964,7 +3263,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [
@@ -3024,7 +3324,23 @@
           "created_at": "2026-11-01T10:00:00.000Z"
         }
       ],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "IndexNow key",
@@ -3119,7 +3435,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3133,7 +3450,8 @@
           },
           "body": {
             "text": "0123456789abcdef0123456789abcdef\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3145,7 +3463,8 @@
           "headers": {
             "content-type": "text/plain; charset=utf-8"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -3159,7 +3478,8 @@
           },
           "body": {
             "text": "0123456789abcdef0123456789abcdef\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3173,7 +3493,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3187,7 +3508,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3201,7 +3523,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3215,7 +3538,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3229,7 +3553,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3243,7 +3568,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3257,11 +3583,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "IndexNow key that the route cannot name",
@@ -3301,7 +3644,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3315,11 +3659,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "responsive variants",
@@ -3433,7 +3794,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3449,7 +3811,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3465,7 +3828,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3478,7 +3842,8 @@
             "cache-control": "public, max-age=604800, stale-while-revalidate=86400",
             "content-type": "image/webp"
           },
-          "body": null
+          "body": null,
+          "sent": []
         },
         {
           "request": {
@@ -3494,7 +3859,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3510,7 +3876,8 @@
           "body": {
             "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
             "length": 5
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3524,7 +3891,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3538,7 +3906,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3552,7 +3921,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3566,7 +3936,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3580,7 +3951,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3594,7 +3966,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3608,11 +3981,28 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "media uploads",
@@ -3811,7 +4201,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3826,7 +4217,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3841,7 +4233,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3856,7 +4249,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3871,7 +4265,8 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3890,7 +4285,8 @@
           },
           "body": {
             "text": "{\"asset_id\":1,\"kind\":\"photo\",\"filename\":\"photo.png\",\"byte_size\":66}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3909,7 +4305,8 @@
           },
           "body": {
             "text": "{\"asset_id\":1,\"kind\":\"photo\",\"filename\":\"photo.png\",\"byte_size\":66}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3928,7 +4325,8 @@
           },
           "body": {
             "text": "{\"asset_id\":2,\"kind\":\"photo\",\"filename\":\"caf-.png\",\"byte_size\":5}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3943,7 +4341,8 @@
           },
           "body": {
             "text": "{\"asset_id\":3,\"kind\":\"video\",\"filename\":\"clip.mp4\",\"byte_size\":1000}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3958,7 +4357,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media upload failed\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3973,7 +4373,8 @@
           },
           "body": {
             "text": "{\"error\":\"Upload the raw file body with X-Filename and Content-Type headers.\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -3987,7 +4388,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media request has no body\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4002,7 +4404,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media upload failed\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4021,7 +4424,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media upload failed\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4040,7 +4444,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media upload is too large\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4055,7 +4460,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media upload is too large\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4074,7 +4480,8 @@
           },
           "body": {
             "text": "{\"asset_id\":4,\"kind\":\"photo\",\"filename\":\"upload\",\"byte_size\":5}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4089,7 +4496,8 @@
           },
           "body": {
             "text": "{\"error\":\"Media upload failed\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4103,7 +4511,8 @@
           },
           "body": {
             "text": "not found\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [
@@ -4152,7 +4561,23 @@
           "created_at": "2026-11-01T10:00:00.000Z"
         }
       ],
-      "incoming": []
+      "incoming": [],
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "media uploads without Studio access configured",
@@ -4185,11 +4610,28 @@
           },
           "body": {
             "text": "forbidden\n"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [],
-      "incoming": null
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     },
     {
       "name": "media uploads beyond two at once",
@@ -4261,7 +4703,8 @@
           },
           "body": {
             "text": "{\"error\":\"Too many media uploads are active; retry shortly.\"}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4276,7 +4719,8 @@
           },
           "body": {
             "text": "{\"asset_id\":1,\"kind\":\"photo\",\"filename\":\"one.png\",\"byte_size\":12}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4291,7 +4735,8 @@
           },
           "body": {
             "text": "{\"asset_id\":2,\"kind\":\"photo\",\"filename\":\"two.png\",\"byte_size\":13}"
-          }
+          },
+          "sent": []
         },
         {
           "request": {
@@ -4306,7 +4751,8 @@
           },
           "body": {
             "text": "{\"asset_id\":3,\"kind\":\"photo\",\"filename\":\"four.png\",\"byte_size\":13}"
-          }
+          },
+          "sent": []
         }
       ],
       "assets": [
@@ -4344,7 +4790,1565 @@
           "created_at": "2026-11-01T10:00:00.000Z"
         }
       ],
-      "incoming": []
+      "incoming": [],
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
+    },
+    {
+      "name": "oauth meta",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7",
+        "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+        "COMMAND_CENTER_TOKEN": "command-token-for-tests",
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret",
+        "X_CLIENT_ID": "test-x-client",
+        "X_CLIENT_SECRET": "test-x-secret",
+        "YOUTUBE_RU_CLIENT_ID": "test-yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-yt-ru-secret",
+        "YOUTUBE_EN_CLIENT_ID": "test-yt-en-client",
+        "YOUTUBE_EN_CLIENT_SECRET": "test-yt-en-secret"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/oauth/threads/start?locale=ru",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads/start?locale=ru",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads/start?locale=ru&token=command-token-for-tests",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram/start?locale=de",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/oauth/instagram/start?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/oauth/threads/start?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads/start/?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads/start?state=$state",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram/start?state=$state",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram?state=$state&code=test-code",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads?state=$state&error=access_denied&error_description=The+user+denied+%3Caccess%3E",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads?state=$state&error_description=&error=ignored",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads?state=$state",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads?state=bogus&code=test-code",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads?state=$state&code=test-code&code=second"
+          },
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-short",
+                "user_id": 17841400000001
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-long",
+                "token_type": "bearer",
+                "expires_in": 5183944
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-threads-user",
+                "username": " alice "
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "target": "/oauth/threads/?state=$state&code=test-code"
+          },
+          "responses": [
+            {
+              "status": 401,
+              "body": "{\"error\":{\"message\":\"Invalid OAuth access token\",\"code\":190}}"
+            }
+          ]
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram/start?locale=ru",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram?code=test-code&state=$state"
+          },
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-ig-short",
+                "user_id": "test-ig-user"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-ig-long"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-ig-user"
+              }
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-01T10:10:00.001Z"
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram?code=test-code&state=$state",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/instagram/start?state=$state",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start?locale=ru",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Connection link is invalid</title><body><main><h1>Connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start?locale=ru",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://threads.net/oauth/authorize?client_id=test-threads-app&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fthreads&response_type=code&scope=threads_basic%2Cthreads_content_publish%2Cthreads_manage_replies%2Cthreads_read_replies%2Cthreads_manage_insights&state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJydSIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJBUUVCQVFFQkFRRUJBUUVCQVFFQkFRIn0.Xefmj5GU68sQ--3VHvpSEZ-nm6DOtoiVxrJNKthUFT4",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start?locale=ru&token=command-token-for-tests",
+            "headers": []
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://threads.net/oauth/authorize?client_id=test-threads-app&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fthreads&response_type=code&scope=threads_basic%2Cthreads_content_publish%2Cthreads_manage_replies%2Cthreads_read_replies%2Cthreads_manage_insights&state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJydSIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnIn0._w_cfTvNmLM0DiqZ7HNCOPNKZzUOPkPOPdn7a0g8VS4",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram/start?locale=de",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Connection link is invalid</title><body><main><h1>Connection link is invalid</h1><p>Error: OAuth link has no valid locale</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/oauth/instagram/start?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://www.instagram.com/oauth/authorize?client_id=test-instagram-app&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Finstagram&response_type=code&scope=instagram_business_basic%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights%2Cinstagram_business_manage_comments&enable_fb_login=0&force_reauth=true&state=eyJwbGF0Zm9ybSI6Imluc3RhZ3JhbSIsImxvY2FsZSI6ImVuIiwiZXhwaXJlc0F0IjoxNzkzNTI3ODAwMDAwLCJub25jZSI6IkF3TURBd01EQXdNREF3TURBd01EQXcifQ.NjL1jFAvFzNaVHe4Sd0ZBAc6t3uyWYHeEMJCg-NfOFo",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/oauth/threads/start?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start/?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://threads.net/oauth/authorize?client_id=test-threads-app&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fthreads&response_type=code&scope=threads_basic%2Cthreads_content_publish%2Cthreads_manage_replies%2Cthreads_read_replies%2Cthreads_manage_insights&state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE",
+            "headers": []
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://threads.net/oauth/authorize?client_id=test-threads-app&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fthreads&response_type=code&scope=threads_basic%2Cthreads_content_publish%2Cthreads_manage_replies%2Cthreads_read_replies%2Cthreads_manage_insights&state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram/start?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Connection link is invalid</title><body><main><h1>Connection link is invalid</h1><p>Error: OAuth link names a different platform</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Instagram connection failed</title><body><main><h1>Instagram connection failed</h1><p>Error: OAuth callback reached the wrong platform route</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE&error=access_denied&error_description=The+user+denied+%3Caccess%3E",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connection failed</title><body><main><h1>Threads connection failed</h1><p>Error: Threads refused the authorization: The user denied &lt;access&gt;</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE&error_description=&error=ignored",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connection failed</title><body><main><h1>Threads connection failed</h1><p>Error: OAuth callback has no code</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connection failed</title><body><main><h1>Threads connection failed</h1><p>Error: OAuth callback has no code</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads?state=bogus&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connection failed</title><body><main><h1>Threads connection failed</h1><p>Error: OAuth state is malformed</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE&code=test-code&code=second",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connected</title><body><main><h1>Threads connected</h1><p>@alice is ready for EN publishing.</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://graph.threads.net/oauth/access_token",
+              "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+              "body": "client_id=test-threads-app&client_secret=test-threads-secret&grant_type=authorization_code&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fthreads&code=test-code"
+            },
+            {
+              "method": "GET",
+              "url": "https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=test-threads-secret&access_token=test-token-threads-short",
+              "headers": [],
+              "body": ""
+            },
+            {
+              "method": "GET",
+              "url": "https://graph.threads.net/v1.0/me?fields=id%2Cusername&access_token=test-token-threads-long",
+              "headers": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/?state=eyJwbGF0Zm9ybSI6InRocmVhZHMiLCJsb2NhbGUiOiJlbiIsImV4cGlyZXNBdCI6MTc5MzUyNzgwMDAwMCwibm9uY2UiOiJCQVFFQkFRRUJBUUVCQVFFQkFRRUJBIn0.u1BtRkXUMMO7q2bRR-3Cipj5WHSwmSwoK7Sf3UV3ukE&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connection failed</title><body><main><h1>Threads connection failed</h1><p>Error: POST https://graph.threads.net/oauth/access_token failed: 401 {&quot;error&quot;:{&quot;message&quot;:&quot;Invalid OAuth access token&quot;,&quot;code&quot;:190}}</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://graph.threads.net/oauth/access_token",
+              "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+              "body": "client_id=test-threads-app&client_secret=test-threads-secret&grant_type=authorization_code&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fthreads&code=test-code"
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram/start?locale=ru",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://www.instagram.com/oauth/authorize?client_id=test-instagram-app&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Finstagram&response_type=code&scope=instagram_business_basic%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights%2Cinstagram_business_manage_comments&enable_fb_login=0&force_reauth=true&state=eyJwbGF0Zm9ybSI6Imluc3RhZ3JhbSIsImxvY2FsZSI6InJ1IiwiZXhwaXJlc0F0IjoxNzkzNTI3ODAwMDAwLCJub25jZSI6IkJRVUZCUVVGQlFVRkJRVUZCUVVGQlEifQ.C5hvztWsp1f2hZ0YtIzi9-x1x2lh7Z6m6SsRGze53yQ",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram?code=test-code&state=eyJwbGF0Zm9ybSI6Imluc3RhZ3JhbSIsImxvY2FsZSI6InJ1IiwiZXhwaXJlc0F0IjoxNzkzNTI3ODAwMDAwLCJub25jZSI6IkJRVUZCUVVGQlFVRkJRVUZCUVVGQlEifQ.C5hvztWsp1f2hZ0YtIzi9-x1x2lh7Z6m6SsRGze53yQ",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Instagram connected</title><body><main><h1>Instagram connected</h1><p>test-ig-user is ready for RU publishing.</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://api.instagram.com/oauth/access_token",
+              "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+              "body": "client_id=test-instagram-app&client_secret=test-instagram-secret&grant_type=authorization_code&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Finstagram&code=test-code"
+            },
+            {
+              "method": "GET",
+              "url": "https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=test-instagram-secret&access_token=test-token-ig-short",
+              "headers": [],
+              "body": ""
+            },
+            {
+              "method": "GET",
+              "url": "https://graph.instagram.com/me?fields=id%2Cusername&access_token=test-token-ig-long",
+              "headers": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram?code=test-code&state=eyJwbGF0Zm9ybSI6Imluc3RhZ3JhbSIsImxvY2FsZSI6InJ1IiwiZXhwaXJlc0F0IjoxNzkzNTI3ODAwMDAwLCJub25jZSI6IkJRVUZCUVVGQlFVRkJRVUZCUVVGQlEifQ.C5hvztWsp1f2hZ0YtIzi9-x1x2lh7Z6m6SsRGze53yQ",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Instagram connection failed</title><body><main><h1>Instagram connection failed</h1><p>Error: OAuth link has expired</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/instagram/start?state=eyJwbGF0Zm9ybSI6Imluc3RhZ3JhbSIsImxvY2FsZSI6InJ1IiwiZXhwaXJlc0F0IjoxNzkzNTI3ODAwMDAwLCJub25jZSI6IkJRVUZCUVVGQlFVRkJRVUZCUVVGQlEifQ.C5hvztWsp1f2hZ0YtIzi9-x1x2lh7Z6m6SsRGze53yQ",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Connection link is invalid</title><body><main><h1>Connection link is invalid</h1><p>Error: OAuth link has expired</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        }
+      ],
+      "assets": [],
+      "incoming": null,
+      "channels": [
+        "1 text:'threads_en' text:'threads_en' text:'en' text:'native' text:'test-threads-user' text:'threads_en' text:'Threads EN · @alice' integer:1 text:'interface' text:'2026-11-01T10:00:00.000Z' text:'2026-11-01T10:00:00.000Z'",
+        "2 text:'instagram_ru' text:'instagram' text:'ru' text:'native' text:'test-ig-user' null:NULL text:'Instagram RU · test-ig-user' integer:1 text:'interface' text:'2026-11-01T10:00:00.000Z' text:'2026-11-01T10:00:00.000Z'"
+      ],
+      "tokens": [
+        {
+          "target": "threads_en",
+          "sealed_token": "test-token-threads-long",
+          "seed_fingerprint": null,
+          "account_id": "test-threads-user",
+          "sealed_refresh_token": null,
+          "expires_at": null,
+          "refreshed_at": "2026-11-01T10:00:00.000Z",
+          "updated_at": "2026-11-01T10:00:00.000Z",
+          "upload_limit_bytes": null
+        },
+        {
+          "target": "instagram_ru",
+          "sealed_token": "test-token-ig-long",
+          "seed_fingerprint": null,
+          "account_id": "test-ig-user",
+          "sealed_refresh_token": null,
+          "expires_at": null,
+          "refreshed_at": "2026-11-01T10:00:00.000Z",
+          "updated_at": "2026-11-01T10:00:00.000Z",
+          "upload_limit_bytes": null
+        }
+      ],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": "test-token-threads-long",
+        "INSTAGRAM_RU_ACCESS_TOKEN": "test-token-ig-long",
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": "test-ig-user",
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
+    },
+    {
+      "name": "oauth x",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7",
+        "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+        "COMMAND_CENTER_TOKEN": "command-token-for-tests",
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret",
+        "X_CLIENT_ID": "test-x-client",
+        "X_CLIENT_SECRET": "test-x-secret",
+        "YOUTUBE_RU_CLIENT_ID": "test-yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-yt-ru-secret",
+        "YOUTUBE_EN_CLIENT_ID": "test-yt-en-client",
+        "YOUTUBE_EN_CLIENT_SECRET": "test-yt-en-secret"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/oauth/x/start",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x/start",
+            "headers": [["x-command-token", "wrong"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x/start",
+            "headers": [["cookie", "command_token=command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x?error=access_denied",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x?code=test-code",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x?state=$state&code=",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x?state=garbage&code=test-code",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x?code=test-code&state=$state"
+          },
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer",
+                "access_token": "test-token-x-access",
+                "refresh_token": "test-token-x-refresh",
+                "scope": "tweet.read",
+                "expires_in": 7200
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "id": "test-x-user",
+                  "username": "carol"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "target": "/oauth/x?code=test-code&state=$state"
+          },
+          "responses": [
+            {
+              "status": 400,
+              "body": "{\"error\":\"invalid_grant\",\"error_description\":\"Value passed for the authorization code was invalid.\"}"
+            }
+          ]
+        },
+        {
+          "request": {
+            "target": "/oauth/x?code=test-code&state=$state"
+          },
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-x-access-2",
+                "refresh_token": "test-token-x-refresh-2",
+                "expires_in": 7200
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "username": "nobody"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-01T10:10:00.001Z"
+        },
+        {
+          "request": {
+            "target": "/oauth/x?code=test-code&state=$state",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x/start",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection link is invalid</title><body><main><h1>X connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x/start",
+            "headers": [["x-command-token", "wrong"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection link is invalid</title><body><main><h1>X connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x/start",
+            "headers": [["cookie", "command_token=command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://x.com/i/oauth2/authorize?response_type=code&client_id=test-x-client&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fx&scope=tweet.read+tweet.write+users.read+media.write+offline.access&state=SEALED({\"verifier\":\"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE\",\"expiresAt\":1793527800000,\"nonce\":\"02020202020202020202020202020202\"})&code_challenge=VtX6czP210fbQsI5QH5dpMMvTHnzXQkrE0_TWkAtnFw&code_challenge_method=S256",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?error=access_denied",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X refused the authorization: access_denied</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X OAuth callback has no code or state</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?state=HqyokOWY6CniMmvd.65iQ7MuOsr5Gj1viebVOLw%3D%3D.%2BeJqpVX5%2BQqKAwkVuCh1zc6mN6NyBQpZhx8U8uUotBzrbcLXlIQBrfnbzZyO9ehqbyFHTJehKkZ3qS7DQpknMq1dG6NJ9HMmWak0eHfL9tXJjyCwVrFMgZgzvqLX80Teg2F7Cj0eLwxbnu%2Bvz8507FGvplRHJESNgijOyFJOiQ%3D%3D&code=",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X OAuth callback has no code or state</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?state=garbage&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X OAuth state is invalid</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?code=test-code&state=HqyokOWY6CniMmvd.65iQ7MuOsr5Gj1viebVOLw%3D%3D.%2BeJqpVX5%2BQqKAwkVuCh1zc6mN6NyBQpZhx8U8uUotBzrbcLXlIQBrfnbzZyO9ehqbyFHTJehKkZ3qS7DQpknMq1dG6NJ9HMmWak0eHfL9tXJjyCwVrFMgZgzvqLX80Teg2F7Cj0eLwxbnu%2Bvz8507FGvplRHJESNgijOyFJOiQ%3D%3D",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connected</title><body><main><h1>X connected</h1><p>@carol is ready for publishing.</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://api.x.com/2/oauth2/token",
+              "headers": [
+                ["authorization", "Basic dGVzdC14LWNsaWVudDp0ZXN0LXgtc2VjcmV0"],
+                ["content-type", "application/x-www-form-urlencoded"]
+              ],
+              "body": "grant_type=authorization_code&code=test-code&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fx&code_verifier=AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+            },
+            {
+              "method": "GET",
+              "url": "https://api.x.com/2/users/me",
+              "headers": [["authorization", "Bearer test-token-x-access"]],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?code=test-code&state=HqyokOWY6CniMmvd.65iQ7MuOsr5Gj1viebVOLw%3D%3D.%2BeJqpVX5%2BQqKAwkVuCh1zc6mN6NyBQpZhx8U8uUotBzrbcLXlIQBrfnbzZyO9ehqbyFHTJehKkZ3qS7DQpknMq1dG6NJ9HMmWak0eHfL9tXJjyCwVrFMgZgzvqLX80Teg2F7Cj0eLwxbnu%2Bvz8507FGvplRHJESNgijOyFJOiQ%3D%3D",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: POST https://api.x.com/2/oauth2/token failed: 400 {&quot;error&quot;:&quot;invalid_grant&quot;,&quot;error_description&quot;:&quot;Value passed for the authorization code was invalid.&quot;}</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://api.x.com/2/oauth2/token",
+              "headers": [
+                ["authorization", "Basic dGVzdC14LWNsaWVudDp0ZXN0LXgtc2VjcmV0"],
+                ["content-type", "application/x-www-form-urlencoded"]
+              ],
+              "body": "grant_type=authorization_code&code=test-code&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fx&code_verifier=AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?code=test-code&state=HqyokOWY6CniMmvd.65iQ7MuOsr5Gj1viebVOLw%3D%3D.%2BeJqpVX5%2BQqKAwkVuCh1zc6mN6NyBQpZhx8U8uUotBzrbcLXlIQBrfnbzZyO9ehqbyFHTJehKkZ3qS7DQpknMq1dG6NJ9HMmWak0eHfL9tXJjyCwVrFMgZgzvqLX80Teg2F7Cj0eLwxbnu%2Bvz8507FGvplRHJESNgijOyFJOiQ%3D%3D",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X returned no account id</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://api.x.com/2/oauth2/token",
+              "headers": [
+                ["authorization", "Basic dGVzdC14LWNsaWVudDp0ZXN0LXgtc2VjcmV0"],
+                ["content-type", "application/x-www-form-urlencoded"]
+              ],
+              "body": "grant_type=authorization_code&code=test-code&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fx&code_verifier=AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+            },
+            {
+              "method": "GET",
+              "url": "https://api.x.com/2/users/me",
+              "headers": [["authorization", "Bearer test-token-x-access-2"]],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?code=test-code&state=HqyokOWY6CniMmvd.65iQ7MuOsr5Gj1viebVOLw%3D%3D.%2BeJqpVX5%2BQqKAwkVuCh1zc6mN6NyBQpZhx8U8uUotBzrbcLXlIQBrfnbzZyO9ehqbyFHTJehKkZ3qS7DQpknMq1dG6NJ9HMmWak0eHfL9tXJjyCwVrFMgZgzvqLX80Teg2F7Cj0eLwxbnu%2Bvz8507FGvplRHJESNgijOyFJOiQ%3D%3D",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X OAuth link has expired</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        }
+      ],
+      "assets": [],
+      "incoming": null,
+      "channels": [
+        "1 text:'x' text:'x' text:'en' text:'native' text:'test-x-user' text:'x' text:'X EN · @carol' integer:1 text:'interface' text:'2026-11-01T10:00:00.000Z' text:'2026-11-01T10:00:00.000Z'"
+      ],
+      "tokens": [
+        {
+          "target": "x",
+          "sealed_token": "test-token-x-access",
+          "seed_fingerprint": null,
+          "account_id": "test-x-user",
+          "sealed_refresh_token": "test-token-x-refresh",
+          "expires_at": "2026-11-01T12:00:00.000Z",
+          "refreshed_at": "2026-11-01T10:00:00.000Z",
+          "updated_at": "2026-11-01T10:00:00.000Z",
+          "upload_limit_bytes": null
+        }
+      ],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": "test-token-x-access",
+        "X_REFRESH_TOKEN": "test-token-x-refresh",
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
+    },
+    {
+      "name": "oauth youtube",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7",
+        "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+        "COMMAND_CENTER_TOKEN": "command-token-for-tests",
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret",
+        "X_CLIENT_ID": "test-x-client",
+        "X_CLIENT_SECRET": "test-x-secret",
+        "YOUTUBE_RU_CLIENT_ID": "test-yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-yt-ru-secret",
+        "YOUTUBE_EN_CLIENT_ID": "test-yt-en-client",
+        "YOUTUBE_EN_CLIENT_SECRET": "test-yt-en-secret"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/oauth/youtube/start?locale=en",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube/start?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube/start?locale=fr",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube?error=access_denied&error_description=Denied+by+%E2%80%9Cuser%E2%80%9D",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube?state=$state",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube?code=test-code&state=$state"
+          },
+          "responses": [
+            {
+              "throws": "connection reset"
+            }
+          ]
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube?code=test-code&state=$state"
+          },
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "a",
+                "refresh_token": "test-token-yt-ru-refresh",
+                "scope": "https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.force-ssl"
+              }
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-01T10:10:00.001Z"
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube?code=test-code&state=$state",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube/start?locale=en",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection link is invalid</title><body><main><h1>YouTube connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube/start?locale=en",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-yt-en-client&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fyoutube&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.force-ssl+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyt-analytics.readonly&state=SEALED({\"locale\":\"en\",\"verifier\":\"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE\",\"expiresAt\":1793527800000,\"nonce\":\"02020202020202020202020202020202\"})&access_type=offline&prompt=consent&include_granted_scopes=false&code_challenge=VtX6czP210fbQsI5QH5dpMMvTHnzXQkrE0_TWkAtnFw&code_challenge_method=S256",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube/start?locale=fr",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 302,
+          "headers": {
+            "cache-control": "no-store",
+            "location": "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=test-yt-ru-client&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fyoutube&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.force-ssl+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyt-analytics.readonly&state=SEALED({\"locale\":\"ru\",\"verifier\":\"AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM\",\"expiresAt\":1793527800000,\"nonce\":\"04040404040404040404040404040404\"})&access_type=offline&prompt=consent&include_granted_scopes=false&code_challenge=g77gcvvTQj90gfwWOCFjatjPtz-u8N0FgfOXnqDHMbk&code_challenge_method=S256",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null,
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube?error=access_denied&error_description=Denied+by+%E2%80%9Cuser%E2%80%9D",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection failed</title><body><main><h1>YouTube connection failed</h1><p>Error: Google refused the authorization: Denied by “user”</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube?state=5fAW5cItOQXchfDr.UgpzFlV6LUrMb7q2hNBFtg%3D%3D.RtcI4yY6e6DPQekd9RtlWLV01kmUCzW6PDDcuBTBoJ5bla9fJMobVtWGMRq9iDhmMKAjrnZOqzNsucnZvZfsLGuLdeJOiOfmdpPS6qdo4Uit6zNYEYjK%2F92Gr7aTRPL888Li%2BlnwqaqSa%2BPn5ALsf%2Bp0vG6usyAo7T8iw3BhUEhXwI2Ng17dgJXKkUhT",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection failed</title><body><main><h1>YouTube connection failed</h1><p>Error: YouTube OAuth callback has no code or state</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube?code=test-code&state=5fAW5cItOQXchfDr.UgpzFlV6LUrMb7q2hNBFtg%3D%3D.RtcI4yY6e6DPQekd9RtlWLV01kmUCzW6PDDcuBTBoJ5bla9fJMobVtWGMRq9iDhmMKAjrnZOqzNsucnZvZfsLGuLdeJOiOfmdpPS6qdo4Uit6zNYEYjK%2F92Gr7aTRPL888Li%2BlnwqaqSa%2BPn5ALsf%2Bp0vG6usyAo7T8iw3BhUEhXwI2Ng17dgJXKkUhT",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection failed</title><body><main><h1>YouTube connection failed</h1><p>Error: POST https://oauth2.googleapis.com/token failed before receiving an HTTP response</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://oauth2.googleapis.com/token",
+              "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+              "body": "grant_type=authorization_code&code=test-code&client_id=test-yt-ru-client&client_secret=test-yt-ru-secret&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fyoutube&code_verifier=AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM"
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube?code=test-code&state=5fAW5cItOQXchfDr.UgpzFlV6LUrMb7q2hNBFtg%3D%3D.RtcI4yY6e6DPQekd9RtlWLV01kmUCzW6PDDcuBTBoJ5bla9fJMobVtWGMRq9iDhmMKAjrnZOqzNsucnZvZfsLGuLdeJOiOfmdpPS6qdo4Uit6zNYEYjK%2F92Gr7aTRPL888Li%2BlnwqaqSa%2BPn5ALsf%2Bp0vG6usyAo7T8iw3BhUEhXwI2Ng17dgJXKkUhT",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube RU connected</title><body><main><h1>YouTube RU connected</h1><p>The channel is ready for publishing and comment collection.</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": [
+            {
+              "method": "POST",
+              "url": "https://oauth2.googleapis.com/token",
+              "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+              "body": "grant_type=authorization_code&code=test-code&client_id=test-yt-ru-client&client_secret=test-yt-ru-secret&redirect_uri=https%3A%2F%2Fstudio.example.com%2Foauth%2Fyoutube&code_verifier=AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM"
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube?code=test-code&state=5fAW5cItOQXchfDr.UgpzFlV6LUrMb7q2hNBFtg%3D%3D.RtcI4yY6e6DPQekd9RtlWLV01kmUCzW6PDDcuBTBoJ5bla9fJMobVtWGMRq9iDhmMKAjrnZOqzNsucnZvZfsLGuLdeJOiOfmdpPS6qdo4Uit6zNYEYjK%2F92Gr7aTRPL888Li%2BlnwqaqSa%2BPn5ALsf%2Bp0vG6usyAo7T8iw3BhUEhXwI2Ng17dgJXKkUhT",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection failed</title><body><main><h1>YouTube connection failed</h1><p>Error: YouTube connection link has expired. Start the connection again.</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        }
+      ],
+      "assets": [],
+      "incoming": null,
+      "channels": [
+        "1 text:'youtube_ru' text:'youtube' text:'ru' text:'native' null:NULL null:NULL text:'YouTube RU' integer:1 text:'interface' text:'2026-11-01T10:00:00.000Z' text:'2026-11-01T10:00:00.000Z'"
+      ],
+      "tokens": [
+        {
+          "target": "youtube_ru",
+          "sealed_token": "test-token-yt-ru-refresh",
+          "seed_fingerprint": null,
+          "account_id": null,
+          "sealed_refresh_token": null,
+          "expires_at": null,
+          "refreshed_at": "2026-11-01T10:00:00.000Z",
+          "updated_at": "2026-11-01T10:00:00.000Z",
+          "upload_limit_bytes": null
+        }
+      ],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": "test-token-yt-ru-refresh",
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
+    },
+    {
+      "name": "oauth without credentials or a command token",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/oauth/threads/start?locale=ru&token=command-token-for-tests",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/threads?state=x.y&code=test-code",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x?state=x&code=test-code",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube?state=x&code=test-code",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start?locale=ru&token=command-token-for-tests",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Connection link is invalid</title><body><main><h1>Connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection link is invalid</title><body><main><h1>X connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection link is invalid</title><body><main><h1>YouTube connection link is invalid</h1><p>Error: Open an authorized Studio connection link</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads?state=x.y&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Threads connection failed</title><body><main><h1>Threads connection failed</h1><p>Error: TOKEN_ENCRYPTION_KEY is required for browser OAuth</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x?state=x&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection failed</title><body><main><h1>X connection failed</h1><p>Error: X OAuth state is invalid</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube?state=x&code=test-code",
+            "headers": []
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection failed</title><body><main><h1>YouTube connection failed</h1><p>Error: YouTube connection link is not valid for this Studio</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        }
+      ],
+      "assets": [],
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
+    },
+    {
+      "name": "oauth with a command token but no provider credentials",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7",
+        "COMMAND_CENTER_TOKEN": "command-token-for-tests"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/oauth/threads/start?locale=ru",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/x/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/youtube/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/threads/start?locale=ru",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Connection link is invalid</title><body><main><h1>Connection link is invalid</h1><p>Error: TOKEN_ENCRYPTION_KEY is required for browser OAuth</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/x/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>X connection link is invalid</title><body><main><h1>X connection link is invalid</h1><p>Error: X_CLIENT_ID is required for browser OAuth</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/youtube/start",
+            "headers": [["x-command-token", "command-token-for-tests"]]
+          },
+          "status": 400,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/html; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>YouTube connection link is invalid</title><body><main><h1>YouTube connection link is invalid</h1><p>Error: TOKEN_ENCRYPTION_KEY is required to connect an account</p><p>You can close this page and return to the publishing bot.</p></main></body></html>"
+          },
+          "sent": []
+        }
+      ],
+      "assets": [],
+      "incoming": null,
+      "channels": [],
+      "tokens": [],
+      "credentials": {
+        "THREADS_RU_ACCESS_TOKEN": null,
+        "THREADS_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_ACCESS_TOKEN": null,
+        "INSTAGRAM_EN_ACCESS_TOKEN": null,
+        "INSTAGRAM_RU_USER_ID": null,
+        "INSTAGRAM_EN_USER_ID": null,
+        "X_ACCESS_TOKEN": null,
+        "X_REFRESH_TOKEN": null,
+        "ZERNIO_API_KEY": null,
+        "DISCORD_BOT_TOKEN": null,
+        "YOUTUBE_RU_REFRESH_TOKEN": null,
+        "YOUTUBE_EN_REFRESH_TOKEN": null
+      }
     }
   ],
   "command_allowed": [

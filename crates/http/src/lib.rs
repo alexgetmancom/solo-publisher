@@ -16,6 +16,7 @@ mod health;
 mod local;
 mod media_upload;
 mod mime;
+mod oauth;
 mod ranged_file;
 mod response;
 mod server;
@@ -25,14 +26,17 @@ mod uri;
 
 use std::cell::Cell;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use axum::Router;
+use channels::entropy::{Entropy, OsEntropy};
+use channels::oauth_routes::ChannelRegistrar;
 use db::BackendDb;
-use domain::application::ports::Clock;
+use domain::application::ports::{ChannelConnectionRecord, Clock};
 use domain::publishing::Publishing;
 use domain::studio::Studio;
-use foundation::config::Config;
+use domain::studio::services::channels::{ChannelInput, ChannelService};
+use foundation::config::{Config, SharedConfig};
+use runtime::http::HttpClient;
 
 pub use auth::{command_allowed, mcp_studio_actor};
 pub use client_identity::client_ip_hash;
@@ -42,38 +46,65 @@ pub use response::{HandlerError, HandlerResult};
 pub use server::{IDLE_TIMEOUT, MAX_REQUEST_BODY_BYTES, serve};
 pub use uri::Target;
 
-/// What the routes reach through the process. In the Studio that is the bot,
-/// which owns the database, the clock, the live configuration and the host's
-/// boundaries; tests supply their own.
-pub trait Backend {
+/// What the routes reach through the process: in the Studio, the bot (which
+/// owns the database, the clock, the live configuration and the host's
+/// boundaries) and the HTTP client; tests supply their own. Registering a
+/// channel is how an OAuth callback ends (`studio.channels.connect`).
+pub trait Backend: ChannelRegistrar {
     fn db(&self) -> &BackendDb;
     fn clock(&self) -> &dyn Clock;
-    /// The live configuration (stored credentials are re-applied onto it).
-    fn config(&self) -> Arc<Config>;
+    /// The live configuration: stored credentials are re-applied onto it, and
+    /// an OAuth callback swaps in the credentials it connected.
+    fn config(&self) -> &SharedConfig;
     /// A Studio handle over `config`, for the routes that drive Studio services.
     fn studio<'a>(&'a self, config: &'a Config) -> Studio<'a>;
+    /// What the OAuth callbacks exchange their codes through.
+    fn http(&self) -> &HttpClient;
+    /// Where OAuth nonces and PKCE verifiers come from.
+    fn entropy(&self) -> &dyn Entropy;
 }
 
-impl Backend for bot::Bot {
+/// The Studio process as the routes reach it.
+pub struct BotBackend {
+    pub bot: bot::Bot,
+    pub http: HttpClient,
+}
+
+impl Backend for BotBackend {
     fn db(&self) -> &BackendDb {
-        &self.deps().db
+        &self.bot.deps().db
     }
 
     fn clock(&self) -> &dyn Clock {
-        &*self.deps().clock
+        &*self.bot.deps().clock
     }
 
-    fn config(&self) -> Arc<Config> {
-        self.deps().config.load()
+    fn config(&self) -> &SharedConfig {
+        &self.bot.deps().config
     }
 
     fn studio<'a>(&'a self, config: &'a Config) -> Studio<'a> {
-        let deps = self.deps();
+        let deps = self.bot.deps();
         Studio::new(
             Publishing::new(db::unsafe_db(&deps.db), &*deps.clock, deps.host.publishing()),
             config,
             deps.host.studio(),
         )
+    }
+
+    fn http(&self) -> &HttpClient {
+        &self.http
+    }
+
+    fn entropy(&self) -> &dyn Entropy {
+        &OsEntropy
+    }
+}
+
+impl ChannelRegistrar for BotBackend {
+    fn connect(&self, input: &ChannelInput) -> domain::Result<ChannelConnectionRecord> {
+        let config = self.config().load();
+        ChannelService::new(self.studio(&config), &self.bot.deps().adapters).connect(input, None)
     }
 }
 
@@ -97,11 +128,12 @@ impl HttpState {
 }
 
 /// The route groups, each one call. A later slice adds its group here
-/// (`.merge(oauth::routes())`, `.merge(mcp::routes())`); until then its paths
-/// are unknown routes like any other.
+/// (`.merge(mcp::routes())`); until then its paths are unknown routes like
+/// any other.
 fn routes() -> Router<Local> {
     Router::new()
         .merge(health::routes())
+        .merge(oauth::routes())
         .merge(studio::routes())
         .merge(site::routes())
         .merge(discovery::routes())

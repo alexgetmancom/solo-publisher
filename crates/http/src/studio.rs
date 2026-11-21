@@ -49,7 +49,7 @@ impl Drop for ActiveUpload<'_> {
 }
 
 async fn upload(state: &HttpState, parts: &Parts, body: Body) -> Response {
-    let config = state.backend.config();
+    let config = state.backend.config().load();
     let Some(actor_id) = mcp_studio_actor(&parts.headers, &config) else {
         return text("forbidden\n", 403);
     };

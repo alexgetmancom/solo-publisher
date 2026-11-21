@@ -1,19 +1,18 @@
-import crypto from "node:crypto";
+import { mock } from "bun:test";
+import * as nodeCrypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { createApiHandler } from "../../apps/backend/src/api.js";
-import { openBackendDb, unsafeDb } from "../../apps/backend/src/db/client.js";
-import { clientIpHash } from "../../apps/backend/src/foundation/client-identity.js";
-import { loadConfig, withStudioProfile } from "../../apps/backend/src/foundation/config.js";
-import { commandAllowed, mcpStudioActor } from "../../apps/backend/src/foundation/http-auth.js";
-import { streamUploadToFile } from "../../apps/backend/src/interfaces/http/media-upload.js";
 
 /**
  * The TypeScript side of the Rust HTTP edge parity test (crates/http/tests/goldens.rs).
  * Every case builds the real Hono app (`createApiHandler`) over its own database and
  * DATA_DIR under a fixed clock, runs its steps and records every response: status,
- * every header, and the body (text, or sha256 + length for bytes). The request is
- * recorded as the app saw it, so the Rust side replays exactly those headers.
+ * every header, and the body (text, or sha256 + length for bytes), with the requests
+ * the app sent through a recording `fetch` that answers the step's canned responses.
+ * The request is recorded as the app saw it, so the Rust side replays exactly those
+ * headers. After its steps a case records the stored assets, the upload scratch
+ * directory, `channel_connections`, `platform_tokens` (sealed values opened) and the
+ * live config's credentials.
  *
  *   bun scripts/rust/http-goldens.ts      writes parity/http/goldens.json
  *
@@ -21,32 +20,35 @@ import { streamUploadToFile } from "../../apps/backend/src/interfaces/http/media
  *   {"sql": "<statements>"}                       `$DATA_DIR` is replaced by the case's directory
  *   {"write": "<path under DATA_DIR>", "base64": "<bytes>"}
  *   {"mkdir": "<path under DATA_DIR>"} | {"chmod": "<path under DATA_DIR>", "mode": <octal>}
- *   {"request": Req}                             a header value `$etag` is the last ETag answered
+ *   {"clock": "<ISO>"}
+ *   {"request": Req, "responses"?: [Canned]}     a header value `$etag` is the last ETag answered;
+ *                                                `$state` in the target is the `state` of the last
+ *                                                `location` answered (recorded resolved)
  *   {"held_uploads": [Req, Req], "meanwhile": Req}   two uploads whose bodies stay open while `meanwhile` runs
- * Response bodies and the recorded asset rows carry `$DATA_DIR` instead of the path.
+ * a canned response {"status", "headers"?, "body"? | "json"?} | {"throws": "<message>"}.
+ * Response bodies and the recorded asset rows carry `$DATA_DIR` instead of the path; a sealed
+ * `state=` in a header is shown opened (its IV is random). `randomBytes` is scripted — every
+ * draw but the 12-byte IV fills its buffer with a counter that restarts per case — so signed
+ * states and PKCE challenges compare bit for bit.
  * The helpers without a route of their own in this slice (`commandAllowed`,
  * `mcpStudioActor`, `clientIpHash`, `streamUploadToFile`) are recorded as direct calls.
  */
 
-type Req = { method?: string; target: string; headers?: [string, string][]; base64?: string };
-type Step =
-  | { sql: string }
-  | { write: string; base64: string }
-  | { mkdir: string }
-  | { chmod: string; mode: number }
-  | { request: Req }
-  | { held_uploads: [Req, Req]; meanwhile: Req };
-type Case = { name: string; env?: Record<string, string>; steps: Step[] };
-type Body = { text: string } | { sha256: string; length: number } | null;
-type Recorded = {
-  request: { method: string; target: string; headers: [string, string][]; base64?: string };
-  status: number;
-  headers: Record<string, string>;
-  body: Body;
-};
+// Captured before the mock: the module namespace follows it.
+const realCrypto = { ...nodeCrypto };
+let draws = 0;
+mock.module("node:crypto", () => ({
+  ...realCrypto,
+  default: realCrypto,
+  randomBytes: (size: number) => {
+    if (size === 12) return realCrypto.randomBytes(size);
+    draws += 1;
+    return Buffer.alloc(size, draws & 0xff);
+  },
+}));
 
 const T0 = "2026-11-01T10:00:00.000Z";
-const nowMs = Date.parse(T0);
+let nowMs = Date.parse(T0);
 const RealDate = Date;
 class FixedDate extends RealDate {
   constructor(...args: unknown[]) {
@@ -58,6 +60,51 @@ class FixedDate extends RealDate {
   }
 }
 globalThis.Date = FixedDate as DateConstructor;
+
+type Canned = { status: number; headers?: [string, string][]; body?: string; json?: unknown } | { throws: string };
+type Sent = { method: string; url: string; headers: [string, string][]; body: string };
+let responses: Canned[] = [];
+let sent: Sent[] = [];
+globalThis.fetch = (async (input: string | Request, init: RequestInit = {}) => {
+  const request = new Request(input, init);
+  const headers = [...request.headers].sort((left, right) => (left[0] < right[0] ? -1 : left[0] > right[0] ? 1 : 0));
+  sent.push({ method: request.method, url: request.url, headers, body: await request.text() });
+  const next = responses.shift();
+  if (!next) throw new TypeError("no canned response left");
+  if ("throws" in next) throw new TypeError(next.throws);
+  const body = next.json === undefined ? (next.body ?? "") : JSON.stringify(next.json);
+  return new Response(body, { status: next.status, headers: next.headers ?? [] });
+}) as typeof fetch;
+
+// ---- the modules, imported after the mocks --------------------------------
+
+const { createApiHandler } = await import("../../apps/backend/src/api.js");
+const { openBackendDb, unsafeDb } = await import("../../apps/backend/src/db/client.js");
+const { clientIpHash } = await import("../../apps/backend/src/foundation/client-identity.js");
+const { loadConfig, withStudioProfile } = await import("../../apps/backend/src/foundation/config.js");
+const { commandAllowed, mcpStudioActor } = await import("../../apps/backend/src/foundation/http-auth.js");
+const { encryptionKey, open } = await import("../../apps/backend/src/foundation/secret-box.js");
+const { streamUploadToFile } = await import("../../apps/backend/src/interfaces/http/media-upload.js");
+const { dump } = await import("./scenario-support.js");
+
+type Req = { method?: string; target: string; headers?: [string, string][]; base64?: string };
+type Step =
+  | { sql: string }
+  | { write: string; base64: string }
+  | { mkdir: string }
+  | { chmod: string; mode: number }
+  | { clock: string }
+  | { request: Req; responses?: Canned[] }
+  | { held_uploads: [Req, Req]; meanwhile: Req };
+type Case = { name: string; env?: Record<string, string>; steps: Step[] };
+type Body = { text: string } | { sha256: string; length: number } | null;
+type Recorded = {
+  request: { method: string; target: string; headers: [string, string][]; base64?: string };
+  status: number;
+  headers: Record<string, string>;
+  body: Body;
+  sent: Sent[];
+};
 
 const STUDIO_TOKEN = "studio-token-for-tests-0001";
 const BASE_ENV = {
@@ -90,6 +137,26 @@ const upload = (headers: [string, string][], base64?: string): Req => ({
   ...(base64 === undefined ? {} : { base64 }),
 });
 const write = (file: string, base64 = b64("bytes")): Step => ({ write: file, base64 });
+
+const COMMAND_TOKEN = "command-token-for-tests";
+const OAUTH_ENV = {
+  TOKEN_ENCRYPTION_KEY: "1".repeat(64),
+  COMMAND_CENTER_TOKEN: COMMAND_TOKEN,
+  THREADS_APP_ID: "test-threads-app",
+  THREADS_APP_SECRET: "test-threads-secret",
+  INSTAGRAM_APP_ID: "test-instagram-app",
+  INSTAGRAM_APP_SECRET: "test-instagram-secret",
+  X_CLIENT_ID: "test-x-client",
+  X_CLIENT_SECRET: "test-x-secret",
+  YOUTUBE_RU_CLIENT_ID: "test-yt-ru-client",
+  YOUTUBE_RU_CLIENT_SECRET: "test-yt-ru-secret",
+  YOUTUBE_EN_CLIENT_ID: "test-yt-en-client",
+  YOUTUBE_EN_CLIENT_SECRET: "test-yt-en-secret",
+};
+const command: [string, string] = ["x-command-token", COMMAND_TOKEN];
+const canned = (target: string, responses: Canned[]): Step => ({ request: { target }, responses });
+/** Past the ten minutes an OAuth state lives. */
+const EXPIRED = "2026-11-01T10:10:00.001Z";
 
 function cases(): Case[] {
   return [
@@ -396,6 +463,118 @@ function cases(): Case[] {
         { request: upload([bearer(), ["content-type", "image/png"], ["x-filename", "four.png"]], b64("fourth upload")) },
       ],
     },
+    {
+      name: "oauth meta",
+      env: OAUTH_ENV,
+      steps: [
+        get("/oauth/threads/start?locale=ru"),
+        get("/oauth/threads/start?locale=ru", [command]),
+        get(`/oauth/threads/start?locale=ru&token=${COMMAND_TOKEN}`),
+        get("/oauth/instagram/start?locale=de", [command]),
+        head("/oauth/instagram/start?locale=en", [command]),
+        { request: { method: "POST", target: "/oauth/threads/start?locale=en", headers: [command] } },
+        get("/oauth/threads/start/?locale=en", [command]),
+        get("/oauth/threads/start?state=$state"),
+        get("/oauth/instagram/start?state=$state"),
+        get("/oauth/instagram?state=$state&code=test-code"),
+        get("/oauth/threads?state=$state&error=access_denied&error_description=The+user+denied+%3Caccess%3E"),
+        get("/oauth/threads?state=$state&error_description=&error=ignored"),
+        get("/oauth/threads?state=$state"),
+        get("/oauth/threads?state=bogus&code=test-code"),
+        canned("/oauth/threads?state=$state&code=test-code&code=second", [
+          { status: 200, json: { access_token: "test-token-threads-short", user_id: 17841400000001 } },
+          { status: 200, json: { access_token: "test-token-threads-long", token_type: "bearer", expires_in: 5183944 } },
+          { status: 200, json: { id: "test-threads-user", username: " alice " } },
+        ]),
+        canned("/oauth/threads/?state=$state&code=test-code", [
+          { status: 401, body: '{"error":{"message":"Invalid OAuth access token","code":190}}' },
+        ]),
+        get("/oauth/instagram/start?locale=ru", [command]),
+        canned("/oauth/instagram?code=test-code&state=$state", [
+          { status: 200, json: { access_token: "test-token-ig-short", user_id: "test-ig-user" } },
+          { status: 200, json: { access_token: "test-token-ig-long" } },
+          { status: 200, json: { id: "test-ig-user" } },
+        ]),
+        { clock: EXPIRED },
+        get("/oauth/instagram?code=test-code&state=$state"),
+        get("/oauth/instagram/start?state=$state"),
+      ],
+    },
+    {
+      name: "oauth x",
+      env: OAUTH_ENV,
+      steps: [
+        get("/oauth/x/start"),
+        get("/oauth/x/start", [["x-command-token", "wrong"]]),
+        get("/oauth/x/start", [["cookie", `command_token=${COMMAND_TOKEN}`]]),
+        get("/oauth/x?error=access_denied"),
+        get("/oauth/x?code=test-code"),
+        get("/oauth/x?state=$state&code="),
+        get("/oauth/x?state=garbage&code=test-code"),
+        canned("/oauth/x?code=test-code&state=$state", [
+          {
+            status: 200,
+            json: {
+              token_type: "bearer",
+              access_token: "test-token-x-access",
+              refresh_token: "test-token-x-refresh",
+              scope: "tweet.read",
+              expires_in: 7200,
+            },
+          },
+          { status: 200, json: { data: { id: "test-x-user", username: "carol" } } },
+        ]),
+        canned("/oauth/x?code=test-code&state=$state", [
+          { status: 400, body: '{"error":"invalid_grant","error_description":"Value passed for the authorization code was invalid."}' },
+        ]),
+        canned("/oauth/x?code=test-code&state=$state", [
+          { status: 200, json: { access_token: "test-token-x-access-2", refresh_token: "test-token-x-refresh-2", expires_in: 7200 } },
+          { status: 200, json: { data: { username: "nobody" } } },
+        ]),
+        { clock: EXPIRED },
+        get("/oauth/x?code=test-code&state=$state"),
+      ],
+    },
+    {
+      name: "oauth youtube",
+      env: OAUTH_ENV,
+      steps: [
+        get("/oauth/youtube/start?locale=en"),
+        get("/oauth/youtube/start?locale=en", [command]),
+        get("/oauth/youtube/start?locale=fr", [command]),
+        get("/oauth/youtube?error=access_denied&error_description=Denied+by+%E2%80%9Cuser%E2%80%9D"),
+        get("/oauth/youtube?state=$state"),
+        canned("/oauth/youtube?code=test-code&state=$state", [{ throws: "connection reset" }]),
+        canned("/oauth/youtube?code=test-code&state=$state", [
+          {
+            status: 200,
+            json: {
+              access_token: "a",
+              refresh_token: "test-token-yt-ru-refresh",
+              scope: "https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.force-ssl",
+            },
+          },
+        ]),
+        { clock: EXPIRED },
+        get("/oauth/youtube?code=test-code&state=$state"),
+      ],
+    },
+    {
+      name: "oauth without credentials or a command token",
+      steps: [
+        get(`/oauth/threads/start?locale=ru&token=${COMMAND_TOKEN}`, [command]),
+        get("/oauth/x/start", [command]),
+        get("/oauth/youtube/start", [command]),
+        get("/oauth/threads?state=x.y&code=test-code"),
+        get("/oauth/x?state=x&code=test-code"),
+        get("/oauth/youtube?state=x&code=test-code"),
+      ],
+    },
+    {
+      name: "oauth with a command token but no provider credentials",
+      env: { COMMAND_CENTER_TOKEN: COMMAND_TOKEN },
+      steps: [get("/oauth/threads/start?locale=ru", [command]), get("/oauth/x/start", [command]), get("/oauth/youtube/start", [command])],
+    },
   ];
 }
 
@@ -409,7 +588,7 @@ function bodyOf(response: Response, bytes: Buffer, dataDir: string): Body {
   if (bytes.length === 0) return null;
   const type = response.headers.get("content-type") ?? "";
   if (type.startsWith("text/") || type.includes("json")) return { text: bytes.toString("utf8").replaceAll(dataDir, "$DATA_DIR") };
-  return { sha256: crypto.createHash("sha256").update(bytes).digest("hex"), length: bytes.length };
+  return { sha256: realCrypto.createHash("sha256").update(bytes).digest("hex"), length: bytes.length };
 }
 
 /** An upload body that stays open until `release` is called. */
@@ -424,16 +603,53 @@ function heldBody(base64: string): { stream: ReadableStream<Uint8Array>; release
   return { stream, release: () => release() };
 }
 
+const CREDENTIALS = [
+  "THREADS_RU_ACCESS_TOKEN",
+  "THREADS_EN_ACCESS_TOKEN",
+  "INSTAGRAM_RU_ACCESS_TOKEN",
+  "INSTAGRAM_EN_ACCESS_TOKEN",
+  "INSTAGRAM_RU_USER_ID",
+  "INSTAGRAM_EN_USER_ID",
+  "X_ACCESS_TOKEN",
+  "X_REFRESH_TOKEN",
+  "ZERNIO_API_KEY",
+  "DISCORD_BOT_TOKEN",
+  "YOUTUBE_RU_REFRESH_TOKEN",
+  "YOUTUBE_EN_REFRESH_TOKEN",
+] as const;
+
+/** A sealed `state=` shown as what it opens to. */
+function unsealed(value: string, key: Buffer | null): string {
+  if (!key) return value;
+  return value.replace(/([?&]state=)([^&]*)/g, (whole, prefix: string, raw: string) => {
+    try {
+      return `${prefix}SEALED(${open(decodeURIComponent(raw.replaceAll("+", " ")), key)})`;
+    } catch {
+      return whole;
+    }
+  });
+}
+
 async function run(spec: Case, base: string) {
   const dataDir = path.join(base, spec.name.replace(/[^a-z0-9]+/gi, "-"));
   fs.mkdirSync(dataDir, { recursive: true });
+  nowMs = Date.parse(T0);
+  draws = 0;
   const env = { ...BASE_ENV, ...spec.env, DATA_DIR: dataDir };
   const backendDb = openBackendDb(path.join(dataDir, "pipeline.db"), 5000);
   const config = withStudioProfile(loadConfig(env), backendDb);
+  const key = (() => {
+    try {
+      return encryptionKey(config.TOKEN_ENCRYPTION_KEY);
+    } catch {
+      return null;
+    }
+  })();
   const handler = createApiHandler({ config, backendDb });
   const results: Recorded[] = [];
   const chmodded: string[] = [];
   let etag = "";
+  let state = "";
 
   const build = (req: Req, body?: BodyInit) =>
     new Request(`http://localhost${req.target}`, {
@@ -445,6 +661,8 @@ async function run(spec: Case, base: string) {
     const response = await pending;
     const bytes = Buffer.from(await response.arrayBuffer());
     etag = response.headers.get("etag") ?? etag;
+    const location = response.headers.get("location");
+    state = (location && new URL(location).searchParams.get("state")) || state;
     results.push({
       request: {
         method: request.method,
@@ -453,9 +671,13 @@ async function run(spec: Case, base: string) {
         ...(req.base64 !== undefined ? { base64: req.base64 } : {}),
       },
       status: response.status,
-      headers: Object.fromEntries([...response.headers].map(([name, value]) => [name, value.replaceAll(dataDir, "$DATA_DIR")])),
+      headers: Object.fromEntries(
+        [...response.headers].map(([name, value]) => [name, unsealed(value.replaceAll(dataDir, "$DATA_DIR"), key)]),
+      ),
       body: bodyOf(response, bytes, dataDir),
+      sent,
     });
+    sent = [];
   };
 
   for (const item of spec.steps) {
@@ -468,9 +690,13 @@ async function run(spec: Case, base: string) {
     else if ("chmod" in item) {
       fs.chmodSync(path.join(dataDir, item.chmod), item.mode);
       chmodded.push(path.join(dataDir, item.chmod));
-    } else if ("request" in item) {
-      const request = build(item.request);
-      await record(item.request, request, handler(request));
+    } else if ("clock" in item) nowMs = Date.parse(item.clock);
+    else if ("request" in item) {
+      const req = { ...item.request, target: item.request.target.replace("$state", encodeURIComponent(state)) };
+      responses = [...(item.responses ?? [])];
+      const request = build(req);
+      await record(req, request, handler(request));
+      if (responses.length) throw new Error(`${spec.name}: ${req.target} left canned responses unanswered`);
     } else {
       const held = item.held_uploads.map((req) => ({ req, ...heldBody(req.base64 ?? "") }));
       const requests = held.map(({ req, stream }) => build(req, stream));
@@ -486,16 +712,34 @@ async function run(spec: Case, base: string) {
     }
   }
   for (const dir of chmodded) fs.chmodSync(dir, 0o755);
-  const assets = unsafeDb(backendDb)
-    .sqlite.query(
+  const { sqlite } = unsafeDb(backendDb);
+  const assets = sqlite
+    .query(
       "SELECT actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at FROM studio_media_assets ORDER BY id",
     )
     .all()
     .map((row: unknown) => JSON.parse(JSON.stringify(row).replaceAll(dataDir, "$DATA_DIR")));
   const incomingDir = path.join(config.STUDIO_MEDIA_DIR, ".incoming");
   const incoming = fs.existsSync(incomingDir) ? fs.readdirSync(incomingDir) : null;
-  unsafeDb(backendDb).sqlite.close();
-  return { name: spec.name, env: { ...BASE_ENV, ...spec.env }, steps: spec.steps, results, assets, incoming };
+  const channels = dump(sqlite).channel_connections ?? [];
+  const opened = (sealed: string | number | null) => (key && typeof sealed === "string" ? open(sealed, key) : sealed);
+  const tokens = (sqlite.query("SELECT * FROM platform_tokens ORDER BY rowid").all() as Record<string, string | number | null>[]).map(
+    (row) => ({ ...row, sealed_token: opened(row.sealed_token ?? null), sealed_refresh_token: opened(row.sealed_refresh_token ?? null) }),
+  );
+  const values = config as unknown as Record<string, string | undefined>;
+  const credentials = Object.fromEntries(CREDENTIALS.map((name) => [name, values[name] ?? null]));
+  sqlite.close();
+  return {
+    name: spec.name,
+    env: { ...BASE_ENV, ...spec.env },
+    steps: spec.steps,
+    results,
+    assets,
+    incoming,
+    channels,
+    tokens,
+    credentials,
+  };
 }
 
 // -------------------------------------------------------- direct helpers

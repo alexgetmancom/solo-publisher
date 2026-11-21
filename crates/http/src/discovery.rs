@@ -38,7 +38,7 @@ fn cached(body: &Value) -> Response {
 /// and advertises no authorization server.
 async fn protected_resource(State(local): State<Local>) -> Response {
     on_local(&local, |state| async move {
-        let config = state.backend.config();
+        let config = state.backend.config().load();
         Ok(cached(&json!({
             "resource": format!("{}/api/mcp", origin(&config.public_base_url)),
             "bearer_methods_supported": ["header"],
@@ -50,7 +50,7 @@ async fn protected_resource(State(local): State<Local>) -> Response {
 /// The endpoint is the MCP transport itself.
 async fn server_card(State(local): State<Local>) -> Response {
     on_local(&local, |state| async move {
-        let config = state.backend.config();
+        let config = state.backend.config().load();
         let host = url_host(origin(&config.public_base_url))?;
         let body = json!({
             "version": "1.0",
