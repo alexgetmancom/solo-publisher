@@ -160,6 +160,68 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
     }
 }
 
+impl<C: Clock> AuthCircuitBreaker<C> {
+    /// `shouldPingToken`: whether token health's live probe of `target` is
+    /// due. A stored ping time that does not parse is never due, as
+    /// TypeScript's `NaN` comparison answered.
+    pub fn should_ping_token(&self, sqlite: &Connection, target: &str, interval_seconds: i64) -> Result<bool> {
+        let row = details_of(sqlite, target)?;
+        let details = parse_details(row.flatten().as_deref());
+        let Some(last_ping) = details.get("lastPingAt").filter(|value| truthy(value)) else {
+            return Ok(true);
+        };
+        Ok(instant_ms(Some(last_ping))
+            .is_some_and(|at| self.clock.now().as_millisecond() - at >= interval_seconds * 1000))
+    }
+
+    /// `recordTokenPing`: a live probe ran. `token_expires_at` is the expiry
+    /// the provider reported (`None` leaves a stored one as it is);
+    /// `backdate_seconds` makes the next probe due that much sooner.
+    pub fn record_token_ping(
+        &self,
+        sqlite: &Connection,
+        target: &str,
+        token_expires_at: Option<&str>,
+        backdate_seconds: Option<i64>,
+    ) -> Result<()> {
+        let now = stamp(&self.clock);
+        let row = details_of(sqlite, target)?;
+        let mut details = parse_details(row.as_ref().and_then(|json| json.as_deref()));
+        let last_ping_at = match backdate_seconds.filter(|seconds| *seconds != 0) {
+            Some(seconds) => stamp_offset(&self.clock, -seconds * 1000),
+            None => now.clone(),
+        };
+        details.insert("lastPingAt".into(), Value::String(last_ping_at));
+        let details = crate::json::stringify_object(&details);
+        match (row.is_some(), token_expires_at) {
+            (true, Some(expires_at)) => sqlite.execute(
+                r#"update "credential_checks" set "expires_at" = ?, "details_json" = ? where "credential_checks"."target" = ?"#,
+                params![expires_at, details, target],
+            )?,
+            (true, None) => sqlite.execute(
+                r#"update "credential_checks" set "details_json" = ? where "credential_checks"."target" = ?"#,
+                params![details, target],
+            )?,
+            (false, expires_at) => sqlite.execute(
+                r#"insert into "credential_checks" ("target", "status", "required_env_json", "missing_env_json", "expires_at", "last_checked_at", "next_check_at", "last_error", "details_json") values (?, 'unknown', '[]', '[]', ?, ?, null, null, ?)"#,
+                params![target, expires_at, now, details],
+            )?,
+        };
+        Ok(())
+    }
+}
+
+/// JavaScript truthiness of a JSON value.
+fn truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(flag) => *flag,
+        Value::Number(number) => number.as_f64().is_some_and(|number| number != 0.0 && !number.is_nan()),
+        Value::String(text) => !text.is_empty(),
+        Value::Array(_) | Value::Object(_) => true,
+    }
+}
+
 /// A JavaScript number as JSON: integral values without a fraction.
 fn number(value: f64) -> Value {
     if value.fract() == 0.0 && value.abs() < 9_007_199_254_740_992.0 {

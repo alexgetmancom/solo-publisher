@@ -1,0 +1,27 @@
+[package]
+name = "channels"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+base64 = "0.22"
+content = { path = "../content" }
+db = { path = "../db" }
+domain = { path = "../domain" }
+foundation = { path = "../foundation" }
+getrandom = "0.2"
+jiff = { version = "0.2", default-features = false, features = ["std"] }
+runtime = { path = "../runtime" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+sha2 = "0.10"
+url = "2"
+
+[dev-dependencies]
+regex = "1"
+tokio = { version = "1", features = ["rt", "macros"] }
