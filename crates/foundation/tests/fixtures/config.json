@@ -1,0 +1,1295 @@
+[
+  {
+    "name": "minimal",
+    "env": {},
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "blank",
+    "env": {
+      "NODE_ENV": "",
+      "LOG_LEVEL": " ",
+      "PORT": "\t\n",
+      "DATA_DIR": " ﻿　",
+      "CLIENT_IP_HASH_SALT": "",
+      "MCP_STUDIO_TOKEN": " ",
+      "MCP_STUDIO_ACTOR_ID": "\t\n",
+      "CONTROLLER_ADMIN_IDS": " ﻿　",
+      "MEDIA_PROCESSOR_URL": "",
+      "PUBLIC_MEDIA_BASE_URL": " ",
+      "PUBLIC_BASE_URL": "\t\n",
+      "ENABLE_X_METRICS": " ﻿　",
+      "THREADS_APP_ID": ""
+    },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "everything",
+    "env": {
+      "NODE_ENV": "test",
+      "DEPLOYMENT_ENV": "test",
+      "LOG_LEVEL": "debug",
+      "PORT": " 0x1F90 ",
+      "BIND_HOST": "0.0.0.0",
+      "DATA_DIR": "./var//studio/../data/",
+      "TELEGRAM_API_BASE_URL": "http://bot-api:8081",
+      "CONTROLLER_BOT_TOKEN": "123456:abc",
+      "CLIENT_IP_HASH_SALT": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+      "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip",
+      "COMMAND_CENTER_TOKEN": "cc",
+      "MCP_STUDIO_TOKEN": "mcp-token-0123456789",
+      "MCP_STUDIO_ACTOR_ID": "1e3",
+      "DEEPSEEK_API_KEY": "sk-deepseek",
+      "GROK_CLI_PATH": "/usr/bin/grok",
+      "CONTROLLER_ADMIN_IDS": "1, 2,x,0,-3,1e3,0x10, 2.5,9007199254740993,,  42  ",
+      "STUDIO_ACTOR_IDS": "7",
+      "TELEGRAM_CHANNEL_USERNAME": "@channel",
+      "PUBLISH_JOB_TIMEOUT_SECONDS": "899",
+      "METRICS_REFRESH_INTERVAL_SECONDS": "11",
+      "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": "60",
+      "OBSERVABILITY_INTERVAL_SECONDS": "301",
+      "IDLE_POLL_INTERVAL_SECONDS": "6",
+      "MEDIA_PROCESSOR_PROVIDER": "remote_http",
+      "MEDIA_PROCESSOR_URL": "  https://media.example.org/run\t ",
+      "MEDIA_PROCESSOR_TOKEN": "media-token-0123456789",
+      "MEDIA_PROCESSOR_TIMEOUT_SECONDS": "10",
+      "STORY_CARD_ASSETS_DIR": "/assets",
+      "STORY_CARD_RENDERER_ENTRY": "/renderer.js",
+      "THREADS_RU_ACCESS_TOKEN": "threads-ru",
+      "THREADS_EN_ACCESS_TOKEN": "threads-en",
+      "THREADS_CONTAINER_TIMEOUT_SECONDS": "181",
+      "THREADS_APP_ID": "threads-app",
+      "THREADS_APP_SECRET": "threads-secret",
+      "X_CLIENT_ID": "x-client",
+      "X_CLIENT_SECRET": "x-secret",
+      "ENABLE_X_METRICS": "Yes",
+      "DISCORD_CHANNEL_ID": "discord-channel",
+      "DISCORD_GUILD_ID": "discord-guild",
+      "ENABLE_X_PROFILE_METRICS": "OFF",
+      "INSTAGRAM_EN_ACCESS_TOKEN": "ig-en",
+      "INSTAGRAM_EN_USER_ID": "ig-en-user",
+      "INSTAGRAM_RU_ACCESS_TOKEN": "ig-ru",
+      "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+      "INSTAGRAM_APP_ID": "ig-app",
+      "INSTAGRAM_APP_SECRET": "ig-secret",
+      "INSTAGRAM_GRAPH_API_VERSION": "v24.0",
+      "YOUTUBE_RU_CLIENT_ID": "yt-ru",
+      "YOUTUBE_RU_CLIENT_SECRET": "yt-ru-secret",
+      "YOUTUBE_RU_REFRESH_TOKEN": "yt-ru-refresh",
+      "YOUTUBE_EN_CLIENT_ID": "yt-en",
+      "YOUTUBE_EN_CLIENT_SECRET": "yt-en-secret",
+      "YOUTUBE_EN_REFRESH_TOKEN": "yt-en-refresh",
+      "TELEGRAM_STORIES_CHANNEL": "@stories",
+      "TELEGRAM_CHANNEL_STORIES_API_ID": "12345",
+      "TELEGRAM_CHANNEL_STORIES_API_HASH": "hash",
+      "TELEGRAM_CHANNEL_STORIES_SESSION": "session",
+      "PUBLIC_MEDIA_BASE_URL": "https://cdn.example.org/media",
+      "PUBLIC_BASE_URL": "https://studio.example.org//",
+      "TOKEN_ENCRYPTION_KEY": "0000000000000000000000000000000000000000000000000000000000000000",
+      "DEPLOY_AGENT_URL": "http://deploy-agent:9000",
+      "DEPLOY_AGENT_TOKEN": "deploy-token-0123456789",
+      "INDEXNOW_ENABLED": "false",
+      "UNRELATED_VARIABLE": "ignored"
+    },
+    "result": {
+      "ok": {
+        "NODE_ENV": "test",
+        "DEPLOYMENT_ENV": "test",
+        "LOG_LEVEL": "debug",
+        "PORT": 8080,
+        "BIND_HOST": "0.0.0.0",
+        "DATA_DIR": "./var//studio/../data/",
+        "TELEGRAM_API_BASE_URL": "http://bot-api:8081",
+        "CONTROLLER_BOT_TOKEN": "123456:abc",
+        "CLIENT_IP_HASH_SALT": "🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip",
+        "COMMAND_CENTER_TOKEN": "cc",
+        "MCP_STUDIO_TOKEN": "mcp-token-0123456789",
+        "MCP_STUDIO_ACTOR_ID": 1000,
+        "DEEPSEEK_API_KEY": "sk-deepseek",
+        "GROK_CLI_PATH": "/usr/bin/grok",
+        "CONTROLLER_ADMIN_IDS": [1, 2, 1000, 16, 42],
+        "STUDIO_ACTOR_IDS": [7],
+        "TELEGRAM_CHANNEL_USERNAME": "@channel",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 899,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 11,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 60,
+        "OBSERVABILITY_INTERVAL_SECONDS": 301,
+        "IDLE_POLL_INTERVAL_SECONDS": 6,
+        "MEDIA_PROCESSOR_PROVIDER": "remote_http",
+        "MEDIA_PROCESSOR_URL": "https://media.example.org/run",
+        "MEDIA_PROCESSOR_TOKEN": "media-token-0123456789",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 10,
+        "STORY_CARD_ASSETS_DIR": "/assets",
+        "STORY_CARD_RENDERER_ENTRY": "/renderer.js",
+        "THREADS_RU_ACCESS_TOKEN": "threads-ru",
+        "THREADS_EN_ACCESS_TOKEN": "threads-en",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 181,
+        "THREADS_APP_ID": "threads-app",
+        "THREADS_APP_SECRET": "threads-secret",
+        "X_CLIENT_ID": "x-client",
+        "X_CLIENT_SECRET": "x-secret",
+        "ENABLE_X_METRICS": true,
+        "DISCORD_CHANNEL_ID": "discord-channel",
+        "DISCORD_GUILD_ID": "discord-guild",
+        "ENABLE_X_PROFILE_METRICS": false,
+        "INSTAGRAM_EN_ACCESS_TOKEN": "ig-en",
+        "INSTAGRAM_EN_USER_ID": "ig-en-user",
+        "INSTAGRAM_RU_ACCESS_TOKEN": "ig-ru",
+        "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+        "INSTAGRAM_APP_ID": "ig-app",
+        "INSTAGRAM_APP_SECRET": "ig-secret",
+        "INSTAGRAM_GRAPH_API_VERSION": "v24.0",
+        "YOUTUBE_RU_CLIENT_ID": "yt-ru",
+        "YOUTUBE_RU_CLIENT_SECRET": "yt-ru-secret",
+        "YOUTUBE_RU_REFRESH_TOKEN": "yt-ru-refresh",
+        "YOUTUBE_EN_CLIENT_ID": "yt-en",
+        "YOUTUBE_EN_CLIENT_SECRET": "yt-en-secret",
+        "YOUTUBE_EN_REFRESH_TOKEN": "yt-en-refresh",
+        "TELEGRAM_STORIES_CHANNEL": "@stories",
+        "TELEGRAM_CHANNEL_STORIES_API_ID": 12345,
+        "TELEGRAM_CHANNEL_STORIES_API_HASH": "hash",
+        "TELEGRAM_CHANNEL_STORIES_SESSION": "session",
+        "PUBLIC_MEDIA_BASE_URL": "https://cdn.example.org/media",
+        "PUBLIC_BASE_URL": "https://studio.example.org//",
+        "TOKEN_ENCRYPTION_KEY": "0000000000000000000000000000000000000000000000000000000000000000",
+        "DEPLOY_AGENT_URL": "http://deploy-agent:9000",
+        "DEPLOY_AGENT_TOKEN": "deploy-token-0123456789",
+        "INDEXNOW_ENABLED": false,
+        "PIPELINE_DB": "var/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "var/data/video-media",
+        "MEDIA_CACHE_DIR": "var/data/media-cache",
+        "VIDEO_FRAME_DIR": "var/data/video-frames",
+        "STORY_CARD_DIR": "var/data/story-cards",
+        "SITE_PUBLIC_DIR": "var/data/site",
+        "REMOTE_MEDIA_PATH": "var/data/media",
+        "COMMAND_CENTER_URL": "https://studio.example.org//command-center",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": "threads-ru",
+          "THREADS_EN_ACCESS_TOKEN": "threads-en",
+          "INSTAGRAM_RU_ACCESS_TOKEN": "ig-ru",
+          "INSTAGRAM_EN_ACCESS_TOKEN": "ig-en"
+        }
+      }
+    }
+  },
+  {
+    "name": "production",
+    "env": {
+      "NODE_ENV": "production",
+      "DEPLOYMENT_ENV": "production",
+      "COMMAND_CENTER_TOKEN": "command-center-token",
+      "CLIENT_IP_HASH_SALT": "0123456789abcdef",
+      "PUBLIC_BASE_URL": "https://studio.example.org/"
+    },
+    "result": {
+      "ok": {
+        "NODE_ENV": "production",
+        "DEPLOYMENT_ENV": "production",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "0123456789abcdef",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "COMMAND_CENTER_TOKEN": "command-center-token",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "https://studio.example.org/",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "https://studio.example.org/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "https://studio.example.org/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "production without token",
+    "env": {
+      "NODE_ENV": "production",
+      "DEPLOYMENT_ENV": "production",
+      "COMMAND_CENTER_TOKEN": "",
+      "CLIENT_IP_HASH_SALT": "0123456789abcdef",
+      "PUBLIC_BASE_URL": "https://studio.example.org/"
+    },
+    "result": { "error": "COMMAND_CENTER_TOKEN is required in production" }
+  },
+  {
+    "name": "production without salt",
+    "env": {
+      "NODE_ENV": "production",
+      "DEPLOYMENT_ENV": "production",
+      "COMMAND_CENTER_TOKEN": "command-center-token",
+      "CLIENT_IP_HASH_SALT": " ",
+      "PUBLIC_BASE_URL": "https://studio.example.org/"
+    },
+    "result": { "error": "CLIENT_IP_HASH_SALT is required in production" }
+  },
+  {
+    "name": "production without base url",
+    "env": {
+      "NODE_ENV": "production",
+      "DEPLOYMENT_ENV": "production",
+      "COMMAND_CENTER_TOKEN": "command-center-token",
+      "CLIENT_IP_HASH_SALT": "0123456789abcdef",
+      "PUBLIC_BASE_URL": ""
+    },
+    "result": { "error": "PUBLIC_BASE_URL must be set explicitly in production" }
+  },
+  {
+    "name": "node production only",
+    "env": { "NODE_ENV": "production" },
+    "result": { "error": "DEPLOYMENT_ENV=production is required when NODE_ENV=production" }
+  },
+  {
+    "name": "deployment production only",
+    "env": { "DEPLOYMENT_ENV": "production" },
+    "result": { "error": "NODE_ENV=production is required when DEPLOYMENT_ENV=production" }
+  },
+  {
+    "name": "remote processor without url",
+    "env": { "MEDIA_PROCESSOR_PROVIDER": "remote_http", "MEDIA_PROCESSOR_TOKEN": "media-token-0123456789" },
+    "result": { "error": "MEDIA_PROCESSOR_URL and MEDIA_PROCESSOR_TOKEN are required when MEDIA_PROCESSOR_PROVIDER=remote_http" }
+  },
+  {
+    "name": "remote processor without token",
+    "env": { "MEDIA_PROCESSOR_PROVIDER": "remote_http", "MEDIA_PROCESSOR_URL": "https://m.example.org" },
+    "result": { "error": "MEDIA_PROCESSOR_URL and MEDIA_PROCESSOR_TOKEN are required when MEDIA_PROCESSOR_PROVIDER=remote_http" }
+  },
+  {
+    "name": "port NaN",
+    "env": { "PORT": "abc" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received NaN" }
+  },
+  {
+    "name": "port fraction",
+    "env": { "PORT": "-1.5" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected int, received number" }
+  },
+  {
+    "name": "port negative",
+    "env": { "PORT": "-1" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Too small: expected number to be >0" }
+  },
+  {
+    "name": "port zero",
+    "env": { "PORT": "0" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Too small: expected number to be >0" }
+  },
+  {
+    "name": "port minus zero",
+    "env": { "PORT": "-0" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Too small: expected number to be >0" }
+  },
+  {
+    "name": "port infinity",
+    "env": { "PORT": "Infinity" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received Infinity" }
+  },
+  {
+    "name": "port inf",
+    "env": { "PORT": "inf" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received NaN" }
+  },
+  {
+    "name": "port huge",
+    "env": { "PORT": "1e20" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Too big: expected int to be <=9007199254740991" }
+  },
+  {
+    "name": "port huge negative",
+    "env": { "PORT": "-1e20" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  PORT: Too small: expected int to be >=-9007199254740991\n  PORT: Too small: expected number to be >0"
+    }
+  },
+  {
+    "name": "port unsafe",
+    "env": { "PORT": "9007199254740993" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Too big: expected int to be <=9007199254740991" }
+  },
+  {
+    "name": "port exponent",
+    "env": { "PORT": "1e3" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 1000,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "port octal",
+    "env": { "PORT": "0o17" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 15,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "port binary",
+    "env": { "PORT": "0b101" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 5,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "port signed hex",
+    "env": { "PORT": "-0x10" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received NaN" }
+  },
+  {
+    "name": "port dot",
+    "env": { "PORT": "80." },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 80,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "port leading dot",
+    "env": { "PORT": ".5e1" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 5,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "port separator",
+    "env": { "PORT": "8_000" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received NaN" }
+  },
+  {
+    "name": "port nel",
+    "env": { "PORT": "80" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received NaN" }
+  },
+  {
+    "name": "enum invalid",
+    "env": { "NODE_ENV": "prod", "LOG_LEVEL": "INFO", "TRUSTED_CLIENT_IP_HEADER": "x-forwarded-for" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  NODE_ENV: Invalid option: expected one of \"development\"|\"test\"|\"production\"\n  LOG_LEVEL: Invalid option: expected one of \"debug\"|\"info\"|\"warn\"|\"error\"\n  TRUSTED_CLIENT_IP_HEADER: Invalid option: expected one of \"x-real-ip\"|\"cf-connecting-ip\""
+    }
+  },
+  {
+    "name": "enum nel",
+    "env": { "NODE_ENV": "" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  NODE_ENV: Invalid option: expected one of \"development\"|\"test\"|\"production\""
+    }
+  },
+  {
+    "name": "salt short",
+    "env": { "CLIENT_IP_HASH_SALT": "short" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  CLIENT_IP_HASH_SALT: Too small: expected string to have >=16 characters"
+    }
+  },
+  {
+    "name": "salt astral short",
+    "env": { "CLIENT_IP_HASH_SALT": "🙂🙂🙂🙂🙂🙂🙂" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  CLIENT_IP_HASH_SALT: Too small: expected string to have >=16 characters"
+    }
+  },
+  {
+    "name": "url invalid",
+    "env": { "MEDIA_PROCESSOR_URL": "not a url" },
+    "result": { "error": "Invalid environment configuration in .env:\n  MEDIA_PROCESSOR_URL: Invalid URL" }
+  },
+  {
+    "name": "url mailto",
+    "env": { "MEDIA_PROCESSOR_URL": "mailto:x@y" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_URL": "mailto:x@y",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "url spaced",
+    "env": { "DEPLOY_AGENT_URL": " http://a\tb/c d ", "DEPLOY_AGENT_TOKEN": "deploy-token-0123456789" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "DEPLOY_AGENT_URL": "http://ab/c d",
+        "DEPLOY_AGENT_TOKEN": "deploy-token-0123456789",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "url and refine",
+    "env": { "DEPLOY_AGENT_URL": "nope", "THREADS_APP_ID": "x" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  DEPLOY_AGENT_URL: Invalid URL\n  THREADS_APP_ID: THREADS_APP_ID and THREADS_APP_SECRET must be configured together\n  DEPLOY_AGENT_URL: DEPLOY_AGENT_URL and DEPLOY_AGENT_TOKEN must be configured together"
+    }
+  },
+  {
+    "name": "threads pair",
+    "env": { "THREADS_APP_ID": "1" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  THREADS_APP_ID: THREADS_APP_ID and THREADS_APP_SECRET must be configured together"
+    }
+  },
+  {
+    "name": "instagram pair",
+    "env": { "INSTAGRAM_APP_SECRET": "1" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  INSTAGRAM_APP_ID: INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET must be configured together"
+    }
+  },
+  {
+    "name": "youtube pair",
+    "env": { "YOUTUBE_RU_CLIENT_ID": "1", "YOUTUBE_EN_CLIENT_SECRET": "2" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  YOUTUBE_RU_CLIENT_ID: YOUTUBE_RU_CLIENT_ID and YOUTUBE_RU_CLIENT_SECRET must be configured together\n  YOUTUBE_EN_CLIENT_ID: YOUTUBE_EN_CLIENT_ID and YOUTUBE_EN_CLIENT_SECRET must be configured together"
+    }
+  },
+  {
+    "name": "deploy pair",
+    "env": { "DEPLOY_AGENT_TOKEN": "deploy-token-0123456789" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  DEPLOY_AGENT_URL: DEPLOY_AGENT_URL and DEPLOY_AGENT_TOKEN must be configured together"
+    }
+  },
+  {
+    "name": "mcp pair",
+    "env": { "MCP_STUDIO_TOKEN": "mcp-token-0123456789" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  MCP_STUDIO_TOKEN: MCP_STUDIO_TOKEN and MCP_STUDIO_ACTOR_ID must be configured together"
+    }
+  },
+  {
+    "name": "mcp actor zero",
+    "env": { "MCP_STUDIO_TOKEN": "mcp-token-0123456789", "MCP_STUDIO_ACTOR_ID": "0" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  MCP_STUDIO_ACTOR_ID: Too small: expected number to be >0\n  MCP_STUDIO_TOKEN: MCP_STUDIO_TOKEN and MCP_STUDIO_ACTOR_ID must be configured together"
+    }
+  },
+  {
+    "name": "mcp short token",
+    "env": { "MCP_STUDIO_TOKEN": "short", "MCP_STUDIO_ACTOR_ID": "5" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  MCP_STUDIO_TOKEN: Too small: expected string to have >=16 characters"
+    }
+  },
+  {
+    "name": "type error skips refine",
+    "env": { "PORT": "x", "THREADS_APP_ID": "1" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected number, received NaN" }
+  },
+  {
+    "name": "int error skips refine",
+    "env": { "PORT": "1.5", "THREADS_APP_ID": "1" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PORT: Invalid input: expected int, received number" }
+  },
+  {
+    "name": "timeout at lock",
+    "env": { "PUBLISH_JOB_TIMEOUT_SECONDS": "900" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  PUBLISH_JOB_TIMEOUT_SECONDS: PUBLISH_JOB_TIMEOUT_SECONDS (900s) must be shorter than the 900s publish lock window"
+    }
+  },
+  {
+    "name": "timeout above max",
+    "env": { "PUBLISH_JOB_TIMEOUT_SECONDS": "5000" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  PUBLISH_JOB_TIMEOUT_SECONDS: Too big: expected number to be <=3600\n  PUBLISH_JOB_TIMEOUT_SECONDS: PUBLISH_JOB_TIMEOUT_SECONDS (5000s) must be shorter than the 900s publish lock window"
+    }
+  },
+  {
+    "name": "timeout zero",
+    "env": { "PUBLISH_JOB_TIMEOUT_SECONDS": "0" },
+    "result": { "error": "Invalid environment configuration in .env:\n  PUBLISH_JOB_TIMEOUT_SECONDS: Too small: expected number to be >=1" }
+  },
+  {
+    "name": "creator refresh too small",
+    "env": { "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": "59" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS: Too small: expected number to be >=60"
+    }
+  },
+  {
+    "name": "processor timeout range",
+    "env": { "MEDIA_PROCESSOR_TIMEOUT_SECONDS": "9" },
+    "result": {
+      "error": "Invalid environment configuration in .env:\n  MEDIA_PROCESSOR_TIMEOUT_SECONDS: Too small: expected number to be >=10"
+    }
+  },
+  {
+    "name": "flags",
+    "env": { "ENABLE_X_METRICS": "TRUE", "ENABLE_X_PROFILE_METRICS": "no", "INDEXNOW_ENABLED": "0" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": true,
+        "ENABLE_X_PROFILE_METRICS": false,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": false,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "flags odd",
+    "env": { "ENABLE_X_METRICS": "off ", "ENABLE_X_PROFILE_METRICS": "Off", "INDEXNOW_ENABLED": "nope" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": true,
+        "ENABLE_X_PROFILE_METRICS": false,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "data dir root",
+    "env": { "DATA_DIR": "/" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/video-media",
+        "MEDIA_CACHE_DIR": "/media-cache",
+        "VIDEO_FRAME_DIR": "/video-frames",
+        "STORY_CARD_DIR": "/story-cards",
+        "SITE_PUBLIC_DIR": "/site",
+        "REMOTE_MEDIA_PATH": "/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "data dir relative",
+    "env": { "DATA_DIR": "data" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "data/video-media",
+        "MEDIA_CACHE_DIR": "data/media-cache",
+        "VIDEO_FRAME_DIR": "data/video-frames",
+        "STORY_CARD_DIR": "data/story-cards",
+        "SITE_PUBLIC_DIR": "data/site",
+        "REMOTE_MEDIA_PATH": "data/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "data dir parent",
+    "env": { "DATA_DIR": "../../x/./y/.." },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "../../x/./y/..",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "../../x/pipeline.db",
+        "STUDIO_MEDIA_DIR": "../../x/video-media",
+        "MEDIA_CACHE_DIR": "../../x/media-cache",
+        "VIDEO_FRAME_DIR": "../../x/video-frames",
+        "STORY_CARD_DIR": "../../x/story-cards",
+        "SITE_PUBLIC_DIR": "../../x/site",
+        "REMOTE_MEDIA_PATH": "../../x/media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "data dir dot",
+    "env": { "DATA_DIR": "." },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": ".",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://localhost:8788",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "pipeline.db",
+        "STUDIO_MEDIA_DIR": "video-media",
+        "MEDIA_CACHE_DIR": "media-cache",
+        "VIDEO_FRAME_DIR": "video-frames",
+        "STORY_CARD_DIR": "story-cards",
+        "SITE_PUBLIC_DIR": "site",
+        "REMOTE_MEDIA_PATH": "media",
+        "COMMAND_CENTER_URL": "http://localhost:8788/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://localhost:8788/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  },
+  {
+    "name": "base url without slash",
+    "env": { "PUBLIC_BASE_URL": "http://example.org" },
+    "result": {
+      "ok": {
+        "NODE_ENV": "development",
+        "DEPLOYMENT_ENV": "development",
+        "LOG_LEVEL": "info",
+        "PORT": 8788,
+        "BIND_HOST": "127.0.0.1",
+        "DATA_DIR": "/data",
+        "TELEGRAM_API_BASE_URL": "https://api.telegram.org",
+        "CLIENT_IP_HASH_SALT": "development-only",
+        "TRUSTED_CLIENT_IP_HEADER": "x-real-ip",
+        "GROK_CLI_PATH": "grok",
+        "CONTROLLER_ADMIN_IDS": [],
+        "STUDIO_ACTOR_IDS": [],
+        "TELEGRAM_CHANNEL_USERNAME": "",
+        "PUBLISH_JOB_TIMEOUT_SECONDS": 600,
+        "METRICS_REFRESH_INTERVAL_SECONDS": 10,
+        "CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS": 3600,
+        "OBSERVABILITY_INTERVAL_SECONDS": 300,
+        "IDLE_POLL_INTERVAL_SECONDS": 5,
+        "MEDIA_PROCESSOR_PROVIDER": "local",
+        "MEDIA_PROCESSOR_TIMEOUT_SECONDS": 900,
+        "STORY_CARD_ASSETS_DIR": "/app/apps/backend/assets/story-card",
+        "STORY_CARD_RENDERER_ENTRY": "/app/story-renderer/renderer-process.js",
+        "THREADS_CONTAINER_TIMEOUT_SECONDS": 180,
+        "ENABLE_X_METRICS": false,
+        "ENABLE_X_PROFILE_METRICS": true,
+        "INSTAGRAM_GRAPH_API_VERSION": "v23.0",
+        "PUBLIC_BASE_URL": "http://example.org",
+        "INDEXNOW_ENABLED": true,
+        "PIPELINE_DB": "/data/pipeline.db",
+        "STUDIO_MEDIA_DIR": "/data/video-media",
+        "MEDIA_CACHE_DIR": "/data/media-cache",
+        "VIDEO_FRAME_DIR": "/data/video-frames",
+        "STORY_CARD_DIR": "/data/story-cards",
+        "SITE_PUBLIC_DIR": "/data/site",
+        "REMOTE_MEDIA_PATH": "/data/media",
+        "COMMAND_CENTER_URL": "http://example.org/command-center",
+        "PUBLIC_MEDIA_BASE_URL": "http://example.org/media/staging",
+        "metaTokenSeeds": {
+          "THREADS_RU_ACCESS_TOKEN": null,
+          "THREADS_EN_ACCESS_TOKEN": null,
+          "INSTAGRAM_RU_ACCESS_TOKEN": null,
+          "INSTAGRAM_EN_ACCESS_TOKEN": null
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,20 @@
+[package]
+name = "db"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+rusqlite = { version = "0.43", features = ["bundled"] }
+thiserror = "2"
+
+[build-dependencies]
+serde_json = "1"
+sha2 = "0.10"
+
+[dev-dependencies]
+serde_json = "1"
+
+[lints]
+workspace = true
