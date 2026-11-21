@@ -21,6 +21,7 @@ use foundation::config::{SharedConfig, load_config};
 use foundation::logger::{LogLevel, configure_logging, log};
 use runtime::http::{HttpClient, ReqwestTransport};
 use runtime::scheduler::ScheduledLoop;
+use runtime::worker_signal::{WorkerQueue, set_worker_wake};
 use serde_json::json;
 use tokio::signal::unix::{Signal, SignalKind, signal};
 
@@ -179,6 +180,9 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         for scheduled in &loops {
             scheduled.stop().await;
         }
+        // The doorbells hold their loops, and the loops the bot.
+        set_worker_wake(WorkerQueue::TelegramEvents, None);
+        domain::repositories::set_event_bell(None);
         // Updates already handed out finish before the database closes.
         bot.settled().await;
         stopped
