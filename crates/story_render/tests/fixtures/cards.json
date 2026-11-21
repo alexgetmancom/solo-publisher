@@ -1,0 +1,79 @@
+[
+  {
+    "name": "short-ru",
+    "text": "Коротко.",
+    "wordmark": "Страта",
+    "copy": { "headline": "Коротко.", "emoji": null, "lines": ["Коротко."], "boldLineCount": 1, "templateVersion": "strata-v3" },
+    "emoji": null
+  },
+  {
+    "name": "emoji-wrap-ru",
+    "text": "🚨 СЛИВ: Две модели OpenAI с кодовыми именами Zinc и Magnesium были замечены в DesignArena.",
+    "wordmark": "Страта",
+    "copy": {
+      "headline": "СЛИВ: Две модели OpenAI с кодовыми именами Zinc и Magnesium были замечены в DesignArena.",
+      "emoji": "🚨",
+      "lines": ["СЛИВ: Две модели", "OpenAI с кодовыми", "именами Zinc и", "Magnesium были", "замечены в", "DesignArena."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "emoji": true
+  },
+  {
+    "name": "emoji-en",
+    "text": "⚡️ ChatGPT reached approximately one billion weekly active users.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "ChatGPT reached approximately one billion weekly active users.",
+      "emoji": "⚡️",
+      "lines": ["ChatGPT reached", "approximately one", "billion weekly active", "users."],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "emoji": true
+  },
+  {
+    "name": "overflow-no-wordmark",
+    "text": "OpenAI, Anthropic, Google DeepMind и Meta договорились о совместном стандарте безопасности для открытых моделей следующего поколения, который вступит в силу в начале будущего года.",
+    "wordmark": "",
+    "copy": {
+      "headline": "OpenAI, Anthropic, Google DeepMind и Meta договорились о совместном стандарте безопасности для открытых моделей следующего поколения, который вступит в силу в начале будущего года.",
+      "emoji": null,
+      "lines": [
+        "OpenAI, Anthropic,",
+        "Google DeepMind и",
+        "Meta договорились о",
+        "совместном",
+        "стандарте",
+        "безопасности для",
+        "открытых моделей",
+        "следующего…"
+      ],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "emoji": null
+  },
+  {
+    "name": "long-word",
+    "text": "Ссылка aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa внутри поста.",
+    "wordmark": "Strata",
+    "copy": {
+      "headline": "Ссылка aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa внутри поста.",
+      "emoji": null,
+      "lines": [
+        "Ссылка",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaa",
+        "aaaaaa внутри поста."
+      ],
+      "boldLineCount": 2,
+      "templateVersion": "strata-v3"
+    },
+    "emoji": null
+  }
+]
