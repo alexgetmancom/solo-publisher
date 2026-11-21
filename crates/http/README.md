@@ -1,0 +1,67 @@
+# http_edge — the Studio's HTTP surface (Rust)
+
+Port of `apps/backend/src/api.ts`, `interfaces/http/{context,discovery,health,media-upload,public-site,studio}.ts`,
+`foundation/{http-auth,http-response,ranged-file,client-identity}.ts` and the `Bun.serve` options of
+`runtime/server.ts`, on axum 0.8 / hyper 1. The package is `http_edge` (a package named `http` makes every
+`cargo -p http` ambiguous with the `http` crate); the directory is `crates/http`.
+
+| Module | TypeScript |
+|---|---|
+| `lib.rs` (`router`, `HttpState`, `Backend`) | `api.ts` `buildApp`, `context.ts` |
+| `edge.rs` | Hono's dispatch: `strict: false`, HEAD via GET, `notFound`, the `/oauth/*` + `/stats*` `unindexed` middleware |
+| `uri.rs` (`Target`) | `request.url` (WHATWG) and Hono's `getPath` / `decodeURI` / `tryDecode` |
+| `health.rs`, `discovery.rs`, `studio.rs`, `site.rs` | the route files of the same names (`site.rs` = `public-site.ts`) |
+| `media_upload.rs`, `ranged_file.rs`, `auth.rs`, `client_identity.rs`, `response.rs` | the helpers of the same names |
+| `mime.rs` | `Bun.file(path).type` (the extensions Bun 1.4 names, recorded) |
+| `server.rs` (`serve`) | `Bun.serve`: body cap 1 GB + 1 MB (413), idle 255 s |
+
+## Wiring (the integrator's part)
+
+```rust
+let state = http_edge::HttpState::new(Rc::new(bot.clone()));   // `Bot` implements `http_edge::Backend`
+tokio::task::spawn_local(http_edge::serve(TcpListener::bind((host, port)).await?, state));
+```
+
+`serve` and `router` must run inside the process's `LocalSet`. Dropping the `serve` future stops accepting;
+connections in flight end with the runtime.
+
+## Why a local executor
+
+axum requires `Send` handlers and a `Send + Sync` router state; the Studio is single-threaded and its state is `Rc`
+(the bot owns `BackendDb`). So axum/hyper keep routing, extraction and the connection loop (`tokio::spawn`, all
+`Send`), and each route body runs on the `LocalSet`: `Local::run(|state| async { … })` sends a `Send` closure over a
+channel to a dispatcher spawned with `spawn_local`, which runs its future as a local task with `Rc<HttpState>` and
+sends the response back. A caller that stops waiting (client gone) drops the local work, which ends a long poll the
+way an aborted request did in TypeScript. On the current-thread runtime everything still runs on one thread. The
+alternative — a hand-rolled hyper loop serving a `!Send` service — would give up axum's router and its `Send`
+checking, for no gain.
+
+## Adding a route group (later slices)
+
+A group is `pub(crate) fn routes() -> Router<Local>` in its module plus one `.merge(module::routes())` line in
+`lib.rs` `routes()`. Handlers take `State<Local>` (and `Extension<Target>` for the path/URL as Hono read them) and
+call `response::on_local`. `command_allowed`, `mcp_studio_actor` and `client_ip_hash` are ready for OAuth and MCP.
+
+Not in this slice: the OAuth routes (`/oauth/{threads,instagram,x,youtube}[/start]`, channels slice) and the MCP
+transport (`GET`/`POST /api/mcp`, ops slice). Until they land their paths are unknown routes: `404 "not found\n"`
+(under `/oauth/*` with the `noindex` + `no-store` headers, as for any `/oauth` path today).
+
+## Parity
+
+```
+bun scripts/rust/http-goldens.ts   # records parity/http/goldens.json from the Hono app (fixed clock)
+cargo test -p http_edge            # tests/goldens.rs replays it through the router with `oneshot`
+```
+
+18 cases / 174 responses (every route; auth ok/missing/wrong; HEAD; ranges incl. suffix, clamped and 416; traversal
+403; versioned vs unversioned caching; readiness 200/503/500; upload 403/413/415/429/400/200 with the stored
+assets; trailing slashes; wrong methods; unknown routes), plus `commandAllowed` (every token channel),
+`mcpStudioActor`, `clientIpHash` and `streamUploadToFile` call by call. `server.rs` tests drive a real hyper
+connection over an in-memory stream.
+
+## Deliberate differences
+
+- `content-length`: hyper frames every body; a length the TypeScript route did not set itself is not compared.
+- Content types outside `mime.rs`'s table are `application/octet-stream` (Bun names a few hundred more).
+- A directory under a video asset's path is "not found" (Bun would try to stream it).
+- The 413 for a body over the cap and the idle close come from tower-http / hyper, not Bun's own wording.

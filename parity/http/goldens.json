@@ -1,0 +1,5176 @@
+{
+  "cases": [
+    {
+      "name": "health, routing and unknown routes",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/healthz",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/healthz/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/healthz//",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/healthz",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/heal%74hz",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/tg-feed/healthz",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/tg-feed/healthz/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/healthz"
+          }
+        },
+        {
+          "request": {
+            "method": "PUT",
+            "target": "/readyz"
+          }
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "target": "/healthz"
+          }
+        },
+        {
+          "request": {
+            "target": "/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/unknown",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/unknown",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/unknown"
+          }
+        },
+        {
+          "request": {
+            "target": "/stats",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/stats/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/stats/anything/deeper",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/stats/x",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/statsx",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauth/unknown",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/oauthx",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/api/public/site",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-a-360.webp",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/healthz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "ok\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/healthz/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "ok\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/healthz//",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/healthz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/heal%74hz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "ok\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/tg-feed/healthz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "ok\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/tg-feed/healthz/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "ok\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/healthz",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "PUT",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "target": "/healthz",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/unknown",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/unknown",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/unknown",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/stats",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/stats/",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/stats/anything/deeper",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/stats/x",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/statsx",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauth/unknown",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "cache-control": "no-store",
+            "content-type": "text/plain; charset=utf-8",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/oauthx",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/api/public/site",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-a-360.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "public site contract mounted",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "request": {
+            "target": "/api/public/site",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/api/public/site",
+            "headers": [["if-none-match", "$etag"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/api/public/site/",
+            "headers": [["if-none-match", "\"other\""]]
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/api/public/site",
+            "headers": [["if-none-match", "$etag"]]
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/public/site"
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/api/public/site",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "no-cache",
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""
+          },
+          "body": {
+            "text": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/api/public/site",
+            "headers": [["if-none-match", "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""]]
+          },
+          "status": 304,
+          "headers": {
+            "cache-control": "no-cache",
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/api/public/site/",
+            "headers": [["if-none-match", "\"other\""]]
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "no-cache",
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""
+          },
+          "body": {
+            "text": "{\"site\":{\"en\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"},\"ru\":{\"name\":\"studio.example.com\",\"tagline\":\"\",\"about\":\"\",\"bio\":\"\",\"profiles\":[],\"timezone\":\"UTC\"}},\"items\":[]}"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/api/public/site",
+            "headers": [["if-none-match", "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""]]
+          },
+          "status": 304,
+          "headers": {
+            "cache-control": "no-cache",
+            "content-type": "application/json; charset=utf-8",
+            "etag": "\"IxuU9cRfUpiHt3LnHyj2XG2spjT\""
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/public/site",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "discovery documents",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/.well-known/oauth-protected-resource",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/.well-known/oauth-protected-resource/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/.well-known/mcp/server-card.json",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/.well-known/mcp/server-card.json",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/.well-known/other",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/.well-known/oauth-protected-resource",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=3600",
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"resource\":\"https://studio.example.com/api/mcp\",\"bearer_methods_supported\":[\"header\"]}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/.well-known/oauth-protected-resource/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=3600",
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"resource\":\"https://studio.example.com/api/mcp\",\"bearer_methods_supported\":[\"header\"]}"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/.well-known/mcp/server-card.json",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=3600",
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/.well-known/mcp/server-card.json",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=3600",
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"version\":\"1.0\",\"protocolVersion\":\"2024-11-05\",\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"solo-publisher-studio-mcp\",\"version\":\"2.1.0\"},\"description\":\"Operator tools for the studio.example.com Studio. Studio tools require an operator-provisioned bearer token. Read public site content through /feed-ai.json and /llms.txt.\",\"transport\":{\"type\":\"streamable-http\",\"endpoint\":\"/api/mcp\"},\"authentication\":{\"required\":true,\"schemes\":[\"bearer\"]}}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/.well-known/other",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "discovery documents with a port and a trailing slash",
+      "env": {
+        "PUBLIC_BASE_URL": "https://Studio.Example.com:8443/",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/.well-known/oauth-protected-resource",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/.well-known/mcp/server-card.json",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/.well-known/oauth-protected-resource",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=3600",
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"resource\":\"https://Studio.Example.com:8443/api/mcp\",\"bearer_methods_supported\":[\"header\"]}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/.well-known/mcp/server-card.json",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=3600",
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"version\":\"1.0\",\"protocolVersion\":\"2024-11-05\",\"capabilities\":{\"tools\":{}},\"serverInfo\":{\"name\":\"solo-publisher-studio-mcp\",\"version\":\"2.1.0\"},\"description\":\"Operator tools for the studio.example.com:8443 Studio. Studio tools require an operator-provisioned bearer token. Read public site content through /feed-ai.json and /llms.txt.\",\"transport\":{\"type\":\"streamable-http\",\"endpoint\":\"/api/mcp\"},\"authentication\":{\"required\":true,\"schemes\":[\"bearer\"]}}"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "readiness with heartbeats",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "mkdir": "media-cache"
+        },
+        {
+          "sql": "INSERT INTO worker_state (name, state_json, updated_at) VALUES\n            ('queue', '{\"ok\":true,\"last_heartbeat_at\":\"2026-11-01T09:59:58.400Z\",\"heartbeat_interval_ms\":5000}', '2026-11-01T09:59:58.400Z'),\n            ('video', '{\"ok\":true,\"heartbeat_interval_ms\":60000}', '2026-11-01T09:50:00.000Z'),\n            ('site', '{\"last_heartbeat_at\":\"not a date\"}', '2026-11-01T09:00:00.000Z'),\n            ('notifications', '[1,2]', '2026-11-01T10:00:01.000Z'),\n            ('alerts', '{\"heartbeat_interval_ms\":\"5000\",\"last_heartbeat_at\":\"2026-10-31T10:00:00.000Z\"}', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "request": {
+            "target": "/readyz",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/readyz/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/readyz",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"ok\":true,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true},\"media_cache_dir_writable\":{\"ok\":true}},\"workers\":{\"queue\":{\"updated_at\":\"2026-11-01T09:59:58.400Z\",\"ageSeconds\":2,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T09:59:58.400Z\"},\"video\":{\"updated_at\":\"2026-11-01T09:50:00.000Z\",\"ageSeconds\":600,\"stale\":true,\"lastHeartbeatAt\":\"2026-11-01T09:50:00.000Z\"},\"site\":{\"updated_at\":\"2026-11-01T09:00:00.000Z\",\"ageSeconds\":null,\"stale\":false,\"lastHeartbeatAt\":\"not a date\"},\"notifications\":{\"updated_at\":\"2026-11-01T10:00:01.000Z\",\"ageSeconds\":0,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T10:00:01.000Z\"},\"alerts\":{\"updated_at\":\"2026-11-01T10:00:00.000Z\",\"ageSeconds\":86400,\"stale\":false,\"lastHeartbeatAt\":\"2026-10-31T10:00:00.000Z\"}}}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/readyz/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"ok\":true,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true},\"media_cache_dir_writable\":{\"ok\":true}},\"workers\":{\"queue\":{\"updated_at\":\"2026-11-01T09:59:58.400Z\",\"ageSeconds\":2,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T09:59:58.400Z\"},\"video\":{\"updated_at\":\"2026-11-01T09:50:00.000Z\",\"ageSeconds\":600,\"stale\":true,\"lastHeartbeatAt\":\"2026-11-01T09:50:00.000Z\"},\"site\":{\"updated_at\":\"2026-11-01T09:00:00.000Z\",\"ageSeconds\":null,\"stale\":false,\"lastHeartbeatAt\":\"not a date\"},\"notifications\":{\"updated_at\":\"2026-11-01T10:00:01.000Z\",\"ageSeconds\":0,\"stale\":false,\"lastHeartbeatAt\":\"2026-11-01T10:00:01.000Z\"},\"alerts\":{\"updated_at\":\"2026-11-01T10:00:00.000Z\",\"ageSeconds\":86400,\"stale\":false,\"lastHeartbeatAt\":\"2026-10-31T10:00:00.000Z\"}}}"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": null
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "readiness fails on unwritable media directories",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "mkdir": "media-cache"
+        },
+        {
+          "mkdir": "video-media"
+        },
+        {
+          "mkdir": "site"
+        },
+        {
+          "chmod": "media-cache",
+          "mode": 365
+        },
+        {
+          "chmod": "site",
+          "mode": 365
+        },
+        {
+          "request": {
+            "target": "/readyz",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 503,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"ok\":false,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true},\"media_cache_dir_writable\":{\"ok\":false,\"detail\":\"EACCES: permission denied, access '$DATA_DIR/media-cache'\"},\"studio_media_dir_writable\":{\"ok\":true},\"site_public_dir_writable\":{\"ok\":false,\"detail\":\"EACCES: permission denied, access '$DATA_DIR/site'\"}},\"workers\":{}}"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "readiness ignores the site directory of a Studio without a site",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "mkdir": "site"
+        },
+        {
+          "chmod": "site",
+          "mode": 365
+        },
+        {
+          "request": {
+            "target": "/readyz",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"ok\":true,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":true}},\"workers\":{}}"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "readiness fails on an unwritable data directory",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "chmod": ".",
+          "mode": 365
+        },
+        {
+          "request": {
+            "target": "/readyz",
+            "headers": []
+          }
+        },
+        {
+          "chmod": ".",
+          "mode": 493
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 503,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"ok\":false,\"checks\":{\"database\":{\"ok\":true},\"data_dir_writable\":{\"ok\":false,\"detail\":\"EACCES: permission denied, access '$DATA_DIR'\"}},\"workers\":{}}"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "readiness without the worker table is a handler error",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "sql": "DROP TABLE worker_state;"
+        },
+        {
+          "request": {
+            "target": "/readyz",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/readyz",
+            "headers": []
+          },
+          "status": 500,
+          "headers": {
+            "content-type": "text/plain; charset=UTF-8"
+          },
+          "body": {
+            "text": "Internal Server Error"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "staging media",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "write": "media/a.mp4",
+          "base64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5w=="
+        },
+        {
+          "write": "media/sub/b.jpg",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/a b.jpg",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/x.json",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/x.txt",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/x.svg",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/x.JPG",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/x.webm",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/x.unknownext",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/noext",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/.hidden",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/empty.mp4",
+          "base64": ""
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4?v=0123456789ab",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/staging/a.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging//a.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging%2Fa.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-9"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=10-"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-100"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-5000"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=990-2000"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=999-999"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", " bytes=0-1 "]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=1000-"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=5-2"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-0"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=abc"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "items=0-1"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-1,3-4"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=00000000000000000000001-2"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", ""]]
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-9"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/empty.mp4",
+            "headers": [["range", "bytes=0-1"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/empty.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/sub/b.jpg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a%20b.jpg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a b.jpg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/x.json",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/x.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/x.svg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/x.JPG",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/x.webm",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/x.unknownext",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/noext",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/.hidden",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/missing.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/sub",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/..%2F..%2Fpipeline.db",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/sub/..%2F..%2F..%2Fpipeline.db",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/sub/..%2Fa.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/%2e%2e/pipeline.db",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/../../pipeline.db",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/%E0%A4%A.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/%25E0.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/stagingx/a.mp4",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/media/staging/a.mp4"
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4?v=0123456789ab",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/staging/a.mp4",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging//a.mp4",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging%2Fa.mp4",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-9"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "10",
+            "content-range": "bytes 0-9/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "1f825aa2f0020ef7cf91dfa30da4668d791c5d4824fc8e41354b89ec05795ab3",
+            "length": 10
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=10-"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "990",
+            "content-range": "bytes 10-999/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "6737ed0a85815aa969b08b516e519975c9cb59b5d8db5aea0728b04caa5c6eb6",
+            "length": 990
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-100"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "100",
+            "content-range": "bytes 900-999/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "60bdf10257a4ad4a1f5d5db1d8ed67bf68e0f6289c6b41ff68a175aadbfdbc99",
+            "length": 100
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-5000"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-range": "bytes 0-999/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=990-2000"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "10",
+            "content-range": "bytes 990-999/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "035c161c9c5fdc898bb41e41fca0d8b199ee6fadbab54568c46cc2a81bcf60f1",
+            "length": 10
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=999-999"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1",
+            "content-range": "bytes 999-999/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "d0752b60adb148ca0b3b4d2591874e2dabd346373e731c27463d65b449cc234c",
+            "length": 1
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-1"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "2",
+            "content-range": "bytes 0-1/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "b413f47d13ee2fe6c845b2ee141af81de858df4ec549a58b7970bb96645bc8d2",
+            "length": 2
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=1000-"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=5-2"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-0"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=-"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=abc"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "items=0-1"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-1,3-4"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=00000000000000000000001-2"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "2",
+            "content-range": "bytes 1-2/1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a12871fee210fb8619291eaea194581cbd2531e4b23759d225f6806923f63222",
+            "length": 2
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", ""]]
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/staging/a.mp4",
+            "headers": [["range", "bytes=0-9"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "10",
+            "content-range": "bytes 0-9/1000",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/empty.mp4",
+            "headers": [["range", "bytes=0-1"]]
+          },
+          "status": 416,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-range": "bytes */0",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/empty.mp4",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "0",
+            "content-type": "video/mp4"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/sub/b.jpg",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a%20b.jpg",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a b.jpg",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/x.json",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "application/json;charset=utf-8"
+          },
+          "body": {
+            "text": "bytes"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/x.txt",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "text/plain;charset=utf-8"
+          },
+          "body": {
+            "text": "bytes"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/x.svg",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/svg+xml"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/x.JPG",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/x.webm",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "video/webm"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/x.unknownext",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "application/octet-stream"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/noext",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "application/octet-stream"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/.hidden",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "application/octet-stream"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/missing.mp4",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/sub",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/..%2F..%2Fpipeline.db",
+            "headers": []
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/sub/..%2F..%2F..%2Fpipeline.db",
+            "headers": []
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/sub/..%2Fa.mp4",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/%2e%2e/pipeline.db",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/../../pipeline.db",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/%E0%A4%A.mp4",
+            "headers": []
+          },
+          "status": 500,
+          "headers": {
+            "content-type": "text/plain; charset=UTF-8"
+          },
+          "body": {
+            "text": "Internal Server Error"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/%25E0.mp4",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/stagingx/a.mp4",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/media/staging/a.mp4",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "site media",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "write": "site/media/posts/p.jpg",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "site/secret.txt",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "media/a.mp4",
+          "base64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5w=="
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg?v=0123456789ab",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg?x=1&v=0123456789ab",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg?v=0123456789AB",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg?v=0123456789a",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg?v=0123456789ab&v=zz",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/posts/p.jpg?v=0123456789ab",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/p.jpg?v=0123456789ab",
+            "headers": [["range", "bytes=1-2"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/staging/a.mp4?v=0123456789ab",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/..%2Fsecret.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts/..%2F..%2F..%2Fpipeline.db",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/posts",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/missing.jpg",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/extra/p.jpg",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg?v=0123456789ab",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=31536000, immutable",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg?x=1&v=0123456789ab",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=31536000, immutable",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg?v=0123456789AB",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg?v=0123456789a",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg?v=0123456789ab&v=zz",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=31536000, immutable",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/posts/p.jpg?v=0123456789ab",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=31536000, immutable",
+            "content-length": "5",
+            "content-type": "image/jpeg"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/p.jpg?v=0123456789ab",
+            "headers": [["range", "bytes=1-2"]]
+          },
+          "status": 206,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=31536000, immutable",
+            "content-length": "2",
+            "content-range": "bytes 1-2/5",
+            "content-type": "image/jpeg"
+          },
+          "body": {
+            "sha256": "3d40f99acd3b0e84749b6e7117480b41f14c4f84aead9bf4f579edf96fcbab40",
+            "length": 2
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/staging/a.mp4?v=0123456789ab",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "accept-ranges": "bytes",
+            "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+            "content-length": "1000",
+            "content-type": "video/mp4"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/..%2Fsecret.txt",
+            "headers": []
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts/..%2F..%2F..%2Fpipeline.db",
+            "headers": []
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/posts",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/missing.jpg",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/extra/p.jpg",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "video assets",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "write": "video-media/7/clip.mp4",
+          "base64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5w=="
+        },
+        {
+          "write": "video-media/7/empty.mp4",
+          "base64": ""
+        },
+        {
+          "write": "video-media/7/photo.jpg",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES\n            (7, 'video', 'video/quicktime', 'clip.mov', '$DATA_DIR/video-media/7/clip.mp4', 1000, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', 'http_upload', '2026-11-01T10:00:00.000Z'),\n            (7, 'video', '', 'blank.mp4', '$DATA_DIR/video-media/7/clip.mp4', 1000, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'http_upload', '2026-11-01T10:00:00.000Z'),\n            (7, 'video', 'video/mp4', 'empty.mp4', '$DATA_DIR/video-media/7/empty.mp4', 0, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'http_upload', '2026-11-01T10:00:00.000Z'),\n            (7, 'video', 'video/mp4', 'gone.mp4', '$DATA_DIR/video-media/7/gone.mp4', 10, 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'http_upload', '2026-11-01T10:00:00.000Z'),\n            (7, 'photo', 'image/jpeg', 'photo.jpg', '$DATA_DIR/video-media/7/photo.jpg', 5, 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'http_upload', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": [["range", "bytes=0-9"]]
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1/extra",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/media/video/asset",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=300",
+            "content-length": "1000",
+            "content-type": "video/quicktime",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=300",
+            "content-length": "1000",
+            "content-type": "video/quicktime",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": [["range", "bytes=0-9"]]
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=300",
+            "content-length": "1000",
+            "content-type": "video/quicktime",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=300",
+            "content-length": "1000",
+            "content-type": "video/quicktime",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=300",
+            "content-length": "1000",
+            "content-type": "video/mp4",
+            "x-robots-tag": "noindex, nofollow"
+          },
+          "body": {
+            "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+            "length": 1000
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1/extra",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/media/video/asset",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [
+        {
+          "actor_id": 7,
+          "kind": "video",
+          "mime_type": "video/quicktime",
+          "filename": "clip.mov",
+          "local_path": "$DATA_DIR/video-media/7/clip.mp4",
+          "byte_size": 1000,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "video",
+          "mime_type": "",
+          "filename": "blank.mp4",
+          "local_path": "$DATA_DIR/video-media/7/clip.mp4",
+          "byte_size": 1000,
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "video",
+          "mime_type": "video/mp4",
+          "filename": "empty.mp4",
+          "local_path": "$DATA_DIR/video-media/7/empty.mp4",
+          "byte_size": 0,
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "video",
+          "mime_type": "video/mp4",
+          "filename": "gone.mp4",
+          "local_path": "$DATA_DIR/video-media/7/gone.mp4",
+          "byte_size": 10,
+          "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/jpeg",
+          "filename": "photo.jpg",
+          "local_path": "$DATA_DIR/video-media/7/photo.jpg",
+          "byte_size": 5,
+          "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        }
+      ],
+      "incoming": null
+    },
+    {
+      "name": "IndexNow key",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "request": {
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          }
+        },
+        {
+          "write": "indexnow.key",
+          "base64": "ICAwMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1Njc4OWFiY2RlZgo="
+        },
+        {
+          "request": {
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/0123456789abcdef0123456789abcdef.txt/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/1123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/0123456789ABCDEF0123456789ABCDEF.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/0123456789abcdef0123456789abcdef0.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/0123456789abcdef0123456789abcdef.TXT",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/robots.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/x/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/0123456789abcdef0123456789abcdef.txt"
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "0123456789abcdef0123456789abcdef\n"
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789abcdef0123456789abcdef.txt/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "0123456789abcdef0123456789abcdef\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/1123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789ABCDEF0123456789ABCDEF.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789abcdef0123456789abcdef0.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789abcdef0123456789abcdef.TXT",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/robots.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/x/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "IndexNow key that the route cannot name",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "write": "indexnow.key",
+          "base64": "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY="
+        },
+        {
+          "request": {
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/0123456789ABCDEF0123456789ABCDEF.txt",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789abcdef0123456789abcdef.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/0123456789ABCDEF0123456789ABCDEF.txt",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "responsive variants",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "write": "site/generated/responsive/media-abc-360.webp",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "write": "site/generated/responsive/media-abc-361.webp",
+          "base64": "Ynl0ZXM="
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;"
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-360.webp?v=0123456789ab",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/generated/responsive/media-abc-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-360.webp/",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/%6Dedia-abc-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-361.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-480.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/media-abc-360.png",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/a%20b-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive/sub/media-abc-360.webp",
+            "headers": []
+          }
+        },
+        {
+          "request": {
+            "target": "/generated/responsive",
+            "headers": []
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-360.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-360.webp",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=604800, stale-while-revalidate=86400",
+            "content-type": "image/webp"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-360.webp?v=0123456789ab",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=31536000, immutable",
+            "content-type": "image/webp"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "HEAD",
+            "target": "/generated/responsive/media-abc-360.webp",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=604800, stale-while-revalidate=86400",
+            "content-type": "image/webp"
+          },
+          "body": null
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-360.webp/",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=604800, stale-while-revalidate=86400",
+            "content-type": "image/webp"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/%6Dedia-abc-360.webp",
+            "headers": []
+          },
+          "status": 200,
+          "headers": {
+            "cache-control": "public, max-age=604800, stale-while-revalidate=86400",
+            "content-type": "image/webp"
+          },
+          "body": {
+            "sha256": "277089d91c0bdf4f2e6862ba7e4a07605119431f5d13f726dd352b06f1b206a9",
+            "length": 5
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-361.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-480.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/media-abc-360.png",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/-360.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/a%20b-360.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive/sub/media-abc-360.webp",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/generated/responsive",
+            "headers": []
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "media uploads",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0002"], ["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "bearer studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer  studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["x-filename", "photo.png"]
+            ],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["x-filename", "again.png"]
+            ],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "Image/PNG; charset=binary"],
+              ["x-file-name", "café.png"]
+            ],
+            "base64": "b3RoZXI="
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["x-filename", "clip.mp4"]],
+            "base64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5w=="
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"]],
+            "base64": "bm8gbmFtZQ=="
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "multipart/form-data; boundary=x"]],
+            "base64": "LS14LS0="
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"]]
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"]],
+            "base64": ""
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "text/plain"],
+              ["x-filename", "notes.txt"]
+            ],
+            "base64": "dGV4dA=="
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["content-length", "1000000001"]
+            ],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"], ["content-length", "1e10"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["content-length", "1000000000"]
+            ],
+            "base64": "ZXhhY3Q="
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media/",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"]]
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0002"], ["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "bearer studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer  studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["x-filename", "photo.png"]
+            ],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":1,\"kind\":\"photo\",\"filename\":\"photo.png\",\"byte_size\":66}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["x-filename", "again.png"]
+            ],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":1,\"kind\":\"photo\",\"filename\":\"photo.png\",\"byte_size\":66}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "Image/PNG; charset=binary"],
+              ["x-file-name", "café.png"]
+            ],
+            "base64": "b3RoZXI="
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":2,\"kind\":\"photo\",\"filename\":\"caf-.png\",\"byte_size\":5}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["x-filename", "clip.mp4"]],
+            "base64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/wABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5w=="
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":3,\"kind\":\"video\",\"filename\":\"clip.mp4\",\"byte_size\":1000}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"]],
+            "base64": "bm8gbmFtZQ=="
+          },
+          "status": 400,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media upload failed\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "multipart/form-data; boundary=x"]],
+            "base64": "LS14LS0="
+          },
+          "status": 415,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Upload the raw file body with X-Filename and Content-Type headers.\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"]]
+          },
+          "status": 400,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media request has no body\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"]],
+            "base64": ""
+          },
+          "status": 400,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media upload failed\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "text/plain"],
+              ["x-filename", "notes.txt"]
+            ],
+            "base64": "dGV4dA=="
+          },
+          "status": 400,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media upload failed\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-length", "1000000001"],
+              ["content-type", "image/png"]
+            ],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 413,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media upload is too large\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-length", "1e10"], ["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 413,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media upload is too large\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-length", "1000000000"],
+              ["content-type", "image/png"]
+            ],
+            "base64": "ZXhhY3Q="
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":4,\"kind\":\"photo\",\"filename\":\"upload\",\"byte_size\":5}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media/",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 400,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"error\":\"Media upload failed\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "GET",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"]]
+          },
+          "status": 404,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "not found\n"
+          }
+        }
+      ],
+      "assets": [
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/png",
+          "filename": "photo.png",
+          "local_path": "$DATA_DIR/video-media/7/62d7693d527ce6e5cf4a4f54.png",
+          "byte_size": 66,
+          "sha256": "62d7693d527ce6e5cf4a4f54478b889fe3e01a144d09a0a0482ca512d4225b3a",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/png",
+          "filename": "caf-.png",
+          "local_path": "$DATA_DIR/video-media/7/d9298a10d1b0735837dc4bd8.png",
+          "byte_size": 5,
+          "sha256": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "video",
+          "mime_type": "application/octet-stream",
+          "filename": "clip.mp4",
+          "local_path": "$DATA_DIR/video-media/7/a8af099bf2e878609558dbf6.mp4",
+          "byte_size": 1000,
+          "sha256": "a8af099bf2e878609558dbf69d8f88f4a31040a8cf84b549a0cfa912f12ffc3f",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/png",
+          "filename": "upload",
+          "local_path": "$DATA_DIR/video-media/7/fa79d4746c21cd960a17b92d.png",
+          "byte_size": 5,
+          "sha256": "fa79d4746c21cd960a17b92db8976ddef95a7e20b590721f8e0fa7847a05e486",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        }
+      ],
+      "incoming": []
+    },
+    {
+      "name": "media uploads without Studio access configured",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "steps": [
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"]],
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgAAACAAFUok9dAAAAAElFTkSuQmCC"
+          },
+          "status": 403,
+          "headers": {
+            "content-type": "text/plain; charset=utf-8"
+          },
+          "body": {
+            "text": "forbidden\n"
+          }
+        }
+      ],
+      "assets": [],
+      "incoming": null
+    },
+    {
+      "name": "media uploads beyond two at once",
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "steps": [
+        {
+          "held_uploads": [
+            {
+              "method": "POST",
+              "target": "/api/studio/media",
+              "headers": [
+                ["authorization", "Bearer studio-token-for-tests-0001"],
+                ["content-type", "image/png"],
+                ["x-filename", "one.png"]
+              ],
+              "base64": "Zmlyc3QgdXBsb2Fk"
+            },
+            {
+              "method": "POST",
+              "target": "/api/studio/media",
+              "headers": [
+                ["authorization", "Bearer studio-token-for-tests-0001"],
+                ["content-type", "image/png"],
+                ["x-filename", "two.png"]
+              ],
+              "base64": "c2Vjb25kIHVwbG9hZA=="
+            }
+          ],
+          "meanwhile": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["x-filename", "three.png"]
+            ],
+            "base64": "dGhpcmQgdXBsb2Fk"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"], ["x-filename", "four.png"]],
+            "base64": "Zm91cnRoIHVwbG9hZA=="
+          }
+        }
+      ],
+      "results": [
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [
+              ["authorization", "Bearer studio-token-for-tests-0001"],
+              ["content-type", "image/png"],
+              ["x-filename", "three.png"]
+            ],
+            "base64": "dGhpcmQgdXBsb2Fk"
+          },
+          "status": 429,
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "retry-after": "30"
+          },
+          "body": {
+            "text": "{\"error\":\"Too many media uploads are active; retry shortly.\"}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"], ["x-filename", "one.png"]],
+            "base64": "Zmlyc3QgdXBsb2Fk"
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":1,\"kind\":\"photo\",\"filename\":\"one.png\",\"byte_size\":12}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"], ["x-filename", "two.png"]],
+            "base64": "c2Vjb25kIHVwbG9hZA=="
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":2,\"kind\":\"photo\",\"filename\":\"two.png\",\"byte_size\":13}"
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "target": "/api/studio/media",
+            "headers": [["authorization", "Bearer studio-token-for-tests-0001"], ["content-type", "image/png"], ["x-filename", "four.png"]],
+            "base64": "Zm91cnRoIHVwbG9hZA=="
+          },
+          "status": 200,
+          "headers": {
+            "content-type": "application/json; charset=utf-8"
+          },
+          "body": {
+            "text": "{\"asset_id\":3,\"kind\":\"photo\",\"filename\":\"four.png\",\"byte_size\":13}"
+          }
+        }
+      ],
+      "assets": [
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/png",
+          "filename": "one.png",
+          "local_path": "$DATA_DIR/video-media/7/34d9215f1240ef8b83f93a7a.png",
+          "byte_size": 12,
+          "sha256": "34d9215f1240ef8b83f93a7a492bd29fd0f77c26672316e8a9a0accdfda35fc3",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/png",
+          "filename": "two.png",
+          "local_path": "$DATA_DIR/video-media/7/89f5a9e58d60dd620f8b52bb.png",
+          "byte_size": 13,
+          "sha256": "89f5a9e58d60dd620f8b52bbeae29d12f71f71f385beeedde9e89659e32634aa",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        },
+        {
+          "actor_id": 7,
+          "kind": "photo",
+          "mime_type": "image/png",
+          "filename": "four.png",
+          "local_path": "$DATA_DIR/video-media/7/4e99e79f98373513c200402d.png",
+          "byte_size": 13,
+          "sha256": "4e99e79f98373513c200402db16f4bca9fde051e1c6b8f4234919db122005017",
+          "source": "http_upload",
+          "created_at": "2026-11-01T10:00:00.000Z"
+        }
+      ],
+      "incoming": []
+    }
+  ],
+  "command_allowed": [
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-test"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"], ["x-command-token", "wrong"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"], ["x-command-token", ""]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "HEAD",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "head",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x?token=command%2Dtoken+for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x?token=wrong&token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "GET",
+      "target": "/x?token=wrong",
+      "headers": [["cookie", "command_token=command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "a=1; command_token=command-token-for-tests; b=2"]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=command%2Dtoken-for-tests"]],
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=command-token-for-tests%"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=%E0%A4%A"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=a=b"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token = command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [],
+      "payload": " command-token-for-tests ",
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "payload": "wrong",
+      "result": false
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "payload": "   ",
+      "result": true
+    },
+    {
+      "token": "command-token-for-tests",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "ÿcommand-token-for-test"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-test"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"], ["x-command-token", "wrong"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"], ["x-command-token", ""]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "HEAD",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "head",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x?token=command%2Dtoken+for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x?token=wrong&token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "GET",
+      "target": "/x?token=wrong",
+      "headers": [["cookie", "command_token=command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "a=1; command_token=command-token-for-tests; b=2"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=command%2Dtoken-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=command-token-for-tests%"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=%E0%A4%A"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=a=b"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token = command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [],
+      "payload": " command-token-for-tests ",
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "payload": "wrong",
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "payload": "   ",
+      "result": false
+    },
+    {
+      "token": null,
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "ÿcommand-token-for-test"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-test"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"], ["x-command-token", "wrong"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x",
+      "headers": [["x-admin-token", "command-token-for-tests"], ["x-command-token", ""]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "HEAD",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "head",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x?token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x?token=command%2Dtoken+for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x?token=wrong&token=command-token-for-tests",
+      "headers": [],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "GET",
+      "target": "/x?token=wrong",
+      "headers": [["cookie", "command_token=command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "a=1; command_token=command-token-for-tests; b=2"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=command%2Dtoken-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=command-token-for-tests%"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=%E0%A4%A"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token=a=b"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["cookie", "command_token = command-token-for-tests"]],
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [],
+      "payload": " command-token-for-tests ",
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "payload": "wrong",
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "command-token-for-tests"]],
+      "payload": "   ",
+      "result": false
+    },
+    {
+      "token": "ÿcommand-token-for-test",
+      "method": "POST",
+      "target": "/x",
+      "headers": [["x-command-token", "ÿcommand-token-for-test"]],
+      "result": true
+    }
+  ],
+  "studio_actor": [
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [],
+      "result": null
+    },
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [["authorization", "Bearer studio-token-for-tests-0001"]],
+      "result": 7
+    },
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [["authorization", "Bearer studio-token-for-tests-0001x"]],
+      "result": null
+    },
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [["authorization", "bearer studio-token-for-tests-0001"]],
+      "result": null
+    },
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [["authorization", "Bearer  studio-token-for-tests-0001"]],
+      "result": null
+    },
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [["authorization", "Bearer"]],
+      "result": null
+    },
+    {
+      "env": {
+        "PUBLIC_BASE_URL": "https://studio.example.com",
+        "MCP_STUDIO_TOKEN": "studio-token-for-tests-0001",
+        "MCP_STUDIO_ACTOR_ID": "7"
+      },
+      "headers": [["authorization", "studio-token-for-tests-0001"]],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [["authorization", "Bearer studio-token-for-tests-0001"]],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [["authorization", "Bearer studio-token-for-tests-0001x"]],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [["authorization", "bearer studio-token-for-tests-0001"]],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [["authorization", "Bearer  studio-token-for-tests-0001"]],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [["authorization", "Bearer"]],
+      "result": null
+    },
+    {
+      "env": {
+        "MCP_STUDIO_TOKEN": "",
+        "MCP_STUDIO_ACTOR_ID": ""
+      },
+      "headers": [["authorization", "studio-token-for-tests-0001"]],
+      "result": null
+    }
+  ],
+  "client_identity": [
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001"
+      },
+      "headers": [],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001"
+      },
+      "headers": [["x-real-ip", "203.0.113.7"]],
+      "result": "6ee9ac1e6644891c5939f16875b86131291134736fe74dbc365b0b0ab4159229"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001"
+      },
+      "headers": [["x-real-ip", "203.0.113.7"]],
+      "result": "6ee9ac1e6644891c5939f16875b86131291134736fe74dbc365b0b0ab4159229"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001"
+      },
+      "headers": [["x-real-ip", ""]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001"
+      },
+      "headers": [["cf-connecting-ip", "2001:db8::1"]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001"
+      },
+      "headers": [["x-forwarded-for", "198.51.100.1"]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip"
+      },
+      "headers": [],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip"
+      },
+      "headers": [["x-real-ip", "203.0.113.7"]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip"
+      },
+      "headers": [["x-real-ip", "203.0.113.7"]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip"
+      },
+      "headers": [["x-real-ip", ""]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip"
+      },
+      "headers": [["cf-connecting-ip", "2001:db8::1"]],
+      "result": "abc208515102faef96ebbc2107d9efd650e240b3297df0403ba55edba3c7ea88"
+    },
+    {
+      "env": {
+        "CLIENT_IP_HASH_SALT": "salt-for-tests-0001",
+        "TRUSTED_CLIENT_IP_HEADER": "cf-connecting-ip"
+      },
+      "headers": [["x-forwarded-for", "198.51.100.1"]],
+      "result": "8449995cdce890dd99f244c131f164b7e72b4d3cc41594bd9a744f2fccf7b79e"
+    },
+    {
+      "env": {},
+      "headers": [],
+      "result": "7e6f9d9b922c1c126250f7224681884fce3f591436c7ea4a3006a97b5834a7a4"
+    },
+    {
+      "env": {},
+      "headers": [["x-real-ip", "203.0.113.7"]],
+      "result": "ced69556453a246c56b92e99a598211da5d908f4d2907eb9226d8d004edf52c5"
+    },
+    {
+      "env": {},
+      "headers": [["x-real-ip", "203.0.113.7"]],
+      "result": "ced69556453a246c56b92e99a598211da5d908f4d2907eb9226d8d004edf52c5"
+    },
+    {
+      "env": {},
+      "headers": [["x-real-ip", ""]],
+      "result": "7e6f9d9b922c1c126250f7224681884fce3f591436c7ea4a3006a97b5834a7a4"
+    },
+    {
+      "env": {},
+      "headers": [["cf-connecting-ip", "2001:db8::1"]],
+      "result": "7e6f9d9b922c1c126250f7224681884fce3f591436c7ea4a3006a97b5834a7a4"
+    },
+    {
+      "env": {},
+      "headers": [["x-forwarded-for", "198.51.100.1"]],
+      "result": "7e6f9d9b922c1c126250f7224681884fce3f591436c7ea4a3006a97b5834a7a4"
+    }
+  ],
+  "stream_upload": [
+    {
+      "chunks": ["AQI=", "AwQ="],
+      "max": 4,
+      "result": {
+        "size": 4,
+        "written": "AQIDBA=="
+      }
+    },
+    {
+      "chunks": ["AQID", "BA=="],
+      "max": 3,
+      "result": {
+        "error": "Media upload exceeds the 1 MB limit."
+      }
+    },
+    {
+      "chunks": ["AQID"],
+      "max": 3,
+      "result": {
+        "size": 3,
+        "written": "AQID"
+      }
+    },
+    {
+      "chunks": [],
+      "max": 3,
+      "result": {
+        "error": "Media file is empty."
+      }
+    },
+    {
+      "chunks": [""],
+      "max": 3,
+      "result": {
+        "error": "Media file is empty."
+      }
+    },
+    {
+      "chunks": ["AQID", "", "BA=="],
+      "max": 2000000,
+      "result": {
+        "size": 4,
+        "written": "AQIDBA=="
+      }
+    }
+  ]
+}
