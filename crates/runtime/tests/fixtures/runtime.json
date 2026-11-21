@@ -1,0 +1,821 @@
+{
+  "retry_after": [
+    { "headers": [["retry-after", "120"]], "nowMs": 1795255200000, "seconds": 120 },
+    { "headers": [["retry-after", "1.5"]], "nowMs": 1795255200000, "seconds": 1.5 },
+    { "headers": [["retry-after", "-5"]], "nowMs": 1795255200000, "seconds": 0 },
+    { "headers": [["retry-after", " "]], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [["retry-after", ""]], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [["retry-after", "0x10"]], "nowMs": 1795255200000, "seconds": 16 },
+    { "headers": [["retry-after", "Sat, 21 Nov 2026 10:02:00 GMT"]], "nowMs": 1795255200000, "seconds": 120 },
+    { "headers": [["retry-after", "Sat, 21 Nov 2026 09:58:00 GMT"]], "nowMs": 1795255200000, "seconds": 0 },
+    { "headers": [["retry-after", "Sat, 21 Nov 2026 10:00:00 GMT"]], "nowMs": 1795255200000, "seconds": 0 },
+    { "headers": [["retry-after", "2026-11-21T10:05:30Z"]], "nowMs": 1795255200000, "seconds": 330 },
+    { "headers": [["retry-after", "2026-11-21T10:05:30.600Z"]], "nowMs": 1795255200000, "seconds": 331 },
+    { "headers": [["retry-after", "soon"]], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [["retry-after", "soon"], ["x-ratelimit-reset", "1795255242"]], "nowMs": 1795255200000, "seconds": 42 },
+    { "headers": [["x-ratelimit-reset", "1795255242.4"]], "nowMs": 1795255200000, "seconds": 42 },
+    { "headers": [["x-ratelimit-reset", "1795255242.5"]], "nowMs": 1795255200000, "seconds": 43 },
+    { "headers": [["x-ratelimit-reset", "1795255158"]], "nowMs": 1795255200000, "seconds": 0 },
+    { "headers": [["x-ratelimit-reset", "0"]], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [["x-ratelimit-reset", "abc"]], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [["x-ratelimit-reset", ""]], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [], "nowMs": 1795255200000, "seconds": null },
+    { "headers": [["Retry-After", "7"]], "nowMs": 1795255200000, "seconds": 7 }
+  ],
+  "request_json": [
+    {
+      "request": { "url": "https://api.example.com/v1/items?id=1" },
+      "responses": [{ "status": 200, "body": "{\"a\":1,\"b\":[true,null],\"c\":\"é\"}" }],
+      "sent": [{ "method": "GET", "url": "https://api.example.com/v1/items?id=1", "headers": [], "body": "" }],
+      "result": { "ok": { "a": 1, "b": [true, null], "c": "é" } }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/empty", "method": "POST", "body": "x=1" },
+      "responses": [{ "status": 204 }],
+      "sent": [{ "method": "POST", "url": "https://api.example.com/v1/empty", "headers": [], "body": "x=1" }],
+      "result": { "ok": {} }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/array" },
+      "responses": [{ "status": 200, "body": "[1,2]" }],
+      "sent": [{ "method": "GET", "url": "https://api.example.com/v1/array", "headers": [], "body": "" }],
+      "result": { "ok": [1, 2] }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/html?access_token=fixture-secret&page=2" },
+      "responses": [{ "status": 200, "body": "<html>bad gateway token=fixture-secret Bearer abc.def</html>" }],
+      "sent": [{ "method": "GET", "url": "https://api.example.com/v1/html?access_token=fixture-secret&page=2", "headers": [], "body": "" }],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "GET https://api.example.com/v1/html?access_token=%5BREDACTED%5D&page=2 returned a non-JSON body: <html>bad gateway token=[REDACTED] Bearer [REDACTED]</html>",
+          "status": 200,
+          "body": "<html>bad gateway token=[REDACTED] Bearer [REDACTED]</html>",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.telegram.org/bot123456789:fixture-token_x/sendMessage", "method": "POST" },
+      "responses": [{ "status": 429, "headers": [["retry-after", "17"]], "body": "{\"ok\":false,\"description\":\"Too Many Requests\"}" }],
+      "sent": [{ "method": "POST", "url": "https://api.telegram.org/bot123456789:fixture-token_x/sendMessage", "headers": [], "body": "" }],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "POST https://api.telegram.org/bot[REDACTED]/sendMessage failed: 429 {\"ok\":false,\"description\":\"Too Many Requests\"}",
+          "status": 429,
+          "body": "{\"ok\":false,\"description\":\"Too Many Requests\"}",
+          "retryAfterSeconds": 17
+        }
+      }
+    },
+    {
+      "request": { "url": "https://graph.threads.net/v1.0/me?fields=id&access_token=fixture-secret&token=two&token=three" },
+      "responses": [{ "status": 401, "body": "{\"error\":{\"message\":\"Invalid OAuth access token: fixture-secret\"}}" }],
+      "sent": [
+        {
+          "method": "GET",
+          "url": "https://graph.threads.net/v1.0/me?fields=id&access_token=fixture-secret&token=two&token=three",
+          "headers": [],
+          "body": ""
+        }
+      ],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "GET https://graph.threads.net/v1.0/me?fields=id&access_token=%5BREDACTED%5D&token=%5BREDACTED%5D failed: 401 {\"error\":{\"message\":\"Invalid OAuth access token: fixture-secret\"}}",
+          "status": 401,
+          "body": "{\"error\":{\"message\":\"Invalid OAuth access token: fixture-secret\"}}",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/x?api_key=k%20v&q=a+b&api-key=z&password=p" },
+      "responses": [{ "status": 503, "headers": [["retry-after", "30"]], "body": "" }],
+      "sent": [
+        { "method": "GET", "url": "https://api.example.com/v1/x?api_key=k%20v&q=a+b&api-key=z&password=p", "headers": [], "body": "" }
+      ],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "GET https://api.example.com/v1/x?api_key=%5BREDACTED%5D&q=a+b&api-key=%5BREDACTED%5D&password=%5BREDACTED%5D failed: 503 ",
+          "status": 503,
+          "body": "",
+          "retryAfterSeconds": 30
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/long" },
+      "responses": [
+        {
+          "status": 200,
+          "body": "<p>йййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй</p>"
+        }
+      ],
+      "sent": [{ "method": "GET", "url": "https://api.example.com/v1/long", "headers": [], "body": "" }],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "GET https://api.example.com/v1/long returned a non-JSON body: <p>ййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй",
+          "status": 200,
+          "body": "<p>йййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййййй</p>",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/bom" },
+      "responses": [{ "status": 200, "body": "﻿{\"bom\":true}" }],
+      "sent": [{ "method": "GET", "url": "https://api.example.com/v1/bom", "headers": [], "body": "" }],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "GET https://api.example.com/v1/bom returned a non-JSON body: ﻿{\"bom\":true}",
+          "status": 200,
+          "body": "﻿{\"bom\":true}",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/bad\nurl token=raw-secret" },
+      "responses": [{ "throws": "Failed to parse URL" }],
+      "sent": [{ "method": "GET", "url": "https://api.example.com/v1/badurl%20token=raw-secret", "headers": [], "body": "" }],
+      "result": {
+        "error": {
+          "kind": "transport",
+          "message": "GET https://api.example.com/v1/badurl%20token=raw-secret failed before receiving an HTTP response"
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.telegram.org/bot123456789:fixture-token_x/getMe", "method": "POST" },
+      "responses": [{ "throws": "Unable to connect" }],
+      "sent": [{ "method": "POST", "url": "https://api.telegram.org/bot123456789:fixture-token_x/getMe", "headers": [], "body": "" }],
+      "result": {
+        "error": {
+          "kind": "transport",
+          "message": "POST https://api.telegram.org/bot[REDACTED]/getMe failed before receiving an HTTP response"
+        }
+      }
+    },
+    {
+      "request": {
+        "url": "https://api.example.com/v1/create",
+        "method": "PUT",
+        "headers": { "Authorization": "Bearer fixture", "Content-Type": "application/json" },
+        "body": "{\"x\":1}"
+      },
+      "responses": [{ "status": 500, "body": "Internal error for Bearer fixture-abc.123" }],
+      "sent": [
+        {
+          "method": "PUT",
+          "url": "https://api.example.com/v1/create",
+          "headers": [["authorization", "Bearer fixture"], ["content-type", "application/json"]],
+          "body": "{\"x\":1}"
+        }
+      ],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "PUT https://api.example.com/v1/create failed: 500 Internal error for Bearer [REDACTED]",
+          "status": 500,
+          "body": "Internal error for Bearer [REDACTED]",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/text", "method": "POST", "body": "plain body" },
+      "responses": [{ "status": 200, "body": "{}" }],
+      "sent": [{ "method": "POST", "url": "https://api.example.com/v1/text", "headers": [], "body": "plain body" }],
+      "result": { "ok": {} }
+    },
+    {
+      "request": { "url": "https://api.example.com/v1/slow?token=fixture", "method": "POST" },
+      "responses": [{ "hang": true }],
+      "ceilingMs": 5,
+      "sent": [{ "method": "POST", "url": "https://api.example.com/v1/slow?token=fixture", "headers": [], "body": "" }],
+      "result": {
+        "error": { "kind": "transport", "message": "POST https://api.example.com/v1/slow?token=%5BREDACTED%5D timed out after 1s" }
+      }
+    }
+  ],
+  "form_body": [
+    {
+      "fields": [
+        ["client_id", "id.apps.example"],
+        ["client_secret", null],
+        ["refresh_token", "1//a+b/c=d&e"],
+        ["grant_type", "refresh_token"]
+      ],
+      "body": "client_id=id.apps.example&refresh_token=1%2F%2Fa%2Bb%2Fc%3Dd%26e&grant_type=refresh_token"
+    },
+    {
+      "fields": [["text", "Привет, мир! *-._~'()"], ["empty", ""]],
+      "body": "text=%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2C+%D0%BC%D0%B8%D1%80%21+*-._%7E%27%28%29&empty="
+    },
+    { "fields": [], "body": "" }
+  ],
+  "ffmpeg_failure": [
+    { "code": 1, "stderr": "", "message": "media_processing_failed: ffmpeg exit 1: no diagnostic output" },
+    { "code": 1, "stderr": "   \n\r\n  ", "message": "media_processing_failed: ffmpeg exit 1: no diagnostic output" },
+    {
+      "code": 137,
+      "stderr": "frame=  10 fps=1\nKilled",
+      "message": "media_processing_failed: ffmpeg exit 137: process was killed (likely out of memory)"
+    },
+    {
+      "code": 1,
+      "stderr": "frame=  0 fps= 25 q=28.0 size=  0kB time=00:00:00.00\rframe=  10 fps= 25 q=28.0 size=  1kB time=00:00:01.00\rframe=  20 fps= 25 q=28.0 size=  2kB time=00:00:02.00\rframe=  30 fps= 25 q=28.0 size=  3kB time=00:00:03.00\rframe=  40 fps= 25 q=28.0 size=  4kB time=00:00:04.00\rframe=  50 fps= 25 q=28.0 size=  5kB time=00:00:05.00\rframe=  60 fps= 25 q=28.0 size=  6kB time=00:00:06.00\rframe=  70 fps= 25 q=28.0 size=  7kB time=00:00:07.00\rframe=  80 fps= 25 q=28.0 size=  8kB time=00:00:08.00\rframe=  90 fps= 25 q=28.0 size=  9kB time=00:00:09.00\rframe=  100 fps= 25 q=28.0 size=  10kB time=00:00:00.00\rframe=  110 fps= 25 q=28.0 size=  11kB time=00:00:01.00\rframe=  120 fps= 25 q=28.0 size=  12kB time=00:00:02.00\rframe=  130 fps= 25 q=28.0 size=  13kB time=00:00:03.00\rframe=  140 fps= 25 q=28.0 size=  14kB time=00:00:04.00\rframe=  150 fps= 25 q=28.0 size=  15kB time=00:00:05.00\rframe=  160 fps= 25 q=28.0 size=  16kB time=00:00:06.00\rframe=  170 fps= 25 q=28.0 size=  17kB time=00:00:07.00\rframe=  180 fps= 25 q=28.0 size=  18kB time=00:00:08.00\rframe=  190 fps= 25 q=28.0 size=  19kB time=00:00:09.00\rframe=  200 fps= 25 q=28.0 size=  20kB time=00:00:00.00\rframe=  210 fps= 25 q=28.0 size=  21kB time=00:00:01.00\rframe=  220 fps= 25 q=28.0 size=  22kB time=00:00:02.00\rframe=  230 fps= 25 q=28.0 size=  23kB time=00:00:03.00\rframe=  240 fps= 25 q=28.0 size=  24kB time=00:00:04.00\rframe=  250 fps= 25 q=28.0 size=  25kB time=00:00:05.00\rframe=  260 fps= 25 q=28.0 size=  26kB time=00:00:06.00\rframe=  270 fps= 25 q=28.0 size=  27kB time=00:00:07.00\rframe=  280 fps= 25 q=28.0 size=  28kB time=00:00:08.00\rframe=  290 fps= 25 q=28.0 size=  29kB time=00:00:09.00\rframe=  300 fps= 25 q=28.0 size=  30kB time=00:00:00.00\rframe=  310 fps= 25 q=28.0 size=  31kB time=00:00:01.00\rframe=  320 fps= 25 q=28.0 size=  32kB time=00:00:02.00\rframe=  330 fps= 25 q=28.0 size=  33kB time=00:00:03.00\rframe=  340 fps= 25 q=28.0 size=  34kB time=00:00:04.00\rframe=  350 fps= 25 q=28.0 size=  35kB time=00:00:05.00\rframe=  360 fps= 25 q=28.0 size=  36kB time=00:00:06.00\rframe=  370 fps= 25 q=28.0 size=  37kB time=00:00:07.00\rframe=  380 fps= 25 q=28.0 size=  38kB time=00:00:08.00\rframe=  390 fps= 25 q=28.0 size=  39kB time=00:00:09.00\r[libx264 @ 0x1] error\nline a\nline b\nline c\nline d\nline e\nline f\nline g\n",
+      "message": "media_processing_failed: ffmpeg exit 1: line b · line c · line d · line e · line f · line g"
+    },
+    {
+      "code": 234,
+      "stderr": "  Error opening input files: No such file or directory  \n",
+      "message": "media_processing_failed: ffmpeg exit 234: Error opening input files: No such file or directory"
+    },
+    {
+      "code": 1,
+      "stderr": "Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка ",
+      "message": "media_processing_failed: ffmpeg exit 1: Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком длинная строка Слишком дл"
+    },
+    {
+      "code": -1,
+      "stderr": "frame=1 fps=2 x\nframe=   7   fps=0.0 q=0.0\nframe=x fps=1\n\tframe=  3 fps=1",
+      "message": "media_processing_failed: ffmpeg exit -1: frame=x fps=1"
+    }
+  ],
+  "ffprobe": [
+    {
+      "stdout": "{\"streams\":[{\"codec_name\":\"h264\",\"codec_type\":\"video\",\"width\":1080,\"height\":1920,\"avg_frame_rate\":\"30000/1001\",\"duration\":\"12.5\"},{\"codec_name\":\"aac\",\"codec_type\":\"audio\",\"bit_rate\":\"128000\"}],\"format\":{\"duration\":\"12.533333\"}}",
+      "stderr": "",
+      "exit": 0,
+      "result": {
+        "ok": {
+          "width": 1080,
+          "height": 1920,
+          "durationSeconds": 12.533333,
+          "videoCodec": "h264",
+          "audioCodec": "aac",
+          "fps": 29.97002997002997,
+          "audioBitrate": 128000
+        }
+      }
+    },
+    {
+      "stdout": "{\"streams\":[{\"codec_type\":\"video\",\"width\":640,\"height\":360,\"avg_frame_rate\":\"0/0\",\"duration\":\"3.2\"}]}",
+      "stderr": "",
+      "exit": 0,
+      "result": {
+        "ok": {
+          "width": 640,
+          "height": 360,
+          "durationSeconds": 3.2,
+          "videoCodec": "video",
+          "audioCodec": null,
+          "fps": 0,
+          "audioBitrate": null
+        }
+      }
+    },
+    {
+      "stdout": "{\"streams\":[{\"codec_type\":\"audio\",\"codec_name\":\"opus\",\"bit_rate\":\"N/A\"},{\"codec_type\":\"video\",\"codec_name\":\"vp9\",\"width\":720,\"height\":1280,\"avg_frame_rate\":\"25\"}],\"format\":{\"duration\":\"-4\"}}",
+      "stderr": "",
+      "exit": 0,
+      "result": {
+        "ok": {
+          "width": 720,
+          "height": 1280,
+          "durationSeconds": 0,
+          "videoCodec": "vp9",
+          "audioCodec": "opus",
+          "fps": 25,
+          "audioBitrate": null
+        }
+      }
+    },
+    {
+      "stdout": "{\"streams\":[{\"codec_type\":\"video\",\"codec_name\":\"png\",\"width\":0,\"height\":10}],\"format\":{}}",
+      "stderr": "",
+      "exit": 0,
+      "result": { "error": "media_probe_failed: ffprobe did not find a video stream" }
+    },
+    {
+      "stdout": "{\"streams\":[{\"codec_type\":\"audio\",\"codec_name\":\"mp3\",\"bit_rate\":\"320000\"}]}",
+      "stderr": "",
+      "exit": 0,
+      "result": { "error": "media_probe_failed: ffprobe did not find a video stream" }
+    },
+    { "stdout": "", "stderr": "", "exit": 0, "result": { "error": "media_probe_failed: ffprobe did not find a video stream" } },
+    { "stdout": "{not json", "stderr": "", "exit": 0, "result": { "error": "media_probe_failed: ffprobe returned invalid JSON" } },
+    {
+      "stdout": "",
+      "stderr": "/fixture/clip.mp4: Invalid data found when processing input\n",
+      "exit": 1,
+      "result": { "error": "media_probe_failed: ffprobe exit 1: /fixture/clip.mp4: Invalid data found when processing input" }
+    },
+    { "stdout": "", "stderr": "   ", "exit": 1, "result": { "error": "media_probe_failed: ffprobe exit 1: no diagnostic output" } },
+    {
+      "stdout": "",
+      "stderr": "жжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжtail",
+      "exit": 2,
+      "result": {
+        "error": "media_probe_failed: ffprobe exit 2: жжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжжtail"
+      }
+    },
+    {
+      "stdout": "{\"streams\":[{\"codec_type\":\"video\",\"codec_name\":\"hevc\",\"width\":\"1920\",\"height\":1080,\"avg_frame_rate\":\"60/1/2\"},{\"codec_type\":\"audio\",\"bit_rate\":\"0\"}],\"format\":{\"duration\":null}}",
+      "stderr": "",
+      "exit": 0,
+      "result": {
+        "ok": {
+          "width": 1920,
+          "height": 1080,
+          "durationSeconds": 0,
+          "videoCodec": "hevc",
+          "audioCodec": null,
+          "fps": 60,
+          "audioBitrate": null
+        }
+      }
+    }
+  ],
+  "real_probe": [
+    {
+      "args": [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        "testsrc=size=180x320:rate=25:duration=1",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=440:duration=1",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "96k",
+        "-shortest"
+      ],
+      "metadata": {
+        "width": 180,
+        "height": 320,
+        "durationSeconds": 1,
+        "videoCodec": "h264",
+        "audioCodec": "aac",
+        "fps": 25,
+        "audioBitrate": 97167
+      }
+    }
+  ],
+  "worker_state": [
+    {
+      "step": { "op": "start", "name": "queue", "at": "2026-11-21T10:00:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"phase\":\"running\",\"heartbeat_interval_ms\":60000,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:00:00.000Z\"}",
+          "updated_at": "2026-11-21T10:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "heartbeat", "name": "queue", "at": "2026-11-21T10:01:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"phase\":\"running\",\"heartbeat_interval_ms\":60000,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:01:00.000Z\"}",
+          "updated_at": "2026-11-21T10:01:00.000Z"
+        }
+      ]
+    },
+    {
+      "step": {
+        "op": "state",
+        "name": "queue",
+        "state": { "processed": 3, "ok": "kept-position", "note": "é   \"q\"" },
+        "error": null,
+        "at": "2026-11-21T10:01:30.000Z"
+      },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:01:30.000Z\"}",
+          "updated_at": "2026-11-21T10:01:30.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "start", "name": "queue", "at": "2026-11-21T10:02:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:01:30.000Z\"}",
+          "updated_at": "2026-11-21T10:01:30.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "heartbeat", "name": "queue", "at": "2026-11-21T10:03:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:03:00.000Z\",\"heartbeat_interval_ms\":60000}",
+          "updated_at": "2026-11-21T10:03:00.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "finish", "name": "queue", "error": "database is locked", "at": "2026-11-21T10:03:10.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":\"database is locked\",\"last_heartbeat_at\":\"2026-11-21T10:03:10.000Z\",\"heartbeat_interval_ms\":60000,\"phase\":\"failed\"}",
+          "updated_at": "2026-11-21T10:03:10.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "start", "name": "queue", "at": "2026-11-21T10:03:15.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:03:15.000Z\",\"heartbeat_interval_ms\":60000,\"phase\":\"running\"}",
+          "updated_at": "2026-11-21T10:03:15.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "finish", "name": "queue", "error": null, "at": "2026-11-21T10:03:20.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:03:15.000Z\",\"heartbeat_interval_ms\":60000,\"phase\":\"running\"}",
+          "updated_at": "2026-11-21T10:03:15.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "state", "name": "video", "state": {}, "error": "ffprobe failed", "at": "2026-11-21T10:04:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:03:15.000Z\",\"heartbeat_interval_ms\":60000,\"phase\":\"running\"}",
+          "updated_at": "2026-11-21T10:03:15.000Z"
+        },
+        {
+          "name": "video",
+          "state_json": "{\"ok\":false,\"last_run_at\":\"2026-11-21T10:04:00.000Z\",\"last_error\":\"ffprobe failed\",\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:04:00.000Z\"}",
+          "updated_at": "2026-11-21T10:04:00.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "heartbeat", "name": "video", "at": "2026-11-21T10:05:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:03:15.000Z\",\"heartbeat_interval_ms\":60000,\"phase\":\"running\"}",
+          "updated_at": "2026-11-21T10:03:15.000Z"
+        },
+        {
+          "name": "video",
+          "state_json": "{\"ok\":false,\"last_run_at\":\"2026-11-21T10:04:00.000Z\",\"last_error\":\"ffprobe failed\",\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:05:00.000Z\",\"heartbeat_interval_ms\":60000}",
+          "updated_at": "2026-11-21T10:05:00.000Z"
+        }
+      ]
+    },
+    {
+      "step": { "op": "heartbeat", "name": "site", "at": "2026-11-21T10:06:00.000Z" },
+      "rows": [
+        {
+          "name": "queue",
+          "state_json": "{\"processed\":3,\"ok\":true,\"note\":\"é   \\\"q\\\"\",\"last_run_at\":\"2026-11-21T10:01:30.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:03:15.000Z\",\"heartbeat_interval_ms\":60000,\"phase\":\"running\"}",
+          "updated_at": "2026-11-21T10:03:15.000Z"
+        },
+        {
+          "name": "site",
+          "state_json": "{\"heartbeat_interval_ms\":60000,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:06:00.000Z\"}",
+          "updated_at": "2026-11-21T10:06:00.000Z"
+        },
+        {
+          "name": "video",
+          "state_json": "{\"ok\":false,\"last_run_at\":\"2026-11-21T10:04:00.000Z\",\"last_error\":\"ffprobe failed\",\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-11-21T10:05:00.000Z\",\"heartbeat_interval_ms\":60000}",
+          "updated_at": "2026-11-21T10:05:00.000Z"
+        }
+      ]
+    }
+  ],
+  "expected_worker_names": [
+    {
+      "telegram": false,
+      "names": [
+        "story-cards",
+        "queue",
+        "publish-watchdog",
+        "publication-reconciliation",
+        "notifications",
+        "video",
+        "site",
+        "site-watchdog",
+        "media-cache",
+        "operational-retention",
+        "observability",
+        "platform-tokens",
+        "credentials",
+        "x-token"
+      ]
+    },
+    {
+      "telegram": true,
+      "names": [
+        "story-cards",
+        "queue",
+        "publish-watchdog",
+        "publication-reconciliation",
+        "notifications",
+        "video",
+        "site",
+        "site-watchdog",
+        "media-cache",
+        "operational-retention",
+        "observability",
+        "platform-tokens",
+        "credentials",
+        "x-token",
+        "telegram-albums",
+        "telegram-translations",
+        "telegram-events",
+        "telegram-alerts",
+        "telegram-daily-backup"
+      ]
+    }
+  ],
+  "liveness": [
+    {
+      "state": { "last_heartbeat_at": "2026-11-21T09:59:00.000Z", "heartbeat_interval_ms": 60000 },
+      "updatedAt": "2026-11-21T09:00:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 60, "stale": false, "lastHeartbeatAt": "2026-11-21T09:59:00.000Z" }
+    },
+    {
+      "state": { "last_heartbeat_at": "2026-11-21T09:56:59.000Z", "heartbeat_interval_ms": 60000 },
+      "updatedAt": "2026-11-21T09:00:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 181, "stale": true, "lastHeartbeatAt": "2026-11-21T09:56:59.000Z" }
+    },
+    {
+      "state": { "last_heartbeat_at": "2026-11-21T09:56:59.400Z", "heartbeat_interval_ms": 10000 },
+      "updatedAt": "2026-11-21T09:00:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 181, "stale": true, "lastHeartbeatAt": "2026-11-21T09:56:59.400Z" }
+    },
+    {
+      "state": { "heartbeat_interval_ms": 100000 },
+      "updatedAt": "2026-11-21T09:55:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 300, "stale": false, "lastHeartbeatAt": "2026-11-21T09:55:00.000Z" }
+    },
+    {
+      "state": {},
+      "updatedAt": "2026-11-21T08:00:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 7200, "stale": false, "lastHeartbeatAt": "2026-11-21T08:00:00.000Z" }
+    },
+    {
+      "state": { "last_heartbeat_at": "2026-11-21T10:00:30.000Z", "heartbeat_interval_ms": 1 },
+      "updatedAt": "2026-11-21T09:00:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 0, "stale": false, "lastHeartbeatAt": "2026-11-21T10:00:30.000Z" }
+    },
+    {
+      "state": { "last_heartbeat_at": 5, "heartbeat_interval_ms": "60000" },
+      "updatedAt": "2026-11-21T09:58:00.000Z",
+      "nowMs": 1795255200000,
+      "result": { "ageSeconds": 120, "stale": false, "lastHeartbeatAt": "2026-11-21T09:58:00.000Z" }
+    }
+  ],
+  "scheduler": [
+    { "action": "begin", "trace": ["start", "task 1"] },
+    { "action": "wake", "trace": [] },
+    { "action": "wake", "trace": [] },
+    { "action": "release-ok", "trace": ["finish ok", "start", "task 2"] },
+    { "action": "release-error", "trace": ["finish boom"] },
+    { "action": "wake", "trace": ["start", "task 3"] },
+    { "action": "wake", "trace": [] },
+    { "action": "release-ok", "trace": ["finish ok", "start", "task 4"] },
+    { "action": "release-ok", "trace": ["finish ok"] },
+    { "action": "wake", "trace": ["start", "task 5"] },
+    { "action": "stop", "trace": [] },
+    { "action": "release-ok", "trace": ["finish ok", "stopped"] },
+    { "action": "wake", "trace": [] }
+  ],
+  "external": [
+    {
+      "name": "deepseek-json",
+      "responses": [{ "status": 200, "body": "{\"choices\":[{\"message\":{\"content\":\"  {\\\"title\\\":\\\"Hi\\\"}\\n\"}}]}" }],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://api.deepseek.com/v1/chat/completions",
+          "headers": [["authorization", "Bearer fixture-deepseek-key"], ["content-type", "application/json"]],
+          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":0.1,\"response_format\":{\"type\":\"json_object\"}}"
+        }
+      ],
+      "result": { "ok": "{\"title\":\"Hi\"}" }
+    },
+    {
+      "name": "deepseek-text",
+      "responses": [{ "status": 200, "body": "{\"choices\":[]}" }],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://api.deepseek.com/v1/chat/completions",
+          "headers": [["authorization", "Bearer fixture-deepseek-key"], ["content-type", "application/json"]],
+          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":1}"
+        }
+      ],
+      "result": { "ok": "" }
+    },
+    {
+      "name": "deepseek-refused",
+      "responses": [{ "status": 402, "body": "{\"error\":{\"message\":\"Insufficient Balance\"}}" }],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://api.deepseek.com/v1/chat/completions",
+          "headers": [["authorization", "Bearer fixture-deepseek-key"], ["content-type", "application/json"]],
+          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":0}"
+        }
+      ],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "POST https://api.deepseek.com/v1/chat/completions failed: 402 {\"error\":{\"message\":\"Insufficient Balance\"}}",
+          "status": 402,
+          "body": "{\"error\":{\"message\":\"Insufficient Balance\"}}",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "name": "youtube-token-ru",
+      "responses": [{ "status": 200, "body": "{\"access_token\":\"fixture-access\",\"expires_in\":3599}" }],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://oauth2.googleapis.com/token",
+          "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+          "body": "client_id=ru-client.apps.example&client_secret=ru-secret&refresh_token=1%2F%2Fru-refresh&grant_type=refresh_token"
+        }
+      ],
+      "result": { "ok": "fixture-access" }
+    },
+    {
+      "name": "youtube-token-en",
+      "responses": [{ "status": 400, "body": "{\"error\":\"invalid_grant\"}" }],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://oauth2.googleapis.com/token",
+          "headers": [["content-type", "application/x-www-form-urlencoded;charset=UTF-8"]],
+          "body": "client_id=en-client.apps.example&client_secret=en-secret&refresh_token=1%2F%2Fen-refresh&grant_type=refresh_token"
+        }
+      ],
+      "result": {
+        "error": {
+          "kind": "http",
+          "message": "POST https://oauth2.googleapis.com/token failed: 400 {\"error\":\"invalid_grant\"}",
+          "status": 400,
+          "body": "{\"error\":\"invalid_grant\"}",
+          "retryAfterSeconds": null
+        }
+      }
+    },
+    {
+      "name": "zernio-accounts-object",
+      "responses": [
+        {
+          "status": 200,
+          "body": "{\"accounts\":[{\"_id\":\"a1\",\"username\":\"alex\",\"displayName\":\"Alex\",\"platform\":\"tiktok\",\"followersCount\":12},{\"_id\":\"a2\"}]}"
+        }
+      ],
+      "sent": [
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/accounts",
+          "headers": [["authorization", "Bearer fixture-zernio-key"]],
+          "body": ""
+        }
+      ],
+      "result": {
+        "ok": [{ "_id": "a1", "username": "alex", "displayName": "Alex", "platform": "tiktok", "followersCount": 12 }, { "_id": "a2" }]
+      }
+    },
+    {
+      "name": "zernio-accounts-array",
+      "responses": [{ "status": 200, "body": "[{\"_id\":\"b1\",\"platform\":\"youtube\"}]" }],
+      "sent": [
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/accounts",
+          "headers": [["authorization", "Bearer fixture-zernio-key"]],
+          "body": ""
+        }
+      ],
+      "result": { "ok": [{ "_id": "b1", "platform": "youtube" }] }
+    },
+    {
+      "name": "zernio-account-missing",
+      "responses": [{ "status": 200, "body": "{}" }],
+      "sent": [
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/accounts",
+          "headers": [["authorization", "Bearer fixture-zernio-key"]],
+          "body": ""
+        }
+      ],
+      "result": { "error": { "kind": "message", "message": "Zernio account was not found" } }
+    },
+    {
+      "name": "zernio-no-key",
+      "responses": [],
+      "sent": [],
+      "result": { "error": { "kind": "message", "message": "ZERNIO_API_KEY is missing" } }
+    },
+    {
+      "name": "telegram-file-by-id",
+      "responses": [
+        { "status": 200, "body": "{\"ok\":true,\"result\":{\"file_id\":\"F1\",\"file_path\":\"videos/file_7.mp4\"}}" },
+        { "status": 200, "body": "video bytes" }
+      ],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://bot-api.example/bot987654321:fixture-other/getFile",
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"file_id\":\"F1\"}"
+        },
+        { "method": "GET", "url": "https://bot-api.example/file/bot987654321:fixture-other/videos/file_7.mp4", "headers": [], "body": "" }
+      ],
+      "result": { "ok": { "name": "by-id.mp4", "temporary": false, "content": "video bytes" } }
+    },
+    {
+      "name": "telegram-file-get-file-refused",
+      "responses": [{ "status": 200, "body": "{\"ok\":false}" }],
+      "sent": [
+        {
+          "method": "POST",
+          "url": "https://bot-api.example/bot123456789:fixture-controller/getFile",
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"file_id\":\"F2\"}"
+        }
+      ],
+      "result": { "error": { "kind": "message", "message": "Telegram getFile failed for F2" } }
+    },
+    {
+      "name": "telegram-file-download-status",
+      "responses": [{ "status": 404, "body": "gone" }],
+      "sent": [
+        {
+          "method": "GET",
+          "url": "https://bot-api.example/file/bot123456789:fixture-controller/photos/file_1.jpg",
+          "headers": [],
+          "body": ""
+        }
+      ],
+      "result": { "error": { "kind": "message", "message": "Telegram file download failed: 404" } }
+    },
+    {
+      "name": "telegram-file-download-failed",
+      "responses": [{ "throws": "socket closed" }],
+      "sent": [
+        {
+          "method": "GET",
+          "url": "https://bot-api.example/file/bot123456789:fixture-controller/photos/file_1.jpg",
+          "headers": [],
+          "body": ""
+        }
+      ],
+      "result": { "error": { "kind": "message", "message": "Telegram file download failed." } }
+    },
+    {
+      "name": "telegram-file-absolute",
+      "responses": [],
+      "sent": [],
+      "result": { "ok": { "path": "/var/lib/telegram-bot-api/file.mp4", "temporary": false } }
+    }
+  ]
+}

@@ -754,6 +754,7 @@ fn studio_services_match_typescript() {
             video_codec: probe["videoCodec"].as_str().unwrap().into(),
             audio_codec: probe["audioCodec"].as_str().map(str::to_owned),
             fps: probe["fps"].as_f64().unwrap(),
+            audio_bitrate: probe["audioBitrate"].as_f64(),
         },
         accounts: serde_json::from_value(spec["zernioAccounts"].clone()).unwrap(),
     };

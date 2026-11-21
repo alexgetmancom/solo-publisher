@@ -1323,6 +1323,7 @@ fn a_video_source_is_checked_through_the_media_probe() {
         video_codec: "h264".into(),
         audio_codec: Some("aac".into()),
         fps: 30.0,
+        audio_bitrate: Some(128_000.0),
     };
     let quiet = "lavfi.astats.Overall.RMS_trough=-70.5\nlavfi.astats.Overall.Noise_floor=-80\n".to_owned();
     let check = ready(validate_video_source(

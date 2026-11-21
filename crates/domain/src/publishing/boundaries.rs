@@ -151,6 +151,8 @@ pub struct MediaMetadata {
     pub video_codec: String,
     pub audio_codec: Option<String>,
     pub fps: f64,
+    /// The audio stream's bit rate, when ffprobe reports a positive one.
+    pub audio_bitrate: Option<f64>,
 }
 
 /// ffprobe and ffmpeg, as the video checks call them.

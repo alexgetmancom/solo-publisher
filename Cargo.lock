@@ -1078,6 +1078,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "runtime"
+version = "0.0.0"
+dependencies = [
+ "content",
+ "db",
+ "domain",
+ "foundation",
+ "futures-util",
+ "getrandom 0.2.17",
+ "jiff",
+ "regex",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
 name = "rusqlite"
 version = "0.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

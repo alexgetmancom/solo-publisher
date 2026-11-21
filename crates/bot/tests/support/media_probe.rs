@@ -77,6 +77,7 @@ pub fn probe(path: &str) -> Result<MediaMetadata, String> {
         .filter(|duration| !duration.is_null())
         .or_else(|| video.get("duration").filter(|duration| !duration.is_null()));
     let duration = duration.map_or(0.0, |duration| number(Some(duration)));
+    let audio_bitrate = number(audio.and_then(|audio| audio.get("bit_rate")));
     Ok(MediaMetadata {
         width: number(video.get("width")),
         height: number(video.get("height")),
@@ -95,6 +96,7 @@ pub fn probe(path: &str) -> Result<MediaMetadata, String> {
         } else {
             0.0
         },
+        audio_bitrate: (audio_bitrate.is_finite() && audio_bitrate > 0.0).then_some(audio_bitrate),
     })
 }
 
