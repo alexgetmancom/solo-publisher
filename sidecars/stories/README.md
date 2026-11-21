@@ -22,7 +22,7 @@ In the image (`Dockerfile.rust`) it is bundled to `/app/sidecar` and started, su
 `studio-entrypoint` (`crates/entrypoint`); nothing to configure. Sign in once:
 
 ```
-docker exec -it -u studio <container> bun /app/sidecar/login.js
+docker exec -it -u bun <container> bun /app/sidecar/login.js
 ```
 
 Tests: `bun test sidecars` (mtcute faked; no network).

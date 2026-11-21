@@ -1,0 +1,91 @@
+# One Studio on the Rust image (Dockerfile.rust): the deploy agent's composeFile
+# for a target that runs it. Identical to studio.compose.yaml — same container
+# name, volumes, port and healthcheck — except pids_limit, marked "Rust image:".
+# The Stories sidecar runs inside this container.
+name: ${STUDIO:?set STUDIO to this deployment's name}
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?set an immutable backend image digest}
+    pull_policy: always
+    container_name: ${STUDIO:?set STUDIO to this deployment's name}-backend
+    # No `command:` — the image entrypoint (studio-entrypoint under tini) fixes
+    # bind-mount ownership as root, drops to uid 1000 and starts the Studio and
+    # the Stories sidecar itself.
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    env_file:
+      - ./secrets.env
+    group_add:
+      - "${BOT_API_GID:-101}"
+    environment:
+      # One volume: every pipeline path is derived from it (foundation/config.ts).
+      DATA_DIR: /data
+      # Never under DATA_DIR — a backup on the volume it exists to survive is
+      # not a backup, and `doctor` fails a deployment that puts it there.
+      NODE_ENV: production
+      DEPLOYMENT_ENV: production
+      BIND_HOST: 0.0.0.0
+      PORT: "8788"
+      # Caddy terminates TLS and is the only thing that can reach this port, so
+      # the address it forwards is the real client's.
+      TRUSTED_CLIENT_IP_HEADER: x-real-ip
+      METRICS_REFRESH_INTERVAL_SECONDS: "60"
+      # No default: a wrong value here hands a publishing platform a URL on
+      # another Studio's domain, and the request that proves it wrong comes
+      # from Meta, not from a test.
+      PUBLIC_BASE_URL: ${STUDIO_PUBLIC_BASE_URL:?set this Studio's public base URL}
+      PUBLIC_MEDIA_BASE_URL: ${STUDIO_PUBLIC_BASE_URL:?set this Studio's public base URL}/media/staging
+      # Empty means this Studio publishes to no Telegram channel.
+      TELEGRAM_CHANNEL_USERNAME: ${TELEGRAM_CHANNEL_USERNAME:-}
+      # The host's single Bot API server, reached by its network alias. The
+      # alias is the name every Studio uses; the container name carries the
+      # compose project it happens to have been created under and is not it.
+      TELEGRAM_API_BASE_URL: ${TELEGRAM_API_BASE_URL:-http://bot-api:8081}
+      GROK_HOME: /home/deploy/.grok
+      GROK_CLI_PATH: /home/deploy/.grok/bin/grok
+    volumes:
+      - ${STUDIO_DATA_DIR_HOST:-./data}:/data
+      - ${STUDIO_MEDIA_CACHE_DIR_HOST:-./media-cache}:/data/media-cache
+      - ${STUDIO_VIDEO_MEDIA_DIR_HOST:-./video-media}:/data/video-media
+      - ${STUDIO_MEDIA_STAGING_DIR_HOST:-./media-staging}:/data/media
+      - ${STUDIO_SITE_MEDIA_DIR_HOST:-./site-media}:/data/site/media
+      - ${BOT_API_DATA_DIR_HOST:-/home/deploy/bot-api/data}:/var/lib/telegram-bot-api:ro
+      # One Grok state directory per Studio. Shared, two Studios wrote each
+      # other's sessions, locks and credentials through the same mount.
+      - ${STUDIO_GROK_DIR_HOST:?set this Studio's own Grok state directory}:/home/deploy/.grok
+    ports:
+      - "127.0.0.1:${STUDIO_PORT:?set the loopback port this Studio answers on}:8788"
+    extra_hosts:
+      - "host.docker.internal:${DEPLOY_AGENT_HOST_GATEWAY:-host-gateway}"
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:8788/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    # The default 10 MB x 3 held under a day of this Studio's logs, and the
+    # timing lines they carry are the only record of how long a publish, a
+    # dashboard render or a bot tap actually took -- a question that is always
+    # asked after the fact. 50 MB x 5 costs disk the host has and is weeks of
+    # room, but the size is not the binding limit: a new image means a new
+    # container, and the replaced one's log goes with it, so in practice this
+    # reaches back to the last deployment. `ops:prod logs` reads what is left.
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "5"
+    networks:
+      - agent_default
+    mem_limit: 384m
+    cpus: ${STUDIO_CPUS:-1.0}
+    cpu_shares: 256
+    # Rust image: the Stories sidecar is a second resident process, measured
+    # at 21 threads and 41 MB idle; the Studio keeps the 96 it had.
+    pids_limit: 128
+
+networks:
+  agent_default:
+    external: true

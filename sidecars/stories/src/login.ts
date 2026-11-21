@@ -4,7 +4,7 @@ import { createStoryClient, storyCredentials } from "./client.js";
  * sidecar reads it (`TELEGRAM_CHANNEL_STORIES_SESSION`). Stories are posted by
  * a user, not a bot, so the credential is an MTProto session. Run it inside the
  * container, with a terminal, as the user that owns the data volume:
- * `docker exec -it -u studio <container> bun /app/sidecar/login.js`. */
+ * `docker exec -it -u bun <container> bun /app/sidecar/login.js`. */
 const ask = (question: string): string => (prompt(question) ?? "").trim();
 
 // mtcute loads its WASM from the working directory once bundled, and the

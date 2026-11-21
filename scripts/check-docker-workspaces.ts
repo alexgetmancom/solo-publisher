@@ -10,10 +10,10 @@ import { Glob } from "bun";
  * how a missing layer-checker manifest would break it.
  */
 const root = new URL("../", import.meta.url).pathname;
-const dockerfiles = ["Dockerfile", "Dockerfile.runtime-base"].map((name) => ({
-  name,
-  path: `${root}apps/backend/${name}`,
-}));
+const dockerfiles = [
+  ...["Dockerfile", "Dockerfile.runtime-base"].map((name) => ({ name, path: `${root}apps/backend/${name}` })),
+  { name: "Dockerfile.rust", path: `${root}Dockerfile.rust` },
+];
 const rootManifest = (await Bun.file(`${root}package.json`).json()) as { workspaces: string[] };
 
 const manifests: string[] = [];
@@ -42,9 +42,7 @@ for (const dockerfile of dockerfiles) {
 }
 
 if (missing.length > 0) {
-  console.error(
-    `Backend Dockerfiles do not copy every workspace manifest before installing:\n${missing.map((entry) => `- ${entry}`).join("\n")}`,
-  );
+  console.error(`Dockerfiles do not copy every workspace manifest before installing:\n${missing.map((entry) => `- ${entry}`).join("\n")}`);
   process.exit(1);
 }
 console.log(`Dockerfile workspace gate passed: ${manifests.length} manifests copied in ${installingStageCount} installing stages.`);

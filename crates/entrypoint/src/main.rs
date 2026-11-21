@@ -29,7 +29,9 @@ use serde_json::json;
 use tokio::process::{Child, Command};
 use tokio::signal::unix::{SignalKind, signal};
 
-const RUNTIME_USER: &str = "studio";
+/// uid 1000 in the Bun base image, as in the TypeScript image: the data
+/// volumes production already has are owned by it.
+const RUNTIME_USER: &str = "bun";
 const STUDIO_BINARY: &str = "/app/bin/solo-publisher";
 /// The bundle and mtcute's WASM files, which it resolves from the working
 /// directory.
