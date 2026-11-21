@@ -40,7 +40,7 @@ Boundaries for `app/src/host.rs`: one `DeliveryMedia::new(client, shared_config,
 adapters' `MediaPreparation` (`PreparedMedia::new(Rc::new(media.clone()))` via `delivery_ports`) and Studio's
 `StoryDerivatives` (renders run on `spawn_local`, one at a time, shared by path). The worker bell is
 `runtime::worker_signal::WorkerSignals`, woken by `set_worker_wake(WorkerQueue::Publish, Some(queue_loop.waker()))`.
-Stories go through `adapters::HttpStoriesSidecar::new(client, shared_config)`.
+Stories go through `adapters::HttpStoriesSidecar::new(client, url, token)` (`app` builds it from `STORIES_SIDECAR_URL`/`_TOKEN`).
 
 ## Parity
 

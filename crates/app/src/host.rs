@@ -5,7 +5,11 @@
 //! runtime (`delivery::story_derivatives::DeliveryMedia`), plus the adapters
 //! Studio waits on.
 
+use std::rc::Rc;
+
 use adapters::providers::ProviderCalls;
+use adapters::telegram_stories::{SidecarError, StoryRequest};
+use adapters::{HttpStoriesSidecar, StoriesSidecar};
 use bot::{Adapters, Fut, Host};
 use channels::connect::ConnectLinks;
 use channels::entropy::OsEntropy;
@@ -52,7 +56,7 @@ impl AppHost {
             reminders: ReminderJobs::new(SystemClock),
             readiness: CapabilityReadiness::new(config.clone()),
             connect_links: ConnectLinks::new(SystemClock, OsEntropy),
-            media: DeliveryMedia::new(http, config, std::rc::Rc::new(SystemClock)),
+            media: DeliveryMedia::new(http, config, Rc::new(SystemClock)),
         }
     }
 
@@ -81,6 +85,31 @@ impl Host for AppHost {
             readiness: &self.readiness,
             connect_links: &self.connect_links,
         }
+    }
+}
+
+/// Where Telegram channel Stories go out: the sidecar the entrypoint starts,
+/// or, without one configured, a refusal naming the settings.
+pub fn stories_sidecar(http: HttpClient, config: &Config) -> Rc<dyn StoriesSidecar> {
+    match (
+        config.stories_sidecar_url.as_deref(),
+        config.stories_sidecar_token.as_deref(),
+    ) {
+        (Some(url), Some(token)) => Rc::new(HttpStoriesSidecar::new(http, url, token)),
+        _ => Rc::new(NoStoriesSidecar),
+    }
+}
+
+/// Nothing is sent, so the Story fails plainly rather than as ambiguous.
+struct NoStoriesSidecar;
+
+impl StoriesSidecar for NoStoriesSidecar {
+    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
+        Box::pin(async {
+            Err(SidecarError::Refused(
+                "Telegram Stories sidecar is not configured: set STORIES_SIDECAR_URL and STORIES_SIDECAR_TOKEN".into(),
+            ))
+        })
     }
 }
 

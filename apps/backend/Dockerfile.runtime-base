@@ -14,6 +14,7 @@ COPY --chown=bun:bun package.json bun.lock tsconfig.json tsconfig.base.json biom
 COPY --chown=bun:bun apps/backend/package.json ./apps/backend/package.json
 COPY --chown=bun:bun tools/knip/package.json ./tools/knip/package.json
 COPY --chown=bun:bun tools/layer-checker/package.json ./tools/layer-checker/package.json
+COPY --chown=bun:bun sidecars/stories/package.json ./sidecars/stories/package.json
 
 RUN chown bun:bun /app
 USER bun

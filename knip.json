@@ -4,7 +4,7 @@
     ".": {
       "entry": ["scripts/*.ts", "scripts/rust/*.ts"],
       "project": ["scripts/**/*.ts"],
-      "ignoreDependencies": ["@mtcute/bun"]
+      "ignoreDependencies": ["@mtcute/bun", "sharp"]
     },
     "apps/backend": {
       "entry": [
@@ -14,6 +14,10 @@
         "src/studio/services/index.ts",
         "src/runtime/server.ts"
       ],
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
+    },
+    "sidecars/stories": {
+      "entry": ["tests/**/*.test.ts"],
       "project": ["src/**/*.ts", "tests/**/*.ts"]
     }
   }

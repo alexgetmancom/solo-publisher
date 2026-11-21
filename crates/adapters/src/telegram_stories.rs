@@ -10,7 +10,6 @@ use std::time::Duration;
 
 use content::message::MediaItem;
 use domain::publishing::errors::PublishResult;
-use foundation::config::SharedConfig;
 use regex::Regex;
 use runtime::ffmpeg::{probe_media_metadata, run_ffmpeg};
 use runtime::http::{Fut, HttpClient, HttpRequest};
@@ -91,23 +90,24 @@ pub trait StoriesSidecar {
     fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>>;
 }
 
-/// The sidecar over local HTTP (`POST $STORIES_SIDECAR_URL/v1/stories`,
-/// `Authorization: Bearer $STORIES_SIDECAR_TOKEN`), read from the live
-/// configuration on every Story.
+/// The sidecar over local HTTP (`POST {base}/v1/stories`), authorized by the
+/// bearer token the container entrypoint draws for both processes
+/// (`STORIES_SIDECAR_URL`, `STORIES_SIDECAR_TOKEN`).
 pub struct HttpStoriesSidecar {
     client: HttpClient,
-    config: SharedConfig,
+    base_url: String,
+    token: String,
 }
 
 impl HttpStoriesSidecar {
-    pub fn new(client: HttpClient, config: SharedConfig) -> Self {
-        Self { client, config }
+    pub fn new(client: HttpClient, base_url: impl Into<String>, token: impl Into<String>) -> Self {
+        Self {
+            client,
+            base_url: base_url.into(),
+            token: token.into(),
+        }
     }
 }
-
-/// What a Story answers when this Studio has no sidecar to send it through.
-pub const SIDECAR_NOT_CONFIGURED: &str =
-    "Telegram Stories sidecar is not configured: set STORIES_SIDECAR_URL and STORIES_SIDECAR_TOKEN";
 
 /// The request body of the sidecar contract.
 pub fn story_request_json(request: &StoryRequest) -> Value {
@@ -140,17 +140,10 @@ pub fn story_request_json(request: &StoryRequest) -> Value {
 impl StoriesSidecar for HttpStoriesSidecar {
     fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
         Box::pin(async move {
-            let config = self.config.load();
-            let (Some(base), Some(token)) = (
-                config.stories_sidecar_url.as_deref(),
-                config.stories_sidecar_token.as_deref(),
-            ) else {
-                return Err(SidecarError::Refused(SIDECAR_NOT_CONFIGURED.into()));
-            };
-            let base = base.strip_suffix('/').unwrap_or(base);
+            let base = self.base_url.strip_suffix('/').unwrap_or(&self.base_url);
             let http = HttpRequest::post(format!("{base}/v1/stories"))
+                .header("Authorization", format!("Bearer {}", self.token))
                 .header("Content-Type", "application/json")
-                .header("Authorization", format!("Bearer {token}"))
                 .text(domain::json::stringify(&story_request_json(request)));
             let response = self
                 .client

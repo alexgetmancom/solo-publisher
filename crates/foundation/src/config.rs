@@ -364,7 +364,7 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
     let deploy_agent_url = s.url("DEPLOY_AGENT_URL");
     let deploy_agent_token = s.min_length("DEPLOY_AGENT_TOKEN", 16);
     let stories_sidecar_url = s.url("STORIES_SIDECAR_URL");
-    let stories_sidecar_token = s.min_length("STORIES_SIDECAR_TOKEN", 16);
+    let stories_sidecar_token = s.min_length("STORIES_SIDECAR_TOKEN", 32);
     let indexnow_enabled = s.flag("INDEXNOW_ENABLED", true);
 
     // zod runs the cross-field rules only when no field failed with a type

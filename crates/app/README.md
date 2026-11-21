@@ -47,7 +47,7 @@ Stories go out through the Stories sidecar (`adapters::HttpStoriesSidecar`); wit
 Required: `CONTROLLER_BOT_TOKEN`, `CONTROLLER_ADMIN_IDS`, `DATA_DIR` (the database is `$DATA_DIR/pipeline.db`).
 
 Optional: `BIND_HOST`, `PORT`, `TELEGRAM_API_BASE_URL`, `LOG_LEVEL`, `DEPLOY_AGENT_URL` + `DEPLOY_AGENT_TOKEN`,
-`STORIES_SIDECAR_URL` + `STORIES_SIDECAR_TOKEN` (Rust only, at least 16 characters), `TOKEN_ENCRYPTION_KEY`,
+`STORIES_SIDECAR_URL` + `STORIES_SIDECAR_TOKEN` (Rust only; the token at least 32 characters, as the sidecar requires), `TOKEN_ENCRYPTION_KEY`,
 `PUBLIC_BASE_URL`, `TELEGRAM_CHANNEL_USERNAME`, `STUDIO_ACTOR_IDS`; any other `.env` variable reads as in TypeScript.
 
 Production (`NODE_ENV=production`, `DEPLOYMENT_ENV=production`) also requires `COMMAND_CENTER_TOKEN`,
@@ -58,3 +58,36 @@ Production (`NODE_ENV=production`, `DEPLOYMENT_ENV=production`) also requires `C
 ```
 cargo build --release -p app && _trash-rust/target/release/solo-publisher
 ```
+
+## Container
+
+`Dockerfile.rust` (context: the repository root, filtered by `Dockerfile.rust.dockerignore`) builds one image with
+two processes, because the Studio hands the Stories sidecar file paths (a re-encoded Story sits in the Studio's temp
+directory) and because the deploy agent, its rollback by digest and `docker exec` keep the one `backend` container
+they know:
+
+| Path | What |
+|---|---|
+| `/app/bin/solo-publisher` | this binary (`cargo build --release -p app`, rust:1.100-bookworm) |
+| `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g` |
+| `/app/sidecar/` | `sidecars/stories` bundled by `bun build` with mtcute's WASM beside it |
+| `/app/apps/backend/assets/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
+| `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1 (as the TypeScript image), Bun 1.4.0 from the `oven/bun` slim base |
+
+`studio-entrypoint`, started as root: creates and `chown`s the data directories (`runtime::data_dirs`, as
+`docker-entrypoint.ts`), then re-executes itself through `setpriv --reuid --regid --groups` as `bun` (uid 1000),
+keeping compose's `group_add` groups and dropping group 0 — the workspace forbids `unsafe`, so the syscalls are
+setpriv's; the exec after them makes the drop irreversible. As `bun` it probes the directories with a write, draws a
+random sidecar token, starts the Studio with `STORIES_SIDECAR_URL=http://127.0.0.1:8790` and `STORIES_SIDECAR_TOKEN`,
+and the sidecar on loopback with the same token, restarting the sidecar if it dies (1 s doubling to 30 s). The
+Studio's exit is the container's; `tini -g` hands SIGTERM to all three, and the entrypoint only waits.
+
+```
+docker build -f Dockerfile.rust -t solo-publisher-rust .
+docker compose -f compose.yaml -f compose.rust.yaml up -d --build      # self-host, same stack, Rust app
+```
+
+`deploy/studio.rust.compose.yaml` is `deploy/studio.compose.yaml` for this image (the deploy agent's `composeFile`;
+only `pids_limit` differs). The healthcheck stays `bun -e fetch('/readyz')` on 8788. Stories sign-in, once per
+session: `docker exec -it -u bun <container> bun /app/sidecar/login.js`. CI (`rust`, `rust-image` in
+`.github/workflows/check.yml`) builds and inspects the image without pushing it; nothing deploys it yet.

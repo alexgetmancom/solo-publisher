@@ -5,7 +5,7 @@
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use adapters::{AdapterContext, HttpStoriesSidecar, MediaPreparation, StoriesSidecar};
+use adapters::{AdapterContext, MediaPreparation, StoriesSidecar};
 use bot::Bot;
 use bot::workers::start_telegram_workers;
 use channels::loops::{
@@ -37,7 +37,7 @@ use runtime::worker_state::{HeartbeatLoops, record_worker_state};
 use serde_json::json;
 use story_render::{STORY_CARD_WORKER, recover_story_card_jobs, run_story_card_cycle};
 
-use crate::host::AppHost;
+use crate::host::{AppHost, stories_sidecar};
 
 const WATCHDOG_INTERVAL: Duration = Duration::from_secs(60);
 const SITE_JOB_POLL_INTERVAL: Duration = Duration::from_secs(10);
@@ -84,7 +84,7 @@ pub fn start(
         bot: bot.clone(),
         http: http.clone(),
         media: Rc::new(host.media.clone()),
-        stories: Rc::new(HttpStoriesSidecar::new(http.clone(), deps.config.clone())),
+        stories: stories_sidecar(http.clone(), &deps.config.load()),
     };
     recover_at_startup(&delivery);
     let loops = HeartbeatLoops::new(Rc::new(bot.clone()), |bot: &Bot| &bot.deps().db).on_heartbeat(flush_usage);
