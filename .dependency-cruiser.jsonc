@@ -78,9 +78,9 @@
     },
     {
       "name": "no-production-imports-of-tests",
-      "comment": "Test helpers stub time, the network and the database. Shipping one into production would do so silently.",
+      "comment": "Test helpers stub time, the network and the database. Shipping one into production would do so silently. scripts/rust is Rust-parity tooling (golden and fixture recorders) and is never shipped.",
       "severity": "error",
-      "from": { "pathNot": "\\.test\\.ts$|^apps/backend/tests/" },
+      "from": { "pathNot": "\\.test\\.ts$|^apps/backend/tests/|^scripts/rust/" },
       "to": { "path": "\\.test\\.ts$|^apps/backend/tests/" }
     },
     {
