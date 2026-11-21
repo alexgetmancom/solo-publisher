@@ -5,7 +5,7 @@ pub mod admin;
 pub mod commands;
 pub mod lifecycle;
 pub mod media;
-mod publication_ref;
+pub(crate) mod publication_ref;
 pub mod reads;
 mod usage;
 
