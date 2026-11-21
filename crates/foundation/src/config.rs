@@ -170,6 +170,11 @@ pub struct Config {
     pub token_encryption_key: Option<String>,
     pub deploy_agent_url: Option<String>,
     pub deploy_agent_token: Option<String>,
+    /// The Stories sidecar Telegram channel Stories go out through, and the
+    /// bearer token it answers to (Rust only: TypeScript ran mtcute in
+    /// process). Without them a Telegram Stories target skips as not configured.
+    pub stories_sidecar_url: Option<String>,
+    pub stories_sidecar_token: Option<String>,
     pub indexnow_enabled: bool,
     pub pipeline_db: PathBuf,
     /// All media the Studio owns: ingress staging, uploads, delivery's video files.
@@ -358,6 +363,8 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
     let token_encryption_key = s.string("TOKEN_ENCRYPTION_KEY");
     let deploy_agent_url = s.url("DEPLOY_AGENT_URL");
     let deploy_agent_token = s.min_length("DEPLOY_AGENT_TOKEN", 16);
+    let stories_sidecar_url = s.url("STORIES_SIDECAR_URL");
+    let stories_sidecar_token = s.min_length("STORIES_SIDECAR_TOKEN", 16);
     let indexnow_enabled = s.flag("INDEXNOW_ENABLED", true);
 
     // zod runs the cross-field rules only when no field failed with a type
@@ -376,6 +383,7 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
             );
         }
         s.pair("DEPLOY_AGENT_URL", "DEPLOY_AGENT_TOKEN");
+        s.pair("STORIES_SIDECAR_URL", "STORIES_SIDECAR_TOKEN");
         if s.present("MCP_STUDIO_TOKEN") != mcp_studio_actor_id.is_some_and(|id| id != 0.0) {
             s.issue(
                 "MCP_STUDIO_TOKEN",
@@ -515,6 +523,8 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
         token_encryption_key,
         deploy_agent_url,
         deploy_agent_token,
+        stories_sidecar_url,
+        stories_sidecar_token,
         indexnow_enabled,
         x_access_token: None,
         x_refresh_token: None,

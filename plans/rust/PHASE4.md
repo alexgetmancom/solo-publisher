@@ -16,7 +16,7 @@ operations registry/CLI/MCP, runtime wiring, packaging.
 | `http` | `interfaces/http/*`, `foundation/http-auth.ts`, `http-response.ts`, `ranged-file.ts` | delivery, public_site |
 | `ops` | `operations/*`, `interfaces/mcp.ts`, `cli.ts` | delivery, http |
 
-`app` wires everything (`runtime/workers.ts`, `server.ts`, `docker-entrypoint.ts`); `unported.rs` shrinks to nothing.
+`app` wires everything (`runtime/workers.ts`, `server.ts`, `docker-entrypoint.ts`); `unported.rs` shrinks to nothing (now `app/src/host.rs`, the host and nothing else).
 
 ## Waves
 

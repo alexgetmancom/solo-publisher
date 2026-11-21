@@ -1,11 +1,9 @@
-//! The host of this build: the ported stores behind Studio's boundaries
-//! (`domain::story_cards`, `domain::notifications`, the credential breaker,
-//! the readiness report, runtime usage, the video completion notice), and the
-//! boundaries whose real implementation belongs to an area this build does not
-//! contain yet. Each of those refuses with `not available in this build:
-//! <area>`, which the bot shows as the error it is; none pretends the work
-//! happened. The ones that return nothing (the worker bell, Story
-//! derivatives) log instead.
+//! The host of this build: the ported stores behind Studio's and publishing's
+//! boundaries (`domain::story_cards`, `domain::notifications`, the credential
+//! breaker, the readiness report, runtime usage, the video completion
+//! notice), the worker doorbells, connect links, and the process's media
+//! runtime (`delivery::story_derivatives::DeliveryMedia`), plus the adapters
+//! Studio waits on.
 
 use adapters::providers::ProviderCalls;
 use bot::{Adapters, Fut, Host};
@@ -14,34 +12,22 @@ use channels::entropy::OsEntropy;
 use channels::zernio::ZernioAccounts;
 use content::Locale;
 use db::rusqlite::Connection;
-use domain::application::ports::{StoryPublishMode, SystemClock};
+use delivery::story_derivatives::DeliveryMedia;
+use domain::application::ports::SystemClock;
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
 use domain::observability::capabilities::CapabilityReadiness;
 use domain::observability::usage::UsageRecorder;
 use domain::publishing::Boundaries;
-use domain::publishing::boundaries::{
-    MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter,
-    VideoProvider, WorkerBell,
-};
+use domain::publishing::boundaries::{MediaMetadata, MediaProbe, ProviderOutcome, SystemJitter, VideoProvider};
 use domain::story_cards::StoryCardStore;
-use domain::studio::boundaries::{StoryDerivatives, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory};
+use domain::studio::boundaries::{StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory};
 use foundation::config::{Config, SharedConfig};
-use foundation::logger::{LogLevel, log};
 use runtime::ffmpeg::FfmpegMediaProbe;
 use runtime::http::HttpClient;
-use serde_json::{Value, json};
-
-const PUBLISH_WORKER: &str = "publish worker";
-const STORY_DERIVATIVES: &str = "Story derivatives (media runtime)";
-
-/// Every area above, for the startup line.
-pub const AREAS: [&str; 2] = [PUBLISH_WORKER, STORY_DERIVATIVES];
-
-fn message(area: &str) -> String {
-    format!("not available in this build: {area}")
-}
+use runtime::worker_signal::WorkerSignals;
+use serde_json::Value;
 
 pub struct AppHost {
     auth_circuit: AuthCircuitBreaker<SystemClock>,
@@ -51,18 +37,22 @@ pub struct AppHost {
     reminders: ReminderJobs<SystemClock>,
     readiness: CapabilityReadiness,
     connect_links: ConnectLinks<SystemClock, OsEntropy>,
+    /// Platform staging and the Story renders; the publish loop's
+    /// `MediaPreparation` and Studio's `StoryDerivatives`.
+    pub media: DeliveryMedia,
 }
 
 impl AppHost {
-    pub fn new(config: SharedConfig) -> Self {
+    pub fn new(config: SharedConfig, http: HttpClient) -> Self {
         Self {
             auth_circuit: AuthCircuitBreaker::new(SystemClock),
             usage: UsageRecorder::new(SystemClock),
             story_cards: StoryCardStore::new(SystemClock),
             video_completion: VideoCompletionNotice::new(SystemClock),
             reminders: ReminderJobs::new(SystemClock),
-            readiness: CapabilityReadiness::new(config),
+            readiness: CapabilityReadiness::new(config.clone()),
             connect_links: ConnectLinks::new(SystemClock, OsEntropy),
+            media: DeliveryMedia::new(http, config, std::rc::Rc::new(SystemClock)),
         }
     }
 
@@ -76,10 +66,10 @@ impl Host for AppHost {
     fn publishing(&self) -> Boundaries<'_> {
         Boundaries {
             jitter: &SystemJitter,
-            bell: self,
+            bell: &WorkerSignals,
             auth_circuit: &self.auth_circuit,
             usage: &self.usage,
-            story_cards: self,
+            story_cards: &self.story_cards,
             video_completion: &self.video_completion,
         }
     }
@@ -87,58 +77,10 @@ impl Host for AppHost {
     fn studio(&self) -> StudioBoundaries<'_> {
         StudioBoundaries {
             reminders: &self.reminders,
-            story_derivatives: self,
+            story_derivatives: &self.media,
             readiness: &self.readiness,
             connect_links: &self.connect_links,
         }
-    }
-}
-
-/// The job is durable; only the wake-up is missing, so a ring is logged.
-impl WorkerBell for AppHost {
-    fn ring_publish(&self) {
-        log(
-            LogLevel::Warn,
-            &message(PUBLISH_WORKER),
-            Some(json!({"hint": "the publish job stays queued until a build with workers runs"})),
-        );
-    }
-    fn ring_publish_after(&self, delay_ms: u64) {
-        log(
-            LogLevel::Warn,
-            &message(PUBLISH_WORKER),
-            Some(json!({"delayMs": delay_ms, "hint": "the publish job stays queued until a build with workers runs"})),
-        );
-    }
-}
-
-/// The store; the story-cards loop renders what it queues.
-impl StoryCards for AppHost {
-    fn queue(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.queue(sqlite, draft_id)
-    }
-    fn for_draft(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Vec<StoryCardState>> {
-        self.story_cards.for_draft(sqlite, draft_id)
-    }
-    fn ready_media(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Option<StoryCardMedia>> {
-        self.story_cards.ready_media(sqlite, draft_id)
-    }
-    fn set_publish_mode(&self, sqlite: &Connection, draft_id: i64, mode: StoryPublishMode) -> domain::Result<()> {
-        self.story_cards.set_publish_mode(sqlite, draft_id, mode)
-    }
-    fn discard(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.discard(sqlite, draft_id)
-    }
-}
-
-/// Nobody waits for it: a failure is logged, as the real encode's is.
-impl StoryDerivatives for AppHost {
-    fn ensure(&self, local_path: &str, video: bool, draft_id: i64) {
-        log(
-            LogLevel::Error,
-            &message(STORY_DERIVATIVES),
-            Some(json!({"localPath": local_path, "video": video, "draftId": draft_id})),
-        );
     }
 }
 

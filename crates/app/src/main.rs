@@ -1,11 +1,8 @@
-//! `solo-publisher`: the Studio process (`apps/backend/src/runtime/server.ts`)
-//! restricted to what the Rust build has ported — the configuration, the
-//! database, the Telegram bot on long polling, the ported workers and the HTTP
-//! surface. The rest comes with its phase (plans/rust/PLAN.md); the
-//! boundaries are the ported stores, and every one whose owner is not here
-//! yet refuses loudly (`unported.rs`).
+//! `solo-publisher`: the Studio process (`apps/backend/src/runtime/server.ts`):
+//! the configuration, the database, the Telegram bot on long polling, the
+//! workers and the HTTP surface, over the host's boundaries (`host.rs`).
 
-mod unported;
+mod host;
 mod workers;
 
 use std::process::ExitCode;
@@ -27,7 +24,7 @@ use serde_json::json;
 use tokio::net::TcpListener;
 use tokio::signal::unix::{Signal, SignalKind, signal};
 
-use crate::unported::{AppAdapters, AppHost};
+use crate::host::{AppAdapters, AppHost};
 
 /// As server.ts: a shutdown that has not finished by then exits with 1.
 const SHUTDOWN_DEADLINE: Duration = Duration::from_secs(10);
@@ -76,11 +73,22 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let http = match ReqwestTransport::new() {
+        Ok(transport) => HttpClient::new(Rc::new(transport)),
+        Err(error) => {
+            log(
+                LogLevel::Error,
+                "HTTP transport could not be built",
+                Some(json!({"error": error.message})),
+            );
+            return ExitCode::FAILURE;
+        }
+    };
     let config = SharedConfig::new(config);
-    let host = Rc::new(AppHost::new(config.clone()));
+    let host = Rc::new(AppHost::new(config.clone(), http.clone()));
     // The bot lives on one thread (see the bot crate).
     let local = tokio::task::LocalSet::new();
-    let (bot, code) = local.block_on(&runtime, run(config, Rc::clone(&host), &token, db));
+    let (bot, code) = local.block_on(&runtime, run(config, Rc::clone(&host), http, &token, db));
     // Ends whatever background work outlived the shutdown wait, so the bot's
     // last handle is ours and the database closes here.
     drop(local);
@@ -109,14 +117,16 @@ fn main() -> ExitCode {
 /// Builds the bot, polls and serves HTTP until SIGINT/SIGTERM or until polling
 /// ends on its own, and stops them. Returns the bot, when one was built, for
 /// its database.
-async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb) -> (Option<Bot>, ExitCode) {
+async fn run(
+    config: SharedConfig,
+    host: Rc<AppHost>,
+    http: HttpClient,
+    token: &str,
+    db: BackendDb,
+) -> (Option<Bot>, ExitCode) {
     let transport = match HttpTransport::new(&config.load().telegram_api_base_url, token) {
         Ok(transport) => transport,
         Err(error) => return failed(None, "Telegram transport could not be built", &error.0),
-    };
-    let http = match ReqwestTransport::new() {
-        Ok(transport) => HttpClient::new(Rc::new(transport)),
-        Err(error) => return failed(None, "HTTP transport could not be built", &error.message),
     };
     let deploy_agent = match HttpDeployAgent::new() {
         Ok(agent) => agent,
@@ -155,7 +165,7 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         Ok(runner) => runner,
         Err(error) => return failed(Some(bot), "Telegram bot could not start", &error.to_string()),
     };
-    let loops = workers::start(&bot, http.clone(), {
+    let loops = workers::start(&bot, &host, http.clone(), {
         let host = Rc::clone(&host);
         move |db| host.flush_usage(db::unsafe_db(db))
     });
@@ -173,14 +183,12 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         "studio listening",
         Some(json!({"hostname": bind_host, "port": port})),
     );
-    let not_in_this_build = [["the other workers"].as_slice(), unported::AREAS.as_slice()].concat();
     log(
         LogLevel::Info,
         "studio started",
         Some(json!({
             "runs": ["telegram bot (long polling)", "workers", "http server"],
             "workers": loops.iter().map(ScheduledLoop::name).collect::<Vec<_>>(),
-            "notInThisBuild": not_in_this_build,
         })),
     );
     let signal = tokio::select! {
@@ -204,6 +212,7 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
             scheduled.stop().await;
         }
         // The doorbells hold their loops, and the loops the bot.
+        set_worker_wake(WorkerQueue::Publish, None);
         set_worker_wake(WorkerQueue::TelegramEvents, None);
         domain::repositories::set_event_bell(None);
         // Updates already handed out finish before the database closes.

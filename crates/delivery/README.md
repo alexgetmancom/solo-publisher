@@ -36,11 +36,11 @@ At startup: `publishing.recover_stale_publish_jobs(PUBLISH_RESTART_LOCK_GRACE_SE
 | `media-cache` | 1 h | `prune_media_cache(d.config(), d.now_ms())` |
 | `operational-retention` | 24 h | `with_maintenance_lock(sqlite, clock, \|\| prune_operational_history(sqlite, clock))` |
 
-Boundaries for `app/src/unported.rs`: one `DeliveryMedia::new(client, shared_config, clock)` per process is both the
+Boundaries for `app/src/host.rs`: one `DeliveryMedia::new(client, shared_config, clock)` per process is both the
 adapters' `MediaPreparation` (`PreparedMedia::new(Rc::new(media.clone()))` via `delivery_ports`) and Studio's
 `StoryDerivatives` (renders run on `spawn_local`, one at a time, shared by path). The worker bell is
 `runtime::worker_signal::WorkerSignals`, woken by `set_worker_wake(WorkerQueue::Publish, Some(queue_loop.waker()))`.
-Stories go through `adapters::HttpStoriesSidecar`.
+Stories go through `adapters::HttpStoriesSidecar::new(client, shared_config)`.
 
 ## Parity
 

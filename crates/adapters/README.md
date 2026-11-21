@@ -42,12 +42,15 @@ Wiring for the integrator: `PreparedMedia::new(Rc<dyn MediaPreparation>)` is the
 implements `MediaPreparation` with `prepareMediaItems` and `awaitPreparedStoryMedia`); `ProviderCalls::new(client,
 config)` implements `VideoProvider` and `YoutubeUploads`, so `AppAdapters` forwards `post_outcome`,
 `publish_instagram_reel` and `keep_youtube_private` to it (`zernio_accounts` is `channels::zernio::ZernioAccounts`);
-`HttpStoriesSidecar::new(client, base_url)` is the `stories`.
+`HttpStoriesSidecar::new(client, shared_config)` is the `stories`.
 
 ## Stories sidecar contract
 
-`POST {base}/v1/stories`, `Content-Type: application/json`, no credentials: the sidecar reads
-`TELEGRAM_CHANNEL_STORIES_*` itself and the media path from the shared data volume.
+`POST $STORIES_SIDECAR_URL/v1/stories`, `Content-Type: application/json`,
+`Authorization: Bearer $STORIES_SIDECAR_TOKEN`: the sidecar reads `TELEGRAM_CHANNEL_STORIES_*` itself and the media
+path from the shared data volume. The two settings are read on every Story and configured together; without them a
+Story fails before any request with "Telegram Stories sidecar is not configured" (`SIDECAR_NOT_CONFIGURED`, a plain
+failure: nothing was sent).
 
 ```json
 {"peer": "channelname", "periodSeconds": 86400,

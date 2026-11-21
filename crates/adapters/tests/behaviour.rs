@@ -9,14 +9,14 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use adapters::telegram_stories::{
-    HttpStoriesSidecar, SidecarError, StoriesSidecar, StoryCaption, StoryRequest, StoryUploadMedia, StoryVideoMetadata,
-    publish_telegram_story, story_reencode_args,
+    HttpStoriesSidecar, SIDECAR_NOT_CONFIGURED, SidecarError, StoriesSidecar, StoryCaption, StoryRequest,
+    StoryUploadMedia, StoryVideoMetadata, publish_telegram_story, story_reencode_args,
 };
 use adapters::{AdapterContext, AdapterError, MediaPreparation, PrepareJob, PreparedMedia};
 use content::message::MediaItem;
 use domain::application::ports::SystemClock;
 use domain::publishing::queue::ClaimedPublishJob;
-use foundation::config::{Config, load_config};
+use foundation::config::{Config, SharedConfig, load_config};
 use futures_util::FutureExt as _;
 use futures_util::future::LocalBoxFuture;
 use runtime::http::{Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
@@ -181,7 +181,13 @@ fn the_sidecar_client_speaks_the_documented_contract() {
         Ok((500, "<html>crash</html>")),
         Err("connection reset by peer"),
     ]);
-    let sidecar = HttpStoriesSidecar::new(HttpClient::new(transport.clone()), "http://stories:8090/");
+    let sidecar = HttpStoriesSidecar::new(
+        HttpClient::new(transport.clone()),
+        SharedConfig::new(config(&[
+            ("STORIES_SIDECAR_URL", "http://stories:8090/"),
+            ("STORIES_SIDECAR_TOKEN", "sidecar-token-for-tests"),
+        ])),
+    );
     let request = story_request();
     let answers: Vec<Result<i64, SidecarError>> = block_on(async {
         let mut answers = Vec::new();
@@ -212,6 +218,10 @@ fn the_sidecar_client_speaks_the_documented_contract() {
     let sent = transport.sent.borrow();
     assert_eq!(sent[0].url, "http://stories:8090/v1/stories");
     assert_eq!(sent[0].header_value("content-type"), Some("application/json"));
+    assert_eq!(
+        sent[0].header_value("authorization"),
+        Some("Bearer sidecar-token-for-tests")
+    );
     let body: Value = serde_json::from_slice(&sent[0].body.as_bytes().unwrap()).unwrap();
     assert_eq!(
         body,
@@ -223,6 +233,17 @@ fn the_sidecar_client_speaks_the_documented_contract() {
             "periodSeconds": 86_400,
         })
     );
+}
+
+#[test]
+fn a_studio_without_the_sidecar_refuses_before_sending() {
+    let transport = Canned::new(Vec::new());
+    let sidecar = HttpStoriesSidecar::new(HttpClient::new(transport.clone()), SharedConfig::new(config(&[])));
+    assert_eq!(
+        block_on(sidecar.send_story(&story_request())),
+        Err(SidecarError::Refused(SIDECAR_NOT_CONFIGURED.into()))
+    );
+    assert!(transport.sent.borrow().is_empty());
 }
 
 /// The sidecar as the publisher sees it: one canned answer.

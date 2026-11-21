@@ -17,6 +17,7 @@ adapters = { path = "../adapters" }
 bot = { path = "../bot" }
 channels = { path = "../channels" }
 content = { path = "../content" }
+delivery = { path = "../delivery" }
 db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
