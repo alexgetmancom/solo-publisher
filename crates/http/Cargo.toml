@@ -1,0 +1,41 @@
+[package]
+name = "http_edge"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+axum = { version = "0.8", default-features = false }
+bot = { path = "../bot" }
+content = { path = "../content" }
+db = { path = "../db" }
+domain = { path = "../domain" }
+foundation = { path = "../foundation" }
+hmac = "0.12"
+http-body = "1"
+hyper = { version = "1", features = ["server", "http1"] }
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["tokio", "service"] }
+percent-encoding = "2"
+public_site = { path = "../public_site" }
+runtime = { path = "../runtime" }
+rustix = { version = "1", features = ["fs"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+sha2 = "0.10"
+subtle = "2"
+tokio = { version = "1", features = ["rt", "net", "fs", "io-util", "sync", "macros", "time"] }
+tokio-io-timeout = "1"
+tokio-util = { version = "0.7", features = ["io"] }
+tower = { version = "0.5", default-features = false }
+tower-http = { version = "0.6", default-features = false, features = ["limit"] }
+url = "2"
+
+[dev-dependencies]
+base64 = "0.22"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+jiff = { version = "0.2", default-features = false, features = ["std"] }
+tower = { version = "0.5", default-features = false, features = ["util"] }
