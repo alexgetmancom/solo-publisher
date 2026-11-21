@@ -15,7 +15,9 @@ use crate::credentials::{ConfigPatch, Setting, assign, encryption_key};
 use crate::encode::{base_url, base64, base64url, hex, pkce_challenge, search_params};
 use crate::entropy::{Entropy, random_bytes};
 use crate::meta::{id_text, required};
-use crate::token_store::{TokenWrite, platform_token, store_platform_token};
+use crate::token_store::{
+    PlatformToken, TokenWrite, platform_token, store_platform_token, store_platform_token_unless_changed,
+};
 use crate::{Error, Result};
 
 const AUTHORIZE_URL: &str = "https://x.com/i/oauth2/authorize";
@@ -155,7 +157,7 @@ pub async fn exchange_x_code(
     else {
         return Err(Error::message("X returned no account id"));
     };
-    install_x_tokens(config, sqlite, &tokens, now, Some(&id))?;
+    install_x_tokens(config, sqlite, &tokens, now, XWrite::Connect(&id))?;
     Ok(XIdentity {
         username: profile
             .pointer("/data/username")
@@ -187,6 +189,9 @@ pub fn stored_x_tokens(config: &Config, sqlite: &Connection, patch: &mut ConfigP
 pub enum XRefresh {
     Fresh,
     Refreshed,
+    /// The pair was replaced (an operator reconnected X) while the refresh
+    /// was in flight; the newer pair stays and nothing was written.
+    Superseded,
     Unconfigured,
 }
 
@@ -205,7 +210,8 @@ pub async fn refresh_x_token(
     }
     let row = platform_token(sqlite, "x")?;
     if let Some(expires_at) = row
-        .and_then(|row| row.expires_at)
+        .as_ref()
+        .and_then(|row| row.expires_at.clone())
         .filter(|expires_at| !expires_at.is_empty())
         && parse_iso_instant(&expires_at).is_ok_and(|at| at.as_millisecond() - now.as_millisecond() > REFRESH_AHEAD_MS)
     {
@@ -220,8 +226,21 @@ pub async fn refresh_x_token(
         ],
     )
     .await?;
-    install_x_tokens(config, sqlite, &tokens, now, None)?;
-    Ok(XRefresh::Refreshed)
+    Ok(
+        if install_x_tokens(config, sqlite, &tokens, now, XWrite::Refresh(row.as_ref()))? {
+            XRefresh::Refreshed
+        } else {
+            XRefresh::Superseded
+        },
+    )
+}
+
+/// Who is writing the pair. A connection is the operator's newest word and
+/// writes unconditionally; a refresh answers the row it read before the
+/// request and writes only if that row is still there.
+enum XWrite<'a> {
+    Connect(&'a str),
+    Refresh(Option<&'a PlatformToken>),
 }
 
 /// `tokens.expires_in ?? 7200`, in milliseconds, as `Date` arithmetic reads it.
@@ -246,8 +265,8 @@ fn install_x_tokens(
     sqlite: &Connection,
     tokens: &Value,
     now: Timestamp,
-    account_id: Option<&str>,
-) -> Result<()> {
+    write: XWrite<'_>,
+) -> Result<bool> {
     let text = |key: &str| {
         tokens
             .get(key)
@@ -262,24 +281,28 @@ fn install_x_tokens(
         .map(to_iso_string)
         .map_err(|_| Error::message("Invalid time value"))?;
     let stamp = to_iso_string(now);
-    let account_id = match account_id {
-        Some(id) => Some(id.to_owned()),
-        None => platform_token(sqlite, "x")?.and_then(|row| row.account_id),
+    let account_id = match write {
+        XWrite::Connect(id) => Some(id.to_owned()),
+        XWrite::Refresh(read) => read.and_then(|row| row.account_id.clone()),
     };
-    store_platform_token(
-        sqlite,
-        "x",
-        &TokenWrite {
-            sealed_token: seal(access_token, &key),
-            seed_fingerprint: None,
-            account_id,
-            sealed_refresh_token: Some(Some(seal(refresh_token, &key))),
-            expires_at: Some(Some(expires_at)),
-            refreshed_at: stamp.clone(),
-            upload_limit_bytes: None,
-            updated_at: stamp,
-        },
-    )?;
+    let row = TokenWrite {
+        sealed_token: seal(access_token, &key),
+        seed_fingerprint: None,
+        account_id,
+        sealed_refresh_token: Some(Some(seal(refresh_token, &key))),
+        expires_at: Some(Some(expires_at)),
+        refreshed_at: stamp.clone(),
+        upload_limit_bytes: None,
+        updated_at: stamp,
+    };
+    match write {
+        XWrite::Connect(_) => store_platform_token(sqlite, "x", &row)?,
+        XWrite::Refresh(read) => {
+            if !store_platform_token_unless_changed(sqlite, "x", &row, read)? {
+                return Ok(false);
+            }
+        }
+    }
     assign(
         config,
         &[
@@ -287,7 +310,7 @@ fn install_x_tokens(
             (Setting::XRefreshToken, refresh_token),
         ],
     );
-    Ok(())
+    Ok(true)
 }
 
 async fn token_request(http: &HttpClient, config: &Config, fields: &[(&str, Option<&str>)]) -> Result<Value> {

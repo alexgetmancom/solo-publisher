@@ -58,8 +58,14 @@ pub async fn credentials_tick(config: &SharedConfig, db: &BackendDb) -> Result<(
 
 /// `x-token`.
 pub async fn x_token_tick(config: &SharedConfig, db: &BackendDb, http: &HttpClient) -> Result<()> {
-    if refresh_x_token(config, unsafe_db(db), http, SystemClock.now()).await? == XRefresh::Refreshed {
-        log(LogLevel::Info, "X access token refreshed", None);
+    match refresh_x_token(config, unsafe_db(db), http, SystemClock.now()).await? {
+        XRefresh::Refreshed => log(LogLevel::Info, "X access token refreshed", None),
+        XRefresh::Superseded => log(
+            LogLevel::Info,
+            "X token refresh superseded by a newer connection; kept the newer pair",
+            None,
+        ),
+        XRefresh::Fresh | XRefresh::Unconfigured => {}
     }
     Ok(())
 }
