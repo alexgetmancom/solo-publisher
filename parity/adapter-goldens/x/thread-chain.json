@@ -1,0 +1,189 @@
+{
+  "name": "thread-chain",
+  "operation": "x.publish",
+  "inputs": {
+    "payload": {
+      "text": "One",
+      "thread": [
+        {
+          "text": "Two https://example.com/x",
+          "entities": [],
+          "media": []
+        },
+        {
+          "text": "Three",
+          "entities": [],
+          "media": [
+            {
+              "type": "IMAGE",
+              "localPath": "$FILES/photo.jpg"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "config": {
+    "env": {
+      "DATA_DIR": "/data",
+      "CONTROLLER_BOT_TOKEN": "test-token-telegram",
+      "TELEGRAM_API_BASE_URL": "https://bot-api.example/",
+      "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+      "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+      "THREADS_EN_ACCESS_TOKEN": "test-token-threads-en",
+      "X_CLIENT_ID": "test-x-client",
+      "X_CLIENT_SECRET": "test-secret-x-client",
+      "DISCORD_CHANNEL_ID": "555",
+      "DISCORD_GUILD_ID": "777",
+      "INSTAGRAM_RU_ACCESS_TOKEN": "EAtest-token-instagram-ru",
+      "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+      "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+      "INSTAGRAM_EN_USER_ID": "ig-en-user",
+      "YOUTUBE_RU_CLIENT_ID": "test-youtube-ru-client",
+      "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube-ru",
+      "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-ru-refresh",
+      "YOUTUBE_EN_CLIENT_ID": "test-youtube-en-client",
+      "YOUTUBE_EN_CLIENT_SECRET": "test-secret-youtube-en",
+      "YOUTUBE_EN_REFRESH_TOKEN": "test-token-youtube-en-refresh",
+      "MEDIA_PROCESSOR_URL": "https://media-processor.example/",
+      "MEDIA_PROCESSOR_TOKEN": "test-token-media-processor-000000000000"
+    },
+    "credentials": {
+      "X_ACCESS_TOKEN": "test-token-x",
+      "X_REFRESH_TOKEN": "test-token-x-refresh",
+      "ZERNIO_API_KEY": "test-token-zernio",
+      "DISCORD_BOT_TOKEN": "test-token-discord"
+    }
+  },
+  "files": {
+    "photo.jpg": {
+      "fill": "J",
+      "size": 64
+    },
+    "second.png": {
+      "fill": "P",
+      "size": 48
+    },
+    "clip.mp4": {
+      "fill": "V",
+      "size": 96
+    },
+    "big.mp4": {
+      "fill": "B",
+      "size": 2101248
+    },
+    "upload.mp4": {
+      "fill": "U",
+      "size": 32
+    },
+    "story.jpg": {
+      "fill": "S",
+      "size": 40
+    }
+  },
+  "responses": [
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"200\",\"text\":\"t\"}}"
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"201\",\"text\":\"t\"}}"
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"m6\",\"media_key\":\"3_m6\"}}"
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"m6\"}}"
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"202\",\"text\":\"t\"}}"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/tweets",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "application/json"]],
+      "body": {
+        "text": "{\"text\":\"One\"}"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/tweets",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "application/json"]],
+      "body": {
+        "text": "{\"text\":\"Two\",\"reply\":{\"in_reply_to_tweet_id\":\"200\"}}"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/media/upload/initialize",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "application/json"]],
+      "body": {
+        "text": "{\"total_bytes\":64,\"media_type\":\"image/jpeg\",\"media_category\":\"tweet_image\"}"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/media/upload/m6/append",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "multipart/form-data"]],
+      "body": {
+        "parts": [
+          {
+            "headers": ["Content-Disposition: form-data; name=\"segment_index\""],
+            "text": "0"
+          },
+          {
+            "headers": ["Content-Disposition: form-data; name=\"media\"; filename=\"segment-0\"", "Content-Type: application/octet-stream"],
+            "text": "JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/media/upload/m6/finalize",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"]],
+      "body": {
+        "text": ""
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/tweets",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "application/json"]],
+      "body": {
+        "text": "{\"text\":\"Three\",\"media\":{\"media_ids\":[\"m6\"]},\"reply\":{\"in_reply_to_tweet_id\":\"201\"}}"
+      }
+    }
+  ],
+  "sleptMs": 0,
+  "written": {},
+  "outcome": {
+    "ok": {
+      "ok": true,
+      "id": "200",
+      "ids": ["200", "201", "202"],
+      "url": "https://x.com/i/web/status/200",
+      "raw": {
+        "data": {
+          "id": "202",
+          "text": "t"
+        }
+      }
+    }
+  }
+}

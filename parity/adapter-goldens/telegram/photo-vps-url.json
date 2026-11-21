@@ -1,0 +1,120 @@
+{
+  "name": "photo-vps-url",
+  "operation": "adapter.publish",
+  "inputs": {
+    "target": "telegram",
+    "payload": {
+      "text": "remote",
+      "media": [
+        {
+          "type": "IMAGE",
+          "vpsUrl": "https://media.example/staging/a.jpg"
+        }
+      ]
+    }
+  },
+  "config": {
+    "env": {
+      "DATA_DIR": "/data",
+      "CONTROLLER_BOT_TOKEN": "test-token-telegram",
+      "TELEGRAM_API_BASE_URL": "https://bot-api.example/",
+      "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+      "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+      "THREADS_EN_ACCESS_TOKEN": "test-token-threads-en",
+      "X_CLIENT_ID": "test-x-client",
+      "X_CLIENT_SECRET": "test-secret-x-client",
+      "DISCORD_CHANNEL_ID": "555",
+      "DISCORD_GUILD_ID": "777",
+      "INSTAGRAM_RU_ACCESS_TOKEN": "EAtest-token-instagram-ru",
+      "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+      "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+      "INSTAGRAM_EN_USER_ID": "ig-en-user",
+      "YOUTUBE_RU_CLIENT_ID": "test-youtube-ru-client",
+      "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube-ru",
+      "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-ru-refresh",
+      "YOUTUBE_EN_CLIENT_ID": "test-youtube-en-client",
+      "YOUTUBE_EN_CLIENT_SECRET": "test-secret-youtube-en",
+      "YOUTUBE_EN_REFRESH_TOKEN": "test-token-youtube-en-refresh",
+      "MEDIA_PROCESSOR_URL": "https://media-processor.example/",
+      "MEDIA_PROCESSOR_TOKEN": "test-token-media-processor-000000000000"
+    },
+    "credentials": {
+      "X_ACCESS_TOKEN": "test-token-x",
+      "X_REFRESH_TOKEN": "test-token-x-refresh",
+      "ZERNIO_API_KEY": "test-token-zernio",
+      "DISCORD_BOT_TOKEN": "test-token-discord"
+    }
+  },
+  "files": {
+    "photo.jpg": {
+      "fill": "J",
+      "size": 64
+    },
+    "second.png": {
+      "fill": "P",
+      "size": 48
+    },
+    "clip.mp4": {
+      "fill": "V",
+      "size": 96
+    },
+    "big.mp4": {
+      "fill": "B",
+      "size": 2101248
+    },
+    "upload.mp4": {
+      "fill": "U",
+      "size": 32
+    },
+    "story.jpg": {
+      "fill": "S",
+      "size": 40
+    }
+  },
+  "responses": [
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"ok\":true,\"result\":{\"message_id\":47}}"
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"ok\":true,\"result\":true}"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "url": "https://bot-api.example/bot{{CONTROLLER_BOT_TOKEN}}/sendPhoto",
+      "headers": [["content-type", "application/json"]],
+      "body": {
+        "text": "{\"chat_id\":\"@studiochannel\",\"photo\":\"https://media.example/staging/a.jpg\",\"caption\":\"remote\",\"caption_entities\":[]}"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://bot-api.example/bot{{CONTROLLER_BOT_TOKEN}}/setMessageReaction",
+      "headers": [["content-type", "application/json"]],
+      "body": {
+        "text": "{\"chat_id\":\"@studiochannel\",\"message_id\":47,\"reaction\":[{\"type\":\"emoji\",\"emoji\":\"❤\"}],\"is_big\":false}"
+      }
+    }
+  ],
+  "sleptMs": 0,
+  "written": {},
+  "outcome": {
+    "ok": {
+      "ok": true,
+      "id": 47,
+      "ids": [47],
+      "url": "https://t.me/studiochannel/47",
+      "raw": {
+        "ok": true,
+        "result": {
+          "message_id": 47
+        }
+      }
+    }
+  }
+}

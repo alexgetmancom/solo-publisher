@@ -17,6 +17,7 @@ pub type Fut<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Method {
     Get,
+    Head,
     Post,
     Put,
     Patch,
@@ -27,6 +28,7 @@ impl Method {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Get => "GET",
+            Self::Head => "HEAD",
             Self::Post => "POST",
             Self::Put => "PUT",
             Self::Patch => "PATCH",
@@ -248,6 +250,7 @@ impl Transport for ReqwestTransport {
         Box::pin(async move {
             let method = match request.method {
                 Method::Get => reqwest::Method::GET,
+                Method::Head => reqwest::Method::HEAD,
                 Method::Post => reqwest::Method::POST,
                 Method::Put => reqwest::Method::PUT,
                 Method::Patch => reqwest::Method::PATCH,

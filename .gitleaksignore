@@ -2,3 +2,13 @@
 crates/foundation/tests/fixtures/secret-box.json:generic-api-key:2
 # Placeholder MEDIA_PROCESSOR_TOKEN in the Rust boundary scenario fixture (scripts/rust/boundary-scenarios.ts); not a secret.
 crates/domain/tests/boundary_scenarios.json:generic-api-key:954
+# The x-studio-idempotency-key header in the Rust adapter request goldens (scripts/rust/adapter-goldens.ts) is a sha256 of fixture media bytes; not a secret.
+parity/adapter-goldens/remote-media/busy.json:generic-api-key:92
+parity/adapter-goldens/remote-media/image.json:generic-api-key:93
+parity/adapter-goldens/remote-media/missing-variant.json:generic-api-key:92
+parity/adapter-goldens/remote-media/not-json.json:generic-api-key:92
+parity/adapter-goldens/remote-media/refused-long.json:generic-api-key:92
+parity/adapter-goldens/remote-media/timeout.json:generic-api-key:90
+parity/adapter-goldens/remote-media/upload-lost.json:generic-api-key:90
+parity/adapter-goldens/remote-media/variant-failed.json:generic-api-key:96
+parity/adapter-goldens/remote-media/video.json:generic-api-key:102

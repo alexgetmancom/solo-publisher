@@ -1,0 +1,228 @@
+{
+  "name": "article",
+  "operation": "x.article",
+  "inputs": {
+    "payload": {
+      "title": "  Title  ",
+      "text": "Heading\nPlain line with link\n\n- item\nquote here\ncode()\nsee example.com now",
+      "entities": [
+        {
+          "type": "heading",
+          "offset": 0,
+          "length": 7,
+          "level": 1
+        },
+        {
+          "type": "bold",
+          "offset": 8,
+          "length": 5
+        },
+        {
+          "type": "text_link",
+          "offset": 19,
+          "length": 4,
+          "url": "https://example.com/l"
+        },
+        {
+          "type": "text_link",
+          "offset": 14,
+          "length": 4,
+          "url": "ftp://nope"
+        },
+        {
+          "type": "list_item",
+          "offset": 25,
+          "length": 6
+        },
+        {
+          "type": "quote",
+          "offset": 32,
+          "length": 10
+        },
+        {
+          "type": "pre",
+          "offset": 43,
+          "length": 6
+        },
+        {
+          "type": "url",
+          "offset": 54,
+          "length": 11
+        },
+        {
+          "type": "italic",
+          "offset": 3,
+          "length": 20
+        },
+        {
+          "type": "heading",
+          "offset": 32,
+          "length": 3
+        },
+        {
+          "type": "bold",
+          "offset": 200,
+          "length": 4
+        }
+      ],
+      "media": [
+        {
+          "type": "IMAGE",
+          "localPath": "$FILES/photo.jpg"
+        },
+        {
+          "type": "VIDEO",
+          "localPath": "$FILES/clip.mp4"
+        }
+      ]
+    }
+  },
+  "config": {
+    "env": {
+      "DATA_DIR": "/data",
+      "CONTROLLER_BOT_TOKEN": "test-token-telegram",
+      "TELEGRAM_API_BASE_URL": "https://bot-api.example/",
+      "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+      "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+      "THREADS_EN_ACCESS_TOKEN": "test-token-threads-en",
+      "X_CLIENT_ID": "test-x-client",
+      "X_CLIENT_SECRET": "test-secret-x-client",
+      "DISCORD_CHANNEL_ID": "555",
+      "DISCORD_GUILD_ID": "777",
+      "INSTAGRAM_RU_ACCESS_TOKEN": "EAtest-token-instagram-ru",
+      "INSTAGRAM_RU_USER_ID": "ig-ru-user",
+      "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+      "INSTAGRAM_EN_USER_ID": "ig-en-user",
+      "YOUTUBE_RU_CLIENT_ID": "test-youtube-ru-client",
+      "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube-ru",
+      "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-ru-refresh",
+      "YOUTUBE_EN_CLIENT_ID": "test-youtube-en-client",
+      "YOUTUBE_EN_CLIENT_SECRET": "test-secret-youtube-en",
+      "YOUTUBE_EN_REFRESH_TOKEN": "test-token-youtube-en-refresh",
+      "MEDIA_PROCESSOR_URL": "https://media-processor.example/",
+      "MEDIA_PROCESSOR_TOKEN": "test-token-media-processor-000000000000"
+    },
+    "credentials": {
+      "X_ACCESS_TOKEN": "test-token-x",
+      "X_REFRESH_TOKEN": "test-token-x-refresh",
+      "ZERNIO_API_KEY": "test-token-zernio",
+      "DISCORD_BOT_TOKEN": "test-token-discord"
+    }
+  },
+  "files": {
+    "photo.jpg": {
+      "fill": "J",
+      "size": 64
+    },
+    "second.png": {
+      "fill": "P",
+      "size": 48
+    },
+    "clip.mp4": {
+      "fill": "V",
+      "size": 96
+    },
+    "big.mp4": {
+      "fill": "B",
+      "size": 2101248
+    },
+    "upload.mp4": {
+      "fill": "U",
+      "size": 32
+    },
+    "story.jpg": {
+      "fill": "S",
+      "size": 40
+    }
+  },
+  "responses": [
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"m7\",\"media_key\":\"3_m7\"}}"
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"m7\"}}"
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"art-1\"}}"
+    },
+    {
+      "status": 200,
+      "headers": [["content-type", "application/json"]],
+      "body": "{\"data\":{\"id\":\"art-1\"}}"
+    }
+  ],
+  "requests": [
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/media/upload/initialize",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "application/json"]],
+      "body": {
+        "text": "{\"total_bytes\":64,\"media_type\":\"image/jpeg\",\"media_category\":\"tweet_image\"}"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/media/upload/m7/append",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "multipart/form-data"]],
+      "body": {
+        "parts": [
+          {
+            "headers": ["Content-Disposition: form-data; name=\"segment_index\""],
+            "text": "0"
+          },
+          {
+            "headers": ["Content-Disposition: form-data; name=\"media\"; filename=\"segment-0\"", "Content-Type: application/octet-stream"],
+            "text": "JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/media/upload/m7/finalize",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"]],
+      "body": {
+        "text": ""
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/articles/draft",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"], ["content-type", "application/json"]],
+      "body": {
+        "text": "{\"title\":\"Title\",\"content_state\":{\"blocks\":[{\"key\":\"b0\",\"text\":\"Heading\",\"type\":\"header-one\",\"depth\":0,\"inline_style_ranges\":[{\"offset\":3,\"length\":4,\"style\":\"ITALIC\"}],\"entity_ranges\":[]},{\"key\":\"b1\",\"text\":\"Plain line with link\",\"type\":\"unstyled\",\"depth\":0,\"inline_style_ranges\":[{\"offset\":0,\"length\":15,\"style\":\"ITALIC\"},{\"offset\":0,\"length\":5,\"style\":\"BOLD\"}],\"entity_ranges\":[{\"offset\":11,\"length\":4,\"key\":0}]},{\"key\":\"b3\",\"text\":\"- item\",\"type\":\"unstyled\",\"depth\":0,\"inline_style_ranges\":[],\"entity_ranges\":[]},{\"key\":\"b4\",\"text\":\"quote here\",\"type\":\"unstyled\",\"depth\":0,\"inline_style_ranges\":[],\"entity_ranges\":[]},{\"key\":\"b5\",\"text\":\"code()\",\"type\":\"unstyled\",\"depth\":0,\"inline_style_ranges\":[],\"entity_ranges\":[]},{\"key\":\"b6\",\"text\":\"see example.com now\",\"type\":\"unstyled\",\"depth\":0,\"inline_style_ranges\":[],\"entity_ranges\":[]},{\"key\":\"m0\",\"text\":\" \",\"type\":\"atomic\",\"depth\":0,\"inline_style_ranges\":[],\"entity_ranges\":[{\"offset\":0,\"length\":1,\"key\":1}]}],\"entity_map\":{\"0\":{\"type\":\"LINK\",\"mutability\":\"MUTABLE\",\"data\":{\"url\":\"https://example.com/l\"}},\"1\":{\"type\":\"MEDIA\",\"mutability\":\"IMMUTABLE\",\"data\":{\"media_id\":\"m7\"}}}}}"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.x.com/2/articles/art-1/publish",
+      "headers": [["authorization", "Bearer {{X_ACCESS_TOKEN}}"]],
+      "body": {
+        "text": ""
+      }
+    }
+  ],
+  "sleptMs": 0,
+  "written": {},
+  "outcome": {
+    "ok": {
+      "ok": true,
+      "id": "art-1",
+      "url": "https://x.com/i/article/art-1",
+      "raw": {
+        "data": {
+          "id": "art-1"
+        }
+      }
+    }
+  }
+}
