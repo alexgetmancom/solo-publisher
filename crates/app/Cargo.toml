@@ -17,11 +17,14 @@ adapters = { path = "../adapters" }
 bot = { path = "../bot" }
 channels = { path = "../channels" }
 content = { path = "../content" }
+delivery = { path = "../delivery" }
 db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
+http_edge = { path = "../http" }
+ops = { path = "../ops" }
 runtime = { path = "../runtime" }
 story_render = { path = "../story_render" }
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-tokio = { version = "1", features = ["rt", "time", "signal", "macros"] }
+tokio = { version = "1", features = ["rt", "time", "signal", "macros", "net", "sync"] }

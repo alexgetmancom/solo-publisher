@@ -20,13 +20,13 @@ use db::BackendDb;
 use domain::application::ports::{Clock as _, SystemClock};
 use domain::publishing::boundaries::UsageMeter;
 use domain::studio::Studio;
-use foundation::config::{Config, SharedConfig};
+use foundation::config::Config;
 use http_body::Frame;
 use http_body_util::BodyExt as _;
 use ops::context::{OpError, Surface};
 use ops::host::OpsAdapters;
 use ops::mcp::McpServer;
-use runtime::http::{HttpClient, ReqwestTransport};
+use runtime::http::HttpClient;
 use serde_json::{Value, json};
 
 use crate::auth::mcp_studio_actor;
@@ -46,7 +46,7 @@ pub(crate) fn routes() -> Router<Local> {
 /// timer for free, so the stream answers to the same authority as POST.
 async fn stream(State(local): State<Local>, headers: HeaderMap) -> Response {
     on_local(&local, move |state| async move {
-        let config = state.backend.config();
+        let config = state.backend.config().load();
         if mcp_studio_actor(&headers, &config).is_none() {
             let mut denied = text("unauthorized\n", 401);
             let origin = config
@@ -119,7 +119,7 @@ async fn call(State(local): State<Local>, request: Request) -> Response {
                 200,
             ));
         };
-        let config = state.backend.config();
+        let config = state.backend.config().load();
         let actor = mcp_studio_actor(&parts.headers, &config);
         let client = client_ip_hash(&parts.headers, &config);
         let surface = BackendSurface::new(&state, config);
@@ -153,13 +153,6 @@ async fn call(State(local): State<Local>, request: Request) -> Response {
     .await
 }
 
-thread_local! {
-    /// The `fetch` operations reach platforms through, one per process.
-    static HTTP: Result<HttpClient, String> = ReqwestTransport::new()
-        .map(|transport| HttpClient::new(std::rc::Rc::new(transport)))
-        .map_err(|error| error.message);
-}
-
 /// The server's database, configuration and boundaries, as an operation's surface.
 struct BackendSurface<'a> {
     backend: &'a dyn Backend,
@@ -170,15 +163,10 @@ struct BackendSurface<'a> {
 
 impl<'a> BackendSurface<'a> {
     fn new(state: &'a HttpState, config: Arc<Config>) -> Self {
-        let http = HTTP.with(|http| http.clone()).unwrap_or_else(|_| {
-            HttpClient::new(std::rc::Rc::new(
-                ReqwestTransport::new().expect("an HTTP client for the operations"),
-            ))
-        });
         Self {
             backend: &*state.backend,
             config,
-            http,
+            http: state.backend.http().clone(),
             adapters: OnceCell::new(),
         }
     }
@@ -200,7 +188,7 @@ impl Surface for BackendSurface<'_> {
     fn adapters(&self) -> Result<&DynAdapters, OpError> {
         Ok(self
             .adapters
-            .get_or_init(|| OpsAdapters::boxed(self.http.clone(), SharedConfig::new((*self.config).clone()))))
+            .get_or_init(|| OpsAdapters::boxed(self.http.clone(), self.backend.config().clone())))
     }
 
     fn usage(&self) -> &dyn UsageMeter {

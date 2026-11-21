@@ -2,22 +2,27 @@
 //! records from the TypeScript Hono app: every case runs its steps on a fresh
 //! database and DATA_DIR under the same fixed clock, sends every request
 //! through the router (`tower::ServiceExt::oneshot`, no sockets) exactly as
-//! the TypeScript app saw it, and compares status, headers and body, then the
-//! stored assets and the upload scratch directory. The helpers without a route
-//! in this slice are compared call by call.
+//! the TypeScript app saw it, against a recording transport answering the
+//! step's canned responses, and compares status, headers, body and the
+//! requests sent; then the stored assets, the upload scratch directory,
+//! `channel_connections`, `platform_tokens` (sealed values opened) and the
+//! live config's credentials. Randomness is scripted as the TypeScript
+//! runner scripts it; a sealed `state=` in a header is compared opened. The
+//! helpers without a route in this slice are compared call by call.
 //!
 //! `content-length` is compared where the route sets it; one the Rust side
 //! adds on its own is the framing hyper would send for that body anyway.
 //! The recorded request headers are what the app saw (`$etag` already
 //! replaced), so they are sent as they are.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+use std::collections::VecDeque;
 use std::convert::Infallible;
 use std::fs;
 use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use axum::Router;
@@ -25,9 +30,14 @@ use axum::body::{Body, Bytes};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, Request, Uri};
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
+use channels::credentials::Setting;
+use channels::entropy::Entropy;
+use channels::oauth_routes::ChannelRegistrar;
 use content::Locale;
+use db::rusqlite::Connection;
+use db::rusqlite::types::Value as SqlValue;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::{Clock, SystemClock};
+use domain::application::ports::{ChannelConnectionRecord, Clock, SystemClock};
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
@@ -39,11 +49,16 @@ use domain::story_cards::StoryCardStore;
 use domain::studio::Studio;
 use domain::studio::boundaries::{
     ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives, StudioBoundaries,
+    ZernioAccount, ZernioDirectory,
 };
+use domain::studio::services::channels::{ChannelInput, ChannelService};
 use foundation::config::{Config, SharedConfig, load_config};
+use foundation::secret_box::{SecretKey, encryption_key, open};
 use http_body_util::BodyExt as _;
 use http_edge::{Backend, HttpState, client_ip_hash, command_allowed, mcp_studio_actor, router, stream_upload_to_file};
 use jiff::Timestamp;
+use regex::Regex;
+use runtime::http::{Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 use tower::ServiceExt as _;
@@ -65,7 +80,86 @@ impl Clock for FixedClock {
     }
 }
 
-/// The ported stores behind Studio's boundaries; the three whose owner is
+/// Every draw but the 12-byte IV fills its buffer with a counter, as the
+/// TypeScript runner's `randomBytes` does; the IV is not drawn from here.
+struct ScriptedEntropy(Cell<u8>);
+
+impl Entropy for ScriptedEntropy {
+    fn fill(&self, bytes: &mut [u8]) {
+        self.0.set(self.0.get().wrapping_add(1));
+        bytes.fill(self.0.get());
+    }
+}
+
+/// Records each request as sent and answers the step's next canned response.
+#[derive(Default)]
+struct Recorder {
+    sent: RefCell<Vec<HttpRequest>>,
+    responses: RefCell<VecDeque<Value>>,
+}
+
+impl Recorder {
+    /// What was sent since the last call, as the TypeScript runner records it.
+    fn take(&self) -> Value {
+        self.sent
+            .take()
+            .iter()
+            .map(|request| {
+                let mut headers: Vec<(String, String)> = request
+                    .headers
+                    .iter()
+                    .map(|(name, value)| (name.to_ascii_lowercase(), value.clone()))
+                    .collect();
+                headers.sort_by(|left, right| left.0.cmp(&right.0));
+                json!({
+                    "method": request.method.as_str(),
+                    "url": url::Url::parse(&request.url).map_or_else(|_| request.url.clone(), String::from),
+                    "headers": headers.into_iter().map(|(name, value)| json!([name, value])).collect::<Vec<_>>(),
+                    "body": String::from_utf8(request.body.as_bytes().unwrap()).unwrap(),
+                })
+            })
+            .collect()
+    }
+}
+
+impl Transport for Recorder {
+    fn send(&self, request: HttpRequest) -> Fut<'_, Result<HttpResponse, TransportFailure>> {
+        self.sent.borrow_mut().push(request);
+        let next = self.responses.borrow_mut().pop_front();
+        Box::pin(async move {
+            let failure = |message: &str| TransportFailure {
+                message: message.into(),
+                timed_out: false,
+            };
+            let next = next.ok_or_else(|| failure("no canned response left"))?;
+            if let Some(message) = next.get("throws") {
+                return Err(failure(message.as_str().unwrap()));
+            }
+            let headers = next["headers"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .map(|pair| {
+                    (
+                        pair[0].as_str().unwrap().to_owned(),
+                        pair[1].as_str().unwrap().to_owned(),
+                    )
+                })
+                .collect();
+            let body = match next.get("json") {
+                Some(json) => domain::json::stringify(json),
+                None => next["body"].as_str().unwrap_or_default().to_owned(),
+            };
+            Ok(HttpResponse::buffered(
+                u16::try_from(next["status"].as_u64().unwrap()).unwrap(),
+                headers,
+                body,
+            ))
+        })
+    }
+}
+
+/// The ported stores behind Studio's boundaries; the ones whose owner is
 /// elsewhere are never reached by these routes.
 struct Host {
     auth_circuit: AuthCircuitBreaker<SystemClock>,
@@ -88,6 +182,12 @@ impl WorkerBell for Host {
 impl StoryDerivatives for Host {
     fn ensure(&self, _: &str, _: bool, _: i64) {
         unreachable!("no HTTP route derives Story media")
+    }
+}
+
+impl ZernioDirectory for Host {
+    async fn accounts(&self, _: &Config) -> domain::Result<Vec<ZernioAccount>> {
+        unreachable!("connecting a channel from a callback lists no Zernio accounts")
     }
 }
 
@@ -114,6 +214,9 @@ struct TestBackend {
     clock: FixedClock,
     config: SharedConfig,
     host: Host,
+    recorder: Rc<Recorder>,
+    http: HttpClient,
+    entropy: ScriptedEntropy,
 }
 
 impl Backend for TestBackend {
@@ -123,8 +226,8 @@ impl Backend for TestBackend {
     fn clock(&self) -> &dyn Clock {
         &self.clock
     }
-    fn config(&self) -> Arc<Config> {
-        self.config.load()
+    fn config(&self) -> &SharedConfig {
+        &self.config
     }
     fn studio<'a>(&'a self, config: &'a Config) -> Studio<'a> {
         let host = &self.host;
@@ -149,6 +252,19 @@ impl Backend for TestBackend {
                 connect_links: host,
             },
         )
+    }
+    fn http(&self) -> &HttpClient {
+        &self.http
+    }
+    fn entropy(&self) -> &dyn Entropy {
+        &self.entropy
+    }
+}
+
+impl ChannelRegistrar for TestBackend {
+    fn connect(&self, input: &ChannelInput) -> domain::Result<ChannelConnectionRecord> {
+        let config = self.config.load();
+        ChannelService::new(self.studio(&config), &self.host).connect(input, None)
     }
 }
 
@@ -217,9 +333,37 @@ fn build(request: &Value, hold: Option<tokio::sync::oneshot::Receiver<()>>) -> R
     built
 }
 
-async fn answer(app: &Router, request: Request<Body>, data_dir: &str) -> Value {
+async fn answer(app: &Router, request: Request<Body>, data_dir: &str, backend: &TestBackend) -> Value {
     let response = app.clone().oneshot(request).await.unwrap();
-    record(response, data_dir).await
+    let key = encryption_key(backend.config.load().token_encryption_key.as_deref())
+        .ok()
+        .flatten();
+    let mut recorded = record(response, data_dir).await;
+    for value in recorded["headers"].as_object_mut().unwrap().values_mut() {
+        *value = json!(unsealed(value.as_str().unwrap(), key.as_ref()));
+    }
+    recorded["sent"] = backend.recorder.take();
+    recorded
+}
+
+static STATE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"([?&]state=)([^&]*)").unwrap());
+
+/// A sealed `state=` shown as what it opens to.
+fn unsealed(value: &str, key: Option<&SecretKey>) -> String {
+    let Some(key) = key else { return value.to_owned() };
+    STATE
+        .replace_all(value, |captures: &regex::Captures<'_>| {
+            let raw = format!("x={}", &captures[2]);
+            let decoded = url::form_urlencoded::parse(raw.as_bytes())
+                .next()
+                .map(|(_, value)| value.into_owned())
+                .unwrap_or_default();
+            match open(&decoded, key) {
+                Ok(opened) => format!("{}SEALED({opened})", &captures[1]),
+                Err(_) => captures[0].to_owned(),
+            }
+        })
+        .into_owned()
 }
 
 async fn record(response: axum::response::Response, data_dir: &str) -> Value {
@@ -255,7 +399,7 @@ async fn record(response: axum::response::Response, data_dir: &str) -> Value {
 /// The golden's response, against what Rust answered (see the module notes
 /// on `content-length`).
 fn same_response(golden: &Value, actual: &mut Value) -> bool {
-    let expected = json!({"status": golden["status"], "headers": golden["headers"], "body": golden["body"]});
+    let expected = json!({"status": golden["status"], "headers": golden["headers"], "body": golden["body"], "sent": golden["sent"]});
     if golden["headers"].get("content-length").is_none()
         && let Some(headers) = actual["headers"].as_object_mut()
         && headers
@@ -313,6 +457,7 @@ async fn replay_all() {
         let dir = data_dir.to_str().unwrap().to_owned();
         let config = load_config(env_pairs(&case["env"], &dir)).unwrap();
         let shared = SharedConfig::new(config);
+        let recorder = Rc::new(Recorder::default());
         let backend = Rc::new(TestBackend {
             db: BackendDb::open(data_dir.join("pipeline.db")).unwrap(),
             clock: FixedClock(Cell::new(foundation::time::parse_iso_instant(T0).unwrap())),
@@ -325,6 +470,9 @@ async fn replay_all() {
                 reminders: ReminderJobs::new(SystemClock),
                 readiness: CapabilityReadiness::new(shared),
             },
+            http: HttpClient::new(recorder.clone()),
+            recorder,
+            entropy: ScriptedEntropy(Cell::new(0)),
         });
         let app = router(HttpState::new(backend.clone()));
         let golden_results = case["results"].as_array().unwrap();
@@ -334,7 +482,16 @@ async fn replay_all() {
         for step in case["steps"].as_array().unwrap() {
             if step.get("request").is_some() {
                 let golden = next.next().unwrap();
-                results.push((golden, answer(&app, build(&golden["request"], None), &dir).await));
+                *backend.recorder.responses.borrow_mut() =
+                    step["responses"].as_array().into_iter().flatten().cloned().collect();
+                results.push((
+                    golden,
+                    answer(&app, build(&golden["request"], None), &dir, &backend).await,
+                ));
+                assert!(
+                    backend.recorder.responses.borrow().is_empty(),
+                    "{name}: canned responses left"
+                );
             } else if let Some(held) = step["held_uploads"].as_array() {
                 // Recorded in answer order: the refused third upload, then the two held ones.
                 let meanwhile = next.next().unwrap();
@@ -348,11 +505,18 @@ async fn replay_all() {
                     pending.push((golden, release, handle));
                 }
                 tokio::time::sleep(Duration::from_millis(20)).await;
-                results.push((meanwhile, answer(&app, build(&meanwhile["request"], None), &dir).await));
+                results.push((
+                    meanwhile,
+                    answer(&app, build(&meanwhile["request"], None), &dir, &backend).await,
+                ));
                 for (golden, release, handle) in pending {
                     drop(release);
-                    results.push((golden, record(handle.await.unwrap(), &dir).await));
+                    let mut recorded = record(handle.await.unwrap(), &dir).await;
+                    recorded["sent"] = backend.recorder.take();
+                    results.push((golden, recorded));
                 }
+            } else if let Some(at) = step["clock"].as_str() {
+                backend.clock.0.set(foundation::time::parse_iso_instant(at).unwrap());
             } else {
                 setup(step, &backend.db, &data_dir, &mut chmodded);
             }
@@ -368,7 +532,7 @@ async fn replay_all() {
                     "{name} #{index} {} {}:\n  ts:   {}\n  rust: {actual}",
                     golden["request"]["method"],
                     golden["request"]["target"],
-                    json!({"status": golden["status"], "headers": golden["headers"], "body": golden["body"]})
+                    json!({"status": golden["status"], "headers": golden["headers"], "body": golden["body"], "sent": golden["sent"]})
                 ));
             }
         }
@@ -376,7 +540,7 @@ async fn replay_all() {
         if case["assets"] != assets {
             failures.push(format!("{name}, assets:\n  ts:   {}\n  rust: {assets}", case["assets"]));
         }
-        let incoming = backend.config().studio_media_dir.join(".incoming");
+        let incoming = backend.config.load().studio_media_dir.join(".incoming");
         let incoming = fs::read_dir(&incoming).ok().map_or(Value::Null, |entries| {
             json!(
                 entries
@@ -387,6 +551,22 @@ async fn replay_all() {
         if case["incoming"] != incoming {
             failures.push(format!("{name}, incoming: ts {} rust {incoming}", case["incoming"]));
         }
+        let config = backend.config.load();
+        let key = encryption_key(config.token_encryption_key.as_deref()).ok().flatten();
+        let sqlite = unsafe_db(&backend.db);
+        let stored = json!({
+            "channels": table_lines(sqlite, "channel_connections"),
+            "tokens": tokens(sqlite, key.as_ref()),
+            "credentials": credentials(&config),
+        });
+        for part in ["channels", "tokens", "credentials"] {
+            if case[part] != stored[part] {
+                failures.push(format!(
+                    "{name}, {part}:\n  ts:   {}\n  rust: {}",
+                    case[part], stored[part]
+                ));
+            }
+        }
     }
     assert!(compared > 0);
     assert!(
@@ -395,6 +575,75 @@ async fn replay_all() {
         failures.len(),
         failures.join("\n")
     );
+}
+
+/// The rows of `table` as the TypeScript runner's `dump` writes them.
+fn table_lines(sqlite: &Connection, table: &str) -> Value {
+    let columns: Vec<String> = sqlite
+        .prepare("SELECT name FROM pragma_table_info(?) ORDER BY cid")
+        .unwrap()
+        .query_map([table], |row| row.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    let cells = columns
+        .iter()
+        .map(|column| format!(r#"typeof("{column}") || ':' || quote("{column}")"#))
+        .collect::<Vec<_>>()
+        .join(" || ' ' || ");
+    let lines: Vec<String> = sqlite
+        .prepare(&format!(
+            r#"SELECT quote(rowid) || ' ' || {cells} FROM "{table}" ORDER BY rowid"#
+        ))
+        .unwrap()
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    json!(lines)
+}
+
+/// `platform_tokens` with the sealed values opened.
+fn tokens(sqlite: &Connection, key: Option<&SecretKey>) -> Value {
+    let mut statement = sqlite.prepare("SELECT * FROM platform_tokens ORDER BY rowid").unwrap();
+    let names: Vec<String> = statement.column_names().map(str::to_owned).collect();
+    let rows: Vec<Vec<SqlValue>> = statement
+        .query_map([], |row| (0..names.len()).map(|index| row.get(index)).collect())
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    rows.into_iter()
+        .map(|row| {
+            let object: Map<String, Value> = names
+                .iter()
+                .zip(row)
+                .map(|(name, cell)| {
+                    let value = match cell {
+                        SqlValue::Null => Value::Null,
+                        SqlValue::Integer(number) => number.into(),
+                        SqlValue::Real(number) => number.into(),
+                        SqlValue::Text(text) => match key {
+                            Some(key) if name.starts_with("sealed_") => open(&text, key).unwrap().into(),
+                            _ => text.into(),
+                        },
+                        SqlValue::Blob(_) => panic!("no blob columns"),
+                    };
+                    (name.clone(), value)
+                })
+                .collect();
+            Value::Object(object)
+        })
+        .collect()
+}
+
+/// The credential settings of the live config.
+fn credentials(config: &Config) -> Value {
+    Value::Object(
+        Setting::ALL
+            .iter()
+            .map(|setting| (setting.name().to_owned(), json!(setting.get(config))))
+            .collect(),
+    )
 }
 
 fn assets(db: &BackendDb, dir: &str) -> Value {

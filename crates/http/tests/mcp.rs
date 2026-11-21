@@ -6,15 +6,17 @@
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::Request;
+use channels::entropy::{Entropy, OsEntropy};
+use channels::oauth_routes::ChannelRegistrar;
 use db::BackendDb;
-use domain::application::ports::Clock;
+use domain::application::ports::{ChannelConnectionRecord, Clock};
 use domain::observability::usage::UsageRecorder;
 use domain::publishing::Publishing;
 use domain::studio::Studio;
+use domain::studio::services::channels::{ChannelInput, ChannelService};
 use foundation::config::{Config, SharedConfig, load_config};
 use http_body_util::BodyExt as _;
 use http_edge::{Backend, HttpState, router};
@@ -38,6 +40,7 @@ struct TestBackend {
     config: SharedConfig,
     host: OpsHost,
     usage: UsageRecorder<Rc<dyn Clock>>,
+    http: HttpClient,
 }
 
 impl Backend for TestBackend {
@@ -47,8 +50,8 @@ impl Backend for TestBackend {
     fn clock(&self) -> &dyn Clock {
         &*self.clock
     }
-    fn config(&self) -> Arc<Config> {
-        self.config.load()
+    fn config(&self) -> &SharedConfig {
+        &self.config
     }
     fn studio<'a>(&'a self, config: &'a Config) -> Studio<'a> {
         Studio::new(
@@ -56,6 +59,19 @@ impl Backend for TestBackend {
             config,
             self.host.studio(),
         )
+    }
+    fn http(&self) -> &HttpClient {
+        &self.http
+    }
+    fn entropy(&self) -> &dyn Entropy {
+        &OsEntropy
+    }
+}
+
+impl ChannelRegistrar for TestBackend {
+    fn connect(&self, input: &ChannelInput) -> domain::Result<ChannelConnectionRecord> {
+        let config = self.config.load();
+        ChannelService::new(self.studio(&config), &self.host.adapters).connect(input, None)
     }
 }
 
@@ -90,7 +106,8 @@ fn mcp_transport_matches_typescript() {
         let http = HttpClient::new(Rc::new(ReqwestTransport::new().unwrap()));
         let backend = TestBackend {
             db: BackendDb::open(dir.join("pipeline.db")).unwrap(),
-            host: OpsHost::new(config.clone(), clock.clone(), http),
+            host: OpsHost::new(config.clone(), clock.clone(), http.clone()),
+            http,
             usage: UsageRecorder::new(clock.clone() as Rc<dyn Clock>),
             clock,
             config,

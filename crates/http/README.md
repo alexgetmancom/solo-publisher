@@ -1,29 +1,36 @@
 # http_edge — the Studio's HTTP surface (Rust)
 
-Port of `apps/backend/src/api.ts`, `interfaces/http/{context,discovery,health,media-upload,public-site,studio}.ts`,
+Port of `apps/backend/src/api.ts`,
+`interfaces/http/{context,discovery,health,media-upload,meta-oauth,public-site,studio,x-oauth,youtube-oauth}.ts`,
 `foundation/{http-auth,http-response,ranged-file,client-identity}.ts` and the `Bun.serve` options of
 `runtime/server.ts`, on axum 0.8 / hyper 1. The package is `http_edge` (a package named `http` makes every
 `cargo -p http` ambiguous with the `http` crate); the directory is `crates/http`.
 
 | Module | TypeScript |
 |---|---|
-| `lib.rs` (`router`, `HttpState`, `Backend`) | `api.ts` `buildApp`, `context.ts` |
+| `lib.rs` (`router`, `HttpState`, `Backend`, `BotBackend`) | `api.ts` `buildApp`, `context.ts` |
 | `edge.rs` | Hono's dispatch: `strict: false`, HEAD via GET, `notFound`, the `/oauth/*` + `/stats*` `unindexed` middleware |
-| `uri.rs` (`Target`) | `request.url` (WHATWG) and Hono's `getPath` / `decodeURI` / `tryDecode` |
+| `uri.rs` (`Target`) | `request.url` (WHATWG), Hono's `getPath` / `decodeURI` / `tryDecode` and `c.req.query` |
 | `health.rs`, `discovery.rs`, `studio.rs`, `site.rs` | the route files of the same names (`site.rs` = `public-site.ts`) |
+| `oauth.rs` | `meta-oauth.ts`, `x-oauth.ts`, `youtube-oauth.ts`: `/oauth/{threads,instagram,x,youtube}[/start]` over `channels::oauth_routes` |
 | `media_upload.rs`, `ranged_file.rs`, `auth.rs`, `client_identity.rs`, `response.rs` | the helpers of the same names |
 | `mime.rs` | `Bun.file(path).type` (the extensions Bun 1.4 names, recorded) |
-| `server.rs` (`serve`) | `Bun.serve`: body cap 1 GB + 1 MB (413), idle 255 s |
+| `server.rs` (`serve`) | `Bun.serve`: body cap 1 GB + 1 MB (413), idle 255 s; `server.stop()` |
 
 ## Wiring (the integrator's part)
 
 ```rust
-let state = http_edge::HttpState::new(Rc::new(bot.clone()));   // `Bot` implements `http_edge::Backend`
-tokio::task::spawn_local(http_edge::serve(TcpListener::bind((host, port)).await?, state));
+let state = http_edge::HttpState::new(Rc::new(BotBackend { bot: bot.clone(), http }));
+let server = tokio::task::spawn_local(http_edge::serve(listener, state, async { let _ = stop.await; }));
 ```
 
-`serve` and `router` must run inside the process's `LocalSet`. Dropping the `serve` future stops accepting;
-connections in flight end with the runtime.
+`serve` and `router` must run inside the process's `LocalSet`. When `stop` completes, `serve` stops accepting and
+returns once every connection is done: requests in flight are answered, idle keep-alive connections close
+(`await server.stop()`). `crates/app` does this first on SIGINT/SIGTERM.
+
+`Backend` is what the routes reach: the database, clock, live `SharedConfig`, a Studio handle, the HTTP client and
+entropy the OAuth exchanges use, and `ChannelRegistrar` (`studio.channels.connect`). `BotBackend` is the process's:
+the bot plus the provider `HttpClient`, with the operating system's randomness.
 
 ## Why a local executor
 
@@ -40,11 +47,10 @@ checking, for no gain.
 
 A group is `pub(crate) fn routes() -> Router<Local>` in its module plus one `.merge(module::routes())` line in
 `lib.rs` `routes()`. Handlers take `State<Local>` (and `Extension<Target>` for the path/URL as Hono read them) and
-call `response::on_local`. `command_allowed`, `mcp_studio_actor` and `client_ip_hash` are ready for OAuth and MCP.
+call `response::on_local`. `mcp_studio_actor` and `client_ip_hash` are ready for MCP.
 
-Not in this slice: the OAuth routes (`/oauth/{threads,instagram,x,youtube}[/start]`, channels slice) and the MCP
-transport (`GET`/`POST /api/mcp`, ops slice). Until they land their paths are unknown routes: `404 "not found\n"`
-(under `/oauth/*` with the `noindex` + `no-store` headers, as for any `/oauth` path today).
+Not in this slice: the MCP transport (`GET`/`POST /api/mcp`, ops slice). Until it lands its paths are unknown
+routes: `404 "not found\n"`.
 
 ## Parity
 
@@ -53,9 +59,14 @@ bun scripts/rust/http-goldens.ts   # records parity/http/goldens.json from the H
 cargo test -p http_edge            # tests/goldens.rs replays it through the router with `oneshot`
 ```
 
-18 cases / 174 responses (every route; auth ok/missing/wrong; HEAD; ranges incl. suffix, clamped and 416; traversal
+23 cases / 222 responses (every route; auth ok/missing/wrong; HEAD; ranges incl. suffix, clamped and 416; traversal
 403; versioned vs unversioned caching; readiness 200/503/500; upload 403/413/415/429/400/200 with the stored
-assets; trailing slashes; wrong methods; unknown routes), plus `commandAllowed` (every token channel),
+assets; trailing slashes; wrong methods; unknown routes; OAuth start without/with the command token by header,
+query and cookie, callbacks with valid, foreign-platform, malformed and expired states, provider refusals, canned
+token exchanges that succeed, fail with 400/401 or a transport error, and unconfigured Studios). A recording
+transport answers the canned responses and the requests sent are compared; `randomBytes` is scripted as in the
+channels goldens, and a sealed `state=` is compared opened. Each case also compares `channel_connections`,
+`platform_tokens` (opened) and the live config's credentials. Plus `commandAllowed` (every token channel),
 `mcpStudioActor`, `clientIpHash` and `streamUploadToFile` call by call. `server.rs` tests drive a real hyper
 connection over an in-memory stream.
 

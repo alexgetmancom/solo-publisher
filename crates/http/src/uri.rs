@@ -68,6 +68,32 @@ impl Target {
             .find(|(key, _)| key == name)
             .map(|(_, value)| value.into_owned())
     }
+
+    /// The query as `c.req.query(name)` reads it, for a lookup that takes the
+    /// first pair of a name: every value `+`- and percent-decoded (a run of
+    /// escapes that does not decode stays as it was). Hono first looks for the
+    /// name as written, and only then compares decoded names, so the pairs
+    /// under their written names come first.
+    pub(crate) fn hono_query(&self) -> Vec<(String, String)> {
+        let Some((_, query)) = self.url.split_once('?') else {
+            return Vec::new();
+        };
+        let pairs: Vec<(&str, String)> = query
+            .split('&')
+            .map(|pair| {
+                let (name, value) = pair.split_once('=').unwrap_or((pair, ""));
+                (name, hono_decode(value))
+            })
+            .collect();
+        let written = pairs.iter().map(|(name, value)| ((*name).to_owned(), value.clone()));
+        let decoded = pairs.iter().map(|(name, value)| (hono_decode(name), value.clone()));
+        written.chain(decoded).filter(|(name, _)| !name.is_empty()).collect()
+    }
+}
+
+/// Hono's `_decodeURI` for a query name or value.
+fn hono_decode(value: &str) -> String {
+    try_decode_uri_component(&value.replace('+', " "))
 }
 
 /// Hono's `getPath` decoding: `decodeURI`, with `%25` kept as `%25`.
@@ -209,5 +235,24 @@ mod tests {
         assert_eq!(decode_uri_component("%C0%80"), None);
         assert_eq!(decode_uri_component("%ED%A0%80"), None);
         assert_eq!(try_decode_uri_component("%6Dedia"), "media");
+    }
+
+    #[test]
+    fn query_as_hono_reads_it() {
+        let first = |raw: &str, name: &str| {
+            target(raw)
+                .hono_query()
+                .into_iter()
+                .find(|(key, _)| key == name)
+                .map(|(_, value)| value)
+        };
+        assert_eq!(first("/x?code=a+b%2Bc&code=2", "code").as_deref(), Some("a b+c"));
+        assert_eq!(first("/x?state&code=1", "state").as_deref(), Some(""));
+        assert_eq!(first("/x?state=a=b", "state").as_deref(), Some("a=b"));
+        assert_eq!(first("/x?state=%E0%A4%A", "state").as_deref(), Some("%E0%A4%A"));
+        assert_eq!(first("/x?st%61te=1&state=2", "state").as_deref(), Some("2"));
+        assert_eq!(first("/x?st%61te=1", "state").as_deref(), Some("1"));
+        assert_eq!(first("/x?=1&state", "").as_deref(), None);
+        assert_eq!(first("/x", "state"), None);
     }
 }

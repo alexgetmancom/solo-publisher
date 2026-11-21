@@ -70,7 +70,7 @@ async fn site(State(local): State<Local>, headers: HeaderMap) -> Response {
     let prefer = header(&headers, "prefer");
     on_local(&local, move |state| async move {
         let backend = &*state.backend;
-        let config = backend.config();
+        let config = backend.config().load();
         let request = SiteRequest {
             if_none_match: if_none_match.as_deref(),
             prefer: prefer.as_deref(),
@@ -131,7 +131,7 @@ async fn media(State(local): State<Local>, Extension(target): Extension<Target>,
     let head = request.method() == Method::HEAD;
     let range = header(request.headers(), "range");
     on_local(&local, move |state| async move {
-        let config = state.backend.config();
+        let config = state.backend.config().load();
         serve_media(&state, &config, &target, range.as_deref(), head).await
     })
     .await
@@ -199,7 +199,7 @@ async fn index_now(State(local): State<Local>, Extension(target): Extension<Targ
         return not_found();
     }
     on_local(&local, move |state| async move {
-        Ok(match index_now_key(&state.backend.config()) {
+        Ok(match index_now_key(&state.backend.config().load()) {
             Some(key) if file == format!("{key}.txt") => text(format!("{key}\n"), 200),
             _ => not_found(),
         })
@@ -233,7 +233,7 @@ async fn responsive(State(local): State<Local>, Extension(target): Extension<Tar
         if !responsive_name(&file) {
             return Ok(not_found());
         }
-        let config = state.backend.config();
+        let config = state.backend.config().load();
         let cached = join(
             &path_text(&config.site_public_dir),
             &format!("generated/responsive/{file}"),

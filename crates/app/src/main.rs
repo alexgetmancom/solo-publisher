@@ -1,11 +1,8 @@
-//! `solo-publisher`: the Studio process (`apps/backend/src/runtime/server.ts`)
-//! restricted to what the Rust build has ported — the configuration, the
-//! database and the Telegram bot on long polling. The HTTP surface and the
-//! workers come with their phases (plans/rust/PLAN.md); the boundaries are
-//! the ported stores, and every one whose owner is not here yet refuses
-//! loudly (`unported.rs`).
+//! `solo-publisher`: the Studio process (`apps/backend/src/runtime/server.ts`):
+//! the configuration, the database, the Telegram bot on long polling, the
+//! workers and the HTTP surface, over the host's boundaries (`host.rs`).
 
-mod unported;
+mod host;
 mod workers;
 
 use std::process::ExitCode;
@@ -14,18 +11,21 @@ use std::time::Duration;
 
 use bot::api::transport::HttpTransport;
 use bot::deployment::HttpDeployAgent;
-use bot::{Bot, BotDeps, DynAdapters, runner};
+use bot::{Bot, BotDeps, runner};
 use db::BackendDb;
 use domain::application::ports::SystemClock;
-use foundation::config::{SharedConfig, load_config};
+use foundation::config::{Config, SharedConfig, load_config};
 use foundation::logger::{LogLevel, configure_logging, log};
+use http_edge::{BotBackend, HttpState};
+use ops::host::OpsAdapters;
 use runtime::http::{HttpClient, ReqwestTransport};
 use runtime::scheduler::ScheduledLoop;
 use runtime::worker_signal::{WorkerQueue, set_worker_wake};
 use serde_json::json;
+use tokio::net::TcpListener;
 use tokio::signal::unix::{Signal, SignalKind, signal};
 
-use crate::unported::{AppAdapters, AppHost};
+use crate::host::AppHost;
 
 /// As server.ts: a shutdown that has not finished by then exits with 1.
 const SHUTDOWN_DEADLINE: Duration = Duration::from_secs(10);
@@ -74,11 +74,22 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let http = match ReqwestTransport::new() {
+        Ok(transport) => HttpClient::new(Rc::new(transport)),
+        Err(error) => {
+            log(
+                LogLevel::Error,
+                "HTTP transport could not be built",
+                Some(json!({"error": error.message})),
+            );
+            return ExitCode::FAILURE;
+        }
+    };
     let config = SharedConfig::new(config);
-    let host = Rc::new(AppHost::new(config.clone()));
+    let host = Rc::new(AppHost::new(config.clone(), http.clone()));
     // The bot lives on one thread (see the bot crate).
     let local = tokio::task::LocalSet::new();
-    let (bot, code) = local.block_on(&runtime, run(config, Rc::clone(&host), &token, db));
+    let (bot, code) = local.block_on(&runtime, run(config, Rc::clone(&host), http, &token, db));
     // Ends whatever background work outlived the shutdown wait, so the bot's
     // last handle is ours and the database closes here.
     drop(local);
@@ -104,16 +115,19 @@ fn main() -> ExitCode {
     code
 }
 
-/// Builds the bot, polls until SIGINT/SIGTERM or until polling ends on its
-/// own, and stops it. Returns the bot, when one was built, for its database.
-async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb) -> (Option<Bot>, ExitCode) {
+/// Builds the bot, polls and serves HTTP until SIGINT/SIGTERM or until polling
+/// ends on its own, and stops them. Returns the bot, when one was built, for
+/// its database.
+async fn run(
+    config: SharedConfig,
+    host: Rc<AppHost>,
+    http: HttpClient,
+    token: &str,
+    db: BackendDb,
+) -> (Option<Bot>, ExitCode) {
     let transport = match HttpTransport::new(&config.load().telegram_api_base_url, token) {
         Ok(transport) => transport,
         Err(error) => return failed(None, "Telegram transport could not be built", &error.0),
-    };
-    let http = match ReqwestTransport::new() {
-        Ok(transport) => HttpClient::new(Rc::new(transport)),
-        Err(error) => return failed(None, "HTTP transport could not be built", &error.message),
     };
     let deploy_agent = match HttpDeployAgent::new() {
         Ok(agent) => agent,
@@ -124,7 +138,7 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         clock: Rc::new(SystemClock),
         config: config.clone(),
         host: Rc::clone(&host) as _,
-        adapters: DynAdapters(Box::new(AppAdapters::new(http.clone(), config))),
+        adapters: OpsAdapters::boxed(http.clone(), config),
         transport: Rc::new(transport),
         deploy_agent: Rc::new(deploy_agent),
     });
@@ -133,6 +147,12 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         (Err(error), _) | (_, Err(error)) => {
             return failed(Some(bot), "signal handlers could not be installed", &error.to_string());
         }
+    };
+    // Bound before anything starts, so a taken port fails the process at once.
+    let bind_host = bot.deps().config.load().bind_host.clone();
+    let listener = match listen(&bot.deps().config.load()).await {
+        Ok(listener) => listener,
+        Err(error) => return failed(Some(bot), "HTTP server could not listen", &error),
     };
     // `getMe` can wait as long as the request timeout; a signal still stops it.
     let started = tokio::select! {
@@ -146,22 +166,30 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         Ok(runner) => runner,
         Err(error) => return failed(Some(bot), "Telegram bot could not start", &error.to_string()),
     };
-    let loops = workers::start(&bot, http, {
+    let loops = workers::start(&bot, &host, http.clone(), {
         let host = Rc::clone(&host);
         move |db| host.flush_usage(db::unsafe_db(db))
     });
-    let not_in_this_build = [
-        ["http server", "the other workers"].as_slice(),
-        unported::AREAS.as_slice(),
-    ]
-    .concat();
+    let port = listener.local_addr().map(|address| address.port()).ok();
+    let (stop_http, http_stopping) = tokio::sync::oneshot::channel::<()>();
+    let server = tokio::task::spawn_local(http_edge::serve(
+        listener,
+        HttpState::new(Rc::new(BotBackend { bot: bot.clone(), http })),
+        async {
+            let _ = http_stopping.await;
+        },
+    ));
+    log(
+        LogLevel::Info,
+        "studio listening",
+        Some(json!({"hostname": bind_host, "port": port})),
+    );
     log(
         LogLevel::Info,
         "studio started",
         Some(json!({
-            "runs": ["telegram bot (long polling)", "workers"],
+            "runs": ["telegram bot (long polling)", "workers", "http server"],
             "workers": loops.iter().map(ScheduledLoop::name).collect::<Vec<_>>(),
-            "notInThisBuild": not_in_this_build,
         })),
     );
     let signal = tokio::select! {
@@ -176,11 +204,16 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
     };
     log(LogLevel::Info, "shutdown requested", Some(json!({"signal": signal})));
     let stopping = async {
+        // `server.stop()`: no new connections, and the requests in flight
+        // are answered before the bot and the loops stop.
+        let _ = stop_http.send(());
+        let _ = server.await;
         let stopped = runner.stop().await;
         for scheduled in &loops {
             scheduled.stop().await;
         }
         // The doorbells hold their loops, and the loops the bot.
+        set_worker_wake(WorkerQueue::Publish, None);
         set_worker_wake(WorkerQueue::TelegramEvents, None);
         domain::repositories::set_event_bell(None);
         // Updates already handed out finish before the database closes.
@@ -199,6 +232,14 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
             std::process::exit(1);
         }
     }
+}
+
+/// `Bun.serve`'s `hostname` and `port`.
+async fn listen(config: &Config) -> Result<TcpListener, String> {
+    let port = u16::try_from(config.port).map_err(|_| format!("PORT {} is not a TCP port", config.port))?;
+    TcpListener::bind((config.bind_host.as_str(), port))
+        .await
+        .map_err(|error| format!("{}:{port}: {error}", config.bind_host))
 }
 
 async fn next_signal(interrupt: &mut Signal, terminate: &mut Signal) -> &'static str {

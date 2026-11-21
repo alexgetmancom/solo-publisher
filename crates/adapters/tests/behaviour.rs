@@ -181,7 +181,11 @@ fn the_sidecar_client_speaks_the_documented_contract() {
         Ok((500, "<html>crash</html>")),
         Err("connection reset by peer"),
     ]);
-    let sidecar = HttpStoriesSidecar::new(HttpClient::new(transport.clone()), "http://stories:8090/");
+    let sidecar = HttpStoriesSidecar::new(
+        HttpClient::new(transport.clone()),
+        "http://127.0.0.1:8790/",
+        "sidecar-test-token",
+    );
     let request = story_request();
     let answers: Vec<Result<i64, SidecarError>> = block_on(async {
         let mut answers = Vec::new();
@@ -210,8 +214,9 @@ fn the_sidecar_client_speaks_the_documented_contract() {
     );
 
     let sent = transport.sent.borrow();
-    assert_eq!(sent[0].url, "http://stories:8090/v1/stories");
+    assert_eq!(sent[0].url, "http://127.0.0.1:8790/v1/stories");
     assert_eq!(sent[0].header_value("content-type"), Some("application/json"));
+    assert_eq!(sent[0].header_value("authorization"), Some("Bearer sidecar-test-token"));
     let body: Value = serde_json::from_slice(&sent[0].body.as_bytes().unwrap()).unwrap();
     assert_eq!(
         body,

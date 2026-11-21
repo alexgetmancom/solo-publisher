@@ -38,7 +38,7 @@ async fn readyz(State(local): State<Local>) -> Response {
 /// diagnosis but never gate: at activation no cycle has necessarily run yet.
 fn readiness(state: &HttpState) -> HandlerResult {
     let backend = &*state.backend;
-    let config = backend.config();
+    let config = backend.config().load();
     let sqlite = unsafe_db(backend.db());
     let mut checks = Map::new();
     checks.insert(

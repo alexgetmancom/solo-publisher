@@ -29,11 +29,9 @@ loops.start(X_TOKEN.0, X_TOKEN.1, move || x_token_tick(&config, &db, &http));
 loops.start(OBSERVABILITY, observability_interval(&config), move || observability_tick(&config, &db, &http));
 ```
 
-Call `observability::memory::process_boot()` once at startup so the boot time is the process's. The host replaces
-the refusing `ChannelConnectLinks` in `app/src/unported.rs` with `ConnectLinks::new(SystemClock, OsEntropy)` and
-`zernio_accounts` with `ZernioAccounts`.
+Call `observability::memory::process_boot()` once at startup so the boot time is the process's. `app/src/host.rs` uses `ConnectLinks::new(SystemClock, OsEntropy)` and `ZernioAccounts`.
 
-The HTTP slice mounts `oauth_routes::{meta_start, meta_callback, x_start, x_callback, youtube_start,
+`crates/http` (`oauth.rs`) mounts `oauth_routes::{meta_start, meta_callback, x_start, x_callback, youtube_start,
 youtube_callback}` with an `OauthContext` (live config, connection, `HttpClient`, clock, entropy, and the Studio's
 `ChannelService` as `ChannelRegistrar`), the query decoded as Hono does (first occurrence, `+` and `%` decoded) and
 the `commandAllowed` verdict; it adds `X-Robots-Tag: noindex, nofollow` and `Cache-Control: no-store` to every
