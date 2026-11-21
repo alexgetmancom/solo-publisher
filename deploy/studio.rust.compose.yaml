@@ -1,7 +1,9 @@
 # One Studio on the Rust image (Dockerfile.rust): the deploy agent's composeFile
 # for a target that runs it. Identical to studio.compose.yaml — same container
 # name, volumes, port and healthcheck — except pids_limit, marked "Rust image:".
-# The Stories sidecar runs inside this container.
+# The Stories sidecar runs inside this container: the entrypoint sets
+# STORIES_SIDECAR_URL (http://127.0.0.1:8790) and STORIES_SIDECAR_TOKEN for
+# the Studio and the sidecar itself, so neither belongs in secrets.env.
 name: ${STUDIO:?set STUDIO to this deployment's name}
 
 services:

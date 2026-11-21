@@ -93,7 +93,7 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    runtime.block_on(supervise())
+    runtime.block_on(run())
 }
 
 /// Fixes ownership, then replaces this process with itself under the runtime
@@ -155,17 +155,9 @@ fn sidecar_token() -> Result<String, getrandom::Error> {
 }
 
 /// Starts the sidecar; a failure is logged and retried by the loop.
-fn start_sidecar(token: &str) -> Option<(Child, Instant)> {
-    let started = Command::new("bun")
-        .arg("main.js")
-        .current_dir(SIDECAR_DIR)
-        .env("STORIES_SIDECAR_TOKEN", token)
-        .env("STORIES_SIDECAR_HOST", "127.0.0.1")
-        .env("STORIES_SIDECAR_PORT", SIDECAR_PORT.to_string())
-        // Without tini, a Studio that exits must not leave the sidecar behind.
-        .kill_on_drop(true)
-        .spawn();
-    match started {
+fn start_sidecar(sidecar: &dyn Fn() -> Command) -> Option<(Child, Instant)> {
+    // Without tini, a Studio that exits must not leave the sidecar behind.
+    match sidecar().kill_on_drop(true).spawn() {
         Ok(child) => Some((child, Instant::now())),
         Err(error) => {
             log(
@@ -191,14 +183,8 @@ fn stopped_on_request(status: ExitStatus) -> bool {
     status.code() == Some(0) || matches!(status.signal(), Some(2 | 15))
 }
 
-async fn supervise() -> ExitCode {
-    // Installing the handlers is what keeps SIGTERM from killing this process
-    // before the Studio has shut down; tini -g delivers it to the children too.
-    let (Ok(mut terminate), Ok(mut interrupt)) = (signal(SignalKind::terminate()), signal(SignalKind::interrupt()))
-    else {
-        log(LogLevel::Error, "cannot install signal handlers", None);
-        return ExitCode::FAILURE;
-    };
+/// Draws the token and runs the two processes of this image.
+async fn run() -> ExitCode {
     let token = match sidecar_token() {
         Ok(token) => token,
         Err(error) => {
@@ -210,11 +196,35 @@ async fn supervise() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let mut studio = match Command::new(STUDIO_BINARY)
+    let mut studio = Command::new(STUDIO_BINARY);
+    studio
         .env("STORIES_SIDECAR_URL", format!("http://127.0.0.1:{SIDECAR_PORT}"))
-        .env("STORIES_SIDECAR_TOKEN", &token)
-        .spawn()
-    {
+        .env("STORIES_SIDECAR_TOKEN", &token);
+    let sidecar = || {
+        let mut sidecar = Command::new("bun");
+        sidecar
+            .arg("main.js")
+            .current_dir(SIDECAR_DIR)
+            .env("STORIES_SIDECAR_TOKEN", &token)
+            .env("STORIES_SIDECAR_HOST", "127.0.0.1")
+            .env("STORIES_SIDECAR_PORT", SIDECAR_PORT.to_string());
+        sidecar
+    };
+    ExitCode::from(supervise(studio, &sidecar, Duration::from_secs(1)).await)
+}
+
+/// Runs the Studio until it exits and returns its exit code; keeps the
+/// sidecar up meanwhile, restarting it `first_delay` after a crash, doubling
+/// to 30 s.
+async fn supervise(mut studio: Command, sidecar: &dyn Fn() -> Command, first_delay: Duration) -> u8 {
+    // Installing the handlers is what keeps SIGTERM from killing this process
+    // before the Studio has shut down; tini -g delivers it to the children too.
+    let (Ok(mut terminate), Ok(mut interrupt)) = (signal(SignalKind::terminate()), signal(SignalKind::interrupt()))
+    else {
+        log(LogLevel::Error, "cannot install signal handlers", None);
+        return 1;
+    };
+    let mut studio = match studio.spawn() {
         Ok(child) => child,
         Err(error) => {
             log(
@@ -222,26 +232,26 @@ async fn supervise() -> ExitCode {
                 "studio could not start",
                 Some(json!({"error": error.to_string()})),
             );
-            return ExitCode::FAILURE;
+            return 1;
         }
     };
     let mut stopping = false;
-    let mut delay = Duration::from_secs(1);
-    let mut sidecar = start_sidecar(&token);
+    let mut delay = first_delay;
+    let mut sidecar_child = start_sidecar(sidecar);
     loop {
         tokio::select! {
             biased;
             _ = terminate.recv() => stopping = true,
             _ = interrupt.recv() => stopping = true,
-            status = studio.wait() => return ExitCode::from(status.map_or(1, exit_code)),
-            status = async { sidecar.as_mut().map(|(child, _)| child).unwrap().wait().await }, if sidecar.is_some() => {
-                let lived = sidecar.take().map_or(Duration::ZERO, |(_, started)| started.elapsed());
+            status = studio.wait() => return status.map_or(1, exit_code),
+            status = async { sidecar_child.as_mut().map(|(child, _)| child).unwrap().wait().await }, if sidecar_child.is_some() => {
+                let lived = sidecar_child.take().map_or(Duration::ZERO, |(_, started)| started.elapsed());
                 if stopping || status.as_ref().is_ok_and(|status| stopped_on_request(*status)) {
                     // Nothing to restart; the Studio's exit is the container's.
-                    return ExitCode::from(studio.wait().await.map_or(1, exit_code));
+                    return studio.wait().await.map_or(1, exit_code);
                 }
                 if lived >= SIDECAR_STABLE {
-                    delay = Duration::from_secs(1);
+                    delay = first_delay;
                 }
                 let status = status.map_or_else(|error| error.to_string(), |status| status.to_string());
                 log(
@@ -250,9 +260,9 @@ async fn supervise() -> ExitCode {
                     Some(json!({"status": status, "restartInMs": delay.as_millis() as u64})),
                 );
             }
-            _ = tokio::time::sleep(delay), if sidecar.is_none() && !stopping => {
+            _ = tokio::time::sleep(delay), if sidecar_child.is_none() && !stopping => {
                 delay = (delay * 2).min(RESTART_DELAY_MAX);
-                sidecar = start_sidecar(&token);
+                sidecar_child = start_sidecar(sidecar);
             }
         }
     }
@@ -281,6 +291,48 @@ mod tests {
         let me = std::fs::metadata("/proc/self").unwrap().uid();
         assert_eq!(uid[1], me);
         assert!(status_ids("Groups:").is_some());
+    }
+
+    fn sh(script: &str) -> Command {
+        let mut command = Command::new("sh");
+        command.arg("-c").arg(script);
+        command
+    }
+
+    fn block_on<T>(work: impl Future<Output = T>) -> T {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(work)
+    }
+
+    #[test]
+    fn the_studio_exit_is_the_containers_and_a_crashed_sidecar_comes_back() {
+        let starts = std::cell::Cell::new(0);
+        let sidecar = || {
+            starts.set(starts.get() + 1);
+            sh("exit 1")
+        };
+        let code = block_on(supervise(sh("sleep 1; exit 3"), &sidecar, Duration::from_millis(50)));
+        assert_eq!(code, 3);
+        assert!(starts.get() >= 3, "sidecar started {} times", starts.get());
+    }
+
+    #[test]
+    fn a_sidecar_that_stopped_on_request_is_not_restarted() {
+        let starts = std::cell::Cell::new(0);
+        let sidecar = || {
+            starts.set(starts.get() + 1);
+            sh("exit 0")
+        };
+        let code = block_on(supervise(
+            sh("sleep 0.5; kill -TERM $$"),
+            &sidecar,
+            Duration::from_millis(10),
+        ));
+        assert_eq!(code, 143);
+        assert_eq!(starts.get(), 1);
     }
 
     #[test]
