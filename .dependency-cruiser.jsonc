@@ -91,6 +91,13 @@
       "to": { "path": "^apps/" }
     },
     {
+      "name": "stories-sidecar-stays-isolated",
+      "comment": "sidecars/stories is bundled on its own into the Rust Studio image, beside a binary that has no TypeScript backend. An import from apps/ would typecheck here and drag the backend into that bundle.",
+      "severity": "error",
+      "from": { "path": "^sidecars/" },
+      "to": { "path": "^(apps|deploy|scripts)/" }
+    },
+    {
       "name": "apps-do-not-import-scripts",
       "comment": "scripts/ are build and ops tools that run from the repo root; nothing shipped may depend on them.",
       "severity": "error",

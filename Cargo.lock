@@ -391,6 +391,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "entrypoint"
+version = "0.0.0"
+dependencies = [
+ "foundation",
+ "getrandom 0.2.17",
+ "runtime",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

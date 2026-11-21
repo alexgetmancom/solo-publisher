@@ -90,17 +90,21 @@ pub trait StoriesSidecar {
     fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>>;
 }
 
-/// The sidecar over local HTTP (`POST {base}/v1/stories`).
+/// The sidecar over local HTTP (`POST {base}/v1/stories`), authorized by the
+/// bearer token the container entrypoint draws for both processes
+/// (`STORIES_SIDECAR_URL`, `STORIES_SIDECAR_TOKEN`).
 pub struct HttpStoriesSidecar {
     client: HttpClient,
     base_url: String,
+    token: String,
 }
 
 impl HttpStoriesSidecar {
-    pub fn new(client: HttpClient, base_url: impl Into<String>) -> Self {
+    pub fn new(client: HttpClient, base_url: impl Into<String>, token: impl Into<String>) -> Self {
         Self {
             client,
             base_url: base_url.into(),
+            token: token.into(),
         }
     }
 }
@@ -138,6 +142,7 @@ impl StoriesSidecar for HttpStoriesSidecar {
         Box::pin(async move {
             let base = self.base_url.strip_suffix('/').unwrap_or(&self.base_url);
             let http = HttpRequest::post(format!("{base}/v1/stories"))
+                .header("Authorization", format!("Bearer {}", self.token))
                 .header("Content-Type", "application/json")
                 .text(domain::json::stringify(&story_request_json(request)));
             let response = self

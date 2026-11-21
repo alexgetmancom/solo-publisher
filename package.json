@@ -9,7 +9,8 @@
   },
   "workspaces": [
     "apps/*",
-    "tools/*"
+    "tools/*",
+    "sidecars/*"
   ],
   "overrides": {
     "esbuild": "0.28.2",
@@ -22,9 +23,9 @@
   "scripts": {
     "prepare": "lefthook install",
     "demo": "bun scripts/dev-seed.ts --reset --simple && bun --env-file=$PWD/.dev-fixture/demo.env run --filter @solo-publisher/backend dev",
-    "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter @solo-publisher/backend typecheck && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json",
-    "test": "bun test apps/backend/tests deploy",
-    "test:coverage": "bun test --coverage apps/backend/tests deploy",
+    "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter @solo-publisher/backend typecheck && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json && tsc -p sidecars/stories/tsconfig.json",
+    "test": "bun test apps/backend/tests deploy sidecars",
+    "test:coverage": "bun test --coverage apps/backend/tests deploy sidecars",
     "check:audit": "bun audit --audit-level=high",
     "check:docker": "bun scripts/check-docker-workspaces.ts",
     "lint": "biome lint .",
