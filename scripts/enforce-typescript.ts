@@ -6,7 +6,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // runtime, ops and entrypoint hold bundles built from TypeScript sources. CI
 // only builds them after this gate runs, so it never saw them; a local image
 // build does, and the gate then fails on generated JavaScript.
-const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage", "runtime", "ops", "entrypoint", "story-renderer"]);
+// _trash-rust holds Rust build output and scratch files (git-excluded, disposable).
+const ignoredDirectories = new Set([
+  ".git",
+  "node_modules",
+  "dist",
+  "coverage",
+  "runtime",
+  "ops",
+  "entrypoint",
+  "story-renderer",
+  "_trash-rust",
+]);
 const forbiddenExtensions = new Set([".py", ".pyi", ".js", ".jsx", ".mjs", ".cjs"]);
 // The one file that cannot be TypeScript: it runs on a bare host through
 // `curl … | sh`, before Docker has pulled anything and long before a Bun exists
