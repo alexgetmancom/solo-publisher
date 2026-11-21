@@ -1,0 +1,463 @@
+//! The golden replay: each case of parity/bot-goldens/ runs against the Rust
+//! bot on the database the TypeScript recorder seeded for it, with the same
+//! updates, the same clock and a fake Telegram that answers and normalises as
+//! the recorder's did; the recorded calls must come out byte for byte.
+//!
+//! Seeds (`_trash-rust/tmp/bot-goldens-seeds/<area>/<case>.{db,meta.json,golden.json}`)
+//! are written by `bun scripts/rust/bot-goldens.ts --seeds`, which this
+//! harness runs itself when they are missing or no longer match the committed
+//! goldens.
+
+pub mod host;
+pub mod pending;
+pub mod telegram;
+pub mod triggers;
+
+use std::cell::Cell;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::rc::Rc;
+use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
+
+use bot::api::types::Update;
+use bot::{Bot, BotDeps, DynAdapters};
+use db::BackendDb;
+use foundation::config::{SharedConfig, load_config};
+use foundation::i18n::{Key, t};
+use jiff::Timestamp;
+use serde_json::{Value, json};
+use std::future::Future;
+
+use host::{FixedClock, GoldenAdapters, GoldenHost};
+use telegram::FakeTelegram;
+
+const BOT_TOKEN: &str = "123456:TEST-TOKEN";
+const NOW: &str = "2026-08-20T09:00:00.000Z";
+
+pub fn repo_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap()
+}
+
+fn goldens_dir() -> PathBuf {
+    repo_root().join("parity/bot-goldens")
+}
+
+fn seeds_dir() -> PathBuf {
+    repo_root().join("_trash-rust/tmp/bot-goldens-seeds")
+}
+
+/// The recorder's temporary directory, which `<tmp>` stands for.
+fn recorder_tmp() -> PathBuf {
+    repo_root().join("_trash-rust/tmp/bot-goldens")
+}
+
+fn read_json(path: &Path) -> Value {
+    let text = std::fs::read_to_string(path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    serde_json::from_str(&text).unwrap_or_else(|error| panic!("{}: {error}", path.display()))
+}
+
+/// Every committed golden, as `(area, case)`, in directory order.
+pub fn cases(area: &str) -> Vec<String> {
+    let mut cases: Vec<String> = std::fs::read_dir(goldens_dir().join(area))
+        .unwrap_or_else(|error| panic!("parity/bot-goldens/{area}: {error}"))
+        .filter_map(|entry| {
+            let name = entry.ok()?.file_name().into_string().ok()?;
+            name.strip_suffix(".json").map(str::to_owned)
+        })
+        .collect();
+    cases.sort();
+    cases
+}
+
+pub fn areas() -> Vec<String> {
+    let mut areas: Vec<String> = std::fs::read_dir(goldens_dir())
+        .unwrap()
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            entry
+                .file_type()
+                .ok()?
+                .is_dir()
+                .then(|| entry.file_name().into_string().ok())?
+        })
+        .collect();
+    areas.sort();
+    areas
+}
+
+fn seeds_match_goldens() -> Result<(), String> {
+    for area in areas() {
+        for case in cases(&area) {
+            let seed = seeds_dir().join(&area);
+            for suffix in ["db", "meta.json", "golden.json"] {
+                if !seed.join(format!("{case}.{suffix}")).exists() {
+                    return Err(format!("no seed {area}/{case}.{suffix}"));
+                }
+            }
+            let recorded = read_json(&seed.join(format!("{case}.golden.json")));
+            let committed = read_json(&goldens_dir().join(&area).join(format!("{case}.json")));
+            if recorded != committed {
+                return Err(format!(
+                    "the seed of {area}/{case} was recorded from a bot that no longer matches the committed golden"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Makes sure the seeds exist and belong to the committed goldens, recording
+/// them with the TypeScript bot when they do not.
+pub fn ensure_seeds() {
+    static READY: OnceLock<Result<(), String>> = OnceLock::new();
+    static RECORDING: Mutex<()> = Mutex::new(());
+    let ready = READY.get_or_init(|| {
+        let _recording = RECORDING.lock().unwrap();
+        if seeds_match_goldens().is_ok() {
+            return Ok(());
+        }
+        let root = repo_root();
+        let status = Command::new("bun")
+            .args(["scripts/rust/bot-goldens.ts", "--seeds"])
+            .current_dir(&root)
+            .env("TMPDIR", root.join("_trash-rust/tmp"))
+            .status()
+            .map_err(|error| format!("could not run bun: {error}"))?;
+        if !status.success() {
+            return Err(format!("bun scripts/rust/bot-goldens.ts --seeds failed: {status}"));
+        }
+        seeds_match_goldens()
+    });
+    if let Err(error) = ready {
+        panic!("{error}");
+    }
+}
+
+fn instant(text: &str) -> Timestamp {
+    foundation::time::parse_iso_instant(text).unwrap()
+}
+
+/// The configuration harness.ts gives every case, plus the case's own env.
+fn env(data_dir: &Path, case_env: &Value) -> Vec<(String, String)> {
+    let mut vars: Vec<(String, String)> = [
+        ("NODE_ENV", "test"),
+        ("CONTROLLER_BOT_TOKEN", BOT_TOKEN),
+        ("CONTROLLER_ADMIN_IDS", "1001"),
+        ("TELEGRAM_API_BASE_URL", "http://telegram.invalid"),
+        ("DEPLOY_AGENT_URL", "http://deploy-agent.invalid"),
+        ("DEPLOY_AGENT_TOKEN", "deploy-agent-test-token"),
+        ("YOUTUBE_RU_CLIENT_ID", "youtube-ru-client"),
+        ("YOUTUBE_RU_CLIENT_SECRET", "youtube-ru-secret"),
+        ("YOUTUBE_RU_REFRESH_TOKEN", "youtube-ru-refresh"),
+        ("YOUTUBE_EN_CLIENT_ID", "youtube-en-client"),
+        ("YOUTUBE_EN_CLIENT_SECRET", "youtube-en-secret"),
+        ("YOUTUBE_EN_REFRESH_TOKEN", "youtube-en-refresh"),
+        ("INSTAGRAM_RU_ACCESS_TOKEN", "instagram-ru-token"),
+        ("INSTAGRAM_RU_USER_ID", "1700000000000001"),
+        ("INSTAGRAM_EN_ACCESS_TOKEN", "instagram-en-token"),
+        ("INSTAGRAM_EN_USER_ID", "1700000000000002"),
+    ]
+    .iter()
+    .map(|(key, value)| ((*key).to_owned(), (*value).to_owned()))
+    .collect();
+    vars.push(("DATA_DIR".into(), data_dir.display().to_string()));
+    for (key, value) in case_env.as_object().into_iter().flatten() {
+        vars.retain(|(known, _)| known != key);
+        vars.push((key.clone(), value.as_str().unwrap_or_default().to_owned()));
+    }
+    vars
+}
+
+fn bot_user() -> Value {
+    json!({"first_name": "Studio", "id": 123456, "is_bot": true, "username": "studio_test_bot"})
+}
+
+/// Loads a step's database seed into the live connection: every table's rows
+/// replaced by the seed's (the schema is the same on both sides).
+pub fn reseed(sqlite: &db::rusqlite::Connection, path: &Path) {
+    let tables: Vec<String> = {
+        let mut statement = sqlite
+            .prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name")
+            .unwrap();
+        statement
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
+    sqlite.execute_batch("PRAGMA foreign_keys = OFF").unwrap();
+    sqlite
+        .execute("ATTACH DATABASE ? AS seed", [path.display().to_string()])
+        .unwrap();
+    let mut script = String::from("BEGIN;");
+    for table in &tables {
+        script.push_str(&format!(
+            r#"DELETE FROM main."{table}"; INSERT INTO main."{table}" SELECT * FROM seed."{table}";"#
+        ));
+    }
+    let has_sequence: bool = sqlite
+        .query_row(
+            "select count(*) > 0 from main.sqlite_master where name = 'sqlite_sequence'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    if has_sequence {
+        script.push_str(
+            "DELETE FROM main.sqlite_sequence; INSERT INTO main.sqlite_sequence SELECT * FROM seed.sqlite_sequence;",
+        );
+    }
+    script.push_str("COMMIT;");
+    sqlite.execute_batch(&script).unwrap();
+    sqlite
+        .execute_batch("DETACH DATABASE seed; PRAGMA foreign_keys = ON")
+        .unwrap();
+}
+
+/// Where the Rust bot differs from the recording on purpose
+/// (plans/rust/DECISIONS.md), applied to the expected calls and checked to be
+/// exactly what the decision says.
+fn deliberate_deviations(area: &str, case: &str, steps: &mut [Value]) {
+    if (area, case) == ("entry", "bootstrap") {
+        let description = &mut steps[0]["calls"][0]["payload"]["commands"][0]["description"];
+        assert_eq!(
+            description,
+            &json!("Restore bot menu"),
+            "the TypeScript bot sends the EN command description"
+        );
+        *description = json!(t(Key::BotCommandStart, &[]));
+    }
+}
+
+/// Calls of a step that fed several updates at once, grouped by the chat they
+/// write to (acknowledgements by themselves): their order across chats is the
+/// scheduler's, not the bot's; within a chat it is compared as recorded.
+fn by_chat(calls: &[Value]) -> Vec<(String, Vec<String>)> {
+    let mut groups: Vec<(String, Vec<String>)> = Vec::new();
+    for call in calls {
+        let key = if call["method"] == "answerCallbackQuery" {
+            "answerCallbackQuery".to_owned()
+        } else {
+            call["payload"]["chat_id"].to_string()
+        };
+        match groups.iter_mut().find(|(known, _)| *known == key) {
+            Some((_, list)) => list.push(call.to_string()),
+            None => groups.push((key, vec![call.to_string()])),
+        }
+    }
+    groups.sort_by(|a, b| a.0.cmp(&b.0));
+    groups
+}
+
+fn describe_difference(index: usize, expected: &[Value], actual: &[Value]) -> String {
+    let pretty = |calls: &[Value]| serde_json::to_string_pretty(calls).unwrap();
+    format!(
+        "step {index}: calls differ\n--- expected (golden)\n{}\n--- actual (Rust)\n{}",
+        pretty(expected),
+        pretty(actual)
+    )
+}
+
+/// A Rust bot on a database, a pinned clock and the fake Telegram, built the
+/// way harness.ts builds the TypeScript one.
+pub struct Harness {
+    pub bot: Bot,
+    pub telegram: Rc<FakeTelegram>,
+    pub clock: Rc<FixedClock>,
+    /// What the bot sent while it was built (`setMyCommands`).
+    pub construction: Vec<Value>,
+}
+
+impl Harness {
+    /// Must run inside a `LocalSet`.
+    pub async fn new(db: BackendDb, data_dir: &Path, case_env: &Value, at: Timestamp) -> Result<Self, String> {
+        let config = load_config(env(data_dir, case_env)).map_err(|error| error.to_string())?;
+        let clock = Rc::new(FixedClock(Cell::new(at)));
+        let telegram = Rc::new(FakeTelegram::new(&recorder_tmp().display().to_string(), bot_user()));
+        let bot = Bot::new(BotDeps {
+            db,
+            clock: clock.clone(),
+            config: SharedConfig::new(config),
+            host: Rc::new(GoldenHost),
+            adapters: DynAdapters(Box::new(GoldenAdapters)),
+            transport: telegram.clone(),
+        });
+        let mut info = bot_user();
+        info["can_join_groups"] = json!(true);
+        info["can_read_all_group_messages"] = json!(false);
+        info["supports_inline_queries"] = json!(false);
+        bot.set_info(serde_json::from_value(info).unwrap());
+        bot.settled().await;
+        let construction = telegram.take_calls();
+        Ok(Self {
+            bot,
+            telegram,
+            clock,
+            construction,
+        })
+    }
+
+    /// Hands these updates to the bot at once (one is an ordinary step), lets
+    /// a held call go after 50 ms as the recorder did, waits for the bot to be
+    /// quiet and returns what it sent.
+    pub async fn feed(&self, updates: &[Value]) -> Result<Vec<Value>, String> {
+        let mut handles = Vec::new();
+        for update in updates {
+            self.telegram.observe(update);
+            let parsed: Update = serde_json::from_value(update.clone()).map_err(|error| error.to_string())?;
+            let bot = self.bot.clone();
+            handles.push(tokio::task::spawn_local(async move { bot.handle_update(parsed).await }));
+        }
+        if self.telegram.holds() {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            self.telegram.release();
+        }
+        for handle in handles {
+            handle.await.map_err(|error| format!("the update panicked: {error}"))?;
+        }
+        self.bot.settled().await;
+        Ok(self.telegram.take_calls())
+    }
+}
+
+/// Runs `test` inside a fresh single-threaded runtime and `LocalSet`.
+pub fn on_bot_thread<F: Future>(test: F) -> F::Output {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    tokio::task::LocalSet::new().block_on(&runtime, test)
+}
+
+/// A case's seed database, copied where the Rust bot may write to it.
+pub fn seed_database(area: &str, case: &str, file: &str) -> BackendDb {
+    let work = repo_root().join("_trash-rust/tmp/bot-goldens-rust").join(area);
+    std::fs::create_dir_all(&work).unwrap();
+    let db_path = work.join(format!("{case}.db"));
+    for suffix in ["", "-wal", "-shm"] {
+        let _ = std::fs::remove_file(format!("{}{suffix}", db_path.display()));
+    }
+    std::fs::copy(seeds_dir().join(area).join(file), &db_path).unwrap();
+    BackendDb::open(&db_path).unwrap()
+}
+
+/// Replays one case; `Err` carries the first difference.
+pub fn replay(area: &str, case: &str) -> Result<(), String> {
+    replay_steps(area, case, usize::MAX)
+}
+
+/// Replays the first `count` steps of a case.
+pub fn replay_steps(area: &str, case: &str, count: usize) -> Result<(), String> {
+    on_bot_thread(replay_case(area, case, count))
+}
+
+async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String> {
+    let seeds = seeds_dir().join(area);
+    let meta = read_json(&seeds.join(format!("{case}.meta.json")));
+    let golden = read_json(&goldens_dir().join(area).join(format!("{case}.json")));
+    let mut expected_steps = golden["steps"].as_array().cloned().unwrap_or_default();
+    deliberate_deviations(area, case, &mut expected_steps);
+    let step_meta = meta["steps"].as_array().cloned().unwrap_or_default();
+    assert_eq!(
+        step_meta.len(),
+        expected_steps.len(),
+        "{area}/{case}: meta and golden disagree on the steps"
+    );
+
+    let data_dir = recorder_tmp().join("cases").join(case);
+    let _ = std::fs::remove_dir_all(&data_dir);
+    std::fs::create_dir_all(&data_dir).unwrap();
+    let db = seed_database(area, case, &format!("{case}.db"));
+    let first_at = step_meta.first().and_then(|step| step["at"].as_str()).unwrap_or(NOW);
+    let harness = Harness::new(db, &data_dir, &meta["env"], instant(first_at)).await?;
+
+    for (index, (expected, meta)) in expected_steps.iter().zip(&step_meta).enumerate().take(count) {
+        let at = instant(meta["at"].as_str().unwrap_or(NOW));
+        harness.clock.0.set(at);
+        harness.telegram.prepare(meta, at.as_second());
+        if let Some(reseed_file) = meta["reseed"].as_str() {
+            reseed(db::unsafe_db(&harness.bot.deps().db), &seeds.join(reseed_file));
+        }
+        let actual = match (&expected["update"], expected["trigger"].as_str()) {
+            (Value::Null, Some("createBot")) if index == 0 => harness.construction.clone(),
+            (Value::Null, Some(name)) => match triggers::find(name) {
+                Some(trigger) => trigger(&harness).await?,
+                None => {
+                    return Err(format!(
+                        "step {index}: trigger {name:?} has no row in support/triggers.rs"
+                    ));
+                }
+            },
+            (Value::Array(updates), _) => harness.feed(updates).await?,
+            (update, _) => harness.feed(std::slice::from_ref(update)).await?,
+        };
+        let expected_calls = expected["calls"].as_array().cloned().unwrap_or_default();
+        let same = if expected["update"].is_array() {
+            by_chat(&expected_calls) == by_chat(&actual)
+        } else {
+            expected_calls
+                .iter()
+                .map(Value::to_string)
+                .eq(actual.iter().map(Value::to_string))
+        };
+        if !same {
+            return Err(describe_difference(index, &expected_calls, &actual));
+        }
+    }
+    Ok(())
+}
+
+/// What one area's run found.
+pub struct Report {
+    pub passed: Vec<String>,
+    pub not_ported: Vec<(String, Vec<&'static str>)>,
+    pub failed: Vec<(String, String)>,
+}
+
+/// Replays every case of a golden directory that is ported, and lists the
+/// rest with the areas they wait for.
+pub fn run_area(area: &str) -> Report {
+    ensure_seeds();
+    foundation::logger::configure_logging(foundation::logger::LogLevel::Error);
+    let mut report = Report {
+        passed: Vec::new(),
+        not_ported: Vec::new(),
+        failed: Vec::new(),
+    };
+    for case in cases(area) {
+        let pending = pending::pending_for(area, &case);
+        if !pending.is_empty() {
+            report.not_ported.push((case, pending));
+            continue;
+        }
+        match replay(area, &case) {
+            Ok(()) => report.passed.push(case),
+            Err(error) => report.failed.push((case, error)),
+        }
+    }
+    for case in &report.passed {
+        println!("PASS        {area}/{case}");
+    }
+    for (case, pending) in &report.not_ported {
+        println!("NOT PORTED  {area}/{case} (waits for: {})", pending.join(", "));
+    }
+    for (case, error) in &report.failed {
+        println!("FAIL        {area}/{case}\n{error}");
+    }
+    report
+}
+
+/// The registrations of a bot built the way the harness builds one.
+pub fn missing_registrations() -> Vec<(&'static str, String)> {
+    on_bot_thread(async {
+        let work = repo_root().join("_trash-rust/tmp/bot-goldens-rust");
+        std::fs::create_dir_all(&work).unwrap();
+        let db = BackendDb::open(":memory:").unwrap();
+        let harness = Harness::new(db, &work, &json!({}), instant(NOW)).await.unwrap();
+        harness.bot.registry().missing()
+    })
+}

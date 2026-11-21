@@ -73,11 +73,20 @@ import { registerTestChannels, type TestChannelId } from "../../../apps/backend/
  * - OAuth start links (Settings → Connect) carry a random PKCE challenge and a
  *   sealed random state: the `state=` and `code_challenge=` query values are
  *   written as `<random>`.
+ *
+ * Replay seeds (`--seeds`, for the Rust golden test in crates/bot/tests/goldens.rs):
+ * each case also writes, under _trash-rust/tmp/bot-goldens-seeds/<area>/,
+ * `<case>.db` (the database right before the first step), `<case>.meta.json`
+ * (per step: the clock, the scripted Telegram failures, the held method, the
+ * files getFile serves; per case: channels and env) and `<case>.golden.json`.
+ * When the case itself changed the database between two steps, that step gets
+ * `<case>.step-<n>.db` and `reseed` in its meta, so a replay can load it.
  */
 
 export const ROOT = path.join(import.meta.dir, "../../..");
 const BACKEND = path.join(ROOT, "apps/backend");
 export const OUT = path.join(ROOT, "parity/bot-goldens");
+export const SEEDS = path.join(ROOT, "_trash-rust/tmp/bot-goldens-seeds");
 const TMP = path.join(ROOT, "_trash-rust/tmp/bot-goldens");
 
 process.env.TZ = "UTC";
@@ -122,6 +131,15 @@ type Config = ReturnType<typeof loadRuntimeConfig>;
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type Call = { method: string; transport?: "multipart"; payload: Json };
 type Step = { update?: Json; trigger?: string; calls: Call[] };
+/** What a replay needs to put in place before one step (see the header). */
+type StepMeta = {
+  at: string;
+  files: Record<string, string>;
+  failures?: Record<string, TelegramError[]>;
+  hold?: string;
+  opaqueUploads?: true;
+  reseed?: string;
+};
 
 /** OAuth start links carry a fresh PKCE challenge and a sealed state every time. */
 const RANDOM_QUERY = /([?&](?:state|code_challenge)=)[^&\s"]+/g;
@@ -508,10 +526,16 @@ export class Harness {
   private updateId = 0;
   private callbackId = 0;
   readonly dataDir: string;
+  readonly stepMeta: StepMeta[] = [];
+  /** The database as the previous step left it, to tell the case's own writes apart. */
+  private afterStep: Uint8Array | null = null;
+  fastStoryWaits = false;
 
   constructor(
     readonly meta: CaseContext,
     options: { channels: readonly TestChannelId[]; env?: Record<string, string> | undefined },
+    /** Where this case writes its replay seeds, when it does. */
+    private readonly seeds: string | null = null,
   ) {
     this.dataDir = path.join(TMP, "cases", meta.id);
     fs.rmSync(this.dataDir, { recursive: true, force: true });
@@ -558,7 +582,39 @@ export class Harness {
   async bootstrap(): Promise<void> {
     await this.idle();
     if (this.meta.id !== "bootstrap") this.telegram.calls = [];
-    else this.steps.push({ trigger: "createBot", calls: this.telegram.calls.splice(0) });
+    else {
+      this.checkpoint();
+      this.steps.push({ trigger: "createBot", calls: this.telegram.calls.splice(0) });
+      this.stepDone();
+    }
+  }
+
+  /** Writes what a replay of the next step starts from (only with `--seeds`). */
+  private checkpoint(): void {
+    if (!this.seeds) return;
+    const sqlite = unsafeDb(this.backendDb).sqlite;
+    const index = this.stepMeta.length;
+    const step: StepMeta = { at: new Date().toISOString(), files: Object.fromEntries(this.telegram.files) };
+    const failures = [...this.telegram.failures].filter(([, list]) => list.length);
+    if (failures.length) step.failures = Object.fromEntries(failures.map(([method, list]) => [method, [...list]]));
+    if (this.telegram.hold) step.hold = this.telegram.hold.method;
+    if (this.telegram.opaqueUploads) step.opaqueUploads = true;
+    fs.mkdirSync(this.seeds, { recursive: true });
+    const write = (name: string) => {
+      const target = path.join(this.seeds ?? "", name);
+      fs.rmSync(target, { force: true });
+      sqlite.run("VACUUM INTO ?", [target]);
+    };
+    if (index === 0) write(`${this.meta.id}.db`);
+    else if (this.afterStep && Buffer.compare(Buffer.from(sqlite.serialize()), Buffer.from(this.afterStep)) !== 0) {
+      step.reseed = `${this.meta.id}.step-${index}.db`;
+      write(step.reseed);
+    }
+    this.stepMeta.push(step);
+  }
+
+  private stepDone(): void {
+    if (this.seeds) this.afterStep = unsafeDb(this.backendDb).sqlite.serialize();
   }
 
   user(id = ADMIN): Json {
@@ -703,29 +759,35 @@ export class Harness {
   }
 
   async feed(update: Record<string, Json>, until?: Until): Promise<void> {
+    this.checkpoint();
     const step: Step = { update: sortKeys(update), calls: [] };
     this.steps.push(step);
     await this.bot.handleUpdate(update as never);
     await this.idle(until);
     step.calls = this.telegram.calls.splice(0);
+    this.stepDone();
   }
 
   /** Feeds several updates at once, the way the runner hands a burst to grammY. */
   async feedTogether(updates: Array<Record<string, Json>>): Promise<void> {
+    this.checkpoint();
     const step: Step = { update: updates.map(sortKeys), calls: [] };
     this.steps.push(step);
     await Promise.all(updates.map((update) => this.bot.handleUpdate(update as never)));
     await this.idle();
     step.calls = this.telegram.calls.splice(0);
+    this.stepDone();
   }
 
   /** Anything not driven by an update: a worker tick, a background repaint. */
   async trigger(name: string, run: () => Promise<unknown> | unknown, until?: Until): Promise<void> {
+    this.checkpoint();
     const step: Step = { trigger: name, calls: [] };
     this.steps.push(step);
     await run();
     await this.idle(until);
     step.calls = this.telegram.calls.splice(0);
+    this.stepDone();
   }
 
   note(text: string): void {
@@ -739,6 +801,7 @@ export class Harness {
     const original = this.originalSetTimeout;
     globalThis.setTimeout = ((handler: () => void, ms?: number, ...args: unknown[]) =>
       original(handler, ms === 1000 ? 1 : ms, ...args)) as typeof setTimeout;
+    this.fastStoryWaits = true;
     this.note("The Story-card waiter's one-second polls are shortened to 1 ms (60 polls, then the timeout).");
   }
 
@@ -840,9 +903,12 @@ export type Case = {
   run: (h: Harness) => Promise<void>;
 };
 
-/** Runs one case on its own database, bot and fake Telegram, and returns its golden. */
-export async function record(item: Case): Promise<Json> {
-  const h = new Harness({ id: item.id, specRef: item.specRef }, { channels: item.channels ?? ALL_CHANNELS, env: item.env });
+/** Runs one case on its own database, bot and fake Telegram, and returns its golden.
+ * With `seeds`, it also writes the replay seeds described in the header. */
+export async function record(item: Case, seeds = false): Promise<Json> {
+  const channels = item.channels ?? ALL_CHANNELS;
+  const seedDir = path.join(SEEDS, item.area);
+  const h = new Harness({ id: item.id, specRef: item.specRef }, { channels, env: item.env }, seeds ? seedDir : null);
   try {
     await h.bootstrap();
     await item.run(h);
@@ -859,7 +925,13 @@ export async function record(item: Case): Promise<Json> {
   } finally {
     h.close();
   }
-  return sortKeys({ id: item.id, specRef: item.specRef, seed: h.seed, steps: h.steps });
+  const golden = sortKeys({ id: item.id, specRef: item.specRef, seed: h.seed, steps: h.steps });
+  if (seeds) {
+    const meta = { id: item.id, area: item.area, channels, env: item.env ?? {}, fastStoryWait: h.fastStoryWaits, steps: h.stepMeta };
+    fs.writeFileSync(path.join(seedDir, `${item.id}.meta.json`), `${JSON.stringify(meta, null, 2)}\n`);
+    fs.writeFileSync(path.join(seedDir, `${item.id}.golden.json`), `${JSON.stringify(golden, null, 2)}\n`);
+  }
+  return golden;
 }
 
 export function prepareFixtures(): Promise<void> {

@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { CASES } from "./bot-goldens/cases.ts";
-import { OUT, prepareFixtures, ROOT, record } from "./bot-goldens/harness.ts";
+import { OUT, prepareFixtures, ROOT, record, SEEDS } from "./bot-goldens/harness.ts";
 
 /**
  * Records the Telegram bot goldens under parity/bot-goldens/. See
@@ -11,9 +11,23 @@ import { OUT, prepareFixtures, ROOT, record } from "./bot-goldens/harness.ts";
  *
  *   bun scripts/rust/bot-goldens.ts            # every case; stale case files are removed
  *   bun scripts/rust/bot-goldens.ts <filter>   # only case ids containing <filter>
+ *   bun scripts/rust/bot-goldens.ts --seeds    # replay seeds for the Rust test instead
+ *                                              # (_trash-rust/tmp/bot-goldens-seeds; parity/ untouched)
  */
-const filter = process.argv[2];
+const seeds = process.argv[2] === "--seeds";
+const filter = process.argv[seeds ? 3 : 2];
 await prepareFixtures();
+if (seeds) {
+  if (!filter) fs.rmSync(SEEDS, { recursive: true, force: true });
+  let count = 0;
+  for (const item of CASES) {
+    if (filter && !item.id.includes(filter)) continue;
+    await record(item, true);
+    count += 1;
+  }
+  console.log(`wrote replay seeds for ${count} cases to ${path.relative(ROOT, SEEDS)}`);
+  process.exit(0);
+}
 if (!filter && fs.existsSync(OUT))
   for (const entry of fs.readdirSync(OUT, { withFileTypes: true }))
     if (entry.isDirectory()) fs.rmSync(path.join(OUT, entry.name), { recursive: true });
