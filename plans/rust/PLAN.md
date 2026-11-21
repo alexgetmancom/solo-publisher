@@ -20,15 +20,15 @@ Branch `rust`; `main` stays the production line until one cutover commit. CI dep
   and schema — no data migration. Drizzle migration bookkeeping is read, not rewritten.
 - Telegram: raw Bot API client (`teloxide-core` requests only) + own router, because callback_data must be
   byte-compatible with today's keyboards, including `@grammyjs/menu` encoded buttons already sitting in chats.
-- i18n: `catalog.ts` is exported once to `locales/{en,ru}.json` (all 531 keys) and embedded; same placeholders,
-  same plural rules (CLDR via `icu`-free hand rules matching today's output, verified by goldens).
+- i18n: Russian only (DECISIONS). The `ru` half of `catalog.ts` is exported once to `locales/ru.json` and embedded;
+  same placeholders, same Russian plural rules, verified by goldens. No interface-language switch.
 
 ## Parity method for the bot (the core guarantee)
 
 1. In the TS tree add a golden dumper: seed fixture DB (`scripts/fixtures/site-fixture.ts`) → for every screen and
    flow step in spec §10 record `{method, text, parse_mode, reply_markup}` exactly as grammY would send it.
-2. Rust renders the same fixtures; a test diffs byte-for-byte against the goldens (93 screens, 50 publication
-   actions, 13 flows, 531 strings).
+2. Rust renders the same fixtures; a test diffs byte-for-byte against the goldens (93 screens minus the language
+   screen, 50 publication actions, 13 flows, every `ru` string); goldens are recorded with the actor locale `ru`.
 3. Callback replay: feed recorded callback_data (incl. menu-plugin format and stale cards) to Rust and compare
    the resulting effects.
 A screen is "done" only when its golden matches.

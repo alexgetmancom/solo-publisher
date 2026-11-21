@@ -5,3 +5,4 @@
 - 2026-11-21 Telegram Stories (MTProto, mtcute) stay in TypeScript as a small sidecar; Rust calls it.
 - 2026-11-21 Tests: port only the key ones (delivery invariants, callback/parity contracts, public site contract, DB/migration guards), not all 1,146.
 - 2026-11-21 All Rust build output / temp files go to `_trash-rust/` (git-excluded, `rm -rf _trash-rust` to clean).
+- 2026-11-21 Bot interface is Russian only: no `en` interface locale, no 🌐 Language settings screen (spec §4.10.6), only `ru` catalog strings are ported; menu fingerprint/locale-dependent bits use `ru` constantly. English CONTENT stays: English posts, `en` targets/channels, `schedule_en`, the `en` queue filter are unchanged. Code, comments and logs remain English (repo rule).
