@@ -15,91 +15,69 @@ use bot::Fut;
 pub type Trigger = for<'a> fn(&'a Harness) -> Fut<'a, Result<Vec<Value>, String>>;
 
 pub const TRIGGERS: &[(&str, Trigger)] = &[
-    ("album worker tick (+5 s)", album_worker_tick),
+    ("album worker tick (+5 s)", telegram_albums),
     (
         "Story worker finishes the cards while the bot waits",
         story_worker_finishes,
     ),
-    ("telegram-events tick", telegram_events_tick),
-    ("telegram-alerts tick", telegram_alerts_tick),
-    ("notification jobs cycle", notification_jobs_cycle),
-    ("telegram-translations tick", telegram_translations_tick),
-    ("telegram-daily-backup tick (12:00 MSK)", telegram_daily_backup_tick),
-    (
-        "telegram-daily-backup tick (again the same day)",
-        telegram_daily_backup_tick,
-    ),
-    ("telegram-daily-backup tick (next day)", telegram_daily_backup_tick),
+    ("telegram-events tick", telegram_events),
+    ("telegram-alerts tick", telegram_alerts),
+    ("notification jobs cycle", notifications),
+    ("telegram-translations tick", telegram_translations),
+    ("telegram-daily-backup tick (12:00 MSK)", telegram_daily_backup),
+    ("telegram-daily-backup tick (again the same day)", telegram_daily_backup),
+    ("telegram-daily-backup tick (next day)", telegram_daily_backup),
+    // loops/: each loop's own task (`bot::workers`).
+    ("telegram-events loop", telegram_events),
+    ("telegram-translations loop", telegram_translations),
+    ("telegram-albums loop", telegram_albums),
+    ("telegram-alerts loop", telegram_alerts),
+    ("telegram-daily-backup loop", telegram_daily_backup),
+    ("notifications loop", notifications),
 ];
 
 fn failed(error: bot::Error) -> String {
     error.to_string()
 }
 
-/// One `consumeTelegramEvents` pass (the `telegram-events` loop).
-fn telegram_events_tick(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
-    Box::pin(async move {
-        bot::screens::notices::consume_telegram_events(&harness.bot)
-            .await
-            .map_err(failed)?;
-        harness.bot.settled().await;
-        Ok(harness.telegram.take_calls())
-    })
+/// One tick of a loop's task, then the calls it made once the bot is quiet.
+async fn tick(harness: &Harness, task: impl Future<Output = bot::Result<()>>) -> Result<Vec<Value>, String> {
+    task.await.map_err(failed)?;
+    harness.bot.settled().await;
+    Ok(harness.telegram.take_calls())
 }
 
-/// One `deliverPendingAlerts` pass with the worker's transport (the
-/// `telegram-alerts` loop).
-fn telegram_alerts_tick(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
-    Box::pin(async move {
-        bot::screens::notices::deliver_alerts(&harness.bot)
-            .await
-            .map_err(failed)?;
-        harness.bot.settled().await;
-        Ok(harness.telegram.take_calls())
-    })
+fn telegram_events(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
+    Box::pin(tick(harness, bot::workers::telegram_events(&harness.bot)))
+}
+
+fn telegram_alerts(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
+    Box::pin(tick(harness, bot::workers::telegram_alerts(&harness.bot)))
+}
+
+/// The translation loop, its DeepSeek the golden one.
+fn telegram_translations(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
+    Box::pin(tick(
+        harness,
+        bot::workers::telegram_translations(&harness.bot, &harness.http),
+    ))
+}
+
+fn telegram_daily_backup(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
+    Box::pin(tick(harness, bot::workers::telegram_daily_backup(&harness.bot)))
+}
+
+/// The step's clock is already past the settle window.
+fn telegram_albums(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
+    Box::pin(tick(harness, bot::workers::telegram_albums(&harness.bot)))
 }
 
 /// `runNotificationCycle`: the Notifications worker, which sends nothing itself.
-fn notification_jobs_cycle(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
+fn notifications(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
     Box::pin(async move {
         let deps = harness.bot.deps();
-        super::notification_worker::run_notification_cycle(db::unsafe_db(&deps.db), &*deps.clock)
+        domain::notifications::run_notification_cycle(db::unsafe_db(&deps.db), &*deps.clock)
             .map_err(|error| error.to_string())?;
-        Ok(harness.telegram.take_calls())
-    })
-}
-
-/// `runTranslationCycle`, then each translated draft's card repainted.
-fn telegram_translations_tick(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
-    Box::pin(async move {
-        let translated = super::translations::run_translation_cycle(harness, &harness.seed)?;
-        bot::screens::notices::refresh_translated_drafts(&harness.bot, &translated)
-            .await
-            .map_err(failed)?;
-        harness.bot.settled().await;
-        Ok(harness.telegram.take_calls())
-    })
-}
-
-/// One `sendDailyBackup` pass (the `telegram-daily-backup` loop).
-fn telegram_daily_backup_tick(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
-    Box::pin(async move {
-        bot::screens::notices::send_daily_backup(&harness.bot)
-            .await
-            .map_err(failed)?;
-        harness.bot.settled().await;
-        Ok(harness.telegram.take_calls())
-    })
-}
-
-/// One `telegram-albums` pass (`finalizePendingAlbums`); the step's clock is
-/// already past the settle window.
-fn album_worker_tick(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
-    Box::pin(async move {
-        bot::albums::finalize_pending_albums(&harness.bot)
-            .await
-            .map_err(|error| error.to_string())?;
-        harness.bot.settled().await;
         Ok(harness.telegram.take_calls())
     })
 }

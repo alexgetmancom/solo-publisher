@@ -1,0 +1,327 @@
+{
+  "id": "loop-alerts",
+  "seed": [
+    "Event #1 credential.failed (no ref) {} created at 2026-08-20T09:00:00.000Z.",
+    "Event #2 site.build.failed (no ref) {} created at 2026-08-20T09:00:00.000Z.",
+    "Event #3 publish.job.published (no ref) {} created at 2026-08-20T09:00:00.000Z.",
+    "Event #4 credential.failed (no ref) {} created at 2026-08-20T09:00:00.000Z.",
+    "Event #5 digest.failed (no ref) {} created at 2026-08-20T09:00:00.000Z.",
+    "Event #6 video.target.failed (no ref) {} created at 2026-08-20T09:00:00.000Z.",
+    "sendMessage answers 403 'Forbidden: bot was blocked by the user' once.",
+    "Clock moved to 2026-08-20T10:00:01.000Z.",
+    "Event #7 credential.failed (no ref) {} created at 2026-08-20T10:00:01.000Z."
+  ],
+  "specRef": "§7.7 alerts: severity filter, subject cooldown, 4000-unit cut, failed send stays settled",
+  "steps": [
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "[ERROR] x\nX rejected the token"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "[WARN] site.build.failed\nSite build failed: timeout"
+          }
+        },
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "[ERROR] digest.failed\nОтчёт: ыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыыы"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 1,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "site.build.failed",
+              "id": 2,
+              "severity": "warn"
+            },
+            {
+              "acked_at": null,
+              "event_type": "publish.job.published",
+              "id": 3,
+              "severity": "info"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 4,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "digest.failed",
+              "id": 5,
+              "severity": "error"
+            }
+          ],
+          "sql": "SELECT id, event_type, severity, acked_at FROM publication_events ORDER BY id"
+        },
+        {
+          "rows": [
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "3b2757561d0f096b081f683af940424af7ada83f2e36a4c783a4d68849b9d935",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "4ee8f3e00dbbed7b6084137f6f9c875f5caeb1b7db6155653614ee07911893db",
+              "suppressed_count": 1
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "8a1f89b73dbf66cfcc3ff7468f077d49bd65ae42c91afcaebd7c238272ee5cfd",
+              "suppressed_count": 0
+            }
+          ],
+          "sql": "SELECT alert_key AS subject_sha256, last_sent_at, suppressed_count FROM alert_dedup ORDER BY last_sent_at, alert_key"
+        }
+      ],
+      "trigger": "telegram-alerts loop"
+    },
+    {
+      "calls": [],
+      "db": [
+        {
+          "rows": [
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 1,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "site.build.failed",
+              "id": 2,
+              "severity": "warn"
+            },
+            {
+              "acked_at": null,
+              "event_type": "publish.job.published",
+              "id": 3,
+              "severity": "info"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 4,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "digest.failed",
+              "id": 5,
+              "severity": "error"
+            }
+          ],
+          "sql": "SELECT id, event_type, severity, acked_at FROM publication_events ORDER BY id"
+        },
+        {
+          "rows": [
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "3b2757561d0f096b081f683af940424af7ada83f2e36a4c783a4d68849b9d935",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "4ee8f3e00dbbed7b6084137f6f9c875f5caeb1b7db6155653614ee07911893db",
+              "suppressed_count": 1
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "8a1f89b73dbf66cfcc3ff7468f077d49bd65ae42c91afcaebd7c238272ee5cfd",
+              "suppressed_count": 0
+            }
+          ],
+          "sql": "SELECT alert_key AS subject_sha256, last_sent_at, suppressed_count FROM alert_dedup ORDER BY last_sent_at, alert_key"
+        }
+      ],
+      "trigger": "telegram-alerts loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "[WARN] youtube_shorts\nYouTube quota exceeded"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 1,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "site.build.failed",
+              "id": 2,
+              "severity": "warn"
+            },
+            {
+              "acked_at": null,
+              "event_type": "publish.job.published",
+              "id": 3,
+              "severity": "info"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 4,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "digest.failed",
+              "id": 5,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "video.target.failed",
+              "id": 6,
+              "severity": "warn"
+            }
+          ],
+          "sql": "SELECT id, event_type, severity, acked_at FROM publication_events ORDER BY id"
+        },
+        {
+          "rows": [
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "2de43c8c69dc2d42e37d83af6e170a292c5a16205bdec55ca2e284cf8369333d",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "3b2757561d0f096b081f683af940424af7ada83f2e36a4c783a4d68849b9d935",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "4ee8f3e00dbbed7b6084137f6f9c875f5caeb1b7db6155653614ee07911893db",
+              "suppressed_count": 1
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "8a1f89b73dbf66cfcc3ff7468f077d49bd65ae42c91afcaebd7c238272ee5cfd",
+              "suppressed_count": 0
+            }
+          ],
+          "sql": "SELECT alert_key AS subject_sha256, last_sent_at, suppressed_count FROM alert_dedup ORDER BY last_sent_at, alert_key"
+        }
+      ],
+      "trigger": "telegram-alerts loop"
+    },
+    {
+      "calls": [
+        {
+          "method": "sendMessage",
+          "payload": {
+            "chat_id": 1001,
+            "text": "[ERROR] x\nX rejected the token"
+          }
+        }
+      ],
+      "db": [
+        {
+          "rows": [
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 1,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "site.build.failed",
+              "id": 2,
+              "severity": "warn"
+            },
+            {
+              "acked_at": null,
+              "event_type": "publish.job.published",
+              "id": 3,
+              "severity": "info"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "credential.failed",
+              "id": 4,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "digest.failed",
+              "id": 5,
+              "severity": "error"
+            },
+            {
+              "acked_at": "2026-08-20T09:00:00.000Z",
+              "event_type": "video.target.failed",
+              "id": 6,
+              "severity": "warn"
+            },
+            {
+              "acked_at": "2026-08-20T10:00:01.000Z",
+              "event_type": "credential.failed",
+              "id": 7,
+              "severity": "error"
+            }
+          ],
+          "sql": "SELECT id, event_type, severity, acked_at FROM publication_events ORDER BY id"
+        },
+        {
+          "rows": [
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "2de43c8c69dc2d42e37d83af6e170a292c5a16205bdec55ca2e284cf8369333d",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "3b2757561d0f096b081f683af940424af7ada83f2e36a4c783a4d68849b9d935",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T09:00:00.000Z",
+              "subject_sha256": "8a1f89b73dbf66cfcc3ff7468f077d49bd65ae42c91afcaebd7c238272ee5cfd",
+              "suppressed_count": 0
+            },
+            {
+              "last_sent_at": "2026-08-20T10:00:01.000Z",
+              "subject_sha256": "4ee8f3e00dbbed7b6084137f6f9c875f5caeb1b7db6155653614ee07911893db",
+              "suppressed_count": 0
+            }
+          ],
+          "sql": "SELECT alert_key AS subject_sha256, last_sent_at, suppressed_count FROM alert_dedup ORDER BY last_sent_at, alert_key"
+        }
+      ],
+      "trigger": "telegram-alerts loop"
+    }
+  ]
+}

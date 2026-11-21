@@ -465,6 +465,37 @@ static NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"name="([^"]+)""#).
 static FILENAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"filename=("?)([^\r\n"]*)"?"#).unwrap());
 static CONTENT_TYPE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)content-type:([^\r\n]+)").unwrap());
 
+/// The recorder's `sqliteSummary`: what an opaque upload (a SQLite backup) is
+/// checked for instead of its bytes — that it opens and passes
+/// `integrity_check`, and the tables it holds.
+fn sqlite_summary(content: &[u8]) -> (Value, Value) {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let path = std::env::temp_dir().join(format!(
+        "bot-goldens-upload-{}-{}.db",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::write(&path, content).unwrap();
+    let summary = {
+        let sqlite =
+            db::rusqlite::Connection::open_with_flags(&path, db::rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        let integrity: String = sqlite
+            .query_row("PRAGMA integrity_check", [], |row| row.get(0))
+            .unwrap();
+        let tables: Vec<String> = sqlite
+            .prepare("select name from sqlite_master where type = 'table' order by name")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        (json!(integrity), json!(tables))
+    };
+    let _ = std::fs::remove_file(&path);
+    summary
+}
+
 /// The recorder's `parseMultipart` + `multipartPayload`.
 fn multipart_payload(bytes: &[u8], content_type: &str, opaque: bool, tmp: &str) -> Value {
     let boundary = content_type
@@ -496,10 +527,14 @@ fn multipart_payload(bytes: &[u8], content_type: &str, opaque: bool, tmp: &str) 
                     .captures(&head)
                     .map(|captures| captures[1].trim().to_owned())
                     .unwrap_or_default();
-                files.insert(
-                    name,
-                    json!({"file": {"name": filename[2].to_owned(), "contentType": content_type, "sha256": sha, "size": size}}),
-                );
+                let mut file =
+                    json!({"name": filename[2].to_owned(), "contentType": content_type, "sha256": sha, "size": size});
+                if opaque {
+                    let (integrity, tables) = sqlite_summary(content);
+                    file["integrity"] = integrity;
+                    file["tables"] = tables;
+                }
+                files.insert(name, json!({ "file": file }));
             }
             None => fields.push((name, String::from_utf8_lossy(content).into_owned())),
         }

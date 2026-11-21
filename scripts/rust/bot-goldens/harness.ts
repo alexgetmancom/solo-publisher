@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import { setSystemTime } from "bun:test";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -21,7 +22,10 @@ import { registerTestChannels, type TestChannelId } from "../../../apps/backend/
  *   bun scripts/rust/bot-goldens.ts <filter>   # case ids containing <filter> (does not prune others)
  *
  * Output: parity/bot-goldens/<area>/<case-id>.json, one file per case:
- *   { id, specRef, seed, steps: [{ update | trigger, calls: [{ method, payload }] }] }
+ *   { id, specRef, seed, steps: [{ update | trigger, calls: [{ method, payload }], db? }] }
+ * A case that calls `h.watch(sql…)` also records, after every later step, what
+ * each of those queries returns (`db: [{ sql, rows }]`, columns sorted): the
+ * database effects a worker tick leaves, which a replay compares as it does calls.
  *
  * How calls are captured: grammY's `ApiClientOptions.fetch` is injected into
  * every Bot the process creates (by wrapping `createRawApi`, the factory grammY's
@@ -65,7 +69,9 @@ import { registerTestChannels, type TestChannelId } from "../../../apps/backend/
  *   `reply_markup` and `media` parsed). Each uploaded file becomes
  *   `{ file: { name, contentType, sha256, size } }` in place of its random
  *   `attach://<id>` reference. The daily database backup's sha256 and size are
- *   written as `<sqlite backup>` (its bytes depend on SQLite's page layout).
+ *   written as `<sqlite backup>` (its bytes depend on SQLite's page layout); what
+ *   is recorded instead is that the file opens as SQLite (`integrity`, from
+ *   `PRAGMA integrity_check`) and the tables it holds (`tables`).
  * - `method: "http"` entries carry method and URL; a body is kept only for the
  *   deploy agent (a provider's request — translator, Zernio — is not bot output).
  * - Absolute paths under the run's temporary directory are written as
@@ -130,7 +136,8 @@ type Config = ReturnType<typeof loadRuntimeConfig>;
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type Call = { method: string; transport?: "multipart"; payload: Json };
-type Step = { update?: Json; trigger?: string; calls: Call[] };
+type Effect = { sql: string; rows: Json[] };
+type Step = { update?: Json; trigger?: string; calls: Call[]; db?: Effect[] };
 /** What a replay needs to put in place before one step (see the header). */
 type StepMeta = {
   at: string;
@@ -165,11 +172,15 @@ async function bodyBytes(body: unknown): Promise<Buffer> {
 }
 
 /** Splits a grammY multipart body into its named fields and files. */
-function parseMultipart(bytes: Buffer, contentType: string): { fields: Record<string, string>; files: Record<string, Json> } {
+function parseMultipart(
+  bytes: Buffer,
+  contentType: string,
+): { fields: Record<string, string>; files: Record<string, Json>; contents: Record<string, Buffer> } {
   const boundary = /boundary=(.+)$/.exec(contentType)?.[1];
   if (!boundary) throw new Error(`multipart without boundary: ${contentType}`);
   const fields: Record<string, string> = {};
   const files: Record<string, Json> = {};
+  const contents: Record<string, Buffer> = {};
   const marker = Buffer.from(`--${boundary}`);
   let start = bytes.indexOf(marker) + marker.length;
   while (start > marker.length - 1) {
@@ -181,7 +192,8 @@ function parseMultipart(bytes: Buffer, contentType: string): { fields: Record<st
     const content = part.subarray(split + 4);
     const name = /name="([^"]+)"/.exec(head)?.[1] ?? "";
     const filename = /filename=("?)([^\r\n"]*)\1/.exec(head)?.[2];
-    if (filename !== undefined)
+    if (filename !== undefined) {
+      contents[name] = content;
       files[name] = {
         file: {
           name: filename,
@@ -190,19 +202,35 @@ function parseMultipart(bytes: Buffer, contentType: string): { fields: Record<st
           size: content.length,
         },
       };
-    else fields[name] = content.toString("utf8");
+    } else fields[name] = content.toString("utf8");
     start = end + marker.length;
   }
-  return { fields, files };
+  return { fields, files, contents };
+}
+
+/** What an opaque upload (a SQLite backup) is checked for instead of its bytes. */
+function sqliteSummary(content: Buffer): Record<string, Json> {
+  const database = Database.deserialize(content, true);
+  try {
+    const integrity = database.query<{ integrity_check: string }, []>("PRAGMA integrity_check").get()?.integrity_check ?? null;
+    const tables = database
+      .query<{ name: string }, []>("select name from sqlite_master where type = 'table' order by name")
+      .all()
+      .map((row) => row.name);
+    return { integrity, tables };
+  } finally {
+    database.close();
+  }
 }
 
 function multipartPayload(bytes: Buffer, contentType: string, opaque: boolean): Json {
-  const { fields, files } = parseMultipart(bytes, contentType);
+  const { fields, files, contents } = parseMultipart(bytes, contentType);
   if (opaque)
-    for (const file of Object.values(files)) {
+    for (const [name, file] of Object.entries(files)) {
       const descriptor = (file as { file: Record<string, Json> }).file;
       descriptor.sha256 = "<sqlite backup>";
       descriptor.size = "<sqlite backup>";
+      Object.assign(descriptor, sqliteSummary(contents[name] ?? Buffer.alloc(0)));
     }
   const attach = (value: unknown): unknown => {
     if (typeof value === "string" && value.startsWith("attach://")) return files[value.slice("attach://".length)] ?? value;
@@ -530,6 +558,8 @@ export class Harness {
   /** The database as the previous step left it, to tell the case's own writes apart. */
   private afterStep: Uint8Array | null = null;
   fastStoryWaits = false;
+  /** Queries recorded after every step from `watch` on (see the header). */
+  private readonly watched: string[] = [];
 
   constructor(
     readonly meta: CaseContext,
@@ -611,6 +641,21 @@ export class Harness {
       write(step.reseed);
     }
     this.stepMeta.push(step);
+  }
+
+  /** Records, after every later step, what these queries return. */
+  watch(...queries: string[]): void {
+    this.watched.push(...queries);
+  }
+
+  /** The step's calls, and what the watched queries return after it. */
+  private finish(step: Step): void {
+    step.calls = this.telegram.calls.splice(0);
+    if (this.watched.length) {
+      const { sqlite } = unsafeDb(this.backendDb);
+      step.db = this.watched.map((sql) => ({ sql, rows: sqlite.prepare(sql).all().map(sortKeys) }));
+    }
+    this.stepDone();
   }
 
   private stepDone(): void {
@@ -764,8 +809,7 @@ export class Harness {
     this.steps.push(step);
     await this.handle(update);
     await this.idle(until);
-    step.calls = this.telegram.calls.splice(0);
-    this.stepDone();
+    this.finish(step);
   }
 
   /** One update as the runner hands it to grammY: a handler that throws
@@ -781,8 +825,7 @@ export class Harness {
     this.steps.push(step);
     await Promise.all(updates.map((update) => this.handle(update)));
     await this.idle();
-    step.calls = this.telegram.calls.splice(0);
-    this.stepDone();
+    this.finish(step);
   }
 
   /** Anything not driven by an update: a worker tick, a background repaint. */
@@ -792,8 +835,7 @@ export class Harness {
     this.steps.push(step);
     await run();
     await this.idle(until);
-    step.calls = this.telegram.calls.splice(0);
-    this.stepDone();
+    this.finish(step);
   }
 
   note(text: string): void {

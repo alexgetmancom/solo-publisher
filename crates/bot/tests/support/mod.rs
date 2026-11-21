@@ -13,13 +13,12 @@
 //! (`_trash-rust/tmp/bot-tests/<pid>-<n>-<label>/`, removed when the case is
 //! done), so test threads and concurrent `cargo test` runs never share a file.
 
+pub mod deepseek;
 pub mod deploy_agent;
 pub mod host;
 pub mod media_probe;
-pub mod notification_worker;
 pub mod pending;
 pub mod telegram;
-pub mod translations;
 pub mod triggers;
 pub mod zernio;
 
@@ -37,9 +36,11 @@ use db::BackendDb;
 use foundation::config::{SharedConfig, load_config};
 use foundation::i18n::{Key, t};
 use jiff::Timestamp;
+use runtime::http::HttpClient;
 use serde_json::{Value, json};
 use std::future::Future;
 
+use deepseek::GoldenDeepSeek;
 use deploy_agent::GoldenDeployAgent;
 use host::{FixedClock, GoldenAdapters, GoldenHost};
 use telegram::FakeTelegram;
@@ -389,6 +390,9 @@ pub struct Harness {
     pub clock: Rc<FixedClock>,
     pub deploy_agent: Rc<GoldenDeployAgent>,
     pub zernio: Rc<GoldenZernio>,
+    pub deepseek: Rc<GoldenDeepSeek>,
+    /// The HTTP client the worker loops are started with, on the golden DeepSeek.
+    pub http: HttpClient,
     /// What the bot sent while it was built (`setMyCommands`).
     pub construction: Vec<Value>,
     /// The case's seed notes: what the recorder put in place outside the bot.
@@ -406,6 +410,8 @@ impl Harness {
         let telegram = Rc::new(FakeTelegram::new(&recorder_tmp().display().to_string(), bot_user()));
         let deploy_agent = Rc::new(GoldenDeployAgent::new(telegram.clone()));
         let zernio = Rc::new(GoldenZernio::new(telegram.clone()));
+        let deepseek = Rc::new(GoldenDeepSeek::new(telegram.clone()));
+        let http = HttpClient::new(deepseek.clone());
         let config = SharedConfig::new(config);
         let bot = Bot::new(BotDeps {
             db,
@@ -432,6 +438,8 @@ impl Harness {
             clock,
             deploy_agent,
             zernio,
+            deepseek,
+            http,
             construction,
             seed: Value::Null,
             _scratch: scratch,
@@ -536,6 +544,7 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
     harness.seed = golden["seed"].clone();
     harness.deploy_agent.script(&golden["seed"]);
     harness.zernio.script(&golden["seed"], &harness.bot.deps().config);
+    harness.deepseek.script(&golden["seed"]);
     // The Story-card waiter outlives the tap that started it; with the
     // recorder's shortened polls (`fastStoryWait`) a step lasts until it ends.
     let fast_story_wait = meta["fastStoryWait"] == json!(true);
@@ -598,8 +607,51 @@ async fn replay_case(area: &str, case: &str, count: usize) -> Result<(), String>
         if !same {
             return Err(describe_difference(index, &expected_calls, &actual));
         }
+        let effects = database_effects(db::unsafe_db(&harness.bot.deps().db), &expected["db"]);
+        if effects != expected["db"] {
+            return Err(format!(
+                "step {index}: database effects differ\n--- expected (golden)\n{}\n--- actual (Rust)\n{}",
+                serde_json::to_string_pretty(&expected["db"]).unwrap(),
+                serde_json::to_string_pretty(&effects).unwrap()
+            ));
+        }
     }
     Ok(())
+}
+
+/// What the step's watched queries (`h.watch` in the recorder) return on the
+/// Rust bot's database, as the recorder writes them: each row an object with
+/// sorted keys. `Null` when the step watches nothing.
+fn database_effects(sqlite: &db::rusqlite::Connection, watched: &Value) -> Value {
+    use db::rusqlite::types::ValueRef;
+    let Some(watched) = watched.as_array() else {
+        return Value::Null;
+    };
+    let effects = watched.iter().map(|effect| {
+        let sql = effect["sql"].as_str().unwrap();
+        let mut statement = sqlite.prepare(sql).unwrap_or_else(|error| panic!("{sql}: {error}"));
+        let columns: Vec<String> = statement.column_names().map(str::to_owned).collect();
+        let rows: Vec<Value> = statement
+            .query_map([], |row| {
+                let mut object = serde_json::Map::new();
+                for (index, column) in columns.iter().enumerate() {
+                    let value = match row.get_ref(index)? {
+                        ValueRef::Null => Value::Null,
+                        ValueRef::Integer(value) => json!(value),
+                        ValueRef::Real(value) => json!(value),
+                        ValueRef::Text(text) => json!(String::from_utf8_lossy(text)),
+                        ValueRef::Blob(_) => panic!("{sql}: a watched query returns a blob"),
+                    };
+                    object.insert(column.clone(), value);
+                }
+                Ok(Value::Object(object))
+            })
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        json!({"sql": sql, "rows": telegram::sort_keys(&Value::Array(rows), &recorder_tmp().display().to_string())})
+    });
+    Value::Array(effects.collect())
 }
 
 /// How long one step may take before the case fails as hung.

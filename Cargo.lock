@@ -142,6 +142,7 @@ dependencies = [
  "jiff",
  "regex",
  "reqwest",
+ "runtime",
  "rusqlite",
  "serde",
  "serde_json",

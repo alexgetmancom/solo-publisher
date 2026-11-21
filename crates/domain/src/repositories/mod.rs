@@ -23,7 +23,7 @@ pub use conversation_sessions::ConversationSessionStore;
 pub use draft_translations::DraftTranslationStore;
 pub use drafts::DraftStore;
 pub use entity_enrichment::EntityEnrichmentStore;
-pub use events::{EventStore, record_event};
+pub use events::{EventStore, record_event, set_event_bell};
 pub use studio_media_assets::StudioMediaAssetStore;
 pub use studio_posts::StudioPostStore;
 pub use studio_queue::StudioQueueStore;

@@ -50,6 +50,11 @@ fn intake() {
 }
 
 #[test]
+fn loops() {
+    check("loops");
+}
+
+#[test]
 fn notices() {
     check("notices");
 }
@@ -85,6 +90,7 @@ fn the_pending_allowlist_matches_the_registry() {
         "deploy",
         "entry",
         "intake",
+        "loops",
         "notices",
         "post",
         "queue",

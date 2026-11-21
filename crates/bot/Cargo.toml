@@ -19,6 +19,7 @@ indexmap = "2"
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+runtime = { path = "../runtime" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 tokio = { version = "1", features = ["rt", "time", "sync", "macros", "fs"] }
