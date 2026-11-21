@@ -1,0 +1,1992 @@
+{
+  "clock": "2026-11-21T10:00:00.000Z",
+  "config": {
+    "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+    "PUBLIC_BASE_URL": "https://studio.test/",
+    "COMMAND_CENTER_TOKEN": "test-command-token",
+    "STUDIO_ACTOR_IDS": "42"
+  },
+  "ignoredTables": ["runtime_usage"],
+  "setup": ["UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'"],
+  "scenarios": [
+    {
+      "name": "meta renewal",
+      "config": {
+        "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+        "INSTAGRAM_EN_ACCESS_TOKEN": "test-token-instagram-en",
+        "INSTAGRAM_EN_USER_ID": "test-ig-user-en"
+      },
+      "steps": [
+        {
+          "call": "meta.renew",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-ru-renewed",
+                "expires_in": 5183944
+              }
+            },
+            {
+              "status": 400,
+              "body": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}"
+            }
+          ]
+        },
+        {
+          "call": "meta.renew",
+          "args": [],
+          "responses": [
+            {
+              "status": 429,
+              "body": "{\"error\":\"rate limited\"}",
+              "headers": [["retry-after", "120"]]
+            }
+          ]
+        },
+        {
+          "clock": "2026-12-10T10:00:00.000Z"
+        },
+        {
+          "call": "meta.renew",
+          "args": [],
+          "responses": [
+            {
+              "status": 401,
+              "body": "{\"error\":{\"message\":\"Invalid OAuth access token\",\"code\":190}}"
+            }
+          ]
+        },
+        {
+          "clock": "2026-12-22T10:00:00.000Z"
+        },
+        {
+          "call": "meta.renew",
+          "args": [],
+          "responses": [
+            {
+              "throws": "network is unreachable"
+            },
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer"
+              }
+            }
+          ]
+        },
+        {
+          "call": "meta.renew",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-ru-third"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-instagram-en-renewed"
+              }
+            }
+          ]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "meta stored tokens against env",
+      "config": {
+        "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru-replaced",
+        "THREADS_EN_ACCESS_TOKEN": "test-token-threads-en-env",
+        "INSTAGRAM_RU_ACCESS_TOKEN": "test-token-instagram-ru-env"
+      },
+      "steps": [
+        {
+          "call": "tokens.seed",
+          "args": [
+            "threads_ru",
+            {
+              "token": "test-token-threads-ru-stored",
+              "seed": "test-token-threads-ru-old",
+              "refreshedAt": "2026-11-01T10:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "tokens.seed",
+          "args": [
+            "threads_en",
+            {
+              "token": "test-token-threads-en-connected",
+              "refreshedAt": "2026-11-20T10:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "tokens.seed",
+          "args": [
+            "instagram_ru",
+            {
+              "token": "test-token-instagram-ru-stored",
+              "seed": "test-token-instagram-ru-env",
+              "accountId": "test-ig-user-ru",
+              "refreshedAt": "2026-10-01T10:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "tokens.seed",
+          "args": [
+            "instagram_en",
+            {
+              "token": "test-token-instagram-en-stored",
+              "refreshedAt": "2026-11-20T10:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE platform_tokens SET sealed_token = 'garbage.value.here' WHERE target = 'instagram_en'"
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        },
+        {
+          "call": "meta.renew",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-ru-renewed"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-instagram-ru-renewed"
+              }
+            }
+          ]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "meta oauth links and state",
+      "config": {
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret"
+      },
+      "steps": [
+        {
+          "call": "meta.connectUrl",
+          "args": ["threads", "ru"],
+          "bind": "threadsLink"
+        },
+        {
+          "call": "meta.connectPath",
+          "args": ["instagram", "en"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["threads", "ru"],
+          "bind": "threadsStart"
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "threadsStart.url"
+            }
+          ],
+          "bind": "threads"
+        },
+        {
+          "call": "meta.verify",
+          "args": [
+            {
+              "$": "threads.state"
+            }
+          ]
+        },
+        {
+          "call": "meta.authorizeUrl",
+          "args": [
+            {
+              "$": "threads.state"
+            }
+          ]
+        },
+        {
+          "call": "meta.authorize",
+          "args": ["instagram"]
+        },
+        {
+          "call": "meta.verify",
+          "args": ["abc"]
+        },
+        {
+          "call": "meta.verify",
+          "args": [".abc"]
+        },
+        {
+          "call": "meta.verify",
+          "args": ["eyJwbGF0Zm9ybSI6InRocmVhZHMifQ.c2lnbmF0dXJl"]
+        },
+        {
+          "call": "util.tamper",
+          "args": [
+            {
+              "$": "threads.state"
+            }
+          ],
+          "bind": "tampered"
+        },
+        {
+          "call": "meta.verify",
+          "args": [
+            {
+              "$": "tampered.value"
+            }
+          ]
+        },
+        {
+          "call": "connect.start",
+          "args": ["instagram", "en"],
+          "bind": "instagramStart"
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "instagramStart.url"
+            }
+          ],
+          "bind": "instagram"
+        },
+        {
+          "call": "meta.verify",
+          "args": [
+            {
+              "$": "instagram.state"
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-21T10:10:00.000Z"
+        },
+        {
+          "call": "meta.verify",
+          "args": [
+            {
+              "$": "threads.state"
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-21T10:10:00.001Z"
+        },
+        {
+          "call": "meta.verify",
+          "args": [
+            {
+              "$": "threads.state"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "meta oauth unconfigured",
+      "config": {
+        "TOKEN_ENCRYPTION_KEY": "",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret"
+      },
+      "steps": [
+        {
+          "call": "meta.connectUrl",
+          "args": ["threads", "ru"]
+        },
+        {
+          "call": "meta.connectPath",
+          "args": ["threads", "en"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["threads", "ru"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["instagram", "ru"]
+        },
+        {
+          "call": "meta.authorize",
+          "args": ["threads", "state-value"]
+        },
+        {
+          "call": "meta.verify",
+          "args": ["abc.def"]
+        }
+      ]
+    },
+    {
+      "name": "meta oauth bad key",
+      "config": {
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret",
+        "TOKEN_ENCRYPTION_KEY": "abcd"
+      },
+      "steps": [
+        {
+          "call": "meta.connectUrl",
+          "args": ["threads", "ru"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["threads", "ru"]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "meta code exchange",
+      "config": {
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret"
+      },
+      "steps": [
+        {
+          "call": "meta.exchange",
+          "args": ["threads", "test-code-1"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-short",
+                "user_id": 17841400000000001
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-long",
+                "token_type": "bearer",
+                "expires_in": 5183944
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-threads-user",
+                "username": " alice "
+              }
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["instagram", "test-code-2"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-ig-short",
+                "user_id": 17841412345678901
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-ig-long"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "username": "bob"
+              }
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["instagram", "test-code-3"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "error_message": "invalid code"
+              }
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["threads", "test-code-4"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-short"
+              }
+            },
+            {
+              "status": 200,
+              "json": {}
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["threads", "test-code-5"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "a"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "b"
+              }
+            },
+            {
+              "status": 200,
+              "json": {}
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["threads", "test-code-6"],
+          "responses": [
+            {
+              "status": 400,
+              "body": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}"
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["threads", "test-code-7"],
+          "responses": [
+            {
+              "throws": "network is unreachable"
+            }
+          ]
+        },
+        {
+          "call": "meta.exchange",
+          "args": ["threads", "test-code-8"],
+          "responses": [
+            {
+              "status": 200,
+              "body": "<html>proxy error</html>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "meta routes",
+      "config": {
+        "THREADS_APP_ID": "test-threads-app",
+        "THREADS_APP_SECRET": "test-threads-secret",
+        "INSTAGRAM_APP_ID": "test-instagram-app",
+        "INSTAGRAM_APP_SECRET": "test-instagram-secret"
+      },
+      "steps": [
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads/start",
+            {
+              "locale": "ru"
+            },
+            false
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads/start",
+            {
+              "locale": "ru"
+            },
+            true
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/instagram/start",
+            {
+              "locale": "de"
+            },
+            true
+          ]
+        },
+        {
+          "call": "connect.start",
+          "args": ["threads", "en"],
+          "bind": "start"
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "start.url"
+            }
+          ],
+          "bind": "threads"
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads/start",
+            {
+              "state": {
+                "$": "threads.state"
+              }
+            },
+            false
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/instagram/start",
+            {
+              "state": {
+                "$": "threads.state"
+              }
+            },
+            false
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/instagram",
+            {
+              "state": {
+                "$": "threads.state"
+              },
+              "code": "test-code"
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads",
+            {
+              "state": {
+                "$": "threads.state"
+              },
+              "error": "access_denied",
+              "error_description": "The user denied <access>"
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads",
+            {
+              "state": {
+                "$": "threads.state"
+              },
+              "error_description": "",
+              "error": "ignored"
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads",
+            {
+              "state": {
+                "$": "threads.state"
+              },
+              "code": "test-code"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-short",
+                "user_id": 17841400000000001
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-threads-long",
+                "token_type": "bearer",
+                "expires_in": 5183944
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-threads-user",
+                "username": " alice "
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/threads",
+            {
+              "state": "bogus",
+              "code": "test-code"
+            }
+          ]
+        },
+        {
+          "call": "connect.start",
+          "args": ["instagram", "ru"],
+          "bind": "igStart"
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "igStart.url"
+            }
+          ],
+          "bind": "ig"
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/instagram",
+            {
+              "state": {
+                "$": "ig.state"
+              },
+              "code": "test-code"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-ig-short",
+                "user_id": "test-ig-user"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-ig-long"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-ig-user"
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/instagram",
+            {
+              "state": {
+                "$": "ig.state"
+              },
+              "code": "test-code"
+            }
+          ],
+          "responses": [
+            {
+              "status": 401,
+              "body": "{\"error\":{\"message\":\"Invalid OAuth access token\",\"code\":190}}"
+            }
+          ]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "x oauth and refresh",
+      "config": {
+        "X_CLIENT_ID": "test-x-client",
+        "X_CLIENT_SECRET": "test-x-secret"
+      },
+      "steps": [
+        {
+          "call": "x.connectPath",
+          "args": []
+        },
+        {
+          "call": "x.connectUrl",
+          "args": []
+        },
+        {
+          "call": "x.authorizeUrl",
+          "args": [],
+          "bind": "authorize"
+        },
+        {
+          "call": "connect.start",
+          "args": ["x", "ru"]
+        },
+        {
+          "call": "route",
+          "args": ["/oauth/x/start", {}, false]
+        },
+        {
+          "call": "route",
+          "args": ["/oauth/x/start", {}, true]
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "authorize.value"
+            }
+          ],
+          "bind": "x"
+        },
+        {
+          "call": "x.refresh",
+          "args": []
+        },
+        {
+          "call": "x.exchange",
+          "args": [
+            "test-code",
+            {
+              "$": "x.state"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer",
+                "access_token": "test-token-x-access",
+                "refresh_token": "test-token-x-refresh",
+                "scope": "tweet.read",
+                "expires_in": 7200
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "id": "test-x-user",
+                  "username": "bob "
+                }
+              }
+            }
+          ]
+        },
+        {
+          "call": "x.refresh",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T11:49:59.999Z"
+        },
+        {
+          "call": "x.refresh",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T11:50:00.001Z"
+        },
+        {
+          "call": "x.refresh",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer",
+                "access_token": "test-token-x-access-2",
+                "refresh_token": "test-token-x-refresh-2",
+                "scope": "tweet.read"
+              }
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-21T14:00:00.000Z"
+        },
+        {
+          "call": "x.refresh",
+          "args": [],
+          "responses": [
+            {
+              "status": 400,
+              "body": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}"
+            }
+          ]
+        },
+        {
+          "call": "x.refresh",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "only-access"
+              }
+            }
+          ]
+        },
+        {
+          "call": "x.exchange",
+          "args": [
+            "test-code",
+            {
+              "$": "x.state"
+            }
+          ]
+        },
+        {
+          "call": "x.exchange",
+          "args": ["test-code", "garbage"]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "x routes",
+      "config": {
+        "X_CLIENT_ID": "test-x-client",
+        "X_CLIENT_SECRET": "test-x-secret"
+      },
+      "steps": [
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "error": "access_denied"
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "code": "test-code"
+            }
+          ]
+        },
+        {
+          "call": "x.authorizeUrl",
+          "args": [],
+          "bind": "authorize"
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "authorize.value"
+            }
+          ],
+          "bind": "x"
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "code": "test-code",
+              "state": {
+                "$": "x.state"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer",
+                "access_token": "test-token-x-access",
+                "refresh_token": "test-token-x-refresh",
+                "scope": "tweet.read",
+                "expires_in": 7200
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "username": "nobody"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "code": "test-code",
+              "state": {
+                "$": "x.state"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "a"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "id": "test-x-user"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "code": "test-code",
+              "state": {
+                "$": "x.state"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "refresh_token": "r"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "id": "test-x-user"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "code": "test-code",
+              "state": {
+                "$": "x.state"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer",
+                "access_token": "test-token-x-access",
+                "refresh_token": "test-token-x-refresh",
+                "scope": "tweet.read",
+                "expires_in": 3600
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "id": "test-x-user"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/x",
+            {
+              "code": "test-code",
+              "state": {
+                "$": "x.state"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "token_type": "bearer",
+                "access_token": "test-token-x-access-3",
+                "refresh_token": "test-token-x-refresh-3",
+                "scope": "tweet.read",
+                "expires_in": 7200
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "id": "test-x-user",
+                  "username": "carol"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "call": "registry.routing",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "x unconfigured",
+      "config": {
+        "X_CLIENT_ID": "test-x-client"
+      },
+      "steps": [
+        {
+          "call": "x.connectPath",
+          "args": []
+        },
+        {
+          "call": "x.connectUrl",
+          "args": []
+        },
+        {
+          "call": "x.authorizeUrl",
+          "args": []
+        },
+        {
+          "call": "connect.start",
+          "args": ["x", "en"]
+        },
+        {
+          "call": "route",
+          "args": ["/oauth/x/start", {}, true]
+        },
+        {
+          "call": "x.refresh",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "youtube oauth",
+      "config": {
+        "YOUTUBE_RU_CLIENT_ID": "test-yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-yt-ru-secret"
+      },
+      "steps": [
+        {
+          "call": "youtube.authorizeUrl",
+          "args": ["ru"],
+          "bind": "ru"
+        },
+        {
+          "call": "youtube.authorizeUrl",
+          "args": ["en"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["youtube", "en"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["youtube", "ru"]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/youtube/start",
+            {
+              "locale": "fr"
+            },
+            true
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/youtube/start",
+            {
+              "locale": "en"
+            },
+            false
+          ]
+        },
+        {
+          "call": "util.stateOf",
+          "args": [
+            {
+              "$": "ru.value"
+            }
+          ],
+          "bind": "state"
+        },
+        {
+          "call": "youtube.exchange",
+          "args": [
+            "test-code",
+            {
+              "$": "state.state"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "a",
+                "scope": "https://www.googleapis.com/auth/youtube.force-ssl"
+              }
+            }
+          ]
+        },
+        {
+          "call": "youtube.exchange",
+          "args": [
+            "test-code",
+            {
+              "$": "state.state"
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "a"
+              }
+            }
+          ]
+        },
+        {
+          "call": "youtube.exchange",
+          "args": [
+            "test-code",
+            {
+              "$": "state.state"
+            }
+          ],
+          "responses": [
+            {
+              "status": 400,
+              "body": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}"
+            }
+          ]
+        },
+        {
+          "call": "youtube.exchange",
+          "args": ["test-code", "garbage"]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/youtube",
+            {
+              "error": "access_denied"
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/youtube",
+            {
+              "state": {
+                "$": "state.state"
+              }
+            }
+          ]
+        },
+        {
+          "call": "route",
+          "args": [
+            "/oauth/youtube",
+            {
+              "code": "test-code",
+              "state": {
+                "$": "state.state"
+              }
+            }
+          ],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "access_token": "a",
+                "refresh_token": "test-token-yt-ru-refresh",
+                "scope": "https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.force-ssl"
+              }
+            }
+          ]
+        },
+        {
+          "call": "youtube.install",
+          "args": ["en", "test-token-yt-en-refresh"]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T10:10:00.000Z"
+        },
+        {
+          "call": "youtube.exchange",
+          "args": [
+            "test-code",
+            {
+              "$": "state.state"
+            }
+          ]
+        },
+        {
+          "call": "registry.videoDestinations",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "youtube without key",
+      "config": {
+        "YOUTUBE_RU_CLIENT_ID": "test-yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-yt-ru-secret",
+        "TOKEN_ENCRYPTION_KEY": ""
+      },
+      "steps": [
+        {
+          "call": "youtube.authorizeUrl",
+          "args": ["ru"]
+        },
+        {
+          "call": "youtube.exchange",
+          "args": ["test-code", "anything"]
+        },
+        {
+          "call": "youtube.install",
+          "args": ["ru", "test-token"]
+        },
+        {
+          "call": "connect.start",
+          "args": ["youtube", "ru"]
+        },
+        {
+          "call": "apiKeys.store",
+          "args": ["zernio", "test-key"]
+        }
+      ]
+    },
+    {
+      "name": "api keys and zernio connections",
+      "config": {
+        "DISCORD_GUILD_ID": "test guild/1"
+      },
+      "steps": [
+        {
+          "call": "apiKeys.store",
+          "args": ["zernio", "   "]
+        },
+        {
+          "call": "apiKeys.store",
+          "args": ["zernio", "  test-token-zernio  "],
+          "responses": [
+            {
+              "status": 401,
+              "body": "{\"error\":{\"message\":\"Invalid OAuth access token\",\"code\":190}}"
+            }
+          ]
+        },
+        {
+          "call": "apiKeys.store",
+          "args": ["zernio", "  test-token-zernio  "],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "accounts": [
+                  {
+                    "_id": "a"
+                  },
+                  {
+                    "_id": "b"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "call": "apiKeys.store",
+          "args": ["discord", "test-token-discord"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "username": "studio-bot",
+                "id": "1"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "premium_tier": 2
+              }
+            }
+          ]
+        },
+        {
+          "call": "apiKeys.store",
+          "args": ["discord", "test-token-discord-2"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "id": "2"
+              }
+            },
+            {
+              "status": 500,
+              "body": "upstream"
+            }
+          ]
+        },
+        {
+          "call": "apiKeys.store",
+          "args": ["discord", "test-token-discord-3"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {}
+            },
+            {
+              "status": 200,
+              "json": {
+                "premium_tier": 7
+              }
+            }
+          ]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        },
+        {
+          "call": "zernio.discover",
+          "args": ["ru"],
+          "responses": [
+            {
+              "status": 200,
+              "json": [
+                {
+                  "_id": "acc-threads",
+                  "platform": "Threads",
+                  "username": "alice"
+                },
+                {
+                  "_id": "acc-ig",
+                  "platform": "instagram_business",
+                  "displayName": "Alice IG"
+                },
+                {
+                  "_id": "acc-tt",
+                  "platform": "tiktok"
+                },
+                {
+                  "platform": "threads"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "call": "zernio.connect",
+          "args": ["acc-ig", "ru", "instagram_stories"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "accounts": [
+                  {
+                    "_id": "acc-ig",
+                    "platform": "instagram"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "call": "zernio.connect",
+          "args": ["acc-ig", "en", "instagram_reels"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "accounts": [
+                  {
+                    "_id": "acc-ig",
+                    "platform": "instagram"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "call": "zernio.connect",
+          "args": ["missing", "en", "threads"],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "accounts": []
+              }
+            }
+          ]
+        },
+        {
+          "call": "registry.routing",
+          "args": []
+        },
+        {
+          "call": "registry.videoDestinations",
+          "args": []
+        },
+        {
+          "call": "registry.videoIdentity",
+          "args": ["instagram_reels", "en"]
+        },
+        {
+          "call": "registry.videoIdentity",
+          "args": ["youtube_shorts", "ru"]
+        }
+      ]
+    },
+    {
+      "name": "token health",
+      "config": {
+        "CONTROLLER_BOT_TOKEN": "123456:test-bot-token",
+        "X_CLIENT_ID": "test-x-client",
+        "X_CLIENT_SECRET": "test-x-secret",
+        "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+        "INSTAGRAM_EN_ACCESS_TOKEN": "IGtest-token-instagram-en",
+        "INSTAGRAM_EN_USER_ID": "test-ig-user-en",
+        "INSTAGRAM_RU_ACCESS_TOKEN": "test-token-instagram-ru",
+        "INSTAGRAM_RU_USER_ID": "test-ig-user-ru",
+        "YOUTUBE_RU_CLIENT_ID": "test-yt-ru-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-yt-ru-secret",
+        "YOUTUBE_RU_REFRESH_TOKEN": "test-token-yt-ru-refresh"
+      },
+      "steps": [
+        {
+          "call": "tokens.seed",
+          "args": [
+            "x",
+            {
+              "token": "test-token-x-access",
+              "refreshToken": "test-token-x-refresh",
+              "refreshedAt": "2026-11-21T10:00:00.000Z",
+              "expiresAt": "2026-11-21T12:00:00.000Z"
+            }
+          ]
+        },
+        {
+          "call": "credentials.apply",
+          "args": []
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "youtube",
+              "locale": "ru",
+              "provider": "native"
+            }
+          ]
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "instagram",
+              "locale": "en",
+              "provider": "zernio",
+              "providerAccountId": "acc"
+            }
+          ]
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "instagram",
+              "locale": "ru",
+              "provider": "native"
+            }
+          ]
+        },
+        {
+          "call": "tokenHealth.check",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "ok": true,
+                "result": {
+                  "id": 1
+                }
+              }
+            },
+            {
+              "status": 401,
+              "body": "{\"error\":{\"message\":\"Invalid OAuth access token\",\"code\":190}}"
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "me"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "expires_at": 1795514400,
+                  "scopes": ["threads_basic", "threads_content_publish", "threads_manage_insights"]
+                }
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-ig-user-en"
+              }
+            },
+            {
+              "status": 403,
+              "body": "{\"error\":{\"message\":\"debug_token not allowed\"}}"
+            },
+            {
+              "status": 500,
+              "body": "internal"
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-ig-user-ru"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "expires_at": 0,
+                  "scopes": "not-a-list"
+                }
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-yt-access"
+              }
+            },
+            {
+              "status": 503,
+              "body": "unavailable",
+              "headers": [["retry-after", "30"]]
+            }
+          ]
+        },
+        {
+          "call": "tokenHealth.check",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T10:05:00.000Z"
+        },
+        {
+          "call": "tokenHealth.check",
+          "args": [],
+          "responses": [
+            {
+              "throws": "network is unreachable"
+            },
+            {
+              "status": 400,
+              "body": "{\"error\":\"invalid_grant\",\"error_description\":\"Token has been expired or revoked.\"}"
+            }
+          ]
+        },
+        {
+          "clock": "2026-11-21T11:00:00.000Z"
+        },
+        {
+          "call": "tokenHealth.check",
+          "args": [],
+          "responses": [
+            {
+              "status": 200,
+              "json": {
+                "ok": true
+              }
+            },
+            {
+              "status": 403,
+              "body": "forbidden"
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "me"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "expires_at": 1797847200,
+                  "scopes": [
+                    "threads_basic",
+                    "threads_content_publish",
+                    "threads_manage_replies",
+                    "threads_read_replies",
+                    "threads_manage_insights"
+                  ]
+                }
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-ig-user-en"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "data": {
+                  "expires_at": 1795514400.5
+                }
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "id": "test-ig-user-ru"
+              }
+            },
+            {
+              "throws": "network is unreachable"
+            },
+            {
+              "status": 401,
+              "body": "{\"error\":{\"message\":\"Invalid OAuth access token\",\"code\":190}}"
+            },
+            {
+              "status": 200,
+              "json": {
+                "access_token": "test-token-yt-access"
+              }
+            },
+            {
+              "status": 200,
+              "json": {
+                "items": [
+                  {
+                    "id": "channel"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "call": "credentialChecks.update",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "credential checks and publication failures",
+      "config": {
+        "CONTROLLER_BOT_TOKEN": "123456:test-bot-token",
+        "THREADS_RU_ACCESS_TOKEN": "test-token-threads-ru",
+        "MEDIA_PROCESSOR_PROVIDER": "remote_http",
+        "MEDIA_PROCESSOR_URL": "https://media.test",
+        "MEDIA_PROCESSOR_TOKEN": "test-media-token-0000"
+      },
+      "steps": [
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "threads_ru",
+              "locale": "ru",
+              "provider": "native",
+              "targetId": "threads_ru"
+            }
+          ]
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "x",
+              "locale": "en",
+              "provider": "native",
+              "targetId": "x"
+            }
+          ]
+        },
+        {
+          "call": "channels.connect",
+          "args": [
+            {
+              "platform": "youtube",
+              "locale": "en",
+              "provider": "native"
+            }
+          ]
+        },
+        {
+          "call": "credentialChecks.update",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T11:00:00.000Z"
+        },
+        {
+          "call": "credentialChecks.update",
+          "args": []
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (publication_key, target, status, locked_by, locked_at, created_at, updated_at) VALUES ('post:1', 'threads_ru', 'publishing', 'w', '2026-11-21T10:44:00.000Z', '2026-11-21T10:00:00.000Z', '2026-11-21T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (publication_key, target, status, locked_by, locked_at, created_at, updated_at) VALUES ('post:2', 'x', 'publishing', 'w', '2026-11-21T10:46:00.000Z', '2026-11-21T10:00:00.000Z', '2026-11-21T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (publication_key, target, status, created_at, updated_at) VALUES ('post:3', 'x', 'failed', '2026-11-21T10:00:00.000Z', '2026-11-21T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, last_error, created_at, updated_at) VALUES ('post:1', 'publish', 'failed', 'build exploded', '2026-11-21T10:00:00.000Z', '2026-11-21T10:30:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:2', 'edit', 'failed', '2026-11-21T10:00:00.000Z', '2026-11-21T10:50:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:3', 'edit', 'failed', '2026-11-21T09:00:00.000Z', '2026-11-21T09:59:59.999Z')"
+        },
+        {
+          "call": "failures.record",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T11:30:00.000Z"
+        },
+        {
+          "call": "failures.record",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "runtime health",
+      "steps": [
+        {
+          "call": "runtime.restart",
+          "args": ["rev-a"]
+        },
+        {
+          "call": "runtime.restart",
+          "args": ["rev-a"]
+        },
+        {
+          "sql": "UPDATE worker_state SET state_json = '{\"bootId\":\"previous\",\"bootedAt\":\"2026-11-21T09:00:00.000Z\",\"revision\":\"rev-a\",\"restartsAt\":[\"2026-11-21T09:40:00.000Z\",\"2026-11-21T09:20:00.000Z\",7]}' WHERE name = 'runtime'"
+        },
+        {
+          "call": "runtime.restart",
+          "args": ["rev-a"]
+        },
+        {
+          "sql": "UPDATE worker_state SET state_json = '{\"bootId\":\"previous\",\"bootedAt\":\"not a date\",\"revision\":\"rev-a\",\"restartsAt\":[\"2026-11-21T09:59:00.000Z\"]}' WHERE name = 'runtime'"
+        },
+        {
+          "clock": "2026-11-21T10:01:00.000Z"
+        },
+        {
+          "call": "runtime.restart",
+          "args": ["rev-a"]
+        },
+        {
+          "sql": "UPDATE worker_state SET state_json = '{\"bootId\":\"previous\",\"revision\":\"rev-a\",\"restartsAt\":[\"2026-11-21T10:00:30.000Z\",\"2026-11-21T10:00:40.000Z\"]}' WHERE name = 'runtime'"
+        },
+        {
+          "call": "runtime.restart",
+          "args": ["rev-b"]
+        },
+        {
+          "sql": "UPDATE worker_state SET state_json = '{\"bootId\":\"previous\",\"restartsAt\":[\"2026-11-21T10:00:30.000Z\"]}' WHERE name = 'runtime'"
+        },
+        {
+          "call": "runtime.restart",
+          "args": [null]
+        },
+        {
+          "sql": "UPDATE worker_state SET state_json = '[1,2]' WHERE name = 'runtime'"
+        },
+        {
+          "call": "runtime.restart",
+          "args": ["rev-c"]
+        },
+        {
+          "call": "runtime.memory",
+          "args": [943718400, 1073741824]
+        },
+        {
+          "call": "runtime.memory",
+          "args": [996147200, 1073741824]
+        },
+        {
+          "call": "runtime.memory",
+          "args": [104857600, 1073741824]
+        },
+        {
+          "call": "runtime.memory",
+          "args": [943718400, null]
+        },
+        {
+          "clock": "2026-11-21T11:01:00.000Z"
+        },
+        {
+          "call": "runtime.memory",
+          "args": [912261120, 1073741824]
+        }
+      ]
+    },
+    {
+      "name": "observability cycle",
+      "config": {
+        "CONTROLLER_ADMIN_IDS": "42"
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO publication_events (event_type, severity, target, message, details_json, created_at) VALUES ('queue.stale', 'error', 'x', 'stuck', '{}', '2026-11-21T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO alert_dedup (alert_key, last_sent_at, suppressed_count) VALUES ('k', '2026-11-21T09:30:00.000Z', 0)"
+        },
+        {
+          "call": "observability.cycle",
+          "args": []
+        },
+        {
+          "clock": "2026-11-21T10:05:00.000Z"
+        },
+        {
+          "call": "observability.cycle",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "stored dates",
+      "steps": [
+        {
+          "sql": "DROP TRIGGER date_guard_metric_samples_sampled_at_insert"
+        },
+        {
+          "sql": "DROP TRIGGER date_guard_publication_events_created_at_insert"
+        },
+        {
+          "sql": "DROP TRIGGER date_guard_x_activity_items_first_seen_at_insert"
+        },
+        {
+          "sql": "DROP TRIGGER date_guard_x_activity_items_first_seen_at_update"
+        },
+        {
+          "sql": "DROP TRIGGER date_guard_publication_events_created_at_update"
+        },
+        {
+          "sql": "DROP TRIGGER date_guard_metric_samples_sampled_at_update"
+        },
+        {
+          "sql": "INSERT INTO metric_samples (publication_key, target, metric_name, value, sampled_at) VALUES ('p', 'x', 'views', 1, '34Z'), ('p', 'x', 'views', 2, '2026-07-21 21:14:53'), ('p', 'x', 'views', 3, '2026-07-21T21:14:53.000Z'), ('p', 'x', 'views', 4, 2026)"
+        },
+        {
+          "sql": "INSERT INTO publication_events (event_type, severity, message, created_at) VALUES ('a', 'info', 'm', '2026-07-21 21:14:53'), ('b', 'info', 'm', 'yesterday')"
+        },
+        {
+          "sql": "INSERT INTO x_activity_items (x_post_id, kind, text, url, first_seen_at, last_seen_at) VALUES ('1', 'post', 't', 'u', 'garbage', '2026-07-01T00:00:00.000Z')"
+        },
+        {
+          "call": "dates.integrity",
+          "args": []
+        },
+        {
+          "call": "dates.repair",
+          "args": [false]
+        },
+        {
+          "call": "dates.repair",
+          "args": [true]
+        },
+        {
+          "call": "dates.integrity",
+          "args": []
+        }
+      ]
+    }
+  ]
+}
