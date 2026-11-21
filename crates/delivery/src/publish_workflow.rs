@@ -44,7 +44,9 @@ pub fn delivery_ports(
 /// The publish-watchdog loop body (`recoverStalePublishJobs` at its default
 /// age): a hung provider call must not keep a lock out of the retry policy.
 pub fn recover_stale_publish_jobs(delivery: &Delivery<'_>) -> Result<usize> {
-    delivery.publishing().recover_stale_publish_jobs(PUBLISH_LOCK_TIMEOUT_SECONDS)
+    delivery
+        .publishing()
+        .recover_stale_publish_jobs(PUBLISH_LOCK_TIMEOUT_SECONDS)
 }
 
 /// What one attempt came to before settlement.
@@ -163,8 +165,7 @@ async fn run_claimed(delivery: &Delivery<'_>, ports: &DeliveryPorts, job: &Claim
         }
         Attempt::Published(result) => {
             let answered = provider_answered_at(delivery.sqlite(), &job.target)?;
-            if let Err(error) =
-                publishing.complete_publish_job(job.job_id, &result, &job.lock_id, answered.as_deref())
+            if let Err(error) = publishing.complete_publish_job(job.job_id, &result, &job.lock_id, answered.as_deref())
             {
                 emergency_settlement(delivery, job, &error.to_string(), Some(&result));
             }
@@ -182,9 +183,10 @@ fn emergency_settlement(delivery: &Delivery<'_>, job: &ClaimedPublishJob, error:
         "publish job finalization failed",
         Some(json!({"jobId": job.job_id, "target": job.target, "error": message})),
     );
-    if let Err(failure) = delivery
-        .publishing()
-        .force_publish_job_verification(job.job_id, &message, &job.lock_id, result)
+    if let Err(failure) =
+        delivery
+            .publishing()
+            .force_publish_job_verification(job.job_id, &message, &job.lock_id, result)
     {
         log(
             LogLevel::Error,
@@ -225,10 +227,12 @@ async fn attempt(delivery: &Delivery<'_>, adapter: &dyn SocialAdapter, job: &Cla
     .await;
     let success = outcome.is_ok();
     let total_ms = delivery.now_ms() - started_at;
-    delivery
-        .boundaries
-        .usage
-        .record(delivery.sqlite(), "publishing.social.job", success, total_ms.max(0) as u64);
+    delivery.boundaries.usage.record(
+        delivery.sqlite(),
+        "publishing.social.job",
+        success,
+        total_ms.max(0) as u64,
+    );
     let mut timing = json!({
         "operation": "publishing.social.job",
         "jobId": job.job_id,
@@ -272,7 +276,10 @@ async fn phased(
     .await?
     .expect("prepare answers a job");
     let published = timed_phase(delivery, job, Phase::Publish, phases, None, async {
-        adapter.publish(&prepared).await.map(|result| Some(Value::Object(result)))
+        adapter
+            .publish(&prepared)
+            .await
+            .map(|result| Some(Value::Object(result)))
     })
     .await?
     .and_then(|value| match value {
@@ -361,14 +368,22 @@ async fn timed_phase<T: PhaseOutput>(
         .optional()
         .map_err(|error| AdapterError::Message(error.to_string()))?;
     if owned.is_none() {
-        return Err(AdapterError::Message(format!("delivery_job_no_longer_owned:{}", job.job_id)));
+        return Err(AdapterError::Message(format!(
+            "delivery_job_no_longer_owned:{}",
+            job.job_id
+        )));
     }
     let outcome = work.await;
     let duration_ms = delivery.now_ms() - started_at;
     timings.insert(phase.timing_key().into(), duration_ms.into());
     let provider_request_id = |own: Option<String>| own.or_else(|| provider_result.and_then(provider_request_id));
     let (severity, status, details_extra, request_id) = match &outcome {
-        Ok(result) => (Severity::Info, "completed", None, provider_request_id(result.request_id())),
+        Ok(result) => (
+            Severity::Info,
+            "completed",
+            None,
+            provider_request_id(result.request_id()),
+        ),
         Err(error) => (
             Severity::Error,
             "failed",
@@ -404,7 +419,9 @@ async fn timed_phase<T: PhaseOutput>(
         log(
             LogLevel::Warn,
             "publish phase event journal failed",
-            Some(json!({"jobId": job.job_id, "target": job.target, "phase": phase.as_str(), "error": error.to_string()})),
+            Some(
+                json!({"jobId": job.job_id, "target": job.target, "phase": phase.as_str(), "error": error.to_string()}),
+            ),
         );
     }
     outcome

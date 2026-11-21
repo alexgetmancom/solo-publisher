@@ -126,7 +126,7 @@ function recorder(backendDb: UnsafeBackendDb, responses: Canned[], scrub: (text:
 }
 
 /** The files a scenario starts with: filler bytes, or what ffmpeg makes. */
-function writeFiles(data: string, files: Scenario["files"] = {}): void {
+function writeFiles(data: string, at: Date, files: Scenario["files"] = {}): void {
   for (const [name, spec] of Object.entries(files)) {
     const target = path.join(data, name);
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -135,6 +135,8 @@ function writeFiles(data: string, files: Scenario["files"] = {}): void {
       const made = Bun.spawnSync(["ffmpeg", "-loglevel", "error", ...spec.ffmpeg, target]);
       if (made.exitCode !== 0) throw new Error(`ffmpeg could not make ${name}: ${made.stderr.toString()}`);
     }
+    // Freshness is read from mtimes: every input is as old as the spec's clock.
+    fs.utimesSync(target, at, at);
   }
 }
 
@@ -147,7 +149,7 @@ async function run(spec: Spec, scenario: Scenario, call: Call, label: string): P
   const data = path.join(root, "_trash-rust/tmp/delivery-scenarios", label, scenario.name);
   fs.rmSync(data, { recursive: true, force: true });
   fs.mkdirSync(data, { recursive: true });
-  writeFiles(data, scenario.files);
+  writeFiles(data, new Date(Date.parse(spec.clock)), scenario.files);
   const env: Record<string, string> = { ...spec.env, DATA_DIR: data };
   for (const [key, value] of Object.entries(scenario.env ?? {})) {
     if (value === null) delete env[key];
@@ -188,6 +190,14 @@ async function run(spec: Spec, scenario: Scenario, call: Call, label: string): P
     globalThis.fetch = realFetch;
     backendDb.close();
   }
+}
+
+/** Every file under the data directory, relative and sorted: what a call left on disk. */
+export function listFiles(data: string): string[] {
+  return (fs.readdirSync(data, { recursive: true, withFileTypes: true }) as fs.Dirent[])
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.relative(data, path.join(entry.parentPath, entry.name)))
+    .sort();
 }
 
 /** Runs every scenario of the spec at `argv[2]` and prints the outcomes as JSON. */

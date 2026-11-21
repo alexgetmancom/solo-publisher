@@ -19,9 +19,8 @@ use db::{BackendDb, unsafe_db};
 use domain::application::ports::Clock;
 use domain::delivery::VideoCompletionNotice;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
-use domain::publishing::boundaries::{
-    Boundaries, Jitter, StoryCardMedia, StoryCardState, StoryCards, UsageMeter, WorkerBell,
-};
+use domain::observability::usage::UsageRecorder;
+use domain::publishing::boundaries::{Boundaries, Jitter, StoryCardMedia, StoryCardState, StoryCards, WorkerBell};
 use domain::story_cards::StoryCardStore;
 use foundation::config::{Config, load_config};
 use futures_util::future::LocalBoxFuture;
@@ -64,7 +63,7 @@ impl Jitter for FixedJitter {
     }
 }
 
-/// Rings go nowhere and usage is not compared (its table is ignored).
+/// Rings go nowhere.
 struct Quiet;
 
 impl WorkerBell for Quiet {
@@ -72,14 +71,11 @@ impl WorkerBell for Quiet {
     fn ring_publish_after(&self, _: u64) {}
 }
 
-impl UsageMeter for Quiet {
-    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
-}
-
 /// The ported stores behind the boundaries, on the scenario's clock.
 pub struct Host {
     jitter: FixedJitter,
     auth_circuit: AuthCircuitBreaker<SharedClock>,
+    usage: UsageRecorder<SharedClock>,
     story_cards: StoryCardStore<SharedClock>,
     video_completion: VideoCompletionNotice<SharedClock>,
 }
@@ -90,7 +86,7 @@ impl Host {
             jitter: &self.jitter,
             bell: &Quiet,
             auth_circuit: &self.auth_circuit,
-            usage: &Quiet,
+            usage: &self.usage,
             story_cards: self,
             video_completion: &self.video_completion,
         }
@@ -304,7 +300,12 @@ impl Transport for Recorder {
                 .map(|pairs| {
                     pairs
                         .iter()
-                        .map(|pair| (pair[0].as_str().unwrap().to_owned(), pair[1].as_str().unwrap().to_owned()))
+                        .map(|pair| {
+                            (
+                                pair[0].as_str().unwrap().to_owned(),
+                                pair[1].as_str().unwrap().to_owned(),
+                            )
+                        })
                         .collect()
                 })
                 .unwrap_or_default();
@@ -328,7 +329,10 @@ pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
         rows.map(Result::unwrap).collect()
     };
     let mut out = Map::new();
-    for table in strings("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name", None) {
+    for table in strings(
+        "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+        None,
+    ) {
         if ignored.contains(&table) {
             continue;
         }
@@ -407,13 +411,18 @@ fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
                 let (name, field) = reference.split_once('.').expect("reference is <name>.<field>");
                 vars.get(name).unwrap_or_else(|| panic!("unbound {name}"))[field].clone()
             }
-            _ => Value::Object(object.iter().map(|(key, item)| (key.clone(), resolve(item, vars))).collect()),
+            _ => Value::Object(
+                object
+                    .iter()
+                    .map(|(key, item)| (key.clone(), resolve(item, vars)))
+                    .collect(),
+            ),
         },
         other => other.clone(),
     }
 }
 
-fn write_files(data: &Path, files: Option<&Value>) {
+fn write_files(data: &Path, at: std::time::SystemTime, files: Option<&Value>) {
     for (name, spec) in files.and_then(Value::as_object).into_iter().flatten() {
         let target = data.join(name);
         std::fs::create_dir_all(target.parent().unwrap()).unwrap();
@@ -421,7 +430,12 @@ fn write_files(data: &Path, files: Option<&Value>) {
             let size = spec["size"].as_u64().unwrap() as usize;
             std::fs::write(&target, fill.as_str().unwrap().repeat(size)).unwrap();
         } else {
-            let args: Vec<&str> = spec["ffmpeg"].as_array().unwrap().iter().map(|arg| arg.as_str().unwrap()).collect();
+            let args: Vec<&str> = spec["ffmpeg"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|arg| arg.as_str().unwrap())
+                .collect();
             let made = Command::new("ffmpeg")
                 .args(["-loglevel", "error"])
                 .args(&args)
@@ -430,7 +444,33 @@ fn write_files(data: &Path, files: Option<&Value>) {
                 .expect("ffmpeg on PATH");
             assert!(made.status.success(), "ffmpeg could not make {name}");
         }
+        // Freshness is read from mtimes: every input is as old as the spec's clock.
+        let file = std::fs::File::options().write(true).open(&target).unwrap();
+        file.set_times(std::fs::FileTimes::new().set_accessed(at).set_modified(at))
+            .unwrap();
     }
+}
+
+/// Every file under the data directory, relative and sorted: what a call
+/// left on disk.
+pub fn files(data: &Path) -> Value {
+    fn walk(root: &Path, directory: &Path, out: &mut Vec<String>) {
+        let Ok(entries) = std::fs::read_dir(directory) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                walk(root, &path, out);
+            } else {
+                out.push(path.strip_prefix(root).unwrap().to_string_lossy().into_owned());
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(data, data, &mut out);
+    out.sort();
+    json!(out)
 }
 
 /// `JSON.parse(JSON.stringify(value))`: integral floats read back as integers.
@@ -440,11 +480,16 @@ fn as_javascript(value: Value) -> Value {
 
 async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
     let name = scenario["name"].as_str().unwrap();
-    let data = repo_root().join("_trash-rust/tmp/delivery-scenarios").join(label).join(name);
+    let data = repo_root()
+        .join("_trash-rust/tmp/delivery-scenarios")
+        .join(label)
+        .join(name);
     let _ = std::fs::remove_dir_all(&data);
     std::fs::create_dir_all(&data).unwrap();
     let data = data.canonicalize().unwrap();
-    write_files(&data, scenario.get("files"));
+    let at = std::time::UNIX_EPOCH
+        + std::time::Duration::from_millis(instant(spec["clock"].as_str().unwrap()).as_millisecond() as u64);
+    write_files(&data, at, scenario.get("files"));
     let mut env: Vec<(String, String)> = spec["env"]
         .as_object()
         .unwrap()
@@ -480,6 +525,7 @@ async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
         host: Host {
             jitter: FixedJitter(jitter),
             auth_circuit: AuthCircuitBreaker::new(clock.clone()),
+            usage: UsageRecorder::new(clock.clone()),
             story_cards: StoryCardStore::new(clock.clone()),
             video_completion: VideoCompletionNotice::new(clock.clone()),
         },
@@ -539,7 +585,15 @@ async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
 /// Every scenario of the spec through `call`, on a single-threaded runtime
 /// with a `LocalSet`, as the Studio runs.
 pub fn rust_side(spec: &Value, call: Call, label: &str) -> Vec<Value> {
-    run_on(tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap(), spec, call, label)
+    run_on(
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap(),
+        spec,
+        call,
+        label,
+    )
 }
 
 /// [`rust_side`] with tokio's clock paused: a timer fires as soon as nothing
@@ -574,9 +628,17 @@ pub fn typescript_side(script: &str, spec: &Path) -> Vec<Value> {
         .env("TMPDIR", repo_root().join("_trash-rust/tmp"))
         .output()
         .expect("bun must be on PATH");
-    assert!(output.status.success(), "bun failed: {}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "bun failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     let stdout = String::from_utf8(output.stdout).unwrap();
-    let last = stdout.lines().rev().find(|line| line.starts_with("{\"scenarios\"")).expect("runner output");
+    let last = stdout
+        .lines()
+        .rev()
+        .find(|line| line.starts_with("{\"scenarios\""))
+        .expect("runner output");
     let parsed: Value = serde_json::from_str(last).unwrap();
     parsed["scenarios"].as_array().unwrap().clone()
 }
@@ -611,7 +673,10 @@ pub fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
                 expected["unusedResponses"], actual["unusedResponses"]
             ));
         }
-        let (expected_tables, actual_tables) = (expected["tables"].as_object().unwrap(), actual["tables"].as_object().unwrap());
+        let (expected_tables, actual_tables) = (
+            expected["tables"].as_object().unwrap(),
+            actual["tables"].as_object().unwrap(),
+        );
         for table in expected_tables
             .keys()
             .chain(actual_tables.keys().filter(|key| !expected_tables.contains_key(*key)))

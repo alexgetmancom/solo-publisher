@@ -12,8 +12,17 @@ use std::rc::Rc;
 use adapters::StoriesSidecar;
 use adapters::social_ports::MediaPreparation;
 use adapters::telegram_stories::{SidecarError, StoryRequest};
+use delivery::external_edits::{PublishedTargetEdit, edit_published_targets};
+use delivery::external_removals::{
+    RemovalOptions, attempt_published_target_removals, settle_published_target_removals,
+};
+use delivery::maintenance::{prune_operational_history, with_maintenance_lock};
+use delivery::media_prepare::prune_media_cache;
 use delivery::publish_workflow::{delivery_ports, run_delivery_publish_cycle};
+use delivery::reconciliation::run_publication_reconciliation;
 use delivery::story_derivatives::DeliveryMedia;
+use domain::application::ports::{DomainEventInput, Severity};
+use domain::repositories::{record_event, transaction};
 use foundation::config::SharedConfig;
 use futures_util::FutureExt as _;
 use futures_util::future::LocalBoxFuture;
@@ -56,6 +65,48 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
                         .map_err(failed)?
                 )
             }
+            "reconcile" => json!(run_publication_reconciliation(&delivery).await.map_err(failed)?),
+            "editTargets" => {
+                let edit: PublishedTargetEdit = serde_json::from_value(args[0].clone()).unwrap();
+                json!(edit_published_targets(&delivery, &edit).await.map_err(failed)?)
+            }
+            "removeTargets" => {
+                // The caller's shape: the remote removals first, then their
+                // settlement inside the transaction that journals it.
+                let options: RemovalOptions = serde_json::from_value(args[0].clone()).unwrap();
+                let attempts = attempt_published_target_removals(&delivery, &options)
+                    .await
+                    .map_err(failed)?;
+                let sqlite = delivery.sqlite();
+                let results = transaction(sqlite, || {
+                    let results = settle_published_target_removals(sqlite, &attempts, &delivery.now())?;
+                    record_event(
+                        sqlite,
+                        delivery.clock(),
+                        &DomainEventInput {
+                            publication_ref: Some(options.publication_key.clone()),
+                            event_type: "operations.removal".into(),
+                            severity: Severity::Info,
+                            target: None,
+                            message: "removed".into(),
+                            details: Some(json!({"results": results}).as_object().unwrap().clone()),
+                            cooldown_seconds: None,
+                        },
+                    )?;
+                    Ok(results)
+                })
+                .map_err(failed)?;
+                json!(results)
+            }
+            "maintenance" => json!(
+                with_maintenance_lock(delivery.sqlite(), delivery.clock(), || prune_operational_history(
+                    delivery.sqlite(),
+                    delivery.clock()
+                ))
+                .map_err(failed)?
+            ),
+            "pruneMediaCache" => json!(prune_media_cache(delivery.config(), delivery.now_ms()).await),
+            "files" => support::files(&scenario.data),
             other => panic!("unknown call {other}"),
         })
     }
@@ -111,7 +162,11 @@ fn ok(body: Value) -> Value {
 /// publication, and the retry sends only what is missing.
 #[test]
 fn discord_split_post_resumes_without_reposting() {
-    let text = format!("{}\n\n{}", "Paragraph one is here. ".repeat(80), "Second part. ".repeat(40));
+    let text = format!(
+        "{}\n\n{}",
+        "Paragraph one is here. ".repeat(80),
+        "Second part. ".repeat(40)
+    );
     let mut steps = vec![json!({"sql": DRAFT})];
     steps.extend(job(1, "discord", &json!({"text": text, "locale": "en"})));
     steps.extend([
@@ -138,13 +193,24 @@ fn discord_split_post_resumes_without_reposting() {
         .iter()
         .filter(|request| request["method"] == "POST" && request["url"].as_str().unwrap().ends_with("/messages"))
         .collect();
-    assert_eq!(creates.len(), 3, "first part, its refused successor, and the successor again");
+    assert_eq!(
+        creates.len(),
+        3,
+        "first part, its refused successor, and the successor again"
+    );
     let body = |request: &Value| request["body"]["text"].as_str().unwrap().to_owned();
     assert!(body(creates[0]).contains("Paragraph one"));
     assert!(body(creates[1]).contains("Second part"));
-    assert_eq!(body(creates[1]), body(creates[2]), "the retry resumed at the second part");
+    assert_eq!(
+        body(creates[1]),
+        body(creates[2]),
+        "the retry resumed at the second part"
+    );
     let target = rows(outcome, "publication_targets")[0];
-    assert!(target.contains("text:'published'") && target.contains(r#"text:'["d1","d2"]'"#), "{target}");
+    assert!(
+        target.contains("text:'published'") && target.contains(r#"text:'["d1","d2"]'"#),
+        "{target}"
+    );
     let job = rows(outcome, "publish_jobs")[0];
     assert!(job.contains(r#""_discordMessageIds":["d1"]"#), "{job}");
 }
@@ -187,4 +253,35 @@ fn hung_target_times_out_ambiguous_without_blocking_other_targets() {
             .unwrap_or_else(|| panic!("no {kind} for {target}"))
     };
     assert!(position("publish.job.published", "telegram") < position("publish.job.verification_required", "x"));
+}
+
+/// Deliberate deviation: a confirmation lands on the job and its target
+/// together or not at all. An operator who settled the target while the
+/// provider was being asked keeps their answer, and the job is let go for a
+/// fresh read instead of being marked published beside it.
+#[test]
+fn reconciliation_leaves_a_target_settled_while_it_asked() {
+    let steps = json!([
+        {"sql": DRAFT},
+        {"sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (1, 'post:12', 'x', 'verification_required', '{}', 1, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"},
+        {"sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, updated_at) VALUES ('post:12', 'x', 'verification_required', '555', '2026-03-01T10:00:00.000Z')"},
+        {"call": "reconcile"},
+    ]);
+    let mut answer = ok(json!({"data": {"id": "555", "text": "hello"}}));
+    answer["sql"] =
+        json!("UPDATE publication_targets SET status = 'failed', error = 'operator: not published' WHERE target = 'x'");
+    let spec = rust_only(json!([{"name": "target moved", "responses": [answer], "steps": steps}]));
+    let outcome = &support::rust_side(&spec, call, &format!("rust-only-moved-{}", std::process::id()))[0];
+    assert_eq!(outcome["results"][0]["result"]["resolved"], 0);
+    let target = rows(outcome, "publication_targets")[0];
+    assert!(
+        target.contains("text:'failed'") && target.contains("operator: not published"),
+        "{target}"
+    );
+    let job = rows(outcome, "publish_jobs")[0];
+    assert!(
+        job.contains("text:'verification_required'")
+            && job.contains("integer:1 text:'2026-03-01T10:00:37.500Z' null:NULL null:NULL"),
+        "the job is released with one poll counted: {job}"
+    );
 }

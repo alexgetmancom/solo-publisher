@@ -8,7 +8,7 @@ import { runPublicationReconciliation } from "../../apps/backend/src/delivery/pu
 import { runDeliveryPublishCycle } from "../../apps/backend/src/delivery/publish-workflow.js";
 import { pruneOperationalHistory, withMaintenanceLock } from "../../apps/backend/src/operations/maintenance.js";
 import { recoverStalePublishJobs } from "../../apps/backend/src/publishing/queue.js";
-import { type Call, runScenarios } from "./delivery-scenario-support.js";
+import { type Call, listFiles, runScenarios } from "./delivery-scenario-support.js";
 
 /**
  * The TypeScript side of crates/delivery/tests/delivery_scenarios.rs: the
@@ -19,7 +19,7 @@ import { type Call, runScenarios } from "./delivery-scenario-support.js";
  *   bun scripts/rust/delivery-scenarios.ts crates/delivery/tests/delivery_scenarios.json
  */
 
-const call: Call = async ({ backendDb, config, fetchImpl }, name, args) => {
+const call: Call = async ({ backendDb, config, fetchImpl, data }, name, args) => {
   switch (name) {
     case "publishCycle":
       return runDeliveryPublishCycle(config, backendDb, createPlatformPorts(config, fetchImpl, targetRouting(backendDb)));
@@ -54,6 +54,8 @@ const call: Call = async ({ backendDb, config, fetchImpl }, name, args) => {
       return withMaintenanceLock(backendDb, () => pruneOperationalHistory(backendDb));
     case "pruneMediaCache":
       return pruneMediaCache(config);
+    case "files":
+      return listFiles(data);
     default:
       throw new Error(`unknown call ${name}`);
   }

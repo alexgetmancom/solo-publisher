@@ -12,8 +12,8 @@ use adapters::AdapterContext;
 use adapters::remote_media_processor::{MediaKind, Variant, process_vertical_media_remotely};
 use foundation::config::{Config, MediaProcessorProvider};
 use foundation::logger::{LogLevel, log};
-use runtime::ffmpeg::{FFMPEG_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use runtime::ffmpeg::FFPROBE_TIMEOUT;
+use runtime::ffmpeg::{FFMPEG_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use runtime::timeout::with_timeout;
 use serde_json::{Value, json};
 
@@ -52,7 +52,9 @@ pub fn needs_vertical_blur(width: f64, height: f64) -> bool {
 /// container's overhead.
 pub fn telegram_video_kbps(duration: f64, audio_bitrate: f64) -> u64 {
     let target_bits = 8.5 * 1024.0 * 1024.0 * 8.0;
-    ((target_bits / duration - audio_bitrate - 24_000.0) / 1000.0).floor().max(150.0) as u64
+    ((target_bits / duration - audio_bitrate - 24_000.0) / 1000.0)
+        .floor()
+        .max(150.0) as u64
 }
 
 /// `String(number)` for the durations the recipe writes.
@@ -92,7 +94,20 @@ fn output_leg(label: &str, (kbps, max_kbps): (u64, u64), output: &Path) -> Vec<S
     leg.push(format!("{kbps}k"));
     leg.extend(["-maxrate".to_owned(), format!("{max_kbps}k")]);
     leg.extend(["-bufsize".to_owned(), format!("{}k", max_kbps * 2)]);
-    leg.extend(["-g", "50", "-c:a", "copy", "-tag:v", "avc1", "-movflags", "+faststart", "-t"].map(str::to_owned));
+    leg.extend(
+        [
+            "-g",
+            "50",
+            "-c:a",
+            "copy",
+            "-tag:v",
+            "avc1",
+            "-movflags",
+            "+faststart",
+            "-t",
+        ]
+        .map(str::to_owned),
+    );
     leg.push(number(STORY_MAX_DURATION_SECONDS));
     leg.push(output.to_string_lossy().into_owned());
     leg
@@ -183,10 +198,14 @@ async fn transform_locally(
     };
     let rendered = async {
         let args: Vec<&str> = args.iter().map(String::as_str).collect();
-        with_timeout(run_ffmpeg(&args, FFMPEG_TIMEOUT), story_transform_timeout(config), "story_transform_timeout")
-            .await
-            .map_err(|error| error.to_string())?
-            .map_err(|error| error.to_string())?;
+        with_timeout(
+            run_ffmpeg(&args, FFMPEG_TIMEOUT),
+            story_transform_timeout(config),
+            "story_transform_timeout",
+        )
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| error.to_string())?;
         for target in &targets {
             let finalize = async {
                 tokio::fs::set_permissions(partial(target), std::fs::Permissions::from_mode(0o664)).await?;
@@ -215,7 +234,10 @@ async fn transform_remotely(
     telegram_output: Option<&Path>,
     video: bool,
 ) -> Result<(), String> {
-    let bytes = tokio::fs::metadata(source).await.map_err(|error| error.to_string())?.len();
+    let bytes = tokio::fs::metadata(source)
+        .await
+        .map_err(|error| error.to_string())?
+        .len();
     let timeout = story_transform_timeout(&ctx.config);
     let timeout_seconds = timeout.as_secs_f64();
     log(
@@ -268,7 +290,13 @@ mod tests {
         assert!(!needs_vertical_blur(0.0, 1080.0));
         assert_eq!(telegram_video_kbps(10.0, 128_000.0), 6_978);
         assert_eq!(telegram_video_kbps(10_000.0, 0.0), 150);
-        let args = local_story_ffmpeg_args(Path::new("/in.mp4"), Path::new("/s.mp4"), Path::new("/t.mp4"), 900, false);
+        let args = local_story_ffmpeg_args(
+            Path::new("/in.mp4"),
+            Path::new("/s.mp4"),
+            Path::new("/t.mp4"),
+            900,
+            false,
+        );
         assert_eq!(
             args.join(" "),
             "-y -i /in.mp4 -filter_complex [0:v:0]trim=duration=58.9,scale=1080:1920:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,split=2[out0][out1] \

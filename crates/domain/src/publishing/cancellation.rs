@@ -31,7 +31,7 @@ pub struct PendingTarget {
 
 /// The condition a delivery write carries so it cannot start work the
 /// operator has already cancelled; binds the publication key.
-pub(crate) const DELIVERY_NOT_CANCELLED: &str =
+pub const DELIVERY_NOT_CANCELLED: &str =
     r#"not exists (select 1 from "publication_cancellations" where "publication_cancellations"."publication_key" = ?)"#;
 
 pub(crate) fn publication_id(sqlite: &Connection, draft_id: i64) -> Result<Option<i64>> {

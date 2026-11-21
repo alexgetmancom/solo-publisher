@@ -94,7 +94,10 @@ pub fn prepared_story_media(config: &Config, item: &MediaItem) -> Option<MediaIt
     prepared.insert("story_local_path".into(), standard.clone().into());
     prepared.insert("storyLocalPath".into(), standard.into());
     if let Some(telegram) = &paths.telegram {
-        prepared.insert("telegramStoryLocalPath".into(), telegram.to_string_lossy().into_owned().into());
+        prepared.insert(
+            "telegramStoryLocalPath".into(),
+            telegram.to_string_lossy().into_owned().into(),
+        );
     }
     prepared.insert("story_width".into(), 1080.into());
     prepared.insert("story_height".into(), 1920.into());
@@ -274,7 +277,9 @@ impl MediaPreparation for DeliveryMedia {
         config: &'a Config,
         item: &'a MediaItem,
     ) -> Fut<'a, adapters::Result<Option<MediaItem>>> {
-        Box::pin(async move { Ok::<_, AdapterError>(DeliveryMedia::await_prepared_story_media(self, config, item).await) })
+        Box::pin(
+            async move { Ok::<_, AdapterError>(DeliveryMedia::await_prepared_story_media(self, config, item).await) },
+        )
     }
 }
 
@@ -291,7 +296,10 @@ impl StoryDerivatives for DeliveryMedia {
                 Value::Object(label) => label,
                 _ => unreachable!("built as an object"),
             };
-            if let Err(error) = media.ensure_story_derivative(config, &local_path, video, label, false).await {
+            if let Err(error) = media
+                .ensure_story_derivative(config, &local_path, video, label, false)
+                .await
+            {
                 log(
                     LogLevel::Warn,
                     "story derivative not prepared for draft",

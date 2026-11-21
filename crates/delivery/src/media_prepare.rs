@@ -188,7 +188,9 @@ async fn ensure_local_media(ctx: &AdapterContext, item: &MediaItem, cache_key: &
         return Ok(target);
     }
     let Some(file_id) = field(item, "fileId") else {
-        return Err(AdapterError::message_text("media item has neither localPath nor fileId"));
+        return Err(AdapterError::message_text(
+            "media item has neither localPath nor fileId",
+        ));
     };
     materialize_telegram_file(
         &ctx.client,
@@ -232,13 +234,49 @@ async fn normalize_video_for_public_upload(
     );
     let args: Vec<&str> = if metadata.width <= f64::from(max_width) && metadata.height <= f64::from(max_height) {
         vec![
-            "-y", "-i", &input, "-map", "0:v:0", "-map", "0:a:0?", "-c", "copy", "-movflags", "+faststart", &output_text,
+            "-y",
+            "-i",
+            &input,
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a:0?",
+            "-c",
+            "copy",
+            "-movflags",
+            "+faststart",
+            &output_text,
         ]
     } else {
         vec![
-            "-y", "-i", &input, "-map", "0:v:0", "-map", "0:a:0?", "-vf", &scale, "-c:v", "libx264", "-preset",
-            "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2",
-            "-movflags", "+faststart", &output_text,
+            "-y",
+            "-i",
+            &input,
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a:0?",
+            "-vf",
+            &scale,
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "23",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
+            "-movflags",
+            "+faststart",
+            &output_text,
         ]
     };
     run_ffmpeg(&args, FFMPEG_TIMEOUT)
