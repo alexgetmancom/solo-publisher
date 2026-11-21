@@ -331,6 +331,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "delivery"
+version = "0.0.0"
+dependencies = [
+ "adapters",
+ "content",
+ "db",
+ "domain",
+ "foundation",
+ "futures-util",
+ "jiff",
+ "public_site",
+ "regex",
+ "runtime",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
