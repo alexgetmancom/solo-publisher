@@ -1,0 +1,676 @@
+{
+  "clock": "2026-11-01T10:00:00.000Z",
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_ADMIN_IDS": "42",
+    "PUBLIC_BASE_URL": "https://studio.example",
+    "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+    "INDEXNOW_ENABLED": "false"
+  },
+  "normalize": [["6a4516f971392c8cb88055706d18605275fe62dff455e4468634be8ff786ac85", "$DIAGNOSE_IDEMPOTENCY_KEY"]],
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')"
+  ],
+  "cases": [
+    {
+      "name": "media processor not configured",
+      "steps": [
+        {
+          "op": "media-status",
+          "args": {}
+        },
+        {
+          "op": "media-diagnose",
+          "args": {}
+        },
+        {
+          "cli": ["media-status"]
+        }
+      ]
+    },
+    {
+      "name": "remote media processor answering",
+      "env": {
+        "MEDIA_PROCESSOR_PROVIDER": "remote_http",
+        "MEDIA_PROCESSOR_URL": "https://media.example/",
+        "MEDIA_PROCESSOR_TOKEN": "fake-media-token-0000"
+      },
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://media.example/health",
+          "json": {
+            "ok": true,
+            "queued": 2,
+            "active": 1,
+            "concurrency": 2,
+            "version": "1.4.0",
+            "vaapi": false,
+            "workDisk": {
+              "availableBytes": 1000,
+              "totalBytes": 4000
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://media.example/health",
+          "json": {
+            "ok": false,
+            "queued": 9,
+            "active": 1,
+            "concurrency": 2,
+            "version": "1.4.0",
+            "vaapi": false,
+            "workDisk": {
+              "availableBytes": 1000,
+              "totalBytes": 4000
+            }
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://media.example/v1/transforms/ffmpeg",
+          "json": {
+            "ok": true,
+            "width": 1080,
+            "height": 1920
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "media-status",
+          "args": {}
+        },
+        {
+          "op": "media-diagnose",
+          "args": {}
+        }
+      ]
+    },
+    {
+      "name": "remote media processor failing",
+      "env": {
+        "MEDIA_PROCESSOR_PROVIDER": "remote_http",
+        "MEDIA_PROCESSOR_URL": "https://media.example/",
+        "MEDIA_PROCESSOR_TOKEN": "fake-media-token-0000"
+      },
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://media.example/health",
+          "status": 503,
+          "json": {
+            "ok": false,
+            "error": "draining"
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://media.example/v1/transforms/ffmpeg",
+          "status": 401,
+          "body": "unauthorized"
+        }
+      ],
+      "steps": [
+        {
+          "op": "media-diagnose",
+          "args": {}
+        },
+        {
+          "op": "media-status",
+          "args": {}
+        }
+      ]
+    },
+    {
+      "name": "media job over post and video timelines",
+      "steps": [
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (1, 'post:1', 'telegram_stories', 'failed', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (2, 'post:1', 'telegram', 'completed', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nUPDATE publish_jobs SET locked_at = '2026-10-31T10:02:00.000Z' WHERE job_id = 1;\nINSERT INTO publication_targets (publication_key, target, status, url, updated_at) VALUES ('post:1', 'telegram', 'published', 'https://t.me/c/1', '2026-10-31T10:05:00.000Z');\nINSERT INTO publication_events (id, publication_key, event_type, severity, target, message, details_json, created_at) VALUES (1, 'post:1', 'publish.job.phase', 'info', 'telegram_stories', 'event 1', '{\"phase\":\"media.prepare\"}', '2026-10-31T10:01:00.000Z');\nINSERT INTO publication_events (id, publication_key, event_type, severity, target, message, details_json, created_at) VALUES (2, 'post:1', 'publish.failed', 'info', 'telegram_stories', 'event 2', '{\"phase\":\"story_media\"}', '2026-10-31T10:03:00.000Z');\nINSERT INTO publication_events (id, publication_key, event_type, severity, target, message, details_json, created_at) VALUES (3, 'post:1', 'publish.failed', 'info', 'telegram', 'event 3', '{\"phase\":\"upload\"}', '2026-10-31T10:02:00.000Z');\nINSERT INTO publication_events (id, publication_key, event_type, severity, target, message, details_json, created_at) VALUES (4, 'post:1', 'publish.note', 'info', NULL, 'event 4', 'not json', '2026-10-31T10:04:00.000Z');\nINSERT INTO publication_events (id, publication_key, event_type, severity, target, message, details_json, created_at) VALUES (5, 'post:1', 'publish.note', 'info', NULL, 'event 5', '{\"phase\":12}', '2026-10-31T10:04:00.000Z');\nINSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, created_at, updated_at) VALUES (1, 42, 'ru', 'Видео', NULL, 'failed', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, last_error, created_at, updated_at) VALUES (1, 1, 'youtube_shorts', '{\"title\":\"Ролик\",\"description\":\"Описание\",\"tags\":[\"игры\"]}', 'failed', 'native', NULL, NULL, NULL, 'boom', '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (1, 1, 1, 'prepare', '2026-10-31T10:30:00.000Z', 'completed', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_metric_schedule (video_target_id, checkpoint_index, next_check_at, frozen_at, updated_at) VALUES (1, 2, '2026-11-02T00:00:00.000Z', '2026-11-01T00:00:00.000Z', '2026-11-01T00:00:00.000Z');\nINSERT INTO publication_events (id, publication_key, event_type, severity, target, message, details_json, created_at) VALUES (6, 'video:1', 'video.prepare', 'info', 'youtube_shorts', 'event 6', '{\"phase\":\"media\"}', '2026-10-31T10:01:00.000Z');"
+        },
+        {
+          "op": "media-job",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "media-job",
+          "args": {
+            "ref": "1"
+          }
+        },
+        {
+          "op": "media-job",
+          "args": {
+            "ref": "video:1"
+          }
+        },
+        {
+          "op": "media-job",
+          "args": {
+            "ref": "article:1"
+          }
+        },
+        {
+          "op": "media-job",
+          "args": {
+            "ref": "post:404"
+          }
+        }
+      ]
+    },
+    {
+      "name": "media reprocess plans and renders Story media",
+      "steps": [
+        {
+          "write": "data/studio-media/aaaaaaaaaaaaaaaaaaaaaaaa.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (1, 'post:3', 'telegram_stories', 'failed', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/aaaaaaaaaaaaaaaaaaaaaaaa.png\"}]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (2, 'post:3', 'instagram_stories_ru', 'failed', '{\"locale\":null,\"text\":\"Текст\",\"entities\":[],\"media\":[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/aaaaaaaaaaaaaaaaaaaaaaaa.png\"}]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (3, 'post:3', 'instagram_stories', 'failed', '{\"locale\":\"en\",\"text\":\"Текст\",\"entities\":[],\"media\":[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/aaaaaaaaaaaaaaaaaaaaaaaa.png\"},{\"type\":\"photo\",\"fileId\":\"f2\"}]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (4, 'post:3', 'telegram', 'failed', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[{\"type\":\"photo\",\"localPath\":\"/elsewhere.png\"}]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (5, 'post:3', 'telegram_stories', 'dead', 'not json', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (6, 'post:3', 'telegram_stories', 'cancelled', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (7, 'post:4', 'telegram_stories', 'failed', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[{\"type\":\"photo\",\"fileId\":\"remote-only\"}]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');"
+        },
+        {
+          "op": "media-reprocess",
+          "args": {
+            "ref": "post:3"
+          }
+        },
+        {
+          "op": "media-reprocess",
+          "args": {
+            "ref": "video:3"
+          }
+        },
+        {
+          "op": "media-reprocess",
+          "args": {
+            "ref": "post:3",
+            "apply": true
+          }
+        },
+        {
+          "op": "media-reprocess",
+          "args": {
+            "ref": "post:4"
+          }
+        },
+        {
+          "op": "media-reprocess",
+          "args": {
+            "ref": "post:4",
+            "apply": true
+          }
+        },
+        {
+          "op": "media-reprocess",
+          "args": {
+            "ref": "post:5",
+            "apply": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "story media backfill without Story targets",
+      "steps": [
+        {
+          "op": "story-media-backfill",
+          "args": {},
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "story media backfill plans and renders",
+      "steps": [
+        {
+          "sql": "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram_stories', 'telegram', 'ru', 'native', NULL, 'telegram_stories', 'telegram_stories', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')"
+        },
+        {
+          "write": "data/studio-media/bbbbbbbbbbbbbbbbbbbbbbbb.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/studio-media/cccccccccccccccccccccccc.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/studio-media/dddddddddddddddddddddddd.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'draft', '{\"telegram\":true,\"telegram_stories\":true}', NULL, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'ru', 'С историей', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/bbbbbbbbbbbbbbbbbbbbbbbb.png\"},{\"type\":\"photo\",\"local_path\":\"$CASE/data/studio-media/gone.png\"}]', NULL, 'post-1-ru', NULL, NULL, 0, NULL, '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'draft', '{\"telegram\":true}', NULL, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (2, 'ru', 'Без истории', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/cccccccccccccccccccccccc.png\"}]', NULL, 'post-2-ru', NULL, NULL, 0, NULL, '2026-10-31T10:00:00.000Z');\nINSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (42, 'photo', 'image/png', 'b.png', '$CASE/data/studio-media/bbbbbbbbbbbbbbbbbbbbbbbb.png', 70, 'b', 'http_upload', '2026-11-01T09:30:00.000Z');\nINSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (42, 'photo', 'image/png', 'd.png', '$CASE/data/studio-media/dddddddddddddddddddddddd.png', 70, 'd', 'http_upload', '2026-11-01T09:30:00.000Z');"
+        },
+        {
+          "op": "story-media-backfill",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "story-media-backfill",
+          "args": {
+            "all": true,
+            "limit": 1
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "story-media-backfill",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "story-media-backfill",
+          "args": {
+            "apply": true,
+            "all": true,
+            "limit": 1
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "story-media-backfill",
+          "args": {
+            "all": true
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "story media prune",
+      "steps": [
+        {
+          "write": "data/studio-media/eeeeeeeeeeeeeeeeeeeeeeee.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/story-media/eeeeeeeeeeeeeeeeeeeeeeee-story-standard.jpg",
+          "text": "live variant"
+        },
+        {
+          "write": "data/story-media/ffffffffffffffffffffffff-story-standard.jpg",
+          "text": "orphaned variant of a gone source"
+        },
+        {
+          "write": "data/story-media/ffffffffffffffffffffffff-story-telegram.mp4",
+          "text": "orphaned telegram variant"
+        },
+        {
+          "write": "data/story-media/draft-12-story-standard.jpg",
+          "text": "held by a job"
+        },
+        {
+          "write": "data/story-media/.hidden",
+          "text": "skipped"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (42, 'photo', 'image/png', 'e.png', '$CASE/data/studio-media/eeeeeeeeeeeeeeeeeeeeeeee.png', 70, 'e', 'http_upload', '2026-11-01T09:30:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'draft', '{}', NULL, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'ru', 'x', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/ffffffffffffffffffffffff.png\"}]', NULL, 'post-1-ru', NULL, NULL, 0, NULL, '2026-10-31T10:00:00.000Z');\nINSERT INTO publish_jobs (job_id, publication_key, target, status, payload_json, attempt_count, created_at, updated_at) VALUES (1, 'post:9', 'telegram_stories', 'failed', '{\"locale\":\"ru\",\"text\":\"Текст\",\"entities\":[],\"media\":[{\"type\":\"photo\",\"localPath\":\"/x/a.png\",\"storyLocalPath\":\"$CASE/data/story-media/draft-12-story-standard.jpg\"}]}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:05:00.000Z');"
+        },
+        {
+          "op": "story-media-prune",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "story-media-prune",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "story-media-prune",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "site display repair: export, refusals and a reviewed plan",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'ru', 'Первый пост', NULL, '<p>Первый пост</p>', NULL, '[{\"type\":\"image\",\"path\":\"/media/posts/post-1-ru-0.jpg?v=abc\",\"alt\":\"Кот\",\"asset_id\":5},{\"type\":\"image\",\"path\":\"/media/posts/post-1-ru-card.jpg\",\"role\":\"text_story_card\"}]', 'pervyj', NULL, '2026-10-31T13:00:00.000Z', 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (2, 'en', 'Second', 'Second post', NULL, NULL, '[{\"type\":\"video\",\"path\":\"/media/posts/post-2-en-0-vertical.mp4\"}]', 'second', 'Second title', '2026-10-31T14:00:00.000Z', 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (3, 42, 'scheduled', '{}', 3, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (3, 'ru', 'Запланирован', NULL, NULL, NULL, '[]', 'post-3-ru', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/bad.json",
+          "text": "{\"version\":2,\"dates\":[{\"post_id\":\"1\",\"locale\":\"de\",\"expected_updated_at\":\"yesterday\",\"restore_updated_at\":null,\"content_sha256\":\"x\",\"extra\":1}],\"more\":true}"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/bad.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/stale.json",
+          "text": "{\"version\":1,\"dates\":[{\"post_id\":1,\"locale\":\"ru\",\"expected_updated_at\":\"2026-10-31T13:00:00.000Z\",\"restore_updated_at\":\"2026-10-31T12:30:00.000Z\",\"content_sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\"}]}"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/stale.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/early.json",
+          "text": "{\"version\":1,\"dates\":[{\"post_id\":1,\"locale\":\"ru\",\"expected_updated_at\":\"2026-10-31T13:00:00.000Z\",\"restore_updated_at\":\"2026-10-30T12:30:00.000Z\",\"content_sha256\":\"fc52177f96883cf85692babe3dcf7e2be56c1ead39d9ec5288378d60805e38f3\"}]}"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/early.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/twice.json",
+          "text": "{\"version\":1,\"dates\":[{\"post_id\":2,\"locale\":\"en\",\"expected_updated_at\":\"2026-10-31T14:00:00.000Z\",\"restore_updated_at\":null,\"content_sha256\":\"8056df6fc0413af658037f3e811fe396f30f6edaeda1e3331f4deefe3fe82ee3\"},{\"post_id\":2,\"locale\":\"en\",\"expected_updated_at\":\"2026-10-31T14:00:00.000Z\",\"restore_updated_at\":null,\"content_sha256\":\"8056df6fc0413af658037f3e811fe396f30f6edaeda1e3331f4deefe3fe82ee3\"}]}"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/twice.json",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/good.json",
+          "text": "{\"version\":1,\"dates\":[{\"post_id\":1,\"locale\":\"ru\",\"expected_updated_at\":\"2026-10-31T13:00:00.000Z\",\"restore_updated_at\":\"2026-10-31T12:30:00+00:00\",\"content_sha256\":\"fc52177f96883cf85692babe3dcf7e2be56c1ead39d9ec5288378d60805e38f3\"},{\"post_id\":2,\"locale\":\"en\",\"expected_updated_at\":\"2026-10-31T14:00:00.000Z\",\"restore_updated_at\":null,\"content_sha256\":\"8056df6fc0413af658037f3e811fe396f30f6edaeda1e3331f4deefe3fe82ee3\"}]}"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/good.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/good.json",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {
+            "file": "$CASE/plans/good.json",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-display-repair",
+          "args": {},
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "site media backfill restores original galleries",
+      "steps": [
+        {
+          "write": "data/studio-media/abababababababababababab.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'ru', 'Старый', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/abababababababababababab.png\",\"alt\":\"Описание\"}]', '[{\"type\":\"image\",\"path\":\"/media/posts/post-1-ru-0-vertical.jpg?v=1\",\"alt\":\"Описание\"}]', 'post-1-ru', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{}', 2, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (2, 'ru', 'Без загрузки', NULL, NULL, '[]', '[{\"type\":\"image\",\"path\":\"/media/posts/post-2-ru-0-vertical.jpg\"}]', 'post-2-ru', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (3, 42, 'published', '{}', 3, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (3, 'ru', 'Уже новый', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"/x.png\"}]', '[{\"type\":\"image\",\"path\":\"/media/posts/post-3-ru-0.png\"}]', 'post-3-ru', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (4, 42, 'published', '{}', 4, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (4, 'ru', 'Будущий', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"/x.png\"}]', '[{\"type\":\"image\",\"path\":\"/media/posts/post-4-ru-0-vertical.jpg\"}]', 'post-4-ru', NULL, NULL, 1, '2026-12-01T00:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (5, 42, 'published', '{}', 5, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (5, 'ru', 'Потерян', NULL, NULL, '[{\"type\":\"photo\",\"localPath\":\"$CASE/data/studio-media/missing.png\"}]', '[{\"type\":\"image\",\"path\":\"/media/posts/post-5-ru-0-vertical.jpg\"}]', 'post-5-ru', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "op": "site-media-backfill",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-media-backfill",
+          "args": {
+            "limit": 1
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-media-backfill",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "query": "SELECT draft_id, locale, site_updated_at > '2026-11-02' AS redated_by_the_trigger FROM post_locales ORDER BY draft_id, locale"
+        },
+        {
+          "sql": "UPDATE post_locales SET site_updated_at = '2026-11-01T10:00:00.000Z' WHERE site_updated_at > '2026-11-02'"
+        },
+        {
+          "op": "site-media-backfill",
+          "args": {},
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "site responsive backfill",
+      "steps": [
+        {
+          "write": "data/site/media/posts/post-1-ru-0.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/site/media/posts/post-1-ru-1-poster.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'ru', 'Картинки', NULL, '<p>Картинки</p>', NULL, '[{\"type\":\"image\",\"path\":\"/media/posts/post-1-ru-0.png?v=1\",\"width\":4,\"height\":4},{\"type\":\"video\",\"path\":\"/media/posts/post-1-ru-1.mp4\",\"poster\":\"/media/posts/post-1-ru-1-poster.png\",\"width\":4,\"height\":4},{\"type\":\"image\",\"path\":\"/media/posts/missing.jpg\",\"width\":4,\"height\":4},{\"type\":\"image\",\"path\":\"/media/posts/clip.gif\",\"width\":4,\"height\":4}]', 'post-1-ru', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "op": "site-responsive-backfill",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-responsive-backfill",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-responsive-backfill",
+          "args": {},
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "site metadata: export, refusals and a reviewed import",
+      "steps": [
+        {
+          "sql": "UPDATE studio_profile SET site_enabled = 1;\nINSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{}', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'ru', 'Пост с картинкой', NULL, '<p>Пост с картинкой</p>', NULL, '[{\"type\":\"image\",\"path\":\"/media/posts/post-1-ru-0.png\",\"width\":4,\"height\":4},{\"type\":\"image\",\"path\":\"/media/posts/post-1-ru-1.png\",\"alt\":\"Старый\",\"width\":4,\"height\":4}]', 's-kartinkoj', NULL, NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO post_locales (draft_id, locale, source_text, approved_text, html, media_json, site_media_json, slug, seo_title, site_updated_at, site_enabled, published_at, updated_at) VALUES (1, 'en', 'Post with a picture', NULL, '<p>Post with a picture</p>', NULL, '[{\"type\":\"image\",\"path\":\"/media/posts/post-1-en-0.png\",\"width\":4,\"height\":4}]', 'with-picture', 'Old title', NULL, 1, '2026-10-31T12:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "op": "site-metadata",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/empty.json",
+          "text": "{\"version\":1,\"items\":[]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/empty.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/bad.json",
+          "text": "{\"version\":1,\"items\":[{\"post_id\":1.5,\"locale\":\"ru\",\"text_sha256\":\"2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881\",\"seo_title\":\"  \",\"expected_seo_title\":\"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\",\"images\":[{\"path\":\"\",\"alt\":\"a\",\"x\":1}]}]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/bad.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/stale.json",
+          "text": "{\"version\":1,\"items\":[{\"post_id\":1,\"locale\":\"ru\",\"text_sha256\":\"3259c89ea3f38ce4f14e64bfeb41b21831df8b1b32bbc9f3412cd4e2aa75bee0\"}]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/stale.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/edited.json",
+          "text": "{\"version\":1,\"items\":[{\"post_id\":1,\"locale\":\"en\",\"text_sha256\":\"cc5d74313dd58a65ff776c8593a0c81f2df48db2fdac91bf0a481e2c1e272461\",\"seo_title\":\"New title\"}]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/edited.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/alt.json",
+          "text": "{\"version\":1,\"items\":[{\"post_id\":1,\"locale\":\"ru\",\"text_sha256\":\"cec24113467a2af6a8d6d1106a1921b1497ed7933be4d3640ea5dac4adfd0296\",\"images\":[{\"path\":\"media/posts/post-1-ru-1.png\",\"alt\":\"Новый\"}]}]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/alt.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/missing.json",
+          "text": "{\"version\":1,\"items\":[{\"post_id\":1,\"locale\":\"ru\",\"text_sha256\":\"cec24113467a2af6a8d6d1106a1921b1497ed7933be4d3640ea5dac4adfd0296\",\"images\":[{\"path\":\"/media/posts/nope.png\",\"alt\":\"Нет\"}]}]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/missing.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "write": "plans/good.json",
+          "text": "{\"version\":1,\"items\":[{\"post_id\":1,\"locale\":\"ru\",\"text_sha256\":\"cec24113467a2af6a8d6d1106a1921b1497ed7933be4d3640ea5dac4adfd0296\",\"seo_title\":\" Пост с картинкой — заголовок \",\"images\":[{\"path\":\"/media/posts/post-1-ru-0.png\",\"alt\":\" Кот на окне \"},{\"path\":\"/media/posts/post-1-ru-1.png\",\"alt\":\"Новый\",\"expected_alt\":\"Старый\"}]},{\"post_id\":1,\"locale\":\"en\",\"text_sha256\":\"cc5d74313dd58a65ff776c8593a0c81f2df48db2fdac91bf0a481e2c1e272461\",\"seo_title\":\"New title\",\"expected_seo_title\":\"Old title\",\"images\":[]}]}"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/good.json"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/good.json",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "query": "SELECT draft_id, locale, site_updated_at > '2026-11-02' AS redated_by_the_trigger FROM post_locales ORDER BY draft_id, locale"
+        },
+        {
+          "sql": "UPDATE post_locales SET site_updated_at = '2026-11-01T10:00:00.000Z' WHERE site_updated_at > '2026-11-02'"
+        },
+        {
+          "op": "site-metadata",
+          "args": {
+            "file": "$CASE/plans/good.json",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-metadata",
+          "args": {},
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "site media deduplicate",
+      "steps": [
+        {
+          "write": "data/site/media/legacy.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/site/media/notes.txt",
+          "text": "not media"
+        },
+        {
+          "write": "data/site/media/posts/post-1-ru-0.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/site/media/posts/2026/post-2-ru-0.PNG",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "write": "data/site/media/posts/post-3-ru-0.jpg",
+          "text": "other bytes"
+        },
+        {
+          "op": "site-media-deduplicate",
+          "args": {},
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-media-deduplicate",
+          "args": {
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "site-media-deduplicate",
+          "args": {},
+          "actor": "ops-cli"
+        }
+      ]
+    }
+  ]
+}

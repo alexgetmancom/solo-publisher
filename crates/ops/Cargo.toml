@@ -14,6 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 adapters = { path = "../adapters" }
+base64 = "0.22"
 bot = { path = "../bot" }
 channels = { path = "../channels" }
 content = { path = "../content" }
@@ -32,6 +33,5 @@ sha2 = "0.10"
 tokio = { version = "1", features = ["rt", "time", "sync", "macros", "fs", "io-util", "process"] }
 
 [dev-dependencies]
-base64 = "0.22"
 tokio = { version = "1", features = ["rt", "macros", "test-util"] }
 url = "2"

@@ -5,7 +5,10 @@ pub mod admin;
 pub mod commands;
 pub mod lifecycle;
 pub mod media;
+mod plan_schema;
 pub mod reads;
+mod site;
+mod timeline;
 
 /// A handler not ported yet answers with a refusal naming itself.
 macro_rules! not_ported {

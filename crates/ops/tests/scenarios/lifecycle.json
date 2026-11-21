@@ -1,0 +1,613 @@
+{
+  "clock": "2026-11-01T10:00:00.000Z",
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_ADMIN_IDS": "42",
+    "PUBLIC_BASE_URL": "https://studio.example",
+    "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+    "INDEXNOW_ENABLED": "false",
+    "TOKEN_ENCRYPTION_KEY": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', 'acct-x', 'x', 'x', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube:ru', 0, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')",
+    "INSERT INTO platform_tokens (target, sealed_token, account_id, refreshed_at, updated_at) VALUES ('zernio', 'xhT/mPftrojSJIjP.xZteXDzJWN/IbF+RVIFRMg==.DbWWF/aCSdyVWMOtgYTF', '1 connected accounts', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')"
+  ],
+  "cases": [
+    {
+      "name": "publish: refusals and text publications",
+      "steps": [
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "telegram_stories",
+            "text": "История"
+          }
+        },
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "telegram,bogus",
+            "text": "Текст"
+          }
+        },
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "x",
+            "text": "Текст"
+          }
+        },
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "threads_ru",
+            "text": "Текст"
+          }
+        },
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "telegram",
+            "text": "   "
+          }
+        },
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "telegram,telegram",
+            "text": "  Привет, мир  "
+          }
+        },
+        {
+          "op": "publish",
+          "args": {
+            "locale": "en",
+            "targets": "x",
+            "text": "Hello world"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "cli": ["publish", "--locale", "ru", "--targets", "telegram", "--text", "Через CLI"]
+        }
+      ]
+    },
+    {
+      "name": "publish without a Studio actor",
+      "env": {
+        "STUDIO_ACTOR_IDS": "",
+        "CONTROLLER_ADMIN_IDS": ""
+      },
+      "steps": [
+        {
+          "op": "publish",
+          "args": {
+            "locale": "ru",
+            "targets": "telegram",
+            "text": "Текст"
+          }
+        }
+      ]
+    },
+    {
+      "name": "article-publish: refusals and an article",
+      "steps": [
+        {
+          "op": "article-publish",
+          "args": {
+            "locale": "ru",
+            "targets": "telegram",
+            "markdown": "# Заголовок\n\nТекст"
+          }
+        },
+        {
+          "op": "article-publish",
+          "args": {
+            "locale": "ru",
+            "targets": "x_article",
+            "markdown": "# Title\n\nBody"
+          }
+        },
+        {
+          "op": "article-publish",
+          "args": {
+            "locale": "en",
+            "targets": "x_article",
+            "markdown": "Only a body"
+          }
+        },
+        {
+          "op": "article-publish",
+          "args": {
+            "locale": "en",
+            "targets": "x_article,x_article",
+            "markdown": "# The Title\n\nBody with **bold** and [a link](https://example.com).\n\nSecond paragraph."
+          }
+        },
+        {
+          "cli": ["article-publish", "--locale", "en", "--targets", "x_article", "--markdown", "# CLI\n\nText"]
+        }
+      ]
+    },
+    {
+      "name": "draft publish, schedule and cancel",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Черновик для расписания",
+                "targets": ["telegram"]
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Черновик для публикации",
+                "targets": ["telegram"]
+              }
+            }
+          }
+        },
+        {
+          "op": "draft-publish",
+          "args": {
+            "draft": 2
+          }
+        },
+        {
+          "op": "draft-publish",
+          "args": {
+            "draft": 99
+          }
+        },
+        {
+          "op": "draft-schedule",
+          "args": {
+            "draft": 1,
+            "at": "2026-11-02T08:00:00Z"
+          }
+        },
+        {
+          "op": "draft-schedule",
+          "args": {
+            "draft": 1,
+            "at": "03.11.2026 09:30",
+            "locale": "ru"
+          }
+        },
+        {
+          "op": "draft-schedule",
+          "args": {
+            "draft": 1,
+            "at": "2026-11-02 08:00+03:00"
+          }
+        },
+        {
+          "op": "draft-schedule",
+          "args": {
+            "draft": 1,
+            "at": "2026-13-45T08:00Z"
+          }
+        },
+        {
+          "op": "draft-schedule",
+          "args": {
+            "draft": 1,
+            "at": "not a time"
+          }
+        },
+        {
+          "op": "draft-schedule",
+          "args": {
+            "draft": 1,
+            "at": "2026-11-02T08:00:00Z",
+            "apply": true
+          }
+        },
+        {
+          "op": "draft-cancel",
+          "args": {
+            "draft": 1
+          }
+        },
+        {
+          "op": "draft-cancel",
+          "args": {
+            "draft": 1,
+            "apply": true
+          }
+        },
+        {
+          "op": "draft-publish",
+          "args": {
+            "draft": 2,
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "cli": ["draft-cancel", "--draft", "2"]
+        }
+      ]
+    },
+    {
+      "name": "video publish, schedule and cancel",
+      "env": {
+        "YOUTUBE_RU_CLIENT_ID": "fake-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "fake-secret",
+        "YOUTUBE_RU_REFRESH_TOKEN": "fake-refresh"
+      },
+      "steps": [
+        {
+          "write": "data/video-media/clip.mp4",
+          "base64": "AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAADYhtZGF0AAACrwYF//+r3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzE5MSA0NjEzYWMzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyNCAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEyIGxvb2thaGVhZF90aHJlYWRzPTIgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MyBiX3B5cmFtaWQ9MiBiX2FkYXB0PTEgYl9iaWFzPTAgZGlyZWN0PTEgd2VpZ2h0Yj0xIG9wZW5fZ29wPTAgd2VpZ2h0cD0yIGtleWludD0yNTAga2V5aW50X21pbj0yNSBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTQwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAAatliIQAN//+9vD+BTZWBFCXEc3onTMfvxW4ujQ3vc4AAAMAAAMAAAMAAAMBEHUTIzhVLsl4YAAAAwAAcQACvgAoYALWAEZAB3ABCAAsgAjgAXwAXgARAARAAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADADihAAAAQ0GaJGxDf/6nhAAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGfDcAExhdmM2MS4zLjEwMABCIAjBGDgAAABAQZ5CeIV/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMSEQBGCMHCEQBGCMHAAAAEABnmF0Qn8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABswIRAEYIwcAAAAQAGeY2pCfwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGzEhEARgjBwhEARgjBwAAABJQZpoSahBaJlMCG///qeEAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAZ8SEQBGCMHAAAAEJBnoZFESwr/wAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTEhEARgjBwhEARgjBwAAABAAZ6ldEJ/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAbMSEQBGCMHAAAAEABnqdqQn8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABswIRAEYIwcIRAEYIwcAAAASUGarEmoQWyZTAhv//6nhAAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGfAhEARgjBwAAABCQZ7KRRUsK/8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcAAAAQAGe6XRCfwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGzAhEARgjBwhEARgjBwAAABAAZ7rakJ/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAbMCEQBGCMHAAAAElBmvBJqEFsmUwIb//+p4QAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABnxIRAEYIwcIRAEYIwcAAAAQkGfDkUVLCv/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMSEQBGCMHAAAAEABny10Qn8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABsxIRAEYIwcIRAEYIwcAAAAQAGfL2pCfwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGzAhEARgjBwAAABJQZs0SahBbJlMCG///qeEAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAZ8CEQBGCMHAAAAEJBn1JFFSwr/wAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTEhEARgjBwhEARgjBwAAABAAZ9xdEJ/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAbMCEQBGCMHAAAAEABn3NqQn8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABswIRAEYIwcIRAEYIwcAAAASUGbeEmoQWyZTAhn//6eEAAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAZUEhEARgjBwAAABCQZ+WRRUsK/8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUwIRAEYIwcIRAEYIwcAAAAQAGftXRCfwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGzEhEARgjBwAAABAAZ+3akJ/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAbMSEQBGCMHCEQBGCMHAAAAEhBm7xJqEFsmUwIV//+OEAAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAYshEARgjBwAAABCQZ/aRRUsK/8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABUxIRAEYIwcAAAAQAGf+XRCfwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGzAhEARgjBwhEARgjBwAAABAAZ/7akJ/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAbMSEQBGCMHAAAAElBm/1JqEFsmUwIT//98QAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwO7IRAEYIwcIRAEYIwcIRAEYIwcIRAEYIwcIRAEYIwcAAAJqW1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAPoAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAARLdHJhawAAAFx0a2hkAAAAAwAAAAAAAAAAAAAAAQAAAAAAAAPoAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAQ4AAAHgAAAAAAAJGVkdHMAAAAcZWxzdAAAAAAAAAABAAAD6AAABAAAAQAAAAADw21kaWEAAAAgbWRoZAAAAAAAAAAAAAAAAAAAPAAAADwAVcQAAAAAAC1oZGxyAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAA25taW5mAAAAFHZtaGQAAAABAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAAMuc3RibAAAAMJzdHNkAAAAAAAAAAEAAACyYXZjMQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAQ4B4AASAAAAEgAAAAAAAAAARRMYXZjNjEuMy4xMDAgbGlieDI2NAAAAAAAAAAAAAAAABj//wAAADhhdmNDAWQAKP/hABtnZAAorNlARAPHl8BEAAADAAQAAAMA8DxgxlgBAAZo6+PLIsD9+PgAAAAAEHBhc3AAAAABAAAAAQAAABRidHJ0AAAAAAAAYxgAAGMYAAAAGHN0dHMAAAAAAAAAAQAAAB4AAAIAAAAAFHN0c3MAAAAAAAAAAQAAAAEAAAEAY3R0cwAAAAAAAAAeAAAAAQAABAAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAoAAAAAAQAABAAAAAABAAAAAAAAAAEAAAIAAAAAAQAACgAAAAABAAAEAAAAAAEAAAAAAAAAAQAAAgAAAAABAAAKAAAAAAEAAAQAAAAAAQAAAAAAAAABAAACAAAAAAEAAAQAAAAAKHN0c2MAAAAAAAAAAgAAAAEAAAACAAAAAQAAAAIAAAABAAAAAQAAAIxzdHN6AAAAAAAAAAAAAAAeAAAEYgAAAEcAAABEAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAE0AAABGAAAARAAAAEQAAABNAAAARgAAAEQAAABEAAAATQAAAEYAAABEAAAARAAAAEwAAABGAAAARAAAAEQAAABNAAAAhHN0Y28AAAAAAAAAHQAAADAAAATuAAAFPgAABYgAAAXYAAAGKwAABn0AAAbHAAAHFwAAB2oAAAe2AAAIBgAACFAAAAipAAAI9QAACUUAAAmPAAAJ4gAACjQAAAp+AAAKzgAACyEAAAtzAAALvQAADA0AAAxfAAAMqwAADPsAAA1FAAAEiXRyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAIAAAAAAAAD6AAAAAAAAAAAAAAAAQEAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAACRlZHRzAAAAHGVsc3QAAAAAAAAAAQAAA+gAAAQAAAEAAAAABAFtZGlhAAAAIG1kaGQAAAAAAAAAAAAAAAAAAKxEAACwRFXEAAAAAAAtaGRscgAAAAAAAAAAc291bgAAAAAAAAAAAAAAAFNvdW5kSGFuZGxlcgAAAAOsbWluZgAAABBzbWhkAAAAAAAAAAAAAAAkZGluZgAAABxkcmVmAAAAAAAAAAEAAAAMdXJsIAAAAAEAAANwc3RibAAAAH5zdHNkAAAAAAAAAAEAAABubXA0YQAAAAAAAAABAAAAAAAAAAAAAgAQAAAAAKxEAAAAAAA2ZXNkcwAAAAADgICAJQACAASAgIAXQBUAAAAAAfQAAAAItAWAgIAFEhBW5QAGgICAAQIAAAAUYnRydAAAAAAAAfQAAAAItAAAACBzdHRzAAAAAAAAAAIAAAAsAAAEAAAAAAEAAABEAAABSHN0c2MAAAAAAAAAGgAAAAEAAAABAAAAAQAAAAIAAAACAAAAAQAAAAMAAAABAAAAAQAAAAQAAAACAAAAAQAAAAUAAAABAAAAAQAAAAYAAAACAAAAAQAAAAcAAAABAAAAAQAAAAgAAAACAAAAAQAAAAkAAAABAAAAAQAAAAsAAAACAAAAAQAAAAwAAAABAAAAAQAAAA0AAAACAAAAAQAAAA4AAAABAAAAAQAAAA8AAAACAAAAAQAAABAAAAABAAAAAQAAABIAAAACAAAAAQAAABMAAAABAAAAAQAAABQAAAACAAAAAQAAABUAAAABAAAAAQAAABYAAAACAAAAAQAAABcAAAABAAAAAQAAABgAAAACAAAAAQAAABkAAAABAAAAAQAAABsAAAACAAAAAQAAABwAAAABAAAAAQAAAB0AAAAFAAAAAQAAAMhzdHN6AAAAAAAAAAAAAAAtAAAAFQAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAAhHN0Y28AAAAAAAAAHQAABNkAAAUyAAAFggAABcwAAAYlAAAGcQAABsEAAAcLAAAHZAAAB7AAAAf6AAAISgAACJ0AAAjvAAAJOQAACYkAAAncAAAKKAAACngAAArCAAALGwAAC2cAAAu3AAAMAQAADFkAAAylAAAM7wAADT8AAA2SAAAAGnNncGQBAAAAcm9sbAAAAAIAAAAB//8AAAAcc2JncAAAAAByb2xsAAAAAQAAAC0AAAABAAAAYXVkdGEAAABZbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAsaWxzdAAAACSpdG9vAAAAHGRhdGEAAAABAAAAAExhdmY2MS4xLjEwMA=="
+        },
+        {
+          "sql": "UPDATE channel_connections SET enabled = 1 WHERE id = 'youtube:ru'"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (42, 'video', 'video/mp4', 'clip.mp4', '$CASE/data/video-media/clip.mp4', 5977, '8d17cddf53963338196fe374d6c8a74955293b11a5c4d8c5dad4e1a1375126d6', 'http_upload', '2026-11-01T09:30:00.000Z')"
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_create",
+              "arguments": {
+                "asset_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_replace_targets",
+              "arguments": {
+                "video_draft_id": 1,
+                "targets": ["youtube_shorts"]
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_update_metadata",
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "youtube_shorts",
+                "metadata": {
+                  "title": "Первый ролик",
+                  "description": "Описание",
+                  "tags": ["игры", "shorts"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "op": "video-publish",
+          "args": {
+            "draft": 1
+          }
+        },
+        {
+          "op": "video-publish",
+          "args": {
+            "draft": 99
+          }
+        },
+        {
+          "op": "video-schedule",
+          "args": {
+            "draft": 1,
+            "at": "2026-11-03T08:00:00Z"
+          }
+        },
+        {
+          "op": "video-schedule",
+          "args": {
+            "draft": 1,
+            "at": "2026-11-03T08:00:00Z",
+            "apply": true
+          }
+        },
+        {
+          "op": "video-cancel",
+          "args": {
+            "draft": 1
+          }
+        },
+        {
+          "op": "video-cancel",
+          "args": {
+            "draft": 1,
+            "apply": true
+          }
+        },
+        {
+          "op": "video-publish",
+          "args": {
+            "draft": 1,
+            "apply": true
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_create",
+              "arguments": {
+                "asset_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_replace_targets",
+              "arguments": {
+                "video_draft_id": 2,
+                "targets": []
+              }
+            }
+          }
+        },
+        {
+          "op": "video-schedule",
+          "args": {
+            "draft": 2,
+            "at": "2026-11-03T08:00:00Z",
+            "apply": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "video retry and settle over a provider route",
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/posts/zpost-1",
+          "json": {
+            "post": {
+              "_id": "zpost-1",
+              "status": "published",
+              "platforms": [
+                {
+                  "platform": "instagram",
+                  "status": "published",
+                  "platformPostId": "DcEdQ1",
+                  "platformPostUrl": "https://www.instagram.com/reel/DcEdQ1/"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/posts/zpost-2",
+          "json": {
+            "post": {
+              "_id": "zpost-2",
+              "status": "failed",
+              "platforms": [
+                {
+                  "platform": "instagram",
+                  "status": "failed",
+                  "error": "Media upload failed"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "method": "GET",
+          "url": "https://zernio.com/api/v1/posts/zpost-3",
+          "json": {
+            "post": {
+              "_id": "zpost-3",
+              "status": "pending",
+              "platforms": [
+                {
+                  "platform": "instagram",
+                  "status": "pending"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, created_at, updated_at) VALUES (1, 42, 'ru', 'Провайдер', NULL, 'failed', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, last_error, created_at, updated_at) VALUES (1, 1, 'instagram_reels', '{\"caption\":\"Подпись\"}', 'verification_required', 'zernio', 'acct-ig', 'zpost-1', NULL, 'boom', '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, last_error, created_at, updated_at) VALUES (2, 1, 'youtube_shorts', '{\"title\":\"Ролик\",\"description\":\"Описание\",\"tags\":[\"игры\"]}', 'failed', 'native', NULL, NULL, NULL, 'boom', '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (1, 1, 1, 'publish', '2026-10-31T10:30:00.000Z', 'failed', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (2, 1, 2, 'publish', '2026-10-31T10:30:00.000Z', 'failed', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, created_at, updated_at) VALUES (2, 42, 'ru', 'Второй', NULL, 'failed', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, last_error, created_at, updated_at) VALUES (3, 2, 'instagram_reels', '{\"caption\":\"Подпись\"}', 'failed', 'zernio', 'acct-ig', 'zpost-2', NULL, 'boom', '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (3, 2, 3, 'publish', '2026-10-31T10:30:00.000Z', 'failed', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, created_at, updated_at) VALUES (3, 42, 'ru', 'Третий', NULL, 'failed', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, last_error, created_at, updated_at) VALUES (4, 3, 'instagram_reels', '{\"caption\":\"Подпись\"}', 'failed', 'zernio', 'acct-ig', 'zpost-3', NULL, 'boom', '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (4, 3, 4, 'publish', '2026-10-31T10:30:00.000Z', 'failed', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, created_at, updated_at) VALUES (4, 42, 'ru', 'Четвёртый', NULL, 'failed', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');\nINSERT INTO video_targets (id, video_draft_id, target, metadata_json, status, delivery_provider, provider_account_id, provider_post_id, external_id, last_error, created_at, updated_at) VALUES (5, 4, 'instagram_reels', '{\"caption\":\"Подпись\"}', 'verification_required', 'zernio', 'acct-ig', NULL, NULL, 'boom', '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');\nINSERT INTO video_jobs (id, video_draft_id, video_target_id, kind, run_at, status, attempt_count, created_at, updated_at) VALUES (5, 4, 5, 'publish', '2026-10-31T10:30:00.000Z', 'failed', 1, '2026-10-31T10:00:00.000Z', '2026-10-31T11:00:00.000Z');"
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 1,
+            "target": "instagram_reels"
+          }
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 1,
+            "target": "youtube_shorts"
+          }
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 1,
+            "target": "instagram_reels",
+            "apply": true
+          }
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 1,
+            "target": "instagram_reels",
+            "apply": true
+          }
+        },
+        {
+          "op": "video-retry",
+          "args": {
+            "draft": 1,
+            "target": "youtube_shorts"
+          }
+        },
+        {
+          "op": "video-retry",
+          "args": {
+            "draft": 1,
+            "target": "youtube_shorts"
+          }
+        },
+        {
+          "op": "video-retry",
+          "args": {
+            "draft": 1,
+            "target": "tiktok"
+          }
+        },
+        {
+          "op": "video-retry",
+          "args": {
+            "draft": 2,
+            "target": "instagram_reels"
+          }
+        },
+        {
+          "op": "video-retry",
+          "args": {
+            "draft": 3,
+            "target": "instagram_reels"
+          }
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 4,
+            "target": "instagram_reels",
+            "external_id": "Known1"
+          }
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 4,
+            "target": "instagram_reels",
+            "external_id": "Known1",
+            "url": "https://www.instagram.com/reel/Known1/",
+            "apply": true
+          }
+        },
+        {
+          "op": "video-settle",
+          "args": {
+            "draft": 9,
+            "target": "instagram_reels"
+          }
+        }
+      ]
+    },
+    {
+      "name": "video script from text and from a file",
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, locale, label, studio_media_asset_id, status, created_at, updated_at) VALUES (1, 42, 'ru', 'Сценарий', NULL, 'draft', '2026-10-31T10:00:00.000Z', '2026-10-31T10:00:00.000Z');"
+        },
+        {
+          "write": "scripts/script.md",
+          "text": "  Первая строка сценария\nВторая строка 🎮\n\n"
+        },
+        {
+          "op": "video-script",
+          "args": {
+            "ref": "post:1",
+            "text": "x"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "video-script",
+          "args": {
+            "ref": "video:1",
+            "text": "   "
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "video-script",
+          "args": {
+            "ref": "video:1",
+            "text": "  Услышанный текст\nещё  ",
+            "source": "transcript"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "video-script",
+          "args": {
+            "ref": "video:1",
+            "file": "$CASE/scripts/script.md"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "cli": ["video-script", "--ref", "video:1", "--text", "Из командной строки"]
+        },
+        {
+          "op": "video-script",
+          "args": {
+            "ref": "video:7",
+            "text": "Нет такого"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "query": "SELECT script, script_source, opening_line FROM video_drafts"
+        }
+      ]
+    }
+  ]
+}
