@@ -1,0 +1,7 @@
+# Rust rewrite — decisions (owner-approved)
+
+- 2026-11-21 Code lives on branch `rust`; `main` (auto-deploys to prod via CI) is untouched until a single cutover.
+- 2026-11-21 Parity 1:1, Telegram bot is the top priority: every screen, section, button, text and callback must match `telegram-bot-spec.md`.
+- 2026-11-21 Telegram Stories (MTProto, mtcute) stay in TypeScript as a small sidecar; Rust calls it.
+- 2026-11-21 Tests: port only the key ones (delivery invariants, callback/parity contracts, public site contract, DB/migration guards), not all 1,146.
+- 2026-11-21 All Rust build output / temp files go to `_trash-rust/` (git-excluded, `rm -rf _trash-rust` to clean).
