@@ -776,7 +776,7 @@ pub async fn run_operation(name: &str, context: &OperationContext<'_>, args: &Va
             started.elapsed().as_millis() as u64,
         );
     }
-    let result = result?;
+    let result = crate::context::js_numbers(result?);
     if def.mutates && !def.journals_in_handler {
         journal_mutation(context, def, &input);
     }
