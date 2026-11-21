@@ -93,7 +93,21 @@ pub type OpResult = Result<Value, OpError>;
 
 /// Serializes a result the way `JSON.stringify` would see it.
 pub fn to_value(value: impl serde::Serialize) -> OpResult {
-    serde_json::to_value(value).map_err(OpError::from)
+    serde_json::to_value(value).map(js_numbers).map_err(OpError::from)
+}
+
+/// Every number as JavaScript prints it: a double with no fraction is written
+/// without one (`1080`, not serde's `1080.0`), and `-0` is `0`.
+pub fn js_numbers(value: Value) -> Value {
+    match value {
+        Value::Number(number) if number.is_f64() => {
+            let float = number.as_f64().unwrap_or_default();
+            crate::schema::number_value(if float == 0.0 { 0.0 } else { float })
+        }
+        Value::Array(items) => Value::Array(items.into_iter().map(js_numbers).collect()),
+        Value::Object(map) => Value::Object(map.into_iter().map(|(key, value)| (key, js_numbers(value))).collect()),
+        other => other,
+    }
 }
 
 /// The process (or request) an operation runs inside.

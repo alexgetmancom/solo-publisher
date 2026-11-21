@@ -394,7 +394,15 @@ async fn run_spec(area: &str, spec: &Value, goldens: &[Value], scratch: &Path) -
         vars.retain(|(key, _)| key != "DATA_DIR");
         vars.push(("DATA_DIR".into(), dir.join("data").display().to_string()));
         let transport = Rc::new(Canned {
-            responses: RefCell::new(case["responses"].as_array().cloned().unwrap_or_default()),
+            responses: RefCell::new(
+                serde_json::from_str::<Value>(
+                    &compact(&case["responses"]).replace("$CASE", &dir.display().to_string()),
+                )
+                .unwrap()
+                .as_array()
+                .cloned()
+                .unwrap_or_default(),
+            ),
             requests: RefCell::new(Vec::new()),
         });
         let case_run = Case {
@@ -433,7 +441,10 @@ async fn run_spec(area: &str, spec: &Value, goldens: &[Value], scratch: &Path) -
         };
         let mut problems = Vec::new();
         let mut outputs = Vec::new();
-        for step in case["steps"].as_array().unwrap() {
+        // `$CASE` in a step (a path in SQL, an argument, a canned body) is the case directory.
+        let steps: Value =
+            serde_json::from_str(&compact(&case["steps"]).replace("$CASE", &dir.display().to_string())).unwrap();
+        for step in steps.as_array().unwrap() {
             if let Some(output) = case_run.step(step).await {
                 outputs.push(output);
             }

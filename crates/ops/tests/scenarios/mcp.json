@@ -16,20 +16,119 @@
     {
       "name": "protocol: initialize, notifications, batches, unknown methods",
       "steps": [
-        { "mcp": { "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {} } },
-        { "mcp": { "jsonrpc": "2.0", "method": "notifications/initialized" } },
-        { "mcp": { "jsonrpc": "2.0", "id": null, "method": "initialize" } },
-        { "mcp": { "jsonrpc": "2.0", "id": "s", "method": "resources/list" } },
-        { "mcp": { "jsonrpc": "2.0", "id": 3 } },
-        { "mcp": { "jsonrpc": "2.0", "id": 4, "method": 12 } },
-        { "mcp": [] },
-        { "mcp": "text" },
-        { "mcp": [{ "jsonrpc": "2.0", "method": "notifications/initialized" }] },
-        { "mcp": [{ "jsonrpc": "2.0", "id": 5, "method": "initialize" }, { "jsonrpc": "2.0", "method": "x" }, 7] },
-        { "mcp": { "jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": { "name": "studio_queue" } }, "actorId": null },
-        { "mcp": { "jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": { "name": "studio_nothing", "arguments": {} } } },
-        { "mcp": { "jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": { "name": "ops_nothing", "arguments": {} } } },
-        { "mcp": { "jsonrpc": "2.0", "id": 9, "method": "tools/call", "params": { "name": "ops_guide", "arguments": {} } } }
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {}
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": null,
+            "method": "initialize"
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": "s",
+            "method": "resources/list"
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 3
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": 12
+          }
+        },
+        {
+          "mcp": []
+        },
+        {
+          "mcp": "text"
+        },
+        {
+          "mcp": [
+            {
+              "jsonrpc": "2.0",
+              "method": "notifications/initialized"
+            }
+          ]
+        },
+        {
+          "mcp": [
+            {
+              "jsonrpc": "2.0",
+              "id": 5,
+              "method": "initialize"
+            },
+            {
+              "jsonrpc": "2.0",
+              "method": "x"
+            },
+            7
+          ]
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_queue"
+            }
+          },
+          "actorId": null
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_nothing",
+              "arguments": {}
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {
+              "name": "ops_nothing",
+              "arguments": {}
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "tools/call",
+            "params": {
+              "name": "ops_guide",
+              "arguments": {}
+            }
+          }
+        }
       ]
     },
     {
@@ -40,7 +139,12 @@
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": { "name": "submit_feedback", "arguments": { "message": "  the queue is slow  " } }
+            "params": {
+              "name": "submit_feedback",
+              "arguments": {
+                "message": "  the queue is slow  "
+              }
+            }
           },
           "actorId": null
         },
@@ -49,7 +153,13 @@
             "jsonrpc": "2.0",
             "id": 2,
             "method": "tools/call",
-            "params": { "name": "submit_feedback", "arguments": { "name": " Bot ", "message": "x" } }
+            "params": {
+              "name": "submit_feedback",
+              "arguments": {
+                "name": " Bot ",
+                "message": "x"
+              }
+            }
           },
           "actorId": null
         },
@@ -58,7 +168,12 @@
             "jsonrpc": "2.0",
             "id": 3,
             "method": "tools/call",
-            "params": { "name": "submit_feedback", "arguments": { "message": "" } }
+            "params": {
+              "name": "submit_feedback",
+              "arguments": {
+                "message": ""
+              }
+            }
           },
           "actorId": null
         },
@@ -67,7 +182,12 @@
             "jsonrpc": "2.0",
             "id": 4,
             "method": "tools/call",
-            "params": { "name": "submit_feedback", "arguments": { "message": 5 } }
+            "params": {
+              "name": "submit_feedback",
+              "arguments": {
+                "message": 5
+              }
+            }
           },
           "actorId": null
         }
@@ -76,13 +196,28 @@
     {
       "name": "studio reads and settings",
       "steps": [
-        { "mcp": { "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": { "name": "studio_locale", "arguments": {} } } },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_locale",
+              "arguments": {}
+            }
+          }
+        },
         {
           "mcp": {
             "jsonrpc": "2.0",
             "id": 2,
             "method": "tools/call",
-            "params": { "name": "studio_locale_update", "arguments": { "locale": "en" } }
+            "params": {
+              "name": "studio_locale_update",
+              "arguments": {
+                "locale": "en"
+              }
+            }
           }
         },
         {
@@ -90,16 +225,34 @@
             "jsonrpc": "2.0",
             "id": 3,
             "method": "tools/call",
-            "params": { "name": "studio_locale_update", "arguments": { "locale": "de" } }
+            "params": {
+              "name": "studio_locale_update",
+              "arguments": {
+                "locale": "de"
+              }
+            }
           }
         },
-        { "mcp": { "jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": { "name": "studio_channels", "arguments": {} } } },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_channels",
+              "arguments": {}
+            }
+          }
+        },
         {
           "mcp": {
             "jsonrpc": "2.0",
             "id": 5,
             "method": "tools/call",
-            "params": { "name": "studio_notification_settings", "arguments": {} }
+            "params": {
+              "name": "studio_notification_settings",
+              "arguments": {}
+            }
           }
         },
         {
@@ -109,7 +262,10 @@
             "method": "tools/call",
             "params": {
               "name": "studio_notification_settings_update",
-              "arguments": { "reminder_minutes": 30, "completion_enabled": false }
+              "arguments": {
+                "reminder_minutes": 30,
+                "completion_enabled": false
+              }
             }
           }
         },
@@ -118,26 +274,71 @@
             "jsonrpc": "2.0",
             "id": 7,
             "method": "tools/call",
-            "params": { "name": "studio_notification_settings_update", "arguments": { "reminder_minutes": 61 } }
+            "params": {
+              "name": "studio_notification_settings_update",
+              "arguments": {
+                "reminder_minutes": 61
+              }
+            }
           }
         },
-        { "mcp": { "jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": { "name": "studio_youtube_signature", "arguments": {} } } },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_youtube_signature",
+              "arguments": {}
+            }
+          }
+        },
         {
           "mcp": {
             "jsonrpc": "2.0",
             "id": 9,
             "method": "tools/call",
-            "params": { "name": "studio_youtube_signature_update", "arguments": { "signature": "— the channel" } }
+            "params": {
+              "name": "studio_youtube_signature_update",
+              "arguments": {
+                "signature": "— the channel"
+              }
+            }
           }
         },
-        { "mcp": { "jsonrpc": "2.0", "id": 10, "method": "tools/call", "params": { "name": "studio_capabilities", "arguments": {} } } },
-        { "mcp": { "jsonrpc": "2.0", "id": 11, "method": "tools/call", "params": { "name": "studio_queue", "arguments": {} } } },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 10,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_capabilities",
+              "arguments": {}
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_queue",
+              "arguments": {}
+            }
+          }
+        },
         {
           "mcp": {
             "jsonrpc": "2.0",
             "id": 12,
             "method": "tools/call",
-            "params": { "name": "studio_media_list", "arguments": { "limit": 0 } }
+            "params": {
+              "name": "studio_media_list",
+              "arguments": {
+                "limit": 0
+              }
+            }
           }
         },
         {
@@ -145,10 +346,25 @@
             "jsonrpc": "2.0",
             "id": 13,
             "method": "tools/call",
-            "params": { "name": "studio_post_list", "arguments": { "limit": "3" } }
+            "params": {
+              "name": "studio_post_list",
+              "arguments": {
+                "limit": "3"
+              }
+            }
           }
         },
-        { "mcp": { "jsonrpc": "2.0", "id": 14, "method": "tools/call", "params": { "name": "studio_video_list", "arguments": {} } } }
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 14,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_list",
+              "arguments": {}
+            }
+          }
+        }
       ]
     },
     {
@@ -159,7 +375,13 @@
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": { "name": "studio_post_create", "arguments": { "text": "  Привет, мир  ", "targets": ["telegram", "telegram"] } }
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "  Привет, мир  ",
+                "targets": ["telegram", "telegram"]
+              }
+            }
           }
         },
         {
@@ -167,7 +389,13 @@
             "jsonrpc": "2.0",
             "id": 2,
             "method": "tools/call",
-            "params": { "name": "studio_post_create", "arguments": { "text": "x", "targets": [] } }
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "x",
+                "targets": []
+              }
+            }
           }
         },
         {
@@ -175,7 +403,13 @@
             "jsonrpc": "2.0",
             "id": 3,
             "method": "tools/call",
-            "params": { "name": "studio_post_create", "arguments": { "text": "x", "targets": ["telegram", ""] } }
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "x",
+                "targets": ["telegram", ""]
+              }
+            }
           }
         },
         {
@@ -183,7 +417,12 @@
             "jsonrpc": "2.0",
             "id": 4,
             "method": "tools/call",
-            "params": { "name": "studio_post_create", "arguments": { "targets": ["telegram"] } }
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "targets": ["telegram"]
+              }
+            }
           }
         },
         {
@@ -191,7 +430,12 @@
             "jsonrpc": "2.0",
             "id": 5,
             "method": "tools/call",
-            "params": { "name": "studio_post_get", "arguments": { "draft_id": 1 } }
+            "params": {
+              "name": "studio_post_get",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
           }
         },
         {
@@ -199,7 +443,12 @@
             "jsonrpc": "2.0",
             "id": 6,
             "method": "tools/call",
-            "params": { "name": "studio_post_get", "arguments": { "draft_id": "1" } }
+            "params": {
+              "name": "studio_post_get",
+              "arguments": {
+                "draft_id": "1"
+              }
+            }
           }
         },
         {
@@ -207,7 +456,12 @@
             "jsonrpc": "2.0",
             "id": 7,
             "method": "tools/call",
-            "params": { "name": "studio_post_get", "arguments": { "draft_id": 1.5 } }
+            "params": {
+              "name": "studio_post_get",
+              "arguments": {
+                "draft_id": 1.5
+              }
+            }
           }
         },
         {
@@ -215,7 +469,12 @@
             "jsonrpc": "2.0",
             "id": 8,
             "method": "tools/call",
-            "params": { "name": "studio_post_get", "arguments": { "draft_id": 99 } }
+            "params": {
+              "name": "studio_post_get",
+              "arguments": {
+                "draft_id": 99
+              }
+            }
           }
         },
         {
@@ -223,7 +482,14 @@
             "jsonrpc": "2.0",
             "id": 9,
             "method": "tools/call",
-            "params": { "name": "studio_post_edit", "arguments": { "draft_id": 1, "locale": "ru", "text": "Новый текст" } }
+            "params": {
+              "name": "studio_post_edit",
+              "arguments": {
+                "draft_id": 1,
+                "locale": "ru",
+                "text": "Новый текст"
+              }
+            }
           }
         },
         {
@@ -231,7 +497,12 @@
             "jsonrpc": "2.0",
             "id": 10,
             "method": "tools/call",
-            "params": { "name": "studio_post_validate", "arguments": { "draft_id": 1 } }
+            "params": {
+              "name": "studio_post_validate",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
           }
         },
         {
@@ -239,7 +510,12 @@
             "jsonrpc": "2.0",
             "id": 11,
             "method": "tools/call",
-            "params": { "name": "studio_post_preview", "arguments": { "draft_id": 1 } }
+            "params": {
+              "name": "studio_post_preview",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
           }
         },
         {
@@ -247,7 +523,13 @@
             "jsonrpc": "2.0",
             "id": 12,
             "method": "tools/call",
-            "params": { "name": "studio_post_history", "arguments": { "draft_id": 1, "limit": 2 } }
+            "params": {
+              "name": "studio_post_history",
+              "arguments": {
+                "draft_id": 1,
+                "limit": 2
+              }
+            }
           }
         },
         {
@@ -255,7 +537,12 @@
             "jsonrpc": "2.0",
             "id": 13,
             "method": "tools/call",
-            "params": { "name": "studio_post_schedule", "arguments": { "draft_id": 1 } }
+            "params": {
+              "name": "studio_post_schedule",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
           }
         },
         {
@@ -263,7 +550,13 @@
             "jsonrpc": "2.0",
             "id": 14,
             "method": "tools/call",
-            "params": { "name": "studio_post_schedule", "arguments": { "draft_id": 1, "ru_at": "tomorrow" } }
+            "params": {
+              "name": "studio_post_schedule",
+              "arguments": {
+                "draft_id": 1,
+                "ru_at": "tomorrow"
+              }
+            }
           }
         },
         {
@@ -271,7 +564,14 @@
             "jsonrpc": "2.0",
             "id": 15,
             "method": "tools/call",
-            "params": { "name": "studio_post_schedule", "arguments": { "draft_id": 1, "ru_at": "", "en_at": "" } }
+            "params": {
+              "name": "studio_post_schedule",
+              "arguments": {
+                "draft_id": 1,
+                "ru_at": "",
+                "en_at": ""
+              }
+            }
           }
         },
         {
@@ -279,7 +579,13 @@
             "jsonrpc": "2.0",
             "id": 16,
             "method": "tools/call",
-            "params": { "name": "studio_post_schedule", "arguments": { "draft_id": 1, "ru_at": "2026-11-02T08:00:00+03:00" } }
+            "params": {
+              "name": "studio_post_schedule",
+              "arguments": {
+                "draft_id": 1,
+                "ru_at": "2026-11-02T08:00:00+03:00"
+              }
+            }
           }
         },
         {
@@ -287,7 +593,12 @@
             "jsonrpc": "2.0",
             "id": 17,
             "method": "tools/call",
-            "params": { "name": "studio_post_status", "arguments": { "draft_id": 1 } }
+            "params": {
+              "name": "studio_post_status",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
           }
         },
         {
@@ -295,7 +606,12 @@
             "jsonrpc": "2.0",
             "id": 18,
             "method": "tools/call",
-            "params": { "name": "studio_post_cancel", "arguments": { "draft_id": 1 } }
+            "params": {
+              "name": "studio_post_cancel",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
           }
         },
         {
@@ -303,7 +619,14 @@
             "jsonrpc": "2.0",
             "id": 19,
             "method": "tools/call",
-            "params": { "name": "studio_post_attach_media", "arguments": { "draft_id": 1, "locale": "ru", "asset_ids": [1, 1, "2"] } }
+            "params": {
+              "name": "studio_post_attach_media",
+              "arguments": {
+                "draft_id": 1,
+                "locale": "ru",
+                "asset_ids": [1, 1, "2"]
+              }
+            }
           }
         },
         {
@@ -311,7 +634,14 @@
             "jsonrpc": "2.0",
             "id": 20,
             "method": "tools/call",
-            "params": { "name": "studio_post_remove_media", "arguments": { "draft_id": 1, "locale": "xx", "asset_ids": [1] } }
+            "params": {
+              "name": "studio_post_remove_media",
+              "arguments": {
+                "draft_id": 1,
+                "locale": "xx",
+                "asset_ids": [1]
+              }
+            }
           }
         },
         {
@@ -321,7 +651,12 @@
             "method": "tools/call",
             "params": {
               "name": "studio_post_create",
-              "arguments": { "text": "Второй", "text_en": "Second", "targets": ["telegram", "x"], "story_publish_mode": "site_only" }
+              "arguments": {
+                "text": "Второй",
+                "text_en": "Second",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
             }
           }
         },
@@ -330,10 +665,25 @@
             "jsonrpc": "2.0",
             "id": 22,
             "method": "tools/call",
-            "params": { "name": "studio_post_publish", "arguments": { "draft_id": 2 } }
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 2
+              }
+            }
           }
         },
-        { "mcp": { "jsonrpc": "2.0", "id": 23, "method": "tools/call", "params": { "name": "studio_post_list", "arguments": {} } } }
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 23,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_list",
+              "arguments": {}
+            }
+          }
+        }
       ]
     },
     {
@@ -344,7 +694,12 @@
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": { "name": "studio_video_create", "arguments": { "asset_id": 5 } }
+            "params": {
+              "name": "studio_video_create",
+              "arguments": {
+                "asset_id": 5
+              }
+            }
           }
         },
         {
@@ -352,7 +707,12 @@
             "jsonrpc": "2.0",
             "id": 2,
             "method": "tools/call",
-            "params": { "name": "studio_video_get", "arguments": { "video_draft_id": 1 } }
+            "params": {
+              "name": "studio_video_get",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
           }
         },
         {
@@ -362,7 +722,10 @@
             "method": "tools/call",
             "params": {
               "name": "studio_video_replace_targets",
-              "arguments": { "video_draft_id": 1, "targets": ["youtube_shorts", "youtube_shorts"] }
+              "arguments": {
+                "video_draft_id": 1,
+                "targets": ["youtube_shorts", "youtube_shorts"]
+              }
             }
           }
         },
@@ -371,7 +734,13 @@
             "jsonrpc": "2.0",
             "id": 4,
             "method": "tools/call",
-            "params": { "name": "studio_video_replace_targets", "arguments": { "video_draft_id": 1, "targets": ["tiktok"] } }
+            "params": {
+              "name": "studio_video_replace_targets",
+              "arguments": {
+                "video_draft_id": 1,
+                "targets": ["tiktok"]
+              }
+            }
           }
         },
         {
@@ -381,7 +750,13 @@
             "method": "tools/call",
             "params": {
               "name": "studio_video_update_metadata",
-              "arguments": { "video_draft_id": 1, "target": "youtube_shorts", "metadata": { "title": "t" } }
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "youtube_shorts",
+                "metadata": {
+                  "title": "t"
+                }
+              }
             }
           }
         },
@@ -392,7 +767,11 @@
             "method": "tools/call",
             "params": {
               "name": "studio_video_update_metadata",
-              "arguments": { "video_draft_id": 1, "target": "instagram_reels", "metadata": "caption" }
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "instagram_reels",
+                "metadata": "caption"
+              }
             }
           }
         },
@@ -406,7 +785,12 @@
               "arguments": {
                 "video_draft_id": 1,
                 "target": "youtube_shorts",
-                "metadata": { "title": " T ", "description": "", "tags": ["a"], "game_url": "https://game.example" }
+                "metadata": {
+                  "title": " T ",
+                  "description": "",
+                  "tags": ["a"],
+                  "game_url": "https://game.example"
+                }
               }
             }
           }
@@ -416,7 +800,12 @@
             "jsonrpc": "2.0",
             "id": 8,
             "method": "tools/call",
-            "params": { "name": "studio_video_schedule", "arguments": { "video_draft_id": 1 } }
+            "params": {
+              "name": "studio_video_schedule",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
           }
         },
         {
@@ -424,7 +813,13 @@
             "jsonrpc": "2.0",
             "id": 9,
             "method": "tools/call",
-            "params": { "name": "studio_video_schedule", "arguments": { "video_draft_id": 1, "youtube_shorts_at": "2026-11-02T08:00:00Z" } }
+            "params": {
+              "name": "studio_video_schedule",
+              "arguments": {
+                "video_draft_id": 1,
+                "youtube_shorts_at": "2026-11-02T08:00:00Z"
+              }
+            }
           }
         },
         {
@@ -432,7 +827,13 @@
             "jsonrpc": "2.0",
             "id": 10,
             "method": "tools/call",
-            "params": { "name": "studio_video_retry", "arguments": { "video_draft_id": 1, "target": "instagram_reels" } }
+            "params": {
+              "name": "studio_video_retry",
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "instagram_reels"
+              }
+            }
           }
         },
         {
@@ -440,7 +841,13 @@
             "jsonrpc": "2.0",
             "id": 11,
             "method": "tools/call",
-            "params": { "name": "studio_video_rename", "arguments": { "video_draft_id": 1, "label": "   " } }
+            "params": {
+              "name": "studio_video_rename",
+              "arguments": {
+                "video_draft_id": 1,
+                "label": "   "
+              }
+            }
           }
         },
         {
@@ -448,7 +855,12 @@
             "jsonrpc": "2.0",
             "id": 12,
             "method": "tools/call",
-            "params": { "name": "studio_video_cancel", "arguments": { "video_draft_id": 1 } }
+            "params": {
+              "name": "studio_video_cancel",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
           }
         },
         {
@@ -456,7 +868,12 @@
             "jsonrpc": "2.0",
             "id": 13,
             "method": "tools/call",
-            "params": { "name": "studio_video_preflight", "arguments": { "video_draft_id": 1 } }
+            "params": {
+              "name": "studio_video_preflight",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
           }
         },
         {
@@ -464,7 +881,12 @@
             "jsonrpc": "2.0",
             "id": 14,
             "method": "tools/call",
-            "params": { "name": "studio_zernio_connection_options", "arguments": { "locale": "ru" } }
+            "params": {
+              "name": "studio_zernio_connection_options",
+              "arguments": {
+                "locale": "ru"
+              }
+            }
           }
         }
       ]
@@ -472,14 +894,44 @@
     {
       "name": "ops tools run through the registry",
       "steps": [
-        { "mcp": { "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": { "name": "ops_recent", "arguments": { "limit": 0 } } } },
-        { "mcp": { "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": { "name": "ops_recent", "arguments": { "limt": 2 } } } },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "ops_recent",
+              "arguments": {
+                "limit": 0
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "ops_recent",
+              "arguments": {
+                "limt": 2
+              }
+            }
+          }
+        },
         {
           "mcp": {
             "jsonrpc": "2.0",
             "id": 3,
             "method": "tools/call",
-            "params": { "name": "ops_retry", "arguments": { "ref": "post:1", "target": "" } }
+            "params": {
+              "name": "ops_retry",
+              "arguments": {
+                "ref": "post:1",
+                "target": ""
+              }
+            }
           }
         },
         {
@@ -487,14 +939,398 @@
             "jsonrpc": "2.0",
             "id": 4,
             "method": "tools/call",
-            "params": { "name": "ops_publish", "arguments": { "locale": "ru", "targets": ",", "text": "x" } }
+            "params": {
+              "name": "ops_publish",
+              "arguments": {
+                "locale": "ru",
+                "targets": ",",
+                "text": "x"
+              }
+            }
           }
         },
-        { "op": "guide", "args": { "bogus": 1 } },
-        { "op": "guide", "args": { "section": "studio" }, "actor": "ops-cli" },
-        { "op": "nothing", "args": {} },
-        { "cli": ["guide", "--section", "host"] },
-        { "cli": ["guide", "--nope"] }
+        {
+          "op": "guide",
+          "args": {
+            "bogus": 1
+          }
+        },
+        {
+          "op": "guide",
+          "args": {
+            "section": "studio"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "nothing",
+          "args": {}
+        },
+        {
+          "cli": ["guide", "--section", "host"]
+        },
+        {
+          "cli": ["guide", "--nope"]
+        }
+      ]
+    },
+    {
+      "name": "a video draft from an uploaded asset",
+      "steps": [
+        {
+          "write": "data/video-media/clip.mp4",
+          "base64": "AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAADYhtZGF0AAACrwYF//+r3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzE5MSA0NjEzYWMzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyNCAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEyIGxvb2thaGVhZF90aHJlYWRzPTIgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MyBiX3B5cmFtaWQ9MiBiX2FkYXB0PTEgYl9iaWFzPTAgZGlyZWN0PTEgd2VpZ2h0Yj0xIG9wZW5fZ29wPTAgd2VpZ2h0cD0yIGtleWludD0yNTAga2V5aW50X21pbj0yNSBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTQwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAAatliIQAN//+9vD+BTZWBFCXEc3onTMfvxW4ujQ3vc4AAAMAAAMAAAMAAAMBEHUTIzhVLsl4YAAAAwAAcQACvgAoYALWAEZAB3ABCAAsgAjgAXwAXgARAARAAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADADihAAAAQ0GaJGxDf/6nhAAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGfDcAExhdmM2MS4zLjEwMABCIAjBGDgAAABAQZ5CeIV/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAVMSEQBGCMHCEQBGCMHAAAAEABnmF0Qn8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAABswIRAEYIwcAAAAQAGeY2pCfwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAGzEhEARgjBwhEARgjBwAAABJQZpoSahBaJlMCG///qeEAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAZ8SEQBGCMHAAAAEJBnoZFESwr/wAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAAwAAFTEhEARgjBwhEARgjBwAAABAAZ6ldEJ/AAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAADAAAbMSEQBGCMHAAAAEABnqdqQn8AAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMAAAMA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"
+        },
+        {
+          "sql": "UPDATE channel_connections SET enabled = 1 WHERE id = 'youtube:ru'"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (42, 'video', 'video/mp4', 'clip.mp4', '$CASE/data/video-media/clip.mp4', 5977, '8d17cddf53963338196fe374d6c8a74955293b11a5c4d8c5dad4e1a1375126d6', 'http_upload', '2026-11-01T09:30:00.000Z')"
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_media_list",
+              "arguments": {}
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_create",
+              "arguments": {
+                "asset_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_get",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_preview",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_status",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_replace_targets",
+              "arguments": {
+                "video_draft_id": 1,
+                "targets": ["youtube_shorts"]
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_update_metadata",
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "youtube_shorts",
+                "metadata": {
+                  "title": " Первый ролик ",
+                  "description": "Описание",
+                  "tags": ["игры", "shorts"],
+                  "game_url": "https://game.example/1",
+                  "extra": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_update_metadata",
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "youtube_shorts",
+                "metadata": {
+                  "title": "",
+                  "description": "",
+                  "tags": []
+                }
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_rename",
+              "arguments": {
+                "video_draft_id": 1,
+                "label": "  Ролик  "
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 10,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_preflight",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_schedule",
+              "arguments": {
+                "video_draft_id": 1,
+                "youtube_shorts_at": "2026-11-03T08:00:00Z"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 12,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_history",
+              "arguments": {
+                "video_draft_id": 1,
+                "limit": 3
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 13,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_remove_target",
+              "arguments": {
+                "video_draft_id": 1,
+                "target": "instagram_reels"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 14,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_cancel",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 15,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_publish",
+              "arguments": {
+                "video_draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 16,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_video_list",
+              "arguments": {
+                "limit": 5
+              }
+            }
+          }
+        }
+      ],
+      "env": {
+        "YOUTUBE_RU_CLIENT_ID": "test-youtube-client",
+        "YOUTUBE_RU_CLIENT_SECRET": "test-secret-youtube",
+        "YOUTUBE_RU_REFRESH_TOKEN": "test-token-youtube-refresh"
+      }
+    },
+    {
+      "name": "media attached to a post draft and removed",
+      "steps": [
+        {
+          "write": "data/video-media/dot.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP4z8AARwzEcQCukw/x0F8jngAAAABJRU5ErkJggg=="
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (42, 'photo', 'image/png', 'dot.png', '$CASE/data/video-media/dot.png', 70, 'aa', 'http_upload', '2026-11-01T09:30:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO studio_media_assets (actor_id, kind, mime_type, filename, local_path, byte_size, sha256, source, created_at) VALUES (7, 'photo', 'image/png', 'other.png', '$CASE/data/video-media/dot.png', 70, 'bb', 'http_upload', '2026-11-01T09:30:00.000Z')"
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "С картинкой",
+                "targets": ["telegram"]
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_attach_media",
+              "arguments": {
+                "draft_id": 1,
+                "locale": "ru",
+                "asset_ids": [2]
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_get",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_remove_media",
+              "arguments": {
+                "draft_id": 1,
+                "locale": "ru",
+                "asset_ids": [1]
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_attach_media",
+              "arguments": {
+                "draft_id": 1,
+                "locale": "en",
+                "asset_ids": [1],
+                "replace": true
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_get",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_preview",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        }
       ]
     }
   ]
