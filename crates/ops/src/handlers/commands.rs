@@ -19,7 +19,7 @@ mod skip;
 use std::borrow::Cow;
 use std::path::Path;
 use std::rc::Rc;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 
 use adapters::AdapterContext;
 use content::Locale;
@@ -37,9 +37,8 @@ use domain::repositories::{record_event, transaction};
 use domain::studio::services::posts::PostScheduleScope;
 use domain::targets::is_known_target;
 use foundation::config::Config;
-use foundation::time::{Zone, to_iso_string};
+use foundation::time::to_iso_string;
 use jiff::Timestamp;
-use regex::Regex;
 use runtime::http::HttpClient;
 use serde_json::{Map, Value, json};
 
@@ -451,29 +450,9 @@ fn reschedule_post(
     })))
 }
 
-static EXPLICIT_OFFSET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[zZ]|[+-][0-9]{2}:?[0-9]{2}$").unwrap());
-static WITHOUT_SECONDS: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2})(Z|[+-][0-9]{2}:[0-9]{2})$").unwrap());
-
-/// `parseOperationSchedule`: an explicit offset is honoured as written, and
-/// a bare wall clock belongs to the Studio's time zone.
+/// `parseOperationSchedule`, the one reading of a time an operator typed.
 fn parse_operation_schedule(context: &OperationContext<'_>, value: &str) -> Result<Timestamp, OpError> {
-    let trimmed = foundation::js::trim(value);
-    if EXPLICIT_OFFSET.is_match(trimmed) {
-        let iso = WITHOUT_SECONDS.replace(trimmed, "${1}:00${2}");
-        return foundation::time::parse_iso_instant(&iso)
-            .map_err(|_| OpError::failed(format!("invalid schedule time: {value}")));
-    }
-    let profile = domain::application::ports::ApplicationPorts::within(context.sqlite()?, context.clock)
-        .studio_settings()
-        .profile()?;
-    let zone = Zone::parse(&profile.timezone)
-        .ok_or_else(|| OpError::failed(format!("Invalid time zone: {}", profile.timezone)))?;
-    Ok(domain::publishing::schedule::parse_manual_schedule(
-        trimmed,
-        &zone,
-        context.now(),
-    )?)
+    super::lifecycle::parse_operation_schedule(context.sqlite()?, value, context.now())
 }
 
 // --- The registry entries -----------------------------------------------------------

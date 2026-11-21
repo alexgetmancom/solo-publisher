@@ -9,12 +9,12 @@ use std::time::Duration;
 use db::rusqlite::types::{Value as SqlValue, ValueRef};
 use db::rusqlite::{Connection, Params, params, params_from_iter};
 use domain::application::ports::{LocalizedProfiles, LocalizedText};
-use domain::application::publication_ref::{PublicationRefKind, parse_publication_ref, publication_ref};
+use domain::application::publication_ref::{PublicationRefKind, publication_ref};
 use domain::publishing::state::is_partial_delivery;
 use domain::repositories::ActionableIssueStore;
 use domain::studio::services::settings::StudioProfileInput;
 use foundation::js;
-use foundation::time::{parse_iso_instant, to_iso_string};
+use foundation::time::to_iso_string;
 use runtime::http::HttpRequest;
 use serde::Serialize;
 use serde_json::{Map, Value, json};
@@ -56,30 +56,6 @@ fn json_column(row: &mut Row, name: &str) -> Result<(), OpError> {
         row.insert(name.to_owned(), parsed);
     }
     Ok(())
-}
-
-/// `jsonObject(value)`: the stored text as an object, anything else `{}`.
-fn json_object(value: &Value) -> Value {
-    match value {
-        Value::String(text) if !text.is_empty() => match serde_json::from_str::<Value>(text) {
-            Ok(parsed @ Value::Object(_)) => parsed,
-            _ => json!({}),
-        },
-        _ => json!({}),
-    }
-}
-
-/// `Date.parse(end) - Date.parse(start)`, when both are dates and it is not negative.
-fn elapsed(start: &Value, end: &Value) -> Value {
-    let (Some(start), Some(end)) = (start.as_str(), end.as_str()) else {
-        return Value::Null;
-    };
-    match (parse_iso_instant(start), parse_iso_instant(end)) {
-        (Ok(start), Ok(end)) if end.as_millisecond() >= start.as_millisecond() => {
-            json!(end.as_millisecond() - start.as_millisecond())
-        }
-        _ => Value::Null,
-    }
 }
 
 // --- settings and profile -------------------------------------------------------
@@ -969,116 +945,7 @@ fn public_url(value: &str) -> Option<url::Url> {
 
 /// `publicationTimeline`: jobs, targets and the full event log of one publication.
 pub fn timeline<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
-    Box::pin(async move {
-        let reference = input.str("ref");
-        let sqlite = context.sqlite()?;
-        match parse_publication_ref(Some(reference)) {
-            // A video publication's events are journalled under its own ref.
-            Some(parsed) if parsed.kind == PublicationRefKind::Video => video_timeline(sqlite, reference, parsed.id),
-            Some(parsed) if parsed.kind == PublicationRefKind::Post => post_timeline(sqlite, reference),
-            _ => Err(OpError::failed("--ref must look like post:106 or video:12")),
-        }
-    })
-}
-
-fn with_duration(jobs: Vec<Row>) -> Vec<Value> {
-    jobs.into_iter()
-        .map(|mut job| {
-            let start = match &job["lockedAt"] {
-                Value::Null => job["createdAt"].clone(),
-                locked => locked.clone(),
-            };
-            let duration = elapsed(&start, &job["updatedAt"]);
-            job.insert("durationMs".into(), duration);
-            Value::Object(job)
-        })
-        .collect()
-}
-
-fn post_timeline(sqlite: &Connection, reference: &str) -> OpResult {
-    let events = timeline_events(sqlite, reference)?;
-    let jobs = select(
-        sqlite,
-        "SELECT job_id AS jobId, target, status, attempt_count AS attemptCount, publish_at AS publishAt,
-                created_at AS createdAt, locked_at AS lockedAt, updated_at AS updatedAt, last_error AS lastError
-           FROM publish_jobs WHERE publication_key = ? ORDER BY created_at ASC, job_id ASC",
-        params![reference],
-    )?;
-    let targets = select(
-        sqlite,
-        "SELECT target, status, url, error, published_at AS publishedAt, updated_at AS updatedAt
-           FROM publication_targets WHERE publication_key = ? ORDER BY target",
-        params![reference],
-    )?;
-    Ok(json!({"ref": reference, "jobs": with_duration(jobs), "targets": targets, "events": events}))
-}
-
-fn video_timeline(sqlite: &Connection, reference: &str, video_draft_id: i64) -> OpResult {
-    let draft = select(
-        sqlite,
-        "SELECT locale, label, status, scheduled_at AS scheduledAt, created_at AS createdAt
-           FROM video_drafts WHERE id = ? LIMIT 1",
-        params![video_draft_id],
-    )?
-    .into_iter()
-    .next();
-    let mut targets = select(
-        sqlite,
-        "SELECT video_targets.id AS id, video_targets.target AS target, video_targets.status AS status,
-                video_targets.metadata_json AS metadata, video_targets.delivery_provider AS deliveryProvider,
-                video_targets.provider_post_id AS providerPostId,
-                video_targets.confirmation_source AS confirmationSource,
-                video_targets.external_id AS externalId, video_targets.external_url AS url,
-                video_targets.last_error AS error, video_targets.published_at AS publishedAt,
-                video_targets.verified_at AS verifiedAt, video_targets.updated_at AS updatedAt,
-                video_metric_schedule.frozen_at AS metricsFrozenAt,
-                video_metric_schedule.checkpoint_index AS metricsCheckpointIndex,
-                video_metric_schedule.last_checked_at AS metricsLastCheckedAt,
-                video_metric_schedule.last_error AS metricsLastError
-           FROM video_targets
-           LEFT JOIN video_metric_schedule ON video_metric_schedule.video_target_id = video_targets.id
-          WHERE video_targets.video_draft_id = ? ORDER BY video_targets.target",
-        params![video_draft_id],
-    )?;
-    for target in &mut targets {
-        json_column(target, "metadata")?;
-    }
-    let jobs = select(
-        sqlite,
-        "SELECT id AS jobId, video_target_id AS videoTargetId, kind, status, attempt_count AS attemptCount,
-                run_at AS runAt, created_at AS createdAt, locked_at AS lockedAt, updated_at AS updatedAt,
-                last_error AS lastError
-           FROM video_jobs WHERE video_draft_id = ? ORDER BY created_at ASC, id ASC",
-        params![video_draft_id],
-    )?;
-    Ok(json!({
-        "ref": reference,
-        "draft": draft,
-        "jobs": with_duration(jobs),
-        "targets": targets,
-        "events": timeline_events(sqlite, reference)?,
-    }))
-}
-
-fn timeline_events(sqlite: &Connection, reference: &str) -> Result<Vec<Value>, OpError> {
-    Ok(select(
-        sqlite,
-        "SELECT created_at, severity, event_type, target, message, details_json FROM publication_events
-          WHERE publication_key = ? ORDER BY created_at ASC, id ASC",
-        params![reference],
-    )?
-    .into_iter()
-    .map(|event| {
-        json!({
-            "at": event["created_at"],
-            "severity": event["severity"],
-            "type": event["event_type"],
-            "target": event["target"],
-            "message": event["message"],
-            "details": json_object(&event["details_json"]),
-        })
-    })
-    .collect())
+    Box::pin(async move { super::timeline::publication_timeline(context.sqlite()?, input.str("ref")) })
 }
 
 // --- format support and usage -------------------------------------------------------

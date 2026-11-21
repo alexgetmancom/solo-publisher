@@ -147,9 +147,9 @@ pub fn article_publish<'a>(context: &'a OperationContext<'a>, input: &'a Input) 
     })
 }
 
-static EXPLICIT_OFFSET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[zZ]|[+-]\d{2}:?\d{2}$").unwrap());
+static EXPLICIT_OFFSET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[zZ]|[+-][0-9]{2}:?[0-9]{2}$").unwrap());
 static OFFSET_DATE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2}(?:\.\d+)?)?(?i:(z)|([+-]\d{2}):?(\d{2}))$").unwrap()
+    Regex::new(r"^([0-9]{4}-[0-9]{2}-[0-9]{2})[T ]([0-9]{2}:[0-9]{2})(:[0-9]{2}(?:\.[0-9]+)?)?(?i:(z)|([+-][0-9]{2}):?([0-9]{2}))$").unwrap()
 });
 
 /// `new Date(text)` of a time written with an explicit offset: the ISO

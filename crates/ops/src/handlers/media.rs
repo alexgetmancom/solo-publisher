@@ -586,72 +586,6 @@ fn file_bytes(path: &Path) -> u64 {
     std::fs::metadata(path).map_or(0, |metadata| metadata.len())
 }
 
-static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-story-(standard|telegram)\.[^.]+$").unwrap());
-static LAST_EXTENSION: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\.[^.]+$").unwrap());
-
-/// `path.basename`.
-fn basename(path: &str) -> &str {
-    path.trim_end_matches('/').rsplit('/').next().unwrap_or_default()
-}
-
-/// `orphanedStoryVariants` (`disk-report.ts`): a Story variant whose source
-/// is no longer on disk. The variant's name starts with the source's
-/// content-addressed stem, which is the only link between the two.
-pub(crate) struct OrphanedVariants {
-    pub total: usize,
-    pub orphaned: Vec<String>,
-}
-
-pub(crate) fn orphaned_story_variants(sqlite: &Connection, config: &Config) -> Result<OrphanedVariants, OpError> {
-    let mut live: HashSet<String> = HashSet::new();
-    for source in known_sources(sqlite)? {
-        if Path::new(&source).exists() {
-            live.insert(LAST_EXTENSION.replace(basename(&source), "").into_owned());
-        }
-    }
-    let directory = story_directory(config);
-    let mut variants: Vec<String> = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(&directory) {
-        for entry in entries {
-            let entry = entry?;
-            let name = entry.file_name().to_string_lossy().into_owned();
-            if entry.file_type()?.is_file() && !name.starts_with('.') {
-                variants.push(name);
-            }
-        }
-    }
-    let total = variants.len();
-    let orphaned = variants
-        .into_iter()
-        .filter(|name| !live.contains(VARIANT_SUFFIX.replace(name, "").as_ref()))
-        .collect();
-    Ok(OrphanedVariants { total, orphaned })
-}
-
-fn known_sources(sqlite: &Connection) -> Result<Vec<String>, OpError> {
-    let mut sources: Vec<String> = Vec::new();
-    let mut statement = sqlite.prepare(r#"select "local_path" from "studio_media_assets""#)?;
-    for path in statement.query_map([], |row| row.get::<_, Option<String>>(0))? {
-        sources.extend(path?);
-    }
-    let mut statement = sqlite.prepare(r#"select "media_json" from "post_locales""#)?;
-    let media: Vec<Option<String>> = statement.query_map([], |row| row.get(0))?.collect::<Result<_, _>>()?;
-    for text in media {
-        let Value::Array(items) = json_column(text)? else {
-            continue;
-        };
-        for item in items {
-            let Value::Object(item) = item else { continue };
-            let local_path = match item.get("local_path") {
-                Some(Value::String(path)) => Some(path.clone()),
-                _ => item.get("localPath").and_then(Value::as_str).map(str::to_owned),
-            };
-            sources.extend(local_path);
-        }
-    }
-    Ok(sources)
-}
-
 static PAYLOAD_FILE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[A-Za-z0-9._-]+-story-(?:standard|telegram)[A-Za-z0-9._-]*\.(?:jpg|mp4)").unwrap());
 
@@ -678,7 +612,7 @@ pub fn story_media_prune<'a>(context: &'a OperationContext<'a>, input: &'a Input
         let config = context.config()?;
         let sqlite = context.sqlite()?;
         let directory = story_directory(&config);
-        let orphans = orphaned_story_variants(sqlite, &config)?;
+        let orphans = super::admin::orphaned_story_variants(sqlite, &config)?;
         let claimed = payload_named_files(sqlite)?;
         let removable: Vec<&String> = orphans
             .orphaned
