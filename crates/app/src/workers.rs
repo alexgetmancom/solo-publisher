@@ -7,6 +7,10 @@ use std::time::{Duration, Instant};
 
 use bot::Bot;
 use bot::workers::start_telegram_workers;
+use channels::loops::{
+    CREDENTIALS, OBSERVABILITY, PLATFORM_TOKENS, X_TOKEN, credentials_tick, observability_interval, observability_tick,
+    platform_tokens_tick, x_token_tick,
+};
 use db::{BackendDb, unsafe_db};
 use domain::application::ports::Clock;
 use domain::notifications::run_notification_cycle;
@@ -40,7 +44,29 @@ pub fn start(bot: &Bot, http: HttpClient, flush_usage: impl Fn(&BackendDb) + 'st
     }
     let loops = HeartbeatLoops::new(Rc::new(bot.clone()), |bot: &Bot| &bot.deps().db).on_heartbeat(flush_usage);
     let idle_poll = Duration::from_secs(deps.config.load().idle_poll_interval_seconds);
+    let config = &deps.config;
     let mut started = vec![
+        loops.start(PLATFORM_TOKENS.0, PLATFORM_TOKENS.1, {
+            let (bot, http) = (bot.clone(), http.clone());
+            move || {
+                let (bot, http) = (bot.clone(), http.clone());
+                async move { platform_tokens_tick(&bot.deps().config, &bot.deps().db, &http).await }
+            }
+        }),
+        loops.start(CREDENTIALS.0, CREDENTIALS.1, {
+            let bot = bot.clone();
+            move || {
+                let bot = bot.clone();
+                async move { credentials_tick(&bot.deps().config, &bot.deps().db).await }
+            }
+        }),
+        loops.start(X_TOKEN.0, X_TOKEN.1, {
+            let (bot, http) = (bot.clone(), http.clone());
+            move || {
+                let (bot, http) = (bot.clone(), http.clone());
+                async move { x_token_tick(&bot.deps().config, &bot.deps().db, &http).await }
+            }
+        }),
         loops.start(STORY_CARD_WORKER, idle_poll, {
             let bot = bot.clone();
             move || story_cards(bot.clone())
@@ -48,6 +74,13 @@ pub fn start(bot: &Bot, http: HttpClient, flush_usage: impl Fn(&BackendDb) + 'st
         loops.start("notifications", idle_poll, {
             let bot = bot.clone();
             move || notifications(bot.clone())
+        }),
+        loops.start(OBSERVABILITY, observability_interval(config), {
+            let (bot, http) = (bot.clone(), http.clone());
+            move || {
+                let (bot, http) = (bot.clone(), http.clone());
+                async move { observability_tick(&bot.deps().config, &bot.deps().db, &http).await }
+            }
         }),
     ];
     started.extend(start_telegram_workers(bot, http, &loops));

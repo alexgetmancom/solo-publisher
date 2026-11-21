@@ -30,6 +30,8 @@ use crate::unported::{AppAdapters, AppHost};
 const SHUTDOWN_DEADLINE: Duration = Duration::from_secs(10);
 
 fn main() -> ExitCode {
+    // The boot time the memory probe reports is the process's.
+    channels::observability::memory::process_boot();
     // A variable that is not UTF-8 is none of this Studio's settings.
     let vars =
         std::env::vars_os().filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?)));
@@ -108,6 +110,10 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         Ok(transport) => transport,
         Err(error) => return failed(None, "Telegram transport could not be built", &error.0),
     };
+    let http = match ReqwestTransport::new() {
+        Ok(transport) => HttpClient::new(Rc::new(transport)),
+        Err(error) => return failed(None, "HTTP transport could not be built", &error.message),
+    };
     let deploy_agent = match HttpDeployAgent::new() {
         Ok(agent) => agent,
         Err(error) => return failed(None, "deploy agent client could not be built", &error),
@@ -115,9 +121,9 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
     let bot = Bot::new(BotDeps {
         db,
         clock: Rc::new(SystemClock),
-        config,
+        config: config.clone(),
         host: Rc::clone(&host) as _,
-        adapters: DynAdapters(Box::new(AppAdapters)),
+        adapters: DynAdapters(Box::new(AppAdapters::new(http.clone(), config))),
         transport: Rc::new(transport),
         deploy_agent: Rc::new(deploy_agent),
     });
@@ -139,21 +145,12 @@ async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb
         Ok(runner) => runner,
         Err(error) => return failed(Some(bot), "Telegram bot could not start", &error.to_string()),
     };
-    let http = match ReqwestTransport::new() {
-        Ok(transport) => HttpClient::new(Rc::new(transport)),
-        Err(error) => return failed(Some(bot), "HTTP transport could not be built", &error.message),
-    };
     let loops = workers::start(&bot, http, {
         let host = Rc::clone(&host);
         move |db| host.flush_usage(db::unsafe_db(db))
     });
     let not_in_this_build = [
-        [
-            "http server",
-            "the other workers",
-            "stored platform credentials (channels)",
-        ]
-        .as_slice(),
+        ["http server", "the other workers"].as_slice(),
         unported::AREAS.as_slice(),
     ]
     .concat();

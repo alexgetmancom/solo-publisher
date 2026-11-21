@@ -1,5 +1,6 @@
 //! The provider calls Studio waits on through the bot's `Adapters`
-//! (`domain`'s `VideoProvider`, `YoutubeUploads`, `ZernioDirectory`): the
+//! (`domain`'s `VideoProvider`, `YoutubeUploads`; the Zernio directory is
+//! `channels::zernio`): the
 //! same functions the delivery adapters use, over the live configuration.
 
 use std::rc::Rc;
@@ -8,9 +9,8 @@ use std::sync::Arc;
 use content::Locale;
 use domain::application::ports::SystemClock;
 use domain::publishing::boundaries::{ProviderOutcome, VideoProvider};
-use domain::studio::boundaries::{YoutubeUploads, ZernioAccount, ZernioDirectory};
+use domain::studio::boundaries::YoutubeUploads;
 use foundation::config::{Config, SharedConfig};
-use runtime::external::zernio::list_zernio_accounts;
 use runtime::http::HttpClient;
 use serde_json::Value;
 
@@ -91,13 +91,5 @@ impl YoutubeUploads for ProviderCalls {
         keep_youtube_upload_private(&self.context(Arc::new(config.clone())), video_id, locale)
             .await
             .map_err(refused)
-    }
-}
-
-impl ZernioDirectory for ProviderCalls {
-    async fn accounts(&self, config: &Config) -> domain::Result<Vec<ZernioAccount>> {
-        list_zernio_accounts(&self.client, config)
-            .await
-            .map_err(|error| domain::Error::message(error.to_string()))
     }
 }

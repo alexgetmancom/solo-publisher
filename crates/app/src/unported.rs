@@ -7,7 +7,11 @@
 //! happened. The ones that return nothing (the worker bell, Story
 //! derivatives) log instead.
 
+use adapters::providers::ProviderCalls;
 use bot::{Adapters, Fut, Host};
+use channels::connect::ConnectLinks;
+use channels::entropy::OsEntropy;
+use channels::zernio::ZernioAccounts;
 use content::Locale;
 use db::rusqlite::Connection;
 use domain::application::ports::{StoryPublishMode, SystemClock};
@@ -18,34 +22,25 @@ use domain::observability::capabilities::CapabilityReadiness;
 use domain::observability::usage::UsageRecorder;
 use domain::publishing::Boundaries;
 use domain::publishing::boundaries::{
-    MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter, WorkerBell,
+    MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter,
+    VideoProvider, WorkerBell,
 };
 use domain::story_cards::StoryCardStore;
-use domain::studio::boundaries::{
-    ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives, StudioBoundaries,
-    ZernioAccount,
-};
+use domain::studio::boundaries::{StoryDerivatives, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory};
 use foundation::config::{Config, SharedConfig};
 use foundation::logger::{LogLevel, log};
-use jiff::Timestamp;
 use runtime::ffmpeg::FfmpegMediaProbe;
+use runtime::http::HttpClient;
 use serde_json::{Value, json};
 
 const PUBLISH_WORKER: &str = "publish worker";
 const STORY_DERIVATIVES: &str = "Story derivatives (media runtime)";
-const CONNECT_LINKS: &str = "channel connect links (channels)";
-const ZERNIO: &str = "Zernio";
-const YOUTUBE: &str = "YouTube uploads";
 
 /// Every area above, for the startup line.
-pub const AREAS: [&str; 5] = [PUBLISH_WORKER, STORY_DERIVATIVES, CONNECT_LINKS, ZERNIO, YOUTUBE];
+pub const AREAS: [&str; 2] = [PUBLISH_WORKER, STORY_DERIVATIVES];
 
 fn message(area: &str) -> String {
     format!("not available in this build: {area}")
-}
-
-fn refuse<T>(area: &str) -> domain::Result<T> {
-    Err(domain::Error::message(message(area)))
 }
 
 pub struct AppHost {
@@ -55,6 +50,7 @@ pub struct AppHost {
     video_completion: VideoCompletionNotice<SystemClock>,
     reminders: ReminderJobs<SystemClock>,
     readiness: CapabilityReadiness,
+    connect_links: ConnectLinks<SystemClock, OsEntropy>,
 }
 
 impl AppHost {
@@ -66,6 +62,7 @@ impl AppHost {
             video_completion: VideoCompletionNotice::new(SystemClock),
             reminders: ReminderJobs::new(SystemClock),
             readiness: CapabilityReadiness::new(config),
+            connect_links: ConnectLinks::new(SystemClock, OsEntropy),
         }
     }
 
@@ -92,7 +89,7 @@ impl Host for AppHost {
             reminders: &self.reminders,
             story_derivatives: self,
             readiness: &self.readiness,
-            connect_links: self,
+            connect_links: &self.connect_links,
         }
     }
 }
@@ -145,27 +142,21 @@ impl StoryDerivatives for AppHost {
     }
 }
 
-impl ChannelConnectLinks for AppHost {
-    fn meta_oauth_connect_url(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
-        refuse(CONNECT_LINKS)
-    }
-    fn meta_oauth_connect_path(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
-        refuse(CONNECT_LINKS)
-    }
-    fn x_oauth_connect_url(&self, _: &Config) -> domain::Result<String> {
-        refuse(CONNECT_LINKS)
-    }
-    fn x_oauth_connect_path(&self, _: &Config) -> domain::Result<String> {
-        refuse(CONNECT_LINKS)
-    }
-    fn start_connect(&self, _: &Config, _: ConnectPlatform, _: Locale, _: Timestamp) -> domain::Result<ConnectStart> {
-        refuse(CONNECT_LINKS)
-    }
+/// The adapters Studio waits on: the media probe is ffprobe/ffmpeg, the
+/// provider calls go to the platforms, the Zernio directory is channels'.
+pub struct AppAdapters {
+    providers: ProviderCalls,
+    zernio: ZernioAccounts,
 }
 
-/// The adapters Studio waits on: the media probe is ffprobe/ffmpeg; the
-/// provider calls are not ported yet.
-pub struct AppAdapters;
+impl AppAdapters {
+    pub fn new(http: HttpClient, config: SharedConfig) -> Self {
+        Self {
+            providers: ProviderCalls::new(http.clone(), config),
+            zernio: ZernioAccounts::new(http),
+        }
+    }
+}
 
 impl Adapters for AppAdapters {
     fn probe<'a>(&'a self, path: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
@@ -174,22 +165,34 @@ impl Adapters for AppAdapters {
     fn audio_stats<'a>(&'a self, path: &'a str) -> Fut<'a, Result<String, String>> {
         Box::pin(FfmpegMediaProbe.audio_stats(path))
     }
-    fn post_outcome<'a>(&'a self, _: &'a str, _: &'a str) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        Box::pin(async { refuse(ZERNIO) })
+    fn post_outcome<'a>(
+        &'a self,
+        provider_post_id: &'a str,
+        platform: &'a str,
+    ) -> Fut<'a, domain::Result<ProviderOutcome>> {
+        Box::pin(self.providers.post_outcome(provider_post_id, platform))
     }
     fn publish_instagram_reel<'a>(
         &'a self,
-        _: &'a str,
-        _: &'a str,
-        _: &'a Value,
-        _: &'a str,
+        account_id: &'a str,
+        public_url: &'a str,
+        metadata: &'a Value,
+        request_id: &'a str,
     ) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        Box::pin(async { refuse(ZERNIO) })
+        Box::pin(
+            self.providers
+                .publish_instagram_reel(account_id, public_url, metadata, request_id),
+        )
     }
-    fn keep_youtube_private<'a>(&'a self, _: &'a Config, _: &'a str, _: Locale) -> Fut<'a, domain::Result<()>> {
-        Box::pin(async { refuse(YOUTUBE) })
+    fn keep_youtube_private<'a>(
+        &'a self,
+        config: &'a Config,
+        video_id: &'a str,
+        locale: Locale,
+    ) -> Fut<'a, domain::Result<()>> {
+        Box::pin(self.providers.keep_private(config, video_id, locale))
     }
-    fn zernio_accounts<'a>(&'a self, _: &'a Config) -> Fut<'a, domain::Result<Vec<ZernioAccount>>> {
-        Box::pin(async { refuse(ZERNIO) })
+    fn zernio_accounts<'a>(&'a self, config: &'a Config) -> Fut<'a, domain::Result<Vec<ZernioAccount>>> {
+        Box::pin(self.zernio.accounts(config))
     }
 }

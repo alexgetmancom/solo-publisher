@@ -40,8 +40,8 @@ error that may have published is `AdapterError::Ambiguous` (→ `requirePublishV
 
 Wiring for the integrator: `PreparedMedia::new(Rc<dyn MediaPreparation>)` is the `prepare` (the delivery slice
 implements `MediaPreparation` with `prepareMediaItems` and `awaitPreparedStoryMedia`); `ProviderCalls::new(client,
-config)` implements `VideoProvider`, `YoutubeUploads` and `ZernioDirectory`, so `AppAdapters` forwards
-`post_outcome`, `publish_instagram_reel`, `keep_youtube_private` and `zernio_accounts` to it;
+config)` implements `VideoProvider` and `YoutubeUploads`, so `AppAdapters` forwards `post_outcome`,
+`publish_instagram_reel` and `keep_youtube_private` to it (`zernio_accounts` is `channels::zernio::ZernioAccounts`);
 `HttpStoriesSidecar::new(client, base_url)` is the `stories`.
 
 ## Stories sidecar contract
