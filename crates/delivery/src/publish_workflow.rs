@@ -41,6 +41,11 @@ pub fn delivery_ports(
     ))
 }
 
+/// How old a lock a restarted process takes back before its loops start:
+/// the previous process is gone, so the 15-minute crash window is not waited
+/// out; the grace only avoids racing a request just interrupted at the provider.
+pub const PUBLISH_RESTART_LOCK_GRACE_SECONDS: u64 = 30;
+
 /// The publish-watchdog loop body (`recoverStalePublishJobs` at its default
 /// age): a hung provider call must not keep a lock out of the retry policy.
 pub fn recover_stale_publish_jobs(delivery: &Delivery<'_>) -> Result<usize> {

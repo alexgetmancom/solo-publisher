@@ -422,6 +422,20 @@ fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
     }
 }
 
+/// `$DATA` in a step's arguments is the scenario's data directory.
+fn with_data(value: &Value, data: &Path) -> Value {
+    match value {
+        Value::String(text) => Value::String(text.replace("$DATA", &data.to_string_lossy())),
+        Value::Array(items) => Value::Array(items.iter().map(|item| with_data(item, data)).collect()),
+        Value::Object(map) => Value::Object(
+            map.iter()
+                .map(|(key, item)| (key.clone(), with_data(item, data)))
+                .collect(),
+        ),
+        other => other.clone(),
+    }
+}
+
 fn write_files(data: &Path, at: std::time::SystemTime, files: Option<&Value>) {
     for (name, spec) in files.and_then(Value::as_object).into_iter().flatten() {
         let target = data.join(name);
@@ -544,10 +558,11 @@ async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
         if let Some(at) = step.get("clock") {
             clock.0.set(instant(at.as_str().unwrap()));
         } else if let Some(sql) = step.get("sql") {
-            context.sqlite().execute_batch(sql.as_str().unwrap()).unwrap();
+            let sql = sql.as_str().unwrap().replace("$DATA", &data.to_string_lossy());
+            context.sqlite().execute_batch(&sql).unwrap();
         } else {
             let name = step["call"].as_str().unwrap();
-            let args = match resolve(step.get("args").unwrap_or(&json!([])), &vars) {
+            let args = match with_data(&resolve(step.get("args").unwrap_or(&json!([])), &vars), &data) {
                 Value::Array(args) => args,
                 _ => unreachable!("args is an array"),
             };
@@ -700,7 +715,9 @@ pub fn compare(spec_file: &str, script: &str, call: Call, label: &str) {
     let spec_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join(spec_file);
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(&spec_path).unwrap()).unwrap();
     let expected = typescript_side(script, &spec_path);
-    let actual = rust_side(&spec, call, &format!("rust-{label}-{}", std::process::id()));
+    // The same directory the TypeScript run used, after it: paths inside
+    // content hashes then agree.
+    let actual = rust_side(&spec, call, label);
     let failures = differences(&expected, &actual);
     assert!(
         failures.is_empty(),

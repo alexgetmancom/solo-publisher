@@ -14,7 +14,9 @@ import { dump, resolve } from "./scenario-support.js";
  * — `fetchImpl` arguments and the global `fetch` alike — going to a recorder
  * that answers the scenario's canned responses in order. A canned response may
  * carry `sql`, run on the database the moment the request is served: a lease
- * taken over, a target edited while the provider was being asked.
+ * taken over, a target edited while the provider was being asked. `$DATA` in
+ * a step's SQL or arguments is the scenario's data directory, which is the same
+ * path on both sides (the runs are sequential), so content hashes of paths agree.
  *
  * The output is every step's result, every request as it went out, and every
  * non-empty table. Credentials appear as `{{NAME}}`, the scenario's data
@@ -140,6 +142,15 @@ function writeFiles(data: string, at: Date, files: Scenario["files"] = {}): void
   }
 }
 
+/** `$DATA` in a step's arguments is the scenario's data directory. */
+function withData(value: unknown, data: string): unknown {
+  if (typeof value === "string") return value.replaceAll("$DATA", data);
+  if (Array.isArray(value)) return value.map((item) => withData(item, data));
+  if (value && typeof value === "object")
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withData(item, data)]));
+  return value;
+}
+
 function errorResult(error: unknown): unknown {
   return { error: error instanceof Error ? error.message : String(error) };
 }
@@ -167,12 +178,16 @@ async function run(spec: Spec, scenario: Scenario, call: Call, label: string): P
     for (const statement of spec.setup) sqlite.run(statement);
     for (const step of scenario.steps) {
       if (step.clock !== undefined) setSystemTime(new Date(Date.parse(step.clock)));
-      else if (step.sql !== undefined) sqlite.run(step.sql);
+      else if (step.sql !== undefined) sqlite.run(step.sql.replaceAll("$DATA", data));
       else if (step.call !== undefined) {
         const config = { ...withStudioProfile(loadConfig(env), backendDb), ...spec.credentials } as BackendConfig;
         let result: unknown;
         try {
-          const value = await call({ backendDb, config, fetchImpl, data }, step.call, resolve(step.args ?? [], vars) as unknown[]);
+          const value = await call(
+            { backendDb, config, fetchImpl, data },
+            step.call,
+            withData(resolve(step.args ?? [], vars), data) as unknown[],
+          );
           if (step.bind) vars[step.bind] = value;
           result = value === undefined ? null : value;
         } catch (error) {
@@ -210,6 +225,6 @@ export async function runScenarios(label: string, call: Call): Promise<void> {
   const spec = JSON.parse(fs.readFileSync(specPath, "utf8")) as Spec;
   Math.random = () => spec.jitter;
   const scenarios = [];
-  for (const scenario of spec.scenarios) scenarios.push(await run(spec, scenario, call, `ts-${label}`));
+  for (const scenario of spec.scenarios) scenarios.push(await run(spec, scenario, call, label));
   console.log(JSON.stringify({ scenarios }));
 }

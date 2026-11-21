@@ -34,6 +34,7 @@
     "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', NULL, 'x', 'x', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
     "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('discord', 'discord', 'en', 'native', NULL, 'discord', 'discord', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
     "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('threads_ru', 'threads_ru', 'ru', 'native', NULL, 'threads_ru', 'threads_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram_stories', 'instagram_stories', 'en', 'native', NULL, 'instagram_stories', 'instagram_stories', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
     "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_shorts', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')",
     "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('instagram:ru', 'instagram', 'ru', 'zernio', 'acc-1', NULL, 'instagram_reels', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
   ],
@@ -947,6 +948,217 @@
           "args": []
         }
       ]
+    },
+    {
+      "name": "media is staged before the provider sees it",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"m1\", \"media_key\": \"3_m1\"}}"
+        },
+        {
+          "status": 204
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"m1\"}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"300\", \"text\": \"t\"}}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"data\": {\"id\": \"300\", \"text\": \"pic\"}}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'x', 'queued', NULL, 0, '{\"text\": \"pic\", \"locale\": \"en\", \"media\": [{\"type\": \"IMAGE\", \"localPath\": \"$DATA/in/photo.jpg\"}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'x', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "in/photo.jpg": {
+          "fill": "J",
+          "size": 64
+        }
+      }
+    },
+    {
+      "name": "a Story without its prepared variant is refused, never rendered on the way",
+      "responses": [],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'instagram_stories', 'queued', NULL, 0, '{\"text\": \"story\", \"locale\": \"en\", \"media\": [{\"type\": \"IMAGE\", \"localPath\": \"$DATA/video-media/abc.jpg\"}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'instagram_stories', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "video-media/abc.jpg": {
+          "fill": "J",
+          "size": 64
+        }
+      }
+    },
+    {
+      "name": "a Story takes its prepared variant",
+      "responses": [
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"c1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"status_code\": \"FINISHED\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"st1\"}"
+        },
+        {
+          "status": 200,
+          "headers": [["content-type", "application/json"]],
+          "body": "{\"id\": \"st1\", \"permalink\": \"https://instagram.com/stories/st1\"}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'publishing', '{\"telegram\":true,\"x\":true,\"discord\":true,\"threads_ru\":true}', 12, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publish_jobs (job_id, publication_key, target, status, current_phase, reconcile_attempt_count, payload_json, attempt_count, next_attempt_at, locked_by, locked_at, last_error, created_at, updated_at) VALUES (1, 'post:12', 'instagram_stories', 'queued', NULL, 0, '{\"text\": \"story\", \"locale\": \"en\", \"media\": [{\"type\": \"IMAGE\", \"localPath\": \"$DATA/video-media/abc.jpg\"}]}', 0, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, published_at, raw_json, updated_at) VALUES ('post:12', 'instagram_stories', 'queued', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        },
+        {
+          "call": "files",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:00:01.000Z"
+        },
+        {
+          "call": "publishCycle",
+          "args": []
+        }
+      ],
+      "files": {
+        "video-media/abc.jpg": {
+          "fill": "J",
+          "size": 64
+        },
+        "story-media/abc-story-standard.jpg": {
+          "fill": "S",
+          "size": 64
+        }
+      }
+    },
+    {
+      "name": "Story derivatives render once per source",
+      "responses": [],
+      "steps": [
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/wide.jpg", false]
+        },
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/wide.jpg", false]
+        },
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/clip.mp4", true]
+        },
+        {
+          "call": "ensureStory",
+          "args": ["$DATA/video-media/missing.mp4", true]
+        },
+        {
+          "call": "preparedStory",
+          "args": [
+            {
+              "type": "VIDEO",
+              "localPath": "$DATA/video-media/clip.mp4"
+            }
+          ]
+        },
+        {
+          "call": "preparedStory",
+          "args": [
+            {
+              "type": "photo",
+              "localPath": "$DATA/video-media/none.jpg"
+            }
+          ]
+        },
+        {
+          "call": "files",
+          "args": []
+        }
+      ],
+      "files": {
+        "video-media/wide.jpg": {
+          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=640x360:rate=1", "-frames:v", "1"]
+        },
+        "video-media/clip.mp4": {
+          "ffmpeg": [
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc=size=320x180:rate=10",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000",
+            "-t",
+            "1",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            "-shortest"
+          ]
+        }
+      }
     },
     {
       "name": "media cache sweep removes only expired cache files",

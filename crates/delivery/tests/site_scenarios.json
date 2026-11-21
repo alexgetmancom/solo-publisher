@@ -1,0 +1,525 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "jitter": 0.25,
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "PUBLIC_BASE_URL": "https://studio.example/",
+    "TELEGRAM_API_BASE_URL": "https://bot-api.example/",
+    "INDEXNOW_ENABLED": "false"
+  },
+  "credentials": {},
+  "ignoredTables": [],
+  "setup": ["UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'"],
+  "beforeDump": [
+    "UPDATE post_locales SET site_updated_at = '1970-01-01T00:00:00.000Z' WHERE site_updated_at >= strftime('%Y-%m-%d', 'now')"
+  ],
+  "scenarios": [
+    {
+      "name": "image and video build: responsive variants, poster, versioned paths, shared blobs",
+      "files": {
+        "site/uploads/photo.jpg": {
+          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=640x360:rate=1", "-frames:v", "1"]
+        },
+        "site/uploads/clip.mp4": {
+          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=320x240:rate=10", "-t", "1", "-pix_fmt", "yuv420p", "-c:v", "mpeg4"]
+        }
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[{\"type\":\"photo\",\"path\":\"uploads/photo.jpg\"},{\"type\":\"video\",\"path\":\"uploads/clip.mp4\",\"role\":\"attachment\"},{\"type\":\"photo\",\"path\":\"uploads/card.jpg\",\"role\":\"text_story_card\"}]', '[]', 'post-1-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 'en', 'Hello 1', '[]', '[]', 'post-1-en', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "UPDATE post_locales SET site_media_json = '[{\"alt\":\"A test card\"}]' WHERE draft_id = 1 AND locale = 'ru'"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'publish', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "files",
+          "args": ["site"]
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:05:00.000Z"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'site_en', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "files",
+          "args": ["site"]
+        }
+      ]
+    },
+    {
+      "name": "direct media materialization: a replacement detaches the shared locale file",
+      "files": {
+        "site/uploads/a.jpg": {
+          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=640x360:rate=1", "-frames:v", "1"]
+        },
+        "site/uploads/b.jpg": {
+          "ffmpeg": ["-f", "lavfi", "-i", "testsrc2=size=400x300:rate=1", "-frames:v", "1"]
+        },
+        "site/uploads/raw.png": {
+          "fill": "x",
+          "size": 10
+        }
+      },
+      "steps": [
+        {
+          "call": "materializeMedia",
+          "args": [
+            3,
+            "ru",
+            [
+              {
+                "type": "image",
+                "path": "uploads/a.jpg"
+              }
+            ]
+          ]
+        },
+        {
+          "call": "materializeMedia",
+          "args": [
+            3,
+            "en",
+            [
+              {
+                "type": "image",
+                "path": "uploads/a.jpg",
+                "alt": "kept"
+              }
+            ]
+          ]
+        },
+        {
+          "call": "files",
+          "args": ["site/media"]
+        },
+        {
+          "call": "materializeMedia",
+          "args": [
+            3,
+            "ru",
+            [
+              {
+                "type": "image",
+                "path": "uploads/b.jpg"
+              }
+            ]
+          ]
+        },
+        {
+          "call": "files",
+          "args": ["site/media"]
+        },
+        {
+          "call": "files",
+          "args": ["site/generated"]
+        },
+        {
+          "call": "materializeMedia",
+          "args": [
+            4,
+            "ru",
+            [
+              {
+                "type": "image"
+              }
+            ]
+          ]
+        },
+        {
+          "call": "materializeMediaFailure",
+          "args": [
+            4,
+            "ru",
+            [
+              {
+                "type": "image",
+                "path": "uploads/raw.png"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "one bad publication fails only its own jobs, retries with backoff, then fails terminally",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[]', '[]', 'post-1-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 2, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (2, 'ru', 'Привет 2', '[{\"type\":\"photo\",\"path\":\"uploads/missing.jpg\"}]', '[]', 'post-2-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'site_ru', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:2', 'site_ru', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:40:00.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T11:00:00.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T11:20:00.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T11:40:00.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "a source edited while rendering is refused by its version fence, then rendered again",
+      "env": {
+        "CONTROLLER_BOT_TOKEN": "test-token-telegram"
+      },
+      "responses": [
+        {
+          "throws": "media host is unreachable",
+          "sql": "UPDATE post_locales SET source_text = 'Edited', updated_at = '2026-03-01T09:59:00.000Z' WHERE draft_id = 2 AND locale = 'ru'"
+        },
+        {
+          "status": 200,
+          "body": "{\"ok\":false,\"description\":\"Bad Request: file is too big\"}"
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[{\"type\":\"photo\",\"file_id\":\"F-gone\"}]', '[]', 'post-1-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 2, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (2, 'ru', 'Привет 2', '[]', '[]', 'post-2-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'site_ru', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:2', 'site_ru', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "materialize without keys: every post, cancelled locales stay as they are",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (7, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 7, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (7, 'ru', 'Привет 7', '[]', '[]', 'post-7-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (7, 'en', 'Hello 7', '[]', '[]', 'post-7-en', 1, '2026-03-01T12:00:00.000Z', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "UPDATE post_locales SET site_media_json = '[{\"type\":\"image\",\"path\":\"keep.jpg\"}]' WHERE draft_id = 7 AND locale = 'ru'"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:7', 'site_ru', 'cancelled', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:7', 'site_en', 'published', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "materialize"
+        },
+        {
+          "clock": "2026-03-01T12:00:00.000Z"
+        },
+        {
+          "call": "materialize",
+          "args": [["post:7", "story:1"]]
+        }
+      ]
+    },
+    {
+      "name": "a declared cancellation refuses the claim",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[]', '[]', 'post-1-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 2, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (2, 'ru', 'Привет 2', '[]', '[]', 'post-2-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'site_ru', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:2', 'site_ru', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO publication_cancellations (publication_key, actor_id, requested_at) VALUES ('post:1', 42, '2026-03-01T09:30:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "stale lock recovery: retried, terminal, and a live lock left alone",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (11, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 11, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (11, 'ru', 'Привет 11', '[]', '[]', 'post-11-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at, attempt_count, locked_by, locked_at, last_error) VALUES ('post:10', 'site_ru', 'rendering', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z', 0, 'dead-worker', '2026-03-01T09:40:00.000Z', 'previous failure')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at, attempt_count, locked_by, locked_at) VALUES ('post:11', 'site_ru', 'rendering', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z', 4, 'dead-worker', '2026-03-01T09:40:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at, attempt_count, locked_by, locked_at) VALUES ('post:12', 'site_ru', 'rendering', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z', 0, 'live-worker', '2026-03-01T09:59:30.000Z')"
+        },
+        {
+          "call": "recoverStale",
+          "args": [60]
+        },
+        {
+          "call": "recoverStale",
+          "args": [60]
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "cycle"
+        }
+      ]
+    },
+    {
+      "name": "IndexNow: completed pages pinged once, state file kept",
+      "env": {
+        "INDEXNOW_ENABLED": "true"
+      },
+      "files": {
+        "indexnow.key": {
+          "fill": "a1b2c3d4",
+          "size": 4
+        }
+      },
+      "responses": [
+        {
+          "status": 202
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[]', '[]', 'privet', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 'en', 'Hello 1', '[]', '[]', 'hello', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'needs_review', '{\"site_ru\":true,\"site_en\":true}', 2, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (2, 'ru', 'Привет 2', '[]', '[]', 'post-2-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (2, 'en', 'Hello 2', '[]', '[]', 'post-2-en', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'publish', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:2', 'publish', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "settleIndexNow"
+        },
+        {
+          "call": "indexNowState"
+        },
+        {
+          "call": "indexNowKey"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "settleIndexNow"
+        },
+        {
+          "call": "indexNowState"
+        }
+      ]
+    },
+    {
+      "name": "IndexNow rejected: site.indexnow.failed, held until retry_at, then drained on an idle cycle",
+      "env": {
+        "INDEXNOW_ENABLED": "true"
+      },
+      "files": {
+        "indexnow.key": {
+          "fill": "a1b2c3d4",
+          "size": 4
+        }
+      },
+      "responses": [
+        {
+          "status": 503
+        },
+        {
+          "throws": "indexnow is unreachable"
+        },
+        {
+          "status": 200
+        }
+      ],
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[]', '[]', 'privet', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 'en', 'Hello 1', '[]', '[]', 'hello', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO site_jobs (publication_key, reason, status, created_at, updated_at) VALUES ('post:1', 'publish', 'queued', '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "settleIndexNow"
+        },
+        {
+          "call": "indexNowState"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "settleIndexNow"
+        },
+        {
+          "clock": "2026-03-01T10:02:00.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "settleIndexNow"
+        },
+        {
+          "call": "indexNowState"
+        },
+        {
+          "clock": "2026-03-01T10:04:00.000Z"
+        },
+        {
+          "call": "cycle"
+        },
+        {
+          "call": "settleIndexNow"
+        },
+        {
+          "call": "indexNowState"
+        }
+      ]
+    },
+    {
+      "name": "site urls for IndexNow come from the public feed",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (1, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 1, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (1, 'ru', 'Привет 1', '[]', '[]', 'privet', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (1, 'en', 'Hello 1', '[]', '[]', 'hello', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (2, 42, 'published', '{\"site_ru\":true,\"site_en\":true}', 2, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (2, 'ru', 'Привет 2', '[]', '[]', 'tolko-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, post_id, created_at, updated_at) VALUES (3, 42, 'needs_review', '{\"site_ru\":true,\"site_en\":true}', 3, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, media_json, site_media_json, slug, site_enabled, publish_at, published_at, updated_at) VALUES (3, 'ru', 'Привет 3', '[]', '[]', 'post-3-ru', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z'), (3, 'en', 'Hello 3', '[]', '[]', 'post-3-en', 1, NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:00:00.000Z')"
+        },
+        {
+          "call": "siteUrls",
+          "args": [["post:1", "post:2", "post:3", "post:9"]]
+        },
+        {
+          "call": "siteUrls",
+          "args": [[]]
+        },
+        {
+          "call": "indexNowKey"
+        }
+      ]
+    }
+  ]
+}

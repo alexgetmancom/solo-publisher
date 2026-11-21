@@ -106,6 +106,36 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
                 .map_err(failed)?
             ),
             "pruneMediaCache" => json!(prune_media_cache(delivery.config(), delivery.now_ms()).await),
+            "ensureStory" => {
+                let media = DeliveryMedia::new(
+                    scenario.client.clone(),
+                    SharedConfig::new((*scenario.config()).clone()),
+                    Rc::new(scenario.clock.clone()),
+                );
+                let label = json!({"source": "scenario"}).as_object().unwrap().clone();
+                let force = args.get(2).and_then(Value::as_bool).unwrap_or(false);
+                json!(
+                    media
+                        .ensure_story_derivative(
+                            scenario.config(),
+                            args[0].as_str().unwrap(),
+                            args[1].as_bool().unwrap(),
+                            label,
+                            force
+                        )
+                        .await?
+                )
+            }
+            "preparedStory" => {
+                let item = args[0].as_object().unwrap().clone();
+                let config = scenario.config();
+                json!(
+                    media(scenario)
+                        .await_prepared_story_media(&config, &item)
+                        .await
+                        .map_err(|error| error.to_string())?
+                )
+            }
             "files" => support::files(&scenario.data),
             other => panic!("unknown call {other}"),
         })

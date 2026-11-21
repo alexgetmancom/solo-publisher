@@ -14,20 +14,14 @@ pub mod media_prepare;
 pub mod publish_workflow;
 pub mod reconciliation;
 pub mod routing;
-#[cfg(feature = "site")]
 pub mod site_content_index;
-#[cfg(feature = "site")]
 pub mod site_index_now;
-#[cfg(feature = "site")]
 pub mod site_jobs;
-#[cfg(feature = "site")]
 pub mod site_media;
 pub mod site_media_storage;
 pub mod story_derivatives;
 pub mod story_media;
-#[cfg(feature = "video")]
 pub mod video_retention;
-#[cfg(feature = "video")]
 pub mod video_worker;
 
 use adapters::AdapterContext;

@@ -8,12 +8,6 @@ publish.workspace = true
 [lints]
 workspace = true
 
-# Development gates while the site and video halves are written alongside the
-# rest; removed once they land.
-[features]
-site = []
-video = []
-
 [dependencies]
 adapters = { path = "../adapters" }
 content = { path = "../content" }

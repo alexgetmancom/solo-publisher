@@ -6,6 +6,7 @@ import { pruneMediaCache } from "../../apps/backend/src/delivery/media-prepare.j
 import { createPlatformPorts } from "../../apps/backend/src/delivery/ports/social.js";
 import { runPublicationReconciliation } from "../../apps/backend/src/delivery/publication-reconciliation.js";
 import { runDeliveryPublishCycle } from "../../apps/backend/src/delivery/publish-workflow.js";
+import { awaitPreparedStoryMedia, ensureStoryDerivative } from "../../apps/backend/src/delivery/story-derivatives.js";
 import { pruneOperationalHistory, withMaintenanceLock } from "../../apps/backend/src/operations/maintenance.js";
 import { recoverStalePublishJobs } from "../../apps/backend/src/publishing/queue.js";
 import { type Call, listFiles, runScenarios } from "./delivery-scenario-support.js";
@@ -54,6 +55,10 @@ const call: Call = async ({ backendDb, config, fetchImpl, data }, name, args) =>
       return withMaintenanceLock(backendDb, () => pruneOperationalHistory(backendDb));
     case "pruneMediaCache":
       return pruneMediaCache(config);
+    case "ensureStory":
+      return ensureStoryDerivative(config, args[0] as string, args[1] as boolean, { source: "scenario" }, (args[2] as boolean) ?? false);
+    case "preparedStory":
+      return awaitPreparedStoryMedia(config, args[0] as Parameters<typeof awaitPreparedStoryMedia>[1]);
     case "files":
       return listFiles(data);
     default:
