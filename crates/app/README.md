@@ -5,9 +5,13 @@ environment (`foundation::config`, the same variables as TypeScript), the databa
 date guards), and the Telegram bot on long polling (`setMyCommands` at startup). SIGINT/SIGTERM stop polling, wait for
 updates in hand (10 s at most, then exit 1) and close the database. No HTTP server and no workers yet.
 
-Boundaries whose owner is not ported refuse with `not available in this build: <area>` (`src/unported.rs`); the
-startup line `studio started` lists them under `notInThisBuild`. Stored platform credentials (`platform_tokens`) are
-not applied to the configuration yet.
+The boundaries that are database state run on their ported stores: Story cards (`domain::story_cards`; queued cards
+wait, as the renderer is not here), reminders (`domain::notifications`; queued, not delivered without the worker), the
+credential breaker, the readiness report and runtime usage (`domain::observability`, usage flushed at shutdown), the
+video completion notice (`domain::delivery`). Boundaries whose owner is not ported refuse with
+`not available in this build: <area>` (`src/unported.rs`); the startup line `studio started` lists them under
+`notInThisBuild`. Stored platform credentials (`platform_tokens`) are not applied to the configuration yet, so the
+readiness report counts only what the environment sets.
 
 ## Environment
 

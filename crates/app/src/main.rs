@@ -1,8 +1,9 @@
 //! `solo-publisher`: the Studio process (`apps/backend/src/runtime/server.ts`)
 //! restricted to what the Rust build has ported — the configuration, the
 //! database and the Telegram bot on long polling. The HTTP surface and the
-//! workers come with their phases (plans/rust/PLAN.md); every boundary whose
-//! owner is not here yet refuses loudly (`unported.rs`).
+//! workers come with their phases (plans/rust/PLAN.md); the boundaries are
+//! the ported stores, and every one whose owner is not here yet refuses
+//! loudly (`unported.rs`).
 
 mod unported;
 
@@ -15,7 +16,7 @@ use bot::deployment::HttpDeployAgent;
 use bot::{Bot, BotDeps, DynAdapters, runner};
 use db::BackendDb;
 use domain::application::ports::SystemClock;
-use foundation::config::{Config, SharedConfig, load_config};
+use foundation::config::{SharedConfig, load_config};
 use foundation::logger::{LogLevel, configure_logging, log};
 use serde_json::json;
 use tokio::signal::unix::{Signal, SignalKind, signal};
@@ -67,15 +68,18 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    let config = SharedConfig::new(config);
+    let host = Rc::new(AppHost::new(config.clone()));
     // The bot lives on one thread (see the bot crate).
     let local = tokio::task::LocalSet::new();
-    let (bot, code) = local.block_on(&runtime, run(config, &token, db));
+    let (bot, code) = local.block_on(&runtime, run(config, Rc::clone(&host), &token, db));
     // Ends whatever background work outlived the shutdown wait, so the bot's
     // last handle is ours and the database closes here.
     drop(local);
     let Some(bot) = bot else { return code };
     match bot.into_deps() {
         Ok(deps) => {
+            host.flush_usage(db::unsafe_db(&deps.db));
             if let Err(error) = deps.db.close() {
                 log(
                     LogLevel::Error,
@@ -96,8 +100,8 @@ fn main() -> ExitCode {
 
 /// Builds the bot, polls until SIGINT/SIGTERM or until polling ends on its
 /// own, and stops it. Returns the bot, when one was built, for its database.
-async fn run(config: Config, token: &str, db: BackendDb) -> (Option<Bot>, ExitCode) {
-    let transport = match HttpTransport::new(&config.telegram_api_base_url, token) {
+async fn run(config: SharedConfig, host: Rc<AppHost>, token: &str, db: BackendDb) -> (Option<Bot>, ExitCode) {
+    let transport = match HttpTransport::new(&config.load().telegram_api_base_url, token) {
         Ok(transport) => transport,
         Err(error) => return failed(None, "Telegram transport could not be built", &error.0),
     };
@@ -108,8 +112,8 @@ async fn run(config: Config, token: &str, db: BackendDb) -> (Option<Bot>, ExitCo
     let bot = Bot::new(BotDeps {
         db,
         clock: Rc::new(SystemClock),
-        config: SharedConfig::new(config),
-        host: Rc::new(AppHost),
+        config,
+        host,
         adapters: DynAdapters(Box::new(AppAdapters)),
         transport: Rc::new(transport),
         deploy_agent: Rc::new(deploy_agent),

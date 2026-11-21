@@ -3,6 +3,9 @@
 //! Rust replay is one row here, added by the area that ports the worker.
 //! A ported case reaching a trigger with no row fails with that name.
 
+use std::path::Path;
+
+use db::rusqlite::{Connection, params};
 use serde_json::Value;
 
 use super::Harness;
@@ -60,7 +63,7 @@ fn telegram_alerts_tick(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>
 fn notification_jobs_cycle(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String>> {
     Box::pin(async move {
         let deps = harness.bot.deps();
-        super::reminders::run_notification_cycle(db::unsafe_db(&deps.db), &*deps.clock)
+        super::notification_worker::run_notification_cycle(db::unsafe_db(&deps.db), &*deps.clock)
             .map_err(|error| error.to_string())?;
         Ok(harness.telegram.take_calls())
     })
@@ -107,11 +110,22 @@ fn story_worker_finishes(harness: &Harness) -> Fut<'_, Result<Vec<Value>, String
     Box::pin(async move {
         let now = foundation::time::to_iso_string(harness.clock.0.get());
         let fixture = super::recorder_tmp().join("fixtures/photo.jpg");
-        super::story_cards::render_story_cards(db::unsafe_db(&harness.bot.deps().db), &fixture, 1, &now);
+        render_story_cards(db::unsafe_db(&harness.bot.deps().db), &fixture, 1, &now);
         bot::screens::post::story_card_waiters_settled().await;
         harness.bot.settled().await;
         Ok(harness.telegram.take_calls())
     })
+}
+
+/// The recorder's `renderStoryCards(h, draftId)`: every card of the draft
+/// rendered, its file the 1x1 JPEG fixture.
+fn render_story_cards(sqlite: &Connection, fixture: &Path, draft_id: i64, now: &str) {
+    sqlite
+        .execute(
+            r#"update "draft_story_cards" set "status" = 'ready', "local_path" = ?, "updated_at" = ? where "draft_story_cards"."draft_id" = ?"#,
+            params![fixture.display().to_string(), now, draft_id],
+        )
+        .unwrap();
 }
 
 pub fn find(name: &str) -> Option<Trigger> {

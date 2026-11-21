@@ -144,6 +144,7 @@ what state was put in place outside the bot. All screens use the actor locale `r
 | 5.7 menu-plugin format: outdated hash, unknown menu, malformed position | callbacks/callback-menu-legacy |
 | 1.3 admin gate | entry/admin-gate |
 | 1.1 setMyCommands at construction | entry/bootstrap |
+| 1.1 / §11.5 internal error: a tap gets the raw error as a message, a message handler gets no reply | callbacks/callback-internal-error |
 
 ## Findings while recording (behaviour of today's bot, recorded as is)
 

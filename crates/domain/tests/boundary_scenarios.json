@@ -1,0 +1,969 @@
+{
+  "clock": "2026-03-01T10:00:00.000Z",
+  "config": {
+    "STUDIO_ACTOR_IDS": "42",
+    "DATA_DIR": "{FILES}/data"
+  },
+  "ignoredTables": [],
+  "setup": ["UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'"],
+  "scenarios": [
+    {
+      "name": "story card copy",
+      "steps": [
+        {
+          "call": "storyCards.copy",
+          "args": ["Простое предложение без точки"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["\n\n  \n Первая строка после пустых. Вторая."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["Заголовок\r\nвторая строка"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["v1.2 release is out. Next"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["Что? Да."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["🇷🇺 Россия сегодня."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["1️⃣ первый пункт."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["🔥"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["👨‍👩‍👧 семья."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["👍🏽Отлично!"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": [
+            "слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово"
+          ]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": [
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["Hello World. Again."]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["Ends with ellipsis… and more"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": [""]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["   \n  "]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["﻿BOM text. Next"]
+        },
+        {
+          "call": "storyCards.copy",
+          "args": ["Wow!!! Really."]
+        }
+      ]
+    },
+    {
+      "name": "a draft nothing carries a Story for discards its cards",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"threads_ru\":true,\"telegram_stories\":false}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "file": "{FILES}/1-ru.png"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'ru', 'old-hash', 'Old', NULL, 'ready', '{FILES}/1-ru.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'en', 'old-hash', 'Old', NULL, 'failed', NULL, 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "clock": "2026-03-01T10:05:00.000Z"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "a draft with media discards its cards",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, 'site_only', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, '[{\"type\":\"photo\",\"local_path\":\"/m/1.jpg\"}]', 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "file": "{FILES}/1-en.png"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'en', 'old-hash', 'Old', NULL, 'ready', '{FILES}/1-en.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "clock": "2026-03-01T10:05:00.000Z"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "English media alone discards too",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"site_ru\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, '[{\"type\":\"photo\"}]', 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "both locales queue, then only the changed one requeues",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'Machine text.', 'A big patch came out today. Here is what changed.', NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.readyMedia",
+          "args": [1]
+        },
+        {
+          "file": "{FILES}/1-ru.png"
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'ready', local_path = '{FILES}/1-ru.png' WHERE locale = 'ru'"
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'ready', local_path = '{FILES}/missing-en.png' WHERE locale = 'en'"
+        },
+        {
+          "call": "storyCards.readyMedia",
+          "args": [1]
+        },
+        {
+          "clock": "2026-03-01T10:10:00.000Z"
+        },
+        {
+          "call": "storyCards.setPublishMode",
+          "args": [1, "all"]
+        },
+        {
+          "clock": "2026-03-01T10:15:00.000Z"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "unchanged ready cards keep the Story choice",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"site_ru\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "file": "{FILES}/r.png"
+        },
+        {
+          "file": "{FILES}/e.png"
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'ready', local_path = '{FILES}/r.png' WHERE locale = 'ru'"
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'ready', local_path = '{FILES}/e.png' WHERE locale = 'en'"
+        },
+        {
+          "clock": "2026-03-01T10:10:00.000Z"
+        },
+        {
+          "call": "storyCards.setPublishMode",
+          "args": [1, "site_only"]
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.readyMedia",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "a changed text requeues and removes the stale file",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "file": "{FILES}/r.png"
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'ready', local_path = '{FILES}/r.png', attempt_count = 3 WHERE locale = 'ru'"
+        },
+        {
+          "sql": "UPDATE post_locales SET source_text = 'Новый текст. Совсем другой.' WHERE locale = 'ru'"
+        },
+        {
+          "clock": "2026-03-01T10:30:00.000Z"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "a scheduled draft keeps its choice when a card requeues",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'scheduled', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', '', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "an empty locale has no card",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"site_ru\":true}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '   ', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "a draft without locales queues nothing",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"site_ru\":true}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "long headlines are cut at a word or at the limit",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"site_ru\":true}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', 'слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово слово.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb😀 tail', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.queue",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "a missing draft is refused",
+      "steps": [
+        {
+          "call": "storyCards.queue",
+          "args": [7]
+        }
+      ]
+    },
+    {
+      "name": "both cards ready read as Story media",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'ru', '🔥 Сегодня вышел большой патч! Вот что в нём изменилось.\n\nВторой абзац.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO post_locales (draft_id, locale, source_text, approved_text, entities_json, media_json, site_enabled, updated_at) VALUES (1, 'en', 'A big patch came out today. Here is what changed.', NULL, NULL, NULL, 0, '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "file": "{FILES}/r.png"
+        },
+        {
+          "file": "{FILES}/e.png"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'ru', 'old-hash', 'Old', NULL, 'ready', '{FILES}/r.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'en', 'old-hash', 'Old', NULL, 'ready', '{FILES}/e.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.readyMedia",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'rendering' WHERE locale = 'en'"
+        },
+        {
+          "call": "storyCards.readyMedia",
+          "args": [1]
+        },
+        {
+          "sql": "UPDATE draft_story_cards SET status = 'ready', local_path = '' WHERE locale = 'en'"
+        },
+        {
+          "call": "storyCards.readyMedia",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "discard removes the rows and their files",
+      "steps": [
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (1, 42, 'needs_review', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, 'all', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO drafts (id, actor_id, status, targets_json, scheduled_at, scheduled_en_at, publish_mode, post_id, story_publish_mode, created_at, updated_at) VALUES (2, 42, 'needs_review', '{\"telegram\":true,\"telegram_stories\":true,\"site_ru\":false}', NULL, NULL, NULL, NULL, NULL, '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "file": "{FILES}/r.png"
+        },
+        {
+          "file": "{FILES}/other.png"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'ru', 'old-hash', 'Old', NULL, 'ready', '{FILES}/r.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (1, 'en', 'old-hash', 'Old', NULL, 'ready', '{FILES}/gone.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO draft_story_cards (draft_id, locale, source_hash, headline, emoji, status, local_path, attempt_count, next_attempt_at, locked_by, locked_at, last_error, template_version, created_at, updated_at) VALUES (2, 'ru', 'old-hash', 'Old', NULL, 'ready', '{FILES}/other.png', 2, NULL, NULL, NULL, 'boom', 'strata-v2', '2026-02-01T10:00:00.000Z', '2026-02-01T10:00:00.000Z')"
+        },
+        {
+          "call": "storyCards.discard",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [1]
+        },
+        {
+          "call": "storyCards.forDraft",
+          "args": [2]
+        },
+        {
+          "call": "storyCards.discard",
+          "args": [9]
+        },
+        {
+          "clock": "2026-03-01T11:00:00.000Z"
+        },
+        {
+          "call": "storyCards.setPublishMode",
+          "args": [2, "site_only"]
+        },
+        {
+          "call": "storyCards.setPublishMode",
+          "args": [1, "all"]
+        },
+        {
+          "call": "storyCards.setPublishMode",
+          "args": [9, "all"]
+        }
+      ]
+    },
+    {
+      "name": "reminders are queued, replaced and cancelled",
+      "steps": [
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:1",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-01T12:00:00.000Z",
+              "title": "Патч",
+              "targets": ["telegram", "x"],
+              "reminders": {
+                "enabled": true,
+                "minutes": 30
+              }
+            }
+          ]
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:2",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-01T10:10:00.000Z",
+              "title": "Soon",
+              "targets": [],
+              "reminders": {
+                "enabled": true,
+                "minutes": 30
+              }
+            }
+          ]
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:3",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-01T09:00:00.000Z",
+              "title": "Past",
+              "targets": [],
+              "reminders": {
+                "enabled": true,
+                "minutes": 30
+              }
+            }
+          ]
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:4",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-01T10:00:00.000Z",
+              "title": "Now",
+              "targets": [],
+              "reminders": {
+                "enabled": true,
+                "minutes": 30
+              }
+            }
+          ]
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:5",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-02T10:00:00.000Z",
+              "title": "Off",
+              "targets": [],
+              "reminders": {
+                "enabled": false,
+                "minutes": 30
+              }
+            }
+          ]
+        },
+        {
+          "clock": "2026-03-01T10:20:00.000Z"
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:1",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-01T15:00:00.000Z",
+              "title": "Патч (перенесён)",
+              "targets": ["telegram"],
+              "reminders": {
+                "enabled": true,
+                "minutes": 60
+              }
+            }
+          ]
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "video:1",
+              "kind": "video.reminder",
+              "publishAt": "2026-03-01T15:00:00.000Z",
+              "title": "Video",
+              "targets": ["youtube"],
+              "reminders": {
+                "enabled": true,
+                "minutes": 15
+              }
+            }
+          ]
+        },
+        {
+          "sql": "UPDATE studio_notification_jobs SET status = 'delivered' WHERE ref = 'post:2'"
+        },
+        {
+          "clock": "2026-03-01T10:30:00.000Z"
+        },
+        {
+          "call": "reminders.cancel",
+          "args": ["post:1"]
+        },
+        {
+          "call": "reminders.cancel",
+          "args": ["post:2"]
+        },
+        {
+          "call": "reminders.cancel",
+          "args": ["post:9"]
+        },
+        {
+          "clock": "2026-03-01T10:40:00.000Z"
+        },
+        {
+          "call": "reminders.schedule",
+          "args": [
+            {
+              "actorId": 42,
+              "ref": "post:1",
+              "kind": "publication.reminder",
+              "publishAt": "2026-03-01T16:00:00.000Z",
+              "title": "Again",
+              "targets": [],
+              "reminders": {
+                "enabled": true,
+                "minutes": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "the breaker trips on the third auth failure and clears on success",
+      "steps": [
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["x"]
+        },
+        {
+          "clock": "2026-03-01T10:01:00.000Z"
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["x"]
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:02:00.000Z"
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["x"]
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:03:00.000Z"
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["x"]
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:40:00.000Z"
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "call": "authCircuit.recordSuccess",
+          "args": ["x"]
+        },
+        {
+          "call": "authCircuit.recordSuccess",
+          "args": ["threads_ru"]
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "the breaker keeps fields it does not own",
+      "steps": [
+        {
+          "sql": "INSERT INTO credential_checks (target, status, required_env_json, missing_env_json, expires_at, last_checked_at, next_check_at, last_error, details_json) VALUES ('threads_ru', 'ready', '[\"THREADS_RU_ACCESS_TOKEN\"]', '[]', '2026-04-01T00:00:00.000Z', '2026-02-01T00:00:00.000Z', NULL, NULL, '{\"lastPingAt\":\"2026-02-28T10:00:00.000Z\",\"note\":1.5}')"
+        },
+        {
+          "sql": "INSERT INTO credential_checks (target, status, required_env_json, missing_env_json, last_checked_at, details_json) VALUES ('discord', 'ready', '[]', '[]', '2026-02-01T00:00:00.000Z', 'not json')"
+        },
+        {
+          "sql": "INSERT INTO credential_checks (target, status, required_env_json, missing_env_json, last_checked_at, details_json) VALUES ('telegram', 'ready', '[]', '[]', '2026-02-01T00:00:00.000Z', NULL)"
+        },
+        {
+          "sql": "INSERT INTO credential_checks (target, status, required_env_json, missing_env_json, last_checked_at, details_json) VALUES ('x', 'ready', '[]', '[]', '2026-02-01T00:00:00.000Z', '{\"authFailureStreak\":2,\"blockedUntil\":\"2026-03-01T09:00:00.000Z\",\"lastAuthFailureAt\":\"2026-03-01T08:00:00.000Z\"}')"
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["threads_ru"]
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["discord"]
+        },
+        {
+          "call": "authCircuit.recordSuccess",
+          "args": ["telegram"]
+        },
+        {
+          "call": "authCircuit.recordFailure",
+          "args": ["x"]
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        },
+        {
+          "clock": "2026-03-01T10:05:00.000Z"
+        },
+        {
+          "call": "authCircuit.recordSuccess",
+          "args": ["threads_ru"]
+        },
+        {
+          "call": "authCircuit.recordSuccess",
+          "args": ["x"]
+        },
+        {
+          "call": "authCircuit.states",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "a video whose targets are all final is reported once an hour",
+      "steps": [
+        {
+          "sql": "INSERT INTO video_drafts (id, actor_id, label, status, created_at, updated_at) VALUES (1, 42, 'Один', 'published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (2, 42, 'Два', 'published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (3, 42, 'Три', 'scheduled', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (4, 42, 'Четыре', 'published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (5, 42, 'Пять', 'published', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), (6, 42, 'Шесть', 'draft', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "sql": "INSERT INTO video_targets (video_draft_id, target, metadata_json, status, provider_post_id, created_at, updated_at) VALUES (1, 'youtube', '{}', 'published', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (1, 'tiktok', '{}', 'published', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (2, 'youtube', '{}', 'failed', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (2, 'tiktok', '{}', 'verification_required', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (3, 'youtube', '{}', 'published', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (3, 'tiktok', '{}', 'scheduled', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:30:00.000Z'), (4, 'instagram', '{}', 'verification_required', 'zp-1', '2026-03-01T09:00:00.000Z', '2026-03-01T09:50:00.000Z'), (5, 'instagram', '{}', 'verification_required', 'zp-2', '2026-03-01T09:00:00.000Z', '2026-03-01T09:40:00.000Z'), (5, 'youtube', '{}', 'skipped', NULL, '2026-03-01T09:00:00.000Z', '2026-03-01T09:40:00.000Z')"
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [1]
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [2]
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [3]
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [4]
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [5]
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [6]
+        },
+        {
+          "clock": "2026-03-01T10:30:00.000Z"
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [1]
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [4]
+        },
+        {
+          "clock": "2026-03-01T11:30:00.000Z"
+        },
+        {
+          "call": "videoCompletion.recordIfFinal",
+          "args": [1]
+        }
+      ]
+    },
+    {
+      "name": "usage is buffered and written once a minute",
+      "steps": [
+        {
+          "call": "usage.record",
+          "args": ["studio.post.create", true, 12]
+        },
+        {
+          "call": "usage.record",
+          "args": ["studio.post.create", false, 3]
+        },
+        {
+          "call": "usage.record",
+          "args": ["telegram.update.handle", true, 40]
+        },
+        {
+          "call": "usage.record",
+          "args": ["Bad Key", true, 1]
+        },
+        {
+          "clock": "2026-03-01T10:00:30.000Z"
+        },
+        {
+          "call": "usage.record",
+          "args": ["telegram.update.handle", true, 5]
+        },
+        {
+          "clock": "2026-03-01T10:01:00.000Z"
+        },
+        {
+          "call": "usage.record",
+          "args": ["studio.queue.read", true, 7]
+        },
+        {
+          "call": "usage.record",
+          "args": ["studio.queue.read", true, 2]
+        },
+        {
+          "clock": "2026-03-01T23:59:59.000Z"
+        },
+        {
+          "call": "usage.record",
+          "args": ["studio.queue.read", true, 1]
+        },
+        {
+          "clock": "2026-03-02T00:00:01.000Z"
+        },
+        {
+          "call": "usage.record",
+          "args": ["studio.queue.read", false, 4]
+        },
+        {
+          "call": "usage.flush",
+          "args": []
+        },
+        {
+          "call": "usage.flush",
+          "args": []
+        },
+        {
+          "call": "usage.record",
+          "args": ["telegram.update.handle", true, 9]
+        },
+        {
+          "call": "usage.flush",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "readiness without channels",
+      "config": {
+        "CONTROLLER_BOT_TOKEN": "123:abc",
+        "CONTROLLER_ADMIN_IDS": "42"
+      },
+      "steps": [
+        {
+          "call": "readiness.report",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "readiness with nothing configured",
+      "steps": [
+        {
+          "call": "readiness.report",
+          "args": []
+        }
+      ]
+    },
+    {
+      "name": "readiness over the channel registry",
+      "config": {
+        "CONTROLLER_BOT_TOKEN": "123:abc",
+        "THREADS_EN_ACCESS_TOKEN": "t",
+        "X_CLIENT_ID": "id",
+        "X_CLIENT_SECRET": "secret",
+        "TELEGRAM_CHANNEL_STORIES_API_ID": "12345",
+        "TELEGRAM_CHANNEL_STORIES_API_HASH": "hash",
+        "YOUTUBE_RU_CLIENT_ID": "cid",
+        "YOUTUBE_RU_CLIENT_SECRET": "csecret",
+        "INSTAGRAM_EN_ACCESS_TOKEN": "tok",
+        "INSTAGRAM_EN_USER_ID": "uid",
+        "MEDIA_PROCESSOR_PROVIDER": "remote_http",
+        "MEDIA_PROCESSOR_URL": "https://media.example.com",
+        "MEDIA_PROCESSOR_TOKEN": "0123456789abcdef0123",
+        "DISCORD_BOT_TOKEN": "d",
+        "DISCORD_CHANNEL_ID": "c"
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('threads_ru', 'threads_ru', 'ru', 'zernio', NULL, 'threads_ru', 'threads_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('threads_en', 'threads_en', 'en', 'native', NULL, 'threads_en', 'threads_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('x', 'x', 'en', 'native', NULL, 'x', 'x', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('telegram_stories', 'telegram_stories', 'ru', 'native', NULL, 'telegram_stories', 'telegram_stories', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('site_ru', 'site_ru', 'ru', 'native', NULL, 'site_ru', 'site_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('youtube_ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('youtube_en', 'youtube', 'en', 'zernio', NULL, NULL, 'youtube_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('instagram_en', 'instagram', 'en', 'native', NULL, NULL, 'instagram_en', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('instagram_ru', 'instagram', 'ru', 'native', NULL, NULL, 'instagram_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('tiktok_ru', 'tiktok', 'ru', 'zernio', NULL, NULL, 'tiktok_ru', 1, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z'), ('discord', 'discord', 'en', 'native', NULL, 'discord', 'discord', 0, 'config', '2026-03-01T10:00:00.000Z', '2026-03-01T10:00:00.000Z')"
+        },
+        {
+          "call": "readiness.report",
+          "args": []
+        }
+      ]
+    }
+  ]
+}

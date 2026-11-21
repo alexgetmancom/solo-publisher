@@ -4,10 +4,10 @@
 //! on its own fresh database under the same fixed clock, and every step's
 //! result and every table's rows must come out identical.
 //!
-//! The boundaries Studio does not own are faked here with the TypeScript rule
-//! for exactly the states the scenarios reach, so what they write is compared
-//! too: reminders (`notifications/jobs.ts`), the Story-card queue for drafts
-//! that carry no Story or site target, the readiness report over the spec's
+//! Reminders and Story cards run on their real stores (`domain::notifications`,
+//! `domain::story_cards`). The other boundaries Studio does not own are faked
+//! here with the TypeScript rule for exactly the states the scenarios reach,
+//! so what they write is compared too: the readiness report over the spec's
 //! configuration, the connection links of an unconfigured Studio, the Zernio
 //! account list the spec serves, and the prober answering what ffprobe
 //! reported to the TypeScript side for the same clip.
@@ -22,22 +22,24 @@ use std::task::{Context, Poll, Waker};
 
 use content::Locale;
 use content::message::DraftMessage;
-use db::rusqlite::{Connection, params};
+use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
 use domain::application::conversation_flow::{accept_flow, back_flow};
-use domain::application::ports::{ApplicationPorts, StoryPublishMode};
+use domain::application::ports::ApplicationPorts;
+use domain::notifications::ReminderJobs;
 use domain::publishing::Publishing;
 use domain::publishing::article_publish::PublishArticleInput;
 use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia,
-    StoryCardState, StoryCards, UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
+    AuthCircuit, AuthCircuitState, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, UsageMeter,
+    VideoCompletion, VideoProvider, WorkerBell,
 };
 use domain::publishing::platform_profiles::platform_profile;
 use domain::publishing::video_types::VideoTarget;
+use domain::story_cards::StoryCardStore;
 use domain::studio::Studio;
 use domain::studio::boundaries::{
     CapabilityReportEntry, CapabilityStatus, ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform,
-    Readiness, Reminder, Reminders, StoryDerivatives, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory,
+    Readiness, StoryDerivatives, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory,
 };
 use domain::studio::config::studio_config;
 use domain::studio::services::create_studio_services;
@@ -48,8 +50,6 @@ use domain::studio::video_fsm::{
     VIDEO_FLOW, VideoWizardStep, advance_video_metadata, first_video_metadata_step, is_video_wizard_step,
     video_schedule_dates,
 };
-use domain::targets::TargetMap;
-use domain::targets::story_card_use;
 use foundation::config::Config;
 use jiff::Timestamp;
 use serde::Deserialize;
@@ -104,85 +104,6 @@ impl VideoCompletion for Silent {
 impl StoryDerivatives for Silent {
     fn ensure(&self, local_path: &str, _: bool, _: i64) {
         panic!("no scenario prepares Story media ({local_path})")
-    }
-}
-
-/// `story-cards/store.ts` for drafts with no Story and no site target, which
-/// is every draft the scenarios make: queueing discards nothing and clears
-/// the Story decision.
-struct Cards<'a>(&'a FixedClock);
-
-impl Cards<'_> {
-    fn now(&self) -> String {
-        foundation::time::to_iso_string(self.0.0.get())
-    }
-}
-
-impl StoryCards for Cards<'_> {
-    fn queue(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        let targets: String = sqlite.query_row(
-            r#"select "targets_json" from "drafts" where "id" = ?"#,
-            [draft_id],
-            |row| row.get(0),
-        )?;
-        let card_use = story_card_use(&TargetMap::parse(Some(&targets)));
-        assert!(
-            !card_use.stories && !card_use.site,
-            "no scenario renders Story cards ({targets})"
-        );
-        sqlite.execute(
-            r#"update "drafts" set "story_publish_mode" = null, "updated_at" = ? where "id" = ?"#,
-            params![self.now(), draft_id],
-        )?;
-        Ok(())
-    }
-    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
-        Ok(Vec::new())
-    }
-    fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
-        Ok(None)
-    }
-    fn set_publish_mode(&self, sqlite: &Connection, draft_id: i64, mode: StoryPublishMode) -> domain::Result<()> {
-        sqlite.execute(
-            r#"update "drafts" set "story_publish_mode" = ?, "updated_at" = ? where "id" = ?"#,
-            params![mode.as_str(), self.now(), draft_id],
-        )?;
-        Ok(())
-    }
-    fn discard(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        Ok(())
-    }
-}
-
-/// `scheduleReminder` and `cancelScheduledNotifications`, statement for statement.
-struct Jobs<'a>(&'a FixedClock);
-
-impl Reminders for Jobs<'_> {
-    fn schedule(&self, sqlite: &Connection, reminder: &Reminder<'_>) -> domain::Result<()> {
-        let now = self.0.0.get().as_millisecond();
-        let publish_at = reminder.publish_at.as_millisecond();
-        if !reminder.reminders.enabled || publish_at <= now {
-            return Ok(());
-        }
-        let iso = |ms: i64| foundation::time::to_iso_string(Timestamp::from_millisecond(ms).unwrap());
-        let run_at = iso(now.max(publish_at - reminder.reminders.minutes * 60_000));
-        let payload = domain::json::stringify(&json!({
-            "title": reminder.title, "targets": reminder.targets,
-            "publish_at": iso(publish_at), "minutes": reminder.reminders.minutes,
-        }));
-        sqlite.execute(
-            r#"insert into "studio_notification_jobs" ("actor_id", "ref", "kind", "run_at", "status", "payload_json", "created_at", "updated_at") values (?, ?, ?, ?, 'queued', ?, ?, ?) on conflict ("ref", "kind") do update set "run_at" = excluded."run_at", "status" = 'queued', "payload_json" = excluded."payload_json", "updated_at" = excluded."updated_at""#,
-            params![reminder.actor_id, reminder.publication_ref, reminder.kind, run_at, payload, iso(now), iso(now)],
-        )?;
-        Ok(())
-    }
-
-    fn cancel(&self, sqlite: &Connection, publication_ref: &str) -> domain::Result<()> {
-        sqlite.execute(
-            r#"update "studio_notification_jobs" set "status" = 'cancelled', "updated_at" = ? where "ref" = ? and "status" = 'queued'"#,
-            params![foundation::time::to_iso_string(self.0.0.get()), publication_ref],
-        )?;
-        Ok(())
     }
 }
 
@@ -737,8 +658,8 @@ fn run(spec: &Value, world: &World, scenario: &Value) -> Value {
     let backend_db = BackendDb::open(":memory:").unwrap();
     let clock = FixedClock(Cell::new(instant(&spec["clock"])));
     let sqlite = unsafe_db(&backend_db);
-    let cards = Cards(&clock);
-    let jobs = Jobs(&clock);
+    let cards = StoryCardStore::new(&clock);
+    let jobs = ReminderJobs::new(&clock);
     let env = spec["config"].as_object().unwrap();
     let mut config = foundation::config::load_config(
         env.iter()

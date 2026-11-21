@@ -16,13 +16,11 @@
 pub mod deploy_agent;
 pub mod host;
 pub mod media_probe;
+pub mod notification_worker;
 pub mod pending;
-pub mod reminders;
-pub mod story_cards;
 pub mod telegram;
 pub mod translations;
 pub mod triggers;
-pub mod video_completion;
 pub mod zernio;
 
 use std::cell::Cell;
@@ -198,7 +196,7 @@ fn bot_user() -> Value {
 }
 
 /// Loads a step's database seed into the live connection: every table's rows
-/// replaced by the seed's (the schema is the same on both sides).
+/// replaced by the seed's, and a table the seed no longer has dropped.
 pub fn reseed(sqlite: &db::rusqlite::Connection, path: &Path) {
     let tables: Vec<String> = {
         let mut statement = sqlite
@@ -214,8 +212,23 @@ pub fn reseed(sqlite: &db::rusqlite::Connection, path: &Path) {
     sqlite
         .execute("ATTACH DATABASE ? AS seed", [path.display().to_string()])
         .unwrap();
+    let seeded: Vec<String> = {
+        let mut statement = sqlite
+            .prepare("select name from seed.sqlite_master where type = 'table'")
+            .unwrap();
+        statement
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    };
     let mut script = String::from("BEGIN;");
     for table in &tables {
+        // A table the recorder dropped between steps is dropped here too.
+        if !seeded.contains(table) {
+            script.push_str(&format!(r#"DROP TABLE main."{table}";"#));
+            continue;
+        }
         script.push_str(&format!(
             r#"DELETE FROM main."{table}"; INSERT INTO main."{table}" SELECT * FROM seed."{table}";"#
         ));
@@ -398,10 +411,7 @@ impl Harness {
             db,
             clock: clock.clone(),
             config: config.clone(),
-            host: Rc::new(GoldenHost {
-                config,
-                clock: clock.clone(),
-            }),
+            host: Rc::new(GoldenHost::new(config, clock.clone())),
             adapters: DynAdapters(Box::new(GoldenAdapters { zernio: zernio.clone() })),
             transport: telegram.clone(),
             deploy_agent: deploy_agent.clone(),

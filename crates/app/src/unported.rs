@@ -1,52 +1,48 @@
-//! The boundaries Studio calls whose real implementation belongs to an area
-//! this build does not contain yet. Each one refuses with
-//! `not available in this build: <area>`, which the bot shows as the error it
-//! is; none pretends the work happened. The three that return nothing (the
-//! worker bell, usage telemetry, Story derivatives) log instead.
-
-use std::sync::atomic::{AtomicBool, Ordering};
+//! The host of this build: the ported stores behind Studio's boundaries
+//! (`domain::story_cards`, `domain::notifications`, the credential breaker,
+//! the readiness report, runtime usage, the video completion notice), and the
+//! boundaries whose real implementation belongs to an area this build does not
+//! contain yet. Each of those refuses with `not available in this build:
+//! <area>`, which the bot shows as the error it is; none pretends the work
+//! happened. The ones that return nothing (the worker bell, Story
+//! derivatives, a Story card left for the renderer) log instead.
 
 use bot::{Adapters, Fut, Host};
 use content::Locale;
 use db::rusqlite::Connection;
-use domain::application::ports::StoryPublishMode;
+use domain::application::ports::{StoryPublishMode, SystemClock};
+use domain::delivery::VideoCompletionNotice;
+use domain::notifications::ReminderJobs;
+use domain::observability::auth_circuit::AuthCircuitBreaker;
+use domain::observability::capabilities::CapabilityReadiness;
+use domain::observability::usage::UsageRecorder;
 use domain::publishing::Boundaries;
 use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, MediaMetadata, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards,
-    SystemJitter, UsageMeter, VideoCompletion, WorkerBell,
+    MediaMetadata, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter, WorkerBell,
 };
+use domain::story_cards::StoryCardStore;
 use domain::studio::boundaries::{
-    CapabilityReportEntry, ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, Readiness, Reminder,
-    Reminders, StoryDerivatives, StudioBoundaries, ZernioAccount,
+    ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives, StudioBoundaries,
+    ZernioAccount,
 };
-use foundation::config::Config;
+use foundation::config::{Config, SharedConfig};
 use foundation::logger::{LogLevel, log};
 use jiff::Timestamp;
 use serde_json::{Value, json};
 
 const PUBLISH_WORKER: &str = "publish worker";
-const CREDENTIAL_BREAKER: &str = "credential breaker (observability)";
-const USAGE: &str = "usage telemetry (observability)";
-const STORY_CARDS: &str = "Story cards";
-const VIDEO_COMPLETION: &str = "video completion notices";
-const REMINDERS: &str = "publication reminders (notifications)";
+const STORY_CARD_RENDERER: &str = "Story card renderer";
 const STORY_DERIVATIVES: &str = "Story derivatives (media runtime)";
-const READINESS: &str = "readiness report (observability)";
 const CONNECT_LINKS: &str = "channel connect links (channels)";
 const MEDIA_PROBE: &str = "media probe (ffprobe/ffmpeg)";
 const ZERNIO: &str = "Zernio";
 const YOUTUBE: &str = "YouTube uploads";
 
 /// Every area above, for the startup line.
-pub const AREAS: [&str; 12] = [
+pub const AREAS: [&str; 7] = [
     PUBLISH_WORKER,
-    CREDENTIAL_BREAKER,
-    USAGE,
-    STORY_CARDS,
-    VIDEO_COMPLETION,
-    REMINDERS,
+    STORY_CARD_RENDERER,
     STORY_DERIVATIVES,
-    READINESS,
     CONNECT_LINKS,
     MEDIA_PROBE,
     ZERNIO,
@@ -61,26 +57,50 @@ fn refuse<T>(area: &str) -> domain::Result<T> {
     Err(domain::Error::message(message(area)))
 }
 
-/// The host of this build: real process randomness, everything else refused.
-pub struct AppHost;
+pub struct AppHost {
+    auth_circuit: AuthCircuitBreaker<SystemClock>,
+    usage: UsageRecorder<SystemClock>,
+    story_cards: StoryCardStore<SystemClock>,
+    video_completion: VideoCompletionNotice<SystemClock>,
+    reminders: ReminderJobs<SystemClock>,
+    readiness: CapabilityReadiness,
+}
+
+impl AppHost {
+    pub fn new(config: SharedConfig) -> Self {
+        Self {
+            auth_circuit: AuthCircuitBreaker::new(SystemClock),
+            usage: UsageRecorder::new(SystemClock),
+            story_cards: StoryCardStore::new(SystemClock),
+            video_completion: VideoCompletionNotice::new(SystemClock),
+            reminders: ReminderJobs::new(SystemClock),
+            readiness: CapabilityReadiness::new(config),
+        }
+    }
+
+    /// Writes the usage still buffered; called once polling has stopped.
+    pub fn flush_usage(&self, sqlite: &Connection) {
+        self.usage.flush(sqlite);
+    }
+}
 
 impl Host for AppHost {
     fn publishing(&self) -> Boundaries<'_> {
         Boundaries {
             jitter: &SystemJitter,
             bell: self,
-            auth_circuit: self,
-            usage: self,
+            auth_circuit: &self.auth_circuit,
+            usage: &self.usage,
             story_cards: self,
-            video_completion: self,
+            video_completion: &self.video_completion,
         }
     }
 
     fn studio(&self) -> StudioBoundaries<'_> {
         StudioBoundaries {
-            reminders: self,
+            reminders: &self.reminders,
             story_derivatives: self,
-            readiness: self,
+            readiness: &self.readiness,
             connect_links: self,
         }
     }
@@ -104,62 +124,40 @@ impl WorkerBell for AppHost {
     }
 }
 
-impl AuthCircuit for AppHost {
-    fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        refuse(CREDENTIAL_BREAKER)
-    }
-    fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        refuse(CREDENTIAL_BREAKER)
-    }
-    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
-        refuse(CREDENTIAL_BREAKER)
-    }
-}
-
-/// Recorded after every update, so it says so once rather than per update.
-impl UsageMeter for AppHost {
-    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {
-        static WARNED: AtomicBool = AtomicBool::new(false);
-        if !WARNED.swap(true, Ordering::Relaxed) {
+/// The store is real; the renderer that turns a queued card into its image
+/// is not here, so a queue that leaves cards waiting for it says so. The bot
+/// then tells the operator the cards did not finish, as it would for a stuck
+/// renderer.
+impl StoryCards for AppHost {
+    fn queue(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
+        self.story_cards.queue(sqlite, draft_id)?;
+        if self
+            .story_cards
+            .for_draft(sqlite, draft_id)?
+            .iter()
+            .any(|card| card.status == "queued")
+        {
             log(
                 LogLevel::Warn,
-                &message(USAGE),
-                Some(json!({"hint": "usage records are dropped; said once per process"})),
+                &message(STORY_CARD_RENDERER),
+                Some(
+                    json!({"draftId": draft_id, "hint": "the cards stay queued until a build with the renderer runs"}),
+                ),
             );
         }
+        Ok(())
     }
-}
-
-impl StoryCards for AppHost {
-    fn queue(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        refuse(STORY_CARDS)
+    fn for_draft(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Vec<StoryCardState>> {
+        self.story_cards.for_draft(sqlite, draft_id)
     }
-    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
-        refuse(STORY_CARDS)
+    fn ready_media(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Option<StoryCardMedia>> {
+        self.story_cards.ready_media(sqlite, draft_id)
     }
-    fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
-        refuse(STORY_CARDS)
+    fn set_publish_mode(&self, sqlite: &Connection, draft_id: i64, mode: StoryPublishMode) -> domain::Result<()> {
+        self.story_cards.set_publish_mode(sqlite, draft_id, mode)
     }
-    fn set_publish_mode(&self, _: &Connection, _: i64, _: StoryPublishMode) -> domain::Result<()> {
-        refuse(STORY_CARDS)
-    }
-    fn discard(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        refuse(STORY_CARDS)
-    }
-}
-
-impl VideoCompletion for AppHost {
-    fn record_if_final(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        refuse(VIDEO_COMPLETION)
-    }
-}
-
-impl Reminders for AppHost {
-    fn schedule(&self, _: &Connection, _: &Reminder<'_>) -> domain::Result<()> {
-        refuse(REMINDERS)
-    }
-    fn cancel(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        refuse(REMINDERS)
+    fn discard(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
+        self.story_cards.discard(sqlite, draft_id)
     }
 }
 
@@ -171,12 +169,6 @@ impl StoryDerivatives for AppHost {
             &message(STORY_DERIVATIVES),
             Some(json!({"localPath": local_path, "video": video, "draftId": draft_id})),
         );
-    }
-}
-
-impl Readiness for AppHost {
-    fn capability_report(&self, _: &Connection) -> domain::Result<Vec<CapabilityReportEntry>> {
-        refuse(READINESS)
     }
 }
 

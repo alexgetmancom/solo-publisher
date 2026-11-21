@@ -1,8 +1,9 @@
 //! The golden host: the boundaries and adapters Studio calls but the bot does
-//! not own. Only what the ported areas reach is implemented; anything else
-//! panics with its name, so a case that reaches it fails loudly instead of
-//! diverging quietly. An area that needs one implements it here, the way the
-//! TypeScript bot behaved under the recorder.
+//! not own. The ported stores (Story cards, reminders, the credential breaker,
+//! the readiness report, the video completion notice) are the real ones; of
+//! the rest only what the ported areas reach is implemented, and anything
+//! else panics with its name, so a case that reaches it fails loudly instead
+//! of diverging quietly.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -11,16 +12,18 @@ use bot::{Adapters, Fut, Host};
 use content::Locale;
 use db::rusqlite::Connection;
 use domain::application::ports::Clock;
+use domain::delivery::VideoCompletionNotice;
+use domain::notifications::ReminderJobs;
+use domain::observability::auth_circuit::AuthCircuitBreaker;
+use domain::observability::capabilities::CapabilityReadiness;
 use domain::publishing::Boundaries;
-use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Jitter, MediaMetadata, ProviderOutcome, UsageMeter, WorkerBell,
-};
-use domain::publishing::platform_profiles::platform_profile;
+use domain::publishing::boundaries::{Jitter, MediaMetadata, ProviderOutcome, UsageMeter, WorkerBell};
+use domain::story_cards::StoryCardStore;
 use domain::studio::boundaries::{
-    CapabilityReportEntry, CapabilityStatus, ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform,
-    Readiness, StoryDerivatives, StudioBoundaries, ZernioAccount,
+    ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives, StudioBoundaries,
+    ZernioAccount,
 };
-use foundation::config::{Config, MediaProcessorProvider, SharedConfig};
+use foundation::config::{Config, SharedConfig};
 use jiff::Timestamp;
 use serde_json::Value;
 
@@ -40,13 +43,25 @@ fn not_in_host(what: &str) -> ! {
     )
 }
 
+/// The ported stores run for real on the case's clock; the rest is below.
 pub struct GoldenHost {
-    /// The bot's configuration, which the readiness report reads as
-    /// `capabilityReport(config, backendDb)` does.
-    pub config: SharedConfig,
-    /// The case's clock, for the timestamps the Story-card store writes
-    /// (`support/story_cards.rs`).
-    pub clock: Rc<FixedClock>,
+    auth_circuit: AuthCircuitBreaker<Rc<FixedClock>>,
+    story_cards: StoryCardStore<Rc<FixedClock>>,
+    video_completion: VideoCompletionNotice<Rc<FixedClock>>,
+    reminders: ReminderJobs<Rc<FixedClock>>,
+    readiness: CapabilityReadiness,
+}
+
+impl GoldenHost {
+    pub fn new(config: SharedConfig, clock: Rc<FixedClock>) -> Self {
+        Self {
+            auth_circuit: AuthCircuitBreaker::new(clock.clone()),
+            story_cards: StoryCardStore::new(clock.clone()),
+            video_completion: VideoCompletionNotice::new(clock.clone()),
+            reminders: ReminderJobs::new(clock),
+            readiness: CapabilityReadiness::new(config),
+        }
+    }
 }
 
 impl Jitter for GoldenHost {
@@ -61,24 +76,6 @@ impl WorkerBell for GoldenHost {
     fn ring_publish_after(&self, _: u64) {}
 }
 
-impl AuthCircuit for GoldenHost {
-    fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        not_in_host("the credential breaker")
-    }
-    fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        not_in_host("the credential breaker")
-    }
-    /// `authCircuitStates`: the `credential_checks` rows. No golden seeds one,
-    /// so a row would mean a case this host does not reproduce.
-    fn states(&self, sqlite: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
-        let rows: i64 = sqlite.query_row("select count(*) from credential_checks", [], |row| row.get(0))?;
-        if rows > 0 {
-            not_in_host("credential checks with rows");
-        }
-        Ok(Vec::new())
-    }
-}
-
 /// Usage counters are observability rows no golden shows.
 impl UsageMeter for GoldenHost {
     fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
@@ -88,114 +85,6 @@ impl StoryDerivatives for GoldenHost {
     fn ensure(&self, _: &str, _: bool, _: i64) {
         not_in_host("Story derivatives")
     }
-}
-
-impl Readiness for GoldenHost {
-    /// `capabilityReport(config, backendDb)` over the registered channels.
-    fn capability_report(&self, sqlite: &Connection) -> domain::Result<Vec<CapabilityReportEntry>> {
-        let config = self.config.load();
-        let mut requirements: Vec<(String, Vec<String>)> = Vec::new();
-        let mut set =
-            |target: String, required: Vec<String>| match requirements.iter_mut().find(|(key, _)| *key == target) {
-                Some(entry) => entry.1 = required,
-                None => requirements.push((target, required)),
-            };
-        let names = |names: &[&str]| names.iter().map(|name| (*name).to_owned()).collect::<Vec<_>>();
-        if config.controller_bot_token.is_some() || !config.controller_admin_ids.is_empty() {
-            set(
-                "controller_bot".into(),
-                names(&["CONTROLLER_BOT_TOKEN", "CONTROLLER_ADMIN_IDS"]),
-            );
-        }
-        for channel in domain::channels::list_channels(sqlite, true)? {
-            let channel = channel.connection;
-            if let Some(target) = channel.target_id {
-                let required = if channel.provider == "zernio" {
-                    names(&["ZERNIO_API_KEY"])
-                } else {
-                    platform_profile(&target)
-                        .map(|profile| names(profile.requirements))
-                        .unwrap_or_default()
-                };
-                set(target, required);
-            } else if channel.platform == "youtube" || channel.platform == "instagram" {
-                let suffix = if channel.locale == "en" { "EN" } else { "RU" };
-                let required = if channel.provider == "zernio" {
-                    names(&["ZERNIO_API_KEY"])
-                } else if channel.platform == "youtube" {
-                    ["CLIENT_ID", "CLIENT_SECRET", "REFRESH_TOKEN"]
-                        .map(|name| format!("YOUTUBE_{suffix}_{name}"))
-                        .to_vec()
-                } else {
-                    ["ACCESS_TOKEN", "USER_ID"]
-                        .map(|name| format!("INSTAGRAM_{suffix}_{name}"))
-                        .to_vec()
-                };
-                set(channel.id, required);
-            }
-        }
-        if config.media_processor_provider == MediaProcessorProvider::RemoteHttp {
-            set(
-                "media_processor".into(),
-                names(&["MEDIA_PROCESSOR_URL", "MEDIA_PROCESSOR_TOKEN"]),
-            );
-        }
-        Ok(requirements
-            .into_iter()
-            .map(|(target, required)| {
-                let missing: Vec<String> = required
-                    .iter()
-                    .filter(|name| !configured(&config, name))
-                    .cloned()
-                    .collect();
-                CapabilityReportEntry {
-                    status: if missing.is_empty() {
-                        CapabilityStatus::Ready
-                    } else {
-                        CapabilityStatus::Missing
-                    },
-                    target,
-                    required,
-                    missing,
-                }
-            })
-            .collect())
-    }
-}
-
-/// Whether the configuration holds a value for the variable `name`
-/// (`!values[name]`, with the admin list counted by its length).
-fn configured(config: &Config, name: &str) -> bool {
-    let value = match name {
-        "CONTROLLER_ADMIN_IDS" => return !config.controller_admin_ids.is_empty(),
-        "TELEGRAM_CHANNEL_STORIES_API_ID" => return config.telegram_channel_stories_api_id.is_some_and(|id| id != 0),
-        "CONTROLLER_BOT_TOKEN" => &config.controller_bot_token,
-        "ZERNIO_API_KEY" => &config.zernio_api_key,
-        "THREADS_RU_ACCESS_TOKEN" => &config.threads_ru_access_token,
-        "THREADS_EN_ACCESS_TOKEN" => &config.threads_en_access_token,
-        "X_CLIENT_ID" => &config.x_client_id,
-        "X_CLIENT_SECRET" => &config.x_client_secret,
-        "X_ACCESS_TOKEN" => &config.x_access_token,
-        "X_REFRESH_TOKEN" => &config.x_refresh_token,
-        "DISCORD_BOT_TOKEN" => &config.discord_bot_token,
-        "DISCORD_CHANNEL_ID" => &config.discord_channel_id,
-        "TELEGRAM_CHANNEL_STORIES_API_HASH" => &config.telegram_channel_stories_api_hash,
-        "TELEGRAM_CHANNEL_STORIES_SESSION" => &config.telegram_channel_stories_session,
-        "INSTAGRAM_RU_ACCESS_TOKEN" => &config.instagram_ru_access_token,
-        "INSTAGRAM_RU_USER_ID" => &config.instagram_ru_user_id,
-        "INSTAGRAM_EN_ACCESS_TOKEN" => &config.instagram_en_access_token,
-        "INSTAGRAM_EN_USER_ID" => &config.instagram_en_user_id,
-        "YOUTUBE_RU_CLIENT_ID" => &config.youtube_ru_client_id,
-        "YOUTUBE_RU_CLIENT_SECRET" => &config.youtube_ru_client_secret,
-        "YOUTUBE_RU_REFRESH_TOKEN" => &config.youtube_ru_refresh_token,
-        "YOUTUBE_EN_CLIENT_ID" => &config.youtube_en_client_id,
-        "YOUTUBE_EN_CLIENT_SECRET" => &config.youtube_en_client_secret,
-        "YOUTUBE_EN_REFRESH_TOKEN" => &config.youtube_en_refresh_token,
-        "MEDIA_PROCESSOR_URL" => &config.media_processor_url,
-        "MEDIA_PROCESSOR_TOKEN" => &config.media_processor_token,
-        other => not_in_host(&format!("the configuration variable {other}")),
-    };
-    value.as_deref().is_some_and(|value| !value.is_empty())
 }
 
 /// `required(value, name)` of the OAuth links: a trimmed, non-blank value.
@@ -380,18 +269,18 @@ impl Host for GoldenHost {
         Boundaries {
             jitter: self,
             bell: self,
-            auth_circuit: self,
+            auth_circuit: &self.auth_circuit,
             usage: self,
-            story_cards: self,
-            video_completion: self,
+            story_cards: &self.story_cards,
+            video_completion: &self.video_completion,
         }
     }
 
     fn studio(&self) -> StudioBoundaries<'_> {
         StudioBoundaries {
-            reminders: self,
+            reminders: &self.reminders,
             story_derivatives: self,
-            readiness: self,
+            readiness: &self.readiness,
             connect_links: self,
         }
     }

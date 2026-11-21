@@ -1,3 +1,4 @@
+import { unsafeDb } from "../../../apps/backend/src/db/client.js";
 import { newPost, RU_CHANNELS } from "./cases-post.ts";
 import { ADMIN, type Case, type Harness } from "./harness.ts";
 
@@ -19,6 +20,20 @@ function holdNext(h: Harness, method: string): () => void {
 }
 
 export const CALLBACK_CASES: Case[] = [
+  {
+    id: "callback-internal-error",
+    area: "callbacks",
+    specRef: "§1.1 Global error; §1.8 runCallbackAction; §11 #5 (a store failing under a tap and under a message handler)",
+    channels: ["telegram", "telegram_stories", "threads_ru"],
+    run: async (h) => {
+      await newPost(h);
+      const card = h.telegram.last(ADMIN)?.message_id;
+      unsafeDb(h.backendDb).sqlite.run("DROP TABLE draft_story_cards");
+      h.note("draft_story_cards is dropped: every Story-card read and write after this fails as an internal error.");
+      await h.callback("p:post:view:1:overview", { messageId: card });
+      await newPost(h, "Второй пост");
+    },
+  },
   {
     id: "callback-unknown",
     area: "callbacks",

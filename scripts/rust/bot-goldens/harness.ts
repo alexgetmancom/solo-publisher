@@ -762,10 +762,16 @@ export class Harness {
     this.checkpoint();
     const step: Step = { update: sortKeys(update), calls: [] };
     this.steps.push(step);
-    await this.bot.handleUpdate(update as never);
+    await this.handle(update);
     await this.idle(until);
     step.calls = this.telegram.calls.splice(0);
     this.stepDone();
+  }
+
+  /** One update as the runner hands it to grammY: a handler that throws
+   * reaches `bot.catch` (`bot.errorHandler`) and goes no further. */
+  private async handle(update: Record<string, Json>): Promise<void> {
+    await this.bot.handleUpdate(update as never).catch((error: unknown) => this.bot.errorHandler(error as never));
   }
 
   /** Feeds several updates at once, the way the runner hands a burst to grammY. */
@@ -773,7 +779,7 @@ export class Harness {
     this.checkpoint();
     const step: Step = { update: updates.map(sortKeys), calls: [] };
     this.steps.push(step);
-    await Promise.all(updates.map((update) => this.bot.handleUpdate(update as never)));
+    await Promise.all(updates.map((update) => this.handle(update)));
     await this.idle();
     step.calls = this.telegram.calls.splice(0);
     this.stepDone();

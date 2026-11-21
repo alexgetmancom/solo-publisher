@@ -35,6 +35,20 @@ impl Clock for SystemClock {
     }
 }
 
+/// A clock held by reference or shared reads as the clock itself, so a store
+/// can own whichever handle its owner has.
+impl<C: Clock + ?Sized> Clock for &C {
+    fn now(&self) -> Timestamp {
+        (**self).now()
+    }
+}
+
+impl<C: Clock + ?Sized> Clock for std::rc::Rc<C> {
+    fn now(&self) -> Timestamp {
+        (**self).now()
+    }
+}
+
 /// The repositories, bound to one connection and clock.
 #[derive(Clone, Copy)]
 pub struct ApplicationPorts<'a> {
