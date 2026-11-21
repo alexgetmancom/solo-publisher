@@ -1,0 +1,1126 @@
+{
+  "clock": "2026-11-01T10:00:00.000Z",
+  "env": {
+    "STUDIO_ACTOR_IDS": "42",
+    "CONTROLLER_ADMIN_IDS": "42",
+    "PUBLIC_BASE_URL": "https://studio.example",
+    "TELEGRAM_CHANNEL_USERNAME": "@studiochannel",
+    "CONTROLLER_BOT_TOKEN": "123:fake"
+  },
+  "setup": [
+    "UPDATE studio_milestone_settings SET updated_at = '1970-01-01T00:00:00.000Z'",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('telegram', 'telegram', 'ru', 'native', NULL, 'telegram', 'telegram', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('x', 'x', 'en', 'native', 'acct-x', 'x', 'x', 1, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')",
+    "INSERT INTO channel_connections (id, platform, locale, provider, provider_account_id, target_id, label, enabled, source, created_at, updated_at) VALUES ('youtube:ru', 'youtube', 'ru', 'native', NULL, NULL, 'youtube_shorts', 0, 'config', '2026-11-01T09:00:00.000Z', '2026-11-01T09:00:00.000Z')"
+  ],
+  "cases": [
+    {
+      "name": "retry: refusals, plans and requeues",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'failed', last_error = 'boom' WHERE publication_key = 'post:1' AND target = 'telegram'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'failed', NULL, NULL, NULL, 'boom', NULL, '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:999"
+          }
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "1",
+            "target": "myspace"
+          }
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "1"
+          }
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:1",
+            "locale": "en"
+          }
+        },
+        {
+          "cli": ["retry", "--ref", "post:1", "--target", "telegram"]
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:1",
+            "apply": true
+          }
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:1",
+            "locale": "en",
+            "apply": true
+          }
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "apply": true
+          }
+        },
+        {
+          "op": "retry",
+          "args": {
+            "ref": "post:1",
+            "target": "threads_ru",
+            "apply": true
+          }
+        },
+        {
+          "cli": ["retry", "--ref", "post:1", "--target", "discord", "--apply"]
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+              "name": "ops_retry",
+              "arguments": {
+                "ref": "post:1",
+                "target": "x"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "skip: plan, one target, every unlanded one",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'failed', last_error = 'boom' WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'verification_required', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'verification_required', NULL, NULL, NULL, NULL, NULL, '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "skip",
+          "args": {
+            "ref": "post:7"
+          }
+        },
+        {
+          "op": "skip",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "skip",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "skip",
+          "args": {
+            "ref": "post:1",
+            "apply": true
+          }
+        },
+        {
+          "cli": ["skip", "--ref", "post:1", "--apply"]
+        },
+        {
+          "sql": "DELETE FROM publish_jobs;"
+        },
+        {
+          "op": "skip",
+          "args": {
+            "ref": "post:1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "resend: refusals, plan and a new target",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', '501', '[\"501\"]', 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "resend",
+          "args": {
+            "ref": "post:1",
+            "target": "site_ru"
+          }
+        },
+        {
+          "op": "resend",
+          "args": {
+            "ref": "post:1",
+            "target": "discord"
+          }
+        },
+        {
+          "op": "resend",
+          "args": {
+            "ref": "post:1",
+            "target": "discord",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "resend",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "apply": true
+          }
+        },
+        {
+          "cli": ["resend", "--ref", "post:1", "--target", "threads_en"]
+        }
+      ]
+    },
+    {
+      "name": "settle: live with an id, absent without one",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'verification_required', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'verification_required', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'verification_required', NULL, NULL, NULL, NULL, NULL, '2026-11-01T10:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'verification_required', NULL, NULL, NULL, NULL, NULL, '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "settle",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram"
+          }
+        },
+        {
+          "op": "settle",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "external_id": "777"
+          }
+        },
+        {
+          "op": "settle",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "external_id": "777",
+            "url": "https://t.me/studiochannel/777",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "settle",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "apply": true
+          }
+        },
+        {
+          "op": "settle",
+          "args": {
+            "ref": "post:1",
+            "target": "x",
+            "apply": true
+          }
+        },
+        {
+          "op": "settle",
+          "args": {
+            "ref": "post:1",
+            "target": "discord"
+          }
+        },
+        {
+          "cli": ["settle", "--ref", "post:1", "--target", "x"]
+        }
+      ]
+    },
+    {
+      "name": "resume-from: refusals, plan and apply",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'failed', payload_json = json_set(payload_json, '$._xPublishedIds', json('[\"111\"]')) WHERE target = 'x';"
+        },
+        {
+          "op": "resume-from",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "external_id": "9"
+          }
+        },
+        {
+          "op": "resume-from",
+          "args": {
+            "ref": "post:1",
+            "target": "discord",
+            "external_id": "9"
+          }
+        },
+        {
+          "op": "resume-from",
+          "args": {
+            "ref": "post:1",
+            "target": "x",
+            "external_id": "222"
+          }
+        },
+        {
+          "op": "resume-from",
+          "args": {
+            "ref": "post:1",
+            "target": "x",
+            "external_id": "222",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'publishing' WHERE target = 'x';"
+        },
+        {
+          "cli": ["resume-from", "--ref", "post:1", "--target", "x", "--external-id", "333", "--apply"]
+        }
+      ]
+    },
+    {
+      "name": "delete: plan, an unsupported target, a removal republished",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "https://api.telegram.org/bot123:fake/deleteMessage",
+          "status": 200,
+          "json": {
+            "ok": true,
+            "result": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', '501', '[\"501\"]', 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'published', '1888', '[\"1888\"]', 'https://x.com/i/status/1888', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "delete",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "delete",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "republish": true
+          }
+        },
+        {
+          "op": "delete",
+          "args": {
+            "ref": "post:1",
+            "target": "x",
+            "apply": true
+          }
+        },
+        {
+          "op": "delete",
+          "args": {
+            "ref": "post:1",
+            "target": "telegram",
+            "republish": true,
+            "apply": true
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "delete: a removal the platform refuses is not republished",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "https://api.telegram.org/bot123:fake/deleteMessage",
+          "status": 400,
+          "json": {
+            "ok": false,
+            "error_code": 400,
+            "description": "Bad Request: message can't be deleted"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', '501', '[\"501\"]', 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'published', '1888', '[\"1888\"]', 'https://x.com/i/status/1888', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "cli": ["delete", "--ref", "post:1", "--target", "telegram", "--republish", "--apply"]
+        },
+        {
+          "op": "delete",
+          "args": {
+            "ref": "post:1",
+            "locale": "en",
+            "apply": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "edit: refusals, an edit in place and a target that cannot be edited",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "https://api.telegram.org/bot123:fake/editMessageText",
+          "status": 200,
+          "json": {
+            "ok": true,
+            "result": {
+              "message_id": 501
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', '501', '[\"501\"]', 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'published', '1888', '[\"1888\"]', 'https://x.com/i/status/1888', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "text": "Новый"
+          }
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "text": "   ",
+            "apply": true
+          }
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "text": "Новый",
+            "expected_text_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "apply": true
+          }
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "text": "Новый текст",
+            "entities_json": "[{\"type\":\"bold\",\"offset\":0,\"length\":50}]",
+            "apply": true
+          }
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "text": "Новый текст",
+            "entities_json": "{}",
+            "apply": true
+          }
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "text": "Новый текст ",
+            "entities_json": "[{\"type\":\"bold\",\"offset\":0,\"length\":5}]",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "edit",
+          "args": {
+            "ref": "post:1",
+            "locale": "en",
+            "text": "New text",
+            "expected_text_sha256": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+            "apply": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "set-media and use-other-media",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "https://api.telegram.org/bot123:fake/deleteMessage",
+          "status": 200,
+          "json": {
+            "ok": true,
+            "result": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', '501', '[\"501\"]', 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'published', '1888', '[\"1888\"]', 'https://x.com/i/status/1888', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "use-other-media",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "set-media",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "media_json": "[{\"type\":\"photo\"}]",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "set-media",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "target": "telegram",
+            "media_json": "[{\"type\":\"photo\",\"file_id\":\"AgAD-photo\"}]"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "set-media",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "target": "telegram",
+            "media_json": "[{\"type\":\"photo\",\"file_id\":\"AgAD-photo\"}]",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "use-other-media",
+          "args": {
+            "ref": "post:1",
+            "locale": "en",
+            "apply": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "refresh-site and reschedule",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_schedule",
+              "arguments": {
+                "draft_id": 1,
+                "ru_at": "2026-11-03T09:00:00Z",
+                "en_at": "2026-11-03T10:00:00Z"
+              }
+            }
+          }
+        },
+        {
+          "op": "refresh-site",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "refresh-site",
+          "args": {
+            "ref": "post:1"
+          }
+        },
+        {
+          "op": "refresh-site",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "target": "nope"
+          }
+        },
+        {
+          "cli": ["refresh-site", "--ref", "post:1", "--locale", "ru"]
+        },
+        {
+          "op": "reschedule",
+          "args": {
+            "ref": "post:1",
+            "schedule_locale": "ru",
+            "at": "05.11.2026 09:30"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "reschedule",
+          "args": {
+            "ref": "post:1",
+            "schedule_locale": "both",
+            "at": "2026-11-06T08:00:00+02:00"
+          }
+        },
+        {
+          "op": "reschedule",
+          "args": {
+            "ref": "post:1",
+            "schedule_locale": "ru",
+            "at": "   "
+          }
+        },
+        {
+          "op": "reschedule",
+          "args": {
+            "ref": "post:1",
+            "schedule_locale": "ru",
+            "at": "garbage"
+          }
+        },
+        {
+          "op": "reschedule",
+          "args": {
+            "ref": "post:1",
+            "schedule_locale": "ru",
+            "at": "2026-13-01T00:00:00Z"
+          }
+        },
+        {
+          "cli": ["reschedule", "--ref", "post:1", "--schedule-locale", "en", "--at", "07.11.2026 10:00"]
+        }
+      ]
+    },
+    {
+      "name": "replace-media: plan, then a file swapped in",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "https://api.telegram.org/bot123:fake/deleteMessage",
+          "status": 200,
+          "json": {
+            "ok": true,
+            "result": true
+          }
+        }
+      ],
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'x'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', '501', '[\"501\"]', 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z'); INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'x', 'published', '1888', '[\"1888\"]', 'https://x.com/i/status/1888', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "write": "upload/photo.png",
+          "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+        },
+        {
+          "op": "replace-media",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "file": "$CASE/upload/photo.png",
+            "target": "telegram"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "replace-media",
+          "args": {
+            "ref": "post:5",
+            "locale": "ru",
+            "file": "$CASE/upload/photo.png",
+            "target": "telegram"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "replace-media",
+          "args": {
+            "ref": "post:1",
+            "locale": "ru",
+            "file": "$CASE/upload/photo.png",
+            "target": "telegram",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "purge: plan, refused while live, then removed",
+      "responses": [
+        {
+          "method": "GET",
+          "url": "https://t.me/studiochannel/501",
+          "status": 200,
+          "body": "<html>post</html>"
+        },
+        {
+          "method": "GET",
+          "url": "https://t.me/studiochannel/501",
+          "status": 404,
+          "body": "not found"
+        }
+      ],
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', NULL, NULL, 'https://t.me/studiochannel/501', NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "purge",
+          "args": {
+            "ref": "video:5"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "purge",
+          "args": {
+            "ref": "post:9"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "purge",
+          "args": {
+            "ref": "post:1"
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "op": "purge",
+          "args": {
+            "ref": "post:1",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        },
+        {
+          "cli": ["purge", "--ref", "post:1", "--apply"]
+        },
+        {
+          "op": "purge",
+          "args": {
+            "ref": "post:1"
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    },
+    {
+      "name": "purge: a published target with no address cannot be proved absent",
+      "steps": [
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_create",
+              "arguments": {
+                "text": "Привет",
+                "text_en": "Hello",
+                "targets": ["telegram", "x"],
+                "story_publish_mode": "site_only"
+              }
+            }
+          }
+        },
+        {
+          "mcp": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+              "name": "studio_post_publish",
+              "arguments": {
+                "draft_id": 1
+              }
+            }
+          }
+        },
+        {
+          "sql": "UPDATE publish_jobs SET status = 'published', last_error = NULL WHERE publication_key = 'post:1' AND target = 'telegram'; INSERT INTO publication_targets (publication_key, target, status, external_id, external_ids_json, url, error, published_at, updated_at) VALUES ('post:1', 'telegram', 'published', NULL, NULL, NULL, NULL, '2026-11-01T10:00:00.000Z', '2026-11-01T10:00:00.000Z');"
+        },
+        {
+          "op": "purge",
+          "args": {
+            "ref": "post:1",
+            "apply": true
+          },
+          "actor": "ops-cli"
+        }
+      ]
+    }
+  ]
+}

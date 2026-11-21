@@ -5,6 +5,7 @@ pub mod admin;
 pub mod commands;
 pub mod lifecycle;
 pub mod media;
+pub(crate) mod publication_ref;
 pub mod reads;
 
 /// A handler not ported yet answers with a refusal naming itself.
