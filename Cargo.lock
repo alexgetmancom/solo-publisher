@@ -1254,6 +1254,7 @@ dependencies = [
  "public_site",
  "regex",
  "runtime",
+ "rusqlite",
  "rustix",
  "serde",
  "serde_json",
