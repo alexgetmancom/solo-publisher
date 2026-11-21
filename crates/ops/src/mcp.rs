@@ -737,7 +737,7 @@ impl McpServer<'_> {
         let services =
             domain::studio::services::create_studio_services(self.surface.studio(&config)?, self.surface.adapters()?);
         let input = parse_tool_args(&def.schema, args)?;
-        let result = (def.handler)(services, actor_id, &input).await?;
+        let result = crate::context::js_numbers((def.handler)(services, actor_id, &input).await?);
         // The mutation already happened: the audit trail is best-effort.
         if def.mutates {
             let mut details = Map::new();
