@@ -66,8 +66,7 @@ fn text(value: &Option<String>) -> SqlValue {
     value.clone().map_or(SqlValue::Null, SqlValue::Text)
 }
 
-/// `storePlatformToken`: insert, or update the named columns.
-pub fn store_platform_token(sqlite: &Connection, target: &str, row: &TokenWrite) -> Result<()> {
+fn assignments(row: &TokenWrite) -> Vec<(&'static str, SqlValue)> {
     let mut set: Vec<(&str, SqlValue)> = vec![
         ("sealed_token", SqlValue::Text(row.sealed_token.clone())),
         ("seed_fingerprint", text(&row.seed_fingerprint)),
@@ -84,6 +83,12 @@ pub fn store_platform_token(sqlite: &Connection, target: &str, row: &TokenWrite)
     if let Some(value) = row.upload_limit_bytes {
         set.push(("upload_limit_bytes", value.map_or(SqlValue::Null, SqlValue::Integer)));
     }
+    set
+}
+
+/// `storePlatformToken`: insert, or update the named columns.
+pub fn store_platform_token(sqlite: &Connection, target: &str, row: &TokenWrite) -> Result<()> {
+    let set = assignments(row);
     let columns: Vec<&str> = set.iter().map(|(column, _)| *column).collect();
     let placeholders: Vec<String> = (2..=set.len() + 1).map(|index| format!("?{index}")).collect();
     let updates: Vec<String> = columns
@@ -104,4 +109,46 @@ pub fn store_platform_token(sqlite: &Connection, target: &str, row: &TokenWrite)
     let values = std::iter::once(SqlValue::Text(target.into())).chain(set.into_iter().map(|(_, value)| value));
     sqlite.execute(&sql, params_from_iter(values))?;
     Ok(())
+}
+
+/// A store that holds only while the row is still the one the caller read:
+/// the update names that row's `updated_at` and refresh token in its `WHERE`,
+/// and with no row read the insert gives way to a row stored meanwhile.
+/// `false` means the row changed (or appeared) first and nothing was written.
+pub fn store_platform_token_unless_changed(
+    sqlite: &Connection,
+    target: &str,
+    row: &TokenWrite,
+    read: Option<&PlatformToken>,
+) -> Result<bool> {
+    let set = assignments(row);
+    let columns: Vec<String> = set.iter().map(|(column, _)| format!(r#""{column}""#)).collect();
+    let mut values: Vec<SqlValue> = vec![SqlValue::Text(target.into())];
+    values.extend(set.iter().map(|(_, value)| value.clone()));
+    let sql = match read {
+        None => {
+            let placeholders: Vec<String> = (2..=set.len() + 1).map(|index| format!("?{index}")).collect();
+            format!(
+                r#"insert into "platform_tokens" ("target", {}) values (?1, {}) on conflict ("platform_tokens"."target") do nothing"#,
+                columns.join(", "),
+                placeholders.join(", ")
+            )
+        }
+        Some(read) => {
+            let updates: Vec<String> = columns
+                .iter()
+                .enumerate()
+                .map(|(index, column)| format!("{column} = ?{}", index + 2))
+                .collect();
+            let updated_at = values.len() + 1;
+            values.push(SqlValue::Text(read.updated_at.clone()));
+            values.push(text(&read.sealed_refresh_token));
+            format!(
+                r#"update "platform_tokens" set {} where "platform_tokens"."target" = ?1 and "platform_tokens"."updated_at" = ?{updated_at} and "platform_tokens"."sealed_refresh_token" is ?{}"#,
+                updates.join(", "),
+                updated_at + 1
+            )
+        }
+    };
+    Ok(sqlite.execute(&sql, params_from_iter(values))? == 1)
 }
