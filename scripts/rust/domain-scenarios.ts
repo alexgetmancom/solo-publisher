@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import type { Clock } from "../../apps/backend/src/application/ports.js";
 import { openBackendDb, unsafeDb } from "../../apps/backend/src/db/client.js";
 import { createActionableIssueStore } from "../../apps/backend/src/db/repositories/actionable-issues.js";
@@ -103,4 +103,5 @@ function run(scenario: Scenario) {
   }
 }
 
-console.log(JSON.stringify({ scenarios: spec.scenarios.map(run) }));
+// The result goes to the file named by argv[3]: a large stdout write is cut short on a CI pipe.
+writeFileSync(process.argv[3] as string, JSON.stringify({ scenarios: spec.scenarios.map(run) }));

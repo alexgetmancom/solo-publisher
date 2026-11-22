@@ -744,11 +744,17 @@ async fn run(spec: &Value, scenario: &Value) -> Value {
 }
 
 fn typescript() -> Value {
+    let tmp = repo_root().join("_trash-rust/tmp");
+    std::fs::create_dir_all(&tmp).unwrap();
+    let out = tmp.join("channels_scenarios.typescript.json");
+    // A file left by an earlier run must not stand in for this one.
+    let _ = std::fs::remove_file(&out);
     let output = Command::new("bun")
         .arg("scripts/rust/channels-goldens.ts")
         .arg(spec_path())
+        .arg(&out)
         .current_dir(repo_root())
-        .env("TMPDIR", repo_root().join("_trash-rust/tmp"))
+        .env("TMPDIR", &tmp)
         .output()
         .expect("bun must be on PATH");
     assert!(
@@ -756,7 +762,7 @@ fn typescript() -> Value {
         "bun failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    serde_json::from_slice(&output.stdout).unwrap()
+    serde_json::from_str(&std::fs::read_to_string(&out).expect("runner output")).unwrap()
 }
 
 fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {

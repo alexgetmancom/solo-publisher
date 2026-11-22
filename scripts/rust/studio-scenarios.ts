@@ -404,4 +404,5 @@ async function run(scenario: Scenario) {
 
 const scenarios = [];
 for (const scenario of spec.scenarios) scenarios.push(await run(scenario));
-console.log(JSON.stringify({ probe, scenarios }));
+// The result goes to the file named by argv[3]: a large stdout write is cut short on a CI pipe.
+fs.writeFileSync(process.argv[3] as string, JSON.stringify({ probe, scenarios }));

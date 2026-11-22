@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { channelUploadLimits } from "../../apps/backend/src/channels/platform-token-store.js";
 import { registeredPostTargetIds } from "../../apps/backend/src/channels/registry.js";
 import { openBackendDb, type UnsafeBackendDb, unsafeDb } from "../../apps/backend/src/db/client.js";
@@ -281,4 +281,5 @@ async function run(scenario: Scenario) {
 
 const scenarios = [];
 for (const scenario of spec.scenarios) scenarios.push(await run(scenario));
-console.log(JSON.stringify({ scenarios }));
+// The result goes to the file named by argv[3]: a large stdout write is cut short on a CI pipe.
+writeFileSync(process.argv[3] as string, JSON.stringify({ scenarios }));

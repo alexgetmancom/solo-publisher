@@ -75,7 +75,7 @@ class FixedDate extends RealDate {
 }
 globalThis.Date = FixedDate as DateConstructor;
 
-// Logs go to stderr: stdout carries the result.
+// Logs go to stderr.
 console.log = console.error;
 console.info = console.error;
 console.warn = console.error;
@@ -368,4 +368,5 @@ async function run(scenario: Scenario) {
 
 const scenarios = [];
 for (const scenario of spec.scenarios) scenarios.push(await run(scenario));
-process.stdout.write(`${JSON.stringify({ scenarios })}\n`);
+// The result goes to the file named by argv[3]: a large stdout write is cut short on a CI pipe.
+fs.writeFileSync(process.argv[3] as string, JSON.stringify({ scenarios }));

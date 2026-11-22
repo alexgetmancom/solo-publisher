@@ -639,6 +639,8 @@ pub fn typescript_side(script: &str, spec: &Path) -> Vec<Value> {
     let tmp = repo_root().join("_trash-rust/tmp");
     std::fs::create_dir_all(&tmp).unwrap();
     let out = tmp.join(spec.file_name().unwrap()).with_extension("typescript.json");
+    // A file left by an earlier run must not stand in for this one.
+    let _ = std::fs::remove_file(&out);
     let output = Command::new("bun")
         .arg(script)
         .arg(spec)

@@ -101,13 +101,20 @@ pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     out
 }
 
-/// Runs a TypeScript scenario runner over a spec file and returns its output.
+/// Runs a TypeScript scenario runner over a spec file and returns the JSON it
+/// writes to a file: a large stdout write is cut short on a CI pipe.
 pub fn typescript(script: &str, spec: &Path) -> Value {
+    let tmp = repo_root().join("_trash-rust/tmp");
+    std::fs::create_dir_all(&tmp).unwrap();
+    let out = tmp.join(spec.file_name().unwrap()).with_extension("typescript.json");
+    // A file left by an earlier run must not stand in for this one.
+    let _ = std::fs::remove_file(&out);
     let output = Command::new("bun")
         .arg(script)
         .arg(spec)
+        .arg(&out)
         .current_dir(repo_root())
-        .env("TMPDIR", repo_root().join("_trash-rust/tmp"))
+        .env("TMPDIR", &tmp)
         .output()
         .expect("bun must be on PATH");
     assert!(
@@ -115,7 +122,7 @@ pub fn typescript(script: &str, spec: &Path) -> Value {
         "bun failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    serde_json::from_slice(&output.stdout).unwrap()
+    serde_json::from_str(&std::fs::read_to_string(&out).expect("runner output")).unwrap()
 }
 
 /// Every step result and every table of every scenario, TypeScript against
