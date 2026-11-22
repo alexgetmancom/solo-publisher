@@ -22,7 +22,6 @@ use runtime::external::youtube::youtube_access_token;
 use runtime::external::zernio::{list_zernio_accounts, zernio_account};
 use runtime::ffmpeg::{
     FfmpegMediaProbe, ffprobe_failure, format_ffmpeg_failure, media_metadata_from_ffprobe, probe_media_metadata,
-    run_ffmpeg,
 };
 use runtime::http::{
     ExternalError, Fut, Headers, HttpClient, HttpRequest, HttpResponse, Method, Transport, TransportFailure, form_body,
@@ -308,15 +307,12 @@ fn ffprobe_output_maps_to_the_same_metadata() {
     }
 }
 
-/// Needs ffmpeg and ffprobe on PATH (the static 7.0.2 builds the recorder ran).
+/// Needs ffmpeg and ffprobe on PATH. The clip is committed: an encode's AAC
+/// bitrate differs between ffmpeg builds, a probe of the same file does not.
 #[tokio::test]
 async fn a_real_clip_probes_as_in_typescript() {
     let case = &rows("real_probe")[0];
-    let dir = scratch("real-probe");
-    let clip = dir.join("clip.mp4");
-    let mut args: Vec<&str> = case["args"].as_array().unwrap().iter().map(text).collect();
-    args.push(clip.to_str().unwrap());
-    run_ffmpeg(&args, Duration::from_secs(60)).await.unwrap();
+    let clip = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/real-probe.mp4");
     let metadata = probe_media_metadata(clip.to_str().unwrap(), Duration::from_secs(30))
         .await
         .unwrap();

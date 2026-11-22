@@ -16,7 +16,7 @@ import {
   requestJson,
   retryAfterSecondsFromHeaders,
 } from "../../apps/backend/src/foundation/http.js";
-import { formatFfmpegFailure, probeMediaMetadata, runFfmpeg } from "../../apps/backend/src/foundation/runtime/ffmpeg.js";
+import { formatFfmpegFailure, probeMediaMetadata } from "../../apps/backend/src/foundation/runtime/ffmpeg.js";
 import {
   expectedWorkerNames,
   heartbeatLoop,
@@ -299,34 +299,10 @@ for (const [index, probe] of probeCases.entries()) {
   probes.push({ ...probe, result: JSON.parse(new TextDecoder().decode(child.stdout)) });
 }
 
-// A real clip, encoded and probed by the binaries on PATH; the Rust test
-// encodes it again with the same arguments.
-const clip = path.join(scratch, "clip.mp4");
-const clipArgs = [
-  "-hide_banner",
-  "-loglevel",
-  "error",
-  "-y",
-  "-f",
-  "lavfi",
-  "-i",
-  "testsrc=size=180x320:rate=25:duration=1",
-  "-f",
-  "lavfi",
-  "-i",
-  "sine=frequency=440:duration=1",
-  "-c:v",
-  "libx264",
-  "-pix_fmt",
-  "yuv420p",
-  "-c:a",
-  "aac",
-  "-b:a",
-  "96k",
-  "-shortest",
-];
-await runFfmpeg([...clipArgs, clip], 60);
-const realProbe = { args: clipArgs, metadata: await probeMediaMetadata(clip) };
+// A real clip, probed by the ffprobe on PATH. It is committed rather than
+// encoded here: the AAC bitrate ffprobe reports is the encoder's, and it moved
+// from 97167 to 97550 between ffmpeg 7.0.2 and 6.1.1.
+const realProbe = { metadata: await probeMediaMetadata(path.join(fixtures, "real-probe.mp4")) };
 
 // ---- worker state --------------------------------------------------------
 

@@ -78,6 +78,16 @@ class FixedDate extends RealDate {
   }
 }
 
+/** libavcodec's JPEG encoder writes its own version (`Lavc61.3.100`,
+ * `Lavc60.31.102`) as a comment right after SOI. The pixels are the same from
+ * every ffmpeg build, the comment is not, so it is left out of what is compared;
+ * scenarios.rs drops exactly the same segment. */
+function withoutEncoderComment(bytes: Buffer): Buffer {
+  if (bytes.length < 10 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff || bytes[3] !== 0xfe) return bytes;
+  if (bytes.subarray(6, 10).toString("latin1") !== "Lavc") return bytes;
+  return Buffer.concat([bytes.subarray(0, 2), bytes.subarray(4 + bytes.readUInt16BE(4))]);
+}
+
 /** Every file under `root`, sorted, with its size and sha256. */
 function files(root: string): Record<string, { bytes: number; sha256: string }> {
   const found: Record<string, { bytes: number; sha256: string }> = {};
@@ -86,7 +96,7 @@ function files(root: string): Record<string, { bytes: number; sha256: string }> 
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.isFile() && !/pipeline\.db(-wal|-shm|-journal)?$/.test(entry.name)) {
-        const bytes = fs.readFileSync(full);
+        const bytes = withoutEncoderComment(fs.readFileSync(full));
         found[path.relative(root, full)] = { bytes: bytes.length, sha256: crypto.createHash("sha256").update(bytes).digest("hex") };
       }
     }

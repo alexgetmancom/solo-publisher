@@ -182,6 +182,17 @@ fn rows(sqlite: &db::rusqlite::Connection, sql: &str) -> Value {
     Value::Array(out)
 }
 
+/// `withoutEncoderComment` in scripts/rust/ops-scenarios.ts: the `Lavc<version>`
+/// comment libavcodec's JPEG encoder writes right after SOI differs between
+/// ffmpeg builds while the pixels do not, so neither side compares it.
+fn without_encoder_comment(bytes: Vec<u8>) -> Vec<u8> {
+    if bytes.len() < 10 || bytes[..4] != [0xff, 0xd8, 0xff, 0xfe] || &bytes[6..10] != b"Lavc" {
+        return bytes;
+    }
+    let end = 4 + usize::from(u16::from_be_bytes([bytes[4], bytes[5]]));
+    [&bytes[..2], &bytes[end.min(bytes.len())..]].concat()
+}
+
 fn files(root: &Path) -> Map<String, Value> {
     fn walk(root: &Path, dir: &Path, out: &mut Vec<(String, Value)>) {
         let Ok(entries) = std::fs::read_dir(dir) else { return };
@@ -204,7 +215,7 @@ fn files(root: &Path) -> Map<String, Value> {
                 {
                     continue;
                 }
-                let bytes = std::fs::read(&path).unwrap();
+                let bytes = without_encoder_comment(std::fs::read(&path).unwrap());
                 let relative = path.strip_prefix(root).unwrap().display().to_string();
                 out.push((
                     relative,

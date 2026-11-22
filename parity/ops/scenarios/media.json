@@ -1080,8 +1080,8 @@
     },
     "files": {
       "data/story-media/aaaaaaaaaaaaaaaaaaaaaaaa-story-standard.jpg": {
-        "bytes": 14883,
-        "sha256": "055bbf5d2a5bb2fe2849ccc108fb035a3a22a2522ecbb8e134cdee42bfd591cf"
+        "bytes": 14866,
+        "sha256": "1133b742a15307741675f589ad590343bf774511f40307bd4d49951b575eb11e"
       },
       "data/studio-media/aaaaaaaaaaaaaaaaaaaaaaaa.png": {
         "bytes": 73,
@@ -1410,12 +1410,12 @@
     },
     "files": {
       "data/story-media/bbbbbbbbbbbbbbbbbbbbbbbb-story-standard.jpg": {
-        "bytes": 14883,
-        "sha256": "055bbf5d2a5bb2fe2849ccc108fb035a3a22a2522ecbb8e134cdee42bfd591cf"
+        "bytes": 14866,
+        "sha256": "1133b742a15307741675f589ad590343bf774511f40307bd4d49951b575eb11e"
       },
       "data/story-media/cccccccccccccccccccccccc-story-standard.jpg": {
-        "bytes": 14883,
-        "sha256": "055bbf5d2a5bb2fe2849ccc108fb035a3a22a2522ecbb8e134cdee42bfd591cf"
+        "bytes": 14866,
+        "sha256": "1133b742a15307741675f589ad590343bf774511f40307bd4d49951b575eb11e"
       },
       "data/studio-media/bbbbbbbbbbbbbbbbbbbbbbbb.png": {
         "bytes": 73,
