@@ -1,6 +1,6 @@
 //! The golden Zernio: the recorder's `fetch` stub for
 //! `GET https://zernio.com/api/v1/accounts` and `GET …/posts/<id>` (`setHttp`
-//! in scripts/rust/bot-goldens/cases-settings.ts and cases-notices.ts). The
+//! in the recorder's settings and notices cases). The
 //! case's seed notes say what the recorder did: "ZERNIO_API_KEY is set on the
 //! config" / "ZERNIO_API_KEY set on the config" (`h.config.ZERNIO_API_KEY =
 //! "zernio-test-key"`) and "GET <url> answers <503 | json>." Each request is

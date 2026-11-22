@@ -15,18 +15,8 @@ Thumbs.db
 .obsidian/
 
 # Runtime dynamic files and secrets
-/apps/backend/secrets.env
-/apps/backend/secrets.*
-# The template is not a secret and both READMEs tell people to copy it, which
-# they cannot do while the pattern above swallows it too.
-!/apps/backend/secrets.env.example
-/apps/backend/site-feed.env
-/apps/backend/data/
-/apps/backend/logs/
-/apps/backend/media-cache/
-/apps/backend/*.sqlite
-/apps/backend/*.sqlite3
-/apps/backend/*.db
+# Running from source reads it into the environment (docs/install.md).
+/secrets.env
 /*.db
 /*.db-wal
 /*.db-shm
@@ -44,14 +34,6 @@ Thumbs.db
 # Node.js
 node_modules/
 dist/
-# The bundles CI builds from the backend entry points.
-# Reproducing the image build locally creates them here too; untracked minified
-# bundles are one `git add -A` away from being committed.
-/runtime/
-/ops/
-/entrypoint/
-/story-renderer/
-/smoke/
 *.tsbuildinfo
 npm-debug.log*
 package-lock.json
@@ -70,8 +52,6 @@ pnpm-debug.log*
 *.db-wal
 *.zip
 
-# Local dev fixture data (bun scripts/dev-seed.ts)
-/.dev-fixture/
 
 # Production database snapshots pulled down by hand. Out of the repo root so a
 # careless cleanup there cannot reach them; nothing in the project reads them.
@@ -80,3 +60,6 @@ pnpm-debug.log*
 # Scratch output from local tooling
 /tmp/
 /output/
+
+# Rust build output (the default cargo target directory)
+/target/

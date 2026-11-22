@@ -1,7 +1,8 @@
 # Bot goldens — coverage
 
-Recorded by `bun scripts/rust/bot-goldens.ts` from the real bot (`createBot`) against a fake Telegram; how calls are
-captured and what is normalised is in the header of `scripts/rust/bot-goldens/harness.ts`. Every golden is
+Recorded from the real TypeScript bot (`createBot`) against a fake Telegram before the cutover; nothing re-records
+them. The recorder's seeds are `seeds/`, its fixtures `fixtures/`; how the Rust replay reads them is in
+`crates/bot/tests/support/mod.rs`. Every golden is
 `{ id, specRef, seed, steps: [{ update | trigger, calls: [{ method, payload, transport? }] }] }`; `seed` says in words
 what state was put in place outside the bot. All screens use the actor locale `ru`. Paths below are relative to
 `parity/bot-goldens/`.

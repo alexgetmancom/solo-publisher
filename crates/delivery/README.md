@@ -1,6 +1,6 @@
 # delivery — the delivery workers (Rust)
 
-Port of `apps/backend/src/delivery/*` (minus the adapters, which are `crates/adapters`) and the retention routines of
+Port of the TypeScript `delivery/*` (minus the adapters, which are `crates/adapters`) and the retention routines of
 `operations/maintenance.ts`. Every loop body takes a `Delivery` — the database, publishing's `Boundaries`, and one
 `AdapterContext` (configuration snapshot, HTTP client, clock) for the whole cycle. Every write after an earlier check
 carries that check in its `WHERE`; a step that may have reached an audience settles as ambiguous, never re-sent.
@@ -48,9 +48,10 @@ Stories go through `adapters::HttpStoriesSidecar::new(client, url, token)` (`app
 cargo test -p delivery        # needs bun, ffmpeg and ffprobe on PATH
 ```
 
-`tests/{delivery,video,site}_scenarios.rs` run every scenario of their JSON spec through the TypeScript modules
-(`scripts/rust/{delivery,video,site}-scenarios.ts` over `delivery-scenario-support.ts`) and through this crate, on two
-fresh databases under one fixed clock, with the same canned platform answers (a canned answer may carry `sql`, run when
+`tests/{delivery,video,site}_scenarios.rs` run every scenario of their JSON spec through this crate and compare with
+what the TypeScript modules did with it (`tests/*.golden.json`, recorded from the TypeScript backend before the cutover; nothing re-records them; data directories under
+`/tmp/solo-publisher-goldens/`, because media cache keys hash the path; media inputs are `tests/fixtures/`; WebP
+variants and posters, whose bytes follow the ffmpeg build, are compared by path and links), on fresh databases under one fixed clock, with the same canned platform answers (a canned answer may carry `sql`, run when
 it is served: a lease taken over, a target edited mid-call). Compared: every step result, every request (method, URL,
 headers, body), every table, and files on disk; credentials are `{{NAME}}`, the data directory `$DATA`, lease owners
 `$HOST`/`$PID`/`$UUID`. Rust-only tests cover the deliberate deviations and what TypeScript cannot be driven to (a hung

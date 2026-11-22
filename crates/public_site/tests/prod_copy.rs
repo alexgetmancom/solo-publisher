@@ -1,11 +1,10 @@
-//! The route over a copy of a real database, for comparing with the
-//! TypeScript side without printing anything the database holds:
+//! The route over a copy of a real database, without printing anything the
+//! database holds:
 //!
 //!   PUBLIC_SITE_DB=<copy> PUBLIC_SITE_NOW=<ISO> cargo test -p public_site --test prod_copy -- --ignored --nocapture
-//!   bun scripts/rust/public-site-goldens.ts --prod <other copy> <ISO>
 //!
-//! Each side opens (and migrates) its own copy; both print the body's sha256,
-//! the ETag and the item count.
+//! It opens (and migrates) the copy and prints the body's sha256, the ETag and
+//! the item count, to compare with what the running Studio serves.
 
 use std::cell::Cell;
 

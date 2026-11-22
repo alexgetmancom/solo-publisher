@@ -1,5 +1,5 @@
-//! The fake Telegram beneath the whole client: the Rust twin of `FakeTelegram`
-//! in scripts/rust/bot-goldens/harness.ts. It records every call exactly as
+//! The fake Telegram beneath the whole client: the Rust twin of the recorder's
+//! `FakeTelegram`. It records every call exactly as
 //! the recorder normalises it and answers like Telegram (message ids per chat,
 //! "message is not modified", no text to edit on a media message, wrong
 //! file_id).

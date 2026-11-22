@@ -1,9 +1,9 @@
-//! The Rust handle against the TypeScript one, by running both: the TS side is
-//! `scripts/rust/db-reference.ts`, which opens databases through the real
-//! `openBackendDb`. Scratch files live under `_trash-rust/tmp/db-tests`.
+//! The Rust handle against the database the TypeScript one made
+//! (`tests/fixtures/typescript-fresh.sql`, recorded before the cutover) and
+//! against a copy of production's. Scratch files live under
+//! `_trash-rust/tmp/db-tests`.
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::{Duration, Instant};
 use std::{fs, thread};
 
@@ -27,25 +27,19 @@ fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-fn typescript(args: &[&str]) -> Value {
-    let output = Command::new("bun")
-        .arg("scripts/rust/db-reference.ts")
-        .args(args)
-        .current_dir(repo_root())
-        .output()
-        .expect("bun must be on PATH");
-    assert!(
-        output.status.success(),
-        "bun failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_slice(&output.stdout).unwrap()
+/// Writes, at `path`, the database TypeScript's `openBackendDb` created and
+/// migrated on an empty file.
+fn typescript_database(path: &Path) {
+    let sql =
+        fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/typescript-fresh.sql")).unwrap();
+    Connection::open(path).unwrap().execute_batch(&sql).unwrap();
 }
 
 fn journal_entries() -> u64 {
-    let journal: Value =
-        serde_json::from_str(&fs::read_to_string(repo_root().join("apps/backend/drizzle/meta/_journal.json")).unwrap())
-            .unwrap();
+    let journal: Value = serde_json::from_str(
+        &fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations/meta/_journal.json")).unwrap(),
+    )
+    .unwrap();
     journal["entries"].as_array().unwrap().len() as u64
 }
 
@@ -98,10 +92,7 @@ fn fresh_schema_matches_typescript() {
     let dir = scratch("fresh_schema");
     let ts = dir.join("ts.db");
     let rust = dir.join("rust.db");
-    assert_eq!(
-        typescript(&["open", ts.to_str().unwrap()]),
-        json!({ "before": 0, "after": journal_entries() })
-    );
+    typescript_database(&ts);
     BackendDb::open(&rust).unwrap().close().unwrap();
     let expected = dump(&ts);
     assert_same(&expected, &dump(&rust));
@@ -113,7 +104,7 @@ fn fresh_schema_matches_typescript() {
 fn rust_adopts_a_typescript_database() {
     let dir = scratch("rust_adopts");
     let path = dir.join("pipeline.db");
-    typescript(&["open", path.to_str().unwrap()]);
+    typescript_database(&path);
     let before = dump(&path);
     let db = BackendDb::open(&path).unwrap();
     assert_eq!(db::install_date_guards(unsafe_db(&db)).unwrap(), 0);
@@ -121,70 +112,65 @@ fn rust_adopts_a_typescript_database() {
     assert_same(&before, &dump(&path));
 }
 
-#[test]
-fn typescript_adopts_a_rust_database() {
-    let dir = scratch("typescript_adopts");
-    let path = dir.join("pipeline.db");
-    BackendDb::open(&path).unwrap().close().unwrap();
-    let before = dump(&path);
-    let entries = journal_entries();
-    assert_eq!(
-        typescript(&["open", path.to_str().unwrap()]),
-        json!({ "before": entries, "after": entries })
-    );
-    assert_same(&before, &dump(&path));
-}
-
 /// The production copy carries 119 bookkeeping rows from before the baseline
 /// was squashed to 37 files; adoption has to go by the newest `created_at`
-/// alone, as drizzle does. The file is private and not in CI. Only schema and
-/// bookkeeping are compared, never row contents.
+/// alone, as drizzle did, apply nothing, and leave schema and bookkeeping as
+/// they were, its date guards reinstalled identically when they are missing.
+/// The file is private and not in CI. Only schema and bookkeeping are
+/// compared, never row contents.
 #[test]
-fn both_sides_adopt_the_production_database_alike() {
+fn rust_adopts_the_production_database_as_it_is() {
     let original = repo_root().join("_trash-rust/prod-db/pipeline.prod.db");
     if !original.exists() {
         eprintln!("skipped: no production copy at {}", original.display());
         return;
     }
     let dir = scratch("production");
-    let (rust, ts) = (dir.join("rust.db"), dir.join("ts.db"));
-    fs::copy(&original, &rust).unwrap();
-    fs::copy(&original, &ts).unwrap();
-    let before = dump(&rust);
+    let (as_is, unguarded) = (dir.join("as-is.db"), dir.join("unguarded.db"));
+    fs::copy(&original, &as_is).unwrap();
+    fs::copy(&original, &unguarded).unwrap();
+    let before = dump(&as_is);
     let applied = count(&before, "migration ") as u64;
     let guards = count(&before, "schema 'trigger' 'date_guard_");
     assert!(applied > journal_entries());
     assert!(guards > 0);
-    // Without their guards, so each side installs its own from this schema.
-    for copy in [&rust, &ts] {
-        let sqlite = Connection::open(copy).unwrap();
-        let names: Vec<String> = sqlite
-            .prepare("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name GLOB 'date_guard_*'")
-            .unwrap()
-            .query_map([], |row| row.get(0))
-            .unwrap()
-            .map(Result::unwrap)
-            .collect();
-        for name in names {
-            sqlite.execute(&format!("DROP TRIGGER \"{name}\""), []).unwrap();
-        }
-    }
 
-    BackendDb::open(&rust).unwrap().close().unwrap();
-    assert_eq!(
-        typescript(&["open", ts.to_str().unwrap()]),
-        json!({ "before": applied, "after": applied })
-    );
-    let after = dump(&rust);
-    assert_eq!(count(&after, "migration ") as u64, applied);
-    assert_eq!(count(&after, "schema 'trigger' 'date_guard_"), guards);
-    assert_same(&dump(&ts), &after);
+    BackendDb::open(&as_is).unwrap().close().unwrap();
+    assert_same(&before, &dump(&as_is));
+
+    // Without its guards, Rust installs the same ones from this schema.
+    let sqlite = Connection::open(&unguarded).unwrap();
+    let names: Vec<String> = sqlite
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name GLOB 'date_guard_*'")
+        .unwrap()
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    for name in names {
+        sqlite.execute(&format!("DROP TRIGGER \"{name}\""), []).unwrap();
+    }
+    drop(sqlite);
+    BackendDb::open(&unguarded).unwrap().close().unwrap();
+    let reinstalled = dump(&unguarded);
+    assert_eq!(count(&reinstalled, "migration ") as u64, applied);
+    assert_eq!(count(&reinstalled, "schema 'trigger' 'date_guard_"), guards);
+    // Dropped and created again, the triggers sit later in sqlite_master, and
+    // production's own were written with other indentation.
+    let normalized = |lines: Vec<String>| {
+        let mut lines: Vec<String> = lines
+            .iter()
+            .map(|line| line.split_whitespace().collect::<Vec<_>>().join(" "))
+            .collect();
+        lines.sort();
+        lines
+    };
+    assert_same(&normalized(before), &normalized(reinstalled));
 }
 
 #[test]
-fn date_guards_reject_like_typescript() {
+fn date_guards_reject_as_typescript_did() {
     let dir = scratch("date_guards");
-    let ts = dir.join("ts.db");
     let db = BackendDb::open(dir.join("rust.db")).unwrap();
     let statements = [
         "INSERT INTO worker_state VALUES ('w', '{}', '34Z')",
@@ -202,11 +188,6 @@ fn date_guards_reject_like_typescript() {
             Err(rusqlite::Error::SqliteFailure(_, Some(message))) => json!({ "error": message }),
             Err(other) => panic!("{statement}: {other}"),
         };
-        assert_eq!(
-            typescript(&["exec", ts.to_str().unwrap(), statement]),
-            rust,
-            "{statement}"
-        );
         outcomes.push(rust);
     }
     assert_eq!(

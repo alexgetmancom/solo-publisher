@@ -1,0 +1,92 @@
+{
+  "id": "notice-video-completed",
+  "area": "notices",
+  "channels": ["youtube_ru", "youtube_en", "instagram_ru", "instagram_en"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      },
+      "reseed": "notice-video-completed.step-12.db"
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "clip": "<tmp>/fixtures/clip.mp4"
+      }
+    }
+  ]
+}

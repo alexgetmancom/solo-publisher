@@ -1,4 +1,4 @@
-//! `ops`: the operations CLI (`apps/backend/src/cli.ts`). One command per
+//! `ops`: the operations CLI. One command per
 //! process: `ops <command> --flag value`, `--db PATH`, `--json`.
 
 use std::process::ExitCode;

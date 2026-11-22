@@ -1,4 +1,5 @@
-//! The renderer against the TypeScript one (`scripts/rust/story-render-fixtures.ts`).
+//! The renderer against the TypeScript one, as recorded before the cutover
+//! (`tests/fixtures/`).
 //!
 //! The copy, line breaks and overlay SVG must match exactly. The pixels
 //! cannot: libvips and resvg rasterise and encode differently. A card is
@@ -167,7 +168,7 @@ fn cards_match_typescript_pixels() {
     let cards: Vec<Card> = read("cards.json");
     let out = root().join("_trash-rust/tmp/story-render");
     std::fs::create_dir_all(&out).unwrap();
-    let assets = root().join("apps/backend/assets/story-card");
+    let assets = root().join("crates/story_render/assets/story-card");
     // A debug-build render is seconds; the cards are independent.
     let measured: Vec<(String, f64, f64, f64)> = std::thread::scope(|scope| {
         let renders: Vec<_> = cards

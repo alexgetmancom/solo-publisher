@@ -46,11 +46,11 @@ Solo Publisher намеренно обслуживает одного владе
 
 ## Стек
 
-- Bun и TypeScript
-- grammY и MTProto
-- SQLite и Drizzle ORM
+- Rust: tokio, axum, rusqlite
+- Telegram Bot API и MTProto (mtcute на Bun) в небольшом sidecar для Stories
+- SQLite
 - MCP поверх HTTP
-- ffmpeg и sharp
+- ffmpeg и resvg
 - Docker Compose, Caddy и deployment неизменяемых образов
 
 Здесь нет Redis, RabbitMQ, отдельного сервера базы данных или multi-tenant слоя
@@ -59,13 +59,13 @@ Solo Publisher намеренно обслуживает одного владе
 ## Разработка
 
 ```bash
-bun run typecheck
-bun run lint
-bun run test
-bun run build
+cargo test --workspace
+bun run check:all
 ```
 
-`bun run check:all` запускает полный набор проверок репозитория. Файлы
+`bun run check:all` запускает полный набор проверок репозитория: проверки
+TypeScript у sidecar и инструментов deployment, `cargo fmt`, `clippy` и тесты,
+и release-сборку. Файлы
 deployment в `deploy/` привязаны к собственной установке автора — её доменам,
 путям на хосте и systemd-юнитам. Используйте их как пример реализации и
 укажите свои; поддерживаемый путь для self-host — `install.sh`.

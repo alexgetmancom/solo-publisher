@@ -1,6 +1,6 @@
 # http_edge — the Studio's HTTP surface (Rust)
 
-Port of `apps/backend/src/api.ts`,
+Port of the TypeScript `api.ts`,
 `interfaces/http/{context,discovery,health,media-upload,meta-oauth,public-site,studio,x-oauth,youtube-oauth}.ts`,
 `foundation/{http-auth,http-response,ranged-file,client-identity}.ts` and the `Bun.serve` options of
 `runtime/server.ts`, on axum 0.8 / hyper 1. The package is `http_edge` (a package named `http` makes every
@@ -55,8 +55,7 @@ routes: `404 "not found\n"`.
 ## Parity
 
 ```
-bun scripts/rust/http-goldens.ts   # records parity/http/goldens.json from the Hono app (fixed clock)
-cargo test -p http_edge            # tests/goldens.rs replays it through the router with `oneshot`
+cargo test -p http_edge   # tests/goldens.rs replays parity/http/goldens.json (the Hono app, recorded from the TypeScript backend before the cutover; nothing re-records them) with `oneshot`
 ```
 
 23 cases / 222 responses (every route; auth ok/missing/wrong; HEAD; ranges incl. suffix, clamped and 416; traversal

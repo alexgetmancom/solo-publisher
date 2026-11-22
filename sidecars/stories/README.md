@@ -18,7 +18,7 @@ Environment: `STORIES_SIDECAR_TOKEN` (required, ≥ 32 characters), `STORIES_SID
 `STORIES_SIDECAR_PORT` (default `8790`), `TELEGRAM_CHANNEL_STORIES_API_ID`, `_API_HASH`, `_SESSION` (all three, or
 every request answers `missing_channel_story_credentials`, not sent).
 
-In the image (`Dockerfile.rust`) it is bundled to `/app/sidecar` and started, supervised and given its token by
+In the image (`Dockerfile`) it is bundled to `/app/sidecar` and started, supervised and given its token by
 `studio-entrypoint` (`crates/entrypoint`); nothing to configure. Sign in once:
 
 ```

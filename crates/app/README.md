@@ -1,6 +1,6 @@
 # app — the `solo-publisher` binary
 
-The Studio process (`apps/backend/src/runtime/server.ts`): configuration from the environment (`foundation::config`,
+The Studio process: configuration from the environment (`foundation::config`,
 the same variables as TypeScript), the database at `PIPELINE_DB` (migrations and date guards), the Telegram bot on
 long polling (`setMyCommands` at startup), the workers below and the HTTP surface (`http_edge`, every route but MCP)
 on `BIND_HOST:PORT` (default `127.0.0.1:8788`, as TypeScript). The port is bound before polling starts, so a taken one
@@ -61,7 +61,7 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 
 ## Container
 
-`Dockerfile.rust` (context: the repository root, filtered by `Dockerfile.rust.dockerignore`) builds one image with
+`Dockerfile` (context: the repository root, filtered by `Dockerfile.dockerignore`) builds one image with
 two processes, because the Studio hands the Stories sidecar file paths (a re-encoded Story sits in the Studio's temp
 directory) and because the deploy agent, its rollback by digest and `docker exec` keep the one `backend` container
 they know:
@@ -69,10 +69,12 @@ they know:
 | Path | What |
 |---|---|
 | `/app/bin/solo-publisher` | this binary (`cargo build --release -p app`, rust:1.100-bookworm) |
-| `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g` |
+| `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration |
+| `/app/bin/ops` | the operations CLI, behind `bun /app/ops/cli.js` (`scripts/ops-prod.ts`) |
+| `/app/entrypoint/config-check.js` | `studio-entrypoint --check-config`, which the deploy agent runs on a new image before swapping it in |
 | `/app/sidecar/` | `sidecars/stories` bundled by `bun build` with mtcute's WASM beside it |
-| `/app/apps/backend/assets/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
-| `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1 (as the TypeScript image), Bun 1.4.0 from the `oven/bun` slim base |
+| `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
+| `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1, Bun 1.4.0 from the `oven/bun` slim base |
 
 `studio-entrypoint`, started as root: creates and `chown`s the data directories (`runtime::data_dirs`, as
 `docker-entrypoint.ts`), then re-executes itself through `setpriv --reuid --regid --groups` as `bun` (uid 1000),
@@ -83,11 +85,11 @@ and the sidecar on loopback with the same token, restarting the sidecar if it di
 Studio's exit is the container's; `tini -g` hands SIGTERM to all three, and the entrypoint only waits.
 
 ```
-docker build -f Dockerfile.rust -t solo-publisher-rust .
-docker compose -f compose.yaml -f compose.rust.yaml up -d --build      # self-host, same stack, Rust app
+docker build -t solo-publisher .
+IMAGE=solo-publisher bun scripts/image-smoke.ts   # what CI checks on every image it builds
 ```
 
-`deploy/studio.rust.compose.yaml` is `deploy/studio.compose.yaml` for this image (the deploy agent's `composeFile`;
-only `pids_limit` differs). The healthcheck stays `bun -e fetch('/readyz')` on 8788. Stories sign-in, once per
-session: `docker exec -it -u bun <container> bun /app/sidecar/login.js`. CI (`rust`, `rust-image` in
-`.github/workflows/check.yml`) builds and inspects the image without pushing it; nothing deploys it yet.
+The healthcheck is `bun -e fetch('/readyz')` on 8788. Stories sign-in, once per session:
+`docker exec -it -u bun <container> bun /app/sidecar/login.js`. CI builds the image on every push (`image-check`); on
+`main` it builds both architectures, inspects each with `scripts/image-smoke.ts`, and deploys
+(`backend-image` → `deploy`).

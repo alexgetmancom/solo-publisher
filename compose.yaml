@@ -51,7 +51,7 @@ services:
       - .env
     environment:
       # One volume: the database, media, story cards and site all derive from
-      # it (foundation/config.ts). Pointing any one of them somewhere else was
+      # it (foundation::config). Pointing any one of them somewhere else was
       # a way to write production data onto the container's own filesystem.
       DATA_DIR: /data
       # Never under DATA_DIR: a backup on the volume it exists to survive is

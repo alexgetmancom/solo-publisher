@@ -72,8 +72,7 @@ TypeScript used (connect 30 s, `getMe` 30 s, `sendStory` 120 s, teardown 5 s, be
 ## Parity
 
 ```
-bun scripts/rust/adapter-goldens.ts      # writes parity/adapter-goldens/<platform>/<case>.json (deterministic)
-cargo test -p adapters                   # goldens.rs replays them; behaviour.rs covers what they cannot
+cargo test -p adapters   # goldens.rs replays parity/adapter-goldens/ (recorded from the TypeScript backend before the cutover; nothing re-records them); behaviour.rs covers what they cannot
 ```
 
 228 cases: telegram 31, x 33, threads 43, instagram 26, discord 18, zernio 17, youtube 21, reels 16,

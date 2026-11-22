@@ -7,13 +7,10 @@ import { Glob } from "bun";
  * one COPY line at a time. Adding a workspace therefore breaks the image while
  * CI stays green — CI installs from a full checkout, so nothing there notices.
  * The failure surfaces only in Deploy, after main is already merged, which is
- * how a missing layer-checker manifest would break it.
+ * how a missing workspace manifest would break it.
  */
 const root = new URL("../", import.meta.url).pathname;
-const dockerfiles = [
-  ...["Dockerfile", "Dockerfile.runtime-base"].map((name) => ({ name, path: `${root}apps/backend/${name}` })),
-  { name: "Dockerfile.rust", path: `${root}Dockerfile.rust` },
-];
+const dockerfiles = [{ name: "Dockerfile", path: `${root}Dockerfile` }];
 const rootManifest = (await Bun.file(`${root}package.json`).json()) as { workspaces: string[] };
 
 const manifests: string[] = [];

@@ -1,0 +1,52 @@
+{
+  "id": "settings-default-targets",
+  "area": "settings",
+  "channels": [
+    "site_en",
+    "site_ru",
+    "telegram",
+    "telegram_stories",
+    "instagram_stories",
+    "instagram_stories_ru",
+    "threads_en",
+    "threads_ru",
+    "x",
+    "discord",
+    "instagram_en",
+    "instagram_ru",
+    "youtube_en",
+    "youtube_ru"
+  ],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    }
+  ]
+}

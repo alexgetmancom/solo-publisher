@@ -1,6 +1,6 @@
 # channels — connected accounts, their credentials, and the probes that check them (Rust)
 
-Port of `apps/backend/src/channels/*` and the process/provider half of `observability/*`. Registry reads publishing
+Port of the TypeScript `channels/*` and the process/provider half of `observability/*`. Registry reads publishing
 needs stay in `domain::channels`; channel administration (register, Zernio route options) in
 `domain::studio::services::channels`; the database-only probes in `domain::observability`
 (`credentials`, `failures`, `runtime_health`, `dates`, plus `should_ping_token` / `record_token_ping` on the breaker).
@@ -39,8 +39,8 @@ the `commandAllowed` verdict; it adds `X-Robots-Tag: noindex, nofollow` and `Cac
 
 ## Parity
 
-`tests/channels_scenarios.rs` runs `bun scripts/rust/channels-goldens.ts tests/channels_scenarios.json` and the Rust
-port over the same steps (fixed clock, scripted `randomBytes`, canned responses incl. 400 `invalid_grant`, 401,
+`tests/channels_scenarios.rs` runs the Rust port over the steps of `tests/channels_scenarios.json` and compares with
+what TypeScript did with them (`tests/channels_scenarios.golden.json`, recorded from the TypeScript backend before the cutover; nothing re-records them) (fixed clock, scripted `randomBytes`, canned responses incl. 400 `invalid_grant`, 401,
 403, 429, 5xx, transport errors): results, requests, live-config credentials, every table, and `platform_tokens`
 opened. Signed Meta states and PKCE challenges compare bit for bit; sealed states compare opened.
 

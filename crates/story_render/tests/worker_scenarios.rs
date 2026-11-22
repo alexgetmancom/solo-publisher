@@ -1,7 +1,7 @@
 //! Equivalence with TypeScript for the Story-card worker: every scenario in
-//! `worker_scenarios.json` runs through the real TypeScript worker and sharp
-//! renderer (`scripts/rust/story-worker-scenarios.ts`) and through
-//! `story_render`, each on its own fresh database under the same fixed clock,
+//! `worker_scenarios.json` ran through the real TypeScript worker and sharp
+//! renderer before the cutover (`worker_scenarios.golden.json`) and runs
+//! through `story_render`, each on its own fresh database under the same fixed clock,
 //! with the Studio post services queueing and scheduling the cards on both
 //! sides. Every step's result, every table's rows and the card files left
 //! behind must come out identical.
@@ -269,7 +269,7 @@ fn spec() -> Value {
         .replace("{FILES}", &files_dir().to_string_lossy())
         .replace(
             "{ASSETS}",
-            &root.join("apps/backend/assets/story-card").to_string_lossy(),
+            &root.join("crates/story_render/assets/story-card").to_string_lossy(),
         );
     serde_json::from_str(&text).unwrap()
 }
@@ -278,7 +278,7 @@ fn spec() -> Value {
 async fn story_card_worker_matches_typescript() {
     configure_logging(LogLevel::Error);
     let spec = spec();
-    let typescript = support::typescript("scripts/rust/story-worker-scenarios.ts", &spec_path());
+    let typescript = support::golden(&spec_path());
     let expected = typescript["scenarios"].as_array().unwrap();
     let mut actual = Vec::new();
     for scenario in spec["scenarios"].as_array().unwrap() {

@@ -1,0 +1,22 @@
+{
+  "id": "callback-superseded",
+  "area": "callbacks",
+  "channels": ["telegram", "threads_ru"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "hold": "editMessageText"
+    }
+  ]
+}

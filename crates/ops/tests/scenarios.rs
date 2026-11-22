@@ -1,7 +1,6 @@
 //! Every case of `tests/scenarios/<area>.json` replayed against what the
 //! TypeScript operations recorded in `parity/ops/scenarios/<area>.json`
-//! (`bun scripts/rust/ops-goldens.ts scenarios [area…]`, see
-//! `scripts/rust/ops-scenarios.ts`): the same steps on a fresh database and
+//! before the cutover: the same steps on a fresh database and
 //! DATA_DIR under the same fixed clock, every step as its own process, the
 //! same canned HTTP answers. Compared: every step's output (key order
 //! included), every request, every table and every file.
@@ -182,7 +181,7 @@ fn rows(sqlite: &db::rusqlite::Connection, sql: &str) -> Value {
     Value::Array(out)
 }
 
-/// `withoutEncoderComment` in scripts/rust/ops-scenarios.ts: the `Lavc<version>`
+/// `withoutEncoderComment` in the TypeScript recorder: the `Lavc<version>`
 /// comment libavcodec's JPEG encoder writes right after SOI differs between
 /// ffmpeg builds while the pixels do not, so neither side compares it.
 fn without_encoder_comment(bytes: Vec<u8>) -> Vec<u8> {
@@ -535,12 +534,10 @@ fn scenarios() {
         let spec: Value =
             serde_json::from_str(&std::fs::read_to_string(specs.join(format!("{area}.json"))).unwrap()).unwrap();
         let golden_path = repo().join(format!("parity/ops/scenarios/{area}.json"));
-        let goldens: Vec<Value> = serde_json::from_str(&std::fs::read_to_string(&golden_path).unwrap_or_else(|_| {
-            panic!(
-                "{} is missing: bun scripts/rust/ops-goldens.ts scenarios {area}",
-                golden_path.display()
-            )
-        }))
+        let goldens: Vec<Value> = serde_json::from_str(
+            &std::fs::read_to_string(&golden_path)
+                .unwrap_or_else(|_| panic!("{} is missing: every area has a recorded golden", golden_path.display())),
+        )
         .unwrap();
         assert_eq!(
             spec["cases"].as_array().unwrap().len(),

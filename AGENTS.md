@@ -41,9 +41,11 @@ Getting these wrong publishes to a live audience twice, and no reviewer or type 
 - Anything that reached an audience is idempotent on retry or is settled as ambiguous. A second post
   is worse than an unclear status.
 - Taking a publication down, putting it back, and journalling either is one transaction.
-- A migration is rehearsed on a fresh copy of the production database before it is pushed: the
-  squashed baseline is generated from the ORM schema and cannot show what production's own
-  schema and data carry.
+- A migration is a hand-written SQL file plus its journal entry in `crates/db/migrations` (Drizzle's
+  layout, which production's `__drizzle_migrations` bookkeeping reads). It is rehearsed on a fresh
+  copy of the production database before it is pushed — `cargo test -p db` adopts the copy at
+  `_trash-rust/prod-db/pipeline.prod.db` — because a fresh schema cannot show what production's
+  own schema and data carry.
 - A date column's shape is enforced by the database, so the trigger will say what it wants. What it
   cannot see is a well-shaped instant that is the wrong moment: `new Date("Thu, Aug 20, 2026")`
   resolves in the host's timezone, and the same import ran on two machines put one post on two days.
@@ -57,7 +59,8 @@ is data. Convert Russian comments in lines already being edited; do not open fil
 
 # Workflow
 
-Work on `main`. Typecheck, tests, and a production build before every push. CI/CD deploys the
+Work on `main`. Typecheck, tests, and a production build before every push (`bun run check:prepush`:
+the TypeScript checks, `cargo fmt`/`clippy`/`test`, and the release build). CI/CD deploys the
 primary production revision (alex) from `main`.
 
 Work that belongs to Maru carries a `Deploy-Maru: yes` trailer in the commit body. CI then promotes
@@ -68,13 +71,12 @@ that deploys nothing fails CI rather than passing green with the change unshippe
 
 # Persistence boundaries
 
-`BackendDb` is the application handle; raw SQLite only through the explicitly named `unsafeDb(...)`.
-Studio and Content go through persistence ports and their exception set in the architecture tests
-stays empty. Publishing, Delivery and Channels own their transactions directly — that is the shape,
-not a stage. Operations, Observability, Engagement, Notifications, the Public read model
-and StoryCards reach Drizzle directly, reads and writes both,
-for the tables they own. Writing another area's table from there is not covered by that: delivery
-state belongs to Delivery.
+`db::BackendDb` is the application handle; raw SQLite only through the explicitly named
+`db::unsafe_db(...)`. Studio and Content go through the persistence ports in
+`domain::application::ports`. Publishing, Delivery and Channels own their transactions directly —
+that is the shape, not a stage. Operations, Observability, Engagement, Notifications, the Public
+read model and StoryCards reach SQLite directly, reads and writes both, for the tables they own.
+Writing another area's table from there is not covered by that: delivery state belongs to Delivery.
 
 # Production
 
@@ -98,8 +100,8 @@ the production database by hand.
 
 # Operations registry
 
-Every operation is one entry in `apps/backend/src/operations/registry.ts`: `section`, summary, zod
-schema, `mutates`, `agent`, handler, optional formatter, optional `startHere`. The CLI dispatch, the
+Every operation is one entry in `crates/ops/src/registry.rs`: `section`, summary, input schema,
+`mutates`, `agent`, handler, optional formatter, optional `start_here`. The CLI dispatch, the
 `--help` and `guide` catalogs, and the `ops_*` MCP tools are projections of it — adding an entry is
 the whole change, and a usage string is never written by hand. Whatever an operator needs to know
 about one command belongs in its `summary` or `note`, which reach all three surfaces; it does not
@@ -108,7 +110,7 @@ belong here.
 `section` is which part of the catalog a command is read in, and it is required: `guide` answers
 with a route and a section map; each section has `commandCount` and its expansion command.
 `guide --section` exposes that section's command entries and symptom index; `--all` exposes the full
-catalog. `commands` always contains objects, never names alone. `startHere` is the question a
+catalog. `commands` always contains objects, never names alone. `start_here` is the question a
 command begins to answer, and builds the symptom index only in expanded views.
 
 `agent: false` keeps an operation off MCP. Every agent tool is listed in full in every context the
@@ -118,9 +120,12 @@ Anything that moves the database file, writes credentials or reads a host path i
 
 # Local data
 
-`bun scripts/dev-seed.ts` prints its own launch line and URLs. An empty database is normal, not a
-bug — never write INSERTs by hand; change fixture shape in `scripts/fixtures/site-fixture.ts`.
+An empty database is normal, not a bug — never write INSERTs by hand. The tests' data is the
+committed goldens (`parity/`, `crates/*/tests/*.golden.json`, the bot seeds in
+`parity/bot-goldens/seeds/`), recorded from the TypeScript backend before the cutover under the
+production ffmpeg build (6.1.1, which CI installs). Nothing re-records them: a deliberate behaviour
+change edits its golden in the same commit and names the change in `plans/rust/DECISIONS.md`.
 
 The public site is not in this repository. It is its own service (alexgetman-site) that reads
 `GET /api/public/site` and links to `/media/*` and `/generated/responsive/media-*`, which this
-Studio serves; `apps/backend/tests/publicSite.test.ts` is this side of that contract.
+Studio serves; `crates/public_site/tests/goldens.rs` is this side of that contract.

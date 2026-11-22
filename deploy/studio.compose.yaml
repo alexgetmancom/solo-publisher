@@ -1,6 +1,9 @@
 # One Studio. The host runs this file once per deployment, each from its own
 # runtime directory with its own .env — there is no second copy of it to keep
 # in sync, and nothing in it names a particular Studio.
+# The Stories sidecar runs inside this container: the entrypoint sets
+# STORIES_SIDECAR_URL (http://127.0.0.1:8790) and STORIES_SIDECAR_TOKEN for
+# the Studio and the sidecar itself, so neither belongs in secrets.env.
 name: ${STUDIO:?set STUDIO to this deployment's name}
 
 services:
@@ -8,9 +11,9 @@ services:
     image: ${BACKEND_IMAGE:?set an immutable backend image digest}
     pull_policy: always
     container_name: ${STUDIO:?set STUDIO to this deployment's name}-backend
-    # No `command:` — the image entrypoint starts the server itself (it fixes
-    # bind-mount ownership as root first, then drops to uid 1000). A command
-    # here would land as ignored arguments, not as Bun flags.
+    # No `command:` — the image entrypoint (studio-entrypoint under tini) fixes
+    # bind-mount ownership as root, drops to uid 1000 and starts the Studio and
+    # the Stories sidecar itself.
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -19,7 +22,7 @@ services:
     group_add:
       - "${BOT_API_GID:-101}"
     environment:
-      # One volume: every pipeline path is derived from it (foundation/config.ts).
+      # One volume: every pipeline path is derived from it (foundation::config).
       DATA_DIR: /data
       # Never under DATA_DIR — a backup on the volume it exists to survive is
       # not a backup, and `doctor` fails a deployment that puts it there.
@@ -81,7 +84,9 @@ services:
     mem_limit: 384m
     cpus: ${STUDIO_CPUS:-1.0}
     cpu_shares: 256
-    pids_limit: 96
+    # The Stories sidecar is a second resident process, measured at 21 threads
+    # and 41 MB idle; the Studio itself needs 96.
+    pids_limit: 128
 
 networks:
   agent_default:

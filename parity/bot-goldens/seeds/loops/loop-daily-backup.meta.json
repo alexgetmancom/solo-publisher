@@ -1,0 +1,41 @@
+{
+  "id": "loop-daily-backup",
+  "area": "loops",
+  "channels": ["telegram", "threads_ru"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T00:30:00.000Z",
+      "files": {},
+      "opaqueUploads": true
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "opaqueUploads": true,
+      "reseed": "loop-daily-backup.step-1.db"
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "opaqueUploads": true,
+      "reseed": "loop-daily-backup.step-2.db"
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "opaqueUploads": true
+    },
+    {
+      "at": "2026-08-21T00:59:00.000Z",
+      "files": {},
+      "opaqueUploads": true
+    },
+    {
+      "at": "2026-08-21T01:00:00.000Z",
+      "files": {},
+      "opaqueUploads": true
+    }
+  ]
+}

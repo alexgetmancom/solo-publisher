@@ -1,6 +1,6 @@
 //! Delivery equivalence with TypeScript: every scenario in
-//! `delivery_scenarios.json` runs through the real TypeScript modules
-//! (`scripts/rust/delivery-scenarios.ts`) and through this crate over the
+//! `delivery_scenarios.json` ran through the real TypeScript modules before
+//! the cutover (`delivery_scenarios.golden.json`) and runs through this crate over the
 //! adapters, each on a fresh database under the same clock, with the same
 //! canned platform answers; every step's result, every request and every
 //! table must come out identical.
@@ -145,12 +145,7 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
 
 #[test]
 fn delivery_matches_typescript() {
-    support::compare(
-        "delivery_scenarios.json",
-        "scripts/rust/delivery-scenarios.ts",
-        call,
-        "delivery",
-    );
+    support::compare("delivery_scenarios.json", call, "delivery");
 }
 
 /// The shared spec with these scenarios instead of its own: Rust-only cases

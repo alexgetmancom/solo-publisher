@@ -8,32 +8,22 @@
     "bun": ">=1.3.14"
   },
   "workspaces": [
-    "apps/*",
     "tools/*",
     "sidecars/*"
   ],
-  "overrides": {
-    "esbuild": "0.28.2",
-    "fast-xml-parser": "5.11.0",
-    "js-yaml": "4.3.1",
-    "nanoid": "3.3.18",
-    "postcss": "8.5.26",
-    "svgo": "4.0.2"
-  },
   "scripts": {
     "prepare": "lefthook install",
-    "demo": "bun scripts/dev-seed.ts --reset --simple && bun --env-file=$PWD/.dev-fixture/demo.env run --filter @solo-publisher/backend dev",
-    "typecheck": "tsc -p tsconfig.json --noEmit && bun run --filter @solo-publisher/backend typecheck && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json && tsc -p sidecars/stories/tsconfig.json",
-    "test": "bun test apps/backend/tests deploy sidecars",
-    "test:coverage": "bun test --coverage apps/backend/tests deploy sidecars",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json && tsc -p sidecars/stories/tsconfig.json",
+    "test": "bun test deploy sidecars scripts",
+    "test:coverage": "bun test --coverage deploy sidecars scripts",
+    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked",
+    "build": "cargo build --release --locked -p app -p entrypoint -p ops",
     "check:audit": "bun audit --audit-level=high",
     "check:docker": "bun scripts/check-docker-workspaces.ts",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "knip": "bun tools/knip/node_modules/.bin/knip --config knip.json",
-    "check:layers": "bun scripts/check-layers.ts",
     "deps:check": "taze",
-    "check:backend": "bun run --filter @solo-publisher/backend check",
     "check:language": "bun scripts/enforce-typescript.ts",
     "check:all": "bun scripts/check.ts",
     "check:prepush": "bun scripts/check.ts --parallel",
@@ -44,6 +34,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.10",
+    "@types/bun": "^1.3.14",
     "lefthook": "^2.1.10",
     "taze": "^21.1.0",
     "typescript": "7.0.2"

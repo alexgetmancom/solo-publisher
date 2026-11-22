@@ -1,4 +1,4 @@
-//! The background loops (`apps/backend/src/runtime/workers.ts`), each through
+//! The background loops, each through
 //! one heartbeat factory so `status` sees it. Every loop reaches the database
 //! through the bot that owns it; all of them run on the bot's thread.
 

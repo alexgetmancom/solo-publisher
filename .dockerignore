@@ -11,9 +11,6 @@ coverage
 !*.env.example
 **/*.env
 !**/*.env.example
-apps/backend/data
-apps/backend/bot-api-data
-apps/backend/bot-api-temp
 **/*.db
 **/*.db-shm
 **/*.db-wal

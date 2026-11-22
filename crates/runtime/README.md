@@ -47,8 +47,7 @@ field `probeMediaMetadata` returned and the Story re-encode reads.
 ## Parity
 
 ```
-bun scripts/rust/runtime-fixtures.ts   # records tests/fixtures/runtime.json (deterministic)
-cargo test -p runtime                  # needs ffmpeg/ffprobe on PATH
+cargo test -p runtime   # replays tests/fixtures/runtime.json (recorded from the TypeScript backend before the cutover; nothing re-records them); needs ffmpeg/ffprobe on PATH
 ```
 
 Recorded: Retry-After parsing, `requestJson` results and redacted messages, `formBody`, ffmpeg failure trimming,

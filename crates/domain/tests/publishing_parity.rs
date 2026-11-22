@@ -1,5 +1,5 @@
 //! The pure publishing rules against the TypeScript reference outputs in
-//! `fixtures/publishing.json` (`bun scripts/rust/publishing-fixtures.ts`):
+//! `fixtures/publishing.json`, recorded before the cutover:
 //! schedule and zone math across DST edges, error classes and retry curves,
 //! result normalization, preflight, job payloads, chain cuts and status folds.
 

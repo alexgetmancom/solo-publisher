@@ -1,0 +1,19 @@
+{
+  "id": "intake-photo-large",
+  "area": "intake",
+  "channels": ["telegram", "site_ru", "site_en", "threads_ru", "threads_en", "x", "discord"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "big-photo": "<tmp>/fixtures/photo.jpg"
+      }
+    }
+  ]
+}

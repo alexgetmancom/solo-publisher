@@ -3,26 +3,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-// runtime, ops and entrypoint hold bundles built from TypeScript sources. CI
-// only builds them after this gate runs, so it never saw them; a local image
-// build does, and the gate then fails on generated JavaScript.
-// _trash-rust holds Rust build output and scratch files (git-excluded, disposable).
-const ignoredDirectories = new Set([
-  ".git",
-  "node_modules",
-  "dist",
-  "coverage",
-  "runtime",
-  "ops",
-  "entrypoint",
-  "story-renderer",
-  "_trash-rust",
-]);
+// target and _trash-rust hold Rust build output and scratch files (git-excluded, disposable).
+const ignoredDirectories = new Set([".git", "node_modules", "dist", "coverage", "target", "_trash-rust"]);
 const forbiddenExtensions = new Set([".py", ".pyi", ".js", ".jsx", ".mjs", ".cjs"]);
 // The one file that cannot be TypeScript: it runs on a bare host through
 // `curl … | sh`, before Docker has pulled anything and long before a Bun exists
 // to interpret it. Everything it sets up afterwards is TypeScript.
 const allowedShellSources = new Set(["install.sh"]);
+// The image's two Bun-run shims, kept because callers outside the image name
+// these paths: `bun /app/ops/cli.js` (scripts/ops-prod.ts) and
+// `bun /app/entrypoint/config-check.js` (deploy/deploy-agent.ts). Each only
+// runs a Rust binary.
+const allowedJavaScriptSources = new Set(["crates/ops/image/cli.js", "crates/entrypoint/image/config-check.js"]);
 const shellNames = new Set(["sh", "bash", "zsh"]);
 const violations: string[] = [];
 
@@ -37,7 +29,7 @@ function visit(directory: string): void {
     if (!entry.isFile()) continue;
     const relative = path.relative(root, absolute);
     const extension = path.extname(entry.name);
-    if (allowedShellSources.has(relative)) continue;
+    if (allowedShellSources.has(relative) || allowedJavaScriptSources.has(relative)) continue;
     if (forbiddenExtensions.has(extension)) violations.push(relative);
     const disabledTypecheckDirective = "@ts-" + "nocheck";
     if (extension === ".ts" && fs.readFileSync(absolute, "utf8").includes(disabledTypecheckDirective)) violations.push(relative);

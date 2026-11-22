@@ -10,8 +10,13 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
   - package-ecosystem: "docker"
-    directory: "/apps/backend"
+    directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

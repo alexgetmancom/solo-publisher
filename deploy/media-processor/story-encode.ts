@@ -1,12 +1,14 @@
-/** Canonical vertical-media recipes shared by the local and remote executors. */
+/** The remote executor's vertical-media recipes. The Studio's local executor
+ * (crates/delivery/src/story_media.rs) builds the same graph with software
+ * encoders. */
 
 // AAC packets can extend the muxed duration a few milliseconds past the
 // requested cutoff. Keep enough margin for the finished MP4 itself to remain
 // at or below the 59-second Story delivery contract.
-export const STORY_MAX_DURATION_SECONDS = 58.9;
-export const VERTICAL_ASPECT_RATIO = 9 / 16;
+const STORY_MAX_DURATION_SECONDS = 58.9;
+const VERTICAL_ASPECT_RATIO = 9 / 16;
 /** Within five percent of 9:16, preserve a plain contain render. */
-export const VERTICAL_ASPECT_TOLERANCE = 0.05;
+const VERTICAL_ASPECT_TOLERANCE = 0.05;
 
 const VERTICAL_SCALE_FILTER =
   "scale=1080:1920:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black";
@@ -103,26 +105,6 @@ function outputLeg(
     "+faststart",
     ...(duration == null ? [] : ["-t", String(duration)]),
     output,
-  ];
-}
-
-/** The Story pair as the local executor makes it. Same graph, same two outputs
- * and same ladders as the remote one; software encoding is the whole delta. */
-export function localStoryFfmpegArgs(
-  input: string,
-  standardOutput: string,
-  telegramOutput: string,
-  telegramKbps: number,
-  blur: boolean,
-): string[] {
-  return [
-    "-y",
-    "-i",
-    input,
-    "-filter_complex",
-    verticalVideoFilter(STORY_MAX_DURATION_SECONDS, blur, 2, false),
-    ...outputLeg("libx264", "[out0]", STANDARD_RATE, "50", STORY_MAX_DURATION_SECONDS, standardOutput),
-    ...outputLeg("libx264", "[out1]", { kbps: telegramKbps, maxKbps: telegramKbps }, "50", STORY_MAX_DURATION_SECONDS, telegramOutput),
   ];
 }
 

@@ -1,6 +1,6 @@
 # story_render — Story cards drawn and the worker that draws them
 
-Port of `apps/backend/src/story-cards/svg.ts`, `renderer-process.ts` and `worker.ts`. The card copy (headline, emoji,
+Port of the TypeScript `story-cards/svg.ts`, `renderer-process.ts` and `worker.ts`. The card copy (headline, emoji,
 line breaks, bold lines) is `domain::story_cards::story_card_copy`; the store that queues cards is
 `domain::story_cards::StoryCardStore`.
 
@@ -36,5 +36,7 @@ line breaks, bold lines) is `domain::story_cards::story_card_copy`; the store th
   exactly; five cards' pixels against the TypeScript renders in `tests/fixtures/*.jpg` (halved, see the test for the
   measured limits). Rust renders land in `_trash-rust/tmp/story-render/`.
 - `tests/worker_scenarios.rs`: the worker against the TypeScript worker on two fresh databases
-  (`worker_scenarios.json`, run through `scripts/rust/story-worker-scenarios.ts` with the real sharp renderer).
-- Regenerate the fixtures with `bun scripts/rust/story-render-fixtures.ts` (needs sharp in `apps/backend`).
+  (`worker_scenarios.json`; what the TypeScript worker and the real sharp renderer did is
+  `worker_scenarios.golden.json`).
+- The fixtures and goldens were recorded from the TypeScript backend before the cutover; nothing re-records them. The assets are `assets/story-card/`, `/app/assets/story-card`
+  in the image (`STORY_CARD_ASSETS_DIR`'s default).

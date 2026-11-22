@@ -1,12 +1,11 @@
-//! What every SQL-equivalence test shares with its TypeScript runner
-//! (`scripts/rust/scenario-support.ts`): how arguments name earlier results,
-//! how a database is dumped, and how two runs are compared.
+//! What every SQL-equivalence test shares with the TypeScript run recorded in
+//! its golden: how arguments name earlier results, how a database is dumped,
+//! and how two runs are compared.
 
 #![allow(dead_code)]
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use db::rusqlite::Connection;
 use domain::application::ports::Clock;
@@ -101,28 +100,12 @@ pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     out
 }
 
-/// Runs a TypeScript scenario runner over a spec file and returns the JSON it
-/// writes to a file: a large stdout write is cut short on a CI pipe.
-pub fn typescript(script: &str, spec: &Path) -> Value {
-    let tmp = repo_root().join("_trash-rust/tmp");
-    std::fs::create_dir_all(&tmp).unwrap();
-    let out = tmp.join(spec.file_name().unwrap()).with_extension("typescript.json");
-    // A file left by an earlier run must not stand in for this one.
-    let _ = std::fs::remove_file(&out);
-    let output = Command::new("bun")
-        .arg(script)
-        .arg(spec)
-        .arg(&out)
-        .current_dir(repo_root())
-        .env("TMPDIR", &tmp)
-        .output()
-        .expect("bun must be on PATH");
-    assert!(
-        output.status.success(),
-        "bun failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_str(&std::fs::read_to_string(&out).expect("runner output")).unwrap()
+/// What the TypeScript backend recorded for a spec file before the cutover:
+/// `<spec>.golden.json` beside it, with `<root>` standing for this checkout.
+pub fn golden(spec: &Path) -> Value {
+    let path = spec.with_extension("golden.json");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    serde_json::from_str(&text.replace("<root>", &repo_root().display().to_string())).unwrap()
 }
 
 /// Every step result and every table of every scenario, TypeScript against

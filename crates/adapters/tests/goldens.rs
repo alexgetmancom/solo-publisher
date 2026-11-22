@@ -1,5 +1,5 @@
-//! Request parity with the TypeScript adapters, against what
-//! `bun scripts/rust/adapter-goldens.ts` recorded in `parity/adapter-goldens/`.
+//! Request parity with the TypeScript adapters, against what they recorded
+//! in `parity/adapter-goldens/` before the cutover.
 //! Each case replays its canned responses over a recording transport and
 //! asserts the same requests went out — order, method, URL, headers, body
 //! bytes (multipart as its parts) — and the same result or error class.

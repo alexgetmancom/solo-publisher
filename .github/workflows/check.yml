@@ -94,7 +94,10 @@ jobs:
                 backend_image=true
                 deployment=true
                 ;;
-              apps/backend/src/*|apps/backend/assets/*|apps/backend/drizzle/*|apps/backend/tsconfig.json|apps/backend/Dockerfile.release|apps/backend/Dockerfile.runtime-base|bunfig.toml|scripts/image-smoke.ts|scripts/fixtures/*|tsconfig.base.json|tsconfig.json)
+              # Tests and crate READMEs are not in the image.
+              crates/*/tests/* | crates/*/README.md)
+                ;;
+              Cargo.toml | Cargo.lock | rust-toolchain.toml | crates/* | sidecars/stories/src/* | Dockerfile | Dockerfile.dockerignore | scripts/image-smoke.ts)
                 backend_image=true
                 deployment=true
                 ;;
@@ -185,8 +188,8 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'sidecars/stories/package.json') }}
-      - name: TypeScript-only language gate
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
+      - name: Language gate
         run: bun run check:language
       - name: Typecheck
         run: bun run typecheck
@@ -201,11 +204,9 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
       - name: Dead-code report
         run: bun run knip
-      - name: Layer boundaries
-        run: bun run check:layers
       - name: Dockerfile workspace manifests
         run: bun run check:docker
       - name: Self-host stack
@@ -247,7 +248,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
       - name: Install production ffmpeg binaries
         env:
           FFMPEG_IMAGE: mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132
@@ -260,10 +261,8 @@ jobs:
       - name: Tests with coverage threshold
         run: bun run test:coverage
 
-  # The Rust Studio (branch `rust` until the cutover). Nothing waits on these
-  # two jobs and neither holds a secret or a write permission: they report on
-  # the Rust workspace and its image, and cannot start, block or mark a
-  # deployment.
+  # The Studio's workspace: a deployment waits on it. The goldens it replays
+  # were recorded under the production ffmpeg build, so it installs that one.
   rust:
     name: Rust workspace
     runs-on: ubuntu-latest
@@ -273,12 +272,6 @@ jobs:
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      # The parity tests run the TypeScript references (scripts/rust/*.ts)
-      # with bun against the installed workspace.
-      - uses: ./.github/actions/setup-bun
-        with:
-          bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'sidecars/stories/package.json') }}
       - name: Install production ffmpeg binaries
         env:
           FFMPEG_IMAGE: mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132
@@ -316,116 +309,34 @@ jobs:
           mkdir -p _trash-rust/tmp
           cargo test --workspace --locked
 
-  rust-image:
-    name: Build Rust image (not pushed)
+  # On main the image is built, pushed and inspected per architecture by
+  # backend-image; everywhere else it is built once without pushing, so a
+  # Dockerfile change is caught before it reaches main.
+  image-check:
+    name: Build backend image (not pushed)
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
-      - name: Build Dockerfile.rust
+      - name: Build Dockerfile
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
-          file: Dockerfile.rust
+          file: Dockerfile
           build-args: |
             GIT_REVISION=${{ github.sha }}
           push: false
           load: true
-          tags: solo-publisher-rust:ci
-      - name: Image contents
-        run: |
-          set -euo pipefail
-          docker run --rm --entrypoint sh solo-publisher-rust:ci -c '
-            set -e
-            test -x /app/bin/solo-publisher
-            test -x /app/bin/studio-entrypoint
-            test -f /app/sidecar/main.js && test -f /app/sidecar/login.js
-            ls /app/sidecar/*.wasm
-            test -f /app/apps/backend/assets/story-card/Manrope-Variable.ttf
-            ffmpeg -hide_banner -version | head -n 1
-            ffprobe -hide_banner -version | head -n 1
-            bun --version
-            setpriv --version
-            id bun'
-      # No bot token: the Studio starts, then refuses. Reached through the
-      # entrypoint, that refusal proves the ownership fix, the setpriv drop and
-      # the probe ran first, as they will on a real volume.
-      - name: Entrypoint and privilege drop
-        run: |
-          set -euo pipefail
-          refusal='Telegram bot token is not configured'
-          studio=$(docker run --rm --entrypoint /app/bin/solo-publisher -e DATA_DIR=/tmp/data solo-publisher-rust:ci 2>&1 || true)
-          echo "$studio"
-          grep -q "$refusal" <<<"$studio"
-          started=$(docker run --rm -e DATA_DIR=/data solo-publisher-rust:ci 2>&1 || true)
-          echo "$started"
-          grep -q 'fixed data directory ownership before dropping privileges' <<<"$started"
-          grep -q "$refusal" <<<"$started"
-          if grep -qE 'cannot drop privileges|remain unwritable' <<<"$started"; then exit 1; fi
-
-  build:
-    name: Build backend artifacts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/setup-bun
+          tags: solo-publisher:ci
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'sidecars/stories/package.json') }}
-      - name: Build checked backend
-        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+      - name: Image smoke test
         env:
-          CI: "true"
-        run: |
-          bun build apps/backend/src/runtime/server.ts --outdir runtime --target bun
-          bun build apps/backend/src/cli.ts --outdir ops --target bun
-          bun build apps/backend/src/runtime/docker-entrypoint.ts --outdir entrypoint --target bun
-          bun build apps/backend/src/runtime/config-check.ts --outdir entrypoint --target bun
-          test -f entrypoint/docker-entrypoint.js
-          test -f entrypoint/config-check.js
-          grep -q '"/app/entrypoint/docker-entrypoint.js"' apps/backend/Dockerfile
-          grep -q '"/app/entrypoint/docker-entrypoint.js"' apps/backend/Dockerfile.release
-          bun build apps/backend/src/story-cards/renderer-process.ts --outdir story-renderer --target bun
-          test -f story-renderer/renderer-process.js
-          bun build scripts/image-smoke.ts --outdir smoke --target bun
-          test -f smoke/image-smoke.js
-      - name: Build immutable production artifacts
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          CI: "true"
-          DATA_DIR: /data
-        run: |
-          bun build apps/backend/src/runtime/server.ts --outdir runtime --target bun --splitting --minify --sourcemap=external
-          bun build apps/backend/src/cli.ts --outdir ops --target bun --minify --sourcemap=external
-          bun build apps/backend/src/runtime/docker-entrypoint.ts --outdir entrypoint --target bun --minify --sourcemap=external
-          bun build apps/backend/src/runtime/config-check.ts --outdir entrypoint --target bun --minify --sourcemap=external
-          test -f entrypoint/docker-entrypoint.js
-          test -f entrypoint/config-check.js
-          bun entrypoint/config-check.js
-          grep -q '"/app/entrypoint/docker-entrypoint.js"' apps/backend/Dockerfile
-          grep -q '"/app/entrypoint/docker-entrypoint.js"' apps/backend/Dockerfile.release
-          bun build apps/backend/src/story-cards/renderer-process.ts --outdir story-renderer --target bun --minify --sourcemap=external
-          test -f story-renderer/renderer-process.js
-          bun build scripts/image-smoke.ts --outdir smoke --target bun
-          test -f smoke/image-smoke.js
-          test -n "$(find runtime -type f -print -quit)"
-          test -n "$(find ops -type f -print -quit)"
-      - name: Upload immutable backend artifacts
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: backend-build-${{ github.sha }}
-          path: |
-            runtime
-            ops
-            entrypoint
-            story-renderer
-            smoke
-            apps/backend/drizzle
-            apps/backend/assets
-          if-no-files-found: error
-          retention-days: 1
+          IMAGE: solo-publisher:ci
+        run: bun scripts/image-smoke.ts
 
   dependency-audit:
     name: Dependency audit
@@ -437,7 +348,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
       - name: Dependency audit
         run: bun run check:audit
 
@@ -507,12 +418,12 @@ jobs:
 
   backend-image:
     # One build per architecture on a runner of that architecture. QEMU would
-    # let one runner produce both, but emulating the Bun install and sharp turns
-    # a short build into a long one for nothing: arm64 runners are free for
+    # let one runner produce both, but emulating the Rust build turns a short
+    # build into a long one for nothing: arm64 runners are free for
     # public repositories. Each leg pushes by digest — sharing a tag would make
     # the two legs overwrite each other — and the manifest job joins them.
     name: Build backend image (${{ matrix.arch }})
-    needs: [scope, build, backend-image-reuse]
+    needs: [scope, backend-image-reuse]
     if: >-
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       needs.scope.outputs.deployment_required == 'true' &&
@@ -539,64 +450,30 @@ jobs:
       - name: Checkout source for backend image and smoke test
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
-      - name: Download checked backend artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: backend-build-${{ github.sha }}
-          path: .
-      - name: Resolve backend runtime base
-        id: runtime_base
-        env:
-          BASE_IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher:runtime-${{ matrix.arch }}-${{ hashFiles('bun.lock', 'apps/backend/package.json', 'tools/knip/package.json', 'tools/layer-checker/package.json', 'apps/backend/Dockerfile.runtime-base') }}
-        run: |
-          echo "image=$BASE_IMAGE" >> "$GITHUB_OUTPUT"
-          if docker buildx imagetools inspect "$BASE_IMAGE" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Reusing backend runtime base $BASE_IMAGE"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Building backend runtime base $BASE_IMAGE"
-          fi
-      - name: Build and publish backend runtime base
-        if: steps.runtime_base.outputs.exists != 'true'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          file: apps/backend/Dockerfile.runtime-base
-          push: true
-          tags: ${{ steps.runtime_base.outputs.image }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/solo-publisher:buildcache-runtime-${{ matrix.arch }}
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/solo-publisher:buildcache-runtime-${{ matrix.arch }},mode=max
       - name: Build and publish backend image
         id: build_image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
-          file: apps/backend/Dockerfile.release
-          target: app
+          file: Dockerfile
           build-args: |
-            RUNTIME_BASE_IMAGE=${{ steps.runtime_base.outputs.image }}
             GIT_REVISION=${{ github.sha }}
           # Pushed by digest with no tag: the two architectures are joined into
           # one tag by the manifest job. `latest` is moved by the deploy job,
           # because the reuse check above reads it and it must keep meaning
           # "the image production is running".
           outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/solo-publisher,push-by-digest=true,name-canonical=true,push=true
-          # No build cache here on purpose: this stage is COPY of per-commit
-          # artifacts onto the runtime base, so nothing is ever reusable and the
-          # export was writing ~70s of cache no build could hit.
       - name: Set up Bun for image smoke test
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.3.14
       # Runs on each architecture's own runner against that architecture's
-      # image, so a self-hosted arm64 install is covered by the same walk of the
-      # SSR routes, the ops CLI and ffmpeg that amd64 gets.
+      # image, so a self-hosted arm64 install gets the same inspection of the
+      # binaries, the entrypoint, the config check and the ops CLI as amd64.
       - name: Image smoke test
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher@${{ steps.build_image.outputs.digest }}
-          DRIZZLE_MIGRATIONS_DIR: apps/backend/drizzle
-        run: bun smoke/image-smoke.js
+        run: bun scripts/image-smoke.ts
       - name: Record digest
         run: |
           set -euo pipefail
@@ -699,6 +576,7 @@ jobs:
         quality-static,
         quality-analysis,
         quality-tests,
+        rust,
         dependency-audit,
         backend-manifest,
         media-processor-image,
@@ -710,6 +588,7 @@ jobs:
       needs.quality-static.result == 'success' &&
       needs.quality-analysis.result == 'success' &&
       needs.quality-tests.result == 'success' &&
+      needs.rust.result == 'success' &&
       (needs.dependency-audit.result == 'success' || needs.dependency-audit.result == 'skipped') &&
       needs.backend-manifest.result == 'success' &&
       needs.media-processor-image.result == 'success'
@@ -783,6 +662,7 @@ jobs:
         quality-static,
         quality-analysis,
         quality-tests,
+        rust,
         dependency-audit,
         deployment-status-pending,
       ]
@@ -793,6 +673,7 @@ jobs:
         needs.quality-static.result != 'success' ||
         needs.quality-analysis.result != 'success' ||
         needs.quality-tests.result != 'success' ||
+        needs.rust.result != 'success' ||
         (needs.dependency-audit.result != 'success' && needs.dependency-audit.result != 'skipped')
       )
     permissions:
@@ -821,6 +702,7 @@ jobs:
         quality-static,
         quality-analysis,
         quality-tests,
+        rust,
         dependency-audit,
         backend-manifest,
         media-processor-image,
@@ -833,6 +715,7 @@ jobs:
       needs.quality-static.result == 'success' &&
       needs.quality-analysis.result == 'success' &&
       needs.quality-tests.result == 'success' &&
+      needs.rust.result == 'success' &&
       (needs.dependency-audit.result == 'success' || needs.dependency-audit.result == 'skipped')
     permissions:
       statuses: write

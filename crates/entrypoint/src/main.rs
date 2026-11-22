@@ -1,5 +1,5 @@
-//! `studio-entrypoint`: the container's process under `tini -g`
-//! (`apps/backend/src/runtime/docker-entrypoint.ts`, plus the Stories sidecar).
+//! `studio-entrypoint`: the container's process under `tini -g`, which runs
+//! the Studio and the Stories sidecar.
 //!
 //! As root it hands the data directories to the runtime user — a bind mount
 //! Docker created is owned by root, and the first write to it would fail days
@@ -51,6 +51,13 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    // `bun /app/entrypoint/config-check.js` (image/config-check.js): the
+    // deploy agent's check of a new image's configuration before it replaces
+    // the running container. Nothing else runs.
+    if std::env::args().nth(1).as_deref() == Some("--check-config") {
+        println!("{}", json!({"ok": true}));
+        return ExitCode::SUCCESS;
+    }
     configure_logging(config.log_level);
     let directories = required_data_directories(&config);
     match status_ids("Uid:") {

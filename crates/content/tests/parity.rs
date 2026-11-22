@@ -1,5 +1,5 @@
-//! Parity with the TypeScript content modules, against outputs recorded by
-//! `bun scripts/rust/content-fixtures.ts`.
+//! Parity with the TypeScript content modules, against outputs they recorded
+//! before the cutover (`tests/fixtures/`).
 
 use std::path::Path;
 

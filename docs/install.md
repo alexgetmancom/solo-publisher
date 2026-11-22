@@ -20,8 +20,9 @@ existing `.env` is kept as it is.
 A Studio comes up operable by an agent, not only by a person: one of the four
 generated secrets is `MCP_STUDIO_TOKEN`, so `https://your-domain/api/mcp` answers
 as soon as the stack is healthy. The installer prints the two lines that install
-the [`studio` plugin](../plugin/README.md) against it. Connect Telegram later, or
-never — a Studio with no bot publishes and reports exactly the same.
+the [`studio` plugin](../plugin/README.md) against it. The Studio itself does not
+start without its Telegram bot: put `CONTROLLER_BOT_TOKEN` (from @BotFather) and
+`CONTROLLER_ADMIN_IDS` in `.env` before the first run.
 
 Caddy obtains and renews the TLS certificate itself, so there is no certbot and
 no renewal timer to set up. The Command Center link the installer prints signs
@@ -111,18 +112,21 @@ in `.env` when you want the verified installation to stay fixed. Update with
 
 ## Running from source
 
-Requirements: [Bun 1.3.14](https://bun.sh/) and the native build prerequisites
-required by `sharp`. Copy the secret template:
+Requirements: the Rust toolchain `rust-toolchain.toml` pins, ffmpeg, and
+[Bun 1.3.14](https://bun.sh/) only for the Telegram Stories sidecar
+(`sidecars/stories`). Copy the secret template, build, and start the Studio with
+it in the environment:
 
 ```bash
-cp apps/backend/secrets.env.example apps/backend/secrets.env
+cp deploy/secrets.env.example secrets.env
+cargo build --release -p app -p ops
+set -a; . ./secrets.env; set +a; target/release/solo-publisher
 ```
 
 What a Studio publishes as, whether it serves the public site, its time zone and
 video timing live in its own database, read and written with
-`bun run --filter @solo-publisher/backend ops -- studio-profile`. Credentials
-stay in the ignored `apps/backend/secrets.env`; connected destinations live in
-the channel registry. Text posting, video posting and analytics always run.
+`target/release/ops studio-profile`. Credentials stay in the ignored
+`secrets.env`; connected destinations live in the channel registry. Text posting, video posting and analytics always run.
 
 The private Telegram bot and MCP endpoint operate the same Studio services.
 Posts created through either interface land in the same drafts, schedules,

@@ -11,10 +11,7 @@
       "!entrypoint",
       "!coverage",
       "!**/coverage",
-      "!apps/backend/data",
-      "!apps/backend/bot-api-data",
-      "!apps/backend/bot-api-temp",
-      "!apps/backend/drizzle"
+      "!crates/db/migrations"
     ]
   },
   "vcs": {

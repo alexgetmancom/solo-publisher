@@ -1,6 +1,6 @@
 # ops — the operations registry, the `ops` CLI and the Studio MCP server (Rust)
 
-Port of `apps/backend/src/operations/*`, `cli.ts` and `interfaces/mcp.ts`. One table of operations
+Port of the TypeScript `operations/*`, `cli.ts` and `interfaces/mcp.ts`. One table of operations
 (`registry.rs`); the CLI dispatch, `--help`, the `guide` catalogs and the `ops_*` MCP tools are projections of it.
 
 | Module | TypeScript |
@@ -32,13 +32,12 @@ TypeScript key order; `run_operation` prints integral floats as JavaScript does 
 ## Parity
 
 ```
-bun scripts/rust/ops-goldens.ts                 # parity/ops/{catalog,http}.json + every scenario
-bun scripts/rust/ops-goldens.ts scenarios AREA  # parity/ops/scenarios/AREA.json only
 cargo test -p ops                               # catalog.rs (catalog, schemas, tools/list, the binary as a process)
                                                 # scenarios.rs (OPS_SCENARIOS=area,… limits it)
 cargo test -p http_edge --test mcp              # the transport through the router (oneshot)
 ```
 
-`scenarios.rs` replays `tests/scenarios/<area>.json` (spec format: `scripts/rust/ops-scenarios.ts`) on a fresh
+The goldens in `parity/ops/` were recorded from the TypeScript backend before the cutover; nothing re-records them.
+`scenarios.rs` replays `tests/scenarios/<area>.json` on a fresh
 database per case under a fixed clock, each step as its own process, with canned HTTP; compared: every output (key
 order included), request, table and file.

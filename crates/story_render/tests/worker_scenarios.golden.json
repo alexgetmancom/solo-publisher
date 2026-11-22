@@ -1,0 +1,699 @@
+{
+  "scenarios": [
+    {
+      "name": "renders both cards and replans the scheduled Story post",
+      "results": [
+        {
+          "call": "posts.create",
+          "result": 1
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "queued",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "queued",
+              "localPath": null
+            }
+          ]
+        },
+        {
+          "call": "posts.setStoryPublishMode",
+          "result": null
+        },
+        {
+          "call": "posts.schedule",
+          "result": 1
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "published": 1
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "ready",
+              "localPath": "<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg"
+            },
+            {
+              "locale": "ru",
+              "status": "queued",
+              "localPath": null
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "published": 1
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "ready",
+              "localPath": "<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg"
+            },
+            {
+              "locale": "ru",
+              "status": "ready",
+              "localPath": "<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg"
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 0,
+            "state": {
+              "claimed": 0
+            },
+            "error": null
+          }
+        }
+      ],
+      "files": ["draft-1-en-6a08453b826fd7dc.jpg", "draft-1-ru-2c3c6f3cd52107cf.jpg"],
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "channel_connections": [
+          "1 text:'telegram' text:'telegram' text:'ru' text:'native' null:NULL text:'telegram' text:'telegram' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 text:'telegram_stories' text:'telegram_stories' text:'ru' text:'native' null:NULL text:'telegram_stories' text:'telegram_stories' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "3 text:'threads_en' text:'threads_en' text:'en' text:'native' null:NULL text:'threads_en' text:'threads_en' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "draft_story_cards": [
+          "1 integer:1 text:'ru' text:'2c3c6f3cd52107cf6f4090dc48f775fd30785bcc5d1326a2dfa5af6071698693' text:'ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' text:'⚡' text:'ready' text:'<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg' integer:0 null:NULL null:NULL null:NULL null:NULL text:'strata-v3' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:01.000Z'",
+          "2 integer:1 text:'en' text:'6a08453b826fd7dc03b08ac4cfa8fed89251e15cea443bb2e3cc10165791bf9e' text:'ChatGPT reached approximately one billion weekly active users.' text:'⚡️' text:'ready' text:'<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg' integer:0 null:NULL null:NULL null:NULL null:NULL text:'strata-v3' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:01.000Z'"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'scheduled' text:'{\"telegram\":true,\"site_ru\":false,\"site_en\":false,\"threads_ru\":false,\"threads_en\":false,\"x\":false,\"discord\":false,\"telegram_stories\":true,\"instagram_stories_ru\":false,\"instagram_stories\":false}' text:'2026-03-01T15:00:00.000Z' text:'2026-03-01T16:00:00.000Z' text:'scheduled' integer:1 text:'all' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:01.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' null:NULL text:'⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' text:'[]' null:NULL text:'[{\"type\":\"IMAGE\",\"local_path\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg\",\"localPath\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg\",\"story_local_path\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg\",\"storyLocalPath\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg\",\"role\":\"text_story_card\"}]' text:'[]' text:'chatgpt-достиг-примерно-миллиарда-еженедельно-активных-пользователей' integer:0 text:'2026-03-01T15:00:00.000Z' null:NULL text:'2026-03-01T10:00:01.000Z' null:NULL null:NULL",
+          "2 integer:1 text:'en' text:'⚡️ ChatGPT reached approximately one billion weekly active users.' null:NULL text:'⚡️ ChatGPT reached approximately one billion weekly active users.' null:NULL null:NULL text:'[{\"type\":\"IMAGE\",\"local_path\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg\",\"localPath\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg\",\"story_local_path\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg\",\"storyLocalPath\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg\",\"role\":\"text_story_card\"}]' text:'[]' text:'chatgpt-reached-approximately-one-billion-weekly-active-users' integer:0 text:'2026-03-01T16:00:00.000Z' null:NULL text:'2026-03-01T10:00:01.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 text:'draft:1' text:'content.draft.created' text:'info' null:NULL text:'Draft #1 created' text:'{\"owner_id\":42,\"media_count\":0}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 text:'post:1' text:'publishing.plan.created' text:'info' null:NULL text:'Publication plan created for draft #1' text:'{\"draft_id\":1,\"mode\":\"scheduled\",\"ru_at\":\"2026-03-01T15:00:00.000Z\",\"en_at\":\"2026-03-01T16:00:00.000Z\",\"targets\":[\"telegram\"]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "3 integer:3 text:'post:1' text:'publishing.plan.created' text:'info' null:NULL text:'Publication plan created for draft #1' text:'{\"draft_id\":1,\"mode\":\"scheduled\",\"ru_at\":\"2026-03-01T15:00:00.000Z\",\"en_at\":\"2026-03-01T16:00:00.000Z\",\"targets\":[\"telegram\",\"telegram_stories\"]}' text:'2026-03-01T10:00:01.000Z' null:NULL"
+        ],
+        "publish_jobs": [
+          "2 integer:2 text:'post:1' text:'telegram' text:'queued' null:NULL integer:0 text:'2026-03-01T15:00:00.000Z' text:'{\"locale\":\"ru\",\"title\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"text\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"media\":[],\"entities\":[],\"slug\":\"chatgpt-достиг-примерно-миллиарда-еженедельно-активных-пользователей\",\"postId\":1,\"draftId\":1,\"thread\":[]}' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T10:00:01.000Z' text:'2026-03-01T10:00:01.000Z'",
+          "3 integer:3 text:'post:1' text:'telegram_stories' text:'queued' null:NULL integer:0 text:'2026-03-01T15:00:00.000Z' text:'{\"locale\":\"ru\",\"title\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"text\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"media\":[{\"type\":\"IMAGE\",\"localPath\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg\",\"storyLocalPath\":\"<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg\"}],\"entities\":[],\"slug\":\"chatgpt-достиг-примерно-миллиарда-еженедельно-активных-пользователей\",\"postId\":1,\"draftId\":1,\"thread\":[]}' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T10:00:01.000Z' text:'2026-03-01T10:00:01.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:1",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:3",
+          "5 text:'publish_jobs' integer:3",
+          "6 text:'site_jobs' integer:0",
+          "7 text:'video_drafts' integer:0",
+          "8 text:'studio_notification_jobs' integer:2"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_notification_jobs": [
+          "1 integer:1 integer:42 text:'post:1' text:'post.ru' text:'2026-03-01T14:55:00.000Z' text:'queued' text:'{\"title\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"targets\":[\"telegram\",\"telegram_stories\"],\"publish_at\":\"2026-03-01T15:00:00.000Z\",\"minutes\":5}' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:01.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'Europe/Moscow' text:'MSK' integer:0 integer:15 integer:24 text:'{\"ru\":\"Страта\",\"en\":\"Strata\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'2026-03-01T10:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ]
+      }
+    },
+    {
+      "name": "a failing render backs off, then fails and replans without the Story",
+      "results": [
+        {
+          "call": "posts.create",
+          "result": 1
+        },
+        {
+          "call": "posts.setStoryPublishMode",
+          "result": null
+        },
+        {
+          "call": "posts.schedule",
+          "result": 1
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "failed": 1
+            },
+            "error": "story_card_renderer_failed"
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "failed": 1
+            },
+            "error": "story_card_renderer_failed"
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 0,
+            "state": {
+              "claimed": 0
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "queued",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "queued",
+              "localPath": null
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 0,
+            "state": {
+              "claimed": 0
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "failed": 1
+            },
+            "error": "story_card_renderer_failed"
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "failed": 1
+            },
+            "error": "story_card_renderer_failed"
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 0,
+            "state": {
+              "claimed": 0
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "failed": 1
+            },
+            "error": "story_card_renderer_failed"
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "failed",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "queued",
+              "localPath": null
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "failed": 1
+            },
+            "error": "story_card_renderer_failed"
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 0,
+            "state": {
+              "claimed": 0
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "failed",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "failed",
+              "localPath": null
+            }
+          ]
+        }
+      ],
+      "files": [],
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "channel_connections": [
+          "1 text:'telegram' text:'telegram' text:'ru' text:'native' null:NULL text:'telegram' text:'telegram' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 text:'telegram_stories' text:'telegram_stories' text:'ru' text:'native' null:NULL text:'telegram_stories' text:'telegram_stories' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "3 text:'threads_en' text:'threads_en' text:'en' text:'native' null:NULL text:'threads_en' text:'threads_en' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "draft_story_cards": [
+          "1 integer:1 text:'ru' text:'2c3c6f3cd52107cf6f4090dc48f775fd30785bcc5d1326a2dfa5af6071698693' text:'ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' text:'⚡' text:'failed' null:NULL integer:3 null:NULL null:NULL null:NULL text:'story_card_renderer_failed' text:'strata-v3' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:15.000Z'",
+          "2 integer:1 text:'en' text:'6a08453b826fd7dc03b08ac4cfa8fed89251e15cea443bb2e3cc10165791bf9e' text:'ChatGPT reached approximately one billion weekly active users.' text:'⚡️' text:'failed' null:NULL integer:3 null:NULL null:NULL null:NULL text:'story_card_renderer_failed' text:'strata-v3' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:15.000Z'"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'scheduled' text:'{\"telegram\":true,\"site_ru\":false,\"site_en\":false,\"threads_ru\":false,\"threads_en\":false,\"x\":false,\"discord\":false,\"telegram_stories\":true,\"instagram_stories_ru\":false,\"instagram_stories\":false}' text:'2026-03-01T15:00:00.000Z' text:'2026-03-01T16:00:00.000Z' text:'scheduled' integer:1 text:'all' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:15.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' null:NULL text:'⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' text:'[]' null:NULL text:'[]' text:'[]' text:'chatgpt-достиг-примерно-миллиарда-еженедельно-активных-пользователей' integer:0 text:'2026-03-01T15:00:00.000Z' null:NULL text:'2026-03-01T10:00:15.000Z' null:NULL null:NULL",
+          "2 integer:1 text:'en' text:'⚡️ ChatGPT reached approximately one billion weekly active users.' null:NULL text:'⚡️ ChatGPT reached approximately one billion weekly active users.' null:NULL null:NULL text:'[]' text:'[]' text:'chatgpt-reached-approximately-one-billion-weekly-active-users' integer:0 text:'2026-03-01T16:00:00.000Z' null:NULL text:'2026-03-01T10:00:15.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 text:'draft:1' text:'content.draft.created' text:'info' null:NULL text:'Draft #1 created' text:'{\"owner_id\":42,\"media_count\":0}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 text:'post:1' text:'publishing.plan.created' text:'info' null:NULL text:'Publication plan created for draft #1' text:'{\"draft_id\":1,\"mode\":\"scheduled\",\"ru_at\":\"2026-03-01T15:00:00.000Z\",\"en_at\":\"2026-03-01T16:00:00.000Z\",\"targets\":[\"telegram\"]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "3 integer:3 text:'post:1' text:'publishing.plan.created' text:'info' null:NULL text:'Publication plan created for draft #1' text:'{\"draft_id\":1,\"mode\":\"scheduled\",\"ru_at\":\"2026-03-01T15:00:00.000Z\",\"en_at\":\"2026-03-01T16:00:00.000Z\",\"targets\":[\"telegram\"]}' text:'2026-03-01T10:00:15.000Z' null:NULL",
+          "4 integer:4 text:'draft:1' text:'studio.notification.story-cards.failed' text:'error' null:NULL text:'Story cards failed for draft #1; Story delivery was skipped' text:'{\"draft_id\":1}' text:'2026-03-01T10:00:15.000Z' null:NULL",
+          "5 integer:5 text:'post:1' text:'publishing.plan.created' text:'info' null:NULL text:'Publication plan created for draft #1' text:'{\"draft_id\":1,\"mode\":\"scheduled\",\"ru_at\":\"2026-03-01T15:00:00.000Z\",\"en_at\":\"2026-03-01T16:00:00.000Z\",\"targets\":[\"telegram\"]}' text:'2026-03-01T10:00:15.000Z' null:NULL"
+        ],
+        "publish_jobs": [
+          "3 integer:3 text:'post:1' text:'telegram' text:'queued' null:NULL integer:0 text:'2026-03-01T15:00:00.000Z' text:'{\"locale\":\"ru\",\"title\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"text\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"media\":[],\"entities\":[],\"slug\":\"chatgpt-достиг-примерно-миллиарда-еженедельно-активных-пользователей\",\"postId\":1,\"draftId\":1,\"thread\":[]}' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T10:00:15.000Z' text:'2026-03-01T10:00:15.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:1",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:5",
+          "5 text:'publish_jobs' integer:3",
+          "6 text:'site_jobs' integer:0",
+          "7 text:'video_drafts' integer:0",
+          "8 text:'studio_notification_jobs' integer:3"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_notification_jobs": [
+          "1 integer:1 integer:42 text:'post:1' text:'post.ru' text:'2026-03-01T14:55:00.000Z' text:'queued' text:'{\"title\":\"⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.\",\"targets\":[\"telegram\",\"telegram_stories\"],\"publish_at\":\"2026-03-01T15:00:00.000Z\",\"minutes\":5}' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:15.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'Europe/Moscow' text:'MSK' integer:0 integer:15 integer:24 text:'{\"ru\":\"Страта\",\"en\":\"Strata\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'2026-03-01T10:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ]
+      }
+    },
+    {
+      "name": "stale leases are recovered and only due cards are claimed",
+      "results": [
+        {
+          "call": "posts.create",
+          "result": 1
+        },
+        {
+          "call": "worker.recover",
+          "result": 1
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "queued",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "rendering",
+              "localPath": null
+            }
+          ]
+        },
+        {
+          "call": "worker.recover",
+          "result": 1
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "queued",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "queued",
+              "localPath": null
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "published": 1
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 0,
+            "state": {
+              "claimed": 0
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "queued",
+              "localPath": null
+            },
+            {
+              "locale": "ru",
+              "status": "ready",
+              "localPath": "<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg"
+            }
+          ]
+        },
+        {
+          "call": "worker.cycle",
+          "result": {
+            "claimed": 1,
+            "state": {
+              "claimed": 1,
+              "published": 1
+            },
+            "error": null
+          }
+        },
+        {
+          "call": "storyCards.forDraft",
+          "result": [
+            {
+              "locale": "en",
+              "status": "ready",
+              "localPath": "<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg"
+            },
+            {
+              "locale": "ru",
+              "status": "ready",
+              "localPath": "<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg"
+            }
+          ]
+        }
+      ],
+      "files": ["draft-1-en-6a08453b826fd7dc.jpg", "draft-1-ru-2c3c6f3cd52107cf.jpg"],
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "channel_connections": [
+          "1 text:'telegram' text:'telegram' text:'ru' text:'native' null:NULL text:'telegram' text:'telegram' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 text:'telegram_stories' text:'telegram_stories' text:'ru' text:'native' null:NULL text:'telegram_stories' text:'telegram_stories' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "3 text:'threads_en' text:'threads_en' text:'en' text:'native' null:NULL text:'threads_en' text:'threads_en' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "draft_story_cards": [
+          "1 integer:1 text:'ru' text:'2c3c6f3cd52107cf6f4090dc48f775fd30785bcc5d1326a2dfa5af6071698693' text:'ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' text:'⚡' text:'ready' text:'<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-ru-2c3c6f3cd52107cf.jpg' integer:0 null:NULL null:NULL null:NULL null:NULL text:'strata-v3' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 integer:1 text:'en' text:'6a08453b826fd7dc03b08ac4cfa8fed89251e15cea443bb2e3cc10165791bf9e' text:'ChatGPT reached approximately one billion weekly active users.' text:'⚡️' text:'ready' text:'<root>/_trash-rust/tmp/story-worker-scenarios/data/story-cards/draft-1-en-6a08453b826fd7dc.jpg' integer:0 null:NULL null:NULL null:NULL null:NULL text:'strata-v3' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:05:00.000Z'"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'needs_review' text:'{\"telegram\":true,\"site_ru\":false,\"site_en\":false,\"threads_ru\":false,\"threads_en\":false,\"x\":false,\"discord\":false,\"telegram_stories\":true,\"instagram_stories_ru\":false,\"instagram_stories\":false}' null:NULL null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'⚡ ChatGPT достиг примерно миллиарда еженедельно активных пользователей.' null:NULL null:NULL text:'[]' null:NULL null:NULL null:NULL null:NULL integer:0 null:NULL null:NULL text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL",
+          "2 integer:1 text:'en' text:'⚡️ ChatGPT reached approximately one billion weekly active users.' null:NULL null:NULL null:NULL null:NULL null:NULL null:NULL null:NULL integer:0 null:NULL null:NULL text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 text:'draft:1' text:'content.draft.created' text:'info' null:NULL text:'Draft #1 created' text:'{\"owner_id\":42,\"media_count\":0}' text:'2026-03-01T10:00:00.000Z' null:NULL"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:1",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:1",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:0",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'Europe/Moscow' text:'MSK' integer:0 integer:15 integer:24 text:'{\"ru\":\"Страта\",\"en\":\"Strata\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'2026-03-01T10:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ]
+      }
+    }
+  ]
+}

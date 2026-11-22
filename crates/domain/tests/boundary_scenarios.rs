@@ -1,9 +1,9 @@
 //! Equivalence with TypeScript for the stores behind the Studio's
 //! boundaries: the Story-card store, publication reminders, the credential
 //! breaker, the readiness report, the video completion notice and runtime
-//! usage. Every scenario in `boundary_scenarios.json` runs through the real
-//! TypeScript modules (`scripts/rust/boundary-scenarios.ts`) and through their
-//! Rust ports, each on its own fresh database under the same fixed clock;
+//! usage. Every scenario in `boundary_scenarios.json` ran through the real
+//! TypeScript modules before the cutover (`boundary_scenarios.golden.json`)
+//! and runs through their Rust ports, each on its own fresh database under the same fixed clock;
 //! every step's result, every table's rows and the files left in the scratch
 //! directory must come out identical.
 
@@ -195,7 +195,7 @@ fn spec() -> Value {
 #[test]
 fn boundary_stores_match_typescript() {
     let spec = spec();
-    let typescript = support::typescript("scripts/rust/boundary-scenarios.ts", &spec_path());
+    let typescript = support::golden(&spec_path());
     let expected = typescript["scenarios"].as_array().unwrap();
     let actual: Vec<Value> = spec["scenarios"]
         .as_array()

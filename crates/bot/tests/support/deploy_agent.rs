@@ -1,5 +1,5 @@
 //! The golden deploy agent: the recorder's `fetch` stub for the deploy agent
-//! (`agentAnswers` in scripts/rust/bot-goldens/cases-ops.ts). Each request is
+//! (`agentAnswers` in the recorder's ops cases). Each request is
 //! recorded among the Telegram calls as `method: "http"` with its body, as the
 //! recorder writes it, and answered with what the case's seed says the agent
 //! answers ("The deploy agent answers <status> <json>.").

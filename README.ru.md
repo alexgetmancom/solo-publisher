@@ -27,19 +27,6 @@ curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/i
 вместе с токеном. Повторный запуск обновляет установку.
 → [Руководство по установке](docs/install.ru.md)
 
-## Попробовать без установки
-
-Понадобятся [Bun 1.3.14](https://bun.sh/) и нативные зависимости для сборки
-`sharp`:
-
-```bash
-bun install --frozen-lockfile
-bun run demo
-```
-
-Публичная лента Studio — <http://localhost:8788/api/public/site>: тестовые
-данные, без ключей, остановка по `Ctrl+C`.
-
 ## Документация
 
 - [Установка, обновление, запуск из исходников](docs/install.ru.md)

@@ -26,19 +26,6 @@ It checks Docker and the DNS before touching anything, generates the secrets,
 starts the stack, gets the TLS certificate, and prints your Command Center link
 with its token. Run it again to update. → [Install guide](docs/install.md)
 
-## Try it without installing
-
-Needs [Bun 1.3.14](https://bun.sh/) and the native build prerequisites for
-`sharp`:
-
-```bash
-bun install --frozen-lockfile
-bun run demo
-```
-
-The Studio's public feed at <http://localhost:8788/api/public/site> — fixture
-content, no credentials, `Ctrl+C` to stop.
-
 ## Docs
 
 - [Install, update, run from source](docs/install.md)

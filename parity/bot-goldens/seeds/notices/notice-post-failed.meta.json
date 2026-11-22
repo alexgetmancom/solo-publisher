@@ -1,0 +1,54 @@
+{
+  "id": "notice-post-failed",
+  "area": "notices",
+  "channels": ["telegram", "site_ru", "site_en", "threads_ru", "threads_en", "x", "discord"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "reseed": "notice-post-failed.step-6.db"
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    }
+  ]
+}

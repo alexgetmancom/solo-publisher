@@ -1,6 +1,6 @@
 # public_site — what the public website reads (Rust)
 
-Port of `apps/backend/src/public/*` and the `/api/public/site` logic of `interfaces/http/public-site.ts`,
+Port of the TypeScript `public/*` and the `/api/public/site` logic of `interfaces/http/public-site.ts`,
 framework-free: the HTTP slice mounts it.
 
 | Module | TypeScript |
@@ -26,11 +26,10 @@ Dropping the future ends a long poll (client disconnect). An `Err` is the TypeSc
 
 ## Parity
 
-- `bun scripts/rust/public-site-goldens.ts` → `parity/public-site/goldens.json` (TS route, fixed clock, real
-  ffmpeg images on disk); `tests/goldens.rs` replays every case byte-for-byte (body, ETag, headers, events).
+- `parity/public-site/goldens.json` (TS route, fixed clock, real ffmpeg images on disk; recorded from the TypeScript backend before the cutover; nothing re-records them):
+  `tests/goldens.rs` replays every case byte-for-byte (body, ETag, headers, events).
 - `tests/read_model.rs`: cache reuse, transactions, external connections.
-- `tests/prod_copy.rs` (`--ignored`): body sha256 / ETag / item count over a database copy, against
-  `bun scripts/rust/public-site-goldens.ts --prod <copy> <now>`.
+- `tests/prod_copy.rs` (`--ignored`): body sha256 / ETag / item count over a database copy.
 
 ## Deliberate differences
 

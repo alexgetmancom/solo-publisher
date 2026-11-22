@@ -1,7 +1,7 @@
 //! Publishing equivalence with TypeScript: every scenario in
-//! `publishing_scenarios.json` runs through the real TypeScript publishing
-//! modules (`scripts/rust/publishing-scenarios.ts`) and through
-//! `domain::publishing`, each on its own fresh database under the same fixed
+//! `publishing_scenarios.json` ran through the real TypeScript publishing
+//! modules before the cutover (`publishing_scenarios.golden.json`) and runs
+//! through `domain::publishing`, each on its own fresh database under the same fixed
 //! clock and jitter, and every step's result and every table's rows must come
 //! out identical. The tables the spec ignores belong to boundaries faked here
 //! (the credential breaker, runtime usage); the video completion notice is
@@ -677,7 +677,7 @@ fn run(spec: &Value, scenario: &Value) -> Value {
 #[test]
 fn publishing_matches_typescript() {
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(spec_path()).unwrap()).unwrap();
-    let typescript = support::typescript("scripts/rust/publishing-scenarios.ts", &spec_path());
+    let typescript = support::golden(&spec_path());
     let actual: Vec<Value> = spec["scenarios"]
         .as_array()
         .unwrap()

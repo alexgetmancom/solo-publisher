@@ -1,6 +1,6 @@
 //! Video worker equivalence with TypeScript: every scenario in
-//! `video_scenarios.json` runs through the real TypeScript modules
-//! (`scripts/rust/video-scenarios.ts`) and through this crate, each on a fresh
+//! `video_scenarios.json` ran through the real TypeScript modules before the
+//! cutover (`video_scenarios.golden.json`) and runs through this crate, each on a fresh
 //! database under the same clock, with the same canned platform answers;
 //! every step's result, every request and every table must come out identical.
 
@@ -74,7 +74,7 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
 
 #[test]
 fn video_worker_matches_typescript() {
-    support::compare("video_scenarios.json", "scripts/rust/video-scenarios.ts", call, "video");
+    support::compare("video_scenarios.json", call, "video");
 }
 
 /// The shared spec with these scenarios instead of its own: Rust-only cases

@@ -1,0 +1,21 @@
+{
+  "id": "story-cards-timeout",
+  "area": "post",
+  "channels": ["telegram", "telegram_stories", "threads_ru"],
+  "env": {},
+  "fastStoryWait": true,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    }
+  ]
+}

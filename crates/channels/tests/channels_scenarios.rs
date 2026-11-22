@@ -1,7 +1,7 @@
 //! Equivalence with TypeScript for the channels and the observability probes:
-//! every scenario in `channels_scenarios.json` runs through the real
-//! TypeScript modules (`scripts/rust/channels-goldens.ts`) and through this
-//! crate, each on its own fresh database under the same fixed clock, against a
+//! every scenario in `channels_scenarios.json` ran through the real
+//! TypeScript modules before the cutover (`channels_scenarios.golden.json`)
+//! and runs through this crate, each on its own fresh database under the same fixed clock, against a
 //! recording transport answering the same canned responses. Every step's
 //! result, the requests it sent and the live config's credentials, every
 //! table, and `platform_tokens` with its sealed values opened must come out
@@ -11,7 +11,6 @@
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::rc::Rc;
 use std::sync::LazyLock;
 
@@ -743,26 +742,14 @@ async fn run(spec: &Value, scenario: &Value) -> Value {
     }))
 }
 
-fn typescript() -> Value {
-    let tmp = repo_root().join("_trash-rust/tmp");
-    std::fs::create_dir_all(&tmp).unwrap();
-    let out = tmp.join("channels_scenarios.typescript.json");
-    // A file left by an earlier run must not stand in for this one.
-    let _ = std::fs::remove_file(&out);
-    let output = Command::new("bun")
-        .arg("scripts/rust/channels-goldens.ts")
-        .arg(spec_path())
-        .arg(&out)
-        .current_dir(repo_root())
-        .env("TMPDIR", &tmp)
-        .output()
-        .expect("bun must be on PATH");
-    assert!(
-        output.status.success(),
-        "bun failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_str(&std::fs::read_to_string(&out).expect("runner output")).unwrap()
+/// What the TypeScript backend recorded before the cutover
+/// (`channels_scenarios.golden.json`). The runtime worker row carries the
+/// revision the run was built from, which `<revision>` stands for.
+fn golden() -> Value {
+    let path = spec_path().with_extension("golden.json");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    let revision = runtime::git::git_revision(&repo_root()).unwrap_or_default();
+    serde_json::from_str(&text.replace("<revision>", &revision)).unwrap()
 }
 
 fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
@@ -811,8 +798,8 @@ fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
 #[tokio::test(flavor = "current_thread")]
 async fn channels_match_typescript() {
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(spec_path()).unwrap()).unwrap();
-    let typescript = typescript();
-    let expected = typescript["scenarios"].as_array().unwrap();
+    let golden = golden();
+    let expected = golden["scenarios"].as_array().unwrap();
     let mut actual = Vec::new();
     for scenario in spec["scenarios"].as_array().unwrap() {
         actual.push(run(&spec, scenario).await);

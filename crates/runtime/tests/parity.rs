@@ -1,5 +1,5 @@
-//! Parity with the TypeScript runtime foundation, against what
-//! `bun scripts/rust/runtime-fixtures.ts` recorded. HTTP is replayed over a
+//! Parity with the TypeScript runtime foundation, against what it recorded
+//! before the cutover (`tests/fixtures/`). HTTP is replayed over a
 //! recording transport answering the same canned responses the TypeScript
 //! `fetchImpl` answered, and the requests both sides sent are compared.
 

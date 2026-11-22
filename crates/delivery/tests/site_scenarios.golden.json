@@ -1,0 +1,1969 @@
+{
+  "scenarios": [
+    {
+      "name": "image and video build: responsive variants, poster, versioned paths, shared blobs",
+      "results": [
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "files",
+          "result": [
+            {
+              "path": "generated/responsive/media-posts-1-en-0-1280.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-360.webp",
+              "size": 3416,
+              "sha256": "6bdad4e0d890de63bf4623297955702b2d3e0198dab7e1fba0e29723fbc13b68",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-480.webp",
+              "size": 3974,
+              "sha256": "28c27b71180a8762882dfc33ec7a10e70582bf8d7650a94b987ad973a89b46b6",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-640.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-720.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-800.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-960.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-1280.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-360.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-480.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-640.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-720.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-800.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-960.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-1280.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-360.webp",
+              "size": 3416,
+              "sha256": "6bdad4e0d890de63bf4623297955702b2d3e0198dab7e1fba0e29723fbc13b68",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-480.webp",
+              "size": 3974,
+              "sha256": "28c27b71180a8762882dfc33ec7a10e70582bf8d7650a94b987ad973a89b46b6",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-640.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-720.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-800.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-960.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-1280.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-360.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-480.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-640.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-720.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-800.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-960.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "media/.blobs/073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc.jpg",
+              "size": 9169,
+              "sha256": "073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc",
+              "links": 3
+            },
+            {
+              "path": "media/.blobs/24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "media/.blobs/3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-en-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-en-1-original-poster.jpg",
+              "size": 9169,
+              "sha256": "073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-en-1.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-ru-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-ru-1-original-poster.jpg",
+              "size": 9169,
+              "sha256": "073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-ru-1.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 3
+            },
+            {
+              "path": "uploads/clip.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 1
+            },
+            {
+              "path": "uploads/photo.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 1
+            }
+          ]
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        },
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "files",
+          "result": [
+            {
+              "path": "generated/responsive/media-posts-1-en-0-1280.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-360.webp",
+              "size": 3416,
+              "sha256": "6bdad4e0d890de63bf4623297955702b2d3e0198dab7e1fba0e29723fbc13b68",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-480.webp",
+              "size": 3974,
+              "sha256": "28c27b71180a8762882dfc33ec7a10e70582bf8d7650a94b987ad973a89b46b6",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-640.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-720.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-800.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-0-960.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-1280.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-360.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-480.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-640.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-720.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-800.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-en-1-original-poster-960.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-1280.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-360.webp",
+              "size": 3416,
+              "sha256": "6bdad4e0d890de63bf4623297955702b2d3e0198dab7e1fba0e29723fbc13b68",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-480.webp",
+              "size": 3974,
+              "sha256": "28c27b71180a8762882dfc33ec7a10e70582bf8d7650a94b987ad973a89b46b6",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-640.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-720.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-800.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-0-960.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-1280.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-360.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-480.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-640.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-720.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-800.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "generated/responsive/media-posts-1-ru-1-original-poster-960.webp",
+              "size": 3452,
+              "sha256": "dee8a620c867c6d0bcc850d7eff4cf3137c00170f6e287cd2ad1b3c2185d189d",
+              "links": 1
+            },
+            {
+              "path": "media/.blobs/073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc.jpg",
+              "size": 9169,
+              "sha256": "073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc",
+              "links": 3
+            },
+            {
+              "path": "media/.blobs/24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "media/.blobs/3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-en-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-en-1-original-poster.jpg",
+              "size": 9169,
+              "sha256": "073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-en-1.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-ru-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-ru-1-original-poster.jpg",
+              "size": 9169,
+              "sha256": "073e801c9feb4104d0d2b24aa0b67559a9fe6eacdea519262ade543fd4c533dc",
+              "links": 3
+            },
+            {
+              "path": "media/posts/1-ru-1.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 3
+            },
+            {
+              "path": "uploads/clip.mp4",
+              "size": 19928,
+              "sha256": "3e6d6f170d717b174d06879faa77c1cd4c51fc285c55b71a705219a5dbab8874",
+              "links": 1
+            },
+            {
+              "path": "uploads/photo.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 1
+            }
+          ]
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:05:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[{\"type\":\"photo\",\"path\":\"uploads/photo.jpg\"},{\"type\":\"video\",\"path\":\"uploads/clip.mp4\",\"role\":\"attachment\"},{\"type\":\"photo\",\"path\":\"uploads/card.jpg\",\"role\":\"text_story_card\"}]' null:NULL text:'[{\"type\":\"image\",\"path\":\"media/posts/1-ru-0.jpg?v=24ef01a67b90\",\"alt\":\"A test card\"},{\"type\":\"video\",\"path\":\"media/posts/1-ru-1.mp4?v=3e6d6f170d71\",\"role\":\"attachment\",\"poster\":\"media/posts/1-ru-1-original-poster.jpg?v=073e801c9feb\"}]' text:'post-1-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:1 text:'en' text:'Hello 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[{\"type\":\"image\",\"path\":\"media/posts/1-en-0.jpg?v=24ef01a67b90\"},{\"type\":\"video\",\"path\":\"media/posts/1-en-1.mp4?v=3e6d6f170d71\",\"role\":\"attachment\",\"poster\":\"media/posts/1-en-1-original-poster.jpg?v=073e801c9feb\"}]' text:'post-1-en' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:05:00.000Z' null:NULL text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "publication_events": [
+          "1 integer:1 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "3 integer:3 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:05:00.000Z' null:NULL",
+          "4 integer:4 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:05:00.000Z' null:NULL"
+        ],
+        "runtime_usage": [
+          "1 text:'publishing.site.materialize' text:'2026-03-01' integer:2 integer:2 integer:0 integer:0 text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:05:00.000Z'"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:1' text:'publish' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 integer:2 text:'post:1' text:'site_en' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:05:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:1",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:4",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:2",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":1,\"published\":1,\"ok\":true,\"last_run_at\":\"2026-03-01T10:05:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T10:05:00.000Z\"}' text:'2026-03-01T10:05:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "direct media materialization: a replacement detaches the shared locale file",
+      "results": [
+        {
+          "call": "materializeMedia",
+          "result": [
+            {
+              "type": "image",
+              "path": "media/posts/3-ru-0.jpg?v=24ef01a67b90"
+            }
+          ]
+        },
+        {
+          "call": "materializeMedia",
+          "result": [
+            {
+              "type": "image",
+              "path": "media/posts/3-en-0.jpg?v=24ef01a67b90",
+              "alt": "kept"
+            }
+          ]
+        },
+        {
+          "call": "files",
+          "result": [
+            {
+              "path": ".blobs/24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "posts/3-en-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            },
+            {
+              "path": "posts/3-ru-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 3
+            }
+          ]
+        },
+        {
+          "call": "materializeMedia",
+          "result": [
+            {
+              "type": "image",
+              "path": "media/posts/3-ru-0.jpg?v=dde6eb8838a2"
+            }
+          ]
+        },
+        {
+          "call": "files",
+          "result": [
+            {
+              "path": ".blobs/24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 2
+            },
+            {
+              "path": ".blobs/dde6eb8838a2f18ba023f1108211c03e7aac3d1699ff127cea903e51a331cea0.jpg",
+              "size": 11909,
+              "sha256": "dde6eb8838a2f18ba023f1108211c03e7aac3d1699ff127cea903e51a331cea0",
+              "links": 2
+            },
+            {
+              "path": "posts/3-en-0.jpg",
+              "size": 15420,
+              "sha256": "24ef01a67b9049964686dc32f7204045841efb454c7369e7e614744e01cdb2b7",
+              "links": 2
+            },
+            {
+              "path": "posts/3-ru-0.jpg",
+              "size": 11909,
+              "sha256": "dde6eb8838a2f18ba023f1108211c03e7aac3d1699ff127cea903e51a331cea0",
+              "links": 2
+            }
+          ]
+        },
+        {
+          "call": "files",
+          "result": [
+            {
+              "path": "responsive/media-posts-3-en-0-1280.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-en-0-360.webp",
+              "size": 3416,
+              "sha256": "6bdad4e0d890de63bf4623297955702b2d3e0198dab7e1fba0e29723fbc13b68",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-en-0-480.webp",
+              "size": 3974,
+              "sha256": "28c27b71180a8762882dfc33ec7a10e70582bf8d7650a94b987ad973a89b46b6",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-en-0-640.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-en-0-720.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-en-0-800.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-en-0-960.webp",
+              "size": 5038,
+              "sha256": "414b9eb68b928f27d2ff37a2443ccd2cffc4b24c8328bd1103f69ea41a584a97",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-1280.webp",
+              "size": 7004,
+              "sha256": "de90e650bad4cc01af4ffa9da9b8fa90e9657bf6aeeac0cba5e1540c5d522525",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-360.webp",
+              "size": 5874,
+              "sha256": "bb918c7386996ba58dc92489053026d08eb632f8e33fa2849715312e4ed89985",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-480.webp",
+              "size": 7004,
+              "sha256": "de90e650bad4cc01af4ffa9da9b8fa90e9657bf6aeeac0cba5e1540c5d522525",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-640.webp",
+              "size": 7004,
+              "sha256": "de90e650bad4cc01af4ffa9da9b8fa90e9657bf6aeeac0cba5e1540c5d522525",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-720.webp",
+              "size": 7004,
+              "sha256": "de90e650bad4cc01af4ffa9da9b8fa90e9657bf6aeeac0cba5e1540c5d522525",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-800.webp",
+              "size": 7004,
+              "sha256": "de90e650bad4cc01af4ffa9da9b8fa90e9657bf6aeeac0cba5e1540c5d522525",
+              "links": 1
+            },
+            {
+              "path": "responsive/media-posts-3-ru-0-960.webp",
+              "size": 7004,
+              "sha256": "de90e650bad4cc01af4ffa9da9b8fa90e9657bf6aeeac0cba5e1540c5d522525",
+              "links": 1
+            }
+          ]
+        },
+        {
+          "call": "materializeMedia",
+          "result": {
+            "error": "site media has no file_id or local path"
+          }
+        },
+        {
+          "call": "materializeMediaFailure",
+          "result": "media_processing_failed: ffmpeg exit 69"
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:0",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:0",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:0",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ]
+      }
+    },
+    {
+      "name": "one bad publication fails only its own jobs, retries with backoff, then fails terminally",
+      "results": [
+        {
+          "call": "cycle",
+          "result": 2
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        },
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 integer:2 integer:42 text:'failed' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:2 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T11:20:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-1-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL",
+          "2 integer:2 text:'ru' text:'Привет 2' null:NULL null:NULL null:NULL text:'[{\"type\":\"photo\",\"path\":\"uploads/missing.jpg\"}]' null:NULL text:'[]' text:'post-2-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 2 site build job(s)' text:'{\"job_ids\":[1,2]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.failed' text:'error' null:NULL text:'site media has no file_id or local path' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "3 integer:3 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "4 integer:4 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:20:00.000Z' null:NULL",
+          "5 integer:5 null:NULL text:'site.build.failed' text:'error' null:NULL text:'site media has no file_id or local path' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:20:00.000Z' null:NULL",
+          "6 integer:6 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:40:00.000Z' null:NULL",
+          "7 integer:7 null:NULL text:'site.build.failed' text:'error' null:NULL text:'site media has no file_id or local path' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:40:00.000Z' null:NULL",
+          "8 integer:8 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T11:00:00.000Z' null:NULL",
+          "9 integer:9 null:NULL text:'site.build.failed' text:'error' null:NULL text:'site media has no file_id or local path' text:'{\"job_ids\":[2]}' text:'2026-03-01T11:00:00.000Z' null:NULL",
+          "10 integer:10 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T11:20:00.000Z' null:NULL",
+          "11 integer:11 null:NULL text:'site.build.failed' text:'error' null:NULL text:'site media has no file_id or local path' text:'{\"job_ids\":[2]}' text:'2026-03-01T11:20:00.000Z' null:NULL",
+          "12 integer:12 text:'post:2' text:'delivery.post.completed' text:'info' null:NULL text:'Post #2 completed with 1 failed target(s)' text:'{\"post_id\":2,\"total\":1,\"failed\":1,\"published\":0}' text:'2026-03-01T11:20:00.000Z' null:NULL"
+        ],
+        "runtime_usage": [
+          "1 text:'publishing.site.materialize' text:'2026-03-01' integer:5 integer:5 integer:0 integer:0 text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T11:20:00.000Z'"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:1' text:'site_ru' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 integer:2 text:'post:2' text:'site_ru' text:'failed' integer:5 null:NULL null:NULL null:NULL text:'site media has no file_id or local path' text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T11:20:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:2",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:12",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:2",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":0,\"ok\":true,\"last_run_at\":\"2026-03-01T11:40:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T11:40:00.000Z\"}' text:'2026-03-01T11:40:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "a source edited while rendering is refused by its version fence, then rendered again",
+      "results": [
+        {
+          "call": "cycle",
+          "result": 2
+        },
+        {
+          "call": "cycle",
+          "result": 2
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "url": "https://bot-api.example/bottest-token-telegram/getFile",
+          "headers": [["content-type", "application/json"]],
+          "body": {
+            "text": "{\"file_id\":\"F-gone\"}"
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://bot-api.example/bottest-token-telegram/getFile",
+          "headers": [["content-type", "application/json"]],
+          "body": {
+            "text": "{\"file_id\":\"F-gone\"}"
+          }
+        }
+      ],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "2 integer:2 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:2 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:20:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[{\"type\":\"photo\",\"file_id\":\"F-gone\"}]' null:NULL text:'[]' text:'post-1-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL",
+          "2 integer:2 text:'ru' text:'Edited' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-2-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:20:00.000Z' null:NULL text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "publication_events": [
+          "1 integer:1 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 2 site build job(s)' text:'{\"job_ids\":[1,2]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.failed' text:'error' null:NULL text:'POST https://bot-api.example/bot[REDACTED]/getFile failed before receiving an HTTP response' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "3 integer:3 null:NULL text:'site.build.failed' text:'error' null:NULL text:'site source changed while it was rendering' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "4 integer:4 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 2 site build job(s)' text:'{\"job_ids\":[1,2]}' text:'2026-03-01T10:20:00.000Z' null:NULL",
+          "5 integer:5 null:NULL text:'site.build.failed' text:'error' null:NULL text:'Telegram getFile failed for F-gone' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:20:00.000Z' null:NULL",
+          "6 integer:6 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:20:00.000Z' null:NULL"
+        ],
+        "runtime_usage": [
+          "1 text:'publishing.site.materialize' text:'2026-03-01' integer:2 integer:2 integer:0 integer:0 text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:20:00.000Z'"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:1' text:'site_ru' text:'queued' integer:2 text:'2026-03-01T10:21:15.000Z' null:NULL null:NULL text:'Telegram getFile failed for F-gone' text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:20:00.000Z'",
+          "2 integer:2 text:'post:2' text:'site_ru' text:'published' integer:1 text:'2026-03-01T10:00:37.500Z' null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:20:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:2",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:6",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:2",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":2,\"published\":1,\"ok\":true,\"last_run_at\":\"2026-03-01T10:20:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T10:20:00.000Z\"}' text:'2026-03-01T10:20:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "materialize without keys: every post, cancelled locales stay as they are",
+      "results": [
+        {
+          "call": "materialize",
+          "result": []
+        },
+        {
+          "call": "materialize",
+          "result": []
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "7 integer:7 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:7 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:7 text:'ru' text:'Привет 7' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[{\"type\":\"image\",\"path\":\"keep.jpg\"}]' text:'post-7-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:7 text:'en' text:'Hello 7' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-7-en' integer:1 text:'2026-03-01T12:00:00.000Z' text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T12:00:00.000Z' null:NULL null:NULL"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:7' text:'site_ru' text:'cancelled' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "2 integer:2 text:'post:7' text:'site_en' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:7",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:0",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:2",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ]
+      }
+    },
+    {
+      "name": "a declared cancellation refuses the claim",
+      "results": [
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "2 integer:2 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:2 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-1-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL",
+          "2 integer:2 text:'ru' text:'Привет 2' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-2-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL"
+        ],
+        "publication_cancellations": ["1 text:'post:1' integer:42 text:'2026-03-01T09:30:00.000Z'"],
+        "publication_events": [
+          "1 integer:1 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[2]}' text:'2026-03-01T10:00:00.000Z' null:NULL"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:1' text:'site_ru' text:'queued' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "2 integer:2 text:'post:2' text:'site_ru' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:2",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:2",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:2",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":0,\"ok\":true,\"last_run_at\":\"2026-03-01T10:00:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T10:00:00.000Z\"}' text:'2026-03-01T10:00:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "stale lock recovery: retried, terminal, and a live lock left alone",
+      "results": [
+        {
+          "call": "recoverStale",
+          "result": 2
+        },
+        {
+          "call": "recoverStale",
+          "result": 0
+        },
+        {
+          "call": "cycle",
+          "result": 1
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "11 integer:11 integer:42 text:'failed' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:11 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:11 text:'ru' text:'Привет 11' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-11-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 text:'post:11' text:'delivery.post.completed' text:'info' null:NULL text:'Post #11 completed with 1 failed target(s)' text:'{\"post_id\":11,\"total\":1,\"failed\":1,\"published\":0}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:20:00.000Z' null:NULL",
+          "3 integer:3 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:20:00.000Z' null:NULL"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:10' text:'site_ru' text:'published' integer:1 text:'2026-03-01T10:00:37.500Z' null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:20:00.000Z'",
+          "2 integer:2 text:'post:11' text:'site_ru' text:'failed' integer:5 null:NULL null:NULL null:NULL text:'stale site lock recovered' text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "3 integer:3 text:'post:12' text:'site_ru' text:'queued' integer:1 text:'2026-03-01T10:20:37.500Z' null:NULL null:NULL text:'stale site lock recovered' text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:20:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:11",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:3",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:3",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":1,\"published\":1,\"ok\":true,\"last_run_at\":\"2026-03-01T10:20:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T10:20:00.000Z\"}' text:'2026-03-01T10:20:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "IndexNow: completed pages pinged once, state file kept",
+      "results": [
+        {
+          "call": "cycle",
+          "result": 2
+        },
+        {
+          "call": "settleIndexNow",
+          "result": null
+        },
+        {
+          "call": "indexNowState",
+          "result": {
+            "keys": ["pending_urls", "last_attempt_at", "url_count", "last_status", "last_success_at"],
+            "pending_urls": [],
+            "last_attempt_at": "2026-03-01T10:00:00.000Z",
+            "url_count": 2,
+            "last_status": 202,
+            "last_success_at": "2026-03-01T10:00:00.000Z"
+          }
+        },
+        {
+          "call": "indexNowKey",
+          "result": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4"
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        },
+        {
+          "call": "settleIndexNow",
+          "result": null
+        },
+        {
+          "call": "indexNowState",
+          "result": {
+            "keys": ["pending_urls", "last_attempt_at", "url_count", "last_status", "last_success_at"],
+            "pending_urls": [],
+            "last_attempt_at": "2026-03-01T10:00:00.000Z",
+            "url_count": 2,
+            "last_status": 202,
+            "last_success_at": "2026-03-01T10:00:00.000Z"
+          }
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "url": "https://api.indexnow.org/indexnow",
+          "headers": [["content-type", "application/json"]],
+          "body": {
+            "text": "{\"host\":\"studio.example\",\"key\":\"a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4\",\"keyLocation\":\"https://studio.example/a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4.txt\",\"urlList\":[\"https://studio.example/1/hello/\",\"https://studio.example/ru/1/privet/\"]}"
+          }
+        }
+      ],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "2 integer:2 integer:42 text:'needs_review' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:2 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'privet' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL",
+          "2 integer:1 text:'en' text:'Hello 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'hello' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL",
+          "3 integer:2 text:'ru' text:'Привет 2' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-2-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL",
+          "4 integer:2 text:'en' text:'Hello 2' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-2-en' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 2 site build job(s)' text:'{\"job_ids\":[1,2]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 2 site build job(s)' text:'{\"job_ids\":[1,2]}' text:'2026-03-01T10:00:00.000Z' null:NULL"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:1' text:'publish' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
+          "2 integer:2 text:'post:2' text:'publish' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:2",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:2",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:2",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":0,\"ok\":true,\"last_run_at\":\"2026-03-01T10:00:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T10:00:00.000Z\"}' text:'2026-03-01T10:00:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "IndexNow rejected: site.indexnow.failed, held until retry_at, then drained on an idle cycle",
+      "results": [
+        {
+          "call": "cycle",
+          "result": 1
+        },
+        {
+          "call": "settleIndexNow",
+          "result": null
+        },
+        {
+          "call": "indexNowState",
+          "result": {
+            "keys": ["pending_urls", "last_attempt_at", "url_count", "last_status", "retry_at"],
+            "pending_urls": ["https://studio.example/1/hello/", "https://studio.example/ru/1/privet/"],
+            "last_attempt_at": "2026-03-01T10:00:00.000Z",
+            "url_count": 2,
+            "last_status": 503,
+            "retry_at": "2026-03-01T10:01:00.000Z"
+          }
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        },
+        {
+          "call": "settleIndexNow",
+          "result": null
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        },
+        {
+          "call": "settleIndexNow",
+          "result": null
+        },
+        {
+          "call": "indexNowState",
+          "result": {
+            "keys": ["pending_urls", "last_attempt_at", "url_count", "retry_at"],
+            "pending_urls": ["https://studio.example/1/hello/", "https://studio.example/ru/1/privet/"],
+            "last_attempt_at": "2026-03-01T10:02:00.000Z",
+            "url_count": 2,
+            "retry_at": "2026-03-01T10:03:00.000Z"
+          }
+        },
+        {
+          "call": "cycle",
+          "result": 0
+        },
+        {
+          "call": "settleIndexNow",
+          "result": null
+        },
+        {
+          "call": "indexNowState",
+          "result": {
+            "keys": ["pending_urls", "last_attempt_at", "url_count", "last_status", "last_success_at"],
+            "pending_urls": [],
+            "last_attempt_at": "2026-03-01T10:04:00.000Z",
+            "url_count": 2,
+            "last_status": 200,
+            "last_success_at": "2026-03-01T10:04:00.000Z"
+          }
+        }
+      ],
+      "requests": [
+        {
+          "method": "POST",
+          "url": "https://api.indexnow.org/indexnow",
+          "headers": [["content-type", "application/json"]],
+          "body": {
+            "text": "{\"host\":\"studio.example\",\"key\":\"a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4\",\"keyLocation\":\"https://studio.example/a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4.txt\",\"urlList\":[\"https://studio.example/1/hello/\",\"https://studio.example/ru/1/privet/\"]}"
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.indexnow.org/indexnow",
+          "headers": [["content-type", "application/json"]],
+          "body": {
+            "text": "{\"host\":\"studio.example\",\"key\":\"a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4\",\"keyLocation\":\"https://studio.example/a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4.txt\",\"urlList\":[\"https://studio.example/1/hello/\",\"https://studio.example/ru/1/privet/\"]}"
+          }
+        },
+        {
+          "method": "POST",
+          "url": "https://api.indexnow.org/indexnow",
+          "headers": [["content-type", "application/json"]],
+          "body": {
+            "text": "{\"host\":\"studio.example\",\"key\":\"a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4\",\"keyLocation\":\"https://studio.example/a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4.txt\",\"urlList\":[\"https://studio.example/1/hello/\",\"https://studio.example/ru/1/privet/\"]}"
+          }
+        }
+      ],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'privet' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL",
+          "2 integer:1 text:'en' text:'Hello 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'hello' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z' null:NULL null:NULL"
+        ],
+        "publication_events": [
+          "1 integer:1 null:NULL text:'site.build.claimed' text:'info' null:NULL text:'claimed 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "2 integer:2 null:NULL text:'site.build.published' text:'info' null:NULL text:'published 1 site build job(s)' text:'{\"job_ids\":[1]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "3 integer:3 null:NULL text:'site.indexnow.failed' text:'warn' null:NULL text:'IndexNow request rejected: 503' text:'{\"urls\":[\"https://studio.example/1/hello/\",\"https://studio.example/ru/1/privet/\"]}' text:'2026-03-01T10:00:00.000Z' null:NULL",
+          "4 integer:4 null:NULL text:'site.indexnow.failed' text:'warn' null:NULL text:'indexnow is unreachable' text:'{\"urls\":[]}' text:'2026-03-01T10:02:00.000Z' null:NULL"
+        ],
+        "site_jobs": [
+          "1 integer:1 text:'post:1' text:'publish' text:'published' integer:0 null:NULL null:NULL null:NULL null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T10:00:00.000Z'"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:1",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:4",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:1",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ],
+        "worker_state": [
+          "1 text:'site' text:'{\"claimed\":0,\"ok\":true,\"last_run_at\":\"2026-03-01T10:04:00.000Z\",\"last_error\":null,\"scheduler_error\":null,\"last_heartbeat_at\":\"2026-03-01T10:04:00.000Z\"}' text:'2026-03-01T10:04:00.000Z'"
+        ]
+      }
+    },
+    {
+      "name": "site urls for IndexNow come from the public feed",
+      "results": [
+        {
+          "call": "siteUrls",
+          "result": ["https://studio.example/ru/2/tolko-ru/", "https://studio.example/1/hello/", "https://studio.example/ru/1/privet/"]
+        },
+        {
+          "call": "siteUrls",
+          "result": []
+        },
+        {
+          "call": "indexNowKey",
+          "result": null
+        }
+      ],
+      "requests": [],
+      "unusedResponses": 0,
+      "tables": {
+        "__drizzle_migrations": [
+          "1 null:NULL text:'2474654f04fc4ea84a9bfc51095ffad581fbee3dd22dcaefa3ee06072aa52c23' integer:1783727704995",
+          "2 null:NULL text:'3dabde8784dc6a57c429afb7280d12f62bc5def508cd995657355fb0936db8bd' integer:1787300000000",
+          "3 null:NULL text:'9f623095ca44829e5abad60f49f2c473704e8ab62b0c722648d1584b52259c52' integer:1787400000000",
+          "4 null:NULL text:'ab159206f43ec456b82167523fdcbcda9df50d9be5fc8e4cfb7b5d95a297aea5' integer:1787500000000",
+          "5 null:NULL text:'e7665f0602d3f5dde126aa3457084036c835857022c89258ccf516e975500163' integer:1787600000000",
+          "6 null:NULL text:'7d8eb97ee7593127e451bba37fdd35771c890660b6d6387dc49edefb211601d4' integer:1787700000000",
+          "7 null:NULL text:'237693fa9c6e4f6320abe1d26b715f074b05dea0cd798d8ac0149af21d514af2' integer:1787800000000",
+          "8 null:NULL text:'965cacb14524704b5cdd97fbb4d3acd7208f02ff84696a2a0c5ddf067cd4715f' integer:1788050000000",
+          "9 null:NULL text:'2e2b83e236d5737eb665457c2c36d5230a080c4f81f6122f0479b39609ab237a' integer:1788150000000",
+          "10 null:NULL text:'3703fb1ef72b3c0abda22da908a68454c49e273aefb944438025f9ddb18fd0cb' integer:1788200000000",
+          "11 null:NULL text:'17bee1c6d711fbd478e1f1122372a5f87ad472356ceba8764fa39b6f2d80ef8a' integer:1788500000000",
+          "12 null:NULL text:'4df45eb6c2a31bac8b7a0ae808ef670b112d7f62e143decabc5e1b12c452132e' integer:1788600000000",
+          "13 null:NULL text:'50551170e81b3d7ed7b14b791e2fcb2ceb0c1fa36ee3a7b62ee5365ad0b0b876' integer:1788700000000",
+          "14 null:NULL text:'742f4c3b1d56566808fb26baa18adccef3438f3860c0d69ba241a489862d03b4' integer:1788800000000",
+          "15 null:NULL text:'d6922ac600f7fde8841a7202a675688212aa9cdef447ee606efd9bfa2837779c' integer:1788900000000",
+          "16 null:NULL text:'c687d01ba38d683d38b1bc653b369ca56154378205dd87e094dd6aa2a668ec1f' integer:1789000000000",
+          "17 null:NULL text:'778d505aecf77b1932c667c65d488720ffa32b0cfa5b447b9646825f543f48b8' integer:1789100000000",
+          "18 null:NULL text:'eb601e2c15799cf62406c0d3dcbfd10dd31535e669513072582c40d84adf285e' integer:1789300000000",
+          "19 null:NULL text:'cfbc1b6bdef294e7fb53476fe78ca8a9e0711fe00ec8ff1ba45c7f6677011080' integer:1789400000000",
+          "20 null:NULL text:'4a6edf268cf331fe902fca8372ed4440c4da78b39739f72c84749f67679af87b' integer:1789500000000",
+          "21 null:NULL text:'a10c5a35214a5e11baa64225d89ea189bdd160393718d36286fa8ab8a629f583' integer:1789600000000",
+          "22 null:NULL text:'89240067134cb1566ec97ec7f1d99ac15c4558ac6e0a4397495b0e9b272588b9' integer:1789700000000",
+          "23 null:NULL text:'a3f4c1b21fafb7d391525779d8df97b8b04ee7e77365faf9f0551a215af4856c' integer:1789800000000",
+          "24 null:NULL text:'82d4059d0507bf7de761a3a389e297e62adb04171c19712813b27d2287d5b46a' integer:1789900000000",
+          "25 null:NULL text:'2f5b7fa2221ff0c3286846bb9a0c347f12d861faeefbd30866793a4071afb3ac' integer:1790000000000",
+          "26 null:NULL text:'b108b04046eb749f8e3a1a41e2cd3ae0e5409a27483597bd466a8f0d05c2b916' integer:1790100000000",
+          "27 null:NULL text:'e5031e998971c99b78a052ea6bc90cd359ba23567d8cc2a0471901aab0742d60' integer:1790200000000",
+          "28 null:NULL text:'694bbbe3683d208dc1e24b35c1e88089afdb7fe56d9f83ca55a744c659cd4e7c' integer:1790300000000",
+          "29 null:NULL text:'a1b1a98257e7ce5cd697c15b575b915cb7a162a8f221c518a13e344283409f41' integer:1790300060000",
+          "30 null:NULL text:'d3bc7c3cfc66f5242f9c488c76f2d85cf982d3c191fec4edeb2a95b371a09189' integer:1790300120000",
+          "31 null:NULL text:'c0b73b9db440ff21ed8c23e6062ca26d3cc5b8f969db35142ad16530fc44fe12' integer:1790300180000",
+          "32 null:NULL text:'dece272ec8b01f3c370acf100b872a79a063c85b7935bd060335317496a88aa6' integer:1790693645697",
+          "33 null:NULL text:'c040cb933abfb02f46f1bcb0e3ba98da737a41baca1959827b455f51a943a3f2' integer:1790693700000",
+          "34 null:NULL text:'854e6cdd88b02b569575768903bec0edea57f124b26dea1907c51003e4799292' integer:1793030038703",
+          "35 null:NULL text:'8492b653be1cbccf7c04bb0a6c20153ba41713ee2c72cb7bb717975b317c84df' integer:1793476800000",
+          "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
+          "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
+        ],
+        "drafts": [
+          "1 integer:1 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "2 integer:2 integer:42 text:'published' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:2 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'",
+          "3 integer:3 integer:42 text:'needs_review' text:'{\"site_ru\":true,\"site_en\":true}' null:NULL null:NULL null:NULL integer:3 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z'"
+        ],
+        "knowledge_entities": [
+          "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:4 text:'company' null:NULL text:'openai' text:'OpenAI' text:'OpenAI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:5 text:'company' null:NULL text:'google' text:'Google' text:'Google' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:6 text:'company' null:NULL text:'moonshot-ai' text:'Moonshot AI' text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:7 text:'model' integer:3 text:'claude' text:'Claude' text:'Claude' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:8 text:'model' integer:3 text:'fable-5' text:'Fable 5' text:'Fable 5' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:9 text:'model' integer:4 text:'gpt-5-6-sol' text:'GPT-5.6 Sol' text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:10 text:'model' integer:5 text:'gemini-3-6-flash' text:'Gemini 3.6 Flash' text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:11 text:'model' integer:6 text:'kimi-k3' text:'Kimi K3' text:'Kimi K3' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",
+          "12 integer:12 text:'topic' null:NULL text:'codex' text:'Codex' text:'Codex' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "knowledge_entity_aliases": [
+          "1 integer:3 text:'Anthropic' text:'1970-01-01T00:00:00.000Z'",
+          "2 integer:4 text:'OpenAI' text:'1970-01-01T00:00:00.000Z'",
+          "3 integer:5 text:'Google' text:'1970-01-01T00:00:00.000Z'",
+          "4 integer:6 text:'Moonshot AI' text:'1970-01-01T00:00:00.000Z'",
+          "5 integer:7 text:'Claude' text:'1970-01-01T00:00:00.000Z'",
+          "6 integer:8 text:'Fable 5' text:'1970-01-01T00:00:00.000Z'",
+          "7 integer:9 text:'GPT-5.6 Sol' text:'1970-01-01T00:00:00.000Z'",
+          "8 integer:10 text:'Gemini 3.6 Flash' text:'1970-01-01T00:00:00.000Z'",
+          "9 integer:11 text:'Kimi K3' text:'1970-01-01T00:00:00.000Z'",
+          "10 integer:8 text:'Fable' text:'1970-01-01T00:00:00.000Z'",
+          "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "post_locales": [
+          "1 integer:1 text:'ru' text:'Привет 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'privet' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL",
+          "2 integer:1 text:'en' text:'Hello 1' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'hello' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL",
+          "3 integer:2 text:'ru' text:'Привет 2' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'tolko-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL",
+          "4 integer:3 text:'ru' text:'Привет 3' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-3-ru' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL",
+          "5 integer:3 text:'en' text:'Hello 3' null:NULL null:NULL null:NULL text:'[]' null:NULL text:'[]' text:'post-3-en' integer:1 null:NULL text:'2026-03-01T09:00:00.000Z' text:'2026-03-01T09:00:00.000Z' null:NULL null:NULL"
+        ],
+        "sqlite_sequence": [
+          "1 text:'knowledge_entities' integer:12",
+          "2 text:'drafts' integer:3",
+          "3 text:'metric_samples' integer:0",
+          "4 text:'publication_events' integer:0",
+          "5 text:'publish_jobs' integer:0",
+          "6 text:'site_jobs' integer:0",
+          "7 text:'video_drafts' integer:0"
+        ],
+        "studio_milestone_settings": [
+          "1 integer:1 integer:1 integer:1 integer:1 integer:1 text:'[100,250,500,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]' text:'1970-01-01T00:00:00.000Z'"
+        ],
+        "studio_profile": [
+          "1 integer:1 text:'UTC' text:'UTC' integer:0 integer:15 integer:24 text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":[],\"ru\":[]}' text:'[\"telegram\",\"site_ru\",\"site_en\",\"threads_ru\",\"threads_en\",\"telegram_stories\",\"instagram_stories_ru\",\"instagram_stories\"]' text:'1970-01-01T00:00:00.000Z' text:'{\"en\":\"\",\"ru\":\"\"}' text:'{\"en\":\"\",\"ru\":\"\"}'"
+        ]
+      }
+    }
+  ]
+}

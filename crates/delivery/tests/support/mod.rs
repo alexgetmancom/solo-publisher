@@ -1,5 +1,5 @@
-//! What every delivery scenario test shares with its TypeScript runner
-//! (`scripts/rust/delivery-scenario-support.ts`): a fresh database per
+//! What every delivery scenario test shared with its TypeScript runner, whose
+//! results are the committed `<spec>.golden.json`: a fresh database per
 //! scenario under a fixed clock and jitter, a recording transport answering
 //! the scenario's canned responses (and running the `sql` a response carries
 //! when it is served), and the same dump, scrubbing and comparison rules.
@@ -9,7 +9,6 @@
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::rc::Rc;
 use std::sync::{Arc, LazyLock};
 
@@ -31,6 +30,8 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest as _, Sha256};
 
 const MAX_TEXT_BODY: usize = 16 * 1024;
+/// Where every scenario's `DATA_DIR` lives, on every machine.
+const GOLDEN_DATA_ROOT: &str = "/tmp/solo-publisher-goldens/delivery-scenarios";
 static UUID: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap());
 
@@ -444,19 +445,19 @@ fn write_files(data: &Path, at: std::time::SystemTime, files: Option<&Value>) {
             let size = spec["size"].as_u64().unwrap() as usize;
             std::fs::write(&target, fill.as_str().unwrap().repeat(size)).unwrap();
         } else {
-            let args: Vec<&str> = spec["ffmpeg"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|arg| arg.as_str().unwrap())
-                .collect();
-            let made = Command::new("ffmpeg")
-                .args(["-loglevel", "error"])
-                .args(&args)
-                .arg(&target)
-                .output()
-                .expect("ffmpeg on PATH");
-            assert!(made.status.success(), "ffmpeg could not make {name}");
+            // The media inputs are committed bytes (tests/fixtures/README.md):
+            // made at test time, ffmpeg's encoders follow its build and the
+            // machine's core count, and the goldens hash what is derived from them.
+            let fixture = spec["fixture"]
+                .as_str()
+                .unwrap_or_else(|| panic!("{name}: fill or fixture"));
+            std::fs::copy(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("tests/fixtures")
+                    .join(fixture),
+                &target,
+            )
+            .unwrap_or_else(|error| panic!("{name}: fixture {fixture}: {error}"));
         }
         // Freshness is read from mtimes: every input is as old as the spec's clock.
         let file = std::fs::File::options().write(true).open(&target).unwrap();
@@ -494,10 +495,9 @@ fn as_javascript(value: Value) -> Value {
 
 async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
     let name = scenario["name"].as_str().unwrap();
-    let data = repo_root()
-        .join("_trash-rust/tmp/delivery-scenarios")
-        .join(label)
-        .join(name);
+    // A fixed absolute root: media cache keys hash the file's path, and the
+    // goldens were recorded under this one.
+    let data = Path::new(GOLDEN_DATA_ROOT).join(label).join(name);
     let _ = std::fs::remove_dir_all(&data);
     std::fs::create_dir_all(&data).unwrap();
     let data = data.canonicalize().unwrap();
@@ -633,28 +633,12 @@ fn run_on(runtime: tokio::runtime::Runtime, spec: &Value, call: Call, label: &st
     })
 }
 
-/// Runs a TypeScript scenario runner over a spec file; it writes its JSON to a
-/// file, since the TypeScript logger shares stdout.
-pub fn typescript_side(script: &str, spec: &Path) -> Vec<Value> {
-    let tmp = repo_root().join("_trash-rust/tmp");
-    std::fs::create_dir_all(&tmp).unwrap();
-    let out = tmp.join(spec.file_name().unwrap()).with_extension("typescript.json");
-    // A file left by an earlier run must not stand in for this one.
-    let _ = std::fs::remove_file(&out);
-    let output = Command::new("bun")
-        .arg(script)
-        .arg(spec)
-        .arg(&out)
-        .current_dir(repo_root())
-        .env("TMPDIR", &tmp)
-        .output()
-        .expect("bun must be on PATH");
-    assert!(
-        output.status.success(),
-        "bun failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let parsed: Value = serde_json::from_str(&std::fs::read_to_string(&out).expect("runner output")).unwrap();
+/// What the TypeScript backend recorded for a spec file before the cutover:
+/// `<spec>.golden.json` beside it.
+pub fn golden_side(spec: &Path) -> Vec<Value> {
+    let path = spec.with_extension("golden.json");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+    let parsed: Value = serde_json::from_str(&text).unwrap();
     parsed["scenarios"].as_array().unwrap().clone()
 }
 
@@ -709,15 +693,89 @@ pub fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
     failures
 }
 
-/// The whole comparison for one area: its spec, its TypeScript runner, its
-/// Rust calls.
-pub fn compare(spec_file: &str, script: &str, call: Call, label: &str) {
+/// What ffmpeg's encoders wrote — the site's WebP variants and video posters —
+/// is compared by path and links, not by bytes: those follow the ffmpeg build
+/// (its libwebp, its scaler), while what this crate decides about them does
+/// not. A name taken from one's sha256 — a content version (`?v=` and its first
+/// 12 hex), a shared blob (`.blobs/<sha256>`) — reads as the file it names, and
+/// a listing is compared in the order of those names.
+fn without_encoder_bytes(scenario: &mut Value) {
+    fn encoded(path: &str) -> bool {
+        path.ends_with(".webp") || path.contains("-poster.")
+    }
+    fn file_listings(value: &mut Value, visit: &mut dyn FnMut(&mut Vec<Value>)) {
+        match value {
+            Value::Object(object) => {
+                if object.get("call").and_then(Value::as_str) == Some("files")
+                    && let Some(Value::Array(files)) = object.get_mut("result")
+                {
+                    visit(files);
+                }
+                object.values_mut().for_each(|item| file_listings(item, visit));
+            }
+            Value::Array(items) => items.iter_mut().for_each(|item| file_listings(item, visit)),
+            _ => {}
+        }
+    }
+    fn rename(value: &mut Value, names: &[(String, String)]) {
+        match value {
+            Value::Object(object) => object.values_mut().for_each(|item| rename(item, names)),
+            Value::Array(items) => items.iter_mut().for_each(|item| rename(item, names)),
+            Value::String(text) => {
+                for (hash, name) in names {
+                    if text.contains(hash.as_str()) {
+                        *text = text.replace(hash.as_str(), name);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    // Full hashes first, so a prefix never splits one.
+    let mut full = Vec::new();
+    file_listings(scenario, &mut |files| {
+        for file in files.iter() {
+            if let (Some(path), Some(sha)) = (file["path"].as_str(), file["sha256"].as_str())
+                && encoded(path)
+                && !full.iter().any(|(known, _): &(String, String)| known == sha)
+            {
+                full.push((sha.to_owned(), format!("<encoded {path}>")));
+            }
+        }
+    });
+    let hashes: Vec<String> = full.iter().map(|(sha, _)| sha.clone()).collect();
+    file_listings(scenario, &mut |files| {
+        for file in files.iter_mut() {
+            if file["sha256"]
+                .as_str()
+                .is_some_and(|sha| hashes.iter().any(|known| known == sha))
+            {
+                file["size"] = json!("<encoded>");
+                file["sha256"] = json!("<encoded>");
+            }
+        }
+    });
+    let prefixes: Vec<(String, String)> = full
+        .iter()
+        .map(|(sha, name)| (sha[..12].to_owned(), name.clone()))
+        .collect();
+    let names: Vec<(String, String)> = full.into_iter().chain(prefixes).collect();
+    rename(scenario, &names);
+    file_listings(scenario, &mut |files| {
+        files.sort_by(|a, b| a["path"].as_str().cmp(&b["path"].as_str()));
+    });
+}
+
+/// The whole comparison for one area: its spec, its golden, its Rust calls.
+pub fn compare(spec_file: &str, call: Call, label: &str) {
     let spec_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join(spec_file);
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(&spec_path).unwrap()).unwrap();
-    let expected = typescript_side(script, &spec_path);
-    // The same directory the TypeScript run used, after it: paths inside
-    // content hashes then agree.
-    let actual = rust_side(&spec, call, label);
+    let mut expected = golden_side(&spec_path);
+    let mut actual = rust_side(&spec, call, label);
+    expected
+        .iter_mut()
+        .chain(actual.iter_mut())
+        .for_each(without_encoder_bytes);
     let failures = differences(&expected, &actual);
     assert!(
         failures.is_empty(),

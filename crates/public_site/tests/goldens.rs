@@ -1,6 +1,5 @@
-//! Byte-for-byte replay of `parity/public-site/goldens.json`, which
-//! `bun scripts/rust/public-site-goldens.ts` records from the TypeScript
-//! route: every case runs its steps on a fresh database and DATA_DIR under the
+//! Byte-for-byte replay of `parity/public-site/goldens.json`, recorded from
+//! the TypeScript route before the cutover: every case runs its steps on a fresh database and DATA_DIR under the
 //! same fixed clock, and every response (status, headers, body) and every
 //! journalled event must come out identical.
 

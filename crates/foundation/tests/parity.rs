@@ -1,10 +1,7 @@
-//! Parity with the TypeScript foundation modules, against outputs recorded by
-//! `bun scripts/rust/foundation-fixtures.ts`. The secret-box test also runs the
-//! TypeScript side live, through `scripts/rust/secret-box-open.ts`.
+//! Parity with the TypeScript foundation modules, against outputs the
+//! TypeScript backend recorded before the cutover (`tests/fixtures/`).
 
-use std::io::Write as _;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::path::Path;
 
 use foundation::i18n::plural;
 use foundation::markdown::escape_markdown;
@@ -153,10 +150,6 @@ fn text_helpers_match_typescript() {
     }
 }
 
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
-}
-
 #[test]
 fn secret_box_is_byte_compatible_with_typescript() {
     let boxes = fixture("secret-box.json");
@@ -184,22 +177,13 @@ fn secret_box_is_byte_compatible_with_typescript() {
     }
     assert!(encryption_key(None).unwrap().is_none() && encryption_key(Some("")).unwrap().is_none());
 
-    // Rust seals, TypeScript opens.
-    let values: Vec<&str> = rows(&boxes, "sealed").iter().map(|case| text(&case["value"])).collect();
-    let sealed: Vec<String> = values.iter().map(|value| seal(value, &key)).collect();
-    let request = json!({ "key": key_hex, "sealed": sealed, "values": values }).to_string();
-    let mut bun = Command::new("bun")
-        .arg("scripts/rust/secret-box-open.ts")
-        .current_dir(repository_root())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("bun must be on PATH: this test runs the TypeScript secret-box");
-    bun.stdin.take().unwrap().write_all(request.as_bytes()).unwrap();
-    let output = bun.wait_with_output().unwrap();
-    assert!(output.status.success(), "bun secret-box-open.ts failed");
-    let reply: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(reply["opened"], json!(values));
-    let fingerprints: Vec<String> = values.iter().map(|value| fingerprint(value)).collect();
-    assert_eq!(reply["fingerprints"], json!(fingerprints));
+    // What Rust seals opens again, under a fresh IV each time.
+    for case in rows(&boxes, "sealed") {
+        let value = text(&case["value"]);
+        let (first, second) = (seal(value, &key), seal(value, &key));
+        assert_ne!(first, second, "{case}");
+        assert_eq!(first.split('.').count(), 3, "{case}");
+        assert_eq!(open(&first, &key).unwrap(), value, "{case}");
+        assert_eq!(open(&second, &key).unwrap(), value, "{case}");
+    }
 }

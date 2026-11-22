@@ -1,4 +1,4 @@
-//! The Studio Telegram bot (`apps/backend/src/bot.ts`, `bot/**`), Russian only.
+//! The Studio Telegram bot, Russian only.
 //!
 //! The core lives here: the Bot API client and its transformer stack
 //! ([`api`]), update intake ([`runner`], [`bot`]: the middleware chain in the

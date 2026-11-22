@@ -1,0 +1,32 @@
+{
+  "id": "notice-daily-backup",
+  "area": "notices",
+  "channels": ["telegram", "threads_ru"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "opaqueUploads": true
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "opaqueUploads": true
+    },
+    {
+      "at": "2026-08-21T09:00:00.000Z",
+      "files": {},
+      "failures": {
+        "sendDocument": [
+          {
+            "error_code": 400,
+            "description": "Bad Request: file is too big"
+          }
+        ]
+      },
+      "opaqueUploads": true
+    }
+  ]
+}

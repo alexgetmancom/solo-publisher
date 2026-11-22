@@ -1,9 +1,8 @@
 //! SQL equivalence of the Rust repositories with the TypeScript ones: every
-//! scenario in `scenarios.json` runs through the real TypeScript repositories
-//! (`scripts/rust/domain-scenarios.ts`) and through these, each on its own
-//! fresh database migrated by its own side, and every step's result and every
-//! table's rows must come out identical. The format of a scenario is
-//! described in the TypeScript script.
+//! scenario in `scenarios.json` ran through the real TypeScript repositories
+//! before the cutover (`scenarios.golden.json`) and runs through these, each
+//! on its own fresh database migrated by its own side, and every step's result
+//! and every table's rows must come out identical.
 
 mod support;
 
@@ -231,7 +230,7 @@ fn run(scenario: &Value, start: Timestamp, setup: &[Value]) -> Value {
 #[test]
 fn repositories_match_typescript() {
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(spec_path()).unwrap()).unwrap();
-    let typescript = support::typescript("scripts/rust/domain-scenarios.ts", &spec_path());
+    let typescript = support::golden(&spec_path());
     let start = instant(&spec["clock"]);
     let actual: Vec<Value> = spec["scenarios"]
         .as_array()

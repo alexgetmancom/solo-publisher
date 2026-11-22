@@ -1,5 +1,5 @@
 //! The registry's projections against `parity/ops/catalog.json`
-//! (`bun scripts/rust/ops-goldens.ts`): the catalog, every input schema, the
+//! (recorded before the cutover): the catalog, every input schema, the
 //! MCP tool list, and the `ops` binary as a process — `--help`, every `guide`
 //! view, the dispatcher's refusals — byte for byte, with the exit code.
 

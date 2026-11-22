@@ -1,0 +1,50 @@
+{
+  "id": "settings-connect",
+  "area": "settings",
+  "channels": ["threads_ru", "youtube_ru"],
+  "env": {
+    "TOKEN_ENCRYPTION_KEY": "1111111111111111111111111111111111111111111111111111111111111111",
+    "X_CLIENT_ID": "x-client",
+    "X_CLIENT_SECRET": "x-secret",
+    "INSTAGRAM_APP_ID": "instagram-app",
+    "INSTAGRAM_APP_SECRET": "instagram-secret",
+    "THREADS_APP_ID": "threads-app",
+    "THREADS_APP_SECRET": "threads-secret",
+    "PUBLIC_BASE_URL": "https://studio.example.invalid"
+  },
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    }
+  ]
+}

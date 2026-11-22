@@ -326,7 +326,7 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
             &[Bound::AtLeast(10.0), Bound::AtMost(3600.0)],
         )
         .unwrap_or(900.0);
-    let story_card_assets_dir = s.string_or("STORY_CARD_ASSETS_DIR", "/app/apps/backend/assets/story-card");
+    let story_card_assets_dir = s.string_or("STORY_CARD_ASSETS_DIR", "/app/assets/story-card");
     let story_card_renderer_entry = s.string_or("STORY_CARD_RENDERER_ENTRY", "/app/story-renderer/renderer-process.js");
     let threads_ru_access_token = s.string("THREADS_RU_ACCESS_TOKEN");
     let threads_en_access_token = s.string("THREADS_EN_ACCESS_TOKEN");

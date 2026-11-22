@@ -20,8 +20,9 @@ Command Center и MCP вместе с токенами. Повторный за�
 Studio поднимается сразу пригодной для агента, а не только для человека: один из
 четырёх секретов — `MCP_STUDIO_TOKEN`, поэтому `https://ваш-домен/api/mcp`
 отвечает, как только стек здоров. Установщик печатает две строки, которые ставят
-[плагин `studio`](../plugin/README.md) на него. Telegram можно подключить позже
-или не подключать вовсе — Studio без бота публикует и отчитывается точно так же.
+[плагин `studio`](../plugin/README.md) на него. Без своего Telegram-бота Studio
+не запускается: до первого запуска впишите в `.env` `CONTROLLER_BOT_TOKEN` (от
+@BotFather) и `CONTROLLER_ADMIN_IDS`.
 
 Caddy сам получает и продлевает TLS-сертификат, поэтому ни certbot, ни таймер
 продления настраивать не нужно. Ссылка на Command Center, которую напечатал
@@ -107,17 +108,21 @@ Telegram не отдаёт файлы больше 50 МБ, что меньше 
 
 ## Запуск из исходников
 
-Понадобятся [Bun 1.3.14](https://bun.sh/) и нативные зависимости, необходимые для
-сборки `sharp`. Скопируйте шаблон секретов:
+Понадобятся Rust-тулчейн, закреплённый в `rust-toolchain.toml`, ffmpeg и
+[Bun 1.3.14](https://bun.sh/) — только для sidecar Telegram Stories
+(`sidecars/stories`). Скопируйте шаблон секретов, соберите и запустите Studio с
+ним в окружении:
 
 ```bash
-cp apps/backend/secrets.env.example apps/backend/secrets.env
+cp deploy/secrets.env.example secrets.env
+cargo build --release -p app -p ops
+set -a; . ./secrets.env; set +a; target/release/solo-publisher
 ```
 
 От чьего имени публикует Studio, обслуживает ли она публичный сайт, её часовой
 пояс и параметры видео лежат в её собственной базе и читаются/меняются через
-`bun run --filter @solo-publisher/backend ops -- studio-profile`. Ключи остаются
-в игнорируемом `apps/backend/secrets.env`, а площадки — в реестре каналов.
+`target/release/ops studio-profile`. Ключи остаются в игнорируемом
+`secrets.env`, а площадки — в реестре каналов.
 Публикация текста, видео и сбор аналитики работают всегда.
 
 Приватный Telegram-бот и MCP-эндпоинт работают с одними и теми же сервисами

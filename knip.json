@@ -2,19 +2,9 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["scripts/*.ts", "scripts/rust/*.ts"],
-      "project": ["scripts/**/*.ts"],
-      "ignoreDependencies": ["@mtcute/bun", "sharp"]
-    },
-    "apps/backend": {
-      "entry": [
-        "tests/**/*.test.ts",
-        "src/runtime/config-check.ts",
-        "src/story-cards/renderer-process.ts",
-        "src/studio/services/index.ts",
-        "src/runtime/server.ts"
-      ],
-      "project": ["src/**/*.ts", "tests/**/*.ts"]
+      "entry": ["scripts/*.ts", "deploy/*.ts", "deploy/media-processor/server.ts", "deploy/**/*.test.ts"],
+      "project": ["scripts/**/*.ts", "deploy/**/*.ts"],
+      "ignoreDependencies": ["@mtcute/bun"]
     },
     "sidecars/stories": {
       "entry": ["tests/**/*.test.ts"],

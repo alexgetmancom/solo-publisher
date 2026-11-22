@@ -218,6 +218,9 @@ pub fn orphaned_story_variants(sqlite: &Connection, config: &Config) -> Result<O
             }
         }
     }
+    // Directory order is the filesystem's: sorted, a plan reads the same on
+    // every host.
+    variants.sort();
     let orphaned: Vec<String> = variants
         .iter()
         .filter(|name| !live.contains(VARIANT_SUFFIX.replace(name, "").as_ref()))

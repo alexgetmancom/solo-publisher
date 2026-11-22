@@ -1,6 +1,6 @@
 //! The MCP transport (`GET`/`POST /api/mcp`) through the router with
 //! `oneshot`, against what the Hono app answered (`parity/ops/http.json`,
-//! `bun scripts/rust/ops-goldens.ts`): status, every header, and the body —
+//! recorded before the cutover): status, every header, and the body —
 //! for the SSE stream its first event, with the connection id as `$UUID`.
 
 use std::cell::Cell;

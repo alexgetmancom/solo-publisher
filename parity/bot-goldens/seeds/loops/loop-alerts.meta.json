@@ -1,0 +1,35 @@
+{
+  "id": "loop-alerts",
+  "area": "loops",
+  "channels": ["telegram", "threads_ru"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {},
+      "failures": {
+        "sendMessage": [
+          {
+            "error_code": 403,
+            "description": "Forbidden: bot was blocked by the user"
+          }
+        ]
+      },
+      "reseed": "loop-alerts.step-2.db"
+    },
+    {
+      "at": "2026-08-20T10:00:01.000Z",
+      "files": {},
+      "reseed": "loop-alerts.step-3.db"
+    }
+  ]
+}

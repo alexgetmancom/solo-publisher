@@ -18,10 +18,10 @@
       "name": "image and video build: responsive variants, poster, versioned paths, shared blobs",
       "files": {
         "site/uploads/photo.jpg": {
-          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=640x360:rate=1", "-frames:v", "1"]
+          "fixture": "delivery-wide.jpg"
         },
         "site/uploads/clip.mp4": {
-          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=320x240:rate=10", "-t", "1", "-pix_fmt", "yuv420p", "-c:v", "mpeg4"]
+          "fixture": "site-clip.mp4"
         }
       },
       "steps": [
@@ -66,10 +66,10 @@
       "name": "direct media materialization: a replacement detaches the shared locale file",
       "files": {
         "site/uploads/a.jpg": {
-          "ffmpeg": ["-f", "lavfi", "-i", "testsrc=size=640x360:rate=1", "-frames:v", "1"]
+          "fixture": "delivery-wide.jpg"
         },
         "site/uploads/b.jpg": {
-          "ffmpeg": ["-f", "lavfi", "-i", "testsrc2=size=400x300:rate=1", "-frames:v", "1"]
+          "fixture": "site-b.jpg"
         },
         "site/uploads/raw.png": {
           "fill": "x",

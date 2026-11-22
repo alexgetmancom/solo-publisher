@@ -1443,7 +1443,7 @@
           "removable": 2,
           "removable_megabytes": 0,
           "held_by_a_publish_job": ["draft-12-story-standard.jpg"],
-          "plan": ["ffffffffffffffffffffffff-story-telegram.mp4", "ffffffffffffffffffffffff-story-standard.jpg"]
+          "plan": ["ffffffffffffffffffffffff-story-standard.jpg", "ffffffffffffffffffffffff-story-telegram.mp4"]
         }
       },
       {
@@ -1455,7 +1455,7 @@
           "removable": 2,
           "removable_megabytes": 0,
           "held_by_a_publish_job": ["draft-12-story-standard.jpg"],
-          "plan": ["ffffffffffffffffffffffff-story-telegram.mp4", "ffffffffffffffffffffffff-story-standard.jpg"],
+          "plan": ["ffffffffffffffffffffffff-story-standard.jpg", "ffffffffffffffffffffffff-story-telegram.mp4"],
           "removed": 2
         }
       },

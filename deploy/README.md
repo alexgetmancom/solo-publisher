@@ -173,7 +173,8 @@ recreate and health-check, so rollback always restores its own previous image.
 
 ## Read-only runtime diagnostics
 
-The production image includes the bundled backend operations CLI. From a checkout,
+The production image includes the operations CLI (`/app/bin/ops`, run as
+`bun /app/ops/cli.js`). From a checkout,
 put the SSH destination in the ignored root `.env.local` file and use the single
 production launcher:
 
@@ -190,7 +191,7 @@ bun run ops:prod --as maru status
 Each Studio is a container of its own, so the launcher takes the deployment by
 name: no `--as` means `alex`, and every run prints the deployment and container
 it resolved to on stderr. The names live in `scripts/ops-prod.ts`; a third Studio
-is one line there. The launcher executes the bundled CLI as `bun`, the same
+is one line there. The launcher executes the CLI as `bun`, the same
 unprivileged user used by the application.
 
 Use only the read-only commands above for routine diagnostics. Commands such as

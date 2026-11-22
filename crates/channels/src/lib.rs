@@ -1,7 +1,6 @@
 //! The channels a Studio publishes through and the credentials behind them
-//! (`apps/backend/src/channels/*`), with the observability probes that need
-//! the process or a provider (`observability/{cycle,memory,runtime-health,
-//! token-health}.ts`). The database-only probes live in
+//! with the observability probes that need the process or a provider (the
+//! cycle, memory, runtime health and token health). The database-only probes live in
 //! `domain::observability`; the registry reads publishing needs live in
 //! `domain::channels`, and channel administration in
 //! `domain::studio::services::channels`.

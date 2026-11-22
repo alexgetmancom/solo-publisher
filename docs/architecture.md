@@ -45,11 +45,11 @@ hierarchies, or per-channel subscriptions.
 
 ## Stack
 
-- Bun and TypeScript
-- grammY and MTProto
-- SQLite and Drizzle ORM
+- Rust: tokio, axum, rusqlite
+- The Telegram Bot API, and MTProto (mtcute on Bun) in a small sidecar for Stories
+- SQLite
 - MCP over HTTP
-- ffmpeg and sharp
+- ffmpeg and resvg
 - Docker Compose, Caddy, and immutable-image deployment
 
 There is no Redis, RabbitMQ, separate database server, or multi-tenant
@@ -58,13 +58,13 @@ application layer.
 ## Development
 
 ```bash
-bun run typecheck
-bun run lint
-bun run test
-bun run build
+cargo test --workspace
+bun run check:all
 ```
 
-`bun run check:all` runs the full repository gate. The committed deployment
+`bun run check:all` runs the full repository gate: the TypeScript checks of the
+sidecar and the deployment tooling, `cargo fmt`, `clippy` and tests, and the
+release build. The committed deployment
 files under `deploy/` are specific to the maintainer's own installation — its
 domains, host paths and systemd units. Treat them as an implementation
 reference and supply your own; `install.sh` is the supported path for a
@@ -78,4 +78,4 @@ refresh token, session, or production data export.
 
 The production container starts as root only to fix ownership on dedicated
 bind-mounted data directories, then irreversibly drops to an unprivileged user
-before loading the server. Do not point those mounts at shared host directories.
+before starting the Studio. Do not point those mounts at shared host directories.

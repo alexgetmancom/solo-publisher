@@ -1,6 +1,7 @@
 //! Studio service equivalence with TypeScript: every scenario in
-//! `studio_scenarios.json` drives the real TypeScript Studio services
-//! (`scripts/rust/studio-scenarios.ts`) and `domain::studio::services`, each
+//! `studio_scenarios.json` drove the real TypeScript Studio services before
+//! the cutover (`studio_scenarios.golden.json`) and drives
+//! `domain::studio::services`, each
 //! on its own fresh database under the same fixed clock, and every step's
 //! result and every table's rows must come out identical.
 //!
@@ -732,8 +733,17 @@ fn run(spec: &Value, world: &World, scenario: &Value) -> Value {
     out(json!({ "name": scenario["name"], "results": results, "tables": dump(sqlite, &ignored) }))
 }
 
+/// A fresh base directory holding the committed media the spec names as `{MEDIA}`.
 fn spec() -> Value {
     let base = base_dir();
+    let _ = std::fs::remove_dir_all(&base);
+    let media = base.join("media");
+    std::fs::create_dir_all(&media).unwrap();
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/studio-media");
+    for entry in std::fs::read_dir(fixtures).unwrap() {
+        let entry = entry.unwrap();
+        std::fs::copy(entry.path(), media.join(entry.file_name())).unwrap();
+    }
     let text = std::fs::read_to_string(spec_path())
         .unwrap()
         .replace("{DATA}", &base.join("data").to_string_lossy())
@@ -744,7 +754,7 @@ fn spec() -> Value {
 #[test]
 fn studio_services_match_typescript() {
     let spec = spec();
-    let typescript = support::typescript("scripts/rust/studio-scenarios.ts", &spec_path());
+    let typescript = support::golden(&spec_path());
     let probe = &typescript["probe"];
     let world = World {
         probe: MediaMetadata {

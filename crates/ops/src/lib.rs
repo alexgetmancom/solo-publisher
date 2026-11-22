@@ -1,5 +1,4 @@
-//! The operations registry and its projections (`apps/backend/src/operations/*`,
-//! `cli.ts`, `interfaces/mcp.ts`): one table of operations, dispatched by the
+//! The operations registry and its projections: one table of operations, dispatched by the
 //! `ops` CLI and listed as `ops_*` MCP tools beside the hand-written
 //! `studio_*` tools.
 

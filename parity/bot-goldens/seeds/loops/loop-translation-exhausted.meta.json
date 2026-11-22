@@ -1,0 +1,39 @@
+{
+  "id": "loop-translation-exhausted",
+  "area": "loops",
+  "channels": ["telegram", "site_ru", "site_en", "threads_ru", "threads_en", "x", "discord"],
+  "env": {
+    "DEEPSEEK_API_KEY": "deepseek-test-key"
+  },
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:05.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:15.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:15.000Z",
+      "files": {}
+    }
+  ]
+}

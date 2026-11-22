@@ -1,6 +1,6 @@
 //! Delivery: the workers that take durable publishing state to the platforms
-//! and the public site, and settle what came back (`apps/backend/src/delivery/*`
-//! minus the adapters, which are `crates/adapters`).
+//! and the public site, and settle what came back (the adapters are
+//! `crates/adapters`).
 //!
 //! Every write a worker makes after an earlier check carries that check in its
 //! `WHERE` — the lease, the status, the external id — and anything that may

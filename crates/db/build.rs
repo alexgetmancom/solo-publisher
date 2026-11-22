@@ -1,5 +1,5 @@
-//! Embeds `apps/backend/drizzle` — the single source of the schema — exactly as
-//! drizzle's migrator reads it: journal order, `when` as the bookkeeping
+//! Embeds `migrations/` — the single source of the schema — exactly as
+//! drizzle's migrator read it: journal order, `when` as the bookkeeping
 //! timestamp, and the SHA-256 of each file's text as its hash.
 
 use std::fmt::Write as _;
@@ -9,8 +9,8 @@ use std::{env, fs};
 use sha2::{Digest, Sha256};
 
 fn main() {
-    let folder = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("../../apps/backend/drizzle");
-    let folder = folder.canonicalize().expect("apps/backend/drizzle is missing");
+    let folder = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("migrations");
+    let folder = folder.canonicalize().expect("crates/db/migrations is missing");
     println!("cargo::rerun-if-changed={}", folder.display());
     let journal_path = folder.join("meta/_journal.json");
     println!("cargo::rerun-if-changed={}", journal_path.display());

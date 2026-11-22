@@ -3,10 +3,12 @@
 //! updates, the same clock and a fake Telegram that answers and normalises as
 //! the recorder's did; the recorded calls must come out byte for byte.
 //!
-//! Seeds (`_trash-rust/tmp/bot-goldens-seeds/<area>/<case>.{db,meta.json,golden.json}`)
-//! are written by `bun scripts/rust/bot-goldens.ts --seeds`, which this
-//! harness runs itself when they are missing or no longer match the committed
-//! goldens.
+//! The recorder's seeds are committed as SQL (`parity/bot-goldens/seeds/`:
+//! `schema.sql`, then per database its rows, `<file>.schema.sql` where its
+//! schema differs, and each case's `<case>.meta.json`), with the recorder's
+//! temporary directory written as `<tmp>`. [`ensure_seeds`] builds them into
+//! `_trash-rust/tmp/bot-goldens-seeds/` and puts the recorder's files under
+//! [`recorder_tmp`], once per change of the committed seeds.
 //!
 //! The seeds are shared and only read. Everything a case writes — its copy of
 //! the database, its `DATA_DIR` — is in a [`Scratch`] directory of its own
@@ -24,10 +26,9 @@ pub mod zernio;
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::rc::Rc;
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
 use bot::api::types::Update;
@@ -38,6 +39,7 @@ use foundation::i18n::{Key, t};
 use jiff::Timestamp;
 use runtime::http::HttpClient;
 use serde_json::{Value, json};
+use sha2::{Digest as _, Sha256};
 use std::future::Future;
 
 use deepseek::GoldenDeepSeek;
@@ -63,6 +65,14 @@ fn goldens_dir() -> PathBuf {
 fn seeds_dir() -> PathBuf {
     repo_root().join("_trash-rust/tmp/bot-goldens-seeds")
 }
+
+fn committed_seeds() -> PathBuf {
+    goldens_dir().join("seeds")
+}
+
+/// Ends the tables of a schema file; its indexes and triggers follow, and are
+/// created after the rows, so no trigger rewrites what was recorded.
+const SCHEMA_REST: &str = "-- indexes and triggers, created after the rows\n";
 
 /// The recorder's temporary directory, which `<tmp>` stands for.
 pub fn recorder_tmp() -> PathBuf {
@@ -98,63 +108,135 @@ pub fn areas() -> Vec<String> {
                 .is_dir()
                 .then(|| entry.file_name().into_string().ok())?
         })
+        .filter(|area| area != "seeds" && area != "fixtures")
         .collect();
     areas.sort();
     areas
 }
 
-fn seeds_match_goldens() -> Result<(), String> {
-    for area in areas() {
-        for case in cases(&area) {
-            let seed = seeds_dir().join(&area);
-            for suffix in ["db", "meta.json", "golden.json"] {
-                if !seed.join(format!("{case}.{suffix}")).exists() {
-                    return Err(format!("no seed {area}/{case}.{suffix}"));
-                }
-            }
-            let recorded = read_json(&seed.join(format!("{case}.golden.json")));
-            let committed = read_json(&goldens_dir().join(&area).join(format!("{case}.json")));
-            if recorded != committed {
-                return Err(format!(
-                    "the seed of {area}/{case} was recorded from a bot that no longer matches the committed golden"
-                ));
-            }
-        }
-    }
-    Ok(())
-}
-
-/// Makes sure the seeds exist and belong to the committed goldens, recording
-/// them with the TypeScript bot when they do not.
+/// Builds the seed databases and the recorder's files from the committed
+/// seeds, unless the last build was of the same seeds.
 pub fn ensure_seeds() {
     static READY: OnceLock<Result<(), String>> = OnceLock::new();
-    static RECORDING: Mutex<()> = Mutex::new(());
     let ready = READY.get_or_init(|| {
-        let _recording = RECORDING.lock().unwrap();
-        // Another `cargo test` may be checking or recording the same seeds.
+        // Another `cargo test` may be checking or building the same seeds.
         let lock_path = repo_root().join("_trash-rust/tmp/bot-goldens-seeds.lock");
         std::fs::create_dir_all(lock_path.parent().unwrap()).map_err(|error| error.to_string())?;
         let lock = std::fs::File::create(&lock_path).map_err(|error| format!("{}: {error}", lock_path.display()))?;
         lock.lock()
             .map_err(|error| format!("{}: {error}", lock_path.display()))?;
-        if seeds_match_goldens().is_ok() {
+        let stamp = seeds_stamp()?;
+        let stamp_path = seeds_dir().join("stamp");
+        if std::fs::read_to_string(&stamp_path).is_ok_and(|built| built == stamp) {
             return Ok(());
         }
-        let root = repo_root();
-        let status = Command::new("bun")
-            .args(["scripts/rust/bot-goldens.ts", "--seeds"])
-            .current_dir(&root)
-            .env("TMPDIR", root.join("_trash-rust/tmp"))
-            .status()
-            .map_err(|error| format!("could not run bun: {error}"))?;
-        if !status.success() {
-            return Err(format!("bun scripts/rust/bot-goldens.ts --seeds failed: {status}"));
-        }
-        seeds_match_goldens()
+        build_seeds()?;
+        std::fs::write(&stamp_path, stamp).map_err(|error| error.to_string())
     });
     if let Err(error) = ready {
         panic!("{error}");
     }
+}
+
+/// Every committed seed and fixture file, in order, by name and content.
+fn seeds_stamp() -> Result<String, String> {
+    let mut files = Vec::new();
+    for dir in [committed_seeds(), goldens_dir().join("fixtures")] {
+        collect_files(&dir, &mut files)?;
+    }
+    files.sort();
+    let mut hash = Sha256::new();
+    for file in files {
+        hash.update(file.display().to_string().as_bytes());
+        hash.update(std::fs::read(&file).map_err(|error| format!("{}: {error}", file.display()))?);
+    }
+    Ok(hex(&hash.finalize()))
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), String> {
+    for entry in std::fs::read_dir(dir).map_err(|error| format!("{}: {error}", dir.display()))? {
+        let path = entry.map_err(|error| error.to_string())?.path();
+        if path.is_dir() {
+            collect_files(&path, out)?;
+        } else {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+fn io_error(path: &Path) -> impl Fn(std::io::Error) -> String + '_ {
+    move |error| format!("{}: {error}", path.display())
+}
+
+fn build_seeds() -> Result<(), String> {
+    let tmp = recorder_tmp();
+    let tmp_text = tmp.display().to_string();
+    // The recorder's fixtures, and the content-addressed copies of them its
+    // cases left under `<tmp>/cases/` (`<first 24 hex of the sha256>.<ext>`).
+    let fixtures = tmp.join("fixtures");
+    std::fs::create_dir_all(&fixtures).map_err(io_error(&fixtures))?;
+    let mut by_hash = Vec::new();
+    for entry in std::fs::read_dir(goldens_dir().join("fixtures")).map_err(|error| error.to_string())? {
+        let source = entry.map_err(|error| error.to_string())?.path();
+        let bytes = std::fs::read(&source).map_err(io_error(&source))?;
+        let target = fixtures.join(source.file_name().unwrap());
+        std::fs::write(&target, &bytes).map_err(io_error(&target))?;
+        by_hash.push((hex(&Sha256::digest(&bytes)), target));
+    }
+    let case_file = regex::Regex::new(r"<tmp>/cases/[^'\s]+").unwrap();
+
+    let _ = std::fs::remove_dir_all(seeds_dir());
+    let shared = std::fs::read_to_string(committed_seeds().join("schema.sql")).map_err(|error| error.to_string())?;
+    for area in areas() {
+        let source = committed_seeds().join(&area);
+        let target = seeds_dir().join(&area);
+        std::fs::create_dir_all(&target).map_err(io_error(&target))?;
+        for entry in std::fs::read_dir(&source).map_err(io_error(&source))? {
+            let path = entry.map_err(|error| error.to_string())?.path();
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            let text = std::fs::read_to_string(&path).map_err(io_error(&path))?;
+            if name.ends_with(".meta.json") {
+                std::fs::write(target.join(&name), text.replace("<tmp>", &tmp_text)).map_err(io_error(&path))?;
+                continue;
+            }
+            let Some(base) = name.strip_suffix(".sql").filter(|base| !base.ends_with(".schema")) else {
+                continue;
+            };
+            for found in case_file.find_iter(&text) {
+                let file = PathBuf::from(found.as_str().replacen("<tmp>", &tmp_text, 1));
+                let stem = file.file_stem().unwrap().to_string_lossy().into_owned();
+                let (_, fixture) = by_hash
+                    .iter()
+                    .find(|(hash, _)| hash.starts_with(&stem))
+                    .ok_or_else(|| format!("{name}: no fixture for {}", file.display()))?;
+                std::fs::create_dir_all(file.parent().unwrap()).map_err(io_error(&file))?;
+                std::fs::copy(fixture, &file).map_err(io_error(&file))?;
+            }
+            let own = source.join(format!("{base}.schema.sql"));
+            let schema = if own.exists() {
+                std::fs::read_to_string(&own).map_err(io_error(&own))?
+            } else {
+                shared.clone()
+            };
+            let (tables, rest) = schema
+                .split_once(SCHEMA_REST)
+                .ok_or_else(|| format!("{base}: schema without its marker"))?;
+            let rows = text.replace("<tmp>", &tmp_text);
+            let sqlite =
+                db::rusqlite::Connection::open(target.join(format!("{base}.db"))).map_err(|error| error.to_string())?;
+            sqlite
+                // Rows go in table order, not in the order their references
+                // allow; the bundled SQLite enforces foreign keys by default.
+                .execute_batch(&format!("PRAGMA foreign_keys = OFF;BEGIN;{tables}{rows}{rest}COMMIT;"))
+                .map_err(|error| format!("{area}/{name}: {error}"))?;
+        }
+    }
+    Ok(())
 }
 
 fn instant(text: &str) -> Timestamp {

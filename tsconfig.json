@@ -2,10 +2,10 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "types": ["bun"],
-    "typeRoots": ["./apps/backend/node_modules/@types", "./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types"],
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
   "include": ["scripts/**/*"],
-  "exclude": ["dist", "apps/backend"]
+  "exclude": ["dist"]
 }

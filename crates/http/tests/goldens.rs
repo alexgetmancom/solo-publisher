@@ -1,5 +1,5 @@
-//! Replay of `parity/http/goldens.json`, which `bun scripts/rust/http-goldens.ts`
-//! records from the TypeScript Hono app: every case runs its steps on a fresh
+//! Replay of `parity/http/goldens.json`, recorded from the TypeScript Hono app
+//! before the cutover: every case runs its steps on a fresh
 //! database and DATA_DIR under the same fixed clock, sends every request
 //! through the router (`tower::ServiceExt::oneshot`, no sockets) exactly as
 //! the TypeScript app saw it, against a recording transport answering the

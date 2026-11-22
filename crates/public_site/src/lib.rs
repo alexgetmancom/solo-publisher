@@ -1,5 +1,4 @@
-//! The public site's read side (`apps/backend/src/public/*` and the body of
-//! `GET /api/public/site`): the published-post read model, the description of
+//! The public site's read side (the body of `GET /api/public/site`): the published-post read model, the description of
 //! served images, the video asset lookup, and the route logic — status,
 //! headers and body for a request's `If-None-Match` and `Prefer: wait=N` —
 //! ready for the HTTP layer to mount.

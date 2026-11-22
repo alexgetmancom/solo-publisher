@@ -1,374 +1,101 @@
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { RESPONSIVE_WIDTHS } from "../apps/backend/src/content/site-media-naming.ts";
-import { responsiveWebpFfmpegArgs, sitePosterFfmpegArgs } from "../apps/backend/src/delivery/site-media.js";
-import {
-  localStoryFfmpegArgs,
-  needsVerticalBlur,
-  telegramVideoKbps,
-  verticalImageFfmpegArgs,
-} from "../deploy/media-processor/story-encode.js";
-import { devFixture, seedSiteFixture } from "./fixtures/site-fixture.js";
-
 /**
- * Boots the built backend image against a throwaway seeded database and walks
- * the public routes, the ops CLI and ffmpeg.
+ * Inspects a built Studio image the way production reaches it, without a bot
+ * token and so without starting a Studio:
  *
- * This exists because the image ships a *pruned* node_modules (see the
- * prod-deps stage in apps/backend/Dockerfile), and native packages (sharp,
- * mtcute's WASM) are loaded at runtime rather than bundled. A package the prune
- * removed is present on the runner, so the build and the tests pass, and the
- * container starts and fails per request. Hence: run the real image, and assert
- * on response bodies rather than on process liveness.
+ * - what the image carries: the three binaries, the Stories sidecar bundle
+ *   with mtcute's WASM, the Story-card assets, ffmpeg, Bun and setpriv;
+ * - the entrypoint as root: it fixes the data directory's ownership, drops to
+ *   uid 1000 and starts the Studio, which then refuses for want of a token —
+ *   proof that the fix, the drop and the probe all ran first;
+ * - the deploy agent's configuration check (`bun /app/entrypoint/config-check.js`),
+ *   accepting a valid configuration and refusing an invalid one;
+ * - the operations route `bun /app/ops/cli.js` (scripts/ops-prod.ts).
  *
- *   IMAGE=ghcr.io/...:tag bun scripts/image-smoke.ts
+ *   IMAGE=ghcr.io/...@sha256:... bun scripts/image-smoke.ts
  */
 
 const image = process.env.IMAGE;
 if (!image) {
-  console.error("IMAGE is required, e.g. IMAGE=ghcr.io/owner/solo-publisher:tag");
+  console.error("IMAGE is required, e.g. IMAGE=ghcr.io/owner/solo-publisher@sha256:...");
   process.exit(1);
 }
-
-const container = `image-smoke-${process.pid}`;
-const volume = `image-smoke-${process.pid}`;
-const port = 18000 + (process.pid % 20000);
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "image-smoke-"));
-const dataDir = path.join(root, "data");
-const publicDir = path.join(dataDir, "site");
-fs.mkdirSync(publicDir, { recursive: true });
-
-/** The fixture `bun run demo` seeds, so both look at one shape of data. Two
- * images on the first post keep the gallery path exercised. */
-const { imagePaths } = seedSiteFixture({
-  dbPath: path.join(dataDir, "pipeline.db"),
-  publicDir,
-  posts: devFixture(3, 2),
-});
 
 const failures: string[] = [];
 const check = (ok: boolean, what: string, detail = "") => {
-  console.log(`${ok ? "ok  " : "FAIL"} ${what}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "ok  " : "FAIL"} ${what}${ok || !detail ? "" : `\n${detail}`}`);
   if (!ok) failures.push(what);
 };
 
-async function run(command: string[]): Promise<{ code: number; out: string }> {
-  const proc = Bun.spawn(command, { stdout: "pipe", stderr: "pipe" });
-  const [out, err] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
-  return { code: await proc.exited, out: out + err };
+async function run(args: string[]): Promise<{ code: number; out: string; stdout: string }> {
+  const proc = Bun.spawn(["docker", "run", "--rm", ...args], { stdout: "pipe", stderr: "pipe" });
+  const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
+  return { code: await proc.exited, out: stdout + stderr, stdout };
 }
 
-async function cleanup(): Promise<void> {
-  await run(["docker", "rm", "-f", container]);
-  await run(["docker", "volume", "rm", "-f", volume]);
-  fs.rmSync(root, { recursive: true, force: true });
-}
+const contents = await run([
+  "--entrypoint",
+  "sh",
+  image,
+  "-c",
+  [
+    "set -e",
+    "test -x /app/bin/solo-publisher",
+    "test -x /app/bin/studio-entrypoint",
+    "test -x /app/bin/ops",
+    "test -f /app/sidecar/main.js && test -f /app/sidecar/login.js",
+    "ls /app/sidecar/*.wasm",
+    "test -f /app/assets/story-card/Manrope-Variable.ttf",
+    "test -f /app/assets/story-card/NotoColorEmoji.ttf",
+    "test -f /app/assets/story-card/strata-master-background.png",
+    "test -f /app/ops/cli.js && test -f /app/entrypoint/config-check.js",
+    "ffmpeg -hide_banner -version | head -n 1",
+    "ffprobe -hide_banner -version | head -n 1",
+    "bun --version",
+    "setpriv --version",
+    "id bun",
+  ].join("\n"),
+]);
+check(contents.code === 0, "image contents", contents.out);
 
+const refusal = "Telegram bot token is not configured";
+const studio = await run(["--entrypoint", "/app/bin/solo-publisher", "-e", "DATA_DIR=/tmp/data", image]);
+check(studio.code !== 0 && studio.out.includes(refusal), "the Studio refuses without a bot token", studio.out);
+
+const started = await run(["-e", "DATA_DIR=/data", image]);
+check(
+  started.out.includes("fixed data directory ownership before dropping privileges") &&
+    started.out.includes(refusal) &&
+    !/cannot drop privileges|remain unwritable/.test(started.out),
+  "entrypoint fixes ownership, drops privileges, then starts the Studio",
+  started.out,
+);
+
+const valid = await run(["--entrypoint", "bun", "-e", "DATA_DIR=/tmp/data", image, "/app/entrypoint/config-check.js"]);
+check(valid.code === 0 && valid.stdout.trim() === '{"ok":true}', "config check accepts a valid configuration", valid.out);
+const invalid = await run([
+  "--entrypoint",
+  "bun",
+  "-e",
+  "DATA_DIR=/tmp/data",
+  "-e",
+  "NODE_ENV=production",
+  "-e",
+  "DEPLOYMENT_ENV=production",
+  image,
+  "/app/entrypoint/config-check.js",
+]);
+check(invalid.code !== 0 && invalid.out.includes("COMMAND_CENTER_TOKEN"), "config check refuses an invalid configuration", invalid.out);
+
+const guide = await run(["--entrypoint", "bun", "-e", "DATA_DIR=/tmp/data", "-u", "bun", image, "/app/ops/cli.js", "guide", "--json"]);
+let guideOk = false;
 try {
-  const available = await run(["docker", "image", "inspect", image]);
-  if (available.code !== 0) {
-    const pulled = await run(["docker", "pull", image]);
-    if (pulled.code !== 0) {
-      throw new Error(`Docker image is not available locally and pull failed: ${image}\n${pulled.out}`);
-    }
-  }
-
-  const configCheck = await run(["docker", "run", "--rm", "--entrypoint", "bun", image, "/app/entrypoint/config-check.js"]);
-  check(configCheck.code === 0, "production config preflight", configCheck.out.trim());
-  if (configCheck.code !== 0) throw new Error("production config preflight failed");
-
-  /**
-   * The fixture goes into a docker volume rather than a bind mount, and the
-   * container is created, filled and only then started.
-   *
-   * A bind mount looks fine on macOS and breaks on Linux. Docker Desktop and
-   * OrbStack virtualise bind-mount ownership; a real Linux host does not. The
-   * entrypoint chowns /data itself and drops to uid 1000, but
-   * fixDataDirectoriesOwnership is deliberately non-recursive (see
-   * foundation/runtime/data-dirs.ts), so a seeded pipeline.db keeps the uid of
-   * whoever ran this script and the server dies on its first write with
-   * SQLITE_READONLY. The mirror image bites on the way out: files the
-   * container leaves behind as uid 1000 are not deletable by that same user.
-   *
-   * Inside a volume the chown is real on every platform, and teardown is
-   * `docker volume rm`, so no host uid is ever involved.
-   */
-  const created = await run([
-    "docker",
-    "create",
-    "--pull",
-    "never",
-    "--name",
-    container,
-    "-p",
-    `127.0.0.1:${port}:8788`,
-    "-v",
-    `${volume}:/data`,
-    "-e",
-    "DATA_DIR=/data",
-    "-e",
-    "PIPELINE_DB=/data/pipeline.db",
-    "-e",
-    "SITE_PUBLIC_DIR=/data/site",
-    "-e",
-    "MEDIA_CACHE_DIR=/data/media-cache",
-    "-e",
-    "VIDEO_MEDIA_DIR=/data/video-media",
-    "-e",
-    "BIND_HOST=0.0.0.0",
-    "-e",
-    "PORT=8788",
-    "-e",
-    "TELEGRAM_CHANNEL_USERNAME=smoke-channel",
-    image,
-  ]);
-  if (created.code !== 0) throw new Error(`docker create failed: ${created.out}`);
-
-  const copied = await run(["docker", "cp", `${dataDir}/.`, `${container}:/data`]);
-  if (copied.code !== 0) throw new Error(`docker cp failed: ${copied.out}`);
-
-  // `docker cp` writes as root; hand the whole tree to the runtime user before
-  // the entrypoint drops privileges.
-  const owned = await run([
-    "docker",
-    "run",
-    "--rm",
-    "--user",
-    "0",
-    "--entrypoint",
-    "sh",
-    "-v",
-    `${volume}:/data`,
-    image,
-    "-c",
-    "chown -R 1000:1000 /data",
-  ]);
-  if (owned.code !== 0) throw new Error(`smoke volume preparation failed: ${owned.out}`);
-
-  const started = await run(["docker", "start", container]);
-  if (started.code !== 0) throw new Error(`docker start failed: ${started.out}`);
-
-  const base = `http://127.0.0.1:${port}`;
-  const deadline = Date.now() + 60_000;
-  let ready = false;
-  while (Date.now() < deadline) {
-    const response = await fetch(`${base}/readyz`).catch(() => undefined);
-    if (response?.ok) {
-      ready = true;
-      break;
-    }
-    await Bun.sleep(500);
-  }
-  check(ready, "container becomes ready");
-  if (!ready) throw new Error("never became ready");
-
-  /** `/api/public/site` answers only for a Studio that publishes a site, which a
-   * fresh install does not. Turning it on through `ops` against the running
-   * container is also the assertion that a Studio setting reaches the next
-   * request: nothing here restarts anything between this call and the walk. */
-  const siteOn = await run(["docker", "exec", "-u", "bun", container, "bun", "/app/ops/cli.js", "studio-profile-set", "--site-enabled"]);
-  check(siteOn.code === 0, "public site enabled through ops", siteOn.out.trim());
-  if (siteOn.code !== 0) throw new Error("could not enable the public site");
-
-  /** Minimum body size per route; a failing route answers with an empty body. */
-  const routes: [string, number][] = [
-    ["/api/public/site", 1_000],
-    // Discovery documents live under a dotfile directory, which is exactly the
-    // kind of path a build or artifact step drops without failing. They reached
-    // production as 404s once already.
-    ["/.well-known/mcp/server-card.json", 50],
-    ["/.well-known/oauth-protected-resource", 50],
-  ];
-  const probed = await Promise.all(
-    routes.map(async ([route, minimumBytes]) => {
-      const response = await fetch(base + route);
-      const body = await response.text();
-      return { route, minimumBytes, status: response.status, body };
-    }),
-  );
-  for (const { route, minimumBytes, status, body } of probed) {
-    check(status === 200 && body.length >= minimumBytes, `GET ${route}`, `${status}, ${body.length}b (min ${minimumBytes})`);
-  }
-  const site = probed.find((entry) => entry.route === "/api/public/site")?.body ?? "";
-
-  const authorizationServer = await fetch(`${base}/.well-known/oauth-authorization-server`);
-  check(authorizationServer.status === 404, "does not advertise an OAuth issuer", String(authorizationServer.status));
-
-  // The feed must list the original image the media worker produces, and
-  // that file must actually be served off the mounted public dir.
-  const firstImage = imagePaths[0] ?? "";
-  check(firstImage !== "" && site.includes(firstImage), "site feed lists the fixture image", firstImage);
-  const media = await fetch(`${base}/${firstImage}`);
-  check(media.status === 200, `GET /${firstImage}`, String(media.status));
-
-  // In parallel: each of these spawns a fresh bun in the container, and this
-  // step sits on the critical path between the image build and the deploy.
-  // `doctor` fails a Studio whose media has never been pulled off it, so the
-  // export runs first — which is also the only place the streaming path is
-  // exercised inside the real image, tar and all.
-  // Counted in the container: the stream is gzip, and decoding it as text here
-  // to measure it would mangle the very bytes being checked.
-  const exported = await run([
-    "docker",
-    "exec",
-    "-u",
-    "bun",
-    container,
-    "sh",
-    "-c",
-    "bun /app/ops/cli.js backup-stream --what media | wc -c",
-  ]);
-  // `wc -c` prints the count and nothing else, but the container's stderr is
-  // folded into this capture: one warning logged during the pull would turn the
-  // measurement into NaN and fail a backup that in fact streamed fine.
-  const exportedBytes = Number(
-    exported.out
-      .trim()
-      .split(/\s+/)
-      .find((value) => /^\d+$/.test(value)),
-  );
-  check(exported.code === 0 && exportedBytes > 0, "ops backup-stream --what media", `exit ${exported.code}, ${exported.out.trim()} bytes`);
-
-  const opsCommands = ["doctor", "status", "audit", "format-support"];
-  const opsResults = await Promise.all(
-    opsCommands.map((command) => run(["docker", "exec", "-u", "bun", container, "bun", "/app/ops/cli.js", command])),
-  );
-  for (const [index, result] of opsResults.entries()) {
-    check(result.code === 0, `ops ${opsCommands[index]}`, `exit ${result.code}`);
-  }
-
-  /**
-   * The ffmpeg work the backend container really does, driven by the very
-   * argument builders production calls — not by a hand-written command that
-   * would drift from them.
-   *
-   * `-version` is not enough and neither is a plain h264 encode: these recipes
-   * reach for specific encoders and filters (libwebp above all) that a bump of
-   * the pinned mwader/static-ffmpeg image could quietly drop. The story recipe
-   * is the local executor's, the one maru falls back to when
-   * MEDIA_PROCESSOR_PROVIDER is unset; VM-106's VAAPI path cannot run on a
-   * runner and is covered by `ops media-diagnose` instead.
-   */
-  const inContainer = (args: string[]) => run(["docker", "exec", "-u", "bun", container, ...args]);
-  const dimensions = async (file: string): Promise<string> => {
-    const probe = await inContainer([
-      "ffprobe",
-      "-v",
-      "error",
-      "-select_streams",
-      "v:0",
-      "-show_entries",
-      "stream=width,height",
-      "-of",
-      "csv=p=0:s=x",
-      file,
-    ]);
-    return probe.out.trim();
-  };
-
-  // Exercise the isolated renderer exactly as the durable worker does. This
-  // catches missing Sharp native bindings, omitted brand assets and broken
-  // font discovery in the pruned production image before deployment.
-  const storyCard = await inContainer([
-    "sh",
-    "-c",
-    `printf '%s' '<?xml version="1.0"?><fontconfig><dir>/app/apps/backend/assets/story-card</dir><cachedir>/tmp/story-card-font-cache</cachedir></fontconfig>' > /tmp/story-card-fontconfig.xml && printf '%s' '${JSON.stringify(
-      {
-        backgroundPath: "/app/apps/backend/assets/story-card/strata-master-background.png",
-        assetsDir: "/app/apps/backend/assets/story-card",
-        outputPath: "/tmp/text-story-card.jpg",
-        // What the worker passes from studio_profile. A named Studio here, so
-        // the smoke test also renders the wordmark's glyphs and not only the copy.
-        wordmark: "smoke studio",
-        copy: {
-          headline: "ChatGPT reached one billion weekly active users.",
-          emoji: "⚡",
-          lines: ["ChatGPT reached one billion", "weekly active users."],
-          boldLineCount: 1,
-          templateVersion: "strata-v3",
-        },
-      },
-    )}' | FONTCONFIG_FILE=/tmp/story-card-fontconfig.xml bun /app/story-renderer/renderer-process.js`,
-  ]);
-  check(storyCard.code === 0, "text Story card renderer", storyCard.out.trim().slice(0, 200));
-  if (storyCard.code === 0) {
-    const storyCardSize = await dimensions("/tmp/text-story-card.jpg");
-    check(storyCardSize === "1080x1920", "text Story card dimensions", storyCardSize);
-  }
-
-  const sources = await inContainer([
-    "sh",
-    "-c",
-    "ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc=size=640x480:rate=5 -t 0.8 -pix_fmt yuv420p -y /tmp/src.mp4 " +
-      "&& ffmpeg -hide_banner -loglevel error -i /tmp/src.mp4 -frames:v 1 -y /tmp/src.jpg",
-  ]);
-  check(sources.code === 0, "ffmpeg builds the smoke sources", sources.out.trim().slice(0, 200));
-
-  // The smoke source is 640x480, so the local executor blurs it -- which is the
-  // branch worth running in the shipped image, since it is the expensive one.
-  const smokeBlur = needsVerticalBlur(640, 480);
-
-  /** Each entry runs prod's real arguments and states what its outputs must be. */
-  const encodes: {
-    name: string;
-    args: string[];
-    outputs: { path: string; expect: string }[];
-  }[] = [
-    {
-      // One invocation, two files: a Story video is both of them, and an image
-      // that only ever checked the standard one let the Telegram variant vanish.
-      name: "story video (local executor)",
-      args: localStoryFfmpegArgs("/tmp/src.mp4", "/tmp/story.mp4", "/tmp/story-telegram.mp4", telegramVideoKbps(0.8, 128_000), smokeBlur),
-      outputs: [
-        { path: "/tmp/story.mp4", expect: "1080x1920" },
-        { path: "/tmp/story-telegram.mp4", expect: "1080x1920" },
-      ],
-    },
-    {
-      name: "story image (local executor)",
-      args: verticalImageFfmpegArgs("/tmp/src.jpg", "/tmp/story.jpg", smokeBlur),
-      outputs: [{ path: "/tmp/story.jpg", expect: "1080x1920" }],
-    },
-    {
-      name: "site poster frame",
-      args: sitePosterFfmpegArgs("/tmp/src.mp4", "/tmp/poster.jpg"),
-      outputs: [{ path: "/tmp/poster.jpg", expect: "640x480" }],
-    },
-    // libwebp is the encoder most likely to go missing in a rebuilt static
-    // ffmpeg, and every responsive image on the site depends on it.
-    {
-      name: `responsive webp ${RESPONSIVE_WIDTHS[0]}px`,
-      args: responsiveWebpFfmpegArgs("/tmp/src.jpg", `/tmp/responsive-${RESPONSIVE_WIDTHS[0]}.webp`, RESPONSIVE_WIDTHS[0]),
-      outputs: [{ path: `/tmp/responsive-${RESPONSIVE_WIDTHS[0]}.webp`, expect: `${RESPONSIVE_WIDTHS[0]}x270` }],
-    },
-  ];
-  for (const { name, args, outputs } of encodes) {
-    const encoded = await inContainer(["ffmpeg", "-hide_banner", "-loglevel", "error", ...args]);
-    if (encoded.code !== 0) {
-      check(false, `ffmpeg: ${name}`, `exit ${encoded.code}: ${encoded.out.trim().slice(0, 200)}`);
-      continue;
-    }
-    for (const { path: output, expect } of outputs) {
-      const size = await dimensions(output);
-      check(size === expect, `ffmpeg: ${name} -> ${output}`, `${size} (expected ${expect})`);
-    }
-  }
-
-  const logs = await run(["docker", "logs", container]);
-  const errors = logs.out.split("\n").filter((line) => line.includes('"level":"error"') || line.includes("Cannot find module"));
-  check(errors.length === 0, "no errors in container logs", errors.slice(0, 3).join(" | "));
-} catch (error) {
-  const logs = await run(["docker", "logs", container]);
-  console.error(String(error));
-  console.error(logs.out.split("\n").slice(-40).join("\n"));
-  failures.push("smoke run threw");
-} finally {
-  await cleanup();
-}
+  const parsed = JSON.parse(guide.stdout) as { local?: { state?: string } };
+  guideOk = guide.code === 0 && parsed.local?.state === "missing";
+} catch {}
+check(guideOk, "ops CLI answers guide --json", guide.out);
 
 if (failures.length > 0) {
-  console.error(`\n${failures.length} smoke check(s) failed: ${failures.join(", ")}`);
+  console.error(`${failures.length} image check(s) failed: ${failures.join(", ")}`);
   process.exit(1);
 }
-console.log("\nimage smoke passed");
+console.log("Image smoke test passed.");

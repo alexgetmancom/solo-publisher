@@ -1,5 +1,4 @@
-//! The Studio's HTTP edge (`apps/backend/src/api.ts`, `interfaces/http/*`,
-//! `foundation/http-*.ts`, `ranged-file.ts`, `client-identity.ts`) on axum.
+//! The Studio's HTTP edge on axum.
 //!
 //! The process is single-threaded and its state is `Rc` (the bot owns the
 //! database), while axum's handlers and router must be `Send`. Routing,

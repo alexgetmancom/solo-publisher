@@ -1,6 +1,7 @@
-//! The site build queue, site media materialization and IndexNow, TypeScript
-//! (`scripts/rust/site-scenarios.ts`) against Rust over the same scenarios
-//! (`site_scenarios.json`): real ffmpeg on both sides, every file the build
+//! The site build queue, site media materialization and IndexNow, Rust
+//! against what TypeScript recorded before the cutover over the same scenarios
+//! (`site_scenarios.json`, `site_scenarios.golden.json`): real ffmpeg on both
+//! sides, every file the build
 //! leaves under the site directory compared by size, digest and link count.
 //!
 //! IndexNow sends are fire-and-forget on both sides; the `settleIndexNow` step
@@ -166,5 +167,5 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
 
 #[test]
 fn site_scenarios_match_typescript() {
-    support::compare("site_scenarios.json", "scripts/rust/site-scenarios.ts", call, "site");
+    support::compare("site_scenarios.json", call, "site");
 }

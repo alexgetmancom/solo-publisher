@@ -1,0 +1,47 @@
+{
+  "id": "loop-albums",
+  "area": "loops",
+  "channels": ["telegram", "site_ru", "site_en", "threads_ru", "threads_en", "x", "discord"],
+  "env": {},
+  "fastStoryWait": false,
+  "steps": [
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {}
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "loop-album-1": "<tmp>/fixtures/photo.jpg"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "loop-album-1": "<tmp>/fixtures/photo.jpg",
+        "loop-album-2": "<tmp>/fixtures/photo.jpg"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:00.000Z",
+      "files": {
+        "loop-album-1": "<tmp>/fixtures/photo.jpg",
+        "loop-album-2": "<tmp>/fixtures/photo.jpg"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:05.000Z",
+      "files": {
+        "loop-album-1": "<tmp>/fixtures/photo.jpg",
+        "loop-album-2": "<tmp>/fixtures/photo.jpg"
+      }
+    },
+    {
+      "at": "2026-08-20T09:00:05.000Z",
+      "files": {
+        "loop-album-1": "<tmp>/fixtures/photo.jpg",
+        "loop-album-2": "<tmp>/fixtures/photo.jpg"
+      }
+    }
+  ]
+}
