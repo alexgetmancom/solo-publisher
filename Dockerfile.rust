@@ -23,8 +23,8 @@ COPY apps/backend/drizzle ./apps/backend/drizzle
 ARG CARGO_JOBS=
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint \
-  && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint -t /out/
+    cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops \
+  && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint target/release/ops -t /out/
 
 # --- Stories sidecar bundle ---
 FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS sidecar-build
@@ -60,6 +60,10 @@ WORKDIR /app
 COPY apps/backend/assets ./apps/backend/assets
 COPY --from=sidecar-build /app/out ./sidecar
 COPY --from=studio-build /out/ ./bin/
+# The operations CLI: `bun /app/ops/cli.js <command>` (scripts/ops-prod.ts,
+# docs/install.md) runs /app/bin/ops, which is also on PATH as `ops`.
+COPY crates/ops/image/cli.js ./ops/cli.js
+ENV PATH=/app/bin:$PATH
 
 ARG GIT_REVISION=unknown
 ENV GIT_REVISION=${GIT_REVISION}
