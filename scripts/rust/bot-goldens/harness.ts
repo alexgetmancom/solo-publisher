@@ -7,7 +7,6 @@ import path from "node:path";
 import { createBot } from "../../../apps/backend/src/bot.js";
 import { openBackendDb, unsafeDb } from "../../../apps/backend/src/db/client.js";
 import { configureLogging } from "../../../apps/backend/src/foundation/logger.js";
-import { runFfmpeg } from "../../../apps/backend/src/foundation/runtime/ffmpeg.js";
 import { loadRuntimeConfig } from "../../../apps/backend/src/runtime/config.js";
 import { settingsService } from "../../../apps/backend/src/studio/services/settings.js";
 import { registerTestChannels, type TestChannelId } from "../../../apps/backend/tests/helpers/channels.js";
@@ -54,8 +53,10 @@ import { registerTestChannels, type TestChannelId } from "../../../apps/backend/
  * - The unchanged-edit guard keeps a process-wide LRU of 200 message contents.
  *   Between cases the recorder flushes it by sending 201 unrecorded messages to
  *   a throwaway chat, so no case inherits another's memory.
- * - Video fixtures are generated with ffmpeg in bit-exact mode; their sha256 is
- *   stable for one ffmpeg build.
+ * - The video fixtures are committed bytes (scripts/rust/bot-goldens/fixtures/),
+ *   because their size and sha256 reach the goldens and an encode is not
+ *   reproducible: x264 writes its revision and its CPU-derived thread count
+ *   into the stream, so one recipe gave 35977 bytes here and 35976 on CI.
  * - Background work (video download, deploy request, Story-card waiter) is
  *   awaited explicitly: a step that starts it waits for the call that reports
  *   its outcome; every step then waits until the fake Telegram is quiet. The
@@ -484,60 +485,20 @@ export const FIXTURE = {
   markdown: path.join(FIXTURES, "article.md"),
 };
 
-/** Through the backend's own ffmpeg runner, which is how the Studio calls it. */
-async function ffmpeg(target: string, args: string[]): Promise<void> {
-  if (fs.existsSync(target)) return;
-  await runFfmpeg([
-    "-hide_banner",
-    "-loglevel",
-    "error",
-    "-y",
-    ...args,
-    "-map_metadata",
-    "-1",
-    "-fflags",
-    "+bitexact",
-    "-flags",
-    "+bitexact",
-    target,
-  ]);
-}
+/** The committed video fixtures, copied next to the generated ones (ffmpeg
+ * 7.0.2: lavfi `color=c=0x336699:r=10` + `anoisesrc=a=0.2:seed=7`, libx264
+ * `-g 10` yuv420p, AAC 48k, bit-exact). */
+const VIDEO_FIXTURES = path.join(import.meta.dir, "fixtures");
 
-async function writeFixtures(): Promise<void> {
+function writeFixtures(): void {
   fs.mkdirSync(FIXTURES, { recursive: true });
   fs.writeFileSync(FIXTURE.photo, JPEG);
   fs.writeFileSync(
     FIXTURE.markdown,
     "# Как мы считаем охваты\n\nОхват — это число людей, которые увидели публикацию хотя бы раз.\n\n## Методика\n\nМы складываем уникальных зрителей по каждой площадке.\n",
   );
-  const video = (size: string, seconds: number) => [
-    "-f",
-    "lavfi",
-    "-i",
-    `color=c=0x336699:s=${size}:r=10:d=${seconds}`,
-    "-c:v",
-    "libx264",
-    "-pix_fmt",
-    "yuv420p",
-    "-g",
-    "10",
-  ];
-  const audio = (seconds: number) => ["-f", "lavfi", "-i", `anoisesrc=d=${seconds}:a=0.2:seed=7`, "-c:a", "aac", "-b:a", "48k"];
-  await ffmpeg(FIXTURE.clip, [
-    ...video("270x480", 5).slice(0, 4),
-    ...audio(5).slice(0, 4),
-    ...video("270x480", 5).slice(4),
-    ...audio(5).slice(4),
-    "-shortest",
-  ]);
-  await ffmpeg(FIXTURE.long, [
-    ...video("90x160", 95).slice(0, 4),
-    ...audio(95).slice(0, 4),
-    ...video("90x160", 95).slice(4),
-    ...audio(95).slice(4),
-    "-shortest",
-  ]);
-  await ffmpeg(FIXTURE.silent, [...video("480x270", 4), "-an"]);
+  for (const target of [FIXTURE.clip, FIXTURE.long, FIXTURE.silent])
+    fs.copyFileSync(path.join(VIDEO_FIXTURES, path.basename(target)), target);
 }
 
 // ---- the harness one case drives ------------------------------------------------
@@ -982,6 +943,6 @@ export async function record(item: Case, seeds = false): Promise<Json> {
   return golden;
 }
 
-export function prepareFixtures(): Promise<void> {
-  return writeFixtures();
+export function prepareFixtures(): void {
+  writeFixtures();
 }

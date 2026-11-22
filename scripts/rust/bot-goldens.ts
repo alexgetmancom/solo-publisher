@@ -16,7 +16,7 @@ import { OUT, prepareFixtures, ROOT, record, SEEDS } from "./bot-goldens/harness
  */
 const seeds = process.argv[2] === "--seeds";
 const filter = process.argv[seeds ? 3 : 2];
-await prepareFixtures();
+prepareFixtures();
 if (seeds) {
   if (!filter) fs.rmSync(SEEDS, { recursive: true, force: true });
   let count = 0;
