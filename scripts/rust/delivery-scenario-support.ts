@@ -215,16 +215,19 @@ export function listFiles(data: string): string[] {
     .sort();
 }
 
-/** Runs every scenario of the spec at `argv[2]` and prints the outcomes as JSON. */
+/**
+ * Runs every scenario of the spec at `argv[2]` and writes the outcomes as JSON to `argv[3]`. Not stdout:
+ * the logger writes there too, and on a slow pipe its lines land inside a large result.
+ */
 export async function runScenarios(label: string, call: Call): Promise<void> {
-  const specPath = process.argv[2];
-  if (!specPath) {
-    console.error(`usage: ${label}-scenarios.ts <spec.json>`);
+  const [specPath, outPath] = process.argv.slice(2);
+  if (!specPath || !outPath) {
+    console.error(`usage: ${label}-scenarios.ts <spec.json> <out.json>`);
     process.exit(2);
   }
   const spec = JSON.parse(fs.readFileSync(specPath, "utf8")) as Spec;
   Math.random = () => spec.jitter;
   const scenarios = [];
   for (const scenario of spec.scenarios) scenarios.push(await run(spec, scenario, call, label));
-  console.log(JSON.stringify({ scenarios }));
+  fs.writeFileSync(outPath, JSON.stringify({ scenarios }));
 }

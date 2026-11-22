@@ -633,14 +633,18 @@ fn run_on(runtime: tokio::runtime::Runtime, spec: &Value, call: Call, label: &st
     })
 }
 
-/// Runs a TypeScript scenario runner over a spec file; its JSON is the last
-/// line it prints (the TypeScript logger writes to stdout too).
+/// Runs a TypeScript scenario runner over a spec file; it writes its JSON to a
+/// file, since the TypeScript logger shares stdout.
 pub fn typescript_side(script: &str, spec: &Path) -> Vec<Value> {
+    let tmp = repo_root().join("_trash-rust/tmp");
+    std::fs::create_dir_all(&tmp).unwrap();
+    let out = tmp.join(spec.file_name().unwrap()).with_extension("typescript.json");
     let output = Command::new("bun")
         .arg(script)
         .arg(spec)
+        .arg(&out)
         .current_dir(repo_root())
-        .env("TMPDIR", repo_root().join("_trash-rust/tmp"))
+        .env("TMPDIR", &tmp)
         .output()
         .expect("bun must be on PATH");
     assert!(
@@ -648,13 +652,7 @@ pub fn typescript_side(script: &str, spec: &Path) -> Vec<Value> {
         "bun failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let last = stdout
-        .lines()
-        .rev()
-        .find(|line| line.starts_with("{\"scenarios\""))
-        .expect("runner output");
-    let parsed: Value = serde_json::from_str(last).unwrap();
+    let parsed: Value = serde_json::from_str(&std::fs::read_to_string(&out).expect("runner output")).unwrap();
     parsed["scenarios"].as_array().unwrap().clone()
 }
 
