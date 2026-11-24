@@ -1,0 +1,12 @@
+[package]
+name = "vertical_media"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }

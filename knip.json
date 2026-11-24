@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["scripts/*.ts", "deploy/*.ts", "deploy/media-processor/server.ts", "deploy/**/*.test.ts"],
+      "entry": ["scripts/*.ts", "deploy/*.ts", "deploy/**/*.test.ts"],
       "project": ["scripts/**/*.ts", "deploy/**/*.ts"]
     }
   }

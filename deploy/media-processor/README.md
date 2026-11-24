@@ -1,8 +1,12 @@
 # Remote media processor
 
-This directory is the complete, versioned source for an optional remote
-`MEDIA_PROCESSOR_PROVIDER=remote_http` executor. The backend's `local` provider
-does not contact this service and uses its own CPU ffmpeg recipe.
+The optional remote `MEDIA_PROCESSOR_PROVIDER=remote_http` executor. Its source
+is the Rust binary `media-processor` (`crates/media_processor`); the ffmpeg
+recipe it runs is `crates/vertical_media`, the same one the backend's `local`
+provider encodes with on the CPU. This directory is its packaging: the image
+(`Dockerfile`, on `Dockerfile.runtime-base`, Debian's ffmpeg with Intel's iHD
+VAAPI driver), the VM's `compose.yml` and the tunnel unit. The `local` provider
+does not contact this service.
 
 ## Self-hosting modes
 
@@ -29,6 +33,16 @@ Other self-hosted installations may select `local` instead.
 
 ## Runtime contract
 
+The binary listens on `0.0.0.0:8787` and reads `MEDIA_PROCESSOR_TOKEN` (at least
+16 characters, or it refuses to start), `MEDIA_PROCESSOR_WORK_DIR` (`/work`),
+`MEDIA_PROCESSOR_MAX_BYTES` (1 GiB), `MEDIA_PROCESSOR_TIMEOUT_SECONDS` (900, the
+ffmpeg run alone), `MEDIA_PROCESSOR_CACHE_TTL_SECONDS` (86400),
+`MEDIA_PROCESSOR_RETRY_AFTER_SECONDS` (60) and `MEDIA_PROCESSOR_REVISION`. A
+number that does not parse refuses the start. Rendered variants are cached as
+`${WORK}/cache/<key>.<standard|telegram>.<mp4|jpg>` (written beside the name and
+renamed into it); every hour, cache entries and request folders older than the
+cache TTL are removed.
+
 The remote image requires an Intel VAAPI render node and encodes video Stories
 as H.264 through `h264_vaapi`. Configure the host compose environment with an
 immutable image reference:
@@ -45,8 +59,10 @@ backend's explicit `local` provider instead of silently falling back.
 
 ## Deployment model
 
-CI builds and publishes this image when `deploy/media-processor/**` changes on
-`main`. Other releases reuse the last tested immutable digest. Image activation
+CI builds and publishes this image on `main` when the processor or the recipe
+crate changes, when the workspace manifests or `Cargo.lock` change, or when this
+directory's `Dockerfile*` or `compose.yml` do (`.github/workflows/check.yml`,
+the `media=true` paths). Other releases reuse the last tested immutable digest. Image activation
 is intentionally manual: a deployment target selects a tested digest, pulls it,
 recreates only `media-processor`, probes `/health`, and restores the previous
 digest if that probe fails. Target names, image repository, compose path, service

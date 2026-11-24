@@ -11,7 +11,7 @@ carries that check in its `WHERE`; a step that may have reached an audience sett
 | `reconciliation` | `publication-reconciliation.ts` |
 | `external_edits`, `external_removals` | `external-edits.ts`, `external-removals.ts` |
 | `media_prepare` | `media-prepare.ts` (`prepare_media_items`, `prune_media_cache`) |
-| `story_media`, `story_derivatives` (`DeliveryMedia`) | `story-media.ts` + the local recipes of `deploy/media-processor/story-encode.ts`, `story-derivatives.ts` |
+| `story_media`, `story_derivatives` (`DeliveryMedia`) | `story-media.ts`, `story-derivatives.ts`; the recipe is `crates/vertical_media`, shared with the remote media processor |
 | `video_worker`, `video_retention` | `video-worker.ts`, `video-retention.ts` |
 | `site_jobs`, `site_media`, `site_media_storage`, `site_index_now`, `site_content_index` | the `site-*.ts` files |
 | `maintenance` | `pruneOperationalHistory`, `withMaintenanceLock` |

@@ -541,6 +541,7 @@ dependencies = [
  "sha2 0.10.9",
  "tokio",
  "url",
+ "vertical_media",
 ]
 
 [[package]]
@@ -1489,6 +1490,28 @@ name = "md5"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebb8d8732c6a6df3d8f032a82911cfc747e00efb95cc46e8d0acd5b5b88570c"
+
+[[package]]
+name = "media_processor"
+version = "0.0.0"
+dependencies = [
+ "adapters",
+ "domain",
+ "foundation",
+ "futures-util",
+ "getrandom 0.2.17",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "jiff",
+ "runtime",
+ "rustix",
+ "serde_json",
+ "subtle",
+ "tokio",
+ "tokio-util",
+ "vertical_media",
+]
 
 [[package]]
 name = "memchr"
@@ -2929,6 +2952,13 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vertical_media"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
+]
 
 [[package]]
 name = "want"

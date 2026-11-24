@@ -1,8 +1,8 @@
-FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef
+# The processor's runtime: Debian trixie's ffmpeg with Intel's iHD VAAPI driver
+# (the /dev/dri render node itself comes from compose). The remote executor is
+# hardware-only; a host without VAAPI selects the Studio's `local` provider.
+FROM debian:trixie-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0
 
-# VAAPI needs Intel's iHD driver in the image in addition to the /dev/dri
-# device supplied by compose. The remote VM-106 executor is intentionally
-# hardware-only; local execution remains the explicit CPU provider.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg intel-media-va-driver \
   && rm -rf /var/lib/apt/lists/*

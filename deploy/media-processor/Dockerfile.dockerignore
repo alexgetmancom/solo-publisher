@@ -1,0 +1,6 @@
+# deploy/media-processor/Dockerfile reads only what is listed here.
+*
+!Cargo.toml
+!Cargo.lock
+!crates
+**/node_modules
