@@ -24,11 +24,12 @@ use domain::studio::boundaries::{CapabilityStatus, ConnectPlatform};
 use domain::studio::config::studio_config;
 use domain::studio::services::channels::ChannelInput;
 use foundation::config::{Config, SharedConfig};
+use mtproto::{Credentials, SignInPrompts, sign_in};
 use runtime::data_dirs::{check_data_directories_writable, required_data_directories};
 use runtime::external::youtube::youtube_credentials;
 use serde_json::{Map, Value, json};
 
-use crate::context::{Fut, Input, OpError, OpResult, OperationContext, to_value};
+use crate::context::{Fut, Input, OpError, OpResult, OperationContext, Terminal, to_value};
 use exports::{ExportKind, export_status};
 
 fn locale(input: &Input) -> Locale {
@@ -393,8 +394,9 @@ pub fn credential_set<'a>(context: &'a OperationContext<'a>, input: &'a Input) -
     })
 }
 
-/// mtcute stays in the TypeScript Stories sidecar, which carries the
-/// sign-in: the Rust Studio has no MTProto client to run it with.
+/// Signs the Stories account in over MTProto, asking at this terminal; the
+/// session lands at `TELEGRAM_CHANNEL_STORIES_SESSION`. The configuration is
+/// checked before anything touches the network.
 pub fn telegram_stories_login<'a>(context: &'a OperationContext<'a>, _input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
         let config = context.config()?;
@@ -410,10 +412,27 @@ pub fn telegram_stories_login<'a>(context: &'a OperationContext<'a>, _input: &'a
                 "Set TELEGRAM_CHANNEL_STORIES_SESSION to a writable path, for example /data/telegram_channel_stories.",
             ));
         }
-        Err(OpError::failed(
-            "The Stories account signs in through the Stories sidecar, which holds the MTProto client: docker exec -it -u bun <container> bun /app/sidecar/login.js",
-        ))
+        let credentials = Credentials::from_config(&config)
+            .map_err(OpError::failed)?
+            .ok_or_else(|| OpError::failed("the Stories credentials are incomplete"))?;
+        let signed_in = sign_in(&credentials, &TerminalPrompts(context.terminal()?))
+            .await
+            .map_err(OpError::failed)?;
+        Ok(json!({"signedIn": true, "user": signed_in.user, "session": credentials.session}))
     })
+}
+
+/// The sign-in's questions, at the operator's terminal.
+struct TerminalPrompts<'a>(&'a dyn Terminal);
+
+impl SignInPrompts for TerminalPrompts<'_> {
+    fn ask(&self, question: &str) -> String {
+        self.0.ask(question)
+    }
+
+    fn tell(&self, line: &str) {
+        let _ = self.0.print_line(line);
+    }
 }
 
 pub fn threads_authorize<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {

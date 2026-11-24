@@ -12,7 +12,7 @@ use std::fmt;
 use std::sync::LazyLock;
 
 use jiff::Timestamp;
-use jiff::tz::{Offset, TimeZone};
+use jiff::tz::{Offset, TimeZone, TimeZoneDatabase};
 use regex::Regex;
 
 use crate::js;
@@ -39,6 +39,11 @@ pub struct Zone {
     tz: TimeZone,
 }
 
+/// The tzdb bundled into the binary, never the host's: the zones valid here
+/// are the ones `Intl` accepted, and a dependency enabling jiff's default
+/// features (grammers does) would otherwise put `/usr/share/zoneinfo` first.
+static TZDB: LazyLock<TimeZoneDatabase> = LazyLock::new(TimeZoneDatabase::bundled);
+
 static OFFSET_ZONE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([+-])([01][0-9]|2[0-3])(?::?([0-5][0-9]))?$").unwrap());
 
@@ -54,8 +59,8 @@ impl Zone {
             // Where the bundled tzdb and ICU's disagree, ICU decides: it has no
             // `Factory` zone and still knows the retired `US/Pacific-New` link.
             None if name.eq_ignore_ascii_case("Factory") => return None,
-            None if name.eq_ignore_ascii_case("US/Pacific-New") => jiff::tz::db().get("America/Los_Angeles").ok()?,
-            None => jiff::tz::db().get(name).ok()?,
+            None if name.eq_ignore_ascii_case("US/Pacific-New") => TZDB.get("America/Los_Angeles").ok()?,
+            None => TZDB.get(name).ok()?,
         };
         Some(Self {
             name: name.to_owned(),

@@ -4,8 +4,7 @@ Cut over on branch `rust-cutover` (one commit on top of `rust`, not pushed): the
 Rust `Dockerfile`, the TypeScript backend is gone, and CI gates the deployment on the Rust workspace. Merging it into
 `main` deploys Rust to alex (and to Maru only with `Deploy-Maru: yes`).
 
-What still runs TypeScript: the Stories sidecar (`sidecars/stories`), the media processor (`deploy/media-processor`),
-the deploy agent and CI/ops tooling (`deploy/*.ts`, `scripts/*.ts`), and the two Bun shims in the image
+What still runs TypeScript: the media processor (`deploy/media-processor`), the deploy agent and CI/ops tooling (`deploy/*.ts`, `scripts/*.ts`), and the two Bun shims in the image
 (`bun /app/ops/cli.js`, `bun /app/entrypoint/config-check.js`).
 
 Tests: every live TypeScript comparison is now a committed golden recorded before the cutover under ffmpeg 6.1.1

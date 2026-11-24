@@ -31,4 +31,4 @@ pub use platform_adapters::{Route, TargetRouting, create_platform_adapters};
 pub use ports::{AdapterContext, DeliveryPorts, EditOutcome, EditRequest, PrepareJob, SocialAdapter, Unprepared};
 pub use providers::ProviderCalls;
 pub use social_ports::{MediaPreparation, PreparedMedia};
-pub use telegram_stories::{HttpStoriesSidecar, StoriesSidecar};
+pub use telegram_stories::StoriesClient;

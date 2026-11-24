@@ -5,7 +5,7 @@
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use adapters::{AdapterContext, MediaPreparation, StoriesSidecar};
+use adapters::{AdapterContext, MediaPreparation, StoriesClient};
 use bot::Bot;
 use bot::workers::start_telegram_workers;
 use channels::loops::{
@@ -30,6 +30,7 @@ use domain::notifications::run_notification_cycle;
 use domain::publishing::Publishing;
 use domain::studio::Studio;
 use foundation::logger::{LogLevel, log};
+use mtproto::MtprotoStories;
 use runtime::http::HttpClient;
 use runtime::scheduler::ScheduledLoop;
 use runtime::worker_signal::{WorkerQueue, set_worker_wake};
@@ -37,7 +38,7 @@ use runtime::worker_state::{HeartbeatLoops, record_worker_state};
 use serde_json::json;
 use story_render::{STORY_CARD_WORKER, recover_story_card_jobs, run_story_card_cycle};
 
-use crate::host::{AppHost, stories_sidecar};
+use crate::host::AppHost;
 
 const WATCHDOG_INTERVAL: Duration = Duration::from_secs(60);
 const SITE_JOB_POLL_INTERVAL: Duration = Duration::from_secs(10);
@@ -50,7 +51,7 @@ struct DeliveryDeps {
     bot: Bot,
     http: HttpClient,
     media: Rc<dyn MediaPreparation>,
-    stories: Rc<dyn StoriesSidecar>,
+    stories: Rc<dyn StoriesClient>,
 }
 
 impl DeliveryDeps {
@@ -84,7 +85,7 @@ pub fn start(
         bot: bot.clone(),
         http: http.clone(),
         media: Rc::new(host.media.clone()),
-        stories: stories_sidecar(http.clone(), &deps.config.load()),
+        stories: Rc::new(MtprotoStories::new(deps.config.clone())),
     };
     recover_at_startup(&delivery);
     let loops = HeartbeatLoops::new(Rc::new(bot.clone()), |bot: &Bot| &bot.deps().db).on_heartbeat(flush_usage);

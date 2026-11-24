@@ -6,8 +6,8 @@
 
 use std::rc::Rc;
 
-use adapters::telegram_stories::{SidecarError, StoryRequest};
-use adapters::{StoriesSidecar, TargetRouting, Unprepared, create_platform_adapters};
+use adapters::telegram_stories::{StoryError, StoryRequest};
+use adapters::{StoriesClient, TargetRouting, Unprepared, create_platform_adapters};
 use content::Locale;
 use db::rusqlite::{Connection, OptionalExtension as _, params};
 use domain::json::{js_string, stringify};
@@ -21,9 +21,9 @@ use crate::{Delivery, Result};
 /// Edits and removals never publish a Story.
 pub(crate) struct NoStories;
 
-impl StoriesSidecar for NoStories {
-    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, std::result::Result<i64, SidecarError>> {
-        Box::pin(async { Err(SidecarError::Refused("stories are not published from here".into())) })
+impl StoriesClient for NoStories {
+    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, std::result::Result<i64, StoryError>> {
+        Box::pin(async { Err(StoryError::Refused("stories are not published from here".into())) })
     }
 }
 

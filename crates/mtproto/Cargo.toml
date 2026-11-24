@@ -1,0 +1,22 @@
+[package]
+name = "mtproto"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+adapters = { path = "../adapters" }
+foundation = { path = "../foundation" }
+grammers-client = "0.12"
+rusqlite = { version = "0.43", features = ["bundled"] }
+runtime = { path = "../runtime" }
+getrandom = "0.2"
+tokio = { version = "1", features = ["rt", "time", "fs", "io-util", "macros"] }
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+tokio = { version = "1", features = ["rt", "macros"] }

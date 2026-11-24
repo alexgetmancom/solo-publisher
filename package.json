@@ -8,14 +8,13 @@
     "bun": ">=1.3.14"
   },
   "workspaces": [
-    "tools/*",
-    "sidecars/*"
+    "tools/*"
   ],
   "scripts": {
     "prepare": "lefthook install",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json && tsc -p sidecars/stories/tsconfig.json",
-    "test": "bun test deploy sidecars scripts",
-    "test:coverage": "bun test --coverage deploy sidecars scripts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p deploy/media-processor/tsconfig.json && tsc -p deploy/tsconfig.json",
+    "test": "bun test deploy scripts",
+    "test:coverage": "bun test --coverage deploy scripts",
     "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked",
     "build": "cargo build --release --locked -p app -p entrypoint -p ops",
     "check:audit": "bun audit --audit-level=high",
@@ -28,9 +27,6 @@
     "check:all": "bun scripts/check.ts",
     "check:prepush": "bun scripts/check.ts --parallel",
     "ops:prod": "bun scripts/ops-prod.ts"
-  },
-  "dependencies": {
-    "@mtcute/bun": "^0.32.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.10",

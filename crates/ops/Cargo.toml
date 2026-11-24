@@ -22,6 +22,7 @@ db = { path = "../db" }
 delivery = { path = "../delivery" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
+mtproto = { path = "../mtproto" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

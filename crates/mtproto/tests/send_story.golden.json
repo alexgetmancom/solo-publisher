@@ -1,0 +1,178 @@
+{
+  "recordedWith": "mtcute 0.32.1 (TL layer 229): TelegramClient.sendStory(sendStoryParams(request)) of sidecars/stories/src/send.ts after getMe, with the network replaced; media from crates/mtproto/tests/fixtures",
+  "normalized": "random_id is 1 and the upload's file id 2 (mtcute draws both at random); file names are the media's base name (mtcute sent the absolute path it was given, kept as mtcuteFileName). calls: every argument of each constructor as on the wire, flag-only true fields as booleans, absent optional fields left out, bytes by length. sendStoryWire: mtcute's own serialization of the final stories.sendStory.",
+  "cases": [
+    {
+      "name": "photo with a plain caption",
+      "request": {
+        "peer": "solo_channel",
+        "periodSeconds": 86400,
+        "media": {
+          "type": "photo",
+          "path": "story.jpg"
+        },
+        "caption": {
+          "text": "Новый пост уже в канале",
+          "links": []
+        }
+      },
+      "storyId": 77,
+      "mtcuteFileName": "<media dir>/story.jpg",
+      "calls": [
+        {
+          "_": "upload.saveFilePart",
+          "file_id": "2",
+          "file_part": 0,
+          "bytes": {
+            "bytes": 211
+          }
+        },
+        {
+          "_": "contacts.resolveUsername",
+          "username": "solo_channel"
+        },
+        {
+          "_": "stories.sendStory",
+          "pinned": false,
+          "noforwards": false,
+          "fwd_modified": false,
+          "peer": {
+            "_": "inputPeerChannel",
+            "channel_id": 1234567890,
+            "access_hash": "-4242424242424242"
+          },
+          "media": {
+            "_": "inputMediaUploadedPhoto",
+            "spoiler": false,
+            "live_photo": false,
+            "file": {
+              "_": "inputFile",
+              "id": "2",
+              "parts": 1,
+              "name": "story.jpg",
+              "md5_checksum": ""
+            }
+          },
+          "caption": "Новый пост уже в канале",
+          "privacy_rules": [
+            {
+              "_": "inputPrivacyValueAllowAll"
+            }
+          ],
+          "random_id": "1",
+          "period": 86400
+        }
+      ],
+      "sendStoryWire": "98689e8f09000000fcbbbc27d2029649000000004e360ba289edf0ffda75837d000000007ff22ff50200000000000000010000000973746f72792e6a70670000000000002ad09dd0bed0b2d18bd0b920d0bfd0bed181d18220d183d0b6d0b520d0b220d0bad0b0d0bdd0b0d0bbd0b50015c4b51c01000000ce354b18010000000000000080510100"
+    },
+    {
+      "name": "video with two hidden links",
+      "request": {
+        "peer": "solo_channel",
+        "periodSeconds": 86400,
+        "media": {
+          "type": "video",
+          "path": "story.mp4",
+          "width": 1080,
+          "height": 1920,
+          "duration": 12.5,
+          "supportsStreaming": true
+        },
+        "caption": {
+          "text": "Читать 👉 статью и обсуждение",
+          "links": [
+            {
+              "offset": 0,
+              "length": 6,
+              "url": "https://example.com/post"
+            },
+            {
+              "offset": 10,
+              "length": 6,
+              "url": "https://example.com/post#comments"
+            }
+          ]
+        }
+      },
+      "storyId": 77,
+      "mtcuteFileName": "<media dir>/story.mp4",
+      "calls": [
+        {
+          "_": "upload.saveFilePart",
+          "file_id": "2",
+          "file_part": 0,
+          "bytes": {
+            "bytes": 324
+          }
+        },
+        {
+          "_": "contacts.resolveUsername",
+          "username": "solo_channel"
+        },
+        {
+          "_": "stories.sendStory",
+          "pinned": false,
+          "noforwards": false,
+          "fwd_modified": false,
+          "peer": {
+            "_": "inputPeerChannel",
+            "channel_id": 1234567890,
+            "access_hash": "-4242424242424242"
+          },
+          "media": {
+            "_": "inputMediaUploadedDocument",
+            "nosound_video": true,
+            "force_file": false,
+            "spoiler": false,
+            "file": {
+              "_": "inputFile",
+              "id": "2",
+              "parts": 1,
+              "name": "story.mp4",
+              "md5_checksum": ""
+            },
+            "mime_type": "video/mp4",
+            "attributes": [
+              {
+                "_": "documentAttributeFilename",
+                "file_name": "story.mp4"
+              },
+              {
+                "_": "documentAttributeVideo",
+                "round_message": false,
+                "supports_streaming": true,
+                "nosound": false,
+                "duration": 12.5,
+                "w": 1080,
+                "h": 1920
+              }
+            ]
+          },
+          "caption": "Читать 👉 статью и обсуждение",
+          "entities": [
+            {
+              "_": "messageEntityTextUrl",
+              "offset": 0,
+              "length": 6,
+              "url": "https://example.com/post"
+            },
+            {
+              "_": "messageEntityTextUrl",
+              "offset": 10,
+              "length": 6,
+              "url": "https://example.com/post#comments"
+            }
+          ],
+          "privacy_rules": [
+            {
+              "_": "inputPrivacyValueAllowAll"
+            }
+          ],
+          "random_id": "1",
+          "period": 86400
+        }
+      ],
+      "sendStoryWire": "98689e8f0b000000fcbbbc27d2029649000000004e360ba289edf0ff30937c03080000007ff22ff50200000000000000010000000973746f72792e6d703400000000000009766964656f2f6d7034000015c4b51c02000000680059150973746f72792e6d70340000487cc543020000000000000000002940380400008007000036d0a7d0b8d182d0b0d182d18c20f09f918920d181d182d0b0d182d18cd18e20d0b820d0bed0b1d181d183d0b6d0b4d0b5d0bdd0b8d0b50015c4b51c0200000027d3a67600000000060000001868747470733a2f2f6578616d706c652e636f6d2f706f737400000027d3a6760a000000060000002168747470733a2f2f6578616d706c652e636f6d2f706f737423636f6d6d656e7473000015c4b51c01000000ce354b18010000000000000080510100"
+    }
+  ]
+}

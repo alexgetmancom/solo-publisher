@@ -22,6 +22,7 @@ db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 http_edge = { path = "../http" }
+mtproto = { path = "../mtproto" }
 ops = { path = "../ops" }
 runtime = { path = "../runtime" }
 story_render = { path = "../story_render" }

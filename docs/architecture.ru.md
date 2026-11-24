@@ -47,7 +47,7 @@ Solo Publisher намеренно обслуживает одного владе
 ## Стек
 
 - Rust: tokio, axum, rusqlite
-- Telegram Bot API и MTProto (mtcute на Bun) в небольшом sidecar для Stories
+- Telegram Bot API и MTProto (grammers) для Stories
 - SQLite
 - MCP поверх HTTP
 - ffmpeg и resvg
@@ -64,7 +64,7 @@ bun run check:all
 ```
 
 `bun run check:all` запускает полный набор проверок репозитория: проверки
-TypeScript у sidecar и инструментов deployment, `cargo fmt`, `clippy` и тесты,
+TypeScript у инструментов deployment, `cargo fmt`, `clippy` и тесты,
 и release-сборку. Файлы
 deployment в `deploy/` привязаны к собственной установке автора — её доменам,
 путям на хосте и systemd-юнитам. Используйте их как пример реализации и

@@ -1,12 +1,10 @@
-# The Studio: one image, one container, two processes.
+# The Studio: one image, one container.
 #
 # studio-entrypoint (crates/entrypoint) runs under `tini -g`: as root it fixes
 # data directory ownership and drops to `bun` (uid 1000) through setpriv, then
-# runs the Studio (`solo-publisher`) and the Stories sidecar (sidecars/stories,
-# Bun + mtcute) on loopback. One container because the Studio hands the
-# sidecar file paths — the Story it re-encoded sits in its own temp directory —
-# and because the deployment, its rollback by digest and `docker exec` keep the
-# single `backend` container they know. The Bun runtime is the price (~95 MB).
+# becomes the Studio (`solo-publisher`), which posts Telegram channel Stories
+# over MTProto itself (crates/mtproto). The Bun base stays for the two shims the
+# deploy tooling calls: `bun /app/ops/cli.js` and `bun /app/entrypoint/config-check.js`.
 #
 # Build context: the repository root, filtered by Dockerfile.dockerignore.
 
@@ -25,23 +23,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops \
   && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint target/release/ops -t /out/
 
-# --- Stories sidecar bundle ---
-FROM oven/bun:1.4.0-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS sidecar-build
-WORKDIR /app
-# A frozen install needs every workspace manifest the lockfile names
-# (scripts/check-docker-workspaces.ts checks this file too).
-COPY --chown=bun:bun package.json bun.lock ./
-COPY --chown=bun:bun tools/knip/package.json ./tools/knip/package.json
-COPY --chown=bun:bun sidecars/stories/package.json ./sidecars/stories/package.json
-RUN chown bun:bun /app
-USER bun
-RUN --mount=type=cache,target=/home/bun/.bun,uid=1000,gid=1000 \
-    bun install --frozen-lockfile --ignore-scripts --production --filter @solo-publisher/stories-sidecar
-COPY --chown=bun:bun sidecars/stories/src ./sidecars/stories/src
-# Self-contained: mtcute is bundled in, and its WASM files land beside it.
-RUN bun build sidecars/stories/src/main.ts sidecars/stories/src/login.ts \
-    --outdir /app/out --target bun --minify --sourcemap=external
-
 # --- Runtime ---
 FROM oven/bun:1.4.0-slim@sha256:e0ee68d16ccb9927bf02aa7dd8fd4bf3369ee6d46da04faa72b05ce8bfd135f6 AS studio
 # setpriv comes with util-linux in the base.
@@ -55,7 +36,6 @@ WORKDIR /app
 # STORY_CARD_ASSETS_DIR's default: background, Manrope, Noto Color Emoji and
 # the emoji SVGs. The renderer reads its fonts from here, not from fontconfig.
 COPY crates/story_render/assets ./assets
-COPY --from=sidecar-build /app/out ./sidecar
 COPY --from=studio-build /out/ ./bin/
 # The operations CLI: `bun /app/ops/cli.js <command>` (scripts/ops-prod.ts,
 # docs/install.md) runs /app/bin/ops, which is also on PATH as `ops`.
@@ -70,6 +50,5 @@ ENV GIT_REVISION=${GIT_REVISION}
 
 # Stays root: the entrypoint fixes bind-mount ownership, then drops for good.
 # `docker exec` bypasses it, so pass `-u bun` there. `-g` delivers a stop
-# signal to the whole group, so the Studio and the sidecar shut down on their
-# own while the entrypoint waits for the Studio's exit status.
+# signal to the whole group, the Studio included.
 ENTRYPOINT ["tini", "-g", "--", "/app/bin/studio-entrypoint"]

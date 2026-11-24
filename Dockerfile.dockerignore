@@ -3,9 +3,4 @@
 !Cargo.toml
 !Cargo.lock
 !crates
-!tools/knip/package.json
-!sidecars/stories/package.json
-!sidecars/stories/src
-!package.json
-!bun.lock
 **/node_modules

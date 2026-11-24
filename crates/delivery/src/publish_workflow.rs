@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use adapters::social_ports::MediaPreparation;
-use adapters::{AdapterError, DeliveryPorts, PreparedMedia, SocialAdapter, StoriesSidecar, create_platform_adapters};
+use adapters::{AdapterError, DeliveryPorts, PreparedMedia, SocialAdapter, StoriesClient, create_platform_adapters};
 use db::rusqlite::{OptionalExtension as _, params};
 use domain::application::ports::{DomainEventInput, Severity};
 use domain::observability::auth_circuit::{is_target_auth_blocked, provider_answered_at};
@@ -30,7 +30,7 @@ use crate::{Delivery, Result};
 pub fn delivery_ports(
     delivery: &Delivery<'_>,
     media: Rc<dyn MediaPreparation>,
-    stories: Rc<dyn StoriesSidecar>,
+    stories: Rc<dyn StoriesClient>,
 ) -> Result<DeliveryPorts> {
     let routing = target_routing(delivery.sqlite())?;
     Ok(create_platform_adapters(

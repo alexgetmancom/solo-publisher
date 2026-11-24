@@ -16,7 +16,7 @@ use serde_json::{Map, Value, json};
 
 use crate::error::{AdapterError, Result, absent_if_missing};
 use crate::ports::{AdapterContext, DeliveryPorts, EditOutcome, EditRequest, PrepareJob, SocialAdapter};
-use crate::telegram_stories::StoriesSidecar;
+use crate::telegram_stories::StoriesClient;
 use crate::zernio::{ZernioPlatform, verify_zernio_post};
 use crate::{discord, instagram, telegram, telegram_stories, threads, x};
 
@@ -71,7 +71,7 @@ fn story_locale(target: &str) -> Locale {
 pub fn create_platform_adapters(
     ctx: AdapterContext,
     prepare: Rc<dyn PrepareJob>,
-    stories: Rc<dyn StoriesSidecar>,
+    stories: Rc<dyn StoriesClient>,
     routing: &TargetRouting,
 ) -> DeliveryPorts {
     let ctx = Rc::new(ctx);
@@ -129,7 +129,7 @@ struct PlatformAdapter {
     delivery: Delivery,
     ctx: Rc<AdapterContext>,
     prepare: Rc<dyn PrepareJob>,
-    stories: Rc<dyn StoriesSidecar>,
+    stories: Rc<dyn StoriesClient>,
 }
 
 impl SocialAdapter for PlatformAdapter {

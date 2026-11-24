@@ -97,7 +97,7 @@ jobs:
               # Tests and crate READMEs are not in the image.
               crates/*/tests/* | crates/*/README.md)
                 ;;
-              Cargo.toml | Cargo.lock | rust-toolchain.toml | crates/* | sidecars/stories/src/* | Dockerfile | Dockerfile.dockerignore | scripts/image-smoke.ts)
+              Cargo.toml | Cargo.lock | rust-toolchain.toml | crates/* | Dockerfile | Dockerfile.dockerignore | scripts/image-smoke.ts)
                 backend_image=true
                 deployment=true
                 ;;
@@ -188,7 +188,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
       - name: Language gate
         run: bun run check:language
       - name: Typecheck
@@ -204,7 +204,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
       - name: Dead-code report
         run: bun run knip
       - name: Dockerfile workspace manifests
@@ -248,7 +248,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
       - name: Install production ffmpeg binaries
         env:
           FFMPEG_IMAGE: mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132
@@ -348,7 +348,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json', 'sidecars/stories/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
       - name: Dependency audit
         run: bun run check:audit
 

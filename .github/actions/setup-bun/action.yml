@@ -23,7 +23,6 @@ runs:
           ~/.bun/install/cache
           node_modules
           tools/*/node_modules
-          sidecars/*/node_modules
         key: ${{ inputs.cache-key }}
     - name: Install dependencies
       shell: bash

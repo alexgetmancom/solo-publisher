@@ -14,7 +14,7 @@ rest of the Studio: loops, doorbells and transports run on the process's `LocalS
 | `timeout`, `job_heartbeat`, `git`, `data_dirs` | `foundation/runtime/timeout.ts`, `job-heartbeat.ts`, `git.ts`, `data-dirs.ts` |
 | `external::{deepseek, instagram, threads, youtube, zernio, telegram_files}` | `foundation/external/*` |
 
-Not here: `telegram-session.ts` (mtcute; Stories stay in the TypeScript sidecar), `foundation/deployment.ts`
+Not here: `telegram-session.ts` (the Stories session, now `crates/mtproto`), `foundation/deployment.ts`
 (promote/rollback live in `bot::deployment`; `readDeploymentReleases` is an ops read and goes with `ops`), the
 privilege drop of `docker-entrypoint.ts` (goes with the entrypoint).
 

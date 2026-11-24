@@ -46,7 +46,7 @@ hierarchies, or per-channel subscriptions.
 ## Stack
 
 - Rust: tokio, axum, rusqlite
-- The Telegram Bot API, and MTProto (mtcute on Bun) in a small sidecar for Stories
+- The Telegram Bot API, and MTProto (grammers) for Stories
 - SQLite
 - MCP over HTTP
 - ffmpeg and resvg
@@ -63,8 +63,7 @@ bun run check:all
 ```
 
 `bun run check:all` runs the full repository gate: the TypeScript checks of the
-sidecar and the deployment tooling, `cargo fmt`, `clippy` and tests, and the
-release build. The committed deployment
+deployment tooling, `cargo fmt`, `clippy` and tests, and the release build. The committed deployment
 files under `deploy/` are specific to the maintainer's own installation — its
 domains, host paths and systemd units. Treat them as an implementation
 reference and supply your own; `install.sh` is the supported path for a

@@ -1,6 +1,5 @@
 //! The provider helpers several adapters share (`foundation/external/*`).
-//! Telegram channel Stories (`telegram-session.ts`, mtcute) stay in the
-//! TypeScript sidecar.
+//! Telegram channel Stories (`telegram-session.ts`) are `crates/mtproto`.
 
 pub mod deepseek;
 pub mod instagram;

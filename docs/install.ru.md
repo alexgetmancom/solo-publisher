@@ -108,10 +108,8 @@ Telegram не отдаёт файлы больше 50 МБ, что меньше 
 
 ## Запуск из исходников
 
-Понадобятся Rust-тулчейн, закреплённый в `rust-toolchain.toml`, ffmpeg и
-[Bun 1.3.14](https://bun.sh/) — только для sidecar Telegram Stories
-(`sidecars/stories`). Скопируйте шаблон секретов, соберите и запустите Studio с
-ним в окружении:
+Понадобятся Rust-тулчейн, закреплённый в `rust-toolchain.toml`, и ffmpeg.
+Скопируйте шаблон секретов, соберите и запустите Studio с ним в окружении:
 
 ```bash
 cp deploy/secrets.env.example secrets.env

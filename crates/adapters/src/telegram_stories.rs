@@ -1,8 +1,7 @@
 //! `delivery/social/telegramStories.ts`, the Rust half: the guards, the
 //! caption with its clickable hidden links, the upload description and the
-//! small-file re-encode. The MTProto call itself (mtcute's
-//! `stories.sendStory`) stays in the TypeScript sidecar, reached through
-//! [`StoriesSidecar`]; its contract is in this crate's README.
+//! small-file re-encode. The MTProto call itself (`stories.sendStory`) is
+//! behind [`StoriesClient`]; the `mtproto` crate implements it.
 
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
@@ -12,7 +11,7 @@ use content::message::MediaItem;
 use domain::publishing::errors::PublishResult;
 use regex::Regex;
 use runtime::ffmpeg::{probe_media_metadata, run_ffmpeg};
-use runtime::http::{Fut, HttpClient, HttpRequest};
+use runtime::http::Fut;
 use serde_json::{Map, Value, json};
 
 use crate::error::{AdapterError, Result, ambiguous_error};
@@ -20,18 +19,15 @@ use crate::js::{as_record, js_number, utf16_len, utf16_prefix};
 use crate::payload::{field, is_video, payload_media, payload_text};
 use crate::ports::AdapterContext;
 
-/// mtcute switches to its "big file" upload (`upload.saveBigFilePart`, no
-/// checksum) above 10 MiB, and `stories.sendStory` rejects files uploaded
-/// that way with MEDIA_FILE_INVALID, so a video Story stays under this.
+/// The 10 MiB "big file" upload (`upload.saveBigFilePart`, no checksum)
+/// produces files `stories.sendStory` rejects with MEDIA_FILE_INVALID, so a
+/// video Story stays under this.
 pub const STORY_MAX_BYTES: u64 = 9_961_472;
 const STORY_TARGET_BYTES: f64 = 9.0 * 1024.0 * 1024.0;
 const CAPTION_LIMIT: usize = 2048;
 const STORY_PERIOD_SECONDS: u64 = 86_400;
 const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 const FFMPEG_TIMEOUT: Duration = Duration::from_secs(600);
-/// Over the sidecar's own deadlines (connect 30 s, identity 30 s, send
-/// 120 s, teardown 5 s), so the sidecar is the one that says what timed out.
-const SIDECAR_TIMEOUT: Duration = Duration::from_secs(200);
 
 /// One hidden link of a Story caption (`messageEntityTextUrl`), in UTF-16 units.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -49,7 +45,7 @@ pub struct StoryCaption {
     pub links: Vec<CaptionLink>,
 }
 
-/// `telegramStoryUploadMedia`: what the sidecar uploads, with the dimensions
+/// `telegramStoryUploadMedia`: the file to upload, with the dimensions
 /// `stories.sendStory` validates for a video.
 #[derive(Clone, Debug, PartialEq)]
 pub enum StoryUploadMedia {
@@ -67,113 +63,29 @@ pub enum StoryUploadMedia {
 /// One Story to post on behalf of the channel.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StoryRequest {
+    /// The channel's username, without `@`.
     pub peer: String,
     pub media: StoryUploadMedia,
     pub caption: StoryCaption,
     pub period_seconds: u64,
 }
 
-/// What the sidecar answered when it did not post the Story.
+/// Why a Story was not confirmed as posted.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SidecarError {
-    /// The Story was not sent: connecting, identity, or a refusal from
-    /// Telegram itself. Nothing reached the audience.
+pub enum StoryError {
+    /// The Story was not sent: credentials, the session, connecting, identity,
+    /// the upload, or a refusal from Telegram itself. Nothing reached the
+    /// audience.
     Refused(String),
-    /// `stories.sendStory` was sent and no answer came, or the sidecar's own
-    /// answer was lost: the Story may be up.
+    /// `stories.sendStory` went out and no definite answer came back: the
+    /// Story may be up.
     Ambiguous(String),
 }
 
-/// The MTProto half (`stories.sendStory` through mtcute), in the sidecar.
-pub trait StoriesSidecar {
+/// Posts one Story over MTProto.
+pub trait StoriesClient {
     /// The id of the posted Story.
-    fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>>;
-}
-
-/// The sidecar over local HTTP (`POST {base}/v1/stories`), authorized by the
-/// bearer token the container entrypoint draws for both processes
-/// (`STORIES_SIDECAR_URL`, `STORIES_SIDECAR_TOKEN`).
-pub struct HttpStoriesSidecar {
-    client: HttpClient,
-    base_url: String,
-    token: String,
-}
-
-impl HttpStoriesSidecar {
-    pub fn new(client: HttpClient, base_url: impl Into<String>, token: impl Into<String>) -> Self {
-        Self {
-            client,
-            base_url: base_url.into(),
-            token: token.into(),
-        }
-    }
-}
-
-/// The request body of the sidecar contract.
-pub fn story_request_json(request: &StoryRequest) -> Value {
-    let media = match &request.media {
-        StoryUploadMedia::Photo { path } => json!({"type": "photo", "path": path}),
-        StoryUploadMedia::Video {
-            path,
-            width,
-            height,
-            duration,
-        } => json!({
-            "type": "video", "path": path, "width": width, "height": height, "duration": duration,
-            "supportsStreaming": true,
-        }),
-    };
-    let links: Vec<Value> = request
-        .caption
-        .links
-        .iter()
-        .map(|link| json!({"offset": link.offset, "length": link.length, "url": link.url}))
-        .collect();
-    json!({
-        "peer": request.peer,
-        "media": media,
-        "caption": {"text": request.caption.text, "links": links},
-        "periodSeconds": request.period_seconds,
-    })
-}
-
-impl StoriesSidecar for HttpStoriesSidecar {
-    fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
-        Box::pin(async move {
-            let base = self.base_url.strip_suffix('/').unwrap_or(&self.base_url);
-            let http = HttpRequest::post(format!("{base}/v1/stories"))
-                .header("Authorization", format!("Bearer {}", self.token))
-                .header("Content-Type", "application/json")
-                .text(domain::json::stringify(&story_request_json(request)));
-            let response = self
-                .client
-                .fetch_within(http, SIDECAR_TIMEOUT)
-                .await
-                .map_err(|error| SidecarError::Ambiguous(error.to_string()))?;
-            let status = response.status;
-            let body = response
-                .text()
-                .await
-                .map_err(|error| SidecarError::Ambiguous(error.to_string()))?;
-            let answer: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
-            if status == 200
-                && let Some(id) = answer.get("id").and_then(Value::as_i64)
-            {
-                return Ok(id);
-            }
-            let message = answer
-                .pointer("/error/message")
-                .and_then(Value::as_str)
-                .map_or_else(|| format!("stories sidecar answered {status}: {body}"), str::to_owned);
-            // Only an explicit "not sent" is a refusal; anything else after the
-            // request went out may have posted the Story.
-            if answer.pointer("/error/sent") == Some(&Value::Bool(false)) {
-                Err(SidecarError::Refused(message))
-            } else {
-                Err(SidecarError::Ambiguous(message))
-            }
-        })
-    }
+    fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, StoryError>>;
 }
 
 static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://[^\s<>)]*").unwrap());
@@ -223,9 +135,9 @@ pub fn telegram_story_caption_input(text: &str, entities: &[Value]) -> StoryCapt
     StoryCaption { text: caption, links }
 }
 
-/// `telegramStoryUploadMedia`. Without explicit width, height and duration
-/// mtcute writes zeros into documentAttributeVideo, which `stories.sendStory`
-/// rejects with the same MEDIA_FILE_INVALID as a codec problem.
+/// `telegramStoryUploadMedia`. Without the real width, height and duration
+/// documentAttributeVideo carries zeros, which `stories.sendStory` rejects
+/// with the same MEDIA_FILE_INVALID as a codec problem.
 pub fn telegram_story_upload_media(path: &Path, video: bool, metadata: &StoryVideoMetadata) -> StoryUploadMedia {
     if video {
         StoryUploadMedia::Video {
@@ -339,7 +251,7 @@ fn skipped(reason: &str) -> PublishResult {
 /// `publishTelegramStory`.
 pub async fn publish_telegram_story(
     ctx: &AdapterContext,
-    sidecar: &dyn StoriesSidecar,
+    stories: &dyn StoriesClient,
     payload: &Map<String, Value>,
 ) -> Result<PublishResult> {
     let Some(media) = payload_media(payload)
@@ -369,12 +281,12 @@ pub async fn publish_telegram_story(
     if config.telegram_stories_channel.as_deref().is_none_or(str::is_empty) {
         return Ok(skipped("missing_story_channel"));
     }
-    publish_channel_story(ctx, sidecar, &media, caption).await
+    publish_channel_story(ctx, stories, &media, caption).await
 }
 
 async fn publish_channel_story(
     ctx: &AdapterContext,
-    sidecar: &dyn StoriesSidecar,
+    stories: &dyn StoriesClient,
     media: &MediaItem,
     caption: StoryCaption,
 ) -> Result<PublishResult> {
@@ -419,9 +331,9 @@ async fn publish_channel_story(
             caption,
             period_seconds: STORY_PERIOD_SECONDS,
         };
-        let id = sidecar.send_story(&request).await.map_err(|error| match error {
-            SidecarError::Refused(message) => AdapterError::Message(message),
-            SidecarError::Ambiguous(message) => ambiguous_error("telegram_stories", &message),
+        let id = stories.send_story(&request).await.map_err(|error| match error {
+            StoryError::Refused(message) => AdapterError::Message(message),
+            StoryError::Ambiguous(message) => ambiguous_error("telegram_stories", &message),
         })?;
         let mut result = Map::new();
         result.insert("ok".into(), true.into());

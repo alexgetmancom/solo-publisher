@@ -3,12 +3,7 @@
   "workspaces": {
     ".": {
       "entry": ["scripts/*.ts", "deploy/*.ts", "deploy/media-processor/server.ts", "deploy/**/*.test.ts"],
-      "project": ["scripts/**/*.ts", "deploy/**/*.ts"],
-      "ignoreDependencies": ["@mtcute/bun"]
-    },
-    "sidecars/stories": {
-      "entry": ["tests/**/*.test.ts"],
-      "project": ["src/**/*.ts", "tests/**/*.ts"]
+      "project": ["scripts/**/*.ts", "deploy/**/*.ts"]
     }
   }
 }

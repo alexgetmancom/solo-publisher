@@ -2,8 +2,8 @@
  * Inspects a built Studio image the way production reaches it, without a bot
  * token and so without starting a Studio:
  *
- * - what the image carries: the three binaries, the Stories sidecar bundle
- *   with mtcute's WASM, the Story-card assets, ffmpeg, Bun and setpriv;
+ * - what the image carries: the three binaries, the Story-card assets,
+ *   ffmpeg, Bun and setpriv;
  * - the entrypoint as root: it fixes the data directory's ownership, drops to
  *   uid 1000 and starts the Studio, which then refuses for want of a token —
  *   proof that the fix, the drop and the probe all ran first;
@@ -42,8 +42,6 @@ const contents = await run([
     "test -x /app/bin/solo-publisher",
     "test -x /app/bin/studio-entrypoint",
     "test -x /app/bin/ops",
-    "test -f /app/sidecar/main.js && test -f /app/sidecar/login.js",
-    "ls /app/sidecar/*.wasm",
     "test -f /app/assets/story-card/Manrope-Variable.ttf",
     "test -f /app/assets/story-card/NotoColorEmoji.ttf",
     "test -f /app/assets/story-card/strata-master-background.png",

@@ -9,9 +9,9 @@ mod support;
 
 use std::rc::Rc;
 
-use adapters::StoriesSidecar;
+use adapters::StoriesClient;
 use adapters::social_ports::MediaPreparation;
-use adapters::telegram_stories::{SidecarError, StoryRequest};
+use adapters::telegram_stories::{StoryError, StoryRequest};
 use delivery::external_edits::{PublishedTargetEdit, edit_published_targets};
 use delivery::external_removals::{
     RemovalOptions, attempt_published_target_removals, settle_published_target_removals,
@@ -31,11 +31,11 @@ use serde_json::{Value, json};
 use support::Scenario;
 
 /// No scenario publishes a Telegram Story.
-struct NoSidecar;
+struct NoStories;
 
-impl StoriesSidecar for NoSidecar {
-    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
-        panic!("a scenario reached the stories sidecar")
+impl StoriesClient for NoStories {
+    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, Result<i64, StoryError>> {
+        panic!("a scenario reached the Stories client")
     }
 }
 
@@ -53,7 +53,7 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
         let failed = |error: delivery::Error| error.to_string();
         Ok(match name {
             "publishCycle" => {
-                let ports = delivery_ports(&delivery, media(scenario), Rc::new(NoSidecar)).map_err(failed)?;
+                let ports = delivery_ports(&delivery, media(scenario), Rc::new(NoStories)).map_err(failed)?;
                 json!(run_delivery_publish_cycle(&delivery, &ports).await.map_err(failed)?)
             }
             "recoverStale" => {

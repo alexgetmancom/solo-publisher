@@ -11,7 +11,7 @@ goldens see exactly what production sends. The delivery workflow (a later slice)
 | `error` (`AdapterError`, `ambiguous_mutation`, `publish_json`, `absent_if_missing`) | `delivery/ambiguous-publication.ts`, `delivery/platform-absence.ts`, `HttpPublishError`/`publishJson` of `publishing/errors.ts` |
 | `payload`, `multipart` | `delivery/social/payload.ts` (readers in `domain::publishing::payload`), Bun's `FormData` |
 | `telegram` | `delivery/social/telegram.ts` + the Telegram edit/remove ports |
-| `telegram_stories` (`StoriesSidecar`, `HttpStoriesSidecar`) | `delivery/social/telegramStories.ts` minus mtcute |
+| `telegram_stories` (`StoriesClient`, `StoryRequest`, `StoryError`) | `delivery/social/telegramStories.ts` minus the MTProto call (`crates/mtproto`) |
 | `x`, `x_content_state` | `delivery/social/x.ts`, `x-content-state.ts` |
 | `threads` | `delivery/social/threads.ts` + the Threads remove port |
 | `instagram` | `delivery/social/instagram.ts`, `instagram-container.ts` |
@@ -42,32 +42,25 @@ Wiring for the integrator: `PreparedMedia::new(Rc<dyn MediaPreparation>)` is the
 implements `MediaPreparation` with `prepareMediaItems` and `awaitPreparedStoryMedia`); `ProviderCalls::new(client,
 config)` implements `VideoProvider` and `YoutubeUploads`, so `AppAdapters` forwards `post_outcome`,
 `publish_instagram_reel` and `keep_youtube_private` to it (`zernio_accounts` is `channels::zernio::ZernioAccounts`);
-`HttpStoriesSidecar::new(client, STORIES_SIDECAR_URL, STORIES_SIDECAR_TOKEN)` is the `stories` (the container
-entrypoint sets both variables for the Studio; see `crates/entrypoint`).
+`mtproto::MtprotoStories::new(config)` is the `stories`.
 
-## Stories sidecar contract
+## Telegram Stories over MTProto
 
-The sidecar is `sidecars/stories` (Bun, mtcute). `POST {base}/v1/stories`, `Content-Type: application/json`,
-`Authorization: Bearer <STORIES_SIDECAR_TOKEN>`; no Telegram credentials travel: the sidecar reads
-`TELEGRAM_CHANNEL_STORIES_*` itself and the media path from the same filesystem (one container).
+`publish_telegram_story` does the guards, the caption, the probe and the re-encode, then hands one `StoryRequest`
+(channel username without `@`, the file, its width/height/duration for a video, the caption with its hidden links, the
+period) to a `StoriesClient`. The Studio's is `MtprotoStories` (`crates/mtproto`, grammers, in process): it reads
+`TELEGRAM_CHANNEL_STORIES_*` from the live configuration at send time, opens the session file, connects (30 s),
+loads the account (30 s), resolves the channel, uploads the file and sends `stories.sendStory` (120 s for those three),
+then disconnects (5 s, best effort). The request is the one mtcute built (`crates/mtproto/tests/send_story.golden.json`).
 
-```json
-{"peer": "channelname", "periodSeconds": 86400,
- "media": {"type": "video", "path": "/data/…/story.mp4", "width": 1080, "height": 1920, "duration": 12, "supportsStreaming": true},
- "caption": {"text": "…", "links": [{"offset": 4, "length": 4, "url": "https://…"}]}}
-```
-
-`media` is `{"type": "photo", "path"}` for an image. The sidecar uploads `file:<path>`, sends `caption.text` as a plain
-string when `links` is empty and otherwise as `{text, entities: [messageEntityTextUrl…]}`, under the deadlines
-TypeScript used (connect 30 s, `getMe` 30 s, `sendStory` 120 s, teardown 5 s, best effort).
-
-- `200 {"id": <story id>}` — posted.
-- `{"error": {"message": "<TypeScript's message, e.g. telegram_channel_story_connect_timeout>", "sent": false}}` (any
-  status) — `sendStory` never went out: bad token (401), invalid body (400, `invalid_story_request: …`), credentials
-  unset (503, `missing_channel_story_credentials`), media file missing (422), connect or identity failure (502), or
-  Telegram's own RPC refusal / mtcute rejecting the arguments (502, mtcute's message): a plain failure.
-- `{"error": {"message": …, "sent": true}}`, any other answer, or no answer within 200 s — the Story may be up:
-  `Ambiguous("telegram_stories")`.
+- `Ok(id)` — posted.
+- `StoryError::Refused` — nothing reached the audience, a plain failure: credentials unset
+  (`missing_channel_story_credentials`), no signed-in session (`telegram_channel_story_not_signed_in`), media file
+  missing, connect or identity failure or deadline, the channel not resolvable, the upload failing or running out the
+  deadline — all before `sendStory` is handed over — or Telegram refusing `sendStory` itself (codes 300–499, mtcute's
+  wording: `Telegram API error 400: …`).
+- `StoryError::Ambiguous` — `sendStory` went out and no definite answer came back: the deadline, a dropped connection,
+  a server-side failure (code 500 and up, or negative), or an answer without the Story. `Ambiguous("telegram_stories")`.
 
 ## Parity
 
@@ -84,9 +77,10 @@ error kind, message, class, status and Retry-After, virtual sleep time for X, an
 
 ## Deliberate deviations
 
-- A sidecar answer that is not an explicit "not sent" is ambiguous, where TypeScript saw only mtcute's own errors:
-  the new process boundary can lose an answer after `sendStory`, and a second Story is worse than an unclear one.
-- The Stories connection is opened by the sidecar after the probe and re-encode, not before (one call per Story).
+- Stories: a failure before `stories.sendStory` is handed over (the upload's deadline included) is not sent, where
+  TypeScript counted any non-RPC error inside mtcute's `sendStory` as possibly posted; a server-side RPC failure after
+  it is ambiguous, where TypeScript counted every RPC error as not sent.
+- The Stories connection is opened after the probe and re-encode, not before (one connection per Story).
 - A 2xx YouTube upload or Reels publish without an id is reported with `id: None` (TypeScript: `undefined`), never as
   a failure that would retry a publication that happened.
 - Result objects match TypeScript's fields and values, not always their key order (a Threads/Instagram progress
@@ -97,4 +91,4 @@ error kind, message, class, status and Retry-After, virtual sleep time for X, an
   first message again. The retry sends only the remaining parts. A lost answer is ambiguous, as before.
 
 Not here: the video worker loop and the publish workflow (`delivery`), `prepareMediaItems` / story derivatives (behind
-`MediaPreparation`), the mtcute sidecar itself (`sidecars/stories`).
+`MediaPreparation`), the MTProto client itself (`crates/mtproto`).

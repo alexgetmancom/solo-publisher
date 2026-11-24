@@ -112,10 +112,8 @@ in `.env` when you want the verified installation to stay fixed. Update with
 
 ## Running from source
 
-Requirements: the Rust toolchain `rust-toolchain.toml` pins, ffmpeg, and
-[Bun 1.3.14](https://bun.sh/) only for the Telegram Stories sidecar
-(`sidecars/stories`). Copy the secret template, build, and start the Studio with
-it in the environment:
+Requirements: the Rust toolchain `rust-toolchain.toml` pins and ffmpeg. Copy
+the secret template, build, and start the Studio with it in the environment:
 
 ```bash
 cp deploy/secrets.env.example secrets.env

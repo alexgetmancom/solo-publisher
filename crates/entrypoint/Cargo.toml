@@ -15,6 +15,4 @@ workspace = true
 [dependencies]
 foundation = { path = "../foundation" }
 runtime = { path = "../runtime" }
-getrandom = "0.2"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-tokio = { version = "1", features = ["rt", "time", "signal", "macros", "process"] }

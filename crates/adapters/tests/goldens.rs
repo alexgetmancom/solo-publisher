@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use adapters::remote_media_processor::{MediaKind, Variant, process_vertical_media_remotely};
 use adapters::telegram_stories::{
-    SidecarError, StoriesSidecar, StoryCaption, StoryRequest, StoryUploadMedia, StoryVideoMetadata,
+    StoriesClient, StoryCaption, StoryError, StoryRequest, StoryUploadMedia, StoryVideoMetadata,
     telegram_story_caption_input, telegram_story_upload_media,
 };
 use adapters::video_publishers::{
@@ -292,11 +292,11 @@ impl Clock for FixedClock {
 }
 
 /// The guard cases never reach the MTProto half.
-struct NoSidecar;
+struct NoStories;
 
-impl StoriesSidecar for NoSidecar {
-    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
-        panic!("a recorded case reached the stories sidecar")
+impl StoriesClient for NoStories {
+    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, Result<i64, StoryError>> {
+        panic!("a recorded case reached the Stories client")
     }
 }
 
@@ -422,7 +422,7 @@ fn file_input(files: &Path, inputs: &Value, key: &str) -> PathBuf {
 
 async fn run(operation: &str, inputs: &Value, ctx: AdapterContext, files: &Path) -> Result<Value, AdapterError> {
     let adapters =
-        adapters::create_platform_adapters(ctx.clone(), Rc::new(Unprepared), Rc::new(NoSidecar), &routing(inputs));
+        adapters::create_platform_adapters(ctx.clone(), Rc::new(Unprepared), Rc::new(NoStories), &routing(inputs));
     let adapter = || adapters.get(inputs["target"].as_str().unwrap()).unwrap();
     let option = |value: Option<String>| value.map_or(Value::Null, Value::from);
     Ok(match operation {

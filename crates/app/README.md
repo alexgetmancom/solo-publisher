@@ -39,15 +39,15 @@ video completion notice (`domain::delivery`), connect links (`channels`). One `d
 is both the publish loop's `MediaPreparation` and Studio's `StoryDerivatives`; the worker bell is
 `runtime::worker_signal::WorkerSignals`. The adapters Studio waits on: the media probe runs `ffprobe`/`ffmpeg` from
 `PATH`, the provider calls are `adapters::providers`, the Zernio directory is `channels::zernio`. Telegram channel
-Stories go out through the Stories sidecar (`adapters::HttpStoriesSidecar`); without `STORIES_SIDECAR_URL` +
-`STORIES_SIDECAR_TOKEN` a Story fails as "Telegram Stories sidecar is not configured".
+Stories go out over MTProto in this process (`mtproto::MtprotoStories`, with the `TELEGRAM_CHANNEL_STORIES_*` of the
+live configuration).
 
 ## Environment
 
 Required: `CONTROLLER_BOT_TOKEN`, `CONTROLLER_ADMIN_IDS`, `DATA_DIR` (the database is `$DATA_DIR/pipeline.db`).
 
 Optional: `BIND_HOST`, `PORT`, `TELEGRAM_API_BASE_URL`, `LOG_LEVEL`, `DEPLOY_AGENT_URL` + `DEPLOY_AGENT_TOKEN`,
-`STORIES_SIDECAR_URL` + `STORIES_SIDECAR_TOKEN` (Rust only; the token at least 32 characters, as the sidecar requires), `TOKEN_ENCRYPTION_KEY`,
+`TOKEN_ENCRYPTION_KEY`,
 `PUBLIC_BASE_URL`, `TELEGRAM_CHANNEL_USERNAME`, `STUDIO_ACTOR_IDS`; any other `.env` variable reads as in TypeScript.
 
 Production (`NODE_ENV=production`, `DEPLOYMENT_ENV=production`) also requires `COMMAND_CENTER_TOKEN`,
@@ -61,10 +61,8 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 
 ## Container
 
-`Dockerfile` (context: the repository root, filtered by `Dockerfile.dockerignore`) builds one image with
-two processes, because the Studio hands the Stories sidecar file paths (a re-encoded Story sits in the Studio's temp
-directory) and because the deploy agent, its rollback by digest and `docker exec` keep the one `backend` container
-they know:
+`Dockerfile` (context: the repository root, filtered by `Dockerfile.dockerignore`) builds one image, one process
+(the Studio) in one `backend` container, the one the deploy agent, its rollback by digest and `docker exec` know:
 
 | Path | What |
 |---|---|
@@ -72,17 +70,14 @@ they know:
 | `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration |
 | `/app/bin/ops` | the operations CLI, behind `bun /app/ops/cli.js` (`scripts/ops-prod.ts`) |
 | `/app/entrypoint/config-check.js` | `studio-entrypoint --check-config`, which the deploy agent runs on a new image before swapping it in |
-| `/app/sidecar/` | `sidecars/stories` bundled by `bun build` with mtcute's WASM beside it |
 | `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
 | `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1, Bun 1.4.0 from the `oven/bun` slim base |
 
 `studio-entrypoint`, started as root: creates and `chown`s the data directories (`runtime::data_dirs`, as
 `docker-entrypoint.ts`), then re-executes itself through `setpriv --reuid --regid --groups` as `bun` (uid 1000),
 keeping compose's `group_add` groups and dropping group 0 — the workspace forbids `unsafe`, so the syscalls are
-setpriv's; the exec after them makes the drop irreversible. As `bun` it probes the directories with a write, draws a
-random sidecar token, starts the Studio with `STORIES_SIDECAR_URL=http://127.0.0.1:8790` and `STORIES_SIDECAR_TOKEN`,
-and the sidecar on loopback with the same token, restarting the sidecar if it dies (1 s doubling to 30 s). The
-Studio's exit is the container's; `tini -g` hands SIGTERM to all three, and the entrypoint only waits.
+setpriv's; the exec after them makes the drop irreversible. As `bun` it probes the directories with a write and
+replaces itself with the Studio, which `tini -g` then hands SIGTERM directly; the Studio's exit is the container's.
 
 ```
 docker build -t solo-publisher .
@@ -90,6 +85,6 @@ IMAGE=solo-publisher bun scripts/image-smoke.ts   # what CI checks on every imag
 ```
 
 The healthcheck is `bun -e fetch('/readyz')` on 8788. Stories sign-in, once per session:
-`docker exec -it -u bun <container> bun /app/sidecar/login.js`. CI builds the image on every push (`image-check`); on
+`docker compose exec -it app bun /app/ops/cli.js telegram-stories-login`. CI builds the image on every push (`image-check`); on
 `main` it builds both architectures, inspects each with `scripts/image-smoke.ts`, and deploys
 (`backend-image` → `deploy`).

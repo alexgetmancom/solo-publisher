@@ -47,7 +47,7 @@ function verticalImageFilter(blur: boolean): string {
 }
 
 /** VAAPI rate control can overshoot on very short clips. 8.5 MiB leaves a real
- * margin below mtcute's 9.5 MiB upload boundary after MP4 overhead. Account for
+ * margin below the 9.5 MiB Story upload limit after MP4 overhead. Account for
  * the original (copied) audio plus container overhead. */
 export function telegramVideoKbps(duration: number, audioBitrate: number): number {
   const targetBits = 8.5 * 1024 * 1024 * 8;

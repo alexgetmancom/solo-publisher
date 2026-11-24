@@ -7,9 +7,7 @@
 
 use std::rc::Rc;
 
-use adapters::telegram_stories::{SidecarError, StoryRequest};
-use adapters::{HttpStoriesSidecar, StoriesSidecar};
-use bot::{Fut, Host};
+use bot::Host;
 use channels::connect::ConnectLinks;
 use channels::entropy::OsEntropy;
 use db::rusqlite::Connection;
@@ -24,7 +22,7 @@ use domain::publishing::Boundaries;
 use domain::publishing::boundaries::SystemJitter;
 use domain::story_cards::StoryCardStore;
 use domain::studio::boundaries::StudioBoundaries;
-use foundation::config::{Config, SharedConfig};
+use foundation::config::SharedConfig;
 use runtime::http::HttpClient;
 use runtime::worker_signal::WorkerSignals;
 
@@ -80,30 +78,5 @@ impl Host for AppHost {
             readiness: &self.readiness,
             connect_links: &self.connect_links,
         }
-    }
-}
-
-/// Where Telegram channel Stories go out: the sidecar the entrypoint starts,
-/// or, without one configured, a refusal naming the settings.
-pub fn stories_sidecar(http: HttpClient, config: &Config) -> Rc<dyn StoriesSidecar> {
-    match (
-        config.stories_sidecar_url.as_deref(),
-        config.stories_sidecar_token.as_deref(),
-    ) {
-        (Some(url), Some(token)) => Rc::new(HttpStoriesSidecar::new(http, url, token)),
-        _ => Rc::new(NoStoriesSidecar),
-    }
-}
-
-/// Nothing is sent, so the Story fails plainly rather than as ambiguous.
-struct NoStoriesSidecar;
-
-impl StoriesSidecar for NoStoriesSidecar {
-    fn send_story<'a>(&'a self, _: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
-        Box::pin(async {
-            Err(SidecarError::Refused(
-                "Telegram Stories sidecar is not configured: set STORIES_SIDECAR_URL and STORIES_SIDECAR_TOKEN".into(),
-            ))
-        })
     }
 }

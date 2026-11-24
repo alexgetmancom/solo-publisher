@@ -1,16 +1,15 @@
-//! What the request goldens cannot record: the Story re-encode budget, the
-//! stories sidecar contract on both sides, and the preparation cache of the
-//! social ports.
+//! What the request goldens cannot record: the Story re-encode budget, how a
+//! Story settles on the Stories client's answer, and the preparation cache of
+//! the social ports.
 
 use std::cell::{Cell, RefCell};
-use std::collections::VecDeque;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use adapters::telegram_stories::{
-    HttpStoriesSidecar, SidecarError, StoriesSidecar, StoryCaption, StoryRequest, StoryUploadMedia, StoryVideoMetadata,
-    publish_telegram_story, story_reencode_args,
+    StoriesClient, StoryError, StoryRequest, StoryUploadMedia, StoryVideoMetadata, publish_telegram_story,
+    story_reencode_args,
 };
 use adapters::{AdapterContext, AdapterError, MediaPreparation, PrepareJob, PreparedMedia};
 use content::message::MediaItem;
@@ -32,42 +31,12 @@ fn config(extra: &[(&str, &str)]) -> Config {
     load_config(env).unwrap()
 }
 
-/// Answers each request with the next canned response and keeps it.
-struct Canned {
-    sent: RefCell<Vec<HttpRequest>>,
-    answers: RefCell<VecDeque<Result<(u16, String), String>>>,
-}
+/// The Story publisher reaches no HTTP service.
+struct NoNetwork;
 
-impl Canned {
-    fn new(answers: Vec<Result<(u16, &str), &str>>) -> Rc<Self> {
-        Rc::new(Self {
-            sent: RefCell::new(Vec::new()),
-            answers: RefCell::new(
-                answers
-                    .into_iter()
-                    .map(|answer| {
-                        answer
-                            .map(|(status, body)| (status, body.to_owned()))
-                            .map_err(str::to_owned)
-                    })
-                    .collect(),
-            ),
-        })
-    }
-}
-
-impl Transport for Canned {
-    fn send(&self, request: HttpRequest) -> Fut<'_, Result<HttpResponse, TransportFailure>> {
-        self.sent.borrow_mut().push(request);
-        let answer = self.answers.borrow_mut().pop_front().expect("no answer left");
-        Box::pin(async move {
-            answer
-                .map(|(status, body)| HttpResponse::buffered(status, Vec::new(), body))
-                .map_err(|message| TransportFailure {
-                    message,
-                    timed_out: false,
-                })
-        })
+impl Transport for NoNetwork {
+    fn send(&self, _: HttpRequest) -> Fut<'_, Result<HttpResponse, TransportFailure>> {
+        panic!("a Story reached for HTTP")
     }
 }
 
@@ -145,99 +114,14 @@ fn story_reencode_budget_takes_the_copied_audio_out_of_the_video_rate() {
     );
 }
 
-fn story_request() -> StoryRequest {
-    StoryRequest {
-        peer: "studiostories".into(),
-        media: StoryUploadMedia::Video {
-            path: PathBuf::from("/data/story.mp4"),
-            width: 1080.0,
-            height: 1920.0,
-            duration: 12.0,
-        },
-        caption: StoryCaption {
-            text: "Tap here".into(),
-            links: vec![adapters::telegram_stories::CaptionLink {
-                offset: 4,
-                length: 4,
-                url: "https://example.com".into(),
-            }],
-        },
-        period_seconds: 86_400,
-    }
-}
-
-#[test]
-fn the_sidecar_client_speaks_the_documented_contract() {
-    let transport = Canned::new(vec![
-        Ok((200, r#"{"id":321}"#)),
-        Ok((
-            502,
-            r#"{"error":{"message":"telegram_channel_story_connect_timeout","sent":false}}"#,
-        )),
-        Ok((
-            504,
-            r#"{"error":{"message":"telegram_channel_story_timeout","sent":true}}"#,
-        )),
-        Ok((500, "<html>crash</html>")),
-        Err("connection reset by peer"),
-    ]);
-    let sidecar = HttpStoriesSidecar::new(
-        HttpClient::new(transport.clone()),
-        "http://127.0.0.1:8790/",
-        "sidecar-test-token",
-    );
-    let request = story_request();
-    let answers: Vec<Result<i64, SidecarError>> = block_on(async {
-        let mut answers = Vec::new();
-        for _ in 0..5 {
-            answers.push(sidecar.send_story(&request).await);
-        }
-        answers
-    });
-    assert_eq!(answers[0], Ok(321));
-    assert_eq!(
-        answers[1],
-        Err(SidecarError::Refused("telegram_channel_story_connect_timeout".into()))
-    );
-    assert_eq!(
-        answers[2],
-        Err(SidecarError::Ambiguous("telegram_channel_story_timeout".into()))
-    );
-    assert_eq!(
-        answers[3],
-        Err(SidecarError::Ambiguous(
-            "stories sidecar answered 500: <html>crash</html>".into()
-        ))
-    );
-    assert!(
-        matches!(&answers[4], Err(SidecarError::Ambiguous(message)) if message.contains("failed before receiving"))
-    );
-
-    let sent = transport.sent.borrow();
-    assert_eq!(sent[0].url, "http://127.0.0.1:8790/v1/stories");
-    assert_eq!(sent[0].header_value("content-type"), Some("application/json"));
-    assert_eq!(sent[0].header_value("authorization"), Some("Bearer sidecar-test-token"));
-    let body: Value = serde_json::from_slice(&sent[0].body.as_bytes().unwrap()).unwrap();
-    assert_eq!(
-        body,
-        json!({
-            "peer": "studiostories",
-            "media": {"type": "video", "path": "/data/story.mp4", "width": 1080, "height": 1920, "duration": 12,
-                "supportsStreaming": true},
-            "caption": {"text": "Tap here", "links": [{"offset": 4, "length": 4, "url": "https://example.com"}]},
-            "periodSeconds": 86_400,
-        })
-    );
-}
-
-/// The sidecar as the publisher sees it: one canned answer.
-struct FakeSidecar {
-    answer: Result<i64, SidecarError>,
+/// The Stories client as the publisher sees it: one canned answer.
+struct FakeStories {
+    answer: Result<i64, StoryError>,
     seen: RefCell<Option<StoryRequest>>,
 }
 
-impl StoriesSidecar for FakeSidecar {
-    fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, SidecarError>> {
+impl StoriesClient for FakeStories {
+    fn send_story<'a>(&'a self, request: &'a StoryRequest) -> Fut<'a, Result<i64, StoryError>> {
         *self.seen.borrow_mut() = Some(request.clone());
         let answer = self.answer.clone();
         Box::pin(async move { answer })
@@ -245,7 +129,7 @@ impl StoriesSidecar for FakeSidecar {
 }
 
 #[test]
-fn a_story_settles_as_the_sidecar_answers() {
+fn a_story_settles_as_the_stories_client_answers() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../_trash-rust/tmp/adapter-tests")
         .join(format!("{}-story", std::process::id()));
@@ -259,7 +143,7 @@ fn a_story_settles_as_the_sidecar_answers() {
             ("TELEGRAM_CHANNEL_STORIES_SESSION", "/data/stories.session"),
             ("TELEGRAM_STORIES_CHANNEL", "@studiostories"),
         ])),
-        client: HttpClient::new(Canned::new(Vec::new())),
+        client: HttpClient::new(Rc::new(NoNetwork)),
         clock: Rc::new(SystemClock),
     };
     let payload: Map<String, Value> = serde_json::from_value(json!({
@@ -269,12 +153,12 @@ fn a_story_settles_as_the_sidecar_answers() {
     }))
     .unwrap();
     let publish = |answer| {
-        let sidecar = FakeSidecar {
+        let stories = FakeStories {
             answer,
             seen: RefCell::new(None),
         };
-        let outcome = block_on(publish_telegram_story(&ctx, &sidecar, &payload));
-        (outcome, sidecar.seen.into_inner())
+        let outcome = block_on(publish_telegram_story(&ctx, &stories, &payload));
+        (outcome, stories.seen.into_inner())
     };
 
     let (outcome, seen) = publish(Ok(77));
@@ -287,7 +171,7 @@ fn a_story_settles_as_the_sidecar_answers() {
     assert_eq!(seen.caption.links.len(), 1);
     assert_eq!(seen.period_seconds, 86_400);
 
-    let (outcome, _) = publish(Err(SidecarError::Ambiguous("telegram_channel_story_timeout".into())));
+    let (outcome, _) = publish(Err(StoryError::Ambiguous("telegram_channel_story_timeout".into())));
     assert_eq!(
         outcome.unwrap_err(),
         AdapterError::Ambiguous {
@@ -297,7 +181,7 @@ fn a_story_settles_as_the_sidecar_answers() {
                 .into(),
         }
     );
-    let (outcome, _) = publish(Err(SidecarError::Refused("PEER_ID_INVALID".into())));
+    let (outcome, _) = publish(Err(StoryError::Refused("PEER_ID_INVALID".into())));
     assert_eq!(outcome.unwrap_err(), AdapterError::Message("PEER_ID_INVALID".into()));
     std::fs::remove_dir_all(&dir).unwrap();
 }
