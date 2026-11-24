@@ -1,13 +1,17 @@
 //! `cargo xtask image-smoke <image>`: inspects a built Studio image the way
 //! production reaches it, without a bot token and so without starting a Studio:
 //!
-//! - what the image carries: the three binaries, the Story-card assets, the two
-//!   Bun shims, ffmpeg, Bun and setpriv;
+//! - what the image carries: the three binaries, the deploy agent the
+//!   deployment copies onto the host, the Story-card assets, the two Bun shims,
+//!   ffmpeg, Bun and setpriv;
 //! - the entrypoint as root: it fixes the data directory's ownership, drops to
 //!   uid 1000 and starts the Studio, which then refuses for want of a token —
 //!   proof that the fix, the drop and the probe all ran first;
-//! - the deploy agent's configuration check (`bun /app/entrypoint/config-check.js`),
-//!   accepting a valid configuration and refusing an invalid one;
+//! - the deploy agent's configuration check (`studio-entrypoint --check-config`
+//!   as the entrypoint), accepting a valid configuration and refusing an
+//!   invalid one, and the TypeScript agent's `bun /app/entrypoint/config-check.js`;
+//! - the deploy agent itself, which runs (it is static) and refuses to start
+//!   without its token;
 //! - the operations CLI, both as `cargo xtask ops-prod` runs it (`/app/bin/ops`
 //!   as uid 1000) and as a self-hosted Studio does (`bun /app/ops/cli.js`).
 
@@ -48,6 +52,7 @@ pub fn main(argv: Vec<String>) -> u8 {
             "test -x /app/bin/solo-publisher",
             "test -x /app/bin/studio-entrypoint",
             "test -x /app/bin/ops",
+            "test -x /app/bin/deploy-agent",
             "test -f /app/assets/story-card/Manrope-Variable.ttf",
             "test -f /app/assets/story-card/NotoColorEmoji.ttf",
             "test -f /app/assets/story-card/strata-master-background.png",
@@ -87,24 +92,40 @@ pub fn main(argv: Vec<String>) -> u8 {
         &started.out,
     );
 
-    let config_check = ["--entrypoint", "bun", "-e", "DATA_DIR=/tmp/data"];
-    let valid = run(&[&config_check[..], &[image, "/app/entrypoint/config-check.js"]].concat());
+    let config_check = ["--entrypoint", "/app/bin/studio-entrypoint", "-e", "DATA_DIR=/tmp/data"];
+    let valid = run(&[&config_check[..], &[image, "--check-config"]].concat());
     check(
         valid.code == 0 && valid.stdout.trim() == r#"{"ok":true}"#,
         "config check accepts a valid configuration",
         &valid.out,
     );
     let production = ["-e", "NODE_ENV=production", "-e", "DEPLOYMENT_ENV=production"];
-    let invalid = run(&[
-        &config_check[..],
-        &production,
-        &[image, "/app/entrypoint/config-check.js"],
-    ]
-    .concat());
+    let invalid = run(&[&config_check[..], &production, &[image, "--check-config"]].concat());
     check(
         invalid.code != 0 && invalid.out.contains("COMMAND_CENTER_TOKEN"),
         "config check refuses an invalid configuration",
         &invalid.out,
+    );
+    // What a host still on the TypeScript agent runs instead.
+    let shim = run(&[
+        "--entrypoint",
+        "bun",
+        "-e",
+        "DATA_DIR=/tmp/data",
+        image,
+        "/app/entrypoint/config-check.js",
+    ]);
+    check(
+        shim.code == 0 && shim.stdout.trim() == r#"{"ok":true}"#,
+        "bun /app/entrypoint/config-check.js accepts a valid configuration",
+        &shim.out,
+    );
+
+    let agent = run(&["--entrypoint", "/app/bin/deploy-agent", image]);
+    check(
+        agent.code == 1 && agent.out.contains("DEPLOY_AGENT_TOKEN is required"),
+        "the deploy agent runs and refuses without its token",
+        &agent.out,
     );
 
     let ops = run(&[

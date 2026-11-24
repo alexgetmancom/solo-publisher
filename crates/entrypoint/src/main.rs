@@ -39,9 +39,10 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    // `bun /app/entrypoint/config-check.js` (image/config-check.js): the
-    // deploy agent's check of a new image's configuration before it replaces
-    // the running container. Nothing else runs.
+    // The deploy agent's check of a new image's configuration before it
+    // replaces the running container (`--entrypoint /app/bin/studio-entrypoint
+    // … --check-config`; the TypeScript agent's `bun
+    // /app/entrypoint/config-check.js` runs the same). Nothing else runs.
     if std::env::args().nth(1).as_deref() == Some("--check-config") {
         println!("{}", json!({"ok": true}));
         return ExitCode::SUCCESS;

@@ -4,8 +4,14 @@
 # data directory ownership and drops to `bun` (uid 1000) through setpriv, then
 # becomes the Studio (`solo-publisher`), which posts Telegram channel Stories
 # over MTProto itself (crates/mtproto). The Bun base stays for two shims: a
-# self-hosted Studio's `bun /app/ops/cli.js` and the deploy agent's
-# `bun /app/entrypoint/config-check.js`.
+# self-hosted Studio's `bun /app/ops/cli.js` and the TypeScript deploy agent's
+# `bun /app/entrypoint/config-check.js`, which a host runs until it switches
+# to the binary (deploy/README.md).
+#
+# The image also carries that binary, `/app/bin/deploy-agent`, which never runs
+# here: the deployment copies it out onto the host (`cargo xtask
+# deploy-release`). It is static (musl), so it runs on whatever C library the
+# host has.
 #
 # Build context: the repository root, filtered by Dockerfile.dockerignore.
 
@@ -22,7 +28,11 @@ ARG CARGO_JOBS=
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops \
-  && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint target/release/ops -t /out/
+  && musl="$(uname -m)-unknown-linux-musl" \
+  && rustup target add "$musl" \
+  && cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} --target "$musl" -p deploy_agent \
+  && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint target/release/ops \
+       "target/$musl/release/deploy-agent" -t /out/
 
 # --- Runtime ---
 FROM oven/bun:1.4.0-slim@sha256:e0ee68d16ccb9927bf02aa7dd8fd4bf3369ee6d46da04faa72b05ce8bfd135f6 AS studio
@@ -41,8 +51,9 @@ COPY --from=studio-build /out/ ./bin/
 # The operations CLI: `bun /app/ops/cli.js <command>` (docs/install.md) runs
 # /app/bin/ops, which is also on PATH as `ops`; `cargo xtask ops-prod` runs it directly.
 COPY crates/ops/image/cli.js ./ops/cli.js
-# The deploy agent's configuration check of a new image:
-# `bun /app/entrypoint/config-check.js` runs `studio-entrypoint --check-config`.
+# The TypeScript deploy agent's configuration check of a new image:
+# `bun /app/entrypoint/config-check.js` runs `studio-entrypoint --check-config`,
+# which the binary agent runs itself.
 COPY crates/entrypoint/image/config-check.js ./entrypoint/config-check.js
 ENV PATH=/app/bin:$PATH
 

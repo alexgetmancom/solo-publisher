@@ -5,17 +5,21 @@ use std::path::{Path, PathBuf};
 use std::process::{ExitCode, ExitStatus};
 
 mod check;
+mod deploy_release;
+mod family_routes;
 mod image_smoke;
 mod ops_prod;
 
 const USAGE: &str = "usage: cargo xtask <command>
 
   check [--jobs N] [STEP...]   the gate before every push, every step by default:
-                               language, typescript, fmt, clippy, test, build
+                               language, fmt, clippy, test, build
   ops-prod [--as alex|maru] <command> [arguments]
   ops-prod [--as alex|maru] logs [--since 6h] [--grep TEXT] [--lines N]
                                an operations command in a production Studio, over ssh
-  image-smoke <image>          inspect a built Studio image";
+  image-smoke <image>          inspect a built Studio image
+  deploy-release               the production deployment (CI's deploy job; configured by its environment)
+  family-routes                check the adapted host proxy configuration on stdin (CI)";
 
 fn main() -> ExitCode {
     let mut argv = std::env::args().skip(1);
@@ -25,6 +29,8 @@ fn main() -> ExitCode {
         Some("check") => check::main(rest),
         Some("ops-prod") => ops_prod::main(rest),
         Some("image-smoke") => image_smoke::main(rest),
+        Some("deploy-release") => deploy_release::main(rest),
+        Some("family-routes") => family_routes::main(rest),
         Some("help" | "--help" | "-h") => {
             println!("{USAGE}");
             0

@@ -45,7 +45,7 @@ Stories go through `mtproto::MtprotoStories::new(shared_config)` (`app` builds i
 ## Parity
 
 ```
-cargo test -p delivery        # needs bun, ffmpeg and ffprobe on PATH
+cargo test -p delivery        # needs ffmpeg and ffprobe on PATH
 ```
 
 `tests/{delivery,video,site}_scenarios.rs` run every scenario of their JSON spec through this crate and compare with

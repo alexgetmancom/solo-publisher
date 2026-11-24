@@ -69,7 +69,8 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 | `/app/bin/solo-publisher` | this binary (`cargo build --release -p app`, rust:1.100-bookworm) |
 | `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration |
 | `/app/bin/ops` | the operations CLI: `cargo xtask ops-prod` runs it directly, a self-hosted Studio behind `bun /app/ops/cli.js` |
-| `/app/entrypoint/config-check.js` | `studio-entrypoint --check-config`, which the deploy agent runs on a new image before swapping it in |
+| `/app/bin/deploy-agent` | `crates/deploy_agent`, static (musl); never runs here: each deployment copies it onto the host (`deploy/README.md`) |
+| `/app/entrypoint/config-check.js` | `studio-entrypoint --check-config`, which the TypeScript deploy agent runs on a new image before swapping it in, until a host switches to the binary (that runs `studio-entrypoint --check-config` as the entrypoint) |
 | `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
 | `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1, Bun 1.4.0 from the `oven/bun` slim base |
 

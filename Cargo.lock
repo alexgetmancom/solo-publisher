@@ -545,6 +545,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "deploy_agent"
+version = "0.0.0"
+dependencies = [
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "jiff",
+ "regex",
+ "serde",
+ "serde_json",
+ "subtle",
+ "tokio",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

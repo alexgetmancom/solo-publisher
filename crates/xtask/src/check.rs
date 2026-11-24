@@ -5,10 +5,11 @@ use std::ffi::OsString;
 use std::path::Path;
 use std::process::Command;
 
-const STEPS: [&str; 6] = ["language", "typescript", "fmt", "clippy", "test", "build"];
+const STEPS: [&str; 5] = ["language", "fmt", "clippy", "test", "build"];
 
-/// What the image is built from, in release as the Dockerfiles build it.
-const RELEASE_PACKAGES: [&str; 4] = ["app", "entrypoint", "ops", "media_processor"];
+/// What the images are built from, in release as the Dockerfiles build them
+/// (the deploy agent for this host's target; the image builds it for musl).
+const RELEASE_PACKAGES: [&str; 5] = ["app", "entrypoint", "ops", "media_processor", "deploy_agent"];
 
 pub fn main(argv: Vec<String>) -> u8 {
     let mut jobs = None;
@@ -55,11 +56,6 @@ fn run_step(step: &str, root: &Path, jobs: Option<&str>) -> Result<(), String> {
     let jobs: Vec<&str> = jobs.map(|jobs| vec!["-j", jobs]).unwrap_or_default();
     match step {
         "language" => language_gate(root).map(|checked| println!("Language gate passed: {checked} sources allowed.")),
-        // The deployment tooling's TypeScript: its typecheck, then its tests with the coverage ratchet.
-        "typescript" => {
-            run(Command::new("bun").args(["run", "typecheck"]), root)?;
-            run(Command::new("bun").args(["run", "test"]), root)
-        }
         "fmt" => run(&mut cargo(&["fmt", "--all", "--check"]), root),
         "clippy" => run(
             &mut cargo(
@@ -105,24 +101,13 @@ fn run(command: &mut Command, root: &Path) -> Result<(), String> {
     }
 }
 
-/// The repository is Rust. The deployment tooling still runs on Bun, and these
-/// are its sources; anything else in TypeScript, JavaScript, Python or a shell
-/// script is a second language creeping back in.
-const ALLOWED: [&str; 13] = [
-    "deploy/check-family-routes.test.ts",
-    "deploy/check-family-routes.ts",
-    "deploy/deploy-agent.test.ts",
-    "deploy/deploy-agent.ts",
-    "deploy/proxy-topology.test.ts",
-    "deploy/retry.test.ts",
-    "deploy/retry.ts",
-    "scripts/deploy-release.test.ts",
-    "scripts/deploy-release.ts",
-    // Preloaded before those tests (bunfig.toml): an unstubbed outbound fetch fails the test.
-    "scripts/no-network.ts",
+/// The repository is Rust; anything in TypeScript, JavaScript, Python or a
+/// shell script outside these is a second language creeping back in.
+const ALLOWED: [&str; 3] = [
     // The image's two Bun shims, named by callers outside the image: `bun
     // /app/ops/cli.js` (docs/install.md) and `bun /app/entrypoint/config-check.js`
-    // (deploy/deploy-agent.ts). Each only runs a Rust binary.
+    // (the TypeScript deploy agent a host runs until it switches to the binary,
+    // deploy/README.md). Each only runs a Rust binary.
     "crates/entrypoint/image/config-check.js",
     "crates/ops/image/cli.js",
     // It runs on a bare host through `curl … | sh`, before Docker has pulled anything.
@@ -131,8 +116,8 @@ const ALLOWED: [&str; 13] = [
 const SCRIPT_EXTENSIONS: [&str; 10] = ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "py", "pyi"];
 const IGNORED_DIRECTORIES: [&str; 6] = [".git", "node_modules", "target", "_trash-rust", "dist", "coverage"];
 
-/// Fails on every script source outside [`ALLOWED`], and on an allowed one
-/// that switches its typecheck off. Returns how many allowed sources it saw.
+/// Fails on every script source outside [`ALLOWED`]. Returns how many allowed
+/// sources it saw.
 fn language_gate(root: &Path) -> Result<usize, String> {
     let mut violations = Vec::new();
     let mut allowed = 0;
@@ -155,9 +140,6 @@ fn language_gate(root: &Path) -> Result<usize, String> {
             let relative = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().into_owned();
             if ALLOWED.contains(&relative.as_str()) {
                 allowed += 1;
-                if relative.ends_with(".ts") && read(&path)?.contains(concat!("@ts-", "nocheck")) {
-                    violations.push(relative);
-                }
             } else if is_script(&path)? {
                 violations.push(relative);
             }
@@ -199,10 +181,6 @@ fn shell_shebang(path: &Path) -> Result<bool, String> {
     Ok(first_line.starts_with("#!") && ["sh", "bash", "zsh"].iter().any(|shell| first_line.contains(shell)))
 }
 
-fn read(path: &Path) -> Result<String, String> {
-    std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -218,15 +196,16 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("tools/node_modules")).unwrap();
         std::fs::create_dir_all(root.join("deploy")).unwrap();
+        std::fs::create_dir_all(root.join("crates/ops/image")).unwrap();
         std::fs::write(root.join("tools/helper.mjs"), "").unwrap();
         std::fs::write(root.join("tools/node_modules/ignored.js"), "").unwrap();
         std::fs::write(root.join("tools/run"), "#!/usr/bin/env bash\n").unwrap();
         std::fs::write(root.join("tools/notes"), "plain text\n").unwrap();
-        std::fs::write(root.join("deploy/retry.ts"), concat!("// @ts-", "nocheck\n")).unwrap();
-        std::fs::write(root.join("deploy/deploy-agent.ts"), "export {};\n").unwrap();
+        std::fs::write(root.join("deploy/retry.ts"), "export {};\n").unwrap();
+        std::fs::write(root.join("crates/ops/image/cli.js"), "").unwrap();
         let refused = language_gate(&root).unwrap_err();
         assert!(
-            refused.ends_with("\n- deploy/retry.ts\n- tools/helper.mjs\n- tools/run"),
+            refused.ends_with(":\n- deploy/retry.ts\n- tools/helper.mjs\n- tools/run"),
             "{refused}"
         );
         std::fs::remove_dir_all(&root).unwrap();

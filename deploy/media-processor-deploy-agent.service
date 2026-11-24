@@ -9,7 +9,8 @@ User=alex
 Group=alex
 WorkingDirectory=/opt/alexgetman-media-processor
 EnvironmentFile=/etc/alexgetman/media-processor-deploy-agent.env
-ExecStart=/opt/alexgetman-media-processor/media-processor-deploy-agent
+# Copied out of a Studio image by hand; see deploy/README.md.
+ExecStart=/opt/alexgetman-media-processor/deploy-agent
 Restart=always
 RestartSec=3
 NoNewPrivileges=true

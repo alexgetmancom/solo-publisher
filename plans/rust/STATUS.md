@@ -4,10 +4,14 @@ Cut over on branch `rust-cutover` (one commit on top of `rust`, not pushed): the
 Rust `Dockerfile`, the TypeScript backend is gone, and CI gates the deployment on the Rust workspace. Merging it into
 `main` deploys Rust to alex (and to Maru only with `Deploy-Maru: yes`).
 
-What still runs TypeScript: the deploy agent, its retry and the CI deploy driver with their tests (`deploy/*.ts`,
-`scripts/deploy-release.ts`, the `scripts/no-network.ts` test preload), and the two Bun shims in the image
-(`bun /app/ops/cli.js`, `bun /app/entrypoint/config-check.js`). Developer and CI tooling is `cargo xtask`
-(`crates/xtask`): `check` (the pre-push gate), `ops-prod` (the production route) and `image-smoke`.
+What still runs TypeScript (2026-11-24): only the two Bun shims in the image (`bun /app/ops/cli.js`,
+`bun /app/entrypoint/config-check.js`), removed in stage 5; besides them the repository's one non-Rust source is
+`install.sh`. The deploy agent is Rust (`crates/deploy_agent`, binary `deploy-agent`, shipped in the Studio image
+at `/app/bin/deploy-agent`); the hosts keep running the TypeScript agent until each is switched by hand
+(`deploy/README.md`, "Switching the agent to the Rust binary"), and the config-check shim stays for them until
+then. No Bun, `package.json` or lockfile is left in the repository or in CI. Developer and CI tooling is
+`cargo xtask` (`crates/xtask`): `check` (the pre-push gate), `ops-prod` (the production route), `image-smoke`,
+`deploy-release` (CI's deployment) and `family-routes` (CI's check of the adapted host proxy).
 
 The remote media processor is Rust since 2026-11-24 (`crates/media_processor`, binary `media-processor`; image
 `deploy/media-processor/Dockerfile`, no Bun), encoding with the recipe the Studio's local executor uses

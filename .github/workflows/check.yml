@@ -30,7 +30,6 @@ jobs:
       media_changed: ${{ steps.filter.outputs.media }}
       dependencies_changed: ${{ steps.filter.outputs.dependencies }}
       backend_image_changed: ${{ steps.filter.outputs.backend_image }}
-      deploy_agent_changed: ${{ steps.filter.outputs.deploy_agent }}
       caddy_config_changed: ${{ steps.filter.outputs.caddy_config }}
       deployment_required: ${{ steps.filter.outputs.deployment }}
       maru_promote: ${{ steps.filter.outputs.maru_promote }}
@@ -79,7 +78,6 @@ jobs:
           media=false
           dependencies=false
           backend_image=false
-          deploy_agent=false
           caddy_config=false
           deployment=false
 
@@ -89,14 +87,16 @@ jobs:
                 media=true
                 deployment=true
                 ;;
-              # The recipe both executors encode with, and the manifests that
-              # pin the processor's dependencies: both images are built from them.
-              crates/vertical_media/Cargo.toml|crates/vertical_media/src/*|Cargo.toml|Cargo.lock)
+              # The recipe both executors encode with: both images are built from it.
+              crates/vertical_media/Cargo.toml|crates/vertical_media/src/*)
                 media=true
                 backend_image=true
                 deployment=true
                 ;;
-              bun.lock | package.json)
+              # The manifests that pin every dependency of both images, which
+              # the audit reads.
+              Cargo.toml|Cargo.lock)
+                media=true
                 dependencies=true
                 backend_image=true
                 deployment=true
@@ -106,18 +106,20 @@ jobs:
                 backend_image=true
                 deployment=true
                 ;;
+              # The deployment itself: proven by deploying.
+              crates/xtask/src/deploy_release.rs)
+                deployment=true
+                ;;
               # Tests, crate READMEs and the developer tooling are not in the image.
               crates/*/tests/* | crates/*/README.md | crates/xtask/*)
                 ;;
+              # The image carries the deploy agent too (crates/deploy_agent),
+              # which the deployment installs on the host when it changed.
               rust-toolchain.toml | crates/* | Dockerfile | Dockerfile.dockerignore)
                 backend_image=true
                 deployment=true
                 ;;
-              deploy/studio.compose.yaml | deploy/alex.env | deploy/maru.env | scripts/deploy-release.ts)
-                deployment=true
-                ;;
-              deploy/deploy-agent.ts | deploy/retry.ts)
-                deploy_agent=true
+              deploy/studio.compose.yaml | deploy/alex.env | deploy/maru.env)
                 deployment=true
                 ;;
               deploy/caddy/*)
@@ -142,7 +144,6 @@ jobs:
             echo "media=$media"
             echo "dependencies=$dependencies"
             echo "backend_image=$backend_image"
-            echo "deploy_agent=$deploy_agent"
             echo "caddy_config=$caddy_config"
             echo "deployment=$deployment"
           } >> "$GITHUB_OUTPUT"
@@ -192,27 +193,13 @@ jobs:
             -f description='Waiting for CI and production deployment' \
             -f target_url="$TARGET_URL"
 
-  quality-static:
-    name: Static checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/setup-bun
-        with:
-          bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
-      - name: Typecheck
-        run: bun run typecheck
-
   quality-analysis:
     name: Repository analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/setup-bun
-        with:
-          bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
+      # For `cargo xtask family-routes`, below.
+      - uses: ./.github/actions/setup-rust
       - name: Self-host stack
         # The install path published in the README is not exercised by anything
         # else here: nothing in this repository runs it, so without this it
@@ -240,21 +227,9 @@ jobs:
             test "$proxies" -gt 0
             test "$proxies" = "$addressed" || { echo "$file: $proxies proxies but $addressed set the client address"; exit 1; }
             if [ "$file" = deploy/caddy/Caddyfile ]; then
-              printf '%s' "$adapted" | bun deploy/check-family-routes.ts
+              printf '%s' "$adapted" | cargo xtask family-routes
             fi
           done
-
-  quality-tests:
-    name: Tests with coverage threshold
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/setup-bun
-        with:
-          bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
-      - name: Tests with coverage threshold
-        run: bun run test
 
   # The Studio's workspace: a deployment waits on it. The goldens it replays
   # were recorded under the production ffmpeg build, so it installs that one.
@@ -322,6 +297,8 @@ jobs:
       - name: Image smoke test
         run: cargo xtask image-smoke solo-publisher:ci
 
+  # Cargo.lock against the RustSec advisory database: on every change to it,
+  # and weekly for advisories published since.
   dependency-audit:
     name: Dependency audit
     needs: scope
@@ -329,12 +306,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: ./.github/actions/setup-bun
+      - uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
         with:
-          bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
+          tool: cargo-audit
       - name: Dependency audit
-        run: bun run check:audit
+        run: cargo-audit audit
 
   # There are no pull requests here, so the review runs on the push itself: the
   # range is the one the push actually added. A branch's first push has no
@@ -555,9 +531,7 @@ jobs:
     needs:
       [
         scope,
-        quality-static,
         quality-analysis,
-        quality-tests,
         rust,
         dependency-audit,
         backend-manifest,
@@ -567,9 +541,7 @@ jobs:
       always() && vars.DEPLOY_ENABLED == 'true' &&
       needs.scope.result == 'success' &&
       needs.scope.outputs.deployment_required == 'true' &&
-      needs.quality-static.result == 'success' &&
       needs.quality-analysis.result == 'success' &&
-      needs.quality-tests.result == 'success' &&
       needs.rust.result == 'success' &&
       (needs.dependency-audit.result == 'success' || needs.dependency-audit.result == 'skipped') &&
       needs.backend-manifest.result == 'success' &&
@@ -584,9 +556,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.14
+      - uses: ./.github/actions/setup-rust
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
@@ -606,10 +576,8 @@ jobs:
           RELEASE: ${{ github.sha }}
           MARU_DEPLOY_ENABLED: ${{ vars.MARU_DEPLOY_ENABLED }}
           PROMOTE_MARU: ${{ needs.scope.outputs.maru_promote }}
-          DEPLOY_AGENT_CHANGED: ${{ needs.scope.outputs.deploy_agent_changed }}
           CADDY_CONFIG_CHANGED: ${{ needs.scope.outputs.caddy_config_changed }}
-        run: |
-          bun scripts/deploy-release.ts
+        run: cargo xtask deploy-release
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ghcr.io
@@ -641,9 +609,7 @@ jobs:
     needs:
       [
         scope,
-        quality-static,
         quality-analysis,
-        quality-tests,
         rust,
         dependency-audit,
         deployment-status-pending,
@@ -652,9 +618,7 @@ jobs:
       always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       (
         needs.scope.result != 'success' ||
-        needs.quality-static.result != 'success' ||
         needs.quality-analysis.result != 'success' ||
-        needs.quality-tests.result != 'success' ||
         needs.rust.result != 'success' ||
         (needs.dependency-audit.result != 'success' && needs.dependency-audit.result != 'skipped')
       )
@@ -681,9 +645,7 @@ jobs:
     needs:
       [
         scope,
-        quality-static,
         quality-analysis,
-        quality-tests,
         rust,
         dependency-audit,
         backend-manifest,
@@ -694,9 +656,7 @@ jobs:
       always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       needs.deploy.result != 'success' &&
       needs.scope.result == 'success' &&
-      needs.quality-static.result == 'success' &&
       needs.quality-analysis.result == 'success' &&
-      needs.quality-tests.result == 'success' &&
       needs.rust.result == 'success' &&
       (needs.dependency-audit.result == 'success' || needs.dependency-audit.result == 'skipped')
     permissions:

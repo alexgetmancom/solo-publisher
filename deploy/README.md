@@ -1,8 +1,18 @@
 # Production deployment agent
 
-`deploy-agent.ts` is intentionally a small host-side Bun service. It is the only
-component allowed to invoke Docker. The Studio application never mounts the Docker
-socket and can only request a rollback using a private bearer-authenticated route.
+The deploy agent (`crates/deploy_agent`, binary `deploy-agent`) is a small
+host-side service and the only component allowed to invoke Docker. The Studio
+application never mounts the Docker socket and can only request a rollback or a
+promotion through the agent's private bearer-authenticated routes.
+
+The binary ships inside the Studio image at `/app/bin/deploy-agent`, built
+static (musl) so it runs on the host whatever its C library. It never runs in
+the container: every deployment (`cargo xtask deploy-release`, CI's `deploy`
+job) copies it out of the image it is about to activate into
+`/home/deploy/bin/deploy-agent`, and when it differs from the one there,
+replaces it and restarts `alexgetman-deploy-agent`. What that restart runs is
+the unit's `ExecStart`; a host still on the TypeScript agent keeps running it
+until it is switched (below).
 
 ## One-time host setup
 
@@ -67,9 +77,12 @@ socket and can only request a rollback using a private bearer-authenticated rout
    `DEPLOY_AGENT_TOKEN` in the backend `secrets.env`. The compose manifest maps
    `host.docker.internal` to `DEPLOY_AGENT_HOST_GATEWAY`; the agent is not public.
 
-4. Install and start the service:
+4. Install and start the service. The binary comes from any Studio image
+   (the first deployment installs it too):
 
    ```text
+   c=$(docker create ghcr.io/alexgetmancom/solo-publisher:latest)
+   install -d /home/deploy/bin && docker cp "$c:/app/bin/deploy-agent" /home/deploy/bin/deploy-agent && docker rm "$c"
    sudo install -d -o deploy -g deploy /var/lib/alexgetman-deploy
    sudo install -m 0644 deploy/alexgetman-deploy-agent.service /etc/systemd/system/
    sudo systemctl daemon-reload
@@ -83,8 +96,10 @@ socket and can only request a rollback using a private bearer-authenticated rout
 Each deployment receives an immutable `ghcr.io/...@sha256:...` reference. CI builds
 the image once, then updates `alex` and, when repository variable
 `MARU_DEPLOY_ENABLED=true` is set, `maru`. The agent pulls/recreates only the
-target's `backend`, waits for its own Docker health plus `/readyz`, and restores
-that target's previous digest automatically on failure. A successful deployment
+target's `backend` after running `studio-entrypoint --check-config` in the new
+image, waits for its own Docker health plus `/readyz`, and restores that target's
+previous digest automatically on failure. A target whose image has no
+`studio-entrypoint` says `"configCheck": false` in `DEPLOY_TARGETS_JSON`. A successful deployment
 sends the controller bot a target-specific one-click rollback button. The callback
 is accepted only from `CONTROLLER_ADMIN_IDS` and is rejected after a newer release
 exists for that target.
@@ -94,6 +109,112 @@ The default policy is three attempts with 5, 10 and 20 second delays; override i
 with `DEPLOY_RETRY_ATTEMPTS`, `DEPLOY_RETRY_BACKOFF_MS` and
 `DEPLOY_RETRY_MAX_BACKOFF_MS` in the host environment. Permanent image errors such
 as an unknown digest are not retried.
+
+## Switching the agent to the Rust binary
+
+Once per host, after a deployment of the commit that introduced the binary has
+run (it installs `/home/deploy/bin/deploy-agent` and moves `:latest` to an image
+that carries it). Until then the hosts run the TypeScript agent: the Studio
+host's unit runs `bun …/deploy/deploy-agent.ts`, and deployments leave that file
+and `retry.ts` where they are, so the switch is reversible with one line. Switch
+while nothing deploys (`curl -fsS http://127.0.0.1:9899/healthz` says
+`"deploying":false`).
+
+### Studio host (`alexgetman-deploy-agent`)
+
+From a checkout:
+
+```sh
+scp deploy/alexgetman-deploy-agent.service deploy@<host>:/tmp/
+```
+
+On the host:
+
+```sh
+test -x /home/deploy/bin/deploy-agent   # installed by the first deployment of the binary
+sudo cp /etc/systemd/system/alexgetman-deploy-agent.service /etc/alexgetman/alexgetman-deploy-agent.service.bun
+sudo install -m 0644 /tmp/alexgetman-deploy-agent.service /etc/systemd/system/alexgetman-deploy-agent.service
+sudo systemctl daemon-reload
+sudo systemctl restart alexgetman-deploy-agent
+systemctl show -p ExecStart --value alexgetman-deploy-agent   # path=/home/deploy/bin/deploy-agent
+curl -fsS http://127.0.0.1:9899/healthz                       # {"ok":true,"deploying":false}
+sudo sed -n 's/^DEPLOY_AGENT_TOKEN=/Authorization: Bearer /p' /etc/alexgetman/deploy-agent.env \
+  | curl -fsS -H @- http://127.0.0.1:9899/v1/releases          # alex and maru, with their current releases
+```
+
+`/etc/alexgetman/deploy-agent.env` needs no edit: every existing target keeps
+the configuration check. Rollback to the TypeScript agent:
+
+```sh
+sudo cp /etc/alexgetman/alexgetman-deploy-agent.service.bun /etc/systemd/system/alexgetman-deploy-agent.service && sudo systemctl daemon-reload && sudo systemctl restart alexgetman-deploy-agent
+```
+
+### Media processor host, VM-106 (`media-processor-deploy-agent`)
+
+That host runs `/opt/alexgetman-media-processor/media-processor-deploy-agent`,
+a `bun build --compile` of the TypeScript agent that CI produced between
+24 July and 3 August 2026. That agent reads single-target variables
+(`DEPLOY_COMPOSE_FILE`, `DEPLOY_IMAGE_ENV_FILE`, `DEPLOY_STATE_FILE`,
+`DEPLOY_HEALTH_URL`, `DEPLOY_CONTAINER_NAME`, `DEPLOY_SERVICE_NAME`,
+`DEPLOY_IMAGE_ENV_KEY`, `DEPLOY_DEFAULT_TARGET`, `DEPLOY_ALLOW_INITIAL_SEED`)
+unless its env file has `DEPLOY_TARGETS_JSON`; the binary reads
+`DEPLOY_TARGETS_JSON` only. No deployment updates this host's agent: it is
+copied out of a Studio image by hand, now and whenever it should change.
+
+From a checkout:
+
+```sh
+scp deploy/media-processor-deploy-agent.service <vm106>:/tmp/
+```
+
+On VM-106, as a user that may run `docker`, first the binary:
+
+```sh
+c=$(docker create ghcr.io/alexgetmancom/solo-publisher:latest) && docker cp "$c:/app/bin/deploy-agent" /tmp/deploy-agent && docker rm "$c"
+sudo install -m 0755 /tmp/deploy-agent /opt/alexgetman-media-processor/deploy-agent
+/opt/alexgetman-media-processor/deploy-agent; echo $?   # "DEPLOY_AGENT_TOKEN is required", then 1: it runs here
+docker image rm ghcr.io/alexgetmancom/solo-publisher:latest
+```
+
+Then its configuration. If `sudo grep -c '^DEPLOY_TARGETS_JSON=' <env>` prints
+`1`, add `"configCheck":false` to that one target by hand instead; otherwise
+derive it from the variables the old agent reads, with the old agent's own
+defaults, so it names the same files:
+
+```sh
+env=/etc/alexgetman/media-processor-deploy-agent.env
+sudo cp -p $env $env.bun
+sudo sh -s "$env" <<'EOF'
+. "$1"
+seed=; [ "$DEPLOY_ALLOW_INITIAL_SEED" = true ] && seed=',"allowInitialSeed":true'
+printf 'DEPLOY_TARGETS_JSON={"%s":{"composeFile":"%s","imageEnvFile":"%s","stateFile":"%s","healthUrl":"%s","container":"%s","service":"%s","imageEnvKey":"%s","configCheck":false%s}}\n' \
+  "${DEPLOY_DEFAULT_TARGET:-alex}" "$DEPLOY_COMPOSE_FILE" "$DEPLOY_IMAGE_ENV_FILE" \
+  "${DEPLOY_STATE_FILE:-/var/lib/alexgetman-deploy/state.json}" "${DEPLOY_HEALTH_URL:-http://127.0.0.1:8788/readyz}" \
+  "${DEPLOY_CONTAINER_NAME:-alexgetman-backend}" "${DEPLOY_SERVICE_NAME:-backend}" "${DEPLOY_IMAGE_ENV_KEY:-BACKEND_IMAGE}" "$seed" >> "$1"
+EOF
+sudo tail -n 1 $env   # expect compose.yml, studio-media-processor, media-processor, MEDIA_PROCESSOR_IMAGE, http://127.0.0.1:9087/health
+```
+
+Then the unit:
+
+```sh
+sudo cp /etc/systemd/system/media-processor-deploy-agent.service /etc/alexgetman/media-processor-deploy-agent.service.bun
+sudo install -m 0644 /tmp/media-processor-deploy-agent.service /etc/systemd/system/media-processor-deploy-agent.service
+sudo systemctl daemon-reload
+sudo systemctl restart media-processor-deploy-agent
+curl -fsS http://127.0.0.1:9898/healthz                       # {"ok":true,"deploying":false}
+sudo sed -n 's/^DEPLOY_AGENT_TOKEN=/Authorization: Bearer /p' $env \
+  | curl -fsS -H @- http://127.0.0.1:9898/v1/releases          # one compose target, with the state the old agent wrote
+```
+
+The derived target keeps the old state file, so the worker's rollback history
+carries over, and its name does not matter: the Studio host's agent calls
+`POST /v1/deploy` without one, which an agent with a single target takes as
+that target. The leftover single-target variables are ignored. Rollback:
+
+```sh
+sudo cp /etc/alexgetman/media-processor-deploy-agent.env.bun /etc/alexgetman/media-processor-deploy-agent.env && sudo cp /etc/alexgetman/media-processor-deploy-agent.service.bun /etc/systemd/system/media-processor-deploy-agent.service && sudo systemctl daemon-reload && sudo systemctl restart media-processor-deploy-agent
+```
 
 ## Naming the Telegram channel of a second Studio
 
@@ -159,10 +280,14 @@ off cannot.
 
 ## Optional remote worker targets
 
-Remote workers run the same deploy-agent protocol with a different `service` and
-image environment key. Install `media-processor-deploy-agent.service` using
-`media-processor-deploy-agent.env.example` on the worker host; it remains bound
-to loopback and is reached through a reverse SSH tunnel.
+Remote workers run the same deploy agent with one compose target of their own:
+a different `service`, image environment key and health URL, and
+`"configCheck": false` for an image without `studio-entrypoint`. Install
+`media-processor-deploy-agent.service` using
+`media-processor-deploy-agent.env.example` on the worker host, with the binary
+copied out of a Studio image as in "Switching the agent to the Rust binary"
+above; it remains bound to loopback and is
+reached through a reverse SSH tunnel.
 
 The VPS agent supports arbitrary remote target names in `DEPLOY_TARGETS_JSON`.
 A remote target specifies `remoteUrl`, `remoteToken`, `artifactFile`,

@@ -59,9 +59,10 @@ is data. Convert Russian comments in lines already being edited; do not open fil
 
 # Workflow
 
-Work on `main`. Typecheck, tests, and a production build before every push (`cargo xtask check`:
-the language gate, the deploy tooling's TypeScript checks, `cargo fmt`/`clippy`/`test`, and the
-release build; `--jobs N` is passed to cargo). CI/CD deploys the
+Work on `main`. Tests and a production build before every push (`cargo xtask check`: the
+language gate, `cargo fmt`/`clippy`/`test`, and the release build; `--jobs N` is passed to cargo).
+lefthook runs it as the pre-push hook: install lefthook itself (any of its distributions, e.g.
+`brew install lefthook`) and run `lefthook install` once per clone. CI/CD deploys the
 primary production revision (alex) from `main`.
 
 Work that belongs to Maru carries a `Deploy-Maru: yes` trailer in the commit body. CI then promotes

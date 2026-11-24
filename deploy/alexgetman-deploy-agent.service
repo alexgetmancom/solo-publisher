@@ -7,9 +7,11 @@ Requires=docker.service
 Type=simple
 User=deploy
 Group=deploy
-WorkingDirectory=/home/deploy/repos/alexgetman.com
+WorkingDirectory=/home/deploy
 EnvironmentFile=/etc/alexgetman/deploy-agent.env
-ExecStart=/usr/local/bin/bun /home/deploy/repos/alexgetman.com/deploy/deploy-agent.ts
+# Copied out of the image each deployment activates, when it changed
+# (cargo xtask deploy-release); see deploy/README.md.
+ExecStart=/home/deploy/bin/deploy-agent
 Restart=always
 RestartSec=3
 NoNewPrivileges=true
