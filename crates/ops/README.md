@@ -22,8 +22,8 @@ TypeScript key order; `run_operation` prints integral floats as JavaScript does 
 
 ## Surfaces
 
-- CLI: `ops <command> --flag value [--db PATH] [--json]`, the argv contract of `bun /app/ops/cli.js` (what
-  `scripts/ops-prod.ts` runs through `docker exec`). Each run opens the database and configuration on first use
+- CLI: `ops <command> --flag value [--db PATH] [--json]`, what `cargo xtask ops-prod` runs through `docker exec` and
+  `bun /app/ops/cli.js` passes its arguments to. Each run opens the database and configuration on first use
   (`ProcessSurface`), flushes usage and closes on exit. The publish doorbell rings nothing in this process (the worker
   lives in the Studio and polls), as in TypeScript.
 - MCP: `crates/http/src/mcp.rs` mounts `GET`/`POST /api/mcp` and implements `Surface` over the server's `Backend`

@@ -86,10 +86,10 @@ The backend operations CLI reaches the processor over the same production
 tunnel used by publication:
 
 ```sh
-bun run ops:prod media-status
-bun run ops:prod media-diagnose
-bun run ops:prod media-job --ref post:106
-bun run ops:prod media-reprocess --ref post:106
+cargo xtask ops-prod media-status
+cargo xtask ops-prod media-diagnose
+cargo xtask ops-prod media-job --ref post:106
+cargo xtask ops-prod media-reprocess --ref post:106
 ```
 
 `media-diagnose` runs a fixed idempotent image fixture and never publishes.

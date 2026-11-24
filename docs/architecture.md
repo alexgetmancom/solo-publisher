@@ -59,11 +59,12 @@ application layer.
 
 ```bash
 cargo test --workspace
-bun run check:all
+cargo xtask check
 ```
 
-`bun run check:all` runs the full repository gate: the TypeScript checks of the
-deployment tooling, `cargo fmt`, `clippy` and tests, and the release build. The committed deployment
+`cargo xtask check` runs the full repository gate: the language gate, the
+TypeScript checks of the deployment tooling, `cargo fmt`, `clippy` and tests,
+and the release build. The committed deployment
 files under `deploy/` are specific to the maintainer's own installation — its
 domains, host paths and systemd units. Treat them as an implementation
 reference and supply your own; `install.sh` is the supported path for a

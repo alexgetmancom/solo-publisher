@@ -96,15 +96,20 @@ jobs:
                 backend_image=true
                 deployment=true
                 ;;
-              bun.lock | package.json | */package.json)
+              bun.lock | package.json)
                 dependencies=true
                 backend_image=true
                 deployment=true
                 ;;
-              # Tests and crate READMEs are not in the image.
-              crates/*/tests/* | crates/*/README.md)
+              # The image's inspection: a change to it is proven on a fresh image.
+              crates/xtask/src/image_smoke.rs)
+                backend_image=true
+                deployment=true
                 ;;
-              rust-toolchain.toml | crates/* | Dockerfile | Dockerfile.dockerignore | scripts/image-smoke.ts)
+              # Tests, crate READMEs and the developer tooling are not in the image.
+              crates/*/tests/* | crates/*/README.md | crates/xtask/*)
+                ;;
+              rust-toolchain.toml | crates/* | Dockerfile | Dockerfile.dockerignore)
                 backend_image=true
                 deployment=true
                 ;;
@@ -195,13 +200,9 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
-      - name: Language gate
-        run: bun run check:language
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
       - name: Typecheck
         run: bun run typecheck
-      - name: Lint
-        run: bun run lint
 
   quality-analysis:
     name: Repository analysis
@@ -211,11 +212,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
-      - name: Dead-code report
-        run: bun run knip
-      - name: Dockerfile workspace manifests
-        run: bun run check:docker
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
       - name: Self-host stack
         # The install path published in the README is not exercised by anything
         # else here: nothing in this repository runs it, so without this it
@@ -255,18 +252,9 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
-      - name: Install production ffmpeg binaries
-        env:
-          FFMPEG_IMAGE: mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132
-        run: |
-          container=$(docker create "$FFMPEG_IMAGE")
-          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
-          docker cp "$container:/ffmpeg" /tmp/ffmpeg
-          docker cp "$container:/ffprobe" /tmp/ffprobe
-          sudo install -m 0755 /tmp/ffmpeg /tmp/ffprobe /usr/local/bin/
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
       - name: Tests with coverage threshold
-        run: bun run test:coverage
+        run: bun run test
 
   # The Studio's workspace: a deployment waits on it. The goldens it replays
   # were recorded under the production ffmpeg build, so it installs that one.
@@ -288,13 +276,7 @@ jobs:
           docker cp "$container:/ffmpeg" /tmp/ffmpeg
           docker cp "$container:/ffprobe" /tmp/ffprobe
           sudo install -m 0755 /tmp/ffmpeg /tmp/ffprobe /usr/local/bin/
-      - name: Install the pinned toolchain
-        run: |
-          set -euo pipefail
-          channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)
-          test -n "$channel"
-          rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
-          cargo --version
+      - uses: ./.github/actions/setup-rust
       # Saved once per toolchain and lockfile: the dependencies are what is
       # slow to build, and a per-commit save would churn the cache quota.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -306,15 +288,14 @@ jobs:
             target
           key: rust-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
           restore-keys: rust-${{ runner.os }}-${{ runner.arch }}-
+      - name: Language gate
+        run: cargo xtask check language
       - name: Format
-        run: cargo fmt --all --check
+        run: cargo xtask check fmt
       - name: Clippy
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+        run: cargo xtask check clippy
       - name: Tests
-        run: |
-          # The tests write their scratch files under _trash-rust/tmp.
-          mkdir -p _trash-rust/tmp
-          cargo test --workspace --locked
+        run: cargo xtask check test
 
   # On main the image is built, pushed and inspected per architecture by
   # backend-image; everywhere else it is built once without pushing, so a
@@ -337,13 +318,9 @@ jobs:
           push: false
           load: true
           tags: solo-publisher:ci
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.14
+      - uses: ./.github/actions/setup-rust
       - name: Image smoke test
-        env:
-          IMAGE: solo-publisher:ci
-        run: bun scripts/image-smoke.ts
+        run: cargo xtask image-smoke solo-publisher:ci
 
   dependency-audit:
     name: Dependency audit
@@ -355,7 +332,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           bun-version: 1.3.14
-          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json', 'tools/knip/package.json') }}
+          cache-key: bun-workspace-1.3.14-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'package.json') }}
       - name: Dependency audit
         run: bun run check:audit
 
@@ -470,17 +447,15 @@ jobs:
           # because the reuse check above reads it and it must keep meaning
           # "the image production is running".
           outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/solo-publisher,push-by-digest=true,name-canonical=true,push=true
-      - name: Set up Bun for image smoke test
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: 1.3.14
+      - name: Set up Rust for image smoke test
+        uses: ./.github/actions/setup-rust
       # Runs on each architecture's own runner against that architecture's
       # image, so a self-hosted arm64 install gets the same inspection of the
       # binaries, the entrypoint, the config check and the ops CLI as amd64.
       - name: Image smoke test
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher@${{ steps.build_image.outputs.digest }}
-        run: bun scripts/image-smoke.ts
+        run: cargo xtask image-smoke "$IMAGE"
       - name: Record digest
         run: |
           set -euo pipefail

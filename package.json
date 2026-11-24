@@ -7,32 +7,15 @@
   "engines": {
     "bun": ">=1.3.14"
   },
-  "workspaces": [
-    "tools/*"
-  ],
   "scripts": {
     "prepare": "lefthook install",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p deploy/tsconfig.json",
-    "test": "bun test deploy scripts",
-    "test:coverage": "bun test --coverage deploy scripts",
-    "check:rust": "cargo fmt --all --check && cargo clippy --workspace --all-targets --locked -- -D warnings && cargo test --workspace --locked",
-    "build": "cargo build --release --locked -p app -p entrypoint -p ops",
-    "check:audit": "bun audit --audit-level=high",
-    "check:docker": "bun scripts/check-docker-workspaces.ts",
-    "lint": "biome lint .",
-    "format": "biome format --write .",
-    "knip": "bun tools/knip/node_modules/.bin/knip --config knip.json",
-    "deps:check": "taze",
-    "check:language": "bun scripts/enforce-typescript.ts",
-    "check:all": "bun scripts/check.ts",
-    "check:prepush": "bun scripts/check.ts --parallel",
-    "ops:prod": "bun scripts/ops-prod.ts"
+    "test": "bun test --coverage deploy scripts",
+    "check:audit": "bun audit --audit-level=high"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.10",
     "@types/bun": "^1.3.14",
     "lefthook": "^2.1.10",
-    "taze": "^21.1.0",
     "typescript": "7.0.2"
   }
 }

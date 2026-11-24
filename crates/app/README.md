@@ -68,7 +68,7 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 |---|---|
 | `/app/bin/solo-publisher` | this binary (`cargo build --release -p app`, rust:1.100-bookworm) |
 | `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration |
-| `/app/bin/ops` | the operations CLI, behind `bun /app/ops/cli.js` (`scripts/ops-prod.ts`) |
+| `/app/bin/ops` | the operations CLI: `cargo xtask ops-prod` runs it directly, a self-hosted Studio behind `bun /app/ops/cli.js` |
 | `/app/entrypoint/config-check.js` | `studio-entrypoint --check-config`, which the deploy agent runs on a new image before swapping it in |
 | `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
 | `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1, Bun 1.4.0 from the `oven/bun` slim base |
@@ -81,10 +81,10 @@ replaces itself with the Studio, which `tini -g` then hands SIGTERM directly; th
 
 ```
 docker build -t solo-publisher .
-IMAGE=solo-publisher bun scripts/image-smoke.ts   # what CI checks on every image it builds
+cargo xtask image-smoke solo-publisher   # what CI checks on every image it builds
 ```
 
 The healthcheck is `bun -e fetch('/readyz')` on 8788. Stories sign-in, once per session:
 `docker compose exec -it app bun /app/ops/cli.js telegram-stories-login`. CI builds the image on every push (`image-check`); on
-`main` it builds both architectures, inspects each with `scripts/image-smoke.ts`, and deploys
+`main` it builds both architectures, inspects each with `cargo xtask image-smoke`, and deploys
 (`backend-image` → `deploy`).

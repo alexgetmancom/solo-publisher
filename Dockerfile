@@ -3,8 +3,9 @@
 # studio-entrypoint (crates/entrypoint) runs under `tini -g`: as root it fixes
 # data directory ownership and drops to `bun` (uid 1000) through setpriv, then
 # becomes the Studio (`solo-publisher`), which posts Telegram channel Stories
-# over MTProto itself (crates/mtproto). The Bun base stays for the two shims the
-# deploy tooling calls: `bun /app/ops/cli.js` and `bun /app/entrypoint/config-check.js`.
+# over MTProto itself (crates/mtproto). The Bun base stays for two shims: a
+# self-hosted Studio's `bun /app/ops/cli.js` and the deploy agent's
+# `bun /app/entrypoint/config-check.js`.
 #
 # Build context: the repository root, filtered by Dockerfile.dockerignore.
 
@@ -37,8 +38,8 @@ WORKDIR /app
 # the emoji SVGs. The renderer reads its fonts from here, not from fontconfig.
 COPY crates/story_render/assets ./assets
 COPY --from=studio-build /out/ ./bin/
-# The operations CLI: `bun /app/ops/cli.js <command>` (scripts/ops-prod.ts,
-# docs/install.md) runs /app/bin/ops, which is also on PATH as `ops`.
+# The operations CLI: `bun /app/ops/cli.js <command>` (docs/install.md) runs
+# /app/bin/ops, which is also on PATH as `ops`; `cargo xtask ops-prod` runs it directly.
 COPY crates/ops/image/cli.js ./ops/cli.js
 # The deploy agent's configuration check of a new image:
 # `bun /app/entrypoint/config-check.js` runs `studio-entrypoint --check-config`.

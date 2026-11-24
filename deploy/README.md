@@ -183,16 +183,16 @@ OPS_SSH_TARGET=deploy@your-server.example
 ```
 
 ```bash
-bun run ops:prod status
-bun run ops:prod audit
-bun run ops:prod --as maru status
+cargo xtask ops-prod status
+cargo xtask ops-prod audit
+cargo xtask ops-prod --as maru status
 ```
 
 Each Studio is a container of its own, so the launcher takes the deployment by
 name: no `--as` means `alex`, and every run prints the deployment and container
-it resolved to on stderr. The names live in `scripts/ops-prod.ts`; a third Studio
-is one line there. The launcher executes the CLI as `bun`, the same
-unprivileged user used by the application.
+it resolved to on stderr. The names live in `crates/xtask/src/ops_prod.rs`; a
+third Studio is one line there. The launcher executes `/app/bin/ops` as uid 1000,
+the same unprivileged user used by the application.
 
 Use only the read-only commands above for routine diagnostics. Commands such as
 `backup`, `restore`, and `metrics-backfill --apply` mutate state and require an

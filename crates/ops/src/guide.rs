@@ -155,7 +155,7 @@ fn read_invocation(route: &str, env: &dyn Fn(&str) -> Option<String>) -> Value {
         if route == "local" {
             "bun run --filter @solo-publisher/backend ops".into()
         } else {
-            "bun run ops:prod".into()
+            "cargo xtask ops-prod".into()
         }
     });
     let mut out = Map::new();

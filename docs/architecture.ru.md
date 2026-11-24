@@ -60,11 +60,11 @@ Solo Publisher намеренно обслуживает одного владе
 
 ```bash
 cargo test --workspace
-bun run check:all
+cargo xtask check
 ```
 
-`bun run check:all` запускает полный набор проверок репозитория: проверки
-TypeScript у инструментов deployment, `cargo fmt`, `clippy` и тесты,
+`cargo xtask check` запускает полный набор проверок репозитория: проверку
+языков, проверки TypeScript у инструментов deployment, `cargo fmt`, `clippy` и тесты,
 и release-сборку. Файлы
 deployment в `deploy/` привязаны к собственной установке автора — её доменам,
 путям на хосте и systemd-юнитам. Используйте их как пример реализации и

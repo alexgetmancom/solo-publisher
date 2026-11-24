@@ -1,13 +1,9 @@
 pre-commit:
   commands:
-    biome:
-      glob: "*.{ts,tsx,json,yml,yaml}"
-      run: bunx biome check --write --no-errors-on-unmatched {staged_files}
-      stage_fixed: true
     gitleaks:
       run: gitleaks protect --staged --redact --no-banner
 
 pre-push:
   commands:
     quality:
-      run: bun run check:prepush
+      run: cargo xtask check

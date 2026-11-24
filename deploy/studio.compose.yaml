@@ -69,7 +69,7 @@ services:
     # asked after the fact. 50 MB x 5 costs disk the host has and is weeks of
     # room, but the size is not the binding limit: a new image means a new
     # container, and the replaced one's log goes with it, so in practice this
-    # reaches back to the last deployment. `ops:prod logs` reads what is left.
+    # reaches back to the last deployment. `cargo xtask ops-prod logs` reads what is left.
     logging:
       driver: json-file
       options:

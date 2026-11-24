@@ -1,0 +1,19 @@
+name: Set up Rust
+description: Install the toolchain rust-toolchain.toml pins, with its components, for cargo and `cargo xtask`.
+
+runs:
+  using: composite
+  steps:
+    - name: Install the pinned toolchain
+      shell: bash
+      run: |
+        set -euo pipefail
+        if ! command -v rustup >/dev/null; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+        fi
+        channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust-toolchain.toml)
+        test -n "$channel"
+        rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
+        cargo --version

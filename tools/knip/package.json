@@ -1,9 +1,0 @@
-{
-  "name": "@solo-publisher/knip-tools",
-  "private": true,
-  "type": "module",
-  "devDependencies": {
-    "knip": "^6.44.0",
-    "typescript": "7.0.2"
-  }
-}
