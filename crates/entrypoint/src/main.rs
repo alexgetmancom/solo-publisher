@@ -11,10 +11,16 @@
 //! As the runtime user it probes the directories with a real write and
 //! replaces itself with the Studio, which then receives the container's
 //! signals from `tini -g` directly.
+//!
+//! Two arguments run something else instead, and nothing more: the deploy
+//! agent's `--check-config` and the compose healthcheck's `--ready`.
 
+use std::io::{BufRead as _, BufReader, Write as _};
+use std::net::{Ipv4Addr, SocketAddr, TcpStream};
 use std::os::unix::process::CommandExt as _;
 use std::path::Path;
 use std::process::ExitCode;
+use std::time::Duration;
 
 use foundation::config::load_config;
 use foundation::logger::{LogLevel, configure_logging, log};
@@ -28,6 +34,8 @@ use serde_json::json;
 /// volumes production already has are owned by it.
 const RUNTIME_USER: &str = "bun";
 const STUDIO_BINARY: &str = "/app/bin/solo-publisher";
+/// Under the healthcheck's own 5 s, so a Studio that hangs fails with a reason.
+const READY_TIMEOUT: Duration = Duration::from_secs(4);
 
 fn main() -> ExitCode {
     let vars =
@@ -39,13 +47,31 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    // The deploy agent's check of a new image's configuration before it
-    // replaces the running container (`--entrypoint /app/bin/studio-entrypoint
-    // … --check-config`; the TypeScript agent's `bun
-    // /app/entrypoint/config-check.js` runs the same). Nothing else runs.
-    if std::env::args().nth(1).as_deref() == Some("--check-config") {
-        println!("{}", json!({"ok": true}));
-        return ExitCode::SUCCESS;
+    match std::env::args().nth(1).as_deref() {
+        None => {}
+        // The deploy agent's check of a new image's configuration before it
+        // replaces the running container (`--entrypoint
+        // /app/bin/studio-entrypoint … --check-config`).
+        Some("--check-config") => {
+            println!("{}", json!({"ok": true}));
+            return ExitCode::SUCCESS;
+        }
+        // The compose healthcheck, inside the running container.
+        Some("--ready") => {
+            return match probe_ready(config.port) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => {
+                    log(LogLevel::Error, "studio is not ready", Some(json!({"error": error})));
+                    ExitCode::FAILURE
+                }
+            };
+        }
+        // Refused rather than ignored: as root, ignoring it would start a
+        // second Studio beside the running one.
+        Some(other) => {
+            log(LogLevel::Error, "unknown argument", Some(json!({"argument": other})));
+            return ExitCode::FAILURE;
+        }
     }
     configure_logging(config.log_level);
     let directories = required_data_directories(&config);
@@ -130,6 +156,35 @@ fn drop_privileges(directories: &[runtime::data_dirs::DataDirectory]) -> String 
     format!("setpriv: {error}")
 }
 
+/// `GET /readyz` from the Studio on `port` over loopback, ready on a 2xx. It
+/// listens on every address (`BIND_HOST=0.0.0.0` in both compose files), so
+/// loopback reaches it.
+fn probe_ready(port: u64) -> Result<(), String> {
+    let port = u16::try_from(port).map_err(|_| format!("PORT {port} is not a TCP port"))?;
+    let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let failed = |error: std::io::Error| format!("{address}: {error}");
+    let mut stream = TcpStream::connect_timeout(&address, READY_TIMEOUT).map_err(failed)?;
+    stream.set_read_timeout(Some(READY_TIMEOUT)).map_err(failed)?;
+    stream.set_write_timeout(Some(READY_TIMEOUT)).map_err(failed)?;
+    write!(
+        stream,
+        "GET /readyz HTTP/1.1\r\nHost: {address}\r\nConnection: close\r\n\r\n"
+    )
+    .map_err(failed)?;
+    let mut status_line = String::new();
+    BufReader::new(stream).read_line(&mut status_line).map_err(failed)?;
+    ready_status(&status_line)
+}
+
+/// The verdict on a response's status line: ready on a 2xx.
+fn ready_status(status_line: &str) -> Result<(), String> {
+    match status_line.split(' ').nth(1).map(str::parse::<u16>) {
+        Some(Ok(status)) if (200..300).contains(&status) => Ok(()),
+        Some(Ok(status)) => Err(format!("/readyz answered {status}")),
+        _ => Err(format!("/readyz answered {:?}", status_line.trim_end())),
+    }
+}
+
 /// A numeric line of `/proc/self/status`: `Uid:` is real, effective, saved,
 /// filesystem; `Groups:` the supplementary list.
 fn status_ids(field: &str) -> Option<Vec<u32>> {
@@ -143,6 +198,17 @@ mod tests {
     use std::os::unix::fs::MetadataExt as _;
 
     use super::*;
+
+    #[test]
+    fn ready_is_a_2xx() {
+        assert_eq!(ready_status("HTTP/1.1 200 OK\r\n"), Ok(()));
+        assert_eq!(ready_status("HTTP/1.1 204 No Content\r\n"), Ok(()));
+        assert_eq!(
+            ready_status("HTTP/1.1 503 Service Unavailable\r\n"),
+            Err("/readyz answered 503".into())
+        );
+        assert_eq!(ready_status(""), Err("/readyz answered \"\"".into()));
+    }
 
     #[test]
     fn the_status_file_names_this_process() {
