@@ -103,13 +103,7 @@ fn run(command: &mut Command, root: &Path) -> Result<(), String> {
 
 /// The repository is Rust; anything in TypeScript, JavaScript, Python or a
 /// shell script outside these is a second language creeping back in.
-const ALLOWED: [&str; 3] = [
-    // The image's two Bun shims, named by callers outside the image: `bun
-    // /app/ops/cli.js` (docs/install.md) and `bun /app/entrypoint/config-check.js`
-    // (the TypeScript deploy agent a host runs until it switches to the binary,
-    // deploy/README.md). Each only runs a Rust binary.
-    "crates/entrypoint/image/config-check.js",
-    "crates/ops/image/cli.js",
+const ALLOWED: [&str; 1] = [
     // It runs on a bare host through `curl … | sh`, before Docker has pulled anything.
     "install.sh",
 ];
@@ -196,13 +190,12 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("tools/node_modules")).unwrap();
         std::fs::create_dir_all(root.join("deploy")).unwrap();
-        std::fs::create_dir_all(root.join("crates/ops/image")).unwrap();
         std::fs::write(root.join("tools/helper.mjs"), "").unwrap();
         std::fs::write(root.join("tools/node_modules/ignored.js"), "").unwrap();
         std::fs::write(root.join("tools/run"), "#!/usr/bin/env bash\n").unwrap();
         std::fs::write(root.join("tools/notes"), "plain text\n").unwrap();
         std::fs::write(root.join("deploy/retry.ts"), "export {};\n").unwrap();
-        std::fs::write(root.join("crates/ops/image/cli.js"), "").unwrap();
+        std::fs::write(root.join("install.sh"), "#!/bin/sh\n").unwrap();
         let refused = language_gate(&root).unwrap_err();
         assert!(
             refused.ends_with(":\n- deploy/retry.ts\n- tools/helper.mjs\n- tools/run"),

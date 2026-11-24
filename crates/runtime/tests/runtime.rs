@@ -408,10 +408,10 @@ fn data_directories_are_listed_once_and_probed() {
     let passwd = dir.join("passwd");
     std::fs::write(
         &passwd,
-        "root:x:0:0::/root:/bin/sh\nbun:x:1000:1000::/home/bun:/bin/sh\nodd:x:a:1\n",
+        "root:x:0:0::/root:/bin/sh\nstudio:x:1000:1000::/home/studio:/bin/sh\nodd:x:a:1\n",
     )
     .unwrap();
-    assert_eq!(resolve_unix_user("bun", &passwd), Ok((1000, 1000)));
+    assert_eq!(resolve_unix_user("studio", &passwd), Ok((1000, 1000)));
     assert_eq!(
         resolve_unix_user("odd", &passwd),
         Err(format!("Unix user not found in {}: odd", passwd.display()))

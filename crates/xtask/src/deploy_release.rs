@@ -630,8 +630,6 @@ mod tests {
         ));
         assert!(install.contains("mv -f /home/deploy/bin/deploy-agent.next /home/deploy/bin/deploy-agent; sudo systemctl restart alexgetman-deploy-agent"));
         assert!(install.contains("curl --fail --silent http://127.0.0.1:9899/healthz"));
-        // The TypeScript agent's files on the host stay as they are.
-        assert!(!recorder.ran("deploy-agent.ts"));
     }
 
     #[test]

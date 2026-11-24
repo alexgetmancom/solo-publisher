@@ -27,7 +27,7 @@ MCP_STUDIO_ACTOR_ID=1
 
 ```bash
 docker compose up -d
-docker compose exec app bun /app/ops/cli.js doctor
+docker compose exec app ops doctor
 ```
 
 `doctor` покажет `studioTransportConfigured: true`, когда обе настройки на месте.
@@ -72,7 +72,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 примечание с сухим прогоном должны быть перед глазами у того, кто запускает.
 
 ```bash
-docker compose exec app bun /app/ops/cli.js guide --json
+docker compose exec app ops guide --json
 ```
 
 Этот каталог — тот же, что видит агент: у каждой операции указан раздел, меняет

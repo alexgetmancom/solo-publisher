@@ -67,25 +67,25 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 | Path | What |
 |---|---|
 | `/app/bin/solo-publisher` | this binary (`cargo build --release -p app`, rust:1.100-bookworm) |
-| `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration |
-| `/app/bin/ops` | the operations CLI: `cargo xtask ops-prod` runs it directly, a self-hosted Studio behind `bun /app/ops/cli.js` |
+| `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration (the deploy agent's check of a new image), `--ready` is the healthcheck |
+| `/app/bin/ops` | the operations CLI, `ops` on PATH: `cargo xtask ops-prod` runs it directly, a self-hosted Studio as `docker compose exec app ops` |
 | `/app/bin/deploy-agent` | `crates/deploy_agent`, static (musl); never runs here: each deployment copies it onto the host (`deploy/README.md`) |
-| `/app/entrypoint/config-check.js` | `studio-entrypoint --check-config`, which the TypeScript deploy agent runs on a new image before swapping it in, until a host switches to the binary (that runs `studio-entrypoint --check-config` as the entrypoint) |
 | `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
-| `/usr/local/bin/{ffmpeg,ffprobe,bun}` | static ffmpeg 6.1.1, Bun 1.4.0 from the `oven/bun` slim base |
+| `/usr/local/bin/{ffmpeg,ffprobe}` | static ffmpeg 6.1.1 (`mwader/static-ffmpeg`) on `debian:trixie-slim` with `ca-certificates` and `tini` |
 
 `studio-entrypoint`, started as root: creates and `chown`s the data directories (`runtime::data_dirs`, as
-`docker-entrypoint.ts`), then re-executes itself through `setpriv --reuid --regid --groups` as `bun` (uid 1000),
-keeping compose's `group_add` groups and dropping group 0 — the workspace forbids `unsafe`, so the syscalls are
-setpriv's; the exec after them makes the drop irreversible. As `bun` it probes the directories with a write and
-replaces itself with the Studio, which `tini -g` then hands SIGTERM directly; the Studio's exit is the container's.
+`docker-entrypoint.ts`), then re-executes itself through `setpriv --reuid --regid --groups` as `studio` (uid 1000,
+gid 1000, created by the `Dockerfile`), keeping compose's `group_add` groups and dropping group 0 — the workspace
+forbids `unsafe`, so the syscalls are setpriv's; the exec after them makes the drop irreversible. As `studio` it
+probes the directories with a write and replaces itself with the Studio, which `tini -g` then hands SIGTERM directly;
+the Studio's exit is the container's.
 
 ```
 docker build -t solo-publisher .
 cargo xtask image-smoke solo-publisher   # what CI checks on every image it builds
 ```
 
-The healthcheck is `bun -e fetch('/readyz')` on 8788. Stories sign-in, once per session:
-`docker compose exec -it app bun /app/ops/cli.js telegram-stories-login`. CI builds the image on every push (`image-check`); on
+The healthcheck is `studio-entrypoint --ready`: `GET /readyz` on loopback at `PORT` (8788), healthy on a 2xx. Stories sign-in, once per session:
+`docker compose exec -it app ops telegram-stories-login`. CI builds the image on every push (`image-check`); on
 `main` it builds both architectures, inspects each with `cargo xtask image-smoke`, and deploys
 (`backend-image` → `deploy`).

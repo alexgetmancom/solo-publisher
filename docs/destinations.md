@@ -8,10 +8,10 @@ Nothing asks you for keys to a platform you do not publish to.
 
 ```bash
 # 1. Tell the Studio this destination exists
-docker compose exec app bun /app/ops/cli.js channel-connect --target threads_en
+docker compose exec app ops channel-connect --target threads_en
 
 # 2. Ask what it still needs
-docker compose exec app bun /app/ops/cli.js doctor
+docker compose exec app ops doctor
 ```
 
 `doctor` names the exact settings that destination is missing and never prints
@@ -33,7 +33,7 @@ are connected by naming their platform and language.
 
 | Destination | Connect with | Needs |
 | --- | --- | --- |
-| Website | `--target site_ru` / `site_en` | nothing, plus `docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled` |
+| Website | `--target site_ru` / `site_en` | nothing, plus `docker compose exec app ops studio-profile-set --site-enabled` |
 | Telegram channel | Channels or `--target telegram` | `CONTROLLER_BOT_TOKEN` |
 | Discord | Channels or `--target discord` | `DISCORD_CHANNEL_ID`, then CLI `credential-set --target discord` |
 | Threads | Channels or `connect-link --platform threads` | native app credentials or a stored Zernio key |
@@ -84,7 +84,7 @@ people's accounts is the point at which Meta review matters.
 
 ```bash
 # The same destination, delivered through a provider instead
-docker compose exec app bun /app/ops/cli.js channel-connect --target threads_en --provider zernio --account-id <id>
+docker compose exec app ops channel-connect --target threads_en --provider zernio --account-id <id>
 ```
 
 A channel connected this way needs one Zernio key instead of the platform's
@@ -93,7 +93,7 @@ for exactly that. The key is not an .env setting: it is checked against Zernio
 and stored sealed in this Studio's database, the way an OAuth token is.
 
 ```bash
-printf %s "$ZERNIO_KEY" | docker compose exec -T app bun /app/ops/cli.js credential-set --target zernio
+printf %s "$ZERNIO_KEY" | docker compose exec -T app ops credential-set --target zernio
 ```
 
 Command Center and Telegram Settings → Channels list the publishable routes
@@ -139,7 +139,7 @@ project would put it through Google's verification.
    `YOUTUBE_RU_CLIENT_SECRET` (or `YOUTUBE_EN_*`).
 
 ```bash
-docker compose exec app bun /app/ops/cli.js connect-link --platform youtube --locale ru
+docker compose exec app ops connect-link --platform youtube --locale ru
 ```
 
 It answers with a link to Google's consent screen. Approve there and Google
@@ -164,7 +164,7 @@ unreachable — a broken deployment, a Studio that serves nothing publicly — t
 same exchange runs from a terminal:
 
 ```bash
-docker compose exec -it app bun /app/ops/cli.js threads-authorize --locale ru
+docker compose exec -it app ops threads-authorize --locale ru
 ```
 
 It prints a link to approve as the account you publish from. Meta redirects to
@@ -204,7 +204,7 @@ at [my.telegram.org](https://my.telegram.org) under *API development tools*, put
 them in `.env` with a writable path for the session, and sign in once:
 
 ```bash
-docker compose exec -it app bun /app/ops/cli.js telegram-stories-login
+docker compose exec -it app ops telegram-stories-login
 ```
 
 It asks for the phone number, the code Telegram sends and the two-factor

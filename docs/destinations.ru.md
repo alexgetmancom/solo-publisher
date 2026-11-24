@@ -8,10 +8,10 @@
 
 ```bash
 # 1. Сказать Studio, что площадка есть
-docker compose exec app bun /app/ops/cli.js channel-connect --target threads_en
+docker compose exec app ops channel-connect --target threads_en
 
 # 2. Спросить, чего ей не хватает
-docker compose exec app bun /app/ops/cli.js doctor
+docker compose exec app ops doctor
 ```
 
 `doctor` называет ровно те настройки, которых площадке недостаёт, и никогда не
@@ -33,7 +33,7 @@ Command Center и Telegram показывают рядом с каждым ка�
 
 | Площадка | Чем подключить | Что нужно |
 | --- | --- | --- |
-| Сайт | `--target site_ru` / `site_en` | ничего, плюс `docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled` |
+| Сайт | `--target site_ru` / `site_en` | ничего, плюс `docker compose exec app ops studio-profile-set --site-enabled` |
 | Telegram-канал | Каналы или `--target telegram` | `CONTROLLER_BOT_TOKEN` |
 | Discord | Каналы или `--target discord` | `DISCORD_CHANNEL_ID`, затем CLI `credential-set --target discord` |
 | Threads | Каналы или `connect-link --platform threads` | native app credentials либо сохранённый ключ Zernio |
@@ -84,7 +84,7 @@ token в `.env` и перезапускать сервис больше не н�
 
 ```bash
 # Та же площадка, но доставка через провайдера
-docker compose exec app bun /app/ops/cli.js channel-connect --target threads_en --provider zernio --account-id <id>
+docker compose exec app ops channel-connect --target threads_en --provider zernio --account-id <id>
 ```
 
 Такому каналу нужен один ключ Zernio вместо токенов площадки — и для ленты,
@@ -93,7 +93,7 @@ docker compose exec app bun /app/ops/cli.js channel-connect --target threads_en 
 как и OAuth-токен.
 
 ```bash
-printf %s "$ZERNIO_KEY" | docker compose exec -T app bun /app/ops/cli.js credential-set --target zernio
+printf %s "$ZERNIO_KEY" | docker compose exec -T app ops credential-set --target zernio
 ```
 
 Command Center и Telegram → Настройки → Каналы показывают публикационные
@@ -140,7 +140,7 @@ Cloud, а не на пользователя: общий клиент дал б�
    `YOUTUBE_RU_CLIENT_SECRET` (либо `YOUTUBE_EN_*`).
 
 ```bash
-docker compose exec app bun /app/ops/cli.js connect-link --platform youtube --locale ru
+docker compose exec app ops connect-link --platform youtube --locale ru
 ```
 
 Команда отвечает ссылкой на consent screen Google. Подтвердите там — Google
@@ -165,7 +165,7 @@ App secret**. Если подставить id самого приложения
 выполняется из терминала:
 
 ```bash
-docker compose exec -it app bun /app/ops/cli.js threads-authorize --locale ru
+docker compose exec -it app ops threads-authorize --locale ru
 ```
 
 Команда печатает ссылку для подтверждения тем аккаунтом, от имени которого вы
@@ -206,7 +206,7 @@ Studio, выключенную на два месяца, придётся под
 впишите их в `.env` вместе с путём для сессии и войдите один раз:
 
 ```bash
-docker compose exec -it app bun /app/ops/cli.js telegram-stories-login
+docker compose exec -it app ops telegram-stories-login
 ```
 
 Команда спросит номер телефона, код от Telegram и пароль двухфакторной защиты,

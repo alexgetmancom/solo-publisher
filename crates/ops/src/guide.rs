@@ -153,7 +153,7 @@ fn read_invocation(route: &str, env: &dyn Fn(&str) -> Option<String>) -> Value {
         .filter(|value| !value.is_empty());
     let prefix = given.unwrap_or_else(|| {
         if route == "local" {
-            "bun run --filter @solo-publisher/backend ops".into()
+            "ops".into()
         } else {
             "cargo xtask ops-prod".into()
         }

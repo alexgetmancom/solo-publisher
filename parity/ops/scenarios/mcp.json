@@ -1367,11 +1367,11 @@
           },
           "route": "local",
           "invocation": {
-            "prefix": "bun run --filter @solo-publisher/backend ops"
+            "prefix": "ops"
           },
           "next": {
             "reason": "The local database is available; run the requested read-only command locally first.",
-            "command": "bun run --filter @solo-publisher/backend ops <command>"
+            "command": "ops <command>"
           },
           "production": {
             "configured": false
@@ -1380,47 +1380,47 @@
             "source": "this working tree",
             "authoritative": true,
             "reason": "The local route runs this build, so these are the commands it accepts.",
-            "command": "bun run --filter @solo-publisher/backend ops guide --json"
+            "command": "ops guide --json"
           },
           "sections": [
             {
               "name": "health",
               "summary": "Is this deployment working, and what is wrong with it.",
               "commandCount": 8,
-              "command": "bun run --filter @solo-publisher/backend ops guide --section health --json"
+              "command": "ops guide --section health --json"
             },
             {
               "name": "delivery",
               "summary": "One publication: what it is, where it went, and how to move it.",
               "commandCount": 29,
-              "command": "bun run --filter @solo-publisher/backend ops guide --section delivery --json"
+              "command": "ops guide --section delivery --json"
             },
             {
               "name": "media",
               "summary": "The media processor, one publication's assets, and the stored files behind them.",
               "commandCount": 14,
-              "command": "bun run --filter @solo-publisher/backend ops guide --section media --json"
+              "command": "ops guide --section media --json"
             },
             {
               "name": "channels",
               "summary": "Which accounts this Studio publishes through and the state of their credentials.",
               "commandCount": 11,
-              "command": "bun run --filter @solo-publisher/backend ops guide --section channels --json"
+              "command": "ops guide --section channels --json"
             },
             {
               "name": "studio",
               "summary": "What this Studio is, how it is configured, and what it is streaming.",
               "commandCount": 3,
-              "command": "bun run --filter @solo-publisher/backend ops guide --section studio --json"
+              "command": "ops guide --section studio --json"
             },
             {
               "name": "host",
               "summary": "Operations on the deployment's own files. CLI only: they name paths on the host.",
               "commandCount": 3,
-              "command": "bun run --filter @solo-publisher/backend ops guide --section host --json"
+              "command": "ops guide --section host --json"
             }
           ],
-          "expand": "bun run --filter @solo-publisher/backend ops guide --section <health|delivery|media|channels|studio|host>, or --all for every entry",
+          "expand": "ops guide --section <health|delivery|media|channels|studio|host>, or --all for every entry",
           "startHere": [],
           "commands": [
             {
@@ -1459,7 +1459,7 @@
         }
       },
       {
-        "stdout": "operations guide\n\nLocal database: AVAILABLE\nPath: $CASE/data/pipeline.db\nReason: database file and its directory are readable and writable\nRecommended route: LOCAL\n\nThe local database is available; run the requested read-only command locally first.\nNext command: bun run --filter @solo-publisher/backend ops <command>\nProduction launcher: not configured\n\nCatalog: this build.\n\n\nSections:\n  health (8) — Is this deployment working, and what is wrong with it.\n    bun run --filter @solo-publisher/backend ops guide --section health --json\n  delivery (29) — One publication: what it is, where it went, and how to move it.\n    bun run --filter @solo-publisher/backend ops guide --section delivery --json\n  media (14) — The media processor, one publication's assets, and the stored files behind them.\n    bun run --filter @solo-publisher/backend ops guide --section media --json\n  channels (11) — Which accounts this Studio publishes through and the state of their credentials.\n    bun run --filter @solo-publisher/backend ops guide --section channels --json\n  studio (3) — What this Studio is, how it is configured, and what it is streaming.\n    bun run --filter @solo-publisher/backend ops guide --section studio --json\n  host (3) — Operations on the deployment's own files. CLI only: they name paths on the host.\n    bun run --filter @solo-publisher/backend ops guide --section host --json\n\nExpand: bun run --filter @solo-publisher/backend ops guide --section <health|delivery|media|channels|studio|host>, or --all for every entry\n\nCommands:\n  [MUTATION] backup [--output DIRECTORY]\n             Copy the database to a timestamped file.\n  [read-only] backup-stream --what media\n             Write one backup stream to stdout for a backup host to pull. (Nothing is written to this host: the stream is meant for `ssh <studio> ops backup-stream --what media > …` from the machine that keeps the backups. `doctor` fails once no media stream has been pulled for a week.)\n  [MUTATION] restore --source PATH [--force]\n             Replace the database with a backup. (replaces the database)\n",
+        "stdout": "operations guide\n\nLocal database: AVAILABLE\nPath: $CASE/data/pipeline.db\nReason: database file and its directory are readable and writable\nRecommended route: LOCAL\n\nThe local database is available; run the requested read-only command locally first.\nNext command: ops <command>\nProduction launcher: not configured\n\nCatalog: this build.\n\n\nSections:\n  health (8) — Is this deployment working, and what is wrong with it.\n    ops guide --section health --json\n  delivery (29) — One publication: what it is, where it went, and how to move it.\n    ops guide --section delivery --json\n  media (14) — The media processor, one publication's assets, and the stored files behind them.\n    ops guide --section media --json\n  channels (11) — Which accounts this Studio publishes through and the state of their credentials.\n    ops guide --section channels --json\n  studio (3) — What this Studio is, how it is configured, and what it is streaming.\n    ops guide --section studio --json\n  host (3) — Operations on the deployment's own files. CLI only: they name paths on the host.\n    ops guide --section host --json\n\nExpand: ops guide --section <health|delivery|media|channels|studio|host>, or --all for every entry\n\nCommands:\n  [MUTATION] backup [--output DIRECTORY]\n             Copy the database to a timestamped file.\n  [read-only] backup-stream --what media\n             Write one backup stream to stdout for a backup host to pull. (Nothing is written to this host: the stream is meant for `ssh <studio> ops backup-stream --what media > …` from the machine that keeps the backups. `doctor` fails once no media stream has been pulled for a week.)\n  [MUTATION] restore --source PATH [--force]\n             Replace the database with a backup. (replaces the database)\n",
         "stderr": "",
         "code": 0
       },

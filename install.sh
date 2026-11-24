@@ -184,13 +184,13 @@ Operate it from an agent (Claude Code, Codex) over MCP:
 
 Then connect what you publish to, and see what each destination still needs:
 
-  docker compose exec app bun /app/ops/cli.js doctor
-  docker compose exec app bun /app/ops/cli.js connect-link --platform x
+  docker compose exec app ops doctor
+  docker compose exec app ops connect-link --platform x
 
 Both tokens are in $PWD/.env; treat that file as a credential.
 The public website is off. Turn it on with:
 
-  docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled
+  docker compose exec app ops studio-profile-set --site-enabled
 
 NEXT
 }

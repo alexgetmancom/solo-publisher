@@ -21,7 +21,7 @@
 
 ```bash
 docker compose cp <скачанный>.db app:/data/restore.db
-docker compose exec app bun /app/ops/cli.js restore --source /data/restore.db --force
+docker compose exec app ops restore --source /data/restore.db --force
 docker compose restart app
 ```
 
@@ -34,7 +34,7 @@ docker compose restart app
 Studio не хранит их резервную копию. Она её отдаёт:
 
 ```bash
-docker compose exec app bun /app/ops/cli.js backup-stream --what media > media.tar.gz
+docker compose exec app ops backup-stream --what media > media.tar.gz
 ```
 
 На сервере Studio не остаётся ничего, и в этом весь смысл формы. Копия, лежащая
@@ -60,8 +60,8 @@ command="/usr/local/bin/studio-backup-export",restrict ssh-ed25519 AAAA... backu
 # /usr/local/bin/studio-backup-export на сервере Studio
 set -eu
 case "${SSH_ORIGINAL_COMMAND:-}" in
-  "export media") exec docker compose -f /path/to/compose.yaml exec -T app bun /app/ops/cli.js backup-stream --what media ;;
-  "export db")    exec docker compose -f /path/to/compose.yaml exec -T app bun /app/ops/cli.js backup-stream --what db ;;
+  "export media") exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what media ;;
+  "export db")    exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what db ;;
   *) echo "unsupported export" >&2; exit 64 ;;
 esac
 ```
@@ -91,7 +91,7 @@ tar -xzf media-<метка>.tar.gz -C /data
 деплой нездоровым, если медиа не забирали неделю:
 
 ```bash
-docker compose exec app bun /app/ops/cli.js doctor
+docker compose exec app ops doctor
 ```
 
 Это намеренно проверка на **отсутствие**, а не отчёт об ошибке. Тот, кто

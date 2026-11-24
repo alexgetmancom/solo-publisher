@@ -2,18 +2,20 @@
 //! production reaches it, without a bot token and so without starting a Studio:
 //!
 //! - what the image carries: the three binaries, the deploy agent the
-//!   deployment copies onto the host, the Story-card assets, the two Bun shims,
-//!   ffmpeg, Bun and setpriv;
+//!   deployment copies onto the host, the Story-card assets, ffmpeg, setpriv
+//!   and the `studio` user (uid 1000) — and no Bun;
 //! - the entrypoint as root: it fixes the data directory's ownership, drops to
 //!   uid 1000 and starts the Studio, which then refuses for want of a token —
 //!   proof that the fix, the drop and the probe all ran first;
 //! - the deploy agent's configuration check (`studio-entrypoint --check-config`
 //!   as the entrypoint), accepting a valid configuration and refusing an
-//!   invalid one, and the TypeScript agent's `bun /app/entrypoint/config-check.js`;
+//!   invalid one;
+//! - the healthcheck (`studio-entrypoint --ready`), which with no Studio
+//!   listening reports it not ready instead of starting one;
 //! - the deploy agent itself, which runs (it is static) and refuses to start
 //!   without its token;
 //! - the operations CLI, both as `cargo xtask ops-prod` runs it (`/app/bin/ops`
-//!   as uid 1000) and as a self-hosted Studio does (`bun /app/ops/cli.js`).
+//!   as uid 1000) and as a self-hosted Studio does (`ops` on PATH).
 
 use std::process::Command;
 
@@ -56,12 +58,12 @@ pub fn main(argv: Vec<String>) -> u8 {
             "test -f /app/assets/story-card/Manrope-Variable.ttf",
             "test -f /app/assets/story-card/NotoColorEmoji.ttf",
             "test -f /app/assets/story-card/strata-master-background.png",
-            "test -f /app/ops/cli.js && test -f /app/entrypoint/config-check.js",
             "ffmpeg -hide_banner -version | head -n 1",
             "ffprobe -hide_banner -version | head -n 1",
-            "bun --version",
             "setpriv --version",
-            "id bun",
+            "test \"$(id -u studio):$(id -g studio)\" = 1000:1000",
+            // Not `! command -v bun`: `set -e` ignores a negated command.
+            "if command -v bun; then exit 1; fi",
         ]
         .join("\n"),
     ]);
@@ -106,19 +108,14 @@ pub fn main(argv: Vec<String>) -> u8 {
         "config check refuses an invalid configuration",
         &invalid.out,
     );
-    // What a host still on the TypeScript agent runs instead.
-    let shim = run(&[
-        "--entrypoint",
-        "bun",
-        "-e",
-        "DATA_DIR=/tmp/data",
-        image,
-        "/app/entrypoint/config-check.js",
-    ]);
+
+    // The compose files' healthcheck: no Studio runs here, so it must answer
+    // "not ready" — not start one, which would refuse for want of a token.
+    let ready = run(&[&config_check[..], &[image, "--ready"]].concat());
     check(
-        shim.code == 0 && shim.stdout.trim() == r#"{"ok":true}"#,
-        "bun /app/entrypoint/config-check.js accepts a valid configuration",
-        &shim.out,
+        ready.code == 1 && ready.out.contains("studio is not ready") && !ready.out.contains(REFUSAL),
+        "the healthcheck reports a Studio that is not listening as not ready",
+        &ready.out,
     );
 
     let agent = run(&["--entrypoint", "/app/bin/deploy-agent", image]);
@@ -144,22 +141,21 @@ pub fn main(argv: Vec<String>) -> u8 {
         "ops CLI answers guide --json as uid 1000",
         &ops.out,
     );
-    let shim = run(&[
+    let on_path = run(&[
         "--entrypoint",
-        "bun",
+        "ops",
         "-e",
         "DATA_DIR=/tmp/data",
         "-u",
-        "bun",
+        "studio",
         image,
-        "/app/ops/cli.js",
         "guide",
         "--json",
     ]);
     check(
-        guide_answered(&shim),
-        "bun /app/ops/cli.js answers guide --json",
-        &shim.out,
+        guide_answered(&on_path),
+        "ops on PATH answers guide --json as studio",
+        &on_path.out,
     );
 
     if !failures.is_empty() {

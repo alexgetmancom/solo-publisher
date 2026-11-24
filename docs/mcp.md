@@ -27,7 +27,7 @@ who owns work here — and an installation with one agent leaves it empty.
 
 ```bash
 docker compose up -d
-docker compose exec app bun /app/ops/cli.js doctor
+docker compose exec app ops doctor
 ```
 
 `doctor` reports `studioTransportConfigured: true` once both are set.
@@ -73,7 +73,7 @@ CLI-only too: they are run once in a season, with their note and their dry-run
 in front of the operator running them.
 
 ```bash
-docker compose exec app bun /app/ops/cli.js guide --json
+docker compose exec app ops guide --json
 ```
 
 That catalogue is the same one the agent sees: each operation carries its

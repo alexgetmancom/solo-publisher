@@ -34,7 +34,7 @@ off this machine can reach. Caddy is what serves it to the internet.
 Nothing else in `.env` is required to start — a Studio with no platform
 credentials serves its Command Center and publishes nowhere. Add Telegram or MCP
 as the authoring interface, then connect destinations from Command Center →
-Studio; `docker compose exec app bun /app/ops/cli.js doctor` lists what each
+Studio; `docker compose exec app ops doctor` lists what each
 enabled destination still needs. See
 [Connecting a destination](destinations.md).
 
@@ -61,7 +61,7 @@ already have and do not want another site to look after. Enable it with the
 operations CLI shipped in the container:
 
 ```bash
-docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled
+docker compose exec app ops studio-profile-set --site-enabled
 ```
 
 This turns on what a site reads from the Studio: `GET /api/public/site` (the
@@ -79,7 +79,7 @@ permission step.
 
 ## Studio profile
 
-`docker compose exec app bun /app/ops/cli.js studio-profile` shows what this
+`docker compose exec app ops studio-profile` shows what this
 Studio publishes as, its time zone, whether it serves a public site, and video
 timing; `studio-profile-set` on the same CLI changes them. They live in the
 database, so they survive a redeploy and need no restart.
@@ -102,7 +102,7 @@ the forced-command recipe for the pulling side.
 
 ## Updating
 
-Before an update, `docker compose exec app bun /app/ops/cli.js status` reports
+Before an update, `docker compose exec app ops status` reports
 the running `gitRevision`. `latest` follows the revision running in the
 maintainer's production; set
 `SOLO_PUBLISHER_IMAGE=ghcr.io/alexgetmancom/solo-publisher:<full-gitRevision>`

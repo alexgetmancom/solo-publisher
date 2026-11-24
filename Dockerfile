@@ -1,12 +1,11 @@
 # The Studio: one image, one container.
 #
 # studio-entrypoint (crates/entrypoint) runs under `tini -g`: as root it fixes
-# data directory ownership and drops to `bun` (uid 1000) through setpriv, then
-# becomes the Studio (`solo-publisher`), which posts Telegram channel Stories
-# over MTProto itself (crates/mtproto). The Bun base stays for two shims: a
-# self-hosted Studio's `bun /app/ops/cli.js` and the TypeScript deploy agent's
-# `bun /app/entrypoint/config-check.js`, which a host runs until it switches
-# to the binary (deploy/README.md).
+# data directory ownership and drops to `studio` (uid 1000) through setpriv,
+# then becomes the Studio (`solo-publisher`), which posts Telegram channel
+# Stories over MTProto itself (crates/mtproto). The operations CLI is `ops` on
+# PATH (`docker compose exec app ops <command>`), and the healthcheck is
+# `studio-entrypoint --ready`.
 #
 # The image also carries that binary, `/app/bin/deploy-agent`, which never runs
 # here: the deployment copies it out onto the host (`cargo xtask
@@ -35,11 +34,14 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
        "target/$musl/release/deploy-agent" -t /out/
 
 # --- Runtime ---
-FROM oven/bun:1.4.0-slim@sha256:e0ee68d16ccb9927bf02aa7dd8fd4bf3369ee6d46da04faa72b05ce8bfd135f6 AS studio
-# setpriv comes with util-linux in the base.
+FROM debian:trixie-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0 AS studio
+# setpriv comes with util-linux in the base. uid and gid 1000 own the data
+# volumes production already has.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates tini \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && groupadd --gid 1000 studio \
+  && useradd --uid 1000 --gid studio --shell /bin/sh --create-home studio
 # Unpacked as-is: upx would cost every launch.
 COPY --from=mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132 /ffmpeg /usr/local/bin/
 COPY --from=mwader/static-ffmpeg:6.1.1@sha256:a44cd22b260c527f54e99517186a209b805d0a2319e0886d356e840f62a72132 /ffprobe /usr/local/bin/
@@ -48,19 +50,13 @@ WORKDIR /app
 # the emoji SVGs. The renderer reads its fonts from here, not from fontconfig.
 COPY crates/story_render/assets ./assets
 COPY --from=studio-build /out/ ./bin/
-# The operations CLI: `bun /app/ops/cli.js <command>` (docs/install.md) runs
-# /app/bin/ops, which is also on PATH as `ops`; `cargo xtask ops-prod` runs it directly.
-COPY crates/ops/image/cli.js ./ops/cli.js
-# The TypeScript deploy agent's configuration check of a new image:
-# `bun /app/entrypoint/config-check.js` runs `studio-entrypoint --check-config`,
-# which the binary agent runs itself.
-COPY crates/entrypoint/image/config-check.js ./entrypoint/config-check.js
+# `ops`, `studio-entrypoint` and the rest by name.
 ENV PATH=/app/bin:$PATH
 
 ARG GIT_REVISION=unknown
 ENV GIT_REVISION=${GIT_REVISION}
 
 # Stays root: the entrypoint fixes bind-mount ownership, then drops for good.
-# `docker exec` bypasses it, so pass `-u bun` there. `-g` delivers a stop
+# `docker exec` bypasses it, so pass `-u studio` there. `-g` delivers a stop
 # signal to the whole group, the Studio included.
 ENTRYPOINT ["tini", "-g", "--", "/app/bin/studio-entrypoint"]

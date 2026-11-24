@@ -30,9 +30,9 @@ use runtime::data_dirs::{
 };
 use serde_json::json;
 
-/// uid 1000 in the Bun base image, as in the TypeScript image: the data
-/// volumes production already has are owned by it.
-const RUNTIME_USER: &str = "bun";
+/// uid 1000, which the image creates: the data volumes production already
+/// has are owned by it.
+const RUNTIME_USER: &str = "studio";
 const STUDIO_BINARY: &str = "/app/bin/solo-publisher";
 /// Under the healthcheck's own 5 s, so a Studio that hangs fails with a reason.
 const READY_TIMEOUT: Duration = Duration::from_secs(4);

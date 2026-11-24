@@ -34,7 +34,7 @@ Caddy сам получает и продлевает TLS-сертификат, 
 Больше ничего в `.env` для запуска не требуется — Studio без credentials
 площадок обслуживает Command Center и никуда не публикует. Добавьте Telegram или
 MCP как интерфейс автора, затем подключайте назначения в Command Center →
-Studio; `docker compose exec app bun /app/ops/cli.js doctor` покажет, чего не
+Studio; `docker compose exec app ops doctor` покажет, чего не
 хватает каждому включённому назначению. См.
 [Подключение площадки](destinations.ru.md).
 
@@ -62,7 +62,7 @@ curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/i
 его через operations CLI внутри контейнера:
 
 ```bash
-docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled
+docker compose exec app ops studio-profile-set --site-enabled
 ```
 
 Сайт с лентами, sitemap и Markdown-эндпоинтами появится по адресу
@@ -76,7 +76,7 @@ docker compose exec app bun /app/ops/cli.js studio-profile-set --site-enabled
 
 ## Профиль Studio
 
-`docker compose exec app bun /app/ops/cli.js studio-profile` показывает, от чьего
+`docker compose exec app ops studio-profile` показывает, от чьего
 имени публикует эта Studio, её часовой пояс, наличие публичного сайта и тайминги
 видео; `studio-profile-set` в той же CLI их меняет. Они лежат в базе, поэтому
 переживают передеплой и не требуют рестарта.
@@ -99,7 +99,7 @@ Telegram не отдаёт файлы больше 50 МБ, что меньше 
 
 ## Обновление
 
-Перед обновлением `docker compose exec app bun /app/ops/cli.js status` показывает
+Перед обновлением `docker compose exec app ops status` показывает
 текущий `gitRevision`. `latest` следует за revision, работающей в production
 автора; чтобы оставить проверенную установку неизменной, укажите в `.env`
 `SOLO_PUBLISHER_IMAGE=ghcr.io/alexgetmancom/solo-publisher:<полный-gitRevision>`.

@@ -5,7 +5,7 @@ of the product, and every routing rule below names hosts and containers that exi
 maintainer's machines.
 
 **Installing or operating your own Studio? Stop here and read [docs/install.md](docs/install.md).**
-One command brings an instance up, and `docker compose exec app bun /app/ops/cli.js <command>` is
+One command brings an instance up, and `docker compose exec app ops <command>` is
 your operations route — `cargo xtask ops-prod` and `--as alex|maru` below are SSH into the maintainer's own
 host and will never work for you. Nothing in this repository needs patching to install: identity,
 domain, channels and credentials are all runtime configuration.

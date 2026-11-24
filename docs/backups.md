@@ -21,7 +21,7 @@ To restore, download the file from the chat and:
 
 ```bash
 docker compose cp <downloaded>.db app:/data/restore.db
-docker compose exec app bun /app/ops/cli.js restore --source /data/restore.db --force
+docker compose exec app ops restore --source /data/restore.db --force
 docker compose restart app
 ```
 
@@ -34,7 +34,7 @@ published site's assets — and they are the part that cannot be regenerated.
 The Studio does not store a backup of them. It emits one:
 
 ```bash
-docker compose exec app bun /app/ops/cli.js backup-stream --what media > media.tar.gz
+docker compose exec app ops backup-stream --what media > media.tar.gz
 ```
 
 Nothing is written to the Studio's host. That is the point of the shape: a copy
@@ -61,8 +61,8 @@ command="/usr/local/bin/studio-backup-export",restrict ssh-ed25519 AAAA... backu
 # /usr/local/bin/studio-backup-export on the Studio host
 set -eu
 case "${SSH_ORIGINAL_COMMAND:-}" in
-  "export media") exec docker compose -f /path/to/compose.yaml exec -T app bun /app/ops/cli.js backup-stream --what media ;;
-  "export db")    exec docker compose -f /path/to/compose.yaml exec -T app bun /app/ops/cli.js backup-stream --what db ;;
+  "export media") exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what media ;;
+  "export db")    exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what db ;;
   *) echo "unsupported export" >&2; exit 64 ;;
 esac
 ```
@@ -93,7 +93,7 @@ reports the deployment unhealthy once no media export has been pulled for a
 week:
 
 ```bash
-docker compose exec app bun /app/ops/cli.js doctor
+docker compose exec app ops doctor
 ```
 
 This is deliberately a check for *absence*, not a report of failure. A puller
