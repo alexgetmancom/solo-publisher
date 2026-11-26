@@ -23,13 +23,15 @@ services:
       # Never under DATA_DIR — a backup on the volume it exists to survive is
       # not a backup, and `doctor` fails a deployment that puts it there.
       NODE_ENV: production
+      # Read only by images older than "Drop dead configuration", which the
+      # deploy agent may roll back to under this file; the current config
+      # ignores it.
       DEPLOYMENT_ENV: production
       BIND_HOST: 0.0.0.0
       PORT: "8788"
       # Caddy terminates TLS and is the only thing that can reach this port, so
       # the address it forwards is the real client's.
       TRUSTED_CLIENT_IP_HEADER: x-real-ip
-      METRICS_REFRESH_INTERVAL_SECONDS: "60"
       # No default: a wrong value here hands a publishing platform a URL on
       # another Studio's domain, and the request that proves it wrong comes
       # from Meta, not from a test.
@@ -41,8 +43,6 @@ services:
       # alias is the name every Studio uses; the container name carries the
       # compose project it happens to have been created under and is not it.
       TELEGRAM_API_BASE_URL: ${TELEGRAM_API_BASE_URL:-http://bot-api:8081}
-      GROK_HOME: /home/deploy/.grok
-      GROK_CLI_PATH: /home/deploy/.grok/bin/grok
     volumes:
       - ${STUDIO_DATA_DIR_HOST:-./data}:/data
       - ${STUDIO_MEDIA_CACHE_DIR_HOST:-./media-cache}:/data/media-cache
@@ -50,9 +50,6 @@ services:
       - ${STUDIO_MEDIA_STAGING_DIR_HOST:-./media-staging}:/data/media
       - ${STUDIO_SITE_MEDIA_DIR_HOST:-./site-media}:/data/site/media
       - ${BOT_API_DATA_DIR_HOST:-/home/deploy/bot-api/data}:/var/lib/telegram-bot-api:ro
-      # One Grok state directory per Studio. Shared, two Studios wrote each
-      # other's sessions, locks and credentials through the same mount.
-      - ${STUDIO_GROK_DIR_HOST:?set this Studio's own Grok state directory}:/home/deploy/.grok
     ports:
       - "127.0.0.1:${STUDIO_PORT:?set the loopback port this Studio answers on}:8788"
     extra_hosts:

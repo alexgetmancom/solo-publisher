@@ -93,7 +93,6 @@ pub struct MetaTokenSeeds {
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "SCREAMING_SNAKE_CASE"))]
 pub struct Config {
     pub node_env: Environment,
-    pub deployment_env: Environment,
     pub log_level: LogLevel,
     pub port: u64,
     pub bind_host: String,
@@ -109,7 +108,6 @@ pub struct Config {
     pub mcp_studio_token: Option<String>,
     pub mcp_studio_actor_id: Option<i64>,
     pub deepseek_api_key: Option<String>,
-    pub grok_cli_path: String,
     pub controller_admin_ids: Vec<i64>,
     /// Empty uses the Telegram controller roster.
     pub studio_actor_ids: Vec<i64>,
@@ -118,8 +116,6 @@ pub struct Config {
     /// Timeouts are terminal and need an explicit retry: the provider may have
     /// accepted a request whose response was lost.
     pub publish_job_timeout_seconds: u64,
-    pub metrics_refresh_interval_seconds: u64,
-    pub creator_profile_refresh_interval_seconds: u64,
     pub observability_interval_seconds: u64,
     pub idle_poll_interval_seconds: u64,
     pub media_processor_provider: MediaProcessorProvider,
@@ -127,7 +123,6 @@ pub struct Config {
     pub media_processor_token: Option<String>,
     pub media_processor_timeout_seconds: u64,
     pub story_card_assets_dir: String,
-    pub story_card_renderer_entry: String,
     pub threads_ru_access_token: Option<String>,
     pub threads_en_access_token: Option<String>,
     pub threads_container_timeout_seconds: u64,
@@ -137,12 +132,10 @@ pub struct Config {
     pub threads_app_secret: Option<String>,
     pub x_client_id: Option<String>,
     pub x_client_secret: Option<String>,
-    pub enable_x_metrics: bool,
     pub discord_channel_id: Option<String>,
     /// Only builds the message permalink: the create-message response carries
     /// the channel but not its guild.
     pub discord_guild_id: Option<String>,
-    pub enable_x_profile_metrics: bool,
     pub instagram_en_access_token: Option<String>,
     pub instagram_en_user_id: Option<String>,
     pub instagram_ru_access_token: Option<String>,
@@ -175,8 +168,6 @@ pub struct Config {
     /// All media the Studio owns: ingress staging, uploads, delivery's video files.
     pub studio_media_dir: PathBuf,
     pub media_cache_dir: PathBuf,
-    /// The opening frame of every published video, kept after the video is gone.
-    pub video_frame_dir: PathBuf,
     pub story_card_dir: PathBuf,
     pub site_public_dir: PathBuf,
     /// Temporary public staging for platforms that fetch media by URL.
@@ -254,7 +245,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
     ];
 
     let node_env = s.choice("NODE_ENV", &environments, Environment::Development);
-    let deployment_env = s.choice("DEPLOYMENT_ENV", &environments, Environment::Development);
     let log_level = s.choice(
         "LOG_LEVEL",
         &[
@@ -285,7 +275,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
     let mcp_studio_token = s.min_length("MCP_STUDIO_TOKEN", 16);
     let mcp_studio_actor_id = s.int("MCP_STUDIO_ACTOR_ID", &[Bound::Positive]);
     let deepseek_api_key = s.string("DEEPSEEK_API_KEY");
-    let grok_cli_path = s.string_or("GROK_CLI_PATH", "grok");
     let controller_admin_ids = s.id_list("CONTROLLER_ADMIN_IDS");
     let studio_actor_ids = s.id_list("STUDIO_ACTOR_IDS");
     let telegram_channel_username = s.string_or("TELEGRAM_CHANNEL_USERNAME", "");
@@ -295,12 +284,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
             &[Bound::AtLeast(1.0), Bound::AtMost(3600.0)],
         )
         .unwrap_or(600.0);
-    let metrics_refresh_interval_seconds = s
-        .int("METRICS_REFRESH_INTERVAL_SECONDS", &[Bound::Positive])
-        .unwrap_or(10.0);
-    let creator_profile_refresh_interval_seconds = s
-        .int("CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS", &[Bound::AtLeast(60.0)])
-        .unwrap_or(3600.0);
     let observability_interval_seconds = s
         .int("OBSERVABILITY_INTERVAL_SECONDS", &[Bound::Positive])
         .unwrap_or(300.0);
@@ -322,7 +305,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
         )
         .unwrap_or(900.0);
     let story_card_assets_dir = s.string_or("STORY_CARD_ASSETS_DIR", "/app/assets/story-card");
-    let story_card_renderer_entry = s.string_or("STORY_CARD_RENDERER_ENTRY", "/app/story-renderer/renderer-process.js");
     let threads_ru_access_token = s.string("THREADS_RU_ACCESS_TOKEN");
     let threads_en_access_token = s.string("THREADS_EN_ACCESS_TOKEN");
     let threads_container_timeout_seconds = s
@@ -332,10 +314,8 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
     let threads_app_secret = s.string("THREADS_APP_SECRET");
     let x_client_id = s.string("X_CLIENT_ID");
     let x_client_secret = s.string("X_CLIENT_SECRET");
-    let enable_x_metrics = s.flag("ENABLE_X_METRICS", false);
     let discord_channel_id = s.string("DISCORD_CHANNEL_ID");
     let discord_guild_id = s.string("DISCORD_GUILD_ID");
-    let enable_x_profile_metrics = s.flag("ENABLE_X_PROFILE_METRICS", true);
     let instagram_en_access_token = s.string("INSTAGRAM_EN_ACCESS_TOKEN");
     let instagram_en_user_id = s.string("INSTAGRAM_EN_USER_ID");
     let instagram_ru_access_token = s.string("INSTAGRAM_RU_ACCESS_TOKEN");
@@ -407,13 +387,7 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
     }
 
     let fail = |message: &str| Err(ConfigError(message.into()));
-    if node_env == Environment::Production && deployment_env != Environment::Production {
-        return fail("DEPLOYMENT_ENV=production is required when NODE_ENV=production");
-    }
-    if deployment_env == Environment::Production && node_env != Environment::Production {
-        return fail("NODE_ENV=production is required when DEPLOYMENT_ENV=production");
-    }
-    if deployment_env == Environment::Production {
+    if node_env == Environment::Production {
         if command_center_token.is_none() {
             return fail("COMMAND_CENTER_TOKEN is required in production");
         }
@@ -442,7 +416,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
         pipeline_db: data_path("pipeline.db"),
         studio_media_dir: data_path("video-media"),
         media_cache_dir: data_path("media-cache"),
-        video_frame_dir: data_path("video-frames"),
         story_card_dir: data_path("story-cards"),
         site_public_dir: data_path("site"),
         remote_media_path: data_path("media"),
@@ -455,7 +428,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
             instagram_en_access_token: instagram_en_access_token.clone(),
         },
         node_env,
-        deployment_env,
         log_level,
         port: whole(port),
         bind_host,
@@ -468,13 +440,10 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
         mcp_studio_token,
         mcp_studio_actor_id: mcp_studio_actor_id.map(|id| id as i64),
         deepseek_api_key,
-        grok_cli_path,
         controller_admin_ids,
         studio_actor_ids,
         telegram_channel_username,
         publish_job_timeout_seconds: whole(publish_job_timeout_seconds),
-        metrics_refresh_interval_seconds: whole(metrics_refresh_interval_seconds),
-        creator_profile_refresh_interval_seconds: whole(creator_profile_refresh_interval_seconds),
         observability_interval_seconds: whole(observability_interval_seconds),
         idle_poll_interval_seconds: whole(idle_poll_interval_seconds),
         media_processor_provider,
@@ -482,7 +451,6 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
         media_processor_token,
         media_processor_timeout_seconds: whole(media_processor_timeout_seconds),
         story_card_assets_dir,
-        story_card_renderer_entry,
         threads_ru_access_token,
         threads_en_access_token,
         threads_container_timeout_seconds: whole(threads_container_timeout_seconds),
@@ -490,10 +458,8 @@ pub fn load_config<K: AsRef<str>, V: AsRef<str>>(
         threads_app_secret,
         x_client_id,
         x_client_secret,
-        enable_x_metrics,
         discord_channel_id,
         discord_guild_id,
-        enable_x_profile_metrics,
         instagram_en_access_token,
         instagram_en_user_id,
         instagram_ru_access_token,

@@ -49,7 +49,7 @@ Optional: `BIND_HOST`, `PORT`, `TELEGRAM_API_BASE_URL`, `LOG_LEVEL`, `DEPLOY_AGE
 `TOKEN_ENCRYPTION_KEY`,
 `PUBLIC_BASE_URL`, `TELEGRAM_CHANNEL_USERNAME`, `STUDIO_ACTOR_IDS`; any other `.env` variable is read by `foundation::config`.
 
-Production (`NODE_ENV=production`, `DEPLOYMENT_ENV=production`) also requires `COMMAND_CENTER_TOKEN`,
+Production (`NODE_ENV=production`) also requires `COMMAND_CENTER_TOKEN`,
 `CLIENT_IP_HASH_SALT`, `PUBLIC_BASE_URL`.
 
 ## Run

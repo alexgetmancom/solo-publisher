@@ -61,6 +61,13 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   `documentAttributeFilename`), and the upload carries its MD5 (mtcute: empty) in 512 KiB parts.
 - `foundation::time` looks zones up in the bundled tzdb explicitly: grammers enables jiff's default features, which
   would otherwise put the host's `/usr/share/zoneinfo` first and accept names `Intl` refused (`posixrules`).
+- Removed dead config `GROK_CLI_PATH`, `STORY_CARD_RENDERER_ENTRY`, `ENABLE_X_METRICS`, `ENABLE_X_PROFILE_METRICS`,
+  `VIDEO_FRAME_DIR`, `METRICS_REFRESH_INTERVAL_SECONDS`, `CREATOR_PROFILE_REFRESH_INTERVAL_SECONDS` (never read) and
+  the `DEPLOYMENT_ENV` twin of `NODE_ENV`, which alone now gates production; the config.json golden lost those keys and
+  its "creator refresh too small", "node production only" and "deployment production only" cases. An env file that
+  still sets them is ignored, as every unknown variable is. `deploy/studio.compose.yaml` still sets `DEPLOYMENT_ENV` for one
+  release: the deploy agent rolls back the image under the current compose file, and older images refuse to start
+  without it.
 
 ## Test data
 

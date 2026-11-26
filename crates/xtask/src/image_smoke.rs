@@ -101,7 +101,7 @@ pub fn main(argv: Vec<String>) -> u8 {
         "config check accepts a valid configuration",
         &valid.out,
     );
-    let production = ["-e", "NODE_ENV=production", "-e", "DEPLOYMENT_ENV=production"];
+    let production = ["-e", "NODE_ENV=production"];
     let invalid = run(&[&config_check[..], &production, &[image, "--check-config"]].concat());
     check(
         invalid.code != 0 && invalid.out.contains("COMMAND_CENTER_TOKEN"),

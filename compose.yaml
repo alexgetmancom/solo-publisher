@@ -59,7 +59,6 @@ services:
       PUBLIC_MEDIA_BASE_URL: https://${DOMAIN:?set DOMAIN to the hostname this Studio answers on}/media/staging
       PUBLIC_BASE_URL: https://${DOMAIN:?set DOMAIN to the hostname this Studio answers on}
       NODE_ENV: production
-      DEPLOYMENT_ENV: production
       # Caddy terminates TLS and is the only thing that can reach this port, so
       # the address it forwards is the real client's.
       TRUSTED_CLIENT_IP_HEADER: x-real-ip
