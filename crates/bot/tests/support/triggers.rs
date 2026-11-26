@@ -12,9 +12,9 @@ use super::Harness;
 use bot::Fut;
 
 /// Runs the trigger on the harness's bot and returns the calls it made.
-pub type Trigger = for<'a> fn(&'a Harness) -> Fut<'a, Result<Vec<Value>, String>>;
+pub(crate) type Trigger = for<'a> fn(&'a Harness) -> Fut<'a, Result<Vec<Value>, String>>;
 
-pub const TRIGGERS: &[(&str, Trigger)] = &[
+pub(crate) const TRIGGERS: &[(&str, Trigger)] = &[
     ("album worker tick (+5 s)", telegram_albums),
     (
         "Story worker finishes the cards while the bot waits",
@@ -106,7 +106,7 @@ fn render_story_cards(sqlite: &Connection, fixture: &Path, draft_id: i64, now: &
         .unwrap();
 }
 
-pub fn find(name: &str) -> Option<Trigger> {
+pub(crate) fn find(name: &str) -> Option<Trigger> {
     TRIGGERS
         .iter()
         .find(|(known, _)| *known == name)

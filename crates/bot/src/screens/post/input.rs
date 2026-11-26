@@ -25,7 +25,7 @@ use crate::session::ConversationState;
 use super::flow::{PostWizardStep, post_state_step};
 use super::preview::post_preview_card;
 
-pub fn scope(locale: Locale) -> PostScheduleScope {
+pub(super) fn scope(locale: Locale) -> PostScheduleScope {
     match locale {
         Locale::Ru => PostScheduleScope::Ru,
         Locale::En => PostScheduleScope::En,
@@ -37,7 +37,7 @@ fn session_stale() -> crate::Error {
 }
 
 /// `applyAdminState`.
-pub async fn apply_admin_state(
+pub(super) async fn apply_admin_state(
     ctx: &Ctx,
     step: PostWizardStep,
     draft_id: i64,

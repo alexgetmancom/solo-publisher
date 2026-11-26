@@ -15,14 +15,14 @@
 //! (`_trash-rust/tmp/bot-tests/<pid>-<n>-<label>/`, removed when the case is
 //! done), so test threads and concurrent `cargo test` runs never share a file.
 
-pub mod deepseek;
-pub mod deploy_agent;
-pub mod host;
-pub mod media_probe;
-pub mod pending;
-pub mod telegram;
-pub mod triggers;
-pub mod zernio;
+pub(crate) mod deepseek;
+pub(crate) mod deploy_agent;
+pub(crate) mod host;
+pub(crate) mod media_probe;
+pub(crate) mod pending;
+pub(crate) mod telegram;
+pub(crate) mod triggers;
+pub(crate) mod zernio;
 
 use std::cell::Cell;
 use std::path::{Path, PathBuf};
@@ -51,7 +51,7 @@ use zernio::GoldenZernio;
 const BOT_TOKEN: &str = "123456:TEST-TOKEN";
 const NOW: &str = "2026-08-20T09:00:00.000Z";
 
-pub fn repo_root() -> PathBuf {
+pub(crate) fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
@@ -75,7 +75,7 @@ fn committed_seeds() -> PathBuf {
 const SCHEMA_REST: &str = "-- indexes and triggers, created after the rows\n";
 
 /// The recorder's temporary directory, which `<tmp>` stands for.
-pub fn recorder_tmp() -> PathBuf {
+pub(crate) fn recorder_tmp() -> PathBuf {
     repo_root().join("_trash-rust/tmp/bot-goldens")
 }
 
@@ -85,7 +85,7 @@ fn read_json(path: &Path) -> Value {
 }
 
 /// Every committed golden, as `(area, case)`, in directory order.
-pub fn cases(area: &str) -> Vec<String> {
+pub(crate) fn cases(area: &str) -> Vec<String> {
     let mut cases: Vec<String> = std::fs::read_dir(goldens_dir().join(area))
         .unwrap_or_else(|error| panic!("parity/bot-goldens/{area}: {error}"))
         .filter_map(|entry| {
@@ -97,7 +97,7 @@ pub fn cases(area: &str) -> Vec<String> {
     cases
 }
 
-pub fn areas() -> Vec<String> {
+pub(crate) fn areas() -> Vec<String> {
     let mut areas: Vec<String> = std::fs::read_dir(goldens_dir())
         .unwrap()
         .filter_map(|entry| {
@@ -116,7 +116,7 @@ pub fn areas() -> Vec<String> {
 
 /// Builds the seed databases and the recorder's files from the committed
 /// seeds, unless the last build was of the same seeds.
-pub fn ensure_seeds() {
+pub(crate) fn ensure_seeds() {
     static READY: OnceLock<Result<(), String>> = OnceLock::new();
     let ready = READY.get_or_init(|| {
         // Another `cargo test` may be checking or building the same seeds.
@@ -280,7 +280,7 @@ fn bot_user() -> Value {
 
 /// Loads a step's database seed into the live connection: every table's rows
 /// replaced by the seed's, and a table the seed no longer has dropped.
-pub fn reseed(sqlite: &db::rusqlite::Connection, path: &Path) {
+pub(crate) fn reseed(sqlite: &db::rusqlite::Connection, path: &Path) {
     let tables: Vec<String> = {
         let mut statement = sqlite
             .prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name")
@@ -466,7 +466,7 @@ fn describe_difference(index: usize, expected: &[Value], actual: &[Value]) -> St
 
 /// A Rust bot on a database, a pinned clock and the fake Telegram, built the
 /// way the recorder's harness built the recorded one.
-pub struct Harness {
+pub(crate) struct Harness {
     pub bot: Bot,
     pub telegram: Rc<FakeTelegram>,
     pub clock: Rc<FixedClock>,
@@ -486,7 +486,7 @@ pub struct Harness {
 
 impl Harness {
     /// Must run inside a `LocalSet`.
-    pub async fn new(scratch: Scratch, db: BackendDb, case_env: &Value, at: Timestamp) -> Result<Self, String> {
+    pub(crate) async fn new(scratch: Scratch, db: BackendDb, case_env: &Value, at: Timestamp) -> Result<Self, String> {
         let config = load_config(env(&scratch.data_dir(), case_env)).map_err(|error| error.to_string())?;
         let clock = Rc::new(FixedClock(Cell::new(at)));
         let telegram = Rc::new(FakeTelegram::new(&recorder_tmp().display().to_string(), bot_user()));
@@ -531,7 +531,7 @@ impl Harness {
     /// Hands these updates to the bot at once (one is an ordinary step), lets
     /// a held call go after 50 ms as the recorder did, waits for the bot to be
     /// quiet and returns what it sent.
-    pub async fn feed(&self, updates: &[Value]) -> Result<Vec<Value>, String> {
+    pub(crate) async fn feed(&self, updates: &[Value]) -> Result<Vec<Value>, String> {
         let mut handles = Vec::new();
         for update in updates {
             self.telegram.observe(update);
@@ -552,7 +552,7 @@ impl Harness {
 }
 
 /// Runs `test` inside a fresh single-threaded runtime and `LocalSet`.
-pub fn on_bot_thread<F: Future>(test: F) -> F::Output {
+pub(crate) fn on_bot_thread<F: Future>(test: F) -> F::Output {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -562,10 +562,10 @@ pub fn on_bot_thread<F: Future>(test: F) -> F::Output {
 
 /// A directory only one test owns: `<pid>-<n>-<label>` under
 /// `_trash-rust/tmp/bot-tests/`, removed when dropped.
-pub struct Scratch(PathBuf);
+pub(crate) struct Scratch(PathBuf);
 
 impl Scratch {
-    pub fn new(label: &str) -> Self {
+    pub(crate) fn new(label: &str) -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let n = NEXT.fetch_add(1, Ordering::Relaxed);
         let path = repo_root()
@@ -577,13 +577,13 @@ impl Scratch {
     }
 
     /// The bot's `DATA_DIR`.
-    pub fn data_dir(&self) -> PathBuf {
+    pub(crate) fn data_dir(&self) -> PathBuf {
         self.0.join("data")
     }
 
     /// A seed database (`<area>/<file>` of the shared seeds), copied here
     /// where the Rust bot may write to it.
-    pub fn seed_database(&self, area: &str, file: &str) -> BackendDb {
+    pub(crate) fn seed_database(&self, area: &str, file: &str) -> BackendDb {
         let db_path = self.0.join("seed.db");
         std::fs::copy(seeds_dir().join(area).join(file), &db_path).unwrap();
         BackendDb::open(&db_path).unwrap()
@@ -597,12 +597,12 @@ impl Drop for Scratch {
 }
 
 /// Replays one case; `Err` carries the first difference.
-pub fn replay(area: &str, case: &str) -> Result<(), String> {
+pub(crate) fn replay(area: &str, case: &str) -> Result<(), String> {
     replay_steps(area, case, usize::MAX)
 }
 
 /// Replays the first `count` steps of a case.
-pub fn replay_steps(area: &str, case: &str, count: usize) -> Result<(), String> {
+pub(crate) fn replay_steps(area: &str, case: &str, count: usize) -> Result<(), String> {
     on_bot_thread(replay_case(area, case, count))
 }
 
@@ -755,7 +755,7 @@ fn describe_step(step: &Value) -> String {
 }
 
 /// What one area's run found.
-pub struct Report {
+pub(crate) struct Report {
     pub passed: Vec<String>,
     pub not_ported: Vec<(String, Vec<&'static str>)>,
     pub failed: Vec<(String, String)>,
@@ -763,7 +763,7 @@ pub struct Report {
 
 /// Replays every case of a golden directory that is registered, and lists the
 /// rest with the areas they wait for.
-pub fn run_area(area: &str) -> Report {
+pub(crate) fn run_area(area: &str) -> Report {
     ensure_seeds();
     foundation::logger::configure_logging(foundation::logger::LogLevel::Error);
     let mut report = Report {
@@ -795,7 +795,7 @@ pub fn run_area(area: &str) -> Report {
 }
 
 /// The registrations of a bot built the way the harness builds one.
-pub fn missing_registrations() -> Vec<(&'static str, String)> {
+pub(crate) fn missing_registrations() -> Vec<(&'static str, String)> {
     on_bot_thread(async {
         let db = BackendDb::open(":memory:").unwrap();
         let harness = Harness::new(Scratch::new("registry"), db, &json!({}), instant(NOW))

@@ -11,11 +11,11 @@ use std::time::Duration;
 use media_processor::{Commands, Finished, Options, Processor, Running};
 use tokio::sync::Semaphore;
 
-pub const TOKEN: &str = "media-processor-token";
-pub const KEY: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+pub(crate) const TOKEN: &str = "media-processor-token";
+pub(crate) const KEY: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 /// A work directory, removed with the test.
-pub struct Work(Options);
+pub(crate) struct Work(Options);
 
 impl Deref for Work {
     type Target = Options;
@@ -36,7 +36,7 @@ impl Drop for Work {
     }
 }
 
-pub fn work(name: &str) -> Work {
+pub(crate) fn work(name: &str) -> Work {
     static NEXT: AtomicUsize = AtomicUsize::new(0);
     let work_dir: PathBuf = std::env::temp_dir().join(format!(
         "media-processor-{name}-{}-{}",
@@ -57,7 +57,7 @@ pub fn work(name: &str) -> Work {
 }
 
 /// ffprobe's answer for a 9:16 video of `duration` seconds.
-pub fn vertical_probe(duration: f64) -> String {
+pub(crate) fn vertical_probe(duration: f64) -> String {
     format!(
         r#"{{"format":{{"duration":"{duration}"}},"streams":[{{"codec_type":"video","width":1080,"height":1920}}]}}"#
     )
@@ -67,7 +67,7 @@ pub fn vertical_probe(duration: f64) -> String {
 /// argument naming a `.part` file (unless `write_outputs` is off) and exits
 /// with `ffmpeg_exit`, after the hold is released if one was set.
 #[derive(Clone)]
-pub struct Fake {
+pub(crate) struct Fake {
     pub probe: String,
     pub probe_exit: i32,
     pub ffmpeg_exit: i32,
@@ -78,7 +78,7 @@ pub struct Fake {
 }
 
 #[derive(Default)]
-pub struct Seen {
+pub(crate) struct Seen {
     commands: Mutex<Vec<Vec<String>>>,
     sources: Mutex<Vec<Vec<u8>>>,
     hold: Mutex<Option<Arc<Semaphore>>>,
@@ -100,48 +100,48 @@ impl Default for Fake {
 }
 
 impl Fake {
-    pub fn processor(&self, name: &str) -> (Processor, Work) {
+    pub(crate) fn processor(&self, name: &str) -> (Processor, Work) {
         let work = work(name);
         (Processor::new(work.clone(), self.clone()).unwrap(), work)
     }
 
     /// Every command run so far, program first.
-    pub fn commands(&self) -> Vec<Vec<String>> {
+    pub(crate) fn commands(&self) -> Vec<Vec<String>> {
         self.seen.commands.lock().unwrap().clone()
     }
 
     /// The source file ffmpeg was given, read when it started.
-    pub fn sources(&self) -> Vec<Vec<u8>> {
+    pub(crate) fn sources(&self) -> Vec<Vec<u8>> {
         self.seen.sources.lock().unwrap().clone()
     }
 
-    pub fn ffmpeg_args(&self) -> Vec<String> {
+    pub(crate) fn ffmpeg_args(&self) -> Vec<String> {
         self.commands()
             .into_iter()
             .find(|command| command[0] == "ffmpeg")
             .unwrap_or_default()
     }
 
-    pub fn ffmpeg_count(&self) -> usize {
+    pub(crate) fn ffmpeg_count(&self) -> usize {
         self.commands().iter().filter(|command| command[0] == "ffmpeg").count()
     }
 
-    pub fn peak_ffmpeg(&self) -> usize {
+    pub(crate) fn peak_ffmpeg(&self) -> usize {
         self.seen.peak.load(Ordering::SeqCst)
     }
 
     /// ffmpeg runs until [`Fake::release_ffmpeg`].
-    pub fn hold_ffmpeg(&self) {
+    pub(crate) fn hold_ffmpeg(&self) {
         *self.seen.hold.lock().unwrap() = Some(Arc::new(Semaphore::new(0)));
     }
 
-    pub fn release_ffmpeg(&self) {
+    pub(crate) fn release_ffmpeg(&self) {
         if let Some(hold) = self.seen.hold.lock().unwrap().as_ref() {
             hold.add_permits(Semaphore::MAX_PERMITS);
         }
     }
 
-    pub async fn wait_for_ffmpeg(&self, count: usize) {
+    pub(crate) async fn wait_for_ffmpeg(&self, count: usize) {
         for _ in 0..2000 {
             if self.ffmpeg_count() >= count {
                 return;

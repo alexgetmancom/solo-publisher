@@ -14,7 +14,7 @@ use crate::context::{OpError, Terminal};
 
 /// `authorizationCode`: whatever the operator copied out of the browser —
 /// the bare code or the whole address, with or without Meta's trailing `#_`.
-pub fn authorization_code(pasted: &str) -> Result<String, OpError> {
+pub(super) fn authorization_code(pasted: &str) -> Result<String, OpError> {
     let trimmed = foundation::js::trim(pasted);
     let trimmed = trimmed.strip_suffix("#_").unwrap_or(trimmed);
     if trimmed.is_empty() {
@@ -43,7 +43,7 @@ pub fn authorization_code(pasted: &str) -> Result<String, OpError> {
     })
 }
 
-pub async fn authorize_threads(
+pub(super) async fn authorize_threads(
     config: &Config,
     locale: Locale,
     terminal: &dyn Terminal,

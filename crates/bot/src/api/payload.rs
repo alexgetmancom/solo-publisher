@@ -210,11 +210,6 @@ impl InlineKeyboard {
     pub fn rows(&self) -> &[Vec<Value>] {
         &self.rows
     }
-
-    /// Builds from rendered rows (a menu), exactly as given.
-    pub fn from_rows(rows: Vec<Vec<Value>>) -> Self {
-        Self { rows }
-    }
 }
 
 fn button(text: String, key: &str, value: String) -> Value {

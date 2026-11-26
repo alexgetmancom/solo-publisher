@@ -16,7 +16,7 @@ use crate::session::ConversationState;
 
 /// One open post input, with what it carries.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PostWizardStep {
+pub(super) enum PostWizardStep {
     EditText { locale: Locale },
     ScheduleManual { locale: Locale },
     ScheduleConfirm { locale: Locale, value: Timestamp },
@@ -26,7 +26,7 @@ pub enum PostWizardStep {
 }
 
 impl PostWizardStep {
-    pub fn name(self) -> &'static str {
+    pub(super) fn name(self) -> &'static str {
         match self {
             Self::EditText { .. } => "edit_text",
             Self::ScheduleManual { .. } => "schedule_manual",
@@ -38,12 +38,12 @@ impl PostWizardStep {
 
     /// `flowStepInput(POST_FLOW, step)`: every step but the confirmation
     /// is answered with a message.
-    pub fn takes_input(self) -> bool {
+    pub(super) fn takes_input(self) -> bool {
         !matches!(self, Self::ScheduleConfirm { .. })
     }
 
     /// `POST_STEPS[step].next()`.
-    pub fn next(self) -> &'static str {
+    pub(super) fn next(self) -> &'static str {
         match self {
             Self::ScheduleManual { .. } => "schedule_confirm",
             _ => "completed",
@@ -56,7 +56,7 @@ fn locale_value(locale: Locale) -> Value {
 }
 
 /// `postStepData`: the session payload a step carries beside its name.
-pub fn post_step_data(step: PostWizardStep) -> JsonObject {
+pub(super) fn post_step_data(step: PostWizardStep) -> JsonObject {
     let value = match step {
         PostWizardStep::EditText { locale } | PostWizardStep::ScheduleManual { locale } => {
             json!({"locale": locale_value(locale)})
@@ -96,7 +96,7 @@ fn parse_position(value: Option<&Value>) -> Option<i64> {
 }
 
 /// `postStateStep`: the open step of a stored session, or none.
-pub fn post_state_step(state: Option<&ConversationState>) -> Option<PostWizardStep> {
+pub(super) fn post_state_step(state: Option<&ConversationState>) -> Option<PostWizardStep> {
     let state = state?;
     let data = &state.data;
     match state.step.as_str() {

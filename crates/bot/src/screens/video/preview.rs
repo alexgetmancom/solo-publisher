@@ -27,7 +27,7 @@ use super::state::{TimeSettings, time_settings};
 const VIDEO_VIEWS: [&str; 4] = ["overview", "confirm_now", "confirm_cancel", "confirm_remove"];
 
 /// The card renderer of the video kind.
-pub fn render_card(ctx: &Ctx, request: &CardRequest) -> crate::Result<PublicationCard> {
+pub(super) fn render_card(ctx: &Ctx, request: &CardRequest) -> crate::Result<PublicationCard> {
     let time = time_settings(ctx, request.actor_id)?;
     let preview = ctx
         .services()
@@ -314,7 +314,7 @@ fn video_status_label(status: &str) -> String {
 /// `delivery_preview_video:<id>` (`sendVideoSourcePreview`): the video behind
 /// a publication, sent only when asked for. The previews show what each
 /// platform receives as text; the clip is the same file for all of them.
-pub fn delivery_preview_video<'a>(ctx: &'a Ctx, callback: &'a ScreenCallback) -> Fut<'a, crate::Result<bool>> {
+pub(super) fn delivery_preview_video<'a>(ctx: &'a Ctx, callback: &'a ScreenCallback) -> Fut<'a, crate::Result<bool>> {
     Box::pin(async move {
         let Some(id) = screen_number(callback.arg("id"), 1) else {
             return Ok(false);

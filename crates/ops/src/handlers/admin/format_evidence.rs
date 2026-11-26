@@ -58,7 +58,7 @@ const MEDIA_TEST_CASES: [(&str, &str, &str, &str); 9] = [
 const EXPECTED_TARGETS: [&str; 4] = ["telegram", "site_ru", "site_en", "threads_ru"];
 
 /// `seedFormatSupport`.
-pub fn seed_format_support(sqlite: &Connection, now: Timestamp) -> Result<(), OpError> {
+pub(super) fn seed_format_support(sqlite: &Connection, now: Timestamp) -> Result<(), OpError> {
     let unknown: Vec<&str> = EXPECTED_TARGETS
         .into_iter()
         .filter(|target| !TARGETS.iter().any(|known| known.id == *target))
@@ -91,7 +91,7 @@ pub fn seed_format_support(sqlite: &Connection, now: Timestamp) -> Result<(), Op
 
 /// `recordFormatEvidence`: grades the test by what each expected target of
 /// the post did, and answers the test's status.
-pub fn record_format_evidence(
+pub(super) fn record_format_evidence(
     sqlite: &Connection,
     test_id: &str,
     post_id: i64,

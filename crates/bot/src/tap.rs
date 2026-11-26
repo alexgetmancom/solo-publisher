@@ -99,16 +99,3 @@ pub fn record_answered() {
 pub fn record_unchanged_edit() {
     with(|tap| tap.unchanged_edits += 1);
 }
-
-/// One finished call to another provider (translation, a platform, media).
-pub fn record_provider_call(duration_ms: f64) {
-    with(|tap| {
-        tap.provider_ms += duration_ms;
-        tap.provider_calls += 1;
-    });
-}
-
-/// The body of a provider call already counted, added to that same call.
-pub fn record_provider_body_read(duration_ms: f64) {
-    with(|tap| tap.provider_ms += duration_ms);
-}

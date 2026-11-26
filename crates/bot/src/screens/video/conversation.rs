@@ -45,7 +45,7 @@ static SCRIPT_FILE_NAME: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)\.(
 
 /// `handleVideoConversationMessage`: the open video conversation's answer
 /// to a message; with no conversation open the message is not its own.
-pub fn handle_video_conversation_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
+pub(super) fn handle_video_conversation_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
     Box::pin(async move {
         let actor_id = ctx.actor_id();
         let Some(session) = get_video_state(ctx, actor_id)? else {
@@ -134,7 +134,7 @@ async fn accept_video_asset(ctx: &Ctx, actor_id: i64, session: &VideoState) -> E
 
 /// The intake's handoff: the stored video opens the conversation on the
 /// upload step and is attached at once.
-pub fn attach_intake_video(ctx: &Ctx, handoff: VideoHandoff) -> Fut<'_, Effects> {
+pub(super) fn attach_intake_video(ctx: &Ctx, handoff: VideoHandoff) -> Fut<'_, Effects> {
     Box::pin(async move {
         let mut data = Map::new();
         data.insert("videoLocale".into(), json!(handoff.video_locale.as_str()));
@@ -236,7 +236,7 @@ fn video_length_warning_effects(
 
 /// `startVideoDraft`: the upload the operator settled on, behind a fresh
 /// draft for the platforms chosen on the destination screen.
-pub fn start_video_draft(ctx: &Ctx, actor_id: i64, session: &VideoState, asset_id: i64) -> Effects {
+pub(super) fn start_video_draft(ctx: &Ctx, actor_id: i64, session: &VideoState, asset_id: i64) -> Effects {
     let selected = session.selected.clone();
     if selected.is_empty() {
         return Err(StudioError::new("err.no-video-platforms-connected").into());

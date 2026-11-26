@@ -11,7 +11,7 @@ use serde_json::Value;
 const PATHS: [&str; 2] = ["/presence/point", "/presence/place"];
 const INTAKE: &str = "192.168.10.106:8787";
 
-pub fn main(argv: Vec<String>) -> u8 {
+pub(crate) fn main(argv: Vec<String>) -> u8 {
     if !argv.is_empty() {
         eprintln!("usage: caddy adapt … | cargo xtask family-routes");
         return 1;
@@ -59,7 +59,7 @@ fn is_proxy(handler: &&Value) -> bool {
     handler.get("handler").and_then(Value::as_str) == Some("reverse_proxy")
 }
 
-pub fn check(config: &Value) -> Result<(), String> {
+pub(crate) fn check(config: &Value) -> Result<(), String> {
     let servers = config["apps"]["http"]["servers"].as_object();
     let routes: Vec<&Value> = servers
         .into_iter()

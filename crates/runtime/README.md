@@ -5,7 +5,7 @@ rest of the Studio: loops, doorbells and transports run on the process's `LocalS
 
 | Module | What it is |
 |---|---|
-| `http` (`HttpClient`, `Response`, errors, `retry_after_seconds`, `form_body`) | external calls, with the tap hooks as `CallTiming` |
+| `http` (`HttpClient`, `Response`, errors, `retry_after_seconds`, `form_body`) | external calls |
 | `http::Transport`, `ReqwestTransport`, `HttpRequest`, `HttpResponse` | the transport every adapter takes |
 | `ffmpeg` (`run_ffmpeg`, `run_ffmpeg_capture`, `probe_media_metadata`, `FfmpegMediaProbe`) | child-process ffmpeg/ffprobe, and the `astats` call of the video audio check |
 | `scheduler` (`start_loop`, `ScheduledLoop`, `LoopHooks`) | background loops |
@@ -34,8 +34,7 @@ let response = client.exchange(request).await?;          // a bare transport cal
 - `ExternalError::Http` is an authoritative refusal (status, redacted body, `retry_after_seconds`);
   `ExternalError::Transport` is "sent, no answer" — the ambiguous case after a publishing call; `Message` is a plain
   refusal. A body that breaks off mid-read is `Transport`.
-- Production: `HttpClient::new(Rc::new(ReqwestTransport::new()?))`; inside a bot update, `.timed_by(tap)` bills the
-  wait to the tap. Tests: implement `Transport` to record each `HttpRequest` and answer `HttpResponse::buffered(…)` —
+- Production: `HttpClient::new(Rc::new(ReqwestTransport::new()?))`. Tests: implement `Transport` to record each `HttpRequest` and answer `HttpResponse::buffered(…)` —
   `tests/parity.rs` (`Recorder`) is the pattern request goldens use (URL normalized, header names lower-cased and
   sorted, as Bun's `new Request` shows them).
 
@@ -52,7 +51,7 @@ cargo test -p runtime   # replays tests/fixtures/runtime.json (recorded from the
 Recorded: Retry-After parsing, JSON request results and redacted messages, form bodies, ffmpeg failure trimming,
 ffprobe JSON → metadata (a fake ffprobe on PATH), a real clip's probe, `worker_state` rows step by step, liveness,
 scheduler cycle traces, and the requests DeepSeek, YouTube token, Zernio and Telegram file helpers sent.
-`tests/runtime.rs` covers what a recording cannot: kills on timeout, timers, doorbells, accounting, heartbeats.
+`tests/runtime.rs` covers what a recording cannot: kills on timeout, timers, doorbells, heartbeats.
 
 Deliberate deviations: `with_timeout` drops the work it gave up on (a raced promise ran on unobserved);
 `youtube_access_token` refuses a response without `access_token` (the goldens' backend returned `undefined`); a lost

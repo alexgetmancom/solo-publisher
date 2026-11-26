@@ -23,10 +23,6 @@ impl DeliveryPayload {
     pub fn fields(&self) -> &Map<String, Value> {
         &self.0
     }
-
-    pub fn into_fields(self) -> Map<String, Value> {
-        self.0
-    }
 }
 
 /// Why a delivery is sent again from the beginning. There is no safe default:

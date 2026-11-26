@@ -21,7 +21,7 @@ use crate::context::OpError;
 static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-story-(standard|telegram)\.[^.]+$").unwrap());
 
 /// `diskReport`.
-pub fn disk_report(sqlite: &Connection, config: &Config) -> Result<Value, OpError> {
+pub(super) fn disk_report(sqlite: &Connection, config: &Config) -> Result<Value, OpError> {
     let mut directories: Vec<(String, PathBuf)> = required_data_directories(config)
         .into_iter()
         .map(|entry| (entry.name.to_owned(), entry.path))
@@ -180,7 +180,7 @@ fn referenced_post_asset_ids(sqlite: &Connection) -> Result<HashSet<i64>, OpErro
     Ok(ids)
 }
 
-pub struct OrphanedVariants {
+pub(crate) struct OrphanedVariants {
     pub total: usize,
     pub orphaned: Vec<String>,
     pub bytes: u64,
@@ -196,7 +196,7 @@ fn without_extension(name: &str) -> &str {
 
 /// `orphanedStoryVariants`: a variant's name starts with its source's
 /// content-addressed stem, which is the only link between the two.
-pub fn orphaned_story_variants(sqlite: &Connection, config: &Config) -> Result<OrphanedVariants, OpError> {
+pub(crate) fn orphaned_story_variants(sqlite: &Connection, config: &Config) -> Result<OrphanedVariants, OpError> {
     let mut live = HashSet::new();
     for source in known_sources(sqlite)? {
         let path = Path::new(&source);

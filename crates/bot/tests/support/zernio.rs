@@ -32,7 +32,7 @@ enum Answer {
     Json(Value),
 }
 
-pub struct GoldenZernio {
+pub(crate) struct GoldenZernio {
     telegram: Rc<FakeTelegram>,
     answer: RefCell<Option<Answer>>,
     /// `GET posts/<id>` answers, by post id.
@@ -41,7 +41,7 @@ pub struct GoldenZernio {
 }
 
 impl GoldenZernio {
-    pub fn new(telegram: Rc<FakeTelegram>) -> Self {
+    pub(crate) fn new(telegram: Rc<FakeTelegram>) -> Self {
         Self {
             telegram,
             answer: RefCell::new(None),
@@ -51,7 +51,7 @@ impl GoldenZernio {
     }
 
     /// Applies what the case's seed notes say the recorder set up.
-    pub fn script(&self, seed: &Value, config: &SharedConfig) {
+    pub(crate) fn script(&self, seed: &Value, config: &SharedConfig) {
         let notes: Vec<&str> = seed
             .as_array()
             .into_iter()
@@ -91,7 +91,7 @@ impl GoldenZernio {
 
     /// `listZernioAccounts`: no key, no request; anything but a 2xx JSON
     /// answer is an error.
-    pub fn accounts(&self, config: &Config) -> domain::Result<Vec<ZernioAccount>> {
+    pub(crate) fn accounts(&self, config: &Config) -> domain::Result<Vec<ZernioAccount>> {
         if config.zernio_api_key.as_deref().is_none_or(str::is_empty) {
             return Err(domain::Error::message("ZERNIO_API_KEY is missing"));
         }
@@ -117,7 +117,7 @@ impl GoldenZernio {
     }
     /// `zernioPostOutcome(config, providerPostId, platform)`: what the
     /// provider says became of one publication.
-    pub fn post_outcome(&self, provider_post_id: &str, platform: &str) -> domain::Result<ProviderOutcome> {
+    pub(crate) fn post_outcome(&self, provider_post_id: &str, platform: &str) -> domain::Result<ProviderOutcome> {
         if !self.key_set.get() {
             return Err(domain::Error::message("ZERNIO_API_KEY is missing"));
         }

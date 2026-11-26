@@ -14,14 +14,14 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
 
-pub fn repo_root() -> PathBuf {
+pub(crate) fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
         .unwrap()
 }
 
-pub struct FixedClock(pub Cell<Timestamp>);
+pub(crate) struct FixedClock(pub Cell<Timestamp>);
 
 impl Clock for FixedClock {
     fn now(&self) -> Timestamp {
@@ -29,23 +29,23 @@ impl Clock for FixedClock {
     }
 }
 
-pub fn instant(value: &Value) -> Timestamp {
+pub(crate) fn instant(value: &Value) -> Timestamp {
     foundation::time::parse_iso_instant(value.as_str().expect("clock is a string")).unwrap()
 }
 
-pub fn arg<T: DeserializeOwned>(args: &[Value], index: usize) -> T {
+pub(crate) fn arg<T: DeserializeOwned>(args: &[Value], index: usize) -> T {
     serde_json::from_value(args.get(index).cloned().unwrap_or(Value::Null))
         .unwrap_or_else(|error| panic!("argument {index} of {args:?}: {error}"))
 }
 
 /// A result as JavaScript holds it: through `JSON.stringify`, so `12.0` read
 /// from a JSON column is the number `12`, as in the recording.
-pub fn out(value: impl Serialize) -> Value {
+pub(crate) fn out(value: impl Serialize) -> Value {
     serde_json::from_str(&domain::json::stringify(&serde_json::to_value(value).unwrap())).unwrap()
 }
 
 /// `{"$": "<name>.<field>"}` arguments replaced by fields of bound results.
-pub fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
+pub(crate) fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
     match value {
         Value::Array(items) => Value::Array(items.iter().map(|item| resolve(item, vars)).collect()),
         Value::Object(object) => match object.get("$") {
@@ -61,13 +61,13 @@ pub fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
     }
 }
 
-pub fn lookup<'a>(vars: &'a Map<String, Value>, reference: &str) -> &'a Value {
+pub(crate) fn lookup<'a>(vars: &'a Map<String, Value>, reference: &str) -> &'a Value {
     let (name, field) = reference.split_once('.').expect("reference is <name>.<field>");
     &vars.get(name).unwrap_or_else(|| panic!("unbound {name}"))[field]
 }
 
 /// The dump the recording script took, statement for statement.
-pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
+pub(crate) fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     let strings = |sql: &str, param: Option<&str>| -> Vec<String> {
         let mut statement = sqlite.prepare(sql).unwrap();
         let rows = statement
@@ -102,7 +102,7 @@ pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
 
 /// What the TypeScript backend recorded for a spec file before the cutover:
 /// `<spec>.golden.json` beside it, with `<root>` standing for this checkout.
-pub fn golden(spec: &Path) -> Value {
+pub(crate) fn golden(spec: &Path) -> Value {
     let path = spec.with_extension("golden.json");
     let text = std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
     serde_json::from_str(&text.replace("<root>", &repo_root().display().to_string())).unwrap()
@@ -110,7 +110,7 @@ pub fn golden(spec: &Path) -> Value {
 
 /// Every step result and every table of every scenario, recording against
 /// Rust; the differences, described.
-pub fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
+pub(crate) fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
     assert_eq!(expected.len(), actual.len(), "scenario count");
     let mut failures = Vec::new();
     for (expected, actual) in expected.iter().zip(actual) {

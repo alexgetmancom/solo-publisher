@@ -12,7 +12,7 @@ use std::fmt;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::LazyLock;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use foundation::js;
 use foundation::redact::redact_external_secrets;
@@ -75,43 +75,15 @@ impl fmt::Display for ExternalError {
 
 impl std::error::Error for ExternalError {}
 
-/// Where the wait on other providers is accounted (the bot's tap
-/// measurement). Work outside an update has no account, and a client built
-/// without one counts nothing.
-pub trait CallTiming {
-    /// One finished provider call, failed ones included.
-    fn provider_call(&self, duration_ms: f64);
-    /// The body of a call already counted.
-    fn provider_body_read(&self, duration_ms: f64);
-    /// A Telegram call no Bot API client sees.
-    fn telegram_call(&self, method: &str, duration_ms: f64);
-}
-
 /// The one way out of the process to another provider.
 #[derive(Clone)]
 pub struct HttpClient {
     transport: Rc<dyn Transport>,
-    timing: Option<Rc<dyn CallTiming>>,
 }
 
 impl HttpClient {
     pub fn new(transport: Rc<dyn Transport>) -> Self {
-        Self {
-            transport,
-            timing: None,
-        }
-    }
-
-    /// The same client, its calls billed to `timing`.
-    pub fn timed_by(&self, timing: Rc<dyn CallTiming>) -> Self {
-        Self {
-            transport: Rc::clone(&self.transport),
-            timing: Some(timing),
-        }
-    }
-
-    pub(crate) fn timing(&self) -> Option<&dyn CallTiming> {
-        self.timing.as_deref()
+        Self { transport }
     }
 
     /// A fetch under the 30 s default ceiling.
@@ -124,13 +96,7 @@ impl HttpClient {
     /// request's own `deadline` keeps holding over both.
     pub async fn fetch_within(&self, request: HttpRequest, ceiling: Duration) -> Result<Response, ExternalError> {
         let label = label(&request);
-        let started = Instant::now();
         let outcome = tokio::time::timeout(ceiling, self.transport.send(request)).await;
-        // Every provider this process calls comes through here, so a tap that
-        // waits on one can say so. A failed request is still a wait.
-        if let Some(timing) = &self.timing {
-            timing.provider_call(elapsed_ms(started));
-        }
         match outcome {
             Err(_) => Err(ExternalError::Transport(ExternalTransportError {
                 message: format!("{label} timed out after {}s", ceiling.as_millis().div_ceil(1000)),
@@ -140,17 +106,16 @@ impl HttpClient {
                 message: format!("{label} failed before receiving an HTTP response"),
                 cause: failure.message,
             })),
-            Ok(Ok(response)) => Ok(Response::new(response, label, self.timing.clone())),
+            Ok(Ok(response)) => Ok(Response::new(response, label)),
         }
     }
 
     /// The bare call a few callers make: no ceiling but the
-    /// request's own deadline, no provider accounting, the failure as the
-    /// transport reported it.
+    /// request's own deadline, the failure as the transport reported it.
     pub async fn exchange(&self, request: HttpRequest) -> Result<Response, TransportFailure> {
         let label = label(&request);
         let response = self.transport.send(request).await?;
-        Ok(Response::new(response, label, None))
+        Ok(Response::new(response, label))
     }
 
     /// The body of a 2xx as JSON (an empty body is `{}`);
@@ -192,10 +157,6 @@ fn label(request: &HttpRequest) -> String {
     format!("{} {}", request.method.as_str(), safe_url(&request.url))
 }
 
-fn elapsed_ms(started: Instant) -> f64 {
-    started.elapsed().as_secs_f64() * 1000.0
-}
-
 /// A response whose body is still to be read.
 pub struct Response {
     pub status: u16,
@@ -203,17 +164,15 @@ pub struct Response {
     body: Box<dyn ResponseBody>,
     /// `<METHOD> <redacted url>`, for the messages of failed reads.
     label: String,
-    timing: Option<Rc<dyn CallTiming>>,
 }
 
 impl Response {
-    fn new(response: HttpResponse, label: String, timing: Option<Rc<dyn CallTiming>>) -> Self {
+    fn new(response: HttpResponse, label: String) -> Self {
         Self {
             status: response.status,
             headers: response.headers,
             body: response.body,
             label,
-            timing,
         }
     }
 
@@ -223,17 +182,14 @@ impl Response {
     }
 
     pub async fn bytes(mut self) -> Result<Vec<u8>, ExternalError> {
-        let started = Instant::now();
         let mut bytes = Vec::new();
-        let read = loop {
+        loop {
             match self.body.next_chunk().await {
                 Ok(Some(chunk)) => bytes.extend_from_slice(&chunk),
-                Ok(None) => break Ok(()),
-                Err(failure) => break Err(failure),
+                Ok(None) => return Ok(bytes),
+                Err(failure) => return Err(self.read_failed(failure)),
             }
-        };
-        self.read_finished(started, read)?;
-        Ok(bytes)
+        }
     }
 
     /// `response.text()`: UTF-8 with replacement. Bun keeps a leading BOM.
@@ -243,39 +199,22 @@ impl Response {
 
     /// Streams the body into a new file at `path` (`Bun.write(path, response)`).
     pub async fn save(mut self, path: &Path) -> Result<(), ExternalError> {
-        let started = Instant::now();
-        let written = async {
-            let mut file = tokio::fs::File::create(path)
-                .await
-                .map_err(|error| ExternalError::message(error.to_string()))?;
-            loop {
-                match self.body.next_chunk().await {
-                    Ok(Some(chunk)) => file
-                        .write_all(&chunk)
-                        .await
-                        .map_err(|error| ExternalError::message(error.to_string()))?,
-                    Ok(None) => break,
-                    Err(failure) => return Err(self.read_failed(failure)),
-                }
+        let mut file = tokio::fs::File::create(path)
+            .await
+            .map_err(|error| ExternalError::message(error.to_string()))?;
+        loop {
+            match self.body.next_chunk().await {
+                Ok(Some(chunk)) => file
+                    .write_all(&chunk)
+                    .await
+                    .map_err(|error| ExternalError::message(error.to_string()))?,
+                Ok(None) => break,
+                Err(failure) => return Err(self.read_failed(failure)),
             }
-            file.flush()
-                .await
-                .map_err(|error| ExternalError::message(error.to_string()))
         }
-        .await;
-        if let Some(timing) = &self.timing {
-            timing.provider_body_read(elapsed_ms(started));
-        }
-        written
-    }
-
-    fn read_finished(&self, started: Instant, read: Result<(), TransportFailure>) -> Result<(), ExternalError> {
-        // The read is where the wait for the body is, so that is where it is
-        // measured, against the call that fetched it.
-        if let Some(timing) = &self.timing {
-            timing.provider_body_read(elapsed_ms(started));
-        }
-        read.map_err(|failure| self.read_failed(failure))
+        file.flush()
+            .await
+            .map_err(|error| ExternalError::message(error.to_string()))
     }
 
     /// A body that stopped arriving is a response that never fully came: the

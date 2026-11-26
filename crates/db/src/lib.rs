@@ -6,7 +6,6 @@ mod date_guards;
 mod migrations;
 
 use std::path::Path;
-use std::time::Duration;
 use std::{fs, io};
 
 pub use date_guards::install_date_guards;
@@ -29,10 +28,6 @@ pub struct BackendDb {
 
 impl BackendDb {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, Error> {
-        Self::open_with_timeout(path, Duration::from_secs(30))
-    }
-
-    pub fn open_with_timeout(path: impl AsRef<Path>, timeout: Duration) -> Result<Self, Error> {
         let path = path.as_ref();
         if path != Path::new(":memory:")
             && let Some(parent) = path.parent()
@@ -44,7 +39,7 @@ impl BackendDb {
             OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE | OpenFlags::SQLITE_OPEN_NO_MUTEX,
         )?;
         sqlite.execute_batch("PRAGMA journal_mode = WAL")?;
-        sqlite.execute_batch(&format!("PRAGMA busy_timeout = {}", timeout.as_millis()))?;
+        sqlite.execute_batch("PRAGMA busy_timeout = 30000")?;
         // Read latency under concurrent writes is dominated by the writers' fsyncs
         // and by page reads missing a tiny cache. In WAL mode NORMAL keeps commits
         // durable across process crashes and only risks the last commits on a host

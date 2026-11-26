@@ -111,7 +111,7 @@ fn define(
 }
 
 /// `defineVideoActionHandlers`.
-pub fn register(registry: &mut Registry) {
+pub(super) fn register(registry: &mut Registry) {
     use Entity::{Draft, Session};
     let r = registry;
     define(r, "cancel_dialog", handle_cancel_dialog, Session, &[], false, true);

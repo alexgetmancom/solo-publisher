@@ -2,7 +2,7 @@
 //! already answered.
 
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use foundation::config::Config;
 use serde_json::{Value, json};
@@ -67,15 +67,7 @@ pub async fn materialize_telegram_file(
             options.extension.unwrap_or_else(|| extname(&file_path))
         )),
     };
-    // A Telegram call the Bot API client never sees: the file endpoint, with
-    // the bytes landing on disk after the response. The clock starts once the
-    // path is known, because `getFile` is already counted.
-    let started = Instant::now();
-    let written = place(client, config, token, &file_path, &target).await;
-    if let Some(timing) = client.timing() {
-        timing.telegram_call("downloadFile", started.elapsed().as_secs_f64() * 1000.0);
-    }
-    written?;
+    place(client, config, token, &file_path, &target).await?;
     Ok(Materialized {
         path: target,
         temporary: options.target.is_none(),

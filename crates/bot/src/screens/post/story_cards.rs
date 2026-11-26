@@ -27,7 +27,7 @@ use crate::effects::{CardRef, Effect, execute};
 const STORY_CARD_WAIT_POLLS: u32 = 60;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Intent {
+pub(super) enum Intent {
     Publish,
     Schedule,
 }
@@ -82,7 +82,7 @@ fn cards_ready(cards: &[StoryCardState]) -> bool {
 }
 
 /// `showStoryCardChoice`: `None` when there is nothing to ask.
-pub fn show_story_card_choice(
+pub(super) fn show_story_card_choice(
     ctx: &Ctx,
     actor_id: i64,
     draft_id: i64,

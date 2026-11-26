@@ -31,7 +31,7 @@ type Effects = crate::Result<Vec<Effect>>;
 /// `VideoConversationState`: the conversation row with its step known to be
 /// one of the flow's and the platforms it schedules.
 #[derive(Clone, Debug, PartialEq)]
-pub struct VideoState {
+pub(super) struct VideoState {
     pub draft_id: Option<i64>,
     pub step: String,
     pub selected: Vec<VideoTarget>,
@@ -42,7 +42,7 @@ pub struct VideoState {
 
 /// `VideoConversationInput`: what a save writes; `revision`, when given, must
 /// still be the stored one.
-pub struct VideoStateInput {
+pub(super) struct VideoStateInput {
     pub draft_id: Option<i64>,
     pub step: String,
     pub selected: Vec<VideoTarget>,
@@ -53,7 +53,7 @@ pub struct VideoStateInput {
 
 impl VideoState {
     /// The same session, saved again as it is (`{ ...session, … }`).
-    pub fn input(&self) -> VideoStateInput {
+    pub(super) fn input(&self) -> VideoStateInput {
         VideoStateInput {
             draft_id: self.draft_id,
             step: self.step.clone(),
@@ -75,13 +75,13 @@ impl VideoState {
         }
     }
 
-    pub fn single_edit(&self) -> bool {
+    pub(super) fn single_edit(&self) -> bool {
         self.data.get("is_single_edit").is_some_and(domain::json::truthy)
     }
 
     /// `{ ...session.data, selectedTargets: session.selected }`: what the flow
     /// reads its transitions from.
-    pub fn flow_data(&self) -> JsonObject {
+    pub(super) fn flow_data(&self) -> JsonObject {
         with_selected(&self.data, &self.selected)
     }
 }
@@ -102,11 +102,11 @@ fn selection(selected: &[VideoTarget]) -> JsonObject {
 }
 
 /// `parseVideoStep`.
-pub fn is_video_step(value: &str) -> bool {
+pub(super) fn is_video_step(value: &str) -> bool {
     VIDEO_FLOW.steps.iter().any(|step| step.name == value)
 }
 
-pub fn require_video_target(value: &str) -> crate::Result<VideoTarget> {
+pub(super) fn require_video_target(value: &str) -> crate::Result<VideoTarget> {
     VideoTarget::parse(value).ok_or_else(|| StudioError::new("err.unknown-platform").into())
 }
 
@@ -127,7 +127,7 @@ fn parse_selected_targets(value: &Value) -> Option<Vec<VideoTarget>> {
 }
 
 /// `getVideoState`: a row whose step or selection no longer parses is retired.
-pub fn get_video_state(ctx: &Ctx, actor_id: i64) -> crate::Result<Option<VideoState>> {
+pub(super) fn get_video_state(ctx: &Ctx, actor_id: i64) -> crate::Result<Option<VideoState>> {
     let Some(state) = ctx.sessions().get(actor_id, ConversationSessionKind::Video)? else {
         return Ok(None);
     };
@@ -154,7 +154,7 @@ pub fn get_video_state(ctx: &Ctx, actor_id: i64) -> crate::Result<Option<VideoSt
 }
 
 /// `saveVideoState`.
-pub fn save_video_state(ctx: &Ctx, actor_id: i64, input: VideoStateInput) -> crate::Result<VideoState> {
+pub(super) fn save_video_state(ctx: &Ctx, actor_id: i64, input: VideoStateInput) -> crate::Result<VideoState> {
     let data = with_selected(&input.data, &input.selected);
     let saved = ctx.sessions().save(
         actor_id,
@@ -177,16 +177,16 @@ pub fn save_video_state(ctx: &Ctx, actor_id: i64, input: VideoStateInput) -> cra
     })
 }
 
-pub fn clear_video_state(ctx: &Ctx, actor_id: i64) -> crate::Result<()> {
+pub(super) fn clear_video_state(ctx: &Ctx, actor_id: i64) -> crate::Result<()> {
     Ok(ctx.sessions().clear(actor_id, ConversationSessionKind::Video)?)
 }
 
 /// What a transition adds to the data once it knows the step it leads to.
-pub type Decorate<'a> = &'a dyn Fn(JsonObject, &str) -> crate::Result<JsonObject>;
+pub(super) type Decorate<'a> = &'a dyn Fn(JsonObject, &str) -> crate::Result<JsonObject>;
 
 /// `advancePublicationFlow` over the video flow: the step accepts `input`,
 /// the dialog moves to the step it names and consumes one session revision.
-pub fn advance(
+pub(super) fn advance(
     ctx: &Ctx,
     actor_id: i64,
     session: &VideoState,
@@ -216,7 +216,7 @@ pub fn advance(
 }
 
 /// `mm:ss`, the one way a clip's length is written to the operator.
-pub fn video_duration_label(seconds: f64) -> String {
+pub(super) fn video_duration_label(seconds: f64) -> String {
     format!(
         "{:0>2}:{:0>2}",
         number_to_string((seconds / 60.0).floor()),
@@ -224,7 +224,7 @@ pub fn video_duration_label(seconds: f64) -> String {
     )
 }
 
-pub fn video_target_label(target: &str) -> String {
+pub(super) fn video_target_label(target: &str) -> String {
     VideoTarget::parse(target).map_or_else(|| target.to_owned(), |target| target.label().to_owned())
 }
 
@@ -244,7 +244,7 @@ pub(super) fn time_settings(ctx: &Ctx, actor_id: i64) -> crate::Result<TimeSetti
 }
 
 /// `videoStepEffects`: whatever the flow's current step asks the operator for.
-pub fn video_step_effects(ctx: &Ctx, actor_id: i64, session: &VideoState) -> Effects {
+pub(super) fn video_step_effects(ctx: &Ctx, actor_id: i64, session: &VideoState) -> Effects {
     let time = time_settings(ctx, actor_id)?;
     let example = || manual_schedule_example(&time.zone, ctx.now());
     if let Some(step) = VideoWizardStep::parse(&session.step) {
@@ -318,7 +318,7 @@ fn script_prompt_effects(session: &VideoState) -> Effects {
 /// not a question of the flow's own (the upload, the rename from the card, a
 /// field edited on its own) keep the plain prompt: their way back is the
 /// cancel that returns to the card.
-pub fn video_error_effects(ctx: &Ctx, actor_id: i64, session: &VideoState, message: &str) -> Effects {
+pub(super) fn video_error_effects(ctx: &Ctx, actor_id: i64, session: &VideoState, message: &str) -> Effects {
     let rerenders = !session.single_edit()
         && (is_video_wizard_step(&session.step)
             || matches!(session.step.as_str(), "schedule_common" | "schedule_target"));
@@ -407,7 +407,7 @@ fn video_time_effects(session: &VideoState, text: String) -> Effects {
 
 /// One time for every platform, or one each. Built here for both ways in: the
 /// wizard's own step and "📅 Schedule" on a finished draft's card.
-pub fn schedule_choice_keyboard(
+pub(super) fn schedule_choice_keyboard(
     draft_id: Option<i64>,
     revision: i64,
     selected: &[VideoTarget],
@@ -435,7 +435,7 @@ pub fn schedule_choice_keyboard(
 /// confirm/back keyboard, for a session already on `schedule_confirm`. Shared
 /// because the schedule is completed from slot buttons and from a typed date,
 /// and both must land on the identical confirmation.
-pub fn video_schedule_confirmation_effects(
+pub(super) fn video_schedule_confirmation_effects(
     ctx: &Ctx,
     actor_id: i64,
     session: &VideoState,

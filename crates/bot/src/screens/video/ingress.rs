@@ -14,13 +14,13 @@ use crate::media_ingress::{AssetFile, import_telegram_asset};
 use crate::registry::TelegramVideoFile;
 
 /// The intake's side: the file it captured when the operator sent it.
-pub fn store_intake_video<'a>(ctx: &'a Ctx, file: &'a TelegramVideoFile) -> Fut<'a, crate::Result<i64>> {
+pub(super) fn store_intake_video<'a>(ctx: &'a Ctx, file: &'a TelegramVideoFile) -> Fut<'a, crate::Result<i64>> {
     Box::pin(store_telegram_video(ctx, ctx.actor_id(), Some(file)))
 }
 
 /// `storeTelegramVideo`: the captured file, or the video or document of the
 /// message being handled, as a Content video asset; returns its id.
-pub async fn store_telegram_video(ctx: &Ctx, actor_id: i64, source: Option<&TelegramVideoFile>) -> crate::Result<i64> {
+pub(super) async fn store_telegram_video(ctx: &Ctx, actor_id: i64, source: Option<&TelegramVideoFile>) -> crate::Result<i64> {
     if ctx.config.controller_bot_token.as_deref().is_none_or(str::is_empty) {
         return Err(crate::error("Telegram bot token is not configured."));
     }

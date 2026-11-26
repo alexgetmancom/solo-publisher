@@ -29,7 +29,7 @@ use serde_json::Value;
 
 use super::zernio::GoldenZernio;
 
-pub struct FixedClock(pub Cell<Timestamp>);
+pub(crate) struct FixedClock(pub Cell<Timestamp>);
 
 impl Clock for FixedClock {
     fn now(&self) -> Timestamp {
@@ -44,7 +44,7 @@ fn not_in_host(what: &str) -> ! {
 }
 
 /// The real stores run on the case's clock; the rest is below.
-pub struct GoldenHost {
+pub(crate) struct GoldenHost {
     auth_circuit: AuthCircuitBreaker<Rc<FixedClock>>,
     story_cards: StoryCardStore<Rc<FixedClock>>,
     video_completion: VideoCompletionNotice<Rc<FixedClock>>,
@@ -53,7 +53,7 @@ pub struct GoldenHost {
 }
 
 impl GoldenHost {
-    pub fn new(config: SharedConfig, clock: Rc<FixedClock>) -> Self {
+    pub(crate) fn new(config: SharedConfig, clock: Rc<FixedClock>) -> Self {
         Self {
             auth_circuit: AuthCircuitBreaker::new(clock.clone()),
             story_cards: StoryCardStore::new(clock.clone()),
@@ -285,7 +285,7 @@ impl Host for GoldenHost {
     }
 }
 
-pub struct GoldenAdapters {
+pub(crate) struct GoldenAdapters {
     pub zernio: Rc<GoldenZernio>,
 }
 

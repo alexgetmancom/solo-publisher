@@ -35,10 +35,6 @@ pub struct Runner {
 }
 
 impl Runner {
-    pub fn is_running(&self) -> bool {
-        self.running.get()
-    }
-
     /// Resolves once polling has ended, by [`Runner::stop`] or on its own (a
     /// wrong token, another poller); `stop` then returns what it ended with.
     pub async fn ended(&self) {

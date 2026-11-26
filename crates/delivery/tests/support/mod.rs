@@ -35,7 +35,7 @@ const GOLDEN_DATA_ROOT: &str = "/tmp/solo-publisher-goldens/delivery-scenarios";
 static UUID: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").unwrap());
 
-pub fn repo_root() -> PathBuf {
+pub(crate) fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()
@@ -44,7 +44,7 @@ pub fn repo_root() -> PathBuf {
 
 /// The scenario's clock, shared by every boundary that stamps with it.
 #[derive(Clone)]
-pub struct SharedClock(pub Rc<Cell<Timestamp>>);
+pub(crate) struct SharedClock(pub Rc<Cell<Timestamp>>);
 
 impl Clock for SharedClock {
     fn now(&self) -> Timestamp {
@@ -52,7 +52,7 @@ impl Clock for SharedClock {
     }
 }
 
-pub fn instant(value: &str) -> Timestamp {
+pub(crate) fn instant(value: &str) -> Timestamp {
     foundation::time::parse_iso_instant(value).unwrap()
 }
 
@@ -73,7 +73,7 @@ impl WorkerBell for Quiet {
 }
 
 /// The stores behind the boundaries, on the scenario's clock.
-pub struct Host {
+pub(crate) struct Host {
     jitter: FixedJitter,
     auth_circuit: AuthCircuitBreaker<SharedClock>,
     usage: UsageRecorder<SharedClock>,
@@ -82,7 +82,7 @@ pub struct Host {
 }
 
 impl Host {
-    pub fn boundaries(&self) -> Boundaries<'_> {
+    pub(crate) fn boundaries(&self) -> Boundaries<'_> {
         Boundaries {
             jitter: &self.jitter,
             bell: &Quiet,
@@ -122,7 +122,7 @@ fn sha256(bytes: &[u8]) -> String {
 }
 
 /// Credentials back to `{{NAME}}` and the data directory to `$DATA`.
-pub struct Scrubber {
+pub(crate) struct Scrubber {
     data: String,
     secrets: Vec<(String, String)>,
 }
@@ -145,7 +145,7 @@ impl Scrubber {
         }
     }
 
-    pub fn text(&self, value: &str) -> String {
+    pub(crate) fn text(&self, value: &str) -> String {
         let mut text = value.replace(&self.data, "$DATA");
         for (name, secret) in &self.secrets {
             text = text.replace(secret.as_str(), &format!("{{{{{name}}}}}"));
@@ -159,7 +159,7 @@ impl Scrubber {
         UUID.replace_all(&text, "$$UUID").into_owned()
     }
 
-    pub fn deep(&self, value: &Value) -> Value {
+    pub(crate) fn deep(&self, value: &Value) -> Value {
         match value {
             Value::String(text) => Value::String(self.text(text)),
             Value::Array(items) => Value::Array(items.iter().map(|item| self.deep(item)).collect()),
@@ -321,7 +321,7 @@ impl Transport for Recorder {
 }
 
 /// The dump the goldens were recorded with, statement for statement.
-pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
+pub(crate) fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     let strings = |sql: &str, param: Option<&str>| -> Vec<String> {
         let mut statement = sqlite.prepare(sql).unwrap();
         let rows = statement
@@ -355,7 +355,7 @@ pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
 }
 
 /// What one call of a scenario runs with.
-pub struct Scenario {
+pub(crate) struct Scenario {
     pub db: Rc<BackendDb>,
     pub host: Host,
     pub clock: SharedClock,
@@ -366,13 +366,13 @@ pub struct Scenario {
 }
 
 impl Scenario {
-    pub fn sqlite(&self) -> &Connection {
+    pub(crate) fn sqlite(&self) -> &Connection {
         unsafe_db(&self.db)
     }
 
     /// The configuration as the recorded scenarios build it per call: the environment,
     /// then the credentials stored in `platform_tokens`.
-    pub fn config(&self) -> Arc<Config> {
+    pub(crate) fn config(&self) -> Arc<Config> {
         let mut config = load_config(self.env.iter().cloned()).unwrap();
         let credential = |name: &str| self.credentials.get(name).and_then(Value::as_str).map(str::to_owned);
         config.x_access_token = credential("X_ACCESS_TOKEN");
@@ -382,7 +382,7 @@ impl Scenario {
         Arc::new(config)
     }
 
-    pub fn adapters(&self) -> AdapterContext {
+    pub(crate) fn adapters(&self) -> AdapterContext {
         AdapterContext {
             config: self.config(),
             client: self.client.clone(),
@@ -390,18 +390,18 @@ impl Scenario {
         }
     }
 
-    pub fn delivery(&self) -> delivery::Delivery<'_> {
+    pub(crate) fn delivery(&self) -> delivery::Delivery<'_> {
         delivery::Delivery::new(&self.db, self.host.boundaries(), self.adapters())
     }
 
-    pub fn now(&self) -> Timestamp {
+    pub(crate) fn now(&self) -> Timestamp {
         self.clock.now()
     }
 }
 
 /// An area's calls: the step's name and arguments, its JSON result or the
 /// message of its failure.
-pub type Call = for<'a> fn(&'a Scenario, &'a str, Vec<Value>) -> LocalBoxFuture<'a, Result<Value, String>>;
+pub(crate) type Call = for<'a> fn(&'a Scenario, &'a str, Vec<Value>) -> LocalBoxFuture<'a, Result<Value, String>>;
 
 /// `{"$": "<name>.<field>"}` arguments replaced by fields of bound results.
 fn resolve(value: &Value, vars: &Map<String, Value>) -> Value {
@@ -468,7 +468,7 @@ fn write_files(data: &Path, at: std::time::SystemTime, files: Option<&Value>) {
 
 /// Every file under the data directory, relative and sorted: what a call
 /// left on disk.
-pub fn files(data: &Path) -> Value {
+pub(crate) fn files(data: &Path) -> Value {
     fn walk(root: &Path, directory: &Path, out: &mut Vec<String>) {
         let Ok(entries) = std::fs::read_dir(directory) else {
             return;
@@ -599,7 +599,7 @@ async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
 
 /// Every scenario of the spec through `call`, on a single-threaded runtime
 /// with a `LocalSet`, as the Studio runs.
-pub fn rust_side(spec: &Value, call: Call, label: &str) -> Vec<Value> {
+pub(crate) fn rust_side(spec: &Value, call: Call, label: &str) -> Vec<Value> {
     run_on(
         tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -613,7 +613,7 @@ pub fn rust_side(spec: &Value, call: Call, label: &str) -> Vec<Value> {
 
 /// [`rust_side`] with tokio's clock paused: a timer fires as soon as nothing
 /// else can run, so a ten-minute timeout costs nothing.
-pub fn rust_side_paused(spec: &Value, call: Call, label: &str) -> Vec<Value> {
+pub(crate) fn rust_side_paused(spec: &Value, call: Call, label: &str) -> Vec<Value> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .start_paused(true)
@@ -634,7 +634,7 @@ fn run_on(runtime: tokio::runtime::Runtime, spec: &Value, call: Call, label: &st
 }
 
 /// What was recorded for a spec file: `<spec>.golden.json` beside it.
-pub fn golden_side(spec: &Path) -> Vec<Value> {
+pub(crate) fn golden_side(spec: &Path) -> Vec<Value> {
     let path = spec.with_extension("golden.json");
     let text = std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
     let parsed: Value = serde_json::from_str(&text).unwrap();
@@ -642,7 +642,7 @@ pub fn golden_side(spec: &Path) -> Vec<Value> {
 }
 
 /// Every step result, request and table, golden against Rust.
-pub fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
+pub(crate) fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
     assert_eq!(expected.len(), actual.len(), "scenario count");
     let mut failures = Vec::new();
     for (expected, actual) in expected.iter().zip(actual) {
@@ -766,7 +766,7 @@ fn without_encoder_bytes(scenario: &mut Value) {
 }
 
 /// The whole comparison for one area: its spec, its golden, its Rust calls.
-pub fn compare(spec_file: &str, call: Call, label: &str) {
+pub(crate) fn compare(spec_file: &str, call: Call, label: &str) {
     let spec_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join(spec_file);
     let spec: Value = serde_json::from_str(&std::fs::read_to_string(&spec_path).unwrap()).unwrap();
     let mut expected = golden_side(&spec_path);

@@ -108,7 +108,7 @@ fn hono_path(path: &str) -> String {
 const RESERVED_URI: &[char] = &[';', '/', '?', ':', '@', '&', '=', '+', '$', ',', '#'];
 
 /// `decodeURIComponent(value)`; `None` where it throws a `URIError`.
-pub fn decode_uri_component(value: &str) -> Option<String> {
+pub(crate) fn decode_uri_component(value: &str) -> Option<String> {
     decode(value, &[])
 }
 

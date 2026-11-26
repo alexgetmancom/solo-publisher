@@ -17,13 +17,13 @@ use super::telegram::FakeTelegram;
 
 static ANSWER: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^The deploy agent answers (\d+) (.*)\.$").unwrap());
 
-pub struct GoldenDeployAgent {
+pub(crate) struct GoldenDeployAgent {
     telegram: Rc<FakeTelegram>,
     answer: RefCell<Option<AgentResponse>>,
 }
 
 impl GoldenDeployAgent {
-    pub fn new(telegram: Rc<FakeTelegram>) -> Self {
+    pub(crate) fn new(telegram: Rc<FakeTelegram>) -> Self {
         Self {
             telegram,
             answer: RefCell::new(None),
@@ -31,7 +31,7 @@ impl GoldenDeployAgent {
     }
 
     /// Takes the agent's answer from the case's seed notes, if it has one.
-    pub fn script(&self, seed: &Value) {
+    pub(crate) fn script(&self, seed: &Value) {
         let answer = seed.as_array().into_iter().flatten().find_map(|note| {
             let captures = ANSWER.captures(note.as_str()?)?;
             Some(AgentResponse {

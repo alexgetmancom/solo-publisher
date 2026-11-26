@@ -21,7 +21,7 @@ static RANDOM_QUERY: LazyLock<Regex> =
 
 /// The recorder's `sortKeys`: keys sorted recursively, the run's temporary
 /// directory written as `<tmp>`, OAuth randomness as `<random>`.
-pub fn sort_keys(value: &Value, tmp: &str) -> Value {
+pub(crate) fn sort_keys(value: &Value, tmp: &str) -> Value {
     match value {
         Value::Array(items) => Value::Array(items.iter().map(|item| sort_keys(item, tmp)).collect()),
         Value::Object(object) => {
@@ -89,7 +89,7 @@ struct State {
     now_seconds: i64,
 }
 
-pub struct FakeTelegram {
+pub(crate) struct FakeTelegram {
     state: RefCell<State>,
     release: Rc<Semaphore>,
     tmp: String,
@@ -97,7 +97,7 @@ pub struct FakeTelegram {
 }
 
 impl FakeTelegram {
-    pub fn new(tmp: &str, bot_user: Value) -> Self {
+    pub(crate) fn new(tmp: &str, bot_user: Value) -> Self {
         Self {
             state: RefCell::default(),
             release: Rc::new(Semaphore::new(0)),
@@ -107,7 +107,7 @@ impl FakeTelegram {
     }
 
     /// What the recorder had in place before one step.
-    pub fn prepare(&self, meta: &Value, now_seconds: i64) {
+    pub(crate) fn prepare(&self, meta: &Value, now_seconds: i64) {
         let mut state = self.state.borrow_mut();
         state.now_seconds = now_seconds;
         state.files = meta["files"]
@@ -132,18 +132,18 @@ impl FakeTelegram {
         state.opaque_uploads = meta["opaqueUploads"] == Value::Bool(true);
     }
 
-    pub fn holds(&self) -> bool {
+    pub(crate) fn holds(&self) -> bool {
         self.state.borrow().hold.is_some()
     }
 
     /// Lets the held call answer.
-    pub fn release(&self) {
+    pub(crate) fn release(&self) {
         self.release.add_permits(1);
     }
 
     /// A plain HTTP request the bot made, recorded among the calls as the
     /// recorder's `fetch` stub records it.
-    pub fn record_http(&self, request: Value) {
+    pub(crate) fn record_http(&self, request: Value) {
         let payload = sort_keys(&request, &self.tmp);
         self.state
             .borrow_mut()
@@ -151,14 +151,14 @@ impl FakeTelegram {
             .push(json!({"method": "http", "payload": payload}));
     }
 
-    pub fn take_calls(&self) -> Vec<Value> {
+    pub(crate) fn take_calls(&self) -> Vec<Value> {
         std::mem::take(&mut self.state.borrow_mut().calls)
     }
 
     /// An update the harness feeds: the operator's message takes its id in the
     /// chat's sequence; a tapped message nobody stored (one the recorder
     /// injected) is stored as it arrives.
-    pub fn observe(&self, update: &Value) {
+    pub(crate) fn observe(&self, update: &Value) {
         let mut state = self.state.borrow_mut();
         if let Some(message) = update.get("message") {
             let chat = message["chat"]["id"].as_i64().unwrap_or_default();

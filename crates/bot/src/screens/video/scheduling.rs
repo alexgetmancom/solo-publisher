@@ -34,7 +34,7 @@ fn require_draft(session: &VideoState) -> crate::Result<i64> {
 /// `applyVideoScheduleDate`: slot buttons and a typed date advance
 /// identically, so the flow decides what comes next and neither caller
 /// recomputes the remaining platforms.
-pub fn apply_video_schedule_date(ctx: &Ctx, actor_id: i64, session: &VideoState, date: Timestamp) -> Effects {
+pub(super) fn apply_video_schedule_date(ctx: &Ctx, actor_id: i64, session: &VideoState, date: Timestamp) -> Effects {
     if session.draft_id.is_none() {
         return Err(StudioError::new("err.video-missing").into());
     }
@@ -57,7 +57,7 @@ pub fn apply_video_schedule_date(ctx: &Ctx, actor_id: i64, session: &VideoState,
     video_schedule_confirmation_effects(ctx, actor_id, &next, &video_schedule_dates(&schedule)?)
 }
 
-pub async fn finish_video_schedule(
+pub(super) async fn finish_video_schedule(
     ctx: &Ctx,
     actor_id: i64,
     session: &VideoState,
@@ -70,7 +70,7 @@ pub async fn finish_video_schedule(
 
 /// Telegram only renders the result; the immediate scheduling policy lives
 /// in Video Studio.
-pub async fn finish_video_now(ctx: &Ctx, actor_id: i64, session: &VideoState) -> Effects {
+pub(super) async fn finish_video_now(ctx: &Ctx, actor_id: i64, session: &VideoState) -> Effects {
     let draft_id = require_draft(session)?;
     let technical = ctx.services().videos.publish(actor_id, draft_id).await?;
     show_scheduled_video(ctx, actor_id, draft_id, &technical)

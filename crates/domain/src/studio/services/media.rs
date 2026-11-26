@@ -210,13 +210,7 @@ impl<'a> MediaService<'a> {
     }
 }
 
-#[cfg(unix)]
 fn restrict(path: &Path) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
     fs::set_permissions(path, fs::Permissions::from_mode(0o640)).map_err(io)
-}
-
-#[cfg(not(unix))]
-fn restrict(_: &Path) -> Result<()> {
-    Ok(())
 }

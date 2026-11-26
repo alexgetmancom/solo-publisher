@@ -13,7 +13,7 @@ fn failed(message: impl Into<String>) -> Value {
     json!({"ok": false, "message": message.into()})
 }
 
-pub async fn read_deployment_releases(config: &Config, http: &HttpClient) -> Value {
+pub(super) async fn read_deployment_releases(config: &Config, http: &HttpClient) -> Value {
     let url = config.deploy_agent_url.as_deref().filter(|url| !url.is_empty());
     let token = config.deploy_agent_token.as_deref().filter(|token| !token.is_empty());
     let (Some(url), Some(token)) = (url, token) else {

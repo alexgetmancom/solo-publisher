@@ -27,7 +27,7 @@ use crate::publication::unlanded::{Origin, UnlandedTarget, append_unlanded_contr
 use crate::publication::{CardRequest, PublicationCard};
 
 /// Every screen a post card can show.
-pub const DRAFT_VIEWS: [&str; 13] = [
+pub(super) const DRAFT_VIEWS: [&str; 13] = [
     "overview",
     "schedule",
     "schedule_ru",
@@ -101,7 +101,7 @@ fn view_callback(draft_id: i64, view: &str) -> crate::Result<String> {
 
 /// The post renderer (`publicationRenderers.post.card`): an unknown view reads
 /// as the overview.
-pub fn render_card(ctx: &Ctx, request: &CardRequest) -> crate::Result<PublicationCard> {
+pub(super) fn render_card(ctx: &Ctx, request: &CardRequest) -> crate::Result<PublicationCard> {
     let view = request.view.as_deref().filter(|view| is_draft_view(view));
     let (text, keyboard) = draft_preview(ctx, request.publication_id, view.unwrap_or("overview"))?;
     Ok(PublicationCard {

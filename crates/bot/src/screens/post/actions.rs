@@ -57,7 +57,7 @@ fn define(
 }
 
 /// `definePostActionHandlers`.
-pub fn register(registry: &mut Registry) {
+pub(super) fn register(registry: &mut Registry) {
     use Entity::{Draft, Session};
     let r = registry;
     define(r, "toggle", handle_toggle, Draft, &["target"], true, false);

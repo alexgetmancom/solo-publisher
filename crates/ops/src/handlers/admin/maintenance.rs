@@ -22,7 +22,7 @@ use crate::context::{OpError, to_value};
 const AUDIT_EVENT_WINDOW_DAYS: i64 = 30;
 
 /// `backupDatabase`: a consistent copy named after the source and the moment.
-pub fn backup_database(
+pub(super) fn backup_database(
     backend_db: &BackendDb,
     source_path: &Path,
     destination_directory: Option<&str>,
@@ -52,7 +52,7 @@ pub fn backup_database(
 
 /// `restoreDatabase`: replaces the database file, its WAL and shared memory
 /// with the backup. Nothing may have the database open.
-pub fn restore_database(source: &str, destination: &Path, force: bool) -> Result<(), OpError> {
+pub(super) fn restore_database(source: &str, destination: &Path, force: bool) -> Result<(), OpError> {
     if !force {
         return Err(OpError::failed("restore requires --force"));
     }
@@ -74,7 +74,11 @@ pub fn restore_database(source: &str, destination: &Path, force: bool) -> Result
 }
 
 /// `auditOperations`.
-pub fn audit_operations(sqlite: &Connection, publishing: &Publishing<'_>, now: Timestamp) -> Result<Value, OpError> {
+pub(super) fn audit_operations(
+    sqlite: &Connection,
+    publishing: &Publishing<'_>,
+    now: Timestamp,
+) -> Result<Value, OpError> {
     // The journal keeps a year; the window is what an audit is asking about.
     let events_since = to_iso_string(now - SignedDuration::from_hours(AUDIT_EVENT_WINDOW_DAYS * 24));
     let mut out = Map::new();
@@ -297,7 +301,7 @@ fn report(sqlite: &Connection, publishing: &Publishing<'_>, scope: Option<Scope>
 }
 
 /// `publicationConsistencyReport`.
-pub fn publication_consistency_report(
+pub(super) fn publication_consistency_report(
     sqlite: &Connection,
     publishing: &Publishing<'_>,
     publication: Option<&str>,
@@ -308,7 +312,7 @@ pub fn publication_consistency_report(
 
 /// `repairPublicationConsistency`: every write carries the state it read in
 /// its own `WHERE`.
-pub fn repair_publication_consistency(
+pub(super) fn repair_publication_consistency(
     sqlite: &Connection,
     publishing: &Publishing<'_>,
     publication: Option<&str>,

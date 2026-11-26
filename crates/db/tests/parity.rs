@@ -207,7 +207,8 @@ fn immediate_writer_waits_for_the_lock_then_reports_busy() {
     let dir = scratch("immediate");
     let path = dir.join("pipeline.db");
     let mut first = BackendDb::open(&path).unwrap();
-    let mut impatient = BackendDb::open_with_timeout(&path, Duration::from_millis(200)).unwrap();
+    let mut impatient = BackendDb::open(&path).unwrap();
+    unsafe_db(&impatient).busy_timeout(Duration::from_millis(200)).unwrap();
     let mut patient = BackendDb::open(&path).unwrap();
     let waiter = first
         .immediate_transaction(|tx| {

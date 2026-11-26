@@ -20,7 +20,7 @@ use crate::registry::Registry;
 
 use super::preview::post_preview_card;
 
-pub fn register(registry: &mut Registry) {
+pub(super) fn register(registry: &mut Registry) {
     registry.screen(ScreenId::Progress, progress);
     registry.screen(ScreenId::ProgressDetails, progress_details);
     registry.screen(ScreenId::ProgressCancel, progress_cancel);

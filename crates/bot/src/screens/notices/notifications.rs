@@ -25,7 +25,7 @@ use crate::publication::unlanded::{Origin, UnlandedTarget, append_unlanded_contr
 use crate::publication::{CardRequest, render_card};
 
 /// A journalled event as the notices read it.
-pub struct StudioEvent<'a> {
+pub(super) struct StudioEvent<'a> {
     pub publication_key: Option<&'a str>,
     pub event_type: &'a str,
     pub details: &'a Map<String, Value>,
@@ -297,7 +297,7 @@ fn remaining_schedule_text(details: &Map<String, Value>, time_config: &TimeConfi
 /// `sendStudioReminder`: the reminder reaches every administrator, so the
 /// actor only says the event still refers to something real (`admin_id` is
 /// the spelling events written before migration 0030 carry).
-pub async fn send_studio_reminder(ctx: &Ctx, event: &StudioEvent<'_>) -> crate::Result<()> {
+pub(super) async fn send_studio_reminder(ctx: &Ctx, event: &StudioEvent<'_>) -> crate::Result<()> {
     let details = event.details;
     let known = number(details.get("actor_id")).is_some()
         || number(details.get("admin_id")).is_some()
@@ -370,7 +370,7 @@ pub async fn send_studio_reminder(ctx: &Ctx, event: &StudioEvent<'_>) -> crate::
 }
 
 /// `sendStudioCompletion`: a publication (or one language of a post) is done.
-pub async fn send_studio_completion(ctx: &Ctx, event: &StudioEvent<'_>) -> crate::Result<()> {
+pub(super) async fn send_studio_completion(ctx: &Ctx, event: &StudioEvent<'_>) -> crate::Result<()> {
     if !publication_exists(ctx, event.publication_key)? {
         return Ok(());
     }
@@ -651,7 +651,7 @@ fn target_error(target: &VideoTargetOutcome) -> String {
 }
 
 /// `notifyFinalVideoFailure`: a target that will not be retried on its own.
-pub async fn notify_final_video_failure(ctx: &Ctx, video_draft_id: i64, video_target_id: Option<i64>) -> crate::Result<()> {
+pub(super) async fn notify_final_video_failure(ctx: &Ctx, video_draft_id: i64, video_target_id: Option<i64>) -> crate::Result<()> {
     let Some(video_target_id) = video_target_id.filter(|id| *id != 0) else {
         return Ok(());
     };
@@ -692,7 +692,7 @@ pub async fn notify_final_video_failure(ctx: &Ctx, video_draft_id: i64, video_ta
 /// `notifyUnresolvedVideoTarget`: a publication the provider will not
 /// resolve, handed to the one person who can open the account and look. Not
 /// the failure notice: a retry is exactly what this target must not get.
-pub async fn notify_unresolved_video_target(
+pub(super) async fn notify_unresolved_video_target(
     ctx: &Ctx,
     video_draft_id: i64,
     video_target_id: Option<i64>,
@@ -734,7 +734,7 @@ pub async fn notify_unresolved_video_target(
 
 /// `refreshVideoControlCard`: the video card redrawn in place, as the
 /// registered video card renders it for its owner on the overview.
-pub async fn refresh_video_control_card(ctx: &Ctx, video_draft_id: i64) -> crate::Result<()> {
+pub(super) async fn refresh_video_control_card(ctx: &Ctx, video_draft_id: i64) -> crate::Result<()> {
     let Some(card) = cards::video_card(ctx.db(), video_draft_id)? else {
         return Ok(());
     };

@@ -74,7 +74,7 @@ impl DeliveryDeps {
 /// and the Telegram ones, in a stable order; the publish queue is rung
 /// the moment a publication puts work in the table.
 /// `flush_usage` runs on every heartbeat, as `heartbeatLoop`'s hook does.
-pub fn start(
+pub(crate) fn start(
     bot: &Bot,
     host: &AppHost,
     http: HttpClient,

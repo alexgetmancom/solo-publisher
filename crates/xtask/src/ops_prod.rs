@@ -38,7 +38,7 @@ struct Deployment {
     container: &'static str,
 }
 
-pub fn main(argv: Vec<String>) -> u8 {
+pub(crate) fn main(argv: Vec<String>) -> u8 {
     let (deployment, mut args) = match parse(argv) {
         Ok(parsed) => parsed,
         Err(message) => {

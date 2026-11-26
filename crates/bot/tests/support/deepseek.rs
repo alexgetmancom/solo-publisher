@@ -29,13 +29,13 @@ enum Script {
     InOrder(VecDeque<(u16, Value)>),
 }
 
-pub struct GoldenDeepSeek {
+pub(crate) struct GoldenDeepSeek {
     telegram: Rc<FakeTelegram>,
     script: RefCell<Script>,
 }
 
 impl GoldenDeepSeek {
-    pub fn new(telegram: Rc<FakeTelegram>) -> Self {
+    pub(crate) fn new(telegram: Rc<FakeTelegram>) -> Self {
         Self {
             telegram,
             script: RefCell::new(Script::None),
@@ -43,7 +43,7 @@ impl GoldenDeepSeek {
     }
 
     /// Applies what the case's seed notes say the recorder answers.
-    pub fn script(&self, seed: &Value) {
+    pub(crate) fn script(&self, seed: &Value) {
         let notes = seed.as_array().into_iter().flatten().filter_map(Value::as_str);
         let mut script = Script::None;
         for note in notes {

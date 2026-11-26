@@ -386,11 +386,6 @@ impl Api {
         self.call("answerCallbackQuery", payload).await
     }
 
-    pub async fn delete_message(&self, chat_id: i64, message_id: i64) -> Result<Value, ApiError> {
-        let payload = Payload::new().set("chat_id", chat_id).set("message_id", message_id);
-        self.call("deleteMessage", payload).await
-    }
-
     pub async fn get_file(&self, file_id: &str) -> Result<File, ApiError> {
         self.call_as("getFile", Payload::new().set("file_id", file_id)).await
     }

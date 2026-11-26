@@ -22,7 +22,7 @@ const EXPORT_MAX_AGE_DAYS: f64 = 7.0;
 const FLUSH_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum ExportKind {
+pub(super) enum ExportKind {
     Media,
     Db,
 }
@@ -41,7 +41,12 @@ impl ExportKind {
 }
 
 /// `recordExport`.
-pub fn record_export(sqlite: &Connection, kind: ExportKind, bytes: Option<u64>, now: Timestamp) -> Result<(), OpError> {
+pub(super) fn record_export(
+    sqlite: &Connection,
+    kind: ExportKind,
+    bytes: Option<u64>,
+    now: Timestamp,
+) -> Result<(), OpError> {
     let at = to_iso_string(now);
     let state = json!({"at": at, "bytes": bytes}).to_string();
     sqlite.execute(
@@ -52,7 +57,7 @@ pub fn record_export(sqlite: &Connection, kind: ExportKind, bytes: Option<u64>, 
 }
 
 /// `exportStatus`: `{kind, at, bytes, ageDays, ok}`.
-pub fn export_status(sqlite: &Connection, kind: ExportKind, now: Timestamp) -> Result<Value, OpError> {
+pub(super) fn export_status(sqlite: &Connection, kind: ExportKind, now: Timestamp) -> Result<Value, OpError> {
     let state: Option<String> = sqlite
         .query_row(
             r#"select "state_json" from "worker_state" where "worker_state"."name" = ?"#,
@@ -120,7 +125,7 @@ fn resolve(path: &Path) -> PathBuf {
 /// relative to DATA_DIR so it restores onto a fresh volume unchanged, written
 /// to the terminal's stdout; recorded only on a clean exit, because a
 /// truncated archive counted as a backup would keep `doctor` green over it.
-pub async fn stream_media_archive(
+pub(super) async fn stream_media_archive(
     config: &Config,
     sqlite: &Connection,
     terminal: &dyn Terminal,
@@ -172,7 +177,7 @@ pub async fn stream_media_archive(
 
 /// `streamDatabase`: a consistent image of the database, taken under SQLite's
 /// own lock (`serialize`) so a write landing mid-export cannot tear it.
-pub fn stream_database(
+pub(super) fn stream_database(
     db_path: &Path,
     sqlite: &Connection,
     terminal: &dyn Terminal,

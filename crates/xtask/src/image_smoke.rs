@@ -21,7 +21,7 @@ use std::process::Command;
 
 const REFUSAL: &str = "Telegram bot token is not configured";
 
-pub fn main(argv: Vec<String>) -> u8 {
+pub(crate) fn main(argv: Vec<String>) -> u8 {
     let [image] = argv.as_slice() else {
         eprintln!("usage: cargo xtask image-smoke <image>, e.g. ghcr.io/owner/solo-publisher@sha256:...");
         return 1;

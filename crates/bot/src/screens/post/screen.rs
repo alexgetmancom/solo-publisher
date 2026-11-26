@@ -22,7 +22,7 @@ use super::preview::post_preview_card;
 
 /// `handlePostMessage`: an album, an answer to the open step, or the advice
 /// that the intake is the way in. It always answers.
-pub fn handle_post_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
+pub(super) fn handle_post_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
     Box::pin(async move {
         let actor_id = ctx.actor_id();
         let state = ctx.sessions().get(actor_id, ConversationSessionKind::Post)?;

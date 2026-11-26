@@ -7,9 +7,9 @@ use serde_json::{Map, Value};
 
 use crate::context::OpError;
 
-pub type Row = Map<String, Value>;
+pub(super) type Row = Map<String, Value>;
 
-pub fn all(sqlite: &Connection, sql: &str, params: impl Params) -> Result<Vec<Row>, OpError> {
+pub(super) fn all(sqlite: &Connection, sql: &str, params: impl Params) -> Result<Vec<Row>, OpError> {
     let mut statement = sqlite.prepare(sql)?;
     let names: Vec<String> = statement.column_names().map(str::to_owned).collect();
     let mut cursor = statement.query(params)?;
@@ -34,10 +34,10 @@ fn cell(value: ValueRef<'_>) -> Value {
     }
 }
 
-pub fn text<'r>(row: &'r Row, name: &str) -> &'r str {
+pub(super) fn text<'r>(row: &'r Row, name: &str) -> &'r str {
     row.get(name).and_then(Value::as_str).unwrap_or_default()
 }
 
-pub fn int(row: &Row, name: &str) -> i64 {
+pub(super) fn int(row: &Row, name: &str) -> i64 {
     row.get(name).and_then(Value::as_i64).unwrap_or_default()
 }

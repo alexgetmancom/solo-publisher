@@ -26,7 +26,7 @@ use foundation::config::SharedConfig;
 use runtime::http::HttpClient;
 use runtime::worker_signal::WorkerSignals;
 
-pub struct AppHost {
+pub(crate) struct AppHost {
     auth_circuit: AuthCircuitBreaker<SystemClock>,
     usage: UsageRecorder<SystemClock>,
     story_cards: StoryCardStore<SystemClock>,
@@ -40,7 +40,7 @@ pub struct AppHost {
 }
 
 impl AppHost {
-    pub fn new(config: SharedConfig, http: HttpClient) -> Self {
+    pub(crate) fn new(config: SharedConfig, http: HttpClient) -> Self {
         Self {
             auth_circuit: AuthCircuitBreaker::new(SystemClock),
             usage: UsageRecorder::new(SystemClock),
@@ -54,7 +54,7 @@ impl AppHost {
     }
 
     /// Writes the usage still buffered; called once polling has stopped.
-    pub fn flush_usage(&self, sqlite: &Connection) {
+    pub(crate) fn flush_usage(&self, sqlite: &Connection) {
         self.usage.flush(sqlite);
     }
 }

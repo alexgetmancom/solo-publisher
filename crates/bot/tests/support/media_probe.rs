@@ -23,7 +23,7 @@ fn truthy_number(value: Option<&Value>) -> bool {
 }
 
 /// `probeMediaMetadata(path)`.
-pub fn probe(path: &str) -> Result<MediaMetadata, String> {
+pub(crate) fn probe(path: &str) -> Result<MediaMetadata, String> {
     let output = Command::new("ffprobe")
         .args([
             "-v",
@@ -100,7 +100,7 @@ pub fn probe(path: &str) -> Result<MediaMetadata, String> {
 }
 
 /// The `astats` pass `backgroundMusicLikelyMissing` reads, as text.
-pub fn audio_stats(path: &str) -> Result<String, String> {
+pub(crate) fn audio_stats(path: &str) -> Result<String, String> {
     let output = Command::new("ffmpeg")
         .args([
             "-hide_banner",

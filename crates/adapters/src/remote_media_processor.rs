@@ -228,7 +228,6 @@ fn temporary_path(target: &Path) -> PathBuf {
     target.with_file_name(format!(".{stem}.tmp-{}-{random}{extension}", std::process::id()))
 }
 
-#[cfg(unix)]
 async fn set_mode(path: &Path) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt as _;
     tokio::fs::set_permissions(path, std::fs::Permissions::from_mode(0o664)).await

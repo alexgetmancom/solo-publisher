@@ -16,25 +16,25 @@ use serde_json::Value;
 /// Bytes, not text: the release archive travels through here, and decoding a
 /// tar stream as UTF-8 corrupts it silently.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Command {
+pub(crate) struct Command {
     pub argv: Vec<String>,
     pub stdin: Option<Vec<u8>>,
 }
 
 /// A command's status and standard output; its standard error goes to the job's log.
 #[derive(Clone, Debug, Default)]
-pub struct Outcome {
+pub(crate) struct Outcome {
     pub code: i32,
     pub stdout: Vec<u8>,
 }
 
-pub trait Runner: Sync {
+pub(crate) trait Runner: Sync {
     /// `Err` when the command cannot start.
     fn run(&self, command: &Command) -> Result<Outcome, String>;
 }
 
 #[derive(Clone, Debug)]
-pub struct Inputs {
+pub(crate) struct Inputs {
     pub host: String,
     pub user: String,
     pub agent_token: String,
@@ -64,7 +64,7 @@ const IMAGE_REPOSITORY: &str = "ghcr.io/alexgetmancom/solo-publisher";
 /// would ever mention those files again.
 const ALWAYS_SHIPPED: [&str; 3] = ["deploy/studio.compose.yaml", "deploy/alex.env", "deploy/maru.env"];
 
-pub fn main(argv: Vec<String>) -> u8 {
+pub(crate) fn main(argv: Vec<String>) -> u8 {
     if !argv.is_empty() {
         eprintln!("usage: cargo xtask deploy-release (configured by the environment CI's deploy job sets)");
         return 1;
@@ -132,7 +132,7 @@ impl Runner for System {
     }
 }
 
-pub fn deploy_release(inputs: &Inputs, run: &dyn Runner, log: &mut dyn FnMut(&str)) -> Result<(), String> {
+pub(crate) fn deploy_release(inputs: &Inputs, run: &dyn Runner, log: &mut dyn FnMut(&str)) -> Result<(), String> {
     for (name, value) in [
         ("DEPLOY_HOST", &inputs.host),
         ("DEPLOY_USER", &inputs.user),

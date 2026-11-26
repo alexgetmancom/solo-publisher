@@ -12,7 +12,7 @@ const STEPS: [&str; 5] = ["language", "fmt", "clippy", "test", "build"];
 /// (the deploy agent for this host's target; the image builds it for musl).
 const RELEASE_PACKAGES: [&str; 5] = ["app", "entrypoint", "ops", "media_processor", "deploy_agent"];
 
-pub fn main(argv: Vec<String>) -> u8 {
+pub(crate) fn main(argv: Vec<String>) -> u8 {
     let mut jobs = None;
     let mut selected = Vec::new();
     let mut argv = argv.into_iter();

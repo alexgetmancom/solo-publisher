@@ -514,11 +514,6 @@ fn feedback_schema() -> Schema {
 const FEEDBACK_DESCRIPTION: &str = "Record feedback or a bug report in this Studio's own journal, where its operator will see it. It is not sent anywhere.";
 const OPS_TOOL_PREFIX: &str = "ops_";
 
-/// What each Studio tool is called and whether it declares itself a mutation.
-pub fn studio_tool_catalog() -> Vec<(&'static str, bool)> {
-    STUDIO_TOOLS.iter().map(|def| (def.name, def.mutates)).collect()
-}
-
 fn ops_tool_name(operation: &str) -> String {
     format!("{OPS_TOOL_PREFIX}{}", operation.replace('-', "_"))
 }

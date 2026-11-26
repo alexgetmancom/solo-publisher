@@ -41,17 +41,6 @@ impl fmt::Display for MediaToolError {
 
 impl std::error::Error for MediaToolError {}
 
-/// Whether `ffmpeg` runs here.
-pub fn ffmpeg_available() -> bool {
-    std::process::Command::new("ffmpeg")
-        .arg("-version")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success())
-}
-
 /// Runs ffmpeg to completion within `timeout`.
 pub async fn run_ffmpeg(args: &[&str], timeout: Duration) -> Result<(), MediaToolError> {
     let _slot = LIMITER.acquire().await.expect("the limiter is never closed");

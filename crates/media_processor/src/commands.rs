@@ -52,7 +52,7 @@ fn exit_code(status: ExitStatus) -> i32 {
 
 /// What the recipe needs to know about a source.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Probe {
+pub(crate) struct Probe {
     /// Seconds, within 1..=59.
     pub duration: f64,
     pub audio_bitrate: f64,
@@ -87,7 +87,7 @@ pub fn probe_args(input: &Path) -> Vec<String> {
 
 /// ffprobe's answer; anything but a clean exit with a JSON object is
 /// [`UNREADABLE`].
-pub fn parse_probe(finished: &Finished) -> Probe {
+pub(crate) fn parse_probe(finished: &Finished) -> Probe {
     if finished.code != 0 {
         return UNREADABLE;
     }

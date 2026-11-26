@@ -230,17 +230,6 @@ pub fn platform_profile(target: &str) -> Option<&'static PlatformProfile> {
     PLATFORM_PROFILES.iter().find(|profile| profile.id == target)
 }
 
-/// One catalogue for publishing, validation and analytics capability.
-pub fn platform_analytics_profile(target: &str) -> Analytics {
-    platform_profile(target).map_or(
-        Analytics {
-            enabled: false,
-            source: "unsupported",
-        },
-        |profile| profile.analytics,
-    )
-}
-
 /// JavaScript's `\S`: anything but its whitespace and line terminators.
 static URL: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(

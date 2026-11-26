@@ -7,12 +7,12 @@
 //! registered area that still misses a registration).
 
 /// Areas of the bot (`crates/bot/src/screens/<area>.rs`) not implemented yet.
-pub const PENDING_AREAS: &[&str] = &[];
+pub(crate) const PENDING_AREAS: &[&str] = &[];
 
 /// Areas a case reaches beyond its own directory (callbacks/ and entry/ belong
 /// to the core), derived from the updates each case feeds: the screens its
 /// buttons route to, the text triggers and the messages it sends.
-pub const CASE_NEEDS: &[(&str, &[&str])] = &[
+pub(crate) const CASE_NEEDS: &[(&str, &[&str])] = &[
     ("callbacks/callback-action-lock", &["intake", "post"]),
     ("callbacks/callback-duplicate", &["queue"]),
     ("callbacks/callback-menu-legacy", &["settings"]),
@@ -89,7 +89,7 @@ pub const CASE_NEEDS: &[(&str, &[&str])] = &[
 ];
 
 /// The pending areas a case waits for, its own directory included.
-pub fn pending_for(area: &str, case: &str) -> Vec<&'static str> {
+pub(crate) fn pending_for(area: &str, case: &str) -> Vec<&'static str> {
     let key = format!("{area}/{case}");
     let needs = CASE_NEEDS
         .iter()

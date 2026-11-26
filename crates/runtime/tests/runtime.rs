@@ -1,5 +1,5 @@
 //! What the recorded fixtures cannot show: processes killed on time, timers,
-//! the doorbells, the accounting seam and the heartbeat loop over a database.
+//! the doorbells, the transport seam and the heartbeat loop over a database.
 
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
@@ -14,7 +14,7 @@ use runtime::data_dirs::{
 use runtime::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
 use runtime::ffmpeg::{run_ffmpeg, run_ffmpeg_capture};
 use runtime::http::{
-    CallTiming, ExternalError, Fut, HttpClient, HttpRequest, HttpResponse, ResponseBody, Transport, TransportFailure,
+    ExternalError, Fut, HttpClient, HttpRequest, HttpResponse, ResponseBody, Transport, TransportFailure,
 };
 use runtime::job_heartbeat::with_job_heartbeat;
 use runtime::scheduler::{LoopHooks, start_loop};
@@ -259,21 +259,6 @@ async fn heartbeat_loops_report_through_the_database() {
 
 // ---- the transport seam -------------------------------------------------------------
 
-#[derive(Default)]
-struct Timing(RefCell<Vec<String>>);
-
-impl CallTiming for Timing {
-    fn provider_call(&self, _: f64) {
-        self.0.borrow_mut().push("provider".into());
-    }
-    fn provider_body_read(&self, _: f64) {
-        self.0.borrow_mut().push("body".into());
-    }
-    fn telegram_call(&self, method: &str, _: f64) {
-        self.0.borrow_mut().push(format!("telegram {method}"));
-    }
-}
-
 /// A body that breaks off after its first chunk.
 struct Broken(bool);
 
@@ -320,10 +305,9 @@ impl Transport for Telegram {
 }
 
 #[tokio::test]
-async fn calls_are_accounted_and_lost_bodies_are_transport_errors() {
-    let timing = Rc::new(Timing::default());
+async fn lost_bodies_are_transport_errors_and_downloads_land_on_disk() {
     let ok = || Ok(HttpResponse::buffered(200, vec![], "bytes"));
-    let client = HttpClient::new(Rc::new(Telegram { download: Box::new(ok) })).timed_by(timing.clone());
+    let client = HttpClient::new(Rc::new(Telegram { download: Box::new(ok) }));
     let error = client
         .request_json(HttpRequest::get("https://api.example/broken?token=fixture"))
         .await
@@ -337,7 +321,7 @@ async fn calls_are_accounted_and_lost_bodies_are_transport_errors() {
     );
     assert_eq!(error.cause, "connection reset");
 
-    let dir = scratch("accounting");
+    let dir = scratch("telegram-download");
     let config = load_config([
         ("DATA_DIR", dir.to_str().unwrap()),
         ("CONTROLLER_BOT_TOKEN", "123456789:fixture"),
@@ -355,10 +339,6 @@ async fn calls_are_accounted_and_lost_bodies_are_transport_errors() {
     assert!(placed.path.starts_with(dir.join("video-media/.incoming")), "{placed:?}");
     assert_eq!(placed.path.extension().unwrap(), "mp4");
     assert_eq!(std::fs::read(&placed.path).unwrap(), b"bytes");
-    assert_eq!(
-        *timing.0.borrow(),
-        ["provider", "body", "provider", "body", "telegram downloadFile"]
-    );
 
     let timed_out = HttpClient::new(Rc::new(Telegram {
         download: Box::new(|| {

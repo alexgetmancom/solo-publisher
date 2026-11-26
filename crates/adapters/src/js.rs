@@ -6,7 +6,7 @@ use foundation::js::{is_safe_integer, number};
 use serde_json::{Map, Value};
 
 /// `Number(value)` of a JSON value; `undefined` (absent) is NaN.
-pub fn js_number(value: Option<&Value>) -> f64 {
+pub(crate) fn js_number(value: Option<&Value>) -> f64 {
     match value {
         None => f64::NAN,
         Some(Value::Null) => 0.0,
@@ -24,7 +24,7 @@ pub fn js_number(value: Option<&Value>) -> f64 {
 
 /// A number as `JSON.stringify` writes it: an integer without a fraction,
 /// NaN and the infinities as `null`.
-pub fn json_number(value: f64) -> Value {
+pub(crate) fn json_number(value: f64) -> Value {
     if is_safe_integer(value) {
         Value::from(value as i64)
     } else if value.is_finite() {
@@ -35,7 +35,7 @@ pub fn json_number(value: f64) -> Value {
 }
 
 /// `encodeURIComponent`.
-pub fn encode_uri_component(value: &str) -> String {
+pub(crate) fn encode_uri_component(value: &str) -> String {
     let mut encoded = String::with_capacity(value.len());
     for byte in value.bytes() {
         if byte.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&byte) {
@@ -48,13 +48,13 @@ pub fn encode_uri_component(value: &str) -> String {
 }
 
 /// `value.length`.
-pub fn utf16_len(value: &str) -> usize {
+pub(crate) fn utf16_len(value: &str) -> usize {
     value.encode_utf16().count()
 }
 
 /// `value.slice(0, units)`, never splitting a character: a pair the cut
 /// would halve is left out, as the callers that cut on purpose do.
-pub fn utf16_prefix(value: &str, units: usize) -> &str {
+pub(crate) fn utf16_prefix(value: &str, units: usize) -> &str {
     let mut count = 0;
     for (index, character) in value.char_indices() {
         count += character.len_utf16();
@@ -67,21 +67,21 @@ pub fn utf16_prefix(value: &str, units: usize) -> &str {
 
 /// `value.slice(start, end)` by UTF-16 units; a half pair at either edge
 /// becomes U+FFFD, as `String.fromCharCode` of the orphan would print.
-pub fn utf16_slice(units: &[u16], start: usize, end: usize) -> String {
+pub(crate) fn utf16_slice(units: &[u16], start: usize, end: usize) -> String {
     String::from_utf16_lossy(&units[start.min(units.len())..end.min(units.len())])
 }
 
 /// `value && typeof value === "object" && !Array.isArray(value)`.
-pub fn as_record(value: &Value) -> Option<&Map<String, Value>> {
+pub(crate) fn as_record(value: &Value) -> Option<&Map<String, Value>> {
     value.as_object()
 }
 
 /// A string field that is present and not empty (`if (value.x)`).
-pub fn non_empty<'a>(record: &'a Map<String, Value>, key: &str) -> Option<&'a str> {
+pub(crate) fn non_empty<'a>(record: &'a Map<String, Value>, key: &str) -> Option<&'a str> {
     record.get(key).and_then(Value::as_str).filter(|text| !text.is_empty())
 }
 
 /// `a ?? b` over JSON: `null` and absent fall through.
-pub fn present(value: Option<&Value>) -> Option<&Value> {
+pub(crate) fn present(value: Option<&Value>) -> Option<&Value> {
     value.filter(|value| !value.is_null())
 }
