@@ -114,9 +114,9 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   `bun /app/ops/cli.js` as `-u bun`, the same uid and groups), passes `OPS_INVOCATION=cargo xtask ops-prod --as <name>`,
   prints `ops-prod → <name> (<container>)`, and reads `OPS_SSH_TARGET` from the repository root's `.env.local` when the
   variable is not set. The guide's production prefix and `parity/ops/catalog.json` say `cargo xtask ops-prod`.
-- A self-hosted Studio's operations route is `docker compose exec app ops <command>` (`/app/bin` is on the image's
-  PATH); `guide`'s local prefix without `OPS_INVOCATION` is `ops`. `parity/ops/catalog.json` and
-  `parity/ops/scenarios/mcp.json` are edited for it.
+- Without `OPS_INVOCATION`, `guide`'s local prefix is `ops` (`/app/bin` is on the image's PATH).
+  `parity/ops/catalog.json` and `parity/ops/scenarios/mcp.json` are edited for it.
+- Removed the self-host install path (install.sh, root compose, docs/install*); deploy/ is the only way the Studio runs.
 
 ## Deploy agent and image
 

@@ -81,41 +81,11 @@ fn the_retired_dashboard_stays_outside_the_second_studios_allowlist() {
 #[test]
 fn the_proxy_holds_nothing_the_application_decides() {
     // Cache lifetimes, retired URLs, the Markdown twin, the Link header and the
-    // noindex on the first Studio's operator surfaces ship in the image so they
-    // reach self-hosted installs. Restating any of them here creates a second
-    // place to change them, and the two drift apart silently.
+    // noindex on the first Studio's operator surfaces ship in the image.
+    // Restating any of them here creates a second place to change them, and
+    // the two drift apart silently.
     let caddy = read("deploy/caddy/Caddyfile");
     for leaked in ["Cache-Control", "try_files", "root ", "text/markdown", "rel=", "410"] {
         assert!(!caddy.contains(leaked), "{leaked}");
-    }
-}
-
-#[test]
-fn the_self_host_stack_names_no_personal_domain() {
-    // The point of publishing this is that someone else can run it. Every
-    // default that is a live site of this deployment is a defect there.
-    let compose = read("compose.yaml");
-    for file in [&compose, &read("Caddyfile"), &read(".env.example")] {
-        assert!(!file.contains("alexgetman.com"));
-        assert!(!file.contains("marux.ru"));
-        // The registry namespace is where the image is published and is fine;
-        // a channel username is a live channel someone else would post into.
-        assert!(!file.contains("TELEGRAM_CHANNEL_USERNAME=alexgetmancom"));
-    }
-    assert!(!compose.contains("/backups"));
-    // The domain has no default at all: Caddy would request a certificate for
-    // whatever it is told, and the application would publish it in its feeds.
-    assert!(compose.contains("${DOMAIN:?"));
-    // Only the proxy is reachable from outside. The application's one
-    // published port is bound to loopback so an install that already runs its
-    // own web server has an address to forward to without editing this file;
-    // a bind on any other interface would put the app itself on the internet.
-    assert!(compose.contains(r#""127.0.0.1:8788:8788""#));
-    let ports = compose.find("ports:").expect("compose.yaml publishes a port");
-    for (at, _) in compose[ports..].match_indices("8788:8788") {
-        assert!(
-            compose[..ports + at].ends_with("127.0.0.1:"),
-            "8788 published beyond loopback"
-        );
     }
 }

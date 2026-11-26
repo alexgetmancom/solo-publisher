@@ -8,14 +8,15 @@ Nothing asks you for keys to a platform you do not publish to.
 
 ```bash
 # 1. Tell the Studio this destination exists
-docker compose exec app ops channel-connect --target threads_en
+cargo xtask ops-prod [--as alex|maru] channel-connect --target threads_en
 
 # 2. Ask what it still needs
-docker compose exec app ops doctor
+cargo xtask ops-prod [--as alex|maru] doctor
 ```
 
 `doctor` names the exact settings that destination is missing and never prints
-the ones it has. Put deployment credentials in `.env`, restart, and run it
+the ones it has. Put deployment credentials in the Studio's `secrets.env`
+([deploy/README.md](../deploy/README.md)), recreate the container, and run it
 again. The destination itself can be enabled from Command Center → Studio →
 Channels, Telegram → Settings → Channels, the CLI, or the corresponding MCP
 operation. Host credentials and the interactive Telegram Stories login remain
@@ -33,7 +34,7 @@ are connected by naming their platform and language.
 
 | Destination | Connect with | Needs |
 | --- | --- | --- |
-| Website | `--target site_ru` / `site_en` | nothing, plus `docker compose exec app ops studio-profile-set --site-enabled` |
+| Website | `--target site_ru` / `site_en` | nothing, plus `cargo xtask ops-prod studio-profile-set --site-enabled` |
 | Telegram channel | Channels or `--target telegram` | `CONTROLLER_BOT_TOKEN` |
 | Discord | Channels or `--target discord` | `DISCORD_CHANNEL_ID`, then CLI `credential-set --target discord` |
 | Threads | Channels or `connect-link --platform threads` | native app credentials or a stored Zernio key |
@@ -63,7 +64,7 @@ aggregator sitting between you and your audience.
 
 Meta's platforms can be reached two ways, and the channel remembers which one it
 uses. For native delivery, create your own Meta app and put its app id and secret
-in `.env`; Instagram needs a Professional account. Generate
+in `secrets.env`; Instagram needs a Professional account. Generate
 `TOKEN_ENCRYPTION_KEY` once with `openssl rand -hex 32`.
 
 Register these exact callback URLs in the app dashboard:
@@ -78,22 +79,22 @@ and click the RU or EN native button. The browser returns to Studio, which
 exchanges the code, seals the long-lived token in the database and records the
 account id. An Instagram login enables Reels; enable its separate Story target
 on the same screen only when that Studio publishes Stories. No URL copying, CLI
-token exchange, `.env` token edit or restart is involved. An app in
+token exchange, `secrets.env` token edit or restart is involved. An app in
 Development mode works for accounts assigned a role on that app; serving other
 people's accounts is the point at which Meta review matters.
 
 ```bash
 # The same destination, delivered through a provider instead
-docker compose exec app ops channel-connect --target threads_en --provider zernio --account-id <id>
+cargo xtask ops-prod [--as alex|maru] channel-connect --target threads_en --provider zernio --account-id <id>
 ```
 
 A channel connected this way needs one Zernio key instead of the platform's
 tokens — for feed posts, for Threads and for Stories alike — and `doctor` asks
-for exactly that. The key is not an .env setting: it is checked against Zernio
+for exactly that. The key is not a `secrets.env` setting: it is checked against Zernio
 and stored sealed in this Studio's database, the way an OAuth token is.
 
 ```bash
-printf %s "$ZERNIO_KEY" | docker compose exec -T app ops credential-set --target zernio
+printf %s "$ZERNIO_KEY" | cargo xtask ops-prod [--as alex|maru] credential-set --target zernio
 ```
 
 Command Center and Telegram Settings → Channels list the publishable routes
@@ -135,17 +136,17 @@ project would put it through Google's verification.
    devices* type cannot be used: its flow accepts only `auth/youtube` and
    `auth/youtube.readonly` and refuses `force-ssl` outright, which leaves a
    channel that uploads fine and never collects a single comment.
-5. Put the client id and secret in `.env` as `YOUTUBE_RU_CLIENT_ID` and
+5. Put the client id and secret in `secrets.env` as `YOUTUBE_RU_CLIENT_ID` and
    `YOUTUBE_RU_CLIENT_SECRET` (or `YOUTUBE_EN_*`).
 
 ```bash
-docker compose exec app ops connect-link --platform youtube --locale ru
+cargo xtask ops-prod [--as alex|maru] connect-link --platform youtube --locale ru
 ```
 
 It answers with a link to Google's consent screen. Approve there and Google
 returns to the Studio, which finishes on its own: the refresh token is stored
 sealed in its database, the channel appears in the registry, and nothing has to
-be pasted into `.env` or restarted. The same connection can be started from
+be pasted into `secrets.env` or restarted. The same connection can be started from
 Studio → Channels or from the Telegram bot — one flow, three surfaces. That
 approval is the single manual step and it happens once; afterwards the Studio
 exchanges the refresh token for a short-lived access token on every upload, and
@@ -164,31 +165,31 @@ unreachable — a broken deployment, a Studio that serves nothing publicly — t
 same exchange runs from a terminal:
 
 ```bash
-docker compose exec -it app ops threads-authorize --locale ru
+cargo xtask ops-prod [--as alex|maru] threads-authorize --locale ru
 ```
 
 It prints a link to approve as the account you publish from. Meta redirects to
 the callback, which **reports that the connection failed — expected on this
 path**: that link carries no signed state, so the callback refuses it and leaves
 the single-use code unspent. Copy the whole address from the address bar and
-paste it back; the command exchanges it and prints the token for `.env`.
+paste it back; the command exchanges it and prints the token for `secrets.env`.
 
 ## What to know before you start
 
 **Meta tokens lapse, and the Studio renews them for you.** Long-lived Instagram
 and Threads tokens expire 60 days after they are issued. Set `TOKEN_ENCRYPTION_KEY`
-in `.env` and the Studio renews them on its own, a month ahead of the deadline,
+in `secrets.env` and the Studio renews them on its own, a month ahead of the deadline,
 storing each renewal sealed — the database leaves the machine every day as a
 backup, and a live token is not something to hand around in a chat. No key means
-no renewal: the tokens stay exactly what `.env` says and you re-issue them by
+no renewal: the tokens stay exactly what `secrets.env` says and you re-issue them by
 hand.
 
 One thing it cannot do for you. A token that has already expired can no longer
 be renewed, so a Studio switched off for two months has to be connected again —
 from Studio → Channels, the same two clicks as the first time. For an account
 connected that way the credential lives in the database, and editing
-`THREADS_*_ACCESS_TOKEN` in `.env` will not replace it; the startup log says so
-when the two disagree. `.env` still wins for an account that was never connected
+`THREADS_*_ACCESS_TOKEN` in `secrets.env` will not replace it; the startup log says so
+when the two disagree. `secrets.env` still wins for an account that was never connected
 through the browser. Connecting through a provider sidesteps the whole question.
 
 **Keep the Meta app out of development mode.** An app in development mode
@@ -201,18 +202,19 @@ X's API requires a paid tier of their developer platform.
 
 **Telegram Stories are posted by a user, not a bot.** Create an API id and hash
 at [my.telegram.org](https://my.telegram.org) under *API development tools*, put
-them in `.env` with a writable path for the session, and sign in once:
+them in `secrets.env` with a writable path for the session, and sign in once:
 
 ```bash
-docker compose exec -it app ops telegram-stories-login
+cargo xtask ops-prod [--as alex|maru] telegram-stories-login
 ```
 
 It asks for the phone number, the code Telegram sends and the two-factor
 password if the account has one, then reports which account the session now
 belongs to. The session is a directory the app writes to, so this runs inside
-the container — `-it` matters, it is a conversation.
+the container — and it is a conversation, so run it from a terminal.
 
 **Video over 50 MB needs the local Bot API.** Telegram's public API refuses
-larger downloads. Set `TELEGRAM_API_ID`, `TELEGRAM_API_HASH` and
-`COMPOSE_PROFILES=telegram` in `.env` to run one beside the app and lift the
+larger downloads. The host runs one Bot API server from
+`deploy/bot-api.compose.yaml`, which every Studio reaches at
+`http://bot-api:8081` ([deploy/README.md](../deploy/README.md)); it lifts the
 limit to 2 GB.

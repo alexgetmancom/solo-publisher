@@ -104,9 +104,7 @@ fn run(command: &mut Command, root: &Path) -> Result<(), String> {
 
 /// The repository is Rust; anything in TypeScript, JavaScript, Python or a
 /// shell script outside these is a second language creeping back in.
-const ALLOWED: [&str; 3] = [
-    // It runs on a bare host through `curl … | sh`, before Docker has pulled anything.
-    "install.sh",
+const ALLOWED: [&str; 2] = [
     // Git runs hooks as executables; each one hands off to gitleaks or `cargo xtask`.
     ".githooks/pre-commit",
     ".githooks/pre-push",
@@ -199,7 +197,6 @@ mod tests {
         std::fs::write(root.join("tools/run"), "#!/usr/bin/env bash\n").unwrap();
         std::fs::write(root.join("tools/notes"), "plain text\n").unwrap();
         std::fs::write(root.join("deploy/retry.ts"), "export {};\n").unwrap();
-        std::fs::write(root.join("install.sh"), "#!/bin/sh\n").unwrap();
         let refused = language_gate(&root).unwrap_err();
         assert!(
             refused.ends_with(":\n- deploy/retry.ts\n- tools/helper.mjs\n- tools/run"),

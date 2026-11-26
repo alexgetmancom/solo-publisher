@@ -197,36 +197,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # For `cargo xtask family-routes`, below.
       - uses: ./.github/actions/setup-rust
-      - name: Self-host stack
-        # The install path published in the README is not exercised by anything
-        # else here: nothing in this repository runs it, so without this it
-        # rots silently and the first person to find out is a stranger.
+      - name: Production proxy
         run: |
           set -euo pipefail
-          sed 's/^DOMAIN=.*/DOMAIN=publisher.example.com/' .env.example > .env
-          docker compose -f compose.yaml config --quiet
-          rm -f .env
           docker compose -f deploy/caddy/compose.yaml config --quiet
-          for file in Caddyfile deploy/caddy/Caddyfile; do
-            docker run --rm -v "$PWD/$file:/etc/caddy/Caddyfile:ro" \
-              -e DOMAIN=publisher.example.com -e ACME_EMAIL=ci@example.com \
-              caddy:2.10-alpine sh -c 'caddy fmt /etc/caddy/Caddyfile >/dev/null && caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile'
-            # Assert on what Caddy builds, not on what the file says. A snippet
-            # that silently fails to expand leaves every visitor arriving as the
-            # proxy, which turns the application's rate limit into one global
-            # budget and looks completely healthy from outside. Caddy
-            # canonicalises the header to X-Real-Ip, so match that spelling.
-            adapted=$(docker run --rm -v "$PWD/$file:/etc/caddy/Caddyfile:ro" \
-              -e DOMAIN=publisher.example.com -e ACME_EMAIL=ci@example.com \
-              caddy:2.10-alpine caddy adapt --adapter caddyfile --config /etc/caddy/Caddyfile)
-            proxies=$(grep -o '"handler":"reverse_proxy"' <<<"$adapted" | wc -l)
-            addressed=$(grep -o '"X-Real-Ip"' <<<"$adapted" | wc -l)
-            test "$proxies" -gt 0
-            test "$proxies" = "$addressed" || { echo "$file: $proxies proxies but $addressed set the client address"; exit 1; }
-            if [ "$file" = deploy/caddy/Caddyfile ]; then
-              printf '%s' "$adapted" | cargo xtask family-routes
-            fi
-          done
+          file=deploy/caddy/Caddyfile
+          docker run --rm -v "$PWD/$file:/etc/caddy/Caddyfile:ro" \
+            -e DOMAIN=publisher.example.com -e ACME_EMAIL=ci@example.com \
+            caddy:2.10-alpine sh -c 'caddy fmt /etc/caddy/Caddyfile >/dev/null && caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile'
+          # Assert on what Caddy builds, not on what the file says. A snippet
+          # that silently fails to expand leaves every visitor arriving as the
+          # proxy, which turns the application's rate limit into one global
+          # budget and looks completely healthy from outside. Caddy
+          # canonicalises the header to X-Real-Ip, so match that spelling.
+          adapted=$(docker run --rm -v "$PWD/$file:/etc/caddy/Caddyfile:ro" \
+            -e DOMAIN=publisher.example.com -e ACME_EMAIL=ci@example.com \
+            caddy:2.10-alpine caddy adapt --adapter caddyfile --config /etc/caddy/Caddyfile)
+          proxies=$(grep -o '"handler":"reverse_proxy"' <<<"$adapted" | wc -l)
+          addressed=$(grep -o '"X-Real-Ip"' <<<"$adapted" | wc -l)
+          test "$proxies" -gt 0
+          test "$proxies" = "$addressed" || { echo "$file: $proxies proxies but $addressed set the client address"; exit 1; }
+          printf '%s' "$adapted" | cargo xtask family-routes
 
   # The Studio's workspace: a deployment waits on it. The goldens it replays
   # were recorded under the production ffmpeg build, so it installs that one.

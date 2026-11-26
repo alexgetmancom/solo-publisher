@@ -1,4 +1,4 @@
-//! One self-hosted Studio installation is one trusted editorial boundary.
+//! One Studio installation is one trusted editorial boundary.
 //! Every configured Studio actor can operate work
 //! created by another actor in the same installation; actor ids remain on
 //! rows for attribution and audit.

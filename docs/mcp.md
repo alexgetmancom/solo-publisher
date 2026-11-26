@@ -8,8 +8,7 @@ access, no SSH and no checkout of this repository on that machine.
 
 ## Turn it on
 
-`install.sh` generates both of these, so a Studio installed with it already
-answers here — read them from the `.env` it wrote. Setting them by hand:
+Both live in the Studio's `secrets.env` (`deploy/README.md`):
 
 ```dotenv
 # openssl rand -hex 32
@@ -25,9 +24,13 @@ refused at startup. The actor needs no roster entry, because the token is what
 authorizes it. `STUDIO_ACTOR_IDS` exists for the other case — a second person
 who owns work here — and an installation with one agent leaves it empty.
 
+Recreate the container so it reads them (Maru: `/home/deploy/maru` and
+`--as maru`), then check:
+
 ```bash
-docker compose up -d
-docker compose exec app ops doctor
+ssh "$OPS_SSH_TARGET" docker compose --env-file /home/deploy/alexgetman-runtime/deploy-image.env \
+  -f /home/deploy/alexgetman-runtime/compose.yaml up -d --no-deps --force-recreate backend
+cargo xtask ops-prod doctor
 ```
 
 `doctor` reports `studioTransportConfigured: true` once both are set.
@@ -73,7 +76,7 @@ CLI-only too: they are run once in a season, with their note and their dry-run
 in front of the operator running them.
 
 ```bash
-docker compose exec app ops guide --json
+cargo xtask ops-prod [--as alex|maru] guide --json
 ```
 
 That catalogue is the same one the agent sees: each operation carries its

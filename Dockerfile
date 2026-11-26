@@ -4,7 +4,7 @@
 # data directory ownership and drops to `studio` (uid 1000) through setpriv,
 # then becomes the Studio (`solo-publisher`), which posts Telegram channel
 # Stories over MTProto itself (crates/mtproto). The operations CLI is `ops` on
-# PATH (`docker compose exec app ops <command>`), and the healthcheck is
+# PATH (`cargo xtask ops-prod <command>` runs it), and the healthcheck is
 # `studio-entrypoint --ready`.
 #
 # The image also carries that binary, `/app/bin/deploy-agent`, which never runs

@@ -63,11 +63,18 @@ cargo xtask check
 ```
 
 `cargo xtask check` runs the full repository gate: the language gate,
-`cargo fmt`, `clippy` and tests, and the release build. The committed deployment
-files under `deploy/` are specific to the maintainer's own installation — its
-domains, host paths and systemd units. Treat them as an implementation
-reference and supply your own; `install.sh` is the supported path for a
-self-host.
+`cargo fmt`, `clippy` and tests, and the release build. The deployment files
+under `deploy/` are the maintainer's production — its domains, host paths and
+systemd units — and the only way the Studio runs ([deploy/README.md](../deploy/README.md)).
+
+To run a Studio from source (needs ffmpeg), start it with the secret template in
+the environment:
+
+```bash
+cp deploy/secrets.env.example secrets.env
+cargo build --release -p app -p ops
+set -a; . ./secrets.env; set +a; target/release/solo-publisher
+```
 
 ## Security
 

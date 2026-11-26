@@ -58,8 +58,8 @@ impl TrustedClientIpHeader {
     }
 }
 
-/// Where optional heavy media transforms execute. Remote workers are opt-in so
-/// a stock self-hosted Studio keeps working.
+/// Where optional heavy media transforms execute. Remote workers are opt-in;
+/// `local` needs nothing beyond the image.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "snake_case"))]
 pub enum MediaProcessorProvider {

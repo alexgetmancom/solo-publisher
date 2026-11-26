@@ -11,18 +11,20 @@ When Telegram is configured, the Studio silently sends a daily copy of its
 database to the same chat you author from: posts, schedules, delivery state,
 analytics and external ids. It is on unless you turn it off under **Settings →
 Notifications → Database backup**. An MCP-only or site-only Studio has no chat
-to deliver that copy to, so back up its `app-data` volume directly.
+to deliver that copy to, so back up its data directory (`STUDIO_DATA_DIR_HOST`
+in `deploy/alex.env` / `deploy/maru.env`) directly.
 
 It is a real snapshot taken with SQLite's own backup, never a file copy. A live
 database has a write-ahead log beside it, and a plain copy of one is a corrupt
 database that only announces itself when someone tries to restore it.
 
-To restore, download the file from the chat and:
+To restore, download the file from the chat and (for Maru: `--as maru` and
+`maru-backend`):
 
 ```bash
-docker compose cp <downloaded>.db app:/data/restore.db
-docker compose exec app ops restore --source /data/restore.db --force
-docker compose restart app
+ssh "$OPS_SSH_TARGET" 'docker exec -i -u 1000 alexgetman-backend sh -c "cat > /data/restore.db"' < <downloaded>.db
+cargo xtask ops-prod restore --source /data/restore.db --force
+ssh "$OPS_SSH_TARGET" docker restart alexgetman-backend
 ```
 
 ## The media, which a backup host pulls
@@ -34,7 +36,7 @@ published site's assets — and they are the part that cannot be regenerated.
 The Studio does not store a backup of them. It emits one:
 
 ```bash
-docker compose exec app ops backup-stream --what media > media.tar.gz
+cargo xtask ops-prod [--as alex|maru] backup-stream --what media > media.tar.gz
 ```
 
 Nothing is written to the Studio's host. That is the point of the shape: a copy
@@ -48,29 +50,20 @@ rather have its own copy than rely on the daily Telegram one.
 
 ### Pulling from another machine
 
-Give the backup machine a key whose entry in the Studio host's
-`~/.ssh/authorized_keys` is pinned to a forced command, so that key can run
-nothing else — no shell, no path of the caller's choosing:
+The backup machine's key is pinned in the Studio host's
+`~/.ssh/authorized_keys` to a forced command, so that key can run nothing else —
+no shell, no path of the caller's choosing. On the production host that command
+is `/home/deploy/bin/alexgetman-backup-export`, which accepts
+`backup-export <what> <studio>` ([deploy/README.md](../deploy/README.md)):
 
 ```text
-command="/usr/local/bin/studio-backup-export",restrict ssh-ed25519 AAAA... backup
-```
-
-```bash
-#!/bin/sh
-# /usr/local/bin/studio-backup-export on the Studio host
-set -eu
-case "${SSH_ORIGINAL_COMMAND:-}" in
-  "export media") exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what media ;;
-  "export db")    exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what db ;;
-  *) echo "unsupported export" >&2; exit 64 ;;
-esac
+command="/home/deploy/bin/alexgetman-backup-export",restrict ssh-ed25519 AAAA... backup
 ```
 
 Then, from the backup machine, on whatever schedule suits you:
 
 ```bash
-ssh studio-host "export media" > media-$(date -u +%Y%m%dT%H%M%SZ).tar.gz
+ssh <studio-host> "backup-export media <studio>" > media-$(date -u +%Y%m%dT%H%M%SZ).tar.gz
 ```
 
 Anything that reads a stream works — a file, `restic backup --stdin`, a pipe
@@ -79,11 +72,11 @@ integration on purpose: a credential, a retention policy and a cron entry are
 things every host already has a tool for, and each one we shipped would be
 another thing to configure and get wrong.
 
-Paths inside the archive are relative to the volume root, so it restores onto a
-fresh volume unchanged:
+Paths inside the archive are relative to the container's `/data`, where every
+media mount lives, so it restores there unchanged:
 
 ```bash
-tar -xzf media-<stamp>.tar.gz -C /data
+ssh "$OPS_SSH_TARGET" 'docker exec -i -u 1000 alexgetman-backend tar -xzf - -C /data' < media-<stamp>.tar.gz
 ```
 
 ### The check that notices when it stops
@@ -93,7 +86,7 @@ reports the deployment unhealthy once no media export has been pulled for a
 week:
 
 ```bash
-docker compose exec app ops doctor
+cargo xtask ops-prod [--as alex|maru] doctor
 ```
 
 This is deliberately a check for *absence*, not a report of failure. A puller
@@ -103,6 +96,7 @@ whether its media left recently, which is the question that matters.
 
 ## What is not worth backing up
 
-`caddy-data` holds TLS certificates, which Caddy obtains again by itself.
-`bot-api-data` holds Telegram's local file cache. Losing either costs a restart,
+`/home/deploy/caddy/data` holds TLS certificates, which Caddy obtains again by
+itself. `/home/deploy/bot-api/data` (`BOT_API_DATA_DIR_HOST`) holds Telegram's
+local file cache. Losing either costs a restart,
 not data.

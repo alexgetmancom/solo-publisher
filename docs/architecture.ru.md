@@ -66,9 +66,17 @@ cargo xtask check
 `cargo xtask check` запускает полный набор проверок репозитория: проверку
 языков, `cargo fmt`, `clippy` и тесты,
 и release-сборку. Файлы
-deployment в `deploy/` привязаны к собственной установке автора — её доменам,
-путям на хосте и systemd-юнитам. Используйте их как пример реализации и
-укажите свои; поддерживаемый путь для self-host — `install.sh`.
+deployment в `deploy/` — production автора (его домены, пути на хосте и
+systemd-юниты) и единственный способ, которым работает Studio
+([deploy/README.md](../deploy/README.md)).
+
+Запуск Studio из исходников (нужен ffmpeg) — с шаблоном секретов в окружении:
+
+```bash
+cp deploy/secrets.env.example secrets.env
+cargo build --release -p app -p ops
+set -a; . ./secrets.env; set +a; target/release/solo-publisher
+```
 
 ## Безопасность
 

@@ -14,21 +14,9 @@ owner, one server, no SaaS in the middle.
 > Not a starter kit or a mockup. This is the complete publishing pipeline
 > running in production behind a real, daily-updated publication.
 
-## Install
-
-Docker, and a domain whose DNS already points at this machine:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/install.sh | sh -s -- publisher.example.com
-```
-
-It checks Docker and the DNS before touching anything, generates the secrets,
-starts the stack, gets the TLS certificate, and prints your Command Center link
-with its token. Run it again to update. → [Install guide](docs/install.md)
-
 ## Docs
 
-- [Install, update, run from source](docs/install.md)
+- [Production deployment](deploy/README.md)
 - [Connecting a destination](docs/destinations.md) — every platform, what it needs, and what bites later
 - [Backups](docs/backups.md) — what arrives on its own, what you point your own tool at
 - [Operating from an agent](docs/mcp.md) — the MCP transport and connecting a client

@@ -74,7 +74,7 @@ fn resolve(path: &Path) -> PathBuf {
 
 /// Creates each directory if missing and probes it with a real write: a
 /// directory Docker created for a bind mount exists yet may still refuse this
-/// process, which is the case that bites self-hosters.
+/// process.
 pub fn check_data_directories_writable(directories: &[DataDirectory]) -> Vec<DataDirectoryCheck> {
     directories
         .iter()

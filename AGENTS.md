@@ -1,14 +1,8 @@
 # Who this file is for
 
-This is the maintainer's working agreement for developing this repository. It is not a description
-of the product, and every routing rule below names hosts and containers that exist only on the
-maintainer's machines.
-
-**Installing or operating your own Studio? Stop here and read [docs/install.md](docs/install.md).**
-One command brings an instance up, and `docker compose exec app ops <command>` is
-your operations route — `cargo xtask ops-prod` and `--as alex|maru` below are SSH into the maintainer's own
-host and will never work for you. Nothing in this repository needs patching to install: identity,
-domain, channels and credentials are all runtime configuration.
+This is the maintainer's working agreement for developing this repository. Every routing rule below
+names hosts and containers that exist only on the maintainer's machines; production lives in
+`deploy/`, and that is the only way the Studio runs.
 
 # How to work here
 

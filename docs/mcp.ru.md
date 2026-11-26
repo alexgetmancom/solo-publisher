@@ -8,8 +8,7 @@
 
 ## Включить
 
-`install.sh` генерирует обе настройки сам, так что установленная им Studio уже
-отвечает здесь — возьмите их из написанного им `.env`. Если задаёте вручную:
+Обе настройки лежат в `secrets.env` Studio (`deploy/README.md`):
 
 ```dotenv
 # openssl rand -hex 32
@@ -25,9 +24,13 @@ MCP_STUDIO_ACTOR_ID=1
 `STUDIO_ACTOR_IDS` существует для другого случая, когда работой здесь владеет
 второй человек; установка с одним агентом оставляет его пустым.
 
+Пересоздайте контейнер, чтобы он их прочитал (Maru — `/home/deploy/maru` и
+`--as maru`), и проверьте:
+
 ```bash
-docker compose up -d
-docker compose exec app ops doctor
+ssh "$OPS_SSH_TARGET" docker compose --env-file /home/deploy/alexgetman-runtime/deploy-image.env \
+  -f /home/deploy/alexgetman-runtime/compose.yaml up -d --no-deps --force-recreate backend
+cargo xtask ops-prod doctor
 ```
 
 `doctor` покажет `studioTransportConfigured: true`, когда обе настройки на месте.
@@ -72,7 +75,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 примечание с сухим прогоном должны быть перед глазами у того, кто запускает.
 
 ```bash
-docker compose exec app ops guide --json
+cargo xtask ops-prod [--as alex|maru] guide --json
 ```
 
 Этот каталог — тот же, что видит агент: у каждой операции указан раздел, меняет

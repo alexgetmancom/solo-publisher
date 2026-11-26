@@ -22,10 +22,9 @@ the goldens' key order; `run_operation` prints integral floats as JavaScript doe
 
 ## Surfaces
 
-- CLI: `ops <command> --flag value [--db PATH] [--json]`, what `cargo xtask ops-prod` runs through `docker exec` and a
-  self-hosted Studio as `docker compose exec app ops`. Each run opens the database and configuration on first use
-  (`ProcessSurface`), flushes usage and closes on exit. The publish doorbell rings nothing in this process (the worker
-  lives in the Studio and polls).
+- CLI: `ops <command> --flag value [--db PATH] [--json]`, what `cargo xtask ops-prod` runs through `docker exec`.
+  Each run opens the database and configuration on first use (`ProcessSurface`), flushes usage and closes on exit.
+  The publish doorbell rings nothing in this process (the worker lives in the Studio and polls).
 - MCP: `crates/http/src/mcp.rs` mounts `GET`/`POST /api/mcp` and implements `Surface` over the server's `Backend`
   (its database, live configuration and boundaries).
 

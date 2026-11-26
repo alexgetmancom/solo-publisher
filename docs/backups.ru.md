@@ -11,18 +11,20 @@
 же чат: посты, расписание, состояние доставки, аналитику и внешние
 идентификаторы. Функция включена, пока вы не выключите её в **Настройки →
 Уведомления → Бэкап базы**. У MCP-only или site-only Studio нет чата для такой
-доставки, поэтому её том `app-data` нужно копировать напрямую.
+доставки, поэтому её каталог данных (`STUDIO_DATA_DIR_HOST` в `deploy/alex.env` /
+`deploy/maru.env`) нужно копировать напрямую.
 
 Это настоящий снимок средствами самой SQLite, а не копия файла. У живой базы
 рядом лежит WAL, и обычная копия такой базы — это битая база, которая сообщает о
 себе только в момент восстановления.
 
-Чтобы восстановить, скачайте файл из чата и:
+Чтобы восстановить, скачайте файл из чата и (для Maru — `--as maru` и
+`maru-backend`):
 
 ```bash
-docker compose cp <скачанный>.db app:/data/restore.db
-docker compose exec app ops restore --source /data/restore.db --force
-docker compose restart app
+ssh "$OPS_SSH_TARGET" 'docker exec -i -u 1000 alexgetman-backend sh -c "cat > /data/restore.db"' < <скачанный>.db
+cargo xtask ops-prod restore --source /data/restore.db --force
+ssh "$OPS_SSH_TARGET" docker restart alexgetman-backend
 ```
 
 ## Медиа, которые забирает машина с бэкапами
@@ -34,7 +36,7 @@ docker compose restart app
 Studio не хранит их резервную копию. Она её отдаёт:
 
 ```bash
-docker compose exec app ops backup-stream --what media > media.tar.gz
+cargo xtask ops-prod [--as alex|maru] backup-stream --what media > media.tar.gz
 ```
 
 На сервере Studio не остаётся ничего, и в этом весь смысл формы. Копия, лежащая
@@ -47,29 +49,20 @@ Studio. Поэтому забирает машина с бэкапами, а Stu
 
 ### Как забирать с другой машины
 
-Выдайте машине с бэкапами ключ, запись которого в `~/.ssh/authorized_keys` на
-сервере Studio привязана к forced command: тогда этим ключом нельзя выполнить
-ничего другого — ни шелла, ни произвольного пути.
+Ключ машины с бэкапами в `~/.ssh/authorized_keys` на сервере Studio привязан к
+forced command: этим ключом нельзя выполнить ничего другого — ни шелла, ни
+произвольного пути. На production-сервере это
+`/home/deploy/bin/alexgetman-backup-export`, он принимает
+`backup-export <what> <studio>` ([deploy/README.md](../deploy/README.md)):
 
 ```text
-command="/usr/local/bin/studio-backup-export",restrict ssh-ed25519 AAAA... backup
-```
-
-```bash
-#!/bin/sh
-# /usr/local/bin/studio-backup-export на сервере Studio
-set -eu
-case "${SSH_ORIGINAL_COMMAND:-}" in
-  "export media") exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what media ;;
-  "export db")    exec docker compose -f /path/to/compose.yaml exec -T app ops backup-stream --what db ;;
-  *) echo "unsupported export" >&2; exit 64 ;;
-esac
+command="/home/deploy/bin/alexgetman-backup-export",restrict ssh-ed25519 AAAA... backup
 ```
 
 Дальше — с машины с бэкапами, по удобному вам расписанию:
 
 ```bash
-ssh studio-host "export media" > media-$(date -u +%Y%m%dT%H%M%SZ).tar.gz
+ssh <studio-host> "backup-export media <studio>" > media-$(date -u +%Y%m%dT%H%M%SZ).tar.gz
 ```
 
 Подойдёт что угодно, что читает поток: файл, `restic backup --stdin`, труба в
@@ -78,11 +71,11 @@ ssh studio-host "export media" > media-$(date -u +%Y%m%dT%H%M%SZ).tar.gz
 сервере, а каждый такой механизм в поставке — ещё одно место, где можно
 ошибиться.
 
-Пути внутри архива отсчитываются от корня тома, поэтому он разворачивается на
-чистый том без изменений:
+Пути внутри архива отсчитываются от `/data` контейнера, где лежат все
+медиа-монтирования, поэтому он разворачивается туда без изменений:
 
 ```bash
-tar -xzf media-<метка>.tar.gz -C /data
+ssh "$OPS_SSH_TARGET" 'docker exec -i -u 1000 alexgetman-backend tar -xzf - -C /data' < media-<метка>.tar.gz
 ```
 
 ### Проверка, которая замечает остановку
@@ -91,7 +84,7 @@ tar -xzf media-<метка>.tar.gz -C /data
 деплой нездоровым, если медиа не забирали неделю:
 
 ```bash
-docker compose exec app ops doctor
+cargo xtask ops-prod [--as alex|maru] doctor
 ```
 
 Это намеренно проверка на **отсутствие**, а не отчёт об ошибке. Тот, кто
@@ -101,6 +94,7 @@ docker compose exec app ops doctor
 
 ## Что копировать не нужно
 
-В `caddy-data` лежат TLS-сертификаты, которые Caddy получит заново сам. В
-`bot-api-data` — файловый кэш Telegram. Потеря любого из них стоит перезапуска,
+В `/home/deploy/caddy/data` лежат TLS-сертификаты, которые Caddy получит
+заново сам. В `/home/deploy/bot-api/data` (`BOT_API_DATA_DIR_HOST`) — файловый
+кэш Telegram. Потеря любого из них стоит перезапуска,
 а не данных.

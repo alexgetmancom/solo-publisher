@@ -29,7 +29,6 @@ remote media processor runs on VM-106 (`agent106`) with VAAPI. The backend does
 not use its local encoder for the heavy Story and short-form video transform in
 that mode. Small auxiliary work such as upload normalization, poster extraction,
 responsive image variants, and compatibility fallbacks may still run locally.
-Other self-hosted installations may select `local` instead.
 
 ## Runtime contract
 

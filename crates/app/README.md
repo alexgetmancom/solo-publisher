@@ -67,7 +67,7 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 |---|---|
 | `/app/bin/solo-publisher` | this binary (`cargo build --release -p app`, rust:1.100-bookworm) |
 | `/app/bin/studio-entrypoint` | `crates/entrypoint`, the container's process under `tini -g`; `--check-config` only loads the configuration (the deploy agent's check of a new image), `--ready` is the healthcheck |
-| `/app/bin/ops` | the operations CLI, `ops` on PATH: `cargo xtask ops-prod` runs it directly, a self-hosted Studio as `docker compose exec app ops` |
+| `/app/bin/ops` | the operations CLI, `ops` on PATH: `cargo xtask ops-prod` runs it directly |
 | `/app/bin/deploy-agent` | `crates/deploy_agent`, static (musl); never runs here: each deployment copies it onto the host (`deploy/README.md`) |
 | `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
 | `/usr/local/bin/{ffmpeg,ffprobe}` | static ffmpeg 6.1.1 (`mwader/static-ffmpeg`) on `debian:trixie-slim` with `ca-certificates` and `tini` |
@@ -84,5 +84,5 @@ cargo xtask image-smoke solo-publisher   # what CI checks on every image it buil
 ```
 
 The healthcheck is `studio-entrypoint --ready`: `GET /readyz` on loopback at `PORT` (8788), healthy on a 2xx. Stories sign-in, once per session:
-`docker compose exec -it app ops telegram-stories-login`. On `main` CI builds the image,
+`docker exec -it -u 1000 <container> ops telegram-stories-login` on the host. On `main` CI builds the image,
 inspects it with `cargo xtask image-smoke`, and deploys (`backend-image` → `deploy`).

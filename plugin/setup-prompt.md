@@ -25,22 +25,6 @@ give it a credential, install the plugin here, and prove the connection works.
   credential I have not given you.
 - Recreating the container interrupts the site and bot for a few seconds. Tell me before you do it.
 
-## Step 0 — if there is no deployment yet
-
-If I do not have a Studio running at all, install one first and then continue from Step 4. Ask me
-for the server (SSH alias, or "it runs on this machine") and the hostname it should answer on, then
-run the installer there:
-
-    curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/install.sh | sh -s -- <domain>
-
-Add `--behind-proxy` if ports 80 and 443 already belong to another web server; the installer then
-starts the application on `127.0.0.1:8788` and prints the server block to add. If I have no domain,
-a wildcard-DNS hostname works: `publisher.<the-server-ip-with-dashes>.sslip.io`.
-
-The installer generates `MCP_STUDIO_TOKEN` and `MCP_STUDIO_ACTOR_ID` itself, so Steps 1 and 3 are
-already done when it finishes — read the token from the `.env` it wrote rather than making a new
-one. Do not print it.
-
 ## Step 1 — find out what I have
 
 Ask me, in one message, only for what you cannot discover:
@@ -82,7 +66,7 @@ replacing it breaks whatever is already using it.
 
 The actor id is who *owns* the work you create here, and the token authorizes it: it needs no
 separate roster entry. Use my Telegram user id if I also author from the bot, so both interfaces
-own the same work; otherwise any positive integer will do — `1` is what the installer picks.
+own the same work; otherwise any positive integer will do, such as `1`.
 
 ## Step 4 — restart and verify the deployment side
 

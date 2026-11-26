@@ -15,7 +15,7 @@ Thumbs.db
 .obsidian/
 
 # Runtime dynamic files and secrets
-# Running from source reads it into the environment (docs/install.md).
+# Running from source reads it into the environment (docs/architecture.md).
 /secrets.env
 /*.db
 /*.db-wal
@@ -43,8 +43,6 @@ pnpm-debug.log*
 .env
 .env.production
 .env.*
-!.env.example
-!.env.*.example
 
 # Local SQLite runtime artifacts and misc junk
 *.db

@@ -15,7 +15,7 @@
 //! - the deploy agent itself, which runs (it is static) and refuses to start
 //!   without its token;
 //! - the operations CLI, both as `cargo xtask ops-prod` runs it (`/app/bin/ops`
-//!   as uid 1000) and as a self-hosted Studio does (`ops` on PATH).
+//!   as uid 1000) and by name (`ops` on PATH).
 
 use std::process::Command;
 
