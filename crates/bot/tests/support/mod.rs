@@ -1,5 +1,5 @@
 //! The golden replay: each case of parity/bot-goldens/ runs against the Rust
-//! bot on the database the TypeScript recorder seeded for it, with the same
+//! bot on the database the recorder seeded for it, with the same
 //! updates, the same clock and a fake Telegram that answers and normalises as
 //! the recorder's did; the recorded calls must come out byte for byte.
 //!
@@ -243,7 +243,7 @@ fn instant(text: &str) -> Timestamp {
     foundation::time::parse_iso_instant(text).unwrap()
 }
 
-/// The configuration harness.ts gives every case, plus the case's own env.
+/// The configuration the recorder's harness gave every case, plus the case's own env.
 fn env(data_dir: &Path, case_env: &Value) -> Vec<(String, String)> {
     let mut vars: Vec<(String, String)> = [
         ("NODE_ENV", "test"),
@@ -353,7 +353,7 @@ fn deliberate_deviations(area: &str, case: &str, steps: &mut [Value]) {
 }
 
 /// The System screen's body no longer names the language setting
-/// (docs/decisions.md): every recorded body carries the TypeScript text,
+/// (docs/decisions.md): every recorded body carries the old text,
 /// and the Rust bot sends the catalog's, in the calls and in the updates that
 /// tap a message showing it.
 fn without_language_in_system_body(steps: &mut [Value]) {
@@ -465,7 +465,7 @@ fn describe_difference(index: usize, expected: &[Value], actual: &[Value]) -> St
 }
 
 /// A Rust bot on a database, a pinned clock and the fake Telegram, built the
-/// way harness.ts builds the TypeScript one.
+/// way the recorder's harness built the recorded one.
 pub struct Harness {
     pub bot: Bot,
     pub telegram: Rc<FakeTelegram>,
@@ -761,7 +761,7 @@ pub struct Report {
     pub failed: Vec<(String, String)>,
 }
 
-/// Replays every case of a golden directory that is ported, and lists the
+/// Replays every case of a golden directory that is registered, and lists the
 /// rest with the areas they wait for.
 pub fn run_area(area: &str) -> Report {
     ensure_seeds();

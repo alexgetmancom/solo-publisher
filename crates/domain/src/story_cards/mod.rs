@@ -1,4 +1,4 @@
-//! Generated Story cards (`story-cards/store.ts`, `story-cards/copy.ts`): the
+//! Generated Story cards: the
 //! `draft_story_cards` rows the Studio and publishing queue, read and discard,
 //! and the card copy each row carries. Rendering a queued card into its image
 //! is the Story worker's, in the `story_render` crate.

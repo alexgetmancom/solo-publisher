@@ -1,4 +1,4 @@
-//! `channels/api-keys.ts`: the services this Studio reaches with a key it is
+//! The services this Studio reaches with a key it is
 //! handed rather than one it negotiates. The operator pastes it once, it is
 //! verified against the service, and it lives sealed in the database.
 

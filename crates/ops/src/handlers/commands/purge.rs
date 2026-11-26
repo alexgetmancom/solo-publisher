@@ -1,4 +1,4 @@
-//! `operations/publication-purge.ts`: an already-absent publication and all
+//! An already-absent publication and all
 //! of its stored state removed for good, only after the platforms confirm it
 //! is gone and only while its targets still read as they did when checked.
 

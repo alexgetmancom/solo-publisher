@@ -1,4 +1,4 @@
-//! What one update spent waiting on somebody else (`foundation/tap-measurement.ts`).
+//! What one update spent waiting on somebody else.
 //!
 //! Updates are handled concurrently, so the account travels with the update's
 //! task rather than in a global; work outside an update (worker ticks) runs

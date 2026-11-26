@@ -1,5 +1,4 @@
-//! Draft translation (`content/translation-worker.ts`, `runTranslationCycle`,
-//! and the model call of `content/translation.ts`): the only place a post is
+//! Draft translation, with the model call: the only place a post is
 //! translated. An operator's message becomes a draft and a card at once; the
 //! English arrives here a moment later.
 

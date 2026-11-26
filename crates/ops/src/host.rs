@@ -1,11 +1,11 @@
 //! The CLI process's surface: the database and configuration opened on
 //! demand for one command, the boundaries Studio and publishing call (the
-//! ported stores; Story derivatives render in this process, as they did in
-//! the TypeScript CLI), and the terminal it is attached to.
+//! stores; Story derivatives render in this process), and the terminal it is
+//! attached to.
 //!
 //! The publish worker's doorbell rings nothing here: the worker lives in the
-//! Studio process, which polls the queue, exactly as a `ringWorker` with no
-//! registered wake did in a TypeScript CLI process.
+//! Studio process, which polls the queue, exactly as a ring with no
+//! registered wake does in a CLI process.
 
 use std::cell::OnceCell;
 use std::io::{self, IsTerminal, Read, Write};
@@ -111,7 +111,7 @@ impl WorkerBell for NoWorker {
     fn ring_publish_after(&self, _delay_ms: u64) {}
 }
 
-/// Studio's and publishing's boundaries over the ported stores.
+/// Studio's and publishing's boundaries over the stores.
 pub struct OpsHost {
     pub config: SharedConfig,
     auth_circuit: AuthCircuitBreaker<Rc<dyn Clock>>,

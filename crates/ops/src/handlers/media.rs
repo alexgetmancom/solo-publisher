@@ -1,6 +1,5 @@
-//! The media processor and the stored files: `media-processor.ts`,
-//! `story-media-backfill.ts`, `story-media-prune.ts`, and the site media
-//! operations of [`super::site`].
+//! The media processor and the stored files: the media processor, the Story
+//! media backfill and prune, and the site media operations of [`super::site`].
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -43,8 +42,7 @@ impl Clock for ClockAt {
     }
 }
 
-/// The process's media runtime, as the TypeScript CLI rendered Stories in
-/// its own process.
+/// The process's media runtime: the CLI renders Stories in its own process.
 pub(crate) fn delivery_media(context: &OperationContext<'_>, config: &Arc<Config>) -> DeliveryMedia {
     DeliveryMedia::new(
         context.http.clone(),

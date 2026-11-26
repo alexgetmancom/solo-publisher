@@ -1,4 +1,4 @@
-//! `channels/platform-token-store.ts`: the `platform_tokens` row each
+//! The `platform_tokens` row each
 //! credential this Studio renews or was connected with lives in, sealed.
 
 use db::rusqlite::types::Value as SqlValue;
@@ -49,7 +49,7 @@ pub fn platform_token(sqlite: &Connection, target: &str) -> Result<Option<Platfo
 
 /// What one store writes. The three columns only some credentials carry are
 /// `None` when the writer does not name them: a new row stores NULL there and
-/// an existing one keeps its value, as the TypeScript upsert's `set: row` did.
+/// an existing one keeps its value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TokenWrite {
     pub sealed_token: String,

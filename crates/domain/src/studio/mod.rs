@@ -1,6 +1,6 @@
-//! Studio: the one application boundary every interface drives (`studio/**`,
-//! `studio.ts`). Telegram, MCP and the operations CLI receive the same
-//! services; only rendering and transport live outside it.
+//! Studio: the one application boundary every interface drives. Telegram, MCP
+//! and the operations CLI receive the same services; only rendering and
+//! transport live outside it.
 //!
 //! Studio goes through the persistence ports (`ApplicationPorts`) and the
 //! publishing module; it writes no SQL of its own. What it reaches beyond

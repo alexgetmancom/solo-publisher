@@ -26,7 +26,7 @@ use tokio::signal::unix::{Signal, SignalKind, signal};
 
 use crate::host::AppHost;
 
-/// As server.ts: a shutdown that has not finished by then exits with 1.
+/// A shutdown that has not finished by then exits with 1.
 const SHUTDOWN_DEADLINE: Duration = Duration::from_secs(10);
 
 fn main() -> ExitCode {

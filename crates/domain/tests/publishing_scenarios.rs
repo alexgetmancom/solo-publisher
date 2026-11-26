@@ -1,11 +1,11 @@
-//! Publishing equivalence with TypeScript: every scenario in
-//! `publishing_scenarios.json` ran through the real TypeScript publishing
+//! Publishing equivalence with the recorded goldens: every scenario in
+//! `publishing_scenarios.json` ran through the TypeScript backend's publishing
 //! modules before the cutover (`publishing_scenarios.golden.json`) and runs
-//! through `domain::publishing`, each on its own fresh database under the same fixed
-//! clock and jitter, and every step's result and every table's rows must come
-//! out identical. The tables the spec ignores belong to boundaries faked here
-//! (the credential breaker, runtime usage); the video completion notice is
-//! faked with the TypeScript rule itself, so its journal entry is compared.
+//! through `domain::publishing`, each on its own fresh database under the same
+//! fixed clock and jitter, and every step's result and every table's rows must
+//! come out identical. The tables the spec ignores belong to boundaries faked
+//! here (the credential breaker, runtime usage); the video completion notice is
+//! faked with the same rule, so its journal entry is compared.
 
 mod support;
 
@@ -95,8 +95,8 @@ impl StoryCards for Silent {
     }
 }
 
-/// `recordVideoCompletionIfFinal`, the delivery rule, so the notice it
-/// journals is compared with TypeScript's.
+/// The delivery rule for the video completion notice, so the notice it
+/// journals is compared with the golden's.
 struct Completion<'a>(&'a FixedClock);
 
 impl VideoCompletion for Completion<'_> {

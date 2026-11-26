@@ -1,5 +1,5 @@
-//! Parity with the TypeScript foundation modules, against outputs the
-//! TypeScript backend recorded before the cutover (`tests/fixtures/`).
+//! The foundation modules against outputs the TypeScript backend recorded
+//! before the cutover (`tests/fixtures/`).
 
 use std::path::Path;
 

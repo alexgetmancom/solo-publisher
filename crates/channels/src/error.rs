@@ -1,5 +1,5 @@
-//! What a channel operation refuses with. Every variant reads as the message
-//! TypeScript threw; the provider's own error stays inspectable.
+//! What a channel operation refuses with. Every variant reads as its bare
+//! message; the provider's own error stays inspectable.
 
 use std::fmt;
 
@@ -11,7 +11,7 @@ pub enum Error {
     /// A provider call failed (`ExternalHttpError`, `ExternalTransportError`).
     External(ExternalError),
     Domain(domain::Error),
-    /// A refusal TypeScript throws as a plain `Error` with this message.
+    /// A plain refusal with this message.
     Message(String),
 }
 

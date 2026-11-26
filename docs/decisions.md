@@ -13,7 +13,7 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   recorded with `ru` stored explicitly. `ru.json` was exported with the EN value wherever the `ru` key was missing,
   because `t()` fell back to `catalog.en`, which kept the rendered output.
 - `crates/foundation/locales/ru.json` is the source of truth for the interface catalog, edited by hand since the one
-  export from `catalog.ts`. First edit: `settings.category-system-body` drops «язык» (there is no language setting) —
+  export from the old catalog. First edit: `settings.category-system-body` drops «язык» (there is no language setting) —
   «⚙️ Система\n\nЧасы, копия базы и цифры, которые вводятся руками.»; the golden harness asserts the recorded TypeScript
   text and expects the new one (`deliberate_deviations`).
 - `conversationSessions.save` carries the expected-revision check in the upsert's own `WHERE`

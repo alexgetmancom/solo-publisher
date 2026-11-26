@@ -1,5 +1,5 @@
-//! Every stored date, checked for being one (`observability/date-integrity.ts`)
-//! and repaired by the three honest moves (`observability/date-repair.ts`).
+//! Every stored date, checked for being one
+//! and repaired by the three honest moves.
 //!
 //! Dates are text here and every query compares them as text, so a value that
 //! is not a date does not fail — it sorts. The columns are read from the
@@ -140,7 +140,7 @@ static SQLITE_STAMP: LazyLock<Regex> =
 static ISO_INSTANT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}").unwrap());
 
-/// `String(value)` of a stored cell, as the TypeScript tests ran on it.
+/// `String(value)` of a stored cell, as JavaScript renders it.
 fn text_of(value: &SqlValue) -> String {
     match value {
         SqlValue::Null => "null".into(),

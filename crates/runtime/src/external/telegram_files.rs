@@ -1,5 +1,5 @@
-//! `foundation/external/telegram-files.ts`: one Telegram file onto local disk,
-//! by its `file_id` or by the path `getFile` already answered.
+//! One Telegram file onto local disk, by its `file_id` or by the path `getFile`
+//! already answered.
 
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -37,7 +37,7 @@ pub struct Materialized {
     pub temporary: bool,
 }
 
-/// `materializeTelegramFile`.
+/// Brings the file onto local disk.
 pub async fn materialize_telegram_file(
     client: &HttpClient,
     config: &Config,

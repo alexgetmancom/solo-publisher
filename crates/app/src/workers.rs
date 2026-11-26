@@ -71,7 +71,7 @@ impl DeliveryDeps {
 }
 
 /// Recovers what a previous process left locked, then starts the core loops
-/// and the Telegram ones, in TypeScript's order; the publish queue is rung
+/// and the Telegram ones, in a stable order; the publish queue is rung
 /// the moment a publication puts work in the table.
 /// `flush_usage` runs on every heartbeat, as `heartbeatLoop`'s hook does.
 pub fn start(

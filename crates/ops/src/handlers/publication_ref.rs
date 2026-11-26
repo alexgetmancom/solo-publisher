@@ -1,4 +1,4 @@
-//! `operations/publication-ref.ts`: external command input resolved to the
+//! External command input resolved to the
 //! stable publication identity Operations commands act on.
 
 use db::rusqlite::{Connection, OptionalExtension};

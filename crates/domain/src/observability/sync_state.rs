@@ -1,4 +1,4 @@
-//! `observability/sync-state.ts`: a due sync is reserved for one worker
+//! A due sync is reserved for one worker
 //! instance atomically; refresh cadence and crash recovery are independent, so
 //! a daily job does not hold a two-day lease.
 

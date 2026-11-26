@@ -1,6 +1,5 @@
-//! What this process holds in memory (`observability/memory.ts`) and the
-//! container ceiling it runs under (`cgroupMemoryLimitBytes` of
-//! `runtime-health.ts`), read from `/proc` and the cgroup files. The
+//! What this process holds in memory and the container ceiling it runs
+//! under, read from `/proc` and the cgroup files. The
 //! JavaScript heap figures have no counterpart in a Rust process.
 
 use std::sync::LazyLock;

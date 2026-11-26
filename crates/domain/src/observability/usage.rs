@@ -1,7 +1,6 @@
-//! Runtime usage telemetry (`observability/usage.ts`, `recordUsage` and
-//! `flushUsage`): calls, outcomes and time per feature and UTC day, buffered
-//! in the process and written to `runtime_usage` at most once a minute. The
-//! report over those rows is not here.
+//! Runtime usage telemetry: calls, outcomes and time per feature and UTC day,
+//! buffered in the process and written to `runtime_usage` at most once a
+//! minute. The report over those rows is not here.
 
 use std::cell::RefCell;
 use std::sync::LazyLock;

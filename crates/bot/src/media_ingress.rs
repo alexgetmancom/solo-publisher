@@ -1,5 +1,4 @@
-//! Telegram files into Content ownership (`interfaces/telegram/media-ingress.ts`,
-//! `media-import.ts`, and the file side of `foundation/external/telegram-files.ts`).
+//! Telegram files into Content ownership: the download from Telegram and the import.
 //!
 //! Nothing about publication targets is decided here. What a file is *for* is
 //! the draft's business, and the Story shapes are made when a draft says it

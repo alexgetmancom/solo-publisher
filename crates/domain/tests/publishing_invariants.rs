@@ -1,10 +1,7 @@
-//! The TypeScript tests that pin the delivery invariants, ported: leases
-//! fence every settlement, an ambiguous outcome is never republished, a
-//! half-published chain resumes rather than repeats, cancellation binds at the
-//! claim, and taking a target down or putting it back journals in the same
-//! transaction. Sources: jobPolicy, jobPhase, publicationState, publishErrors,
-//! queue, deliveryCancellation, postRecoveryScenario, postRetry,
-//! replanUnfinished, schedule and videoRescheduleGuard `.test.ts`.
+//! The tests that pin the delivery invariants: leases fence every settlement,
+//! an ambiguous outcome is never republished, a half-published chain resumes
+//! rather than repeats, cancellation binds at the claim, and taking a target
+//! down or putting it back journals in the same transaction.
 
 mod support;
 
@@ -283,7 +280,7 @@ const POLICY: RetryPolicy = RetryPolicy {
     backoff_max_seconds: 3600,
 };
 
-// ------------------------------------------------------------ jobPolicy.test.ts
+// ---- job policy
 
 #[test]
 fn retries_transient_errors_within_the_configured_budget() {
@@ -319,7 +316,7 @@ fn a_partial_publication_uses_the_same_curve() {
     assert_eq!((last.attempt, last.status, last.next_attempt_at), (4, "failed", None));
 }
 
-// ------------------------------------------------------------ jobPhase.test.ts
+// ---- job phase
 
 #[test]
 fn a_job_before_the_provider_call_goes_back_and_everything_after_is_held() {
@@ -331,7 +328,7 @@ fn a_job_before_the_provider_call_goes_back_and_everything_after_is_held() {
     assert!(may_have_reached_audience(Some("provider.something-new")));
 }
 
-// ------------------------------------------------------------ publicationState.test.ts
+// ---- publication state
 
 #[test]
 fn publication_states_fold_consistently_and_never_read_empty_as_success() {
@@ -352,7 +349,7 @@ fn publication_states_fold_consistently_and_never_read_empty_as_success() {
     assert!(is_post_target_retryable("site_en", "verification_required", None));
 }
 
-// ------------------------------------------------------------ publishErrors.test.ts
+// ---- publish errors
 
 #[test]
 fn auth_is_its_own_class_and_an_open_breaker_is_transient() {
@@ -385,7 +382,7 @@ fn next_retry_honours_and_caps_a_provider_delay() {
     );
 }
 
-// ------------------------------------------------------------ queue.test.ts
+// ---- queue
 
 #[test]
 fn a_stale_worker_cannot_fail_a_job_another_worker_claimed() {
@@ -709,7 +706,7 @@ fn an_auth_refusal_reaches_the_credential_breaker() {
     assert!(world.recorder.entries().contains(&"auth success x".to_owned()));
 }
 
-// ------------------------------------------------------------ deliveryCancellation.test.ts
+// ---- delivery cancellation
 
 fn seed_publication(world: &World, draft_id: i64, post_id: i64) -> String {
     world.sql(&format!(
@@ -787,7 +784,7 @@ fn the_targets_a_cancellation_would_stop_are_named_first() {
     );
 }
 
-// ------------------------------------------------------------ postRecoveryScenario.test.ts
+// ---- post recovery scenario
 
 #[test]
 fn failed_targets_are_retried_once_and_leave_no_duplicate_queue_rows() {
@@ -848,7 +845,7 @@ fn failed_targets_are_retried_once_and_leave_no_duplicate_queue_rows() {
     assert_eq!(world.int("SELECT count(*) FROM publish_jobs"), 2);
 }
 
-// ------------------------------------------------------------ postRetry.test.ts
+// ---- post retry
 
 #[test]
 fn a_retry_requeues_failed_targets_but_not_ambiguous_ones() {
@@ -1007,7 +1004,7 @@ fn an_abandoned_target_is_taken_down_with_its_journal_in_one_transaction() {
     assert_eq!(world.job(telegram).0, "queued");
 }
 
-// ------------------------------------------------------------ replanUnfinished.test.ts
+// ---- replan unfinished
 
 #[test]
 fn replanning_leaves_a_half_delivered_target_on_its_job() {
@@ -1074,7 +1071,7 @@ fn replanning_leaves_a_half_delivered_target_on_its_job() {
     );
 }
 
-// ------------------------------------------------------------ schedule.test.ts
+// ---- schedule
 
 #[test]
 fn manual_times_and_slot_clocks_resolve_in_the_studio_zone() {
@@ -1121,7 +1118,7 @@ fn wall_clock_times_resolve_on_both_sides_of_dst() {
     assert_eq!(parsed("08.03 02:30", spring), Err("common.schedule-parse-error".into()));
 }
 
-// ------------------------------------------------------------ videoRescheduleGuard.test.ts
+// ---- video reschedule guard
 
 fn video_world() -> World {
     let world = World::new();
@@ -1357,8 +1354,8 @@ fn a_video_source_is_checked_through_the_media_probe() {
     std::fs::remove_dir_all(&dir).unwrap();
 }
 
-/// A stored schedule that is no instant refuses the whole scheduling, as the
-/// TypeScript `new Date(NaN).toISOString()` does, and arms nothing.
+/// A stored schedule that is no instant refuses the whole scheduling, as
+/// JavaScript's `new Date(NaN).toISOString()` does, and arms nothing.
 #[test]
 fn an_unreadable_stored_schedule_refuses_scheduling() {
     let world = video_world();

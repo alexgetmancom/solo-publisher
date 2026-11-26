@@ -1,5 +1,5 @@
-//! The read-only work inbox every Studio interface shows
-//! (`studio/services/queue.ts`). It returns entity references, not
+//! The read-only work inbox every Studio interface shows.
+//! It returns entity references, not
 //! callbacks or display markup.
 
 use jiff::Timestamp;

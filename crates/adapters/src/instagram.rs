@@ -1,4 +1,4 @@
-//! `delivery/social/instagram.ts` and `instagram-container.ts`: an Instagram
+//! An Instagram
 //! Story through Graph containers, one call per attempt, and the one list of
 //! ways Meta says a container is dead.
 

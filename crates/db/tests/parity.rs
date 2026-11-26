@@ -1,4 +1,4 @@
-//! The Rust handle against the database the TypeScript one made
+//! The Rust handle against the database the TypeScript backend made
 //! (`tests/fixtures/typescript-fresh.sql`, recorded before the cutover) and
 //! against a copy of production's. Scratch files live under
 //! `_trash-rust/tmp/db-tests`.
@@ -27,8 +27,8 @@ fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-/// Writes, at `path`, the database TypeScript's `openBackendDb` created and
-/// migrated on an empty file.
+/// Writes, at `path`, the database the backend recorded in the fixture: created
+/// and migrated on an empty file.
 fn typescript_database(path: &Path) {
     let sql =
         fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/typescript-fresh.sql")).unwrap();

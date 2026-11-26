@@ -2,14 +2,14 @@
 //!
 //! The core lives here: the Bot API client and its transformer stack
 //! ([`api`]), update intake ([`runner`], [`bot`]: the middleware chain in the
-//! order `bot.ts` installs it), the callback boundary, the callback grammar,
+//! order it is installed in), the callback boundary, the callback grammar,
 //! effects and the screen anchor, conversation state, card bindings, the menu
 //! plugin's wire format ([`menu`]) and the main menu ([`screens::entry`]).
 //! Every other screen is an area module under [`screens`], registered through
 //! [`registry::Registry`]; see `README.md`.
 //!
-//! Everything runs on one thread (a tokio `LocalSet`), as the TypeScript bot
-//! ran on one event loop: handlers borrow the database connection across
+//! Everything runs on one thread (a tokio `LocalSet`), as the recorded
+//! bot ran on one event loop: handlers borrow the database connection across
 //! awaits, and the per-chat ordering is the only ordering there is.
 
 pub mod action_lock;
@@ -51,7 +51,7 @@ pub type Fut<'a, T> = Pin<Box<dyn Future<Output = T> + 'a>>;
 pub type Error = Box<dyn std::error::Error>;
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-/// A plain error with this message (TypeScript's `throw new Error(message)`).
+/// A plain error with this message, like a thrown JavaScript `Error(message)`.
 pub fn error(message: impl Into<String>) -> Error {
     message.into().into()
 }

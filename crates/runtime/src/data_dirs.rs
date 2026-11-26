@@ -1,6 +1,5 @@
-//! The host paths the process writes under (`foundation/runtime/data-dirs.ts`),
-//! checked with a real write and, as root before the privilege drop, handed to
-//! the app user.
+//! The host paths the process writes under, checked with a real write and, as
+//! root before the privilege drop, handed to the app user.
 
 use std::os::unix::fs::MetadataExt as _;
 use std::path::{Component, Path, PathBuf};

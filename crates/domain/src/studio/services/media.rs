@@ -1,5 +1,5 @@
-//! Content media ingress through the Studio boundary
-//! (`studio/services/media.ts` over `content/assets.ts`). Adapters hand over
+//! Content media ingress through the Studio boundary.
+//! Adapters hand over
 //! bytes or a temporary file, whichever their transport provides; validation,
 //! hashing, deduplication and ownership happen here.
 //!

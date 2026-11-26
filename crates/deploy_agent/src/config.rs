@@ -92,8 +92,8 @@ impl Config {
             .trim()
             .parse()
             .map_err(|_| format!("DEPLOY_AGENT_PORT must be a port number, got {port:?}"))?;
-        // `??` in the TypeScript: an empty DEPLOY_NOTIFICATION_BOT_TOKEN does
-        // not fall back to the controller's token, it switches notifications off.
+        // An empty DEPLOY_NOTIFICATION_BOT_TOKEN does not fall back to the
+        // controller's token, it switches notifications off.
         let bot_token = env
             .get("DEPLOY_NOTIFICATION_BOT_TOKEN")
             .or_else(|| env.get("CONTROLLER_BOT_TOKEN"))

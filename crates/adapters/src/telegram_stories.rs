@@ -1,7 +1,7 @@
-//! `delivery/social/telegramStories.ts`, the Rust half: the guards, the
-//! caption with its clickable hidden links, the upload description and the
-//! small-file re-encode. The MTProto call itself (`stories.sendStory`) is
-//! behind [`StoriesClient`]; the `mtproto` crate implements it.
+//! Telegram Stories: the guards, the caption with its clickable hidden links,
+//! the upload description and the small-file re-encode. The MTProto call
+//! itself (`stories.sendStory`) is behind [`StoriesClient`]; the `mtproto`
+//! crate implements it.
 
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;

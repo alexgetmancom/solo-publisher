@@ -1,11 +1,11 @@
-//! Equivalence with TypeScript for the channels and the observability probes:
-//! every scenario in `channels_scenarios.json` ran through the real
-//! TypeScript modules before the cutover (`channels_scenarios.golden.json`)
-//! and runs through this crate, each on its own fresh database under the same fixed clock, against a
+//! The channels and the observability probes against their goldens: every
+//! scenario in `channels_scenarios.json` has a recorded result
+//! (`channels_scenarios.golden.json`) and runs through this crate, each on its
+//! own fresh database under the same fixed clock, against a
 //! recording transport answering the same canned responses. Every step's
 //! result, the requests it sent and the live config's credentials, every
 //! table, and `platform_tokens` with its sealed values opened must come out
-//! identical. Randomness is scripted on both sides the same way; a sealed
+//! identical. Randomness is scripted the same way as in the recording; a sealed
 //! OAuth state is compared by what it opens to.
 
 use std::cell::{Cell, RefCell};
@@ -88,7 +88,7 @@ impl Clock for FixedClock {
 }
 
 /// Every draw but the 12-byte IV fills its buffer with a counter, as the
-/// TypeScript runner's `randomBytes` does; the IV is not drawn from here.
+/// the recording's scripted `randomBytes` does; the IV is not drawn from here.
 struct ScriptedEntropy(Cell<u8>);
 
 impl Entropy for ScriptedEntropy {
@@ -196,7 +196,7 @@ struct World<'a> {
     http: HttpClient,
 }
 
-/// The Studio as the TypeScript services build it, over the live config.
+/// The Studio over the live config, built as in the recorded scenarios.
 fn studio_parts<'a>(world: &'a World<'a>, config: &'a Config, parts: &'a StudioParts<'a>) -> Studio<'a> {
     Studio::new(
         Publishing::new(
@@ -564,7 +564,7 @@ fn strings(sqlite: &Connection, sql: &str, param: Option<&str>) -> Vec<String> {
         .collect()
 }
 
-/// The TypeScript runner's dump (`scenario-support.ts`), statement for statement.
+/// The dump the goldens were recorded with, statement for statement.
 fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     let mut out = Map::new();
     for table in strings(
@@ -742,8 +742,7 @@ async fn run(spec: &Value, scenario: &Value) -> Value {
     }))
 }
 
-/// What the TypeScript backend recorded before the cutover
-/// (`channels_scenarios.golden.json`). The runtime worker row carries the
+/// What was recorded in `channels_scenarios.golden.json`. The runtime worker row carries the
 /// revision the run was built from, which `<revision>` stands for.
 fn golden() -> Value {
     let path = spec_path().with_extension("golden.json");

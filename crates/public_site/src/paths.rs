@@ -1,6 +1,6 @@
-//! The string semantics the TypeScript side gets from Node's POSIX `path`
-//! module and the WHATWG `URL` parser. Media paths are compared and cached as
-//! strings there, so they are built as the same strings here.
+//! The string semantics of Node's POSIX `path` module and the WHATWG `URL`
+//! parser, which the goldens recorded. Media paths are compared and cached as
+//! strings, so they are built as exactly those strings.
 
 use std::sync::LazyLock;
 

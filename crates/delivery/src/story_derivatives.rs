@@ -1,4 +1,4 @@
-//! `delivery/story-derivatives.ts`: the Story shapes of an imported file,
+//! The Story shapes of an imported file,
 //! made once at ingress and named by its content. Publishing only reads them;
 //! `story-media-backfill` makes the ones ingress never saw.
 //!

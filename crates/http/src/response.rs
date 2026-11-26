@@ -1,4 +1,4 @@
-//! Response constructors every route shares (`foundation/http-response.ts`)
+//! Response constructors every route shares
 //! and the answer to a route that failed (Hono's default error handler).
 
 use std::fmt::Display;
@@ -17,7 +17,7 @@ use crate::local::{Gone, Local};
 /// A route's answer, or the failure Hono turns into a 500.
 pub type HandlerResult = Result<Response, HandlerError>;
 
-/// What a TypeScript handler threw.
+/// What a handler failed with.
 #[derive(Debug)]
 pub struct HandlerError(pub String);
 

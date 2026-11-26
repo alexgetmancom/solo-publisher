@@ -1,5 +1,4 @@
-//! A privacy-preserving visitor identity from the trusted proxy header
-//! (`foundation/client-identity.ts`).
+//! A privacy-preserving visitor identity from the trusted proxy header.
 
 use axum::http::HeaderMap;
 use foundation::config::Config;

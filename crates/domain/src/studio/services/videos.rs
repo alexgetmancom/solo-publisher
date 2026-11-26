@@ -1,5 +1,4 @@
-//! The video publication command boundary for Telegram, MCP and the CLI
-//! (`studio/services/videos.ts`).
+//! The video publication command boundary for Telegram, MCP and the CLI.
 
 use content::Locale;
 use foundation::errors::StudioError;

@@ -1,10 +1,10 @@
 //! The Telegram Bot API client: grammY's `Api` with the transformer stack
-//! `createBot` installs, in the same order (`bot.ts:37-44`):
+//! the bot installs, in this order:
 //!
-//! 1. the unchanged-edit guard (outermost, `bot/unchanged-edits.ts`),
+//! 1. the unchanged-edit guard (outermost),
 //! 2. `@grammyjs/auto-retry` with `{ maxRetryAttempts: 3, maxDelaySeconds: 30,
 //!    rethrowInternalServerErrors: true }`,
-//! 3. the API timing (`bot/api-timing.ts`), around every attempt,
+//! 3. the API timing, around every attempt,
 //!
 //! and then the encoding grammY does (JSON, or multipart when a file is
 //! attached) onto a [`Transport`].

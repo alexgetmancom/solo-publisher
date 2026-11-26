@@ -1,4 +1,4 @@
-//! The Story-card choice (`bot/post-story-cards.ts`): whether the
+//! The Story-card choice: whether the
 //! generated text card also goes to Stories, asked once the cards exist.
 
 use std::cell::{Cell, RefCell};

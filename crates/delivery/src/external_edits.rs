@@ -1,4 +1,4 @@
-//! `delivery/external-edits.ts`: best-effort edits of content that has
+//! Best-effort edits of content that has
 //! already left this system, through each target's edit port.
 
 use std::rc::Rc;

@@ -1,4 +1,4 @@
-//! `delivery/site-index-now.ts`: public content changes queued in a state file
+//! Public content changes queued in a state file
 //! under `DATA_DIR`, and sent to IndexNow one batch at a time per state file
 //! without the site cycle ever waiting on the search provider.
 //!
@@ -268,7 +268,7 @@ fn read_or_create_key(file: &Path) -> Result<String, String> {
             return Ok(value.to_owned());
         }
     }
-    // A random v4 UUID's hex: 122 random bits where TypeScript drew 128,
+    // A random v4 UUID's hex: 122 random bits rather than 128,
     // the same shape for IndexNow.
     let value = domain::repositories::random_uuid().replace('-', "");
     if let Some(parent) = file.parent() {

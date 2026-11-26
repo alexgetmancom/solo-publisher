@@ -1,4 +1,4 @@
-//! `delivery/social/x.ts`: posts and reply chains over the v2 API, media
+//! Posts and reply chains over the v2 API, media
 //! through the chunked upload, and Articles in their two calls.
 
 use std::time::Duration;

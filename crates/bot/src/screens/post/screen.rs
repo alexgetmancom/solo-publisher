@@ -1,4 +1,4 @@
-//! The conversational text-post screen (`bot/post-screen.ts`): the operator's
+//! The conversational text-post screen: the operator's
 //! input from the moment the intake decides the material is a post.
 
 use content::media_size_advice::media_size_advice;

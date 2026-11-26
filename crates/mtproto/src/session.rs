@@ -1,6 +1,6 @@
 //! The Stories account's MTProto session: the SQLite file at
 //! `TELEGRAM_CHANNEL_STORIES_SESSION`, in the layout mtcute 0.32 wrote it, so
-//! the account signed in under TypeScript stays signed in.
+//! an account already signed in stays signed in.
 //!
 //! Two parts of that file matter: `auth_keys(dc, key)`, the permanent 256-byte
 //! authorization key of each datacenter, and `key_value['dc_main']`, the home

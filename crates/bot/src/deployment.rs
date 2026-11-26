@@ -1,4 +1,4 @@
-//! The deploy agent's promote and rollback requests (`foundation/deployment.ts`):
+//! The deploy agent's promote and rollback requests:
 //! what a deployment control may name, and the request with its retries. The
 //! HTTP exchange itself is the [`DeployAgent`] the bot is built with, so a test
 //! answers it the way the recorder's `fetch` stub did.

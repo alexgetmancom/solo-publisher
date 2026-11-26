@@ -1,4 +1,4 @@
-//! A Telegram upload into Content storage (`interfaces/telegram/video-ingress.ts`).
+//! A Telegram upload into Content storage.
 
 use std::path::Path;
 use std::time::Instant;

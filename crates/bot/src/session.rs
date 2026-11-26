@@ -1,4 +1,4 @@
-//! Conversation state (`bot/conversation-state.ts`): one durable row per actor
+//! Conversation state: one durable row per actor
 //! and workflow kind, at most one of them active, expiring 30 minutes after it
 //! was last saved.
 
@@ -172,8 +172,8 @@ impl<'a> Sessions<'a> {
         })
     }
 
-    /// `requireConversationState`: TypeScript throws a plain `Error` here, so
-    /// the operator reads the code itself.
+    /// `requireConversationState`: fails with a plain error here, so the
+    /// operator reads the code itself.
     pub fn require(
         &self,
         actor_id: i64,

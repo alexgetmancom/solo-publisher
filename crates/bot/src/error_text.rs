@@ -1,5 +1,4 @@
-//! How a failure reads to the operator (`describeError`,
-//! `bot/error-text.ts`, `callbackToast`).
+//! How a failure reads to the operator, in a message and in a callback toast.
 
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, t};

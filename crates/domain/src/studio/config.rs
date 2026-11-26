@@ -1,4 +1,4 @@
-//! The Studio's own settings (`studio.ts`, `studioConfig`), read from the
+//! The Studio's own settings, read from the
 //! `studio_profile` row on every access rather than captured at boot: an
 //! operator who changes the time zone or turns the public site on expects the
 //! next request to reflect it, not the next deploy.

@@ -1,4 +1,4 @@
-//! `observability/credentials.ts`: the readiness report persisted per target
+//! The readiness report persisted per target
 //! in `credential_checks`, independently of alerting.
 
 use db::rusqlite::{Connection, params};

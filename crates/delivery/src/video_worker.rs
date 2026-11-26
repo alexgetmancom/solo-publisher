@@ -1,4 +1,4 @@
-//! `delivery/video-worker.ts`: the video loop. Jobs run one at a time, each
+//! The video loop. Jobs run one at a time, each
 //! claimed only when its provider call is about to start, under a 30 s
 //! heartbeat; every write after the claim is fenced on the job's lease, and a
 //! step that may have reached the audience settles as ambiguous rather than
@@ -71,8 +71,8 @@ struct Target {
     confirmation_source: Option<String>,
 }
 
-/// The columns one write sets, in the order TypeScript's patch named them.
-/// An `undefined` field is left out, a `null` one is written as NULL.
+/// The columns one write sets, in the order the recorded goldens name them.
+/// An absent field is left out, a null one is written as NULL.
 type Patch = Vec<(&'static str, SqlValue)>;
 
 fn text(value: impl Into<String>) -> SqlValue {
@@ -88,8 +88,8 @@ fn present(value: Option<&str>) -> Option<&str> {
     value.filter(|value| !value.is_empty())
 }
 
-/// A failure the database answered inside a job step: in TypeScript it was
-/// thrown through the same `catch` as a provider's refusal.
+/// A failure the database answered inside a job step, handled like a
+/// provider's refusal.
 fn local(error: impl ToString) -> AdapterError {
     AdapterError::Message(error.to_string())
 }
@@ -323,7 +323,7 @@ async fn execute_video_job(delivery: &Delivery<'_>, job: &VideoJob) -> adapters:
         .publishing()
         .get_video_draft(job.video_draft_id)
         .map_err(local)?;
-    // Deliberate deviation: TypeScript also ran the step for a target held
+    // Deliberate deviation: the goldens also run the step for a target held
     // for verification. After an upload that lost its answer, the queued
     // publish job then failed with "upload has not completed yet" and wrote
     // the target back to `scheduled`/`failed` — the state an operator retries,

@@ -1,5 +1,4 @@
-//! `delivery/social/telegram.ts` and the Telegram edit/remove ports of
-//! `platform-adapters.ts`: the channel post over the Bot API.
+//! The channel post over the Bot API, with the Telegram edit and remove ports.
 
 use std::path::Path;
 

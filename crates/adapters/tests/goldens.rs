@@ -1,5 +1,5 @@
-//! Request parity with the TypeScript adapters, against what they recorded
-//! in `parity/adapter-goldens/` before the cutover.
+//! Request goldens: what the TypeScript adapters recorded in
+//! `parity/adapter-goldens/` before the cutover.
 //! Each case replays its canned responses over a recording transport and
 //! asserts the same requests went out — order, method, URL, headers, body
 //! bytes (multipart as its parts) — and the same result or error class.
@@ -79,7 +79,7 @@ fn sha256(bytes: &[u8]) -> String {
 }
 
 /// Puts the credentials back as `{{NAME}}` and the scratch directory as
-/// `$FILES`, as the TypeScript recorder wrote them.
+/// `$FILES`, as the recorder wrote them.
 struct Scrubber {
     files: String,
     secrets: Vec<(String, String)>,
@@ -157,8 +157,8 @@ fn find(haystack: &[u8], needle: &[u8], from: usize) -> Option<usize> {
         .map(|index| index + from)
 }
 
-/// The parts as they went on the wire, by the same reading the TypeScript
-/// recorder applies.
+/// The parts as they went on the wire, by the same reading the recorder
+/// applies.
 fn multipart_parts(body: &[u8], boundary: &str, scrub: &Scrubber) -> Vec<Value> {
     let delimiter = format!("--{boundary}").into_bytes();
     let mut parts = Vec::new();
@@ -198,7 +198,7 @@ fn body_bytes(request: &HttpRequest) -> Vec<u8> {
     bytes
 }
 
-/// A request as the TypeScript recorder saw it through `new Request`: the
+/// A request as the recorder saw it through `new Request`: the
 /// normalized URL, header names lower-cased and sorted.
 fn recorded(request: &HttpRequest, scrub: &Scrubber) -> Value {
     let boundary = request

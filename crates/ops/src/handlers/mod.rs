@@ -1,5 +1,5 @@
 //! The operation handlers, one module per area of the catalog. Each handler
-//! is the body of one `registry.ts` entry (or the module it called).
+//! is the body of one registry entry (or the module it calls).
 
 pub mod admin;
 pub mod commands;

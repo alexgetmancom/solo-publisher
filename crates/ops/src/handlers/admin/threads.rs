@@ -1,4 +1,4 @@
-//! `operations/threads-authorize.ts`: the terminal fallback that trades a
+//! The terminal fallback that trades a
 //! Threads consent code for the long-lived token, when the browser callback
 //! is unavailable. The code is single-use and lives an hour, so it is
 //! exchanged at once.

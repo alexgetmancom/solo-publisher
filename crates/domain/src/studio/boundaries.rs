@@ -1,5 +1,5 @@
 //! What Studio calls but does not own, each as the narrowest trait the
-//! TypeScript services use. The real implementations live with their owners
+//! services use. The real implementations live with their owners
 //! (notifications, delivery, observability, the channel adapters); the tests
 //! fake them. Publishing's own boundaries (usage, Story cards, the credential
 //! breaker, the media prober, the video provider) are reused as they are.
@@ -34,7 +34,7 @@ pub struct Reminder<'a> {
     pub reminders: ReminderPolicy,
 }
 
-/// Publication reminders (`notifications/jobs.ts`), on the connection given.
+/// Publication reminders, on the connection given.
 pub trait Reminders {
     /// `scheduleReminder`: nothing when reminders are off or the time passed.
     fn schedule(&self, sqlite: &Connection, reminder: &Reminder<'_>) -> Result<()>;
@@ -74,8 +74,8 @@ pub struct CapabilityReportEntry {
     pub status: CapabilityStatus,
 }
 
-/// The readiness report (`observability/capabilities.ts`, `capabilityReport`
-/// over the channel registry): one entry per connected capability.
+/// The readiness report over the channel registry: one entry per connected
+/// capability.
 pub trait Readiness {
     fn capability_report(&self, sqlite: &Connection) -> Result<Vec<CapabilityReportEntry>>;
 }
@@ -109,8 +109,7 @@ pub struct ConnectStart {
     pub expires_in_minutes: u32,
 }
 
-/// The connection links the channel adapters sign (`channels/meta-oauth.ts`,
-/// `channels/x-oauth.ts`, `channels/connect.ts`). Each refuses with an error
+/// The connection links the channel adapters sign. Each refuses with an error
 /// when the platform is not configured.
 pub trait ChannelConnectLinks {
     fn meta_oauth_connect_url(&self, config: &Config, platform: MetaOauthPlatform, locale: Locale) -> Result<String>;

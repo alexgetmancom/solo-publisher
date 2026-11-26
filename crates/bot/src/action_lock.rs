@@ -1,4 +1,4 @@
-//! The double-tap guard (`foundation/action-lock.ts`): a mutating action runs
+//! The double-tap guard: a mutating action runs
 //! only if its key is not already in flight. Process-local on purpose; durable
 //! idempotency is the services' business.
 

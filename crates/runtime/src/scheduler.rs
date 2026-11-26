@@ -1,6 +1,6 @@
-//! Background loops (`foundation/scheduler.ts`): a task on an interval, never
-//! two cycles of it at once, and a wake that runs it now. Loops live on the
-//! process's `LocalSet`, as everything else does.
+//! Background loops: a task on an interval, never two cycles of it at once, and
+//! a wake that runs it now. Loops live on the process's `LocalSet`, as
+//! everything else does.
 
 use std::cell::{Cell, RefCell};
 use std::fmt::Display;
@@ -79,7 +79,7 @@ impl ScheduledLoop {
     }
 }
 
-/// `startLoop(name, intervalMs, task, hooks)`: the first cycle starts now.
+/// Starts a named loop on an interval: the first cycle starts now.
 /// Must be called inside the process's `LocalSet`.
 pub fn start_loop<F, T, E>(name: &str, interval: Duration, task: F, hooks: LoopHooks) -> ScheduledLoop
 where
@@ -114,7 +114,7 @@ where
     ScheduledLoop { state, timers }
 }
 
-/// `setInterval(tick, period)`: the first tick one period from now.
+/// A tick every `period`, the first one a period from now.
 fn every(period: Duration, tick: impl Fn() + 'static) -> JoinHandle<()> {
     let period = period.max(Duration::from_millis(1));
     tokio::task::spawn_local(async move {
@@ -159,7 +159,7 @@ fn begin(state: &LoopState) {
 async fn cycles(state: Rc<LoopState>) {
     loop {
         // Spawned so a panicking task fails its cycle instead of leaving the
-        // loop marked running forever, as a thrown error did in TypeScript.
+        // loop marked running forever.
         let failure = match tokio::task::spawn_local((state.task)()).await {
             Ok(Ok(())) => None,
             Ok(Err(error)) => Some(error),

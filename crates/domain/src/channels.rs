@@ -1,8 +1,7 @@
-//! What the channel registry answers publishing (`channels/registry.ts`,
-//! `channelUploadLimits`): which targets this Studio has a connection for,
-//! which account a video goes to, and how large an attachment each channel
-//! takes. Registering and disabling channels belongs to the Studio's channel
-//! service.
+//! What the channel registry answers publishing: which targets this Studio has
+//! a connection for, which account a video goes to, and how large an attachment
+//! each channel takes. Registering and disabling channels belongs to the
+//! Studio's channel service.
 
 use content::Locale;
 use db::rusqlite::Connection;

@@ -1,5 +1,5 @@
-//! Equivalence with TypeScript for the Story-card worker: every scenario in
-//! `worker_scenarios.json` ran through the real TypeScript worker and sharp
+//! Equivalence with the recorded Story-card worker: every scenario in
+//! `worker_scenarios.json` ran through the real worker and sharp
 //! renderer before the cutover (`worker_scenarios.golden.json`) and runs
 //! through `story_render`, each on its own fresh database under the same fixed clock,
 //! with the Studio post services queueing and scheduling the cards on both
@@ -70,7 +70,7 @@ impl AuthCircuit for Unreached {
     }
 }
 
-/// Usage rows are not compared: TypeScript times renders on its fixed clock.
+/// Usage rows are not compared: the recorded worker timed renders on its fixed clock.
 impl UsageMeter for Unreached {
     fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
 }

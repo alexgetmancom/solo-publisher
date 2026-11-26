@@ -2,11 +2,10 @@
 //!
 //! Instants are built from parts in UTC and the zone is consulted only for its
 //! offset; nothing is ever parsed or formatted in the host's timezone. The
-//! arithmetic reproduces what the TypeScript code got from `Date.UTC` and `Intl`
-//! (`ru-RU` for display), quirks included: an offset is the zone's wall clock,
-//! read to the second, minus the instant, so it carries the instant's
-//! milliseconds with the opposite sign, and the week and period bounds inherit
-//! that.
+//! arithmetic reproduces what `Date.UTC` and `Intl` give (`ru-RU` for display),
+//! quirks included: an offset is the zone's wall clock, read to the second,
+//! minus the instant, so it carries the instant's milliseconds with the
+//! opposite sign, and the week and period bounds inherit that.
 
 use std::fmt;
 use std::sync::LazyLock;

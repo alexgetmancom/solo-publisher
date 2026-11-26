@@ -1,6 +1,5 @@
-//! The Telegram side's worker loops (`interfaces/telegram/worker.ts`): one
-//! task per loop, each the body the loop runs on every tick, and
-//! [`start_telegram_workers`], which starts them as TypeScript did. What each
+//! The Telegram side's worker loops: one task per loop, each the body the loop
+//! runs on every tick, and [`start_telegram_workers`], which starts them. What each
 //! tick sends lives with the messages ([`crate::screens::notices`],
 //! [`crate::albums`]); the scheduler, single flight and heartbeats are
 //! `runtime`'s.
@@ -39,7 +38,7 @@ pub const ALBUMS_INTERVAL: Duration = Duration::from_secs(1);
 /// `DAILY_INTERFACE_POLL_INTERVAL_SECONDS`.
 pub const DAILY_BACKUP_INTERVAL: Duration = Duration::from_secs(60);
 
-/// `startTelegramWorkers`: the five loops, in TypeScript's order, each
+/// `startTelegramWorkers`: the five loops, in a fixed order, each
 /// through `loops` so it records its heartbeat. The event loop is rung the
 /// moment a domain event is journalled rather than waiting out its poll: the
 /// card an operator is watching changes when it runs. Must be called inside

@@ -1,5 +1,5 @@
-//! The daily database copy sent to the operators' own Telegram
-//! (`interfaces/telegram/backup.ts`). The database is the part that
+//! The daily database copy sent to the operators' own Telegram.
+//! The database is the part that
 //! cannot be recreated; media is far past what Telegram accepts and belongs
 //! to a volume backup. The copy is SQLite's own `VACUUM INTO`, never a file
 //! copy: a live database has a write-ahead log beside it.

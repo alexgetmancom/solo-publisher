@@ -1,5 +1,5 @@
-//! What the public site reads from this Studio, and the files it links to
-//! (`interfaces/http/public-site.ts`). The site is its own service with no
+//! What the public site reads from this Studio, and the files it links to.
+//! The site is its own service with no
 //! access to this Studio's database or disk: `GET /api/public/site` is
 //! everything it renders (the `public_site` crate), and the proxy sends
 //! `/media/*` and `/generated/responsive/media-*` here.
@@ -57,7 +57,7 @@ fn path_text(path: &Path) -> String {
     path.to_string_lossy().into_owned()
 }
 
-/// `Bun.file(path)`: the size of a regular file there, `None` otherwise.
+/// The size of the regular file at `path`, `None` otherwise.
 fn file_size(path: &str) -> Option<u64> {
     fs::metadata(path)
         .ok()
@@ -178,7 +178,7 @@ async fn serve_media(
     Ok(ranged_file_response(Path::new(&file), size, range, &headers, head).await?)
 }
 
-/// `indexNowKey`: the key IndexNow fetches back from `/<key>.txt`, stored in
+/// The key IndexNow fetches back from `/<key>.txt`, stored in
 /// `$DATA_DIR/indexnow.key`.
 fn index_now_key(config: &Config) -> Option<String> {
     let value = fs::read_to_string(Path::new(&config.data_dir).join("indexnow.key")).ok()?;

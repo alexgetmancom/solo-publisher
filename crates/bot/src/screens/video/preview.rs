@@ -1,6 +1,4 @@
-//! The video card (`interfaces/telegram/video-preview.ts`, `video-time.ts`,
-//! the video half of `bot/publication-renderers.ts`) and the source preview
-//! the schedule confirmation offers (`sendVideoSourcePreview`).
+//! The video card and the source preview the schedule confirmation offers.
 
 use domain::application::conversation_flow::PublicationKind;
 use domain::application::ports::{JsonObject, StudioVideoDraftRecord, StudioVideoTargetRecord};

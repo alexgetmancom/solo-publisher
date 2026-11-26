@@ -1,6 +1,6 @@
-//! What a failed adapter call was (`publishing/errors.ts` `HttpPublishError`,
-//! `delivery/ambiguous-publication.ts`, the Instagram container errors), and
-//! the helpers every adapter reads a provider's answer through.
+//! What a failed adapter call was (an HTTP publish error, an ambiguous
+//! publication, the Instagram container errors), and the helpers every
+//! adapter reads a provider's answer through.
 
 use std::fmt;
 use std::sync::LazyLock;

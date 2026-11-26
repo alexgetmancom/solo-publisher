@@ -1,4 +1,4 @@
-//! `story-cards/worker.ts`: one queued card per cycle, claimed under a lease,
+//! One queued card per cycle, claimed under a lease,
 //! rendered, and settled — ready, queued again with a back-off, or failed
 //! once its attempts run out — by writes that carry the lease in their
 //! `WHERE`.

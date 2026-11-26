@@ -1,4 +1,4 @@
-//! `foundation/runtime/timeout.ts`.
+//! A deadline on a piece of work.
 
 use std::fmt;
 use std::time::Duration;
@@ -16,9 +16,9 @@ impl fmt::Display for OperationTimeoutError {
 
 impl std::error::Error for OperationTimeoutError {}
 
-/// `withTimeout(work, ms, message)`. Unlike a raced promise, the work is
-/// dropped when the timer wins: it stops at its next await instead of running
-/// on unobserved.
+/// Runs `work` under a deadline. Unlike a raced promise, the work is dropped
+/// when the timer wins: it stops at its next await instead of running on
+/// unobserved.
 pub async fn with_timeout<T>(
     work: impl Future<Output = T>,
     timeout: Duration,

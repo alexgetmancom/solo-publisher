@@ -1,5 +1,5 @@
 //! The transport-free progress read model shared by Telegram cards and
-//! other clients (`studio/services/post-progress.ts`).
+//! other clients.
 
 use content::Locale;
 use serde::Serialize;

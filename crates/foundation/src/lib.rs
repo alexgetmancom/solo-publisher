@@ -2,9 +2,8 @@
 //! Russian interface catalog, text and Markdown helpers, zoned time, the
 //! credential seal and the structured logger.
 //!
-//! The interface is Russian only, so the TypeScript `locale.ts` (the interface
-//! locale switch) has no counterpart here: everything that took a locale renders
-//! `ru-RU`.
+//! The interface is Russian only, so there is no interface locale switch:
+//! everything that takes a locale renders `ru-RU`.
 
 pub mod config;
 pub mod errors;

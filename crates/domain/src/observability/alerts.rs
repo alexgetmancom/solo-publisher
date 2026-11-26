@@ -1,4 +1,4 @@
-//! `observability/alerts.ts`: unacknowledged warnings and errors of the event
+//! Unacknowledged warnings and errors of the event
 //! journal, delivered through an optional transport, one subject quiet for an
 //! hour after it was reported.
 

@@ -1,4 +1,4 @@
-//! `operations/commands/requeue.ts`: `ops retry` over one publication — which
+//! `ops retry` over one publication — which
 //! targets it names and how its result reads. The requeue itself belongs to
 //! Publishing, which Studio's retry button also goes through.
 

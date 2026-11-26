@@ -4,8 +4,8 @@
 //! pure half of machine translation.
 //!
 //! Entity offsets and lengths are UTF-16 code units, as Telegram measures them
-//! and as the TypeScript code read them through `String.length`; every
-//! function here converts at that boundary rather than counting `char`s.
+//! and as `String.length` reports them; every function here converts at that
+//! boundary rather than counting `char`s.
 
 pub mod assets;
 pub mod draft_content;

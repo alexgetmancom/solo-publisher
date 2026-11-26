@@ -1,4 +1,4 @@
-//! Who may call an operator route (`foundation/http-auth.ts`): the command
+//! Who may call an operator route: the command
 //! center token, and the Studio bearer token that names an actor.
 
 use axum::http::{HeaderMap, Method, Uri};
@@ -8,7 +8,7 @@ use subtle::ConstantTimeEq as _;
 use crate::headers::header;
 use crate::uri::{Target, decode_uri_component};
 
-/// `commandAllowed`: the command center token from the payload, the
+/// Whether the request carries the command center token from the payload, the
 /// `X-Command-Token` or `X-Admin-Token` header, `?token=` (only on GET and
 /// HEAD: a URL survives in proxy logs, Referer headers and history, so it may
 /// open safe reads only) or the `command_token` cookie, compared in constant
@@ -59,7 +59,7 @@ fn cookie_value(cookie_header: Option<&str>, name: &str) -> String {
     String::new()
 }
 
-/// `mcpStudioActor`: the actor the request's `Bearer` token authorizes, when
+/// The actor the request's `Bearer` token authorizes, when
 /// Studio access is configured and the token matches.
 pub fn mcp_studio_actor(headers: &HeaderMap, config: &Config) -> Option<i64> {
     let authorization = header(headers, "authorization").unwrap_or_default();

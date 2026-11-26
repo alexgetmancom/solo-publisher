@@ -129,9 +129,9 @@ const MEDIA_STRING_FIELDS: [&str; 7] = [
     "storyVpsUrl",
 ];
 
-/// `delivery/social/payload.ts` `payloadMedia`: the media items a delivery
-/// adapter can actually send. An item without a type it knows, or without a
-/// file, path or URL to send, is dropped; so is one whose fields are not text.
+/// The media items a delivery adapter can actually send. An item without a type
+/// it knows, or without a file, path or URL to send, is dropped; so is one whose
+/// fields are not text.
 pub fn payload_media(payload: &Map<String, Value>) -> Vec<Map<String, Value>> {
     if !publish_payload_parses(payload) {
         return Vec::new();

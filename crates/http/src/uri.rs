@@ -1,4 +1,4 @@
-//! The request target as the TypeScript routes saw it.
+//! The request target as the routes see it.
 //!
 //! Bun builds `request.url` with the WHATWG URL parser (dot segments, also
 //! `%2e`, resolved; spaces and non-ASCII percent-encoded), and Hono routes on

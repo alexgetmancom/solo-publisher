@@ -1,9 +1,7 @@
-//! The publication controls (`p:post:…`, `p:video:…`): the action contract
-//! (`bot/publication-action-contract.ts`), the router that checks a tap before
-//! any action runs (`bot/callback-router.ts`), the actions both
-//! kinds share (`view`, `retry`), the card a publication renders as
-//! (`bot/publication-renderers.ts`) and `runCallbackAction`
-//! (`bot/callback-effects.ts`).
+//! The publication controls (`p:post:…`, `p:video:…`): the action contract,
+//! the router that checks a tap before any action runs, the actions both
+//! kinds share (`view`, `retry`), the card a publication renders as, and
+//! the one-tap-at-a-time action runner.
 //!
 //! The post and video areas register their actions, their card renderer and
 //! their message handler; nothing here knows what a post card looks like.

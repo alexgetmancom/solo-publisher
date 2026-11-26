@@ -1,5 +1,5 @@
-//! The bodies of the four background loops this crate owns
-//! (`runtime/workers.ts`), each one tick; the binary runs them through
+//! The bodies of the four background loops this crate owns,
+//! each one tick; the binary runs them through
 //! `runtime::worker_state::HeartbeatLoops::start` under the names and
 //! intervals below.
 

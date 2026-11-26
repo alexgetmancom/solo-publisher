@@ -1,13 +1,13 @@
 # story_render — Story cards drawn and the worker that draws them
 
-Port of the TypeScript `story-cards/svg.ts`, `renderer-process.ts` and `worker.ts`. The card copy (headline, emoji,
+The card copy (headline, emoji,
 line breaks, bold lines) is `domain::story_cards::story_card_copy`; the store that queues cards is
 `domain::story_cards::StoryCardStore`.
 
 ## For the host
 
 - At startup: `recover_story_card_jobs(sqlite, clock)` and, when it returns more than 0, log
-  `recovered interrupted Story card locks on worker startup` with `{recovered}` (warn), as `runtime/workers.ts`.
+  `recovered interrupted Story card locks on worker startup` with `{recovered}` (warn).
 - Loop `STORY_CARD_WORKER` (`"story-cards"`) every `IDLE_POLL_INTERVAL_SECONDS`, inside the timed cycle
   `content.story_card.cycle` counted by `claimed`: `run_story_card_cycle(studio).await` with the host's `Studio`
   (publishing boundaries with the real `StoryCardStore` and usage meter; Studio boundaries for the replan's reminders
@@ -17,7 +17,7 @@ line breaks, bold lines) is `domain::story_cards::story_card_copy`; the store th
 - Configuration: `STORY_CARD_ASSETS_DIR` (background, `Manrope-Variable.ttf`, `NotoColorEmoji.ttf`, `emoji/*.svg`)
   and `$DATA_DIR/story-cards` for the output. `STORY_CARD_RENDERER_ENTRY` is not read: there is no renderer process.
 
-## How it differs from TypeScript
+## How it differs from the recorded renders
 
 - No child process, no sharp, no fontconfig file: the render runs on tokio's blocking pool (resvg, tiny-skia,
   jpeg-encoder are safe Rust; a panic is an error). A render past 15 s is reported as timed out exactly as before,
@@ -30,13 +30,13 @@ line breaks, bold lines) is `domain::story_cards::story_card_copy`; the store th
   silhouette in the text colour, traced by cairo from the bitmap and larger; the glyph's advance, and so
   the layout, is the same.
 
-## Parity tests
+## Golden tests
 
 - `tests/render_parity.rs`: copy, line breaks, overlay SVG, emoji file and box against `tests/fixtures/copy.json`
-  exactly; five cards' pixels against the TypeScript renders in `tests/fixtures/*.jpg` (halved, see the test for the
+  exactly; five cards' pixels against the recorded renders in `tests/fixtures/*.jpg` (halved, see the test for the
   measured limits). Rust renders land in `_trash-rust/tmp/story-render/`.
-- `tests/worker_scenarios.rs`: the worker against the TypeScript worker on two fresh databases
-  (`worker_scenarios.json`; what the TypeScript worker and the real sharp renderer did is
+- `tests/worker_scenarios.rs`: the worker against the recorded worker on two fresh databases
+  (`worker_scenarios.json`; what the recorded worker and the real sharp renderer did is
   `worker_scenarios.golden.json`).
-- The fixtures and goldens were recorded from the TypeScript backend before the cutover; nothing re-records them. The assets are `assets/story-card/`, `/app/assets/story-card`
+- The fixtures and goldens were recorded before the cutover; nothing re-records them. The assets are `assets/story-card/`, `/app/assets/story-card`
   in the image (`STORY_CARD_ASSETS_DIR`'s default).

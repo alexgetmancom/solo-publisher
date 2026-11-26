@@ -19,7 +19,7 @@ pub trait SignInPrompts {
     fn tell(&self, line: &str);
 }
 
-/// The account now signed in, named as the TypeScript sign-in printed it.
+/// The account now signed in, named as the sign-in prints it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SignedIn {
     /// `@username`, or the display name of an account without one.

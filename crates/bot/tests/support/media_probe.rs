@@ -1,7 +1,6 @@
-//! ffprobe and ffmpeg as the recorder ran them (`foundation/runtime/ffmpeg.ts`
-//! `probeMediaMetadata`, `publishing/video-audio.ts`): the real binaries on
+//! ffprobe and ffmpeg as the recorder ran them: the real binaries on
 //! the fixture files, so the technical check a video card shows is the one
-//! the TypeScript bot printed.
+//! the recorded bot printed.
 
 use std::process::Command;
 

@@ -1,10 +1,10 @@
-//! `foundation/runtime/job-heartbeat.ts`.
+//! The heartbeat that keeps a long job's durable lease alive.
 
 use std::time::Duration;
 
 use tokio::time::{Instant, MissedTickBehavior};
 
-/// `withJobHeartbeat`: runs `work` while refreshing a durable job lease every
+/// Runs `work` while refreshing a durable job lease every
 /// `interval`. A missed beat is harmless on its own, so its error is dropped:
 /// the next one lands inside the lease timeout.
 pub async fn with_job_heartbeat<T, E>(

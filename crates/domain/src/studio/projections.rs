@@ -1,4 +1,4 @@
-//! The delivery-facing view of a publication (`studio/projections.ts`),
+//! The delivery-facing view of a publication,
 //! shared by Telegram previews and MCP: what each language, or each video
 //! platform, will actually receive.
 

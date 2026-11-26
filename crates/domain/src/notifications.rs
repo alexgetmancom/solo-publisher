@@ -1,4 +1,4 @@
-//! Publication reminders (`notifications/jobs.ts`): the
+//! Publication reminders: the
 //! `studio_notification_jobs` rows scheduling a publication queues and
 //! cancelling it retires, and the Notifications worker's cycle that turns a
 //! due row into its journal event (`runNotificationCycle`).

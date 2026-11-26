@@ -1,4 +1,4 @@
-//! `operations/timeline.ts` (`publicationTimeline`): jobs, targets and the
+//! The publication timeline: jobs, targets and the
 //! event log of one publication, in order. `media-job` reads its media
 //! events out of it.
 

@@ -1,6 +1,6 @@
-//! What every SQL-equivalence test shares with the TypeScript run recorded in
-//! its golden: how arguments name earlier results, how a database is dumped,
-//! and how two runs are compared.
+//! What every SQL-equivalence test shares with the run recorded in its golden:
+//! how arguments name earlier results, how a database is dumped, and how two
+//! runs are compared.
 
 #![allow(dead_code)]
 
@@ -39,7 +39,7 @@ pub fn arg<T: DeserializeOwned>(args: &[Value], index: usize) -> T {
 }
 
 /// A result as JavaScript holds it: through `JSON.stringify`, so `12.0` read
-/// from a JSON column is the number `12`, as on the TypeScript side.
+/// from a JSON column is the number `12`, as in the recording.
 pub fn out(value: impl Serialize) -> Value {
     serde_json::from_str(&domain::json::stringify(&serde_json::to_value(value).unwrap())).unwrap()
 }
@@ -66,7 +66,7 @@ pub fn lookup<'a>(vars: &'a Map<String, Value>, reference: &str) -> &'a Value {
     &vars.get(name).unwrap_or_else(|| panic!("unbound {name}"))[field]
 }
 
-/// The TypeScript script's dump, statement for statement.
+/// The dump the recording script took, statement for statement.
 pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     let strings = |sql: &str, param: Option<&str>| -> Vec<String> {
         let mut statement = sqlite.prepare(sql).unwrap();
@@ -108,7 +108,7 @@ pub fn golden(spec: &Path) -> Value {
     serde_json::from_str(&text.replace("<root>", &repo_root().display().to_string())).unwrap()
 }
 
-/// Every step result and every table of every scenario, TypeScript against
+/// Every step result and every table of every scenario, recording against
 /// Rust; the differences, described.
 pub fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
     assert_eq!(expected.len(), actual.len(), "scenario count");

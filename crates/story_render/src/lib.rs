@@ -1,5 +1,4 @@
-//! The Story-card renderer and its worker (`story-cards/svg.ts`,
-//! `renderer-process.ts`, `worker.ts`): queued `draft_story_cards` rows are
+//! The Story-card renderer and its worker: queued `draft_story_cards` rows are
 //! claimed one at a time, drawn into a 1080×1920 JPEG and settled as ready,
 //! or retried and finally failed.
 

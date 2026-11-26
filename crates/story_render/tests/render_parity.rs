@@ -1,4 +1,4 @@
-//! The renderer against the TypeScript one, as recorded before the cutover
+//! The renderer against the one recorded before the cutover
 //! (`tests/fixtures/`).
 //!
 //! The copy, line breaks and overlay SVG must match exactly. The pixels

@@ -1,10 +1,8 @@
-//! The live configuration's platform credentials (`runtime/config.ts`,
-//! `applyStoredCredentials`): what the database holds, put under the names the
-//! rest of the process reads.
+//! The live configuration's platform credentials: what the database holds,
+//! put under the names the rest of the process reads.
 //!
-//! TypeScript assigned into its one config object; here each change is a
-//! [`ConfigPatch`] swapped into the [`SharedConfig`] at the point TypeScript
-//! assigned, so a reader sees either all of one change or none of it.
+//! Each change is a [`ConfigPatch`] swapped into the [`SharedConfig`] at one
+//! point, so a reader sees either all of one change or none of it.
 
 use db::rusqlite::Connection;
 use foundation::config::{Config, SharedConfig};
@@ -145,8 +143,7 @@ pub(crate) fn assign(config: &SharedConfig, assignments: &[(Setting, &str)]) {
 /// `applyStoredCredentials`: makes the running process's credentials equal to
 /// what the database holds — the renewed Meta tokens, the connected X pair,
 /// the stored API keys, the connected YouTube channels — in that order. A
-/// store that fails stops the rest, as the TypeScript throw did, and what was
-/// applied before it stays applied.
+/// store that fails stops the rest, and what was applied before it stays applied.
 pub fn apply_stored_credentials(config: &SharedConfig, sqlite: &Connection) -> Result<()> {
     let current = config.load();
     let mut patch = ConfigPatch::default();

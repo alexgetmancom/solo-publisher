@@ -12,10 +12,10 @@ thread_local! {
     static EVENT_BELL: RefCell<Option<Rc<dyn Fn()>>> = const { RefCell::new(None) };
 }
 
-/// What [`record_event`] rings once a row is written (`ringWorker("telegram-events")`
-/// in TypeScript): every stored event reaches the Telegram consumer, which
-/// otherwise waits out its poll. Set by whoever starts that loop; `None`
-/// unhooks it. Per thread, as the process's single-threaded runtime is.
+/// What [`record_event`] rings once a row is written: every stored event
+/// reaches the Telegram consumer, which otherwise waits out its poll. Set by
+/// whoever starts that loop; `None` unhooks it. Per thread, as the process's
+/// single-threaded runtime is.
 pub fn set_event_bell(bell: Option<Rc<dyn Fn()>>) {
     EVENT_BELL.with_borrow_mut(|current| *current = bell);
 }

@@ -1,25 +1,25 @@
 # adapters — platform delivery (Rust)
 
-Port of the TypeScript delivery adapters. Every request goes through `runtime::http::HttpClient`, so the request
-goldens see exactly what production sends. The delivery workflow (a later slice) drives them through `SocialAdapter`.
+Every request goes through `runtime::http::HttpClient`, so the request goldens see exactly what production sends.
+The delivery workflow (a later slice) drives the adapters through `SocialAdapter`.
 
-| Module | TypeScript |
+| Module | Holds |
 |---|---|
-| `ports` (`SocialAdapter`, `PrepareJob`, `DeliveryPorts`, `AdapterContext`, `EditRequest`/`EditOutcome`) | `delivery/ports.ts` |
-| `social_ports` (`PreparedMedia`, `MediaPreparation`) | `delivery/ports/social.ts` (`createPlatformPorts`) |
-| `platform_adapters` (`create_platform_adapters`, `verify_platform_publication`, `text_target_is_absent`, `TargetRouting`) | `delivery/platform-adapters.ts` |
-| `error` (`AdapterError`, `ambiguous_mutation`, `publish_json`, `absent_if_missing`) | `delivery/ambiguous-publication.ts`, `delivery/platform-absence.ts`, `HttpPublishError`/`publishJson` of `publishing/errors.ts` |
-| `payload`, `multipart` | `delivery/social/payload.ts` (readers in `domain::publishing::payload`), Bun's `FormData` |
-| `telegram` | `delivery/social/telegram.ts` + the Telegram edit/remove ports |
-| `telegram_stories` (`StoriesClient`, `StoryRequest`, `StoryError`) | `delivery/social/telegramStories.ts` minus the MTProto call (`crates/mtproto`) |
-| `x`, `x_content_state` | `delivery/social/x.ts`, `x-content-state.ts` |
-| `threads` | `delivery/social/threads.ts` + the Threads remove port |
-| `instagram` | `delivery/social/instagram.ts`, `instagram-container.ts` |
-| `discord` | `delivery/social/discord.ts` + edit/remove ports |
-| `zernio` | `delivery/zernio.ts` |
-| `video_publishers` | the provider calls of `delivery/video-publishers.ts` (YouTube resumable upload, keep-private, verify; Reels container, ready, publish; `videoTargetIsAbsent`) |
-| `remote_media_processor` | `delivery/remote-media-processor.ts` (+ `mediaTransformKey`, `writeResponseAtomically`) |
-| `providers` (`ProviderCalls`) | what the bot's `Adapters` calls: `zernioPostOutcome`, `publishZernioInstagramReel`, `keepYouTubeUploadPrivate`, `listZernioAccounts` |
+| `ports` | `SocialAdapter`, `PrepareJob`, `DeliveryPorts`, `AdapterContext`, `EditRequest`/`EditOutcome` |
+| `social_ports` | `PreparedMedia`, `MediaPreparation` |
+| `platform_adapters` | `create_platform_adapters`, `verify_platform_publication`, `text_target_is_absent`, `TargetRouting` |
+| `error` | `AdapterError`, `ambiguous_mutation`, `publish_json`, `absent_if_missing`; the ambiguous-publication and platform-absence rules |
+| `payload`, `multipart` | Payload helpers (the readers live in `domain::publishing::payload`) and the multipart body writer |
+| `telegram` | The Telegram adapter and its edit/remove ports |
+| `telegram_stories` | `StoriesClient`, `StoryRequest`, `StoryError`: everything but the MTProto call (`crates/mtproto`) |
+| `x`, `x_content_state` | The X adapter and its content state |
+| `threads` | The Threads adapter and its remove port |
+| `instagram` | The Instagram adapter and its container handling |
+| `discord` | The Discord adapter and its edit/remove ports |
+| `zernio` | The Zernio adapter |
+| `video_publishers` | The provider calls of the video worker: YouTube resumable upload, keep-private, verify; Reels container, ready, publish; the video absence check |
+| `remote_media_processor` | The remote media processor client (media transform key, atomic response write) |
+| `providers` | `ProviderCalls`: what the bot's `Adapters` calls (Zernio post outcome, Zernio Instagram Reel publish, keep a YouTube upload private, list Zernio accounts) |
 
 ## The port
 
@@ -34,9 +34,9 @@ pub trait SocialAdapter {
 }
 ```
 
-`create_platform_adapters(ctx, prepare, stories, &routing)` builds one adapter per target in TypeScript's order. An
-error that may have published is `AdapterError::Ambiguous` (→ `requirePublishVerification`); anything else goes to
-`failPublishJob` via `to_publish_failure()` / `class()`.
+`create_platform_adapters(ctx, prepare, stories, &routing)` builds one adapter per target in the stable order the
+goldens record. An error that may have published is `AdapterError::Ambiguous` (→ `requirePublishVerification`);
+anything else goes to `failPublishJob` via `to_publish_failure()` / `class()`.
 
 Wiring for the integrator: `PreparedMedia::new(Rc<dyn MediaPreparation>)` is the `prepare` (the delivery slice
 implements `MediaPreparation` with `prepareMediaItems` and `awaitPreparedStoryMedia`); `ProviderCalls::new(client,
@@ -62,10 +62,10 @@ then disconnects (5 s, best effort). The request is the one mtcute built (`crate
 - `StoryError::Ambiguous` — `sendStory` went out and no definite answer came back: the deadline, a dropped connection,
   a server-side failure (code 500 and up, or negative), or an answer without the Story. `Ambiguous("telegram_stories")`.
 
-## Parity
+## Goldens
 
 ```
-cargo test -p adapters   # goldens.rs replays parity/adapter-goldens/ (recorded from the TypeScript backend before the cutover; nothing re-records them); behaviour.rs covers what they cannot
+cargo test -p adapters   # goldens.rs replays parity/adapter-goldens/ (recorded from the TypeScript backend before the cutover; nothing re-records them; they are the contract); behaviour.rs covers what they cannot
 ```
 
 228 cases: telegram 31, x 33, threads 43, instagram 26, discord 18, zernio 17, youtube 21, reels 16,
@@ -77,17 +77,17 @@ error kind, message, class, status and Retry-After, virtual sleep time for X, an
 
 ## Deliberate deviations
 
-- Stories: a failure before `stories.sendStory` is handed over (the upload's deadline included) is not sent, where
-  TypeScript counted any non-RPC error inside mtcute's `sendStory` as possibly posted; a server-side RPC failure after
-  it is ambiguous, where TypeScript counted every RPC error as not sent.
+- Stories: a failure before `stories.sendStory` is handed over (the upload's deadline included) is not sent. A
+  server-side RPC failure after it is ambiguous. Nothing inside mtcute's `sendStory` is guessed at: only
+  what happened before the hand-over is "not sent".
 - The Stories connection is opened after the probe and re-encode, not before (one connection per Story).
-- A 2xx YouTube upload or Reels publish without an id is reported with `id: None` (TypeScript: `undefined`), never as
+- A 2xx YouTube upload or Reels publish without an id is reported with `id: None`, never as
   a failure that would retry a publication that happened.
-- Result objects match TypeScript's fields and values, not always their key order (a Threads/Instagram progress
+- Result objects match the goldens' fields and values, not always their key order (a Threads/Instagram progress
   record whose `containerId` is added later lists it earlier); only the stored JSON's layout differs.
 - A body that does not parse as JSON after a 2xx reports `JSON Parse error: <serde's reason>`, not JavaScriptCore's.
 - Discord: a split post whose later part is refused after the first is in the channel returns a partial publication
-  (`resumeKey: "_discordMessageIds"`, the ids sent), as X and Threads do; TypeScript threw, and the retry posted the
+  (`resumeKey: "_discordMessageIds"`, the ids sent), as X and Threads do, because throwing made the retry post the
   first message again. The retry sends only the remaining parts. A lost answer is ambiguous, as before.
 
 Not here: the video worker loop and the publish workflow (`delivery`), `prepareMediaItems` / story derivatives (behind

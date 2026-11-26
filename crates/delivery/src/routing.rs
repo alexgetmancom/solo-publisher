@@ -1,5 +1,5 @@
-//! What the channel registry tells delivery (`channels/registry.ts`
-//! `targetRouting`, `channels/destinations.ts` `videoChannelIdentity`).
+//! What the channel registry tells delivery: target routing and video
+//! channel identity.
 
 use adapters::{Route, TargetRouting};
 use db::rusqlite::Connection;

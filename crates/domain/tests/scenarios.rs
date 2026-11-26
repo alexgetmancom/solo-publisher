@@ -1,8 +1,8 @@
-//! SQL equivalence of the Rust repositories with the TypeScript ones: every
-//! scenario in `scenarios.json` ran through the real TypeScript repositories
-//! before the cutover (`scenarios.golden.json`) and runs through these, each
-//! on its own fresh database migrated by its own side, and every step's result
-//! and every table's rows must come out identical.
+//! SQL equivalence of the Rust repositories with the recorded goldens: every
+//! scenario in `scenarios.json` ran through the TypeScript backend's
+//! repositories before the cutover (`scenarios.golden.json`) and runs through
+//! these, each on its own fresh database migrated by its own side, and every
+//! step's result and every table's rows must come out identical.
 
 mod support;
 
@@ -34,7 +34,7 @@ fn link_role(value: &str) -> LinkRole {
     }
 }
 
-/// One repository call by its TypeScript name, arguments positional as there.
+/// One repository call by the name the spec records, arguments positional.
 fn call(ports: &ApplicationPorts<'_>, name: &str, args: &[Value]) -> domain::Result<Value> {
     let int = |index| arg::<i64>(args, index);
     let ints = |index| arg::<Vec<i64>>(args, index);

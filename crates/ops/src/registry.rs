@@ -1,4 +1,4 @@
-//! The operations registry (`operations/registry.ts`): one table of every
+//! The operations registry: one table of every
 //! operation. The CLI dispatch, the `--help` and `guide` catalogs and the
 //! `ops_*` MCP tools are projections of it — adding an entry is the whole
 //! change, and a usage string is never written by hand.

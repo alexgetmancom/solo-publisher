@@ -1,4 +1,4 @@
-//! The Studio MCP server (`interfaces/mcp.ts`), framework-free: JSON-RPC
+//! The Studio MCP server, framework-free: JSON-RPC
 //! `initialize`, `tools/list`, `tools/call` over the hand-written `studio_*`
 //! tools and the `ops_*` projection of the registry. The HTTP transport
 //! (`POST`/`GET /api/mcp`) mounts it.
@@ -30,8 +30,7 @@ use crate::schema::{
     Issue, ParseError, Schema, Transform, array, boolean, enumeration, number, object, record, string,
 };
 
-/// `MCP_SERVER_METADATA` (`mcp-protocol.ts`): what `initialize` returns and
-/// discovery advertises must agree.
+/// What `initialize` returns and discovery advertises must agree.
 pub const MCP_PROTOCOL_VERSION: &str = "2024-11-05";
 pub const MCP_SERVER_NAME: &str = "solo-publisher-studio-mcp";
 pub const MCP_SERVER_VERSION: &str = "2.1.0";

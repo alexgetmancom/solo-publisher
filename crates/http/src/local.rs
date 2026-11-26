@@ -5,7 +5,7 @@
 //! gives [`Local::run`] a closure; the dispatcher task, spawned on the
 //! `LocalSet`, runs the closure's future there as its own task and sends the
 //! answer back. A caller that stops waiting (the client disconnected) drops
-//! that task's work, as dropping the TypeScript request ended a long poll.
+//! that task's work, which ends a long poll.
 
 use std::future::Future;
 use std::pin::Pin;

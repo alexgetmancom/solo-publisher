@@ -223,7 +223,7 @@ fn inline_entities(line: &str) -> (String, Vec<Entity>) {
         // Everything already recorded that sits after this marker shifts left by
         // exactly what the marker took with it. An entity inside the marker's
         // span shifts by the closing half too, and can land before the marker or
-        // below zero, exactly as the TypeScript computed it.
+        // below zero; the goldens record exactly that.
         for entity in &mut inline {
             let offset = entity["offset"].as_i64().unwrap();
             if offset > start {

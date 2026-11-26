@@ -1,5 +1,4 @@
-//! The browser side of connecting an account (`interfaces/http/meta-oauth.ts`,
-//! `x-oauth.ts`, `youtube-oauth.ts`), framework-free: each route is a function
+//! The browser side of connecting an account, framework-free: each route is a function
 //! from the query, the command-token verdict and the Studio's state to the
 //! response it answers. The HTTP slice mounts them at
 //!
@@ -38,7 +37,7 @@ use crate::{Error, Result};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OauthResponse {
     pub status: u16,
-    /// In the order the TypeScript `Response` set them.
+    /// In the order the response sets them.
     pub headers: Vec<(&'static str, String)>,
     pub body: Option<String>,
 }

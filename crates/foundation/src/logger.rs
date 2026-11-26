@@ -1,6 +1,6 @@
 //! One JSON object per line — `{"ts","level","message","details"?}` — on
-//! stdout, or stderr for `warn` and `error`, exactly as the TypeScript logger
-//! wrote it, so whatever reads the container logs keeps working.
+//! stdout, or stderr for `warn` and `error`, in the shape whatever
+//! reads the container logs expects.
 
 use std::io::Write as _;
 use std::sync::atomic::{AtomicU8, Ordering};

@@ -1,6 +1,5 @@
-//! `POST /api/studio/media` (`interfaces/http/studio.ts`): a raw-body upload
+//! `POST /api/studio/media`: a raw-body upload
 //! (not multipart) into Studio's media through the Studio media service.
-//! The MCP transport of the same file arrives with the ops slice.
 
 use std::path::Path;
 

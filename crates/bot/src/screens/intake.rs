@@ -1,4 +1,4 @@
-//! The intake (`bot/intake.ts`, the `intake_*` routes of `bot/screen-routes.ts`):
+//! The intake (the `intake_*` routes):
 //! [📝 Текст] and [🎬 Видео] open it, the first message is
 //! captured, and the intake asks what the material is only when the material
 //! itself does not say.

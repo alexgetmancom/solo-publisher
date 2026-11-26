@@ -1,4 +1,4 @@
-//! `observability/usage.ts` `usageReport`: the windowed report over
+//! The usage report: the windowed report over
 //! `runtime_usage`, every known feature included even at zero.
 
 use std::cmp::Ordering;

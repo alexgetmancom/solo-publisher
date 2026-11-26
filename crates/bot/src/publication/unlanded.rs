@@ -1,5 +1,5 @@
-//! "Retry" and "give up" for every target a publication did not land on
-//! (`bot/unlanded-controls.ts`): the publication card and the completion
+//! "Retry" and "give up" for every target a publication did not land on:
+//! the publication card and the completion
 //! notice offer the same decision, so they build it here once.
 
 use content::Locale;

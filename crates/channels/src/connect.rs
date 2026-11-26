@@ -1,4 +1,4 @@
-//! `channels/connect.ts`: starting a connection the way the CLI, the
+//! Starting a connection the way the CLI, the
 //! dashboard and the bot do, and the [`ChannelConnectLinks`] boundary Studio
 //! reaches the signed links through.
 

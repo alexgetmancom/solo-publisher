@@ -1,19 +1,18 @@
 # app — the `solo-publisher` binary
 
-The Studio process: configuration from the environment (`foundation::config`,
-the same variables as TypeScript), the database at `PIPELINE_DB` (migrations and date guards), the Telegram bot on
-long polling (`setMyCommands` at startup), the workers below and the HTTP surface (`http_edge`, every route but MCP)
-on `BIND_HOST:PORT` (default `127.0.0.1:8788`, as TypeScript). The port is bound before polling starts, so a taken one
+The Studio process: configuration from the environment (`foundation::config`),
+the database at `PIPELINE_DB` (migrations and date guards), the Telegram bot on long polling (`setMyCommands` at
+startup), the workers below and the HTTP surface (`http_edge`, every route but MCP) on `BIND_HOST:PORT` (default
+`127.0.0.1:8788`). The port is bound before polling starts, so a taken one
 fails the process at once; `studio listening` logs the address.
 
-SIGINT/SIGTERM stop in `server.ts`'s order: HTTP stops accepting and answers the requests in flight, polling stops, the
+SIGINT/SIGTERM stop in this order: HTTP stops accepting and answers the requests in flight, polling stops, the
 loops stop, the doorbells are unhooked, updates in hand finish, the database closes; all of it within 10 s, else exit 1.
 
 ## Workers (`src/workers.rs`)
 
-`runtime/workers.ts` + `interfaces/telegram/worker.ts`, each loop with its heartbeat row and the usage flush. At
-startup the locks a previous process left are taken back after a 30 s grace (publish jobs, site jobs), then Story-card
-locks. In TypeScript's order:
+Each loop has its heartbeat row and the usage flush. At startup the locks a previous process left are taken back
+after a 30 s grace (publish jobs, site jobs), then Story-card locks. The loops start in this order:
 
 | Loop | Interval | Body |
 |---|---|---|
@@ -33,7 +32,7 @@ then the Telegram loops (`bot::workers`: translations, albums, events, alerts, d
 
 ## Host (`src/host.rs`)
 
-The boundaries are the ported stores: Story cards (`domain::story_cards`), reminders (`domain::notifications`), the
+The boundaries are these stores: Story cards (`domain::story_cards`), reminders (`domain::notifications`), the
 credential breaker, the readiness report and runtime usage (`domain::observability`, usage flushed at shutdown), the
 video completion notice (`domain::delivery`), connect links (`channels`). One `delivery::story_derivatives::DeliveryMedia`
 is both the publish loop's `MediaPreparation` and Studio's `StoryDerivatives`; the worker bell is
@@ -48,7 +47,7 @@ Required: `CONTROLLER_BOT_TOKEN`, `CONTROLLER_ADMIN_IDS`, `DATA_DIR` (the databa
 
 Optional: `BIND_HOST`, `PORT`, `TELEGRAM_API_BASE_URL`, `LOG_LEVEL`, `DEPLOY_AGENT_URL` + `DEPLOY_AGENT_TOKEN`,
 `TOKEN_ENCRYPTION_KEY`,
-`PUBLIC_BASE_URL`, `TELEGRAM_CHANNEL_USERNAME`, `STUDIO_ACTOR_IDS`; any other `.env` variable reads as in TypeScript.
+`PUBLIC_BASE_URL`, `TELEGRAM_CHANNEL_USERNAME`, `STUDIO_ACTOR_IDS`; any other `.env` variable is read by `foundation::config`.
 
 Production (`NODE_ENV=production`, `DEPLOYMENT_ENV=production`) also requires `COMMAND_CENTER_TOKEN`,
 `CLIENT_IP_HASH_SALT`, `PUBLIC_BASE_URL`.
@@ -73,8 +72,7 @@ cargo build --release -p app && _trash-rust/target/release/solo-publisher
 | `/app/assets/story-card/` | Story-card background and fonts (`STORY_CARD_ASSETS_DIR`'s default) |
 | `/usr/local/bin/{ffmpeg,ffprobe}` | static ffmpeg 6.1.1 (`mwader/static-ffmpeg`) on `debian:trixie-slim` with `ca-certificates` and `tini` |
 
-`studio-entrypoint`, started as root: creates and `chown`s the data directories (`runtime::data_dirs`, as
-`docker-entrypoint.ts`), then re-executes itself through `setpriv --reuid --regid --groups` as `studio` (uid 1000,
+`studio-entrypoint`, started as root: creates and `chown`s the data directories (`runtime::data_dirs`), then re-executes itself through `setpriv --reuid --regid --groups` as `studio` (uid 1000,
 gid 1000, created by the `Dockerfile`), keeping compose's `group_add` groups and dropping group 0 — the workspace
 forbids `unsafe`, so the syscalls are setpriv's; the exec after them makes the drop irreversible. As `studio` it
 probes the directories with a write and replaces itself with the Studio, which `tini -g` then hands SIGTERM directly;

@@ -1,4 +1,4 @@
-//! The delivery previews (`interfaces/telegram/delivery-previews.ts`):
+//! The delivery previews:
 //! what each platform will receive, rendered from Studio's delivery
 //! projections. It owns no planning decisions.
 

@@ -1,4 +1,4 @@
-//! `delivery/social/x-content-state.ts`: X's rich-text representation for
+//! X's rich-text representation for
 //! Article bodies, DraftJS raw state with snake_case field names. Blocks carry
 //! their own text and ranges; one entity map is shared across them. The
 //! source is the form every other target reads — plain text plus

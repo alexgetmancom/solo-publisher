@@ -1,6 +1,6 @@
-//! Publications written and moved from the CLI: `publish.ts`,
-//! `article-publish`, `lifecycle.ts` (drafts and videos published, scheduled,
-//! cancelled), the video retry, settle and script commands of `registry.ts`.
+//! Publications written and moved from the CLI: `article-publish`, drafts and
+//! videos published, scheduled and cancelled, and the video retry, settle and
+//! script commands.
 //!
 //! Nothing is reimplemented here: each command calls the Studio service the
 //! bot's button calls, as the draft's owner.
@@ -436,7 +436,7 @@ pub fn video_cancel<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> 
     })
 }
 
-/// The `video-retry` handler of `registry.ts` over `retryVideoTarget`.
+/// The `video-retry` handler.
 pub fn video_retry<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
         let config = context.config()?;
@@ -459,7 +459,7 @@ pub fn video_retry<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> F
     })
 }
 
-/// The `video-settle` handler of `registry.ts` over `settleVideoTarget`.
+/// The `video-settle` handler.
 pub fn video_settle<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
         let config = context.config()?;
@@ -486,7 +486,7 @@ pub fn video_settle<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> 
     })
 }
 
-/// The `video-script` handler of `registry.ts` over `updateVideoScript`.
+/// The `video-script` handler.
 pub fn video_script<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
         let parsed =

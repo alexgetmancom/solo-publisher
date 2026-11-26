@@ -1,4 +1,4 @@
-//! The operations CLI (`cli.ts`, `operations/cli-args.ts`): `ops <command>
+//! The operations CLI: `ops <command>
 //! --flag value`, `--db PATH`, `--json`. The dispatch is the registry's; this
 //! file only turns argv into an input and the result into terminal output.
 

@@ -1,6 +1,6 @@
-//! Card bindings (`interfaces/telegram/control-cards.ts`): which chat message
+//! Card bindings: which chat message
 //! currently *is* a publication's live card, in `interface_bindings`, and the
-//! freshness question asked of a tap (`bot/card-freshness.ts`).
+//! freshness question asked of a tap.
 
 use db::rusqlite::{Connection, OptionalExtension, params};
 use domain::application::conversation_flow::PublicationKind;

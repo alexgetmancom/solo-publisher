@@ -1,6 +1,6 @@
-//! Calls to other providers (`foundation/http.ts`): `externalFetch` with its
-//! 30 s ceiling, `requestJson`, the two error kinds callers tell apart, and the
-//! redaction that keeps tokens out of every message they carry.
+//! Calls to other providers: a fetch with its 30 s ceiling, the JSON request
+//! helper, the two error kinds callers tell apart, and the redaction that keeps
+//! tokens out of every message they carry.
 //!
 //! Every platform adapter goes through an [`HttpClient`] built over a
 //! [`Transport`]: production hands it [`ReqwestTransport`], a test a transport
@@ -25,7 +25,7 @@ pub use transport::{
     Transport, TransportFailure,
 };
 
-/// `externalFetch`'s default ceiling.
+/// The default ceiling on a fetch.
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// The provider answered, and the answer is a failure: a non-2xx status, or a
@@ -53,7 +53,7 @@ pub struct ExternalTransportError {
 pub enum ExternalError {
     Http(ExternalHttpError),
     Transport(ExternalTransportError),
-    /// A refusal TypeScript throws as a plain `Error` with this message.
+    /// A refusal that is a plain error with this message.
     Message(String),
 }
 
@@ -76,14 +76,14 @@ impl fmt::Display for ExternalError {
 impl std::error::Error for ExternalError {}
 
 /// Where the wait on other providers is accounted (the bot's tap
-/// measurement, `foundation/tap-measurement.ts`). Work outside an update has
-/// no account, and a client built without one counts nothing.
+/// measurement). Work outside an update has no account, and a client built
+/// without one counts nothing.
 pub trait CallTiming {
-    /// One finished provider call, failed ones included (`recordTapProviderCall`).
+    /// One finished provider call, failed ones included.
     fn provider_call(&self, duration_ms: f64);
-    /// The body of a call already counted (`recordTapProviderBodyRead`).
+    /// The body of a call already counted.
     fn provider_body_read(&self, duration_ms: f64);
-    /// A Telegram call no Bot API client sees (`recordTapTelegramCall`).
+    /// A Telegram call no Bot API client sees.
     fn telegram_call(&self, method: &str, duration_ms: f64);
 }
 
@@ -114,12 +114,12 @@ impl HttpClient {
         self.timing.as_deref()
     }
 
-    /// `externalFetch(fetchImpl, url, init)`: the 30 s default ceiling.
+    /// A fetch under the 30 s default ceiling.
     pub async fn fetch(&self, request: HttpRequest) -> Result<Response, ExternalError> {
         self.fetch_within(request, DEFAULT_TIMEOUT).await
     }
 
-    /// `externalFetch(fetchImpl, url, init, timeoutMs)`. The ceiling ends at
+    /// A fetch under `ceiling`. The ceiling ends at
     /// the response headers, so a body is read at the caller's pace; the
     /// request's own `deadline` keeps holding over both.
     pub async fn fetch_within(&self, request: HttpRequest, ceiling: Duration) -> Result<Response, ExternalError> {
@@ -144,7 +144,7 @@ impl HttpClient {
         }
     }
 
-    /// The bare `fetchImpl(url, init)` a few callers make: no ceiling but the
+    /// The bare call a few callers make: no ceiling but the
     /// request's own deadline, no provider accounting, the failure as the
     /// transport reported it.
     pub async fn exchange(&self, request: HttpRequest) -> Result<Response, TransportFailure> {
@@ -153,7 +153,7 @@ impl HttpClient {
         Ok(Response::new(response, label, None))
     }
 
-    /// `requestJson`: the body of a 2xx as JSON (an empty body is `{}`);
+    /// The body of a 2xx as JSON (an empty body is `{}`);
     /// anything else is an [`ExternalHttpError`] with the body redacted.
     pub async fn request_json(&self, request: HttpRequest) -> Result<Value, ExternalError> {
         let response = self.fetch(request).await?;
@@ -279,9 +279,8 @@ impl Response {
     }
 
     /// A body that stopped arriving is a response that never fully came: the
-    /// provider may have acted, so it is a transport error. (TypeScript let the
-    /// reader's own `TypeError`/`TimeoutError` through, which nothing could tell
-    /// apart from a refusal.)
+    /// provider may have acted, so it is a transport error. (The reader's own
+    /// error must not pass through: nothing could tell it apart from a refusal.)
     fn read_failed(&self, failure: TransportFailure) -> ExternalError {
         ExternalError::Transport(ExternalTransportError {
             message: format!("{} failed while reading the HTTP response", self.label),
@@ -366,7 +365,7 @@ fn safe_url(value: &str) -> String {
     url.into()
 }
 
-/// `formBody(fields).toString()`: absent values skipped, the rest encoded as
+/// Absent values skipped, the rest encoded as
 /// `application/x-www-form-urlencoded`.
 pub fn form_body(fields: &[(&str, Option<&str>)]) -> String {
     let mut body = url::form_urlencoded::Serializer::new(String::new());

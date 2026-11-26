@@ -1,4 +1,4 @@
-//! `delivery/publish-workflow.ts`: publishing jobs executed through the
+//! Publishing jobs executed through the
 //! delivery adapters, one lane per target, every phase authorised by a write
 //! fenced on the job's lease.
 

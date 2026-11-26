@@ -1,5 +1,5 @@
-//! The Russian interface catalog (`locales/ru.json`, exported once from the
-//! TypeScript catalog and edited by hand since) and the functions that render it.
+//! The Russian interface catalog (`locales/ru.json`, edited by hand) and the functions
+//! that render it.
 
 use std::error::Error;
 use std::fmt::Display;

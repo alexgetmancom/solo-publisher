@@ -1,6 +1,6 @@
-//! The Studio's SQLite database: one file shared with the TypeScript Studio and
-//! its `ops` CLI, opened with the same pragmas, migrated by the same drizzle
-//! bookkeeping and guarded by the same date triggers.
+//! The Studio's SQLite database: one file shared with its `ops` CLI, opened
+//! with the same pragmas, migrated by the drizzle bookkeeping production's
+//! database carries and guarded by the date triggers.
 
 mod date_guards;
 mod migrations;

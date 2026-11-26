@@ -1,7 +1,6 @@
 //! What Delivery owns that the Studio reaches without the delivery workers:
-//! the video completion notice (`delivery/video-worker.ts`,
-//! `recordVideoCompletionIfFinal`). The publish and video workers themselves
-//! are not here.
+//! the video completion notice. The publish and video workers themselves are
+//! not here.
 
 use db::rusqlite::Connection;
 use foundation::time::parse_iso_instant;

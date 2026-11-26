@@ -1,7 +1,6 @@
-//! The read-only reports: `status.ts`, `recent.ts`, `post-text.ts`,
-//! `timeline.ts`, `journal.ts`, `video-library.ts`, `verify.ts`,
-//! `settings-report.ts`, `format-support.ts` (summary), the Studio profile and
-//! channel reports, and the usage report.
+//! The read-only reports: status, recent, post text, timeline, journal, video
+//! library, verify, settings, the format-support summary, the Studio profile
+//! and channel reports, and the usage report.
 
 use std::collections::HashSet;
 use std::time::Duration;

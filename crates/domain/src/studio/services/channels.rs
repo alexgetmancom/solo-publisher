@@ -1,8 +1,6 @@
-//! Channel administration shared by Studio interfaces
-//! (`studio/services/channels.ts`, with the registry writes of
-//! `channels/registry.ts` and the route options of
-//! `channels/zernio-connections.ts`). Telegram renders the connection wizard,
-//! operations drives the same service: two implementations of "is this
+//! Channel administration shared by Studio interfaces, with the registry writes
+//! and the route options. Telegram renders the connection wizard, operations
+//! drives the same service: two implementations of "is this
 //! channel connected" is two answers, and only one of them can be right.
 
 use content::Locale;

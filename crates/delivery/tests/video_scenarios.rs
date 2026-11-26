@@ -1,6 +1,6 @@
-//! Video worker equivalence with TypeScript: every scenario in
-//! `video_scenarios.json` ran through the real TypeScript modules before the
-//! cutover (`video_scenarios.golden.json`) and runs through this crate, each on a fresh
+//! Video worker against its goldens: every scenario in
+//! `video_scenarios.json` has a recorded result
+//! (`video_scenarios.golden.json`) and runs through this crate, each on a fresh
 //! database under the same clock, with the same canned platform answers;
 //! every step's result, every request and every table must come out identical.
 
@@ -78,7 +78,7 @@ fn video_worker_matches_typescript() {
 }
 
 /// The shared spec with these scenarios instead of its own: Rust-only cases
-/// for what TypeScript does differently on purpose.
+/// for what the goldens do differently on purpose.
 /// `Null` keeps the spec's own scenarios.
 fn rust_only(scenarios: Value) -> Value {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/video_scenarios.json");
@@ -96,8 +96,8 @@ fn rows<'a>(outcome: &'a Value, table: &str) -> Vec<&'a str> {
         .unwrap_or_default()
 }
 
-/// Deliberate deviation: after a YouTube upload lost its answer, TypeScript
-/// still ran the due publish job, which failed with "upload has not completed
+/// Deliberate deviation: after a YouTube upload lost its answer, the goldens
+/// still run the due publish job, which failed with "upload has not completed
 /// yet" and wrote the target back to `scheduled` — the state an operator
 /// retries into a second upload. Rust leaves the target held for verification
 /// and completes the publish job without touching it.

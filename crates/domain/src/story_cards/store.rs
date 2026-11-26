@@ -1,4 +1,4 @@
-//! `story-cards/store.ts`: one card per locale of a text-only post, queued
+//! One card per locale of a text-only post, queued
 //! when its text changes and discarded with its file when nothing needs it.
 
 use std::path::Path;

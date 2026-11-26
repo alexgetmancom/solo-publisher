@@ -1,4 +1,4 @@
-//! `operations/commands/content-repair.ts`: durable content repaired before
+//! Durable content repaired before
 //! Delivery rebuilds the site or retries a target.
 
 use content::message::{Entity, MediaItem};

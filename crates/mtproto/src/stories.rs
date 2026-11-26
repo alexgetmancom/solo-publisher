@@ -1,6 +1,6 @@
 //! One Story: connect, load the account, resolve the channel, upload the
-//! file, `stories.sendStory`, under TypeScript's deadlines (connect 30 s,
-//! identity 30 s, the rest 120 s, teardown 5 s).
+//! file, `stories.sendStory`, under fixed deadlines (connect 30 s, identity 30 s,
+//! the rest 120 s, teardown 5 s).
 //!
 //! Everything before `stories.sendStory` is handed to the sender is not sent.
 //! After it, Telegram's own refusal is not sent either, except a server-side

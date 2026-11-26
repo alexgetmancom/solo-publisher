@@ -1,4 +1,4 @@
-//! The TypeScript test cases that pinned real bugs in content logic, kept as
+//! The test cases that pinned real bugs in content logic, kept as
 //! named assertions: the parity corpus covers them too, but a failure here says
 //! which bug came back.
 
@@ -17,7 +17,7 @@ fn entities(value: Value) -> Vec<Entity> {
     serde_json::from_value(value).unwrap()
 }
 
-// bot.test.ts "Telegram entity HTML"
+// Telegram entity HTML
 #[test]
 fn nested_entities_sharing_a_range_do_not_tear_the_markup() {
     let html = entities_to_html(
@@ -51,7 +51,7 @@ fn an_entity_past_the_text_is_dropped_and_a_schemeless_url_links_https() {
     );
 }
 
-// threadsPublisher.test.ts "never cuts a surrogate pair in half"
+// Never cuts a surrogate pair in half
 #[test]
 fn an_unbroken_run_is_never_cut_inside_a_character() {
     let text = format!("{}👨🏽‍🚀{}", "a".repeat(9), "b".repeat(9));
@@ -60,7 +60,7 @@ fn an_unbroken_run_is_never_cut_inside_a_character() {
     assert_eq!(parts.concat(), text);
 }
 
-// threadParts.test.ts "splitting a post into a chain"
+// Splitting a post into a chain
 #[test]
 fn a_chain_cuts_where_a_sentence_ends() {
     let first = "Мы починили разбивку тредов, и это заняло больше времени, чем хотелось.";
@@ -86,7 +86,7 @@ fn chain_pieces_after_the_first_carry_no_media_and_no_entities() {
     assert!(chain[1].media.is_empty() && chain[1].entities.is_empty());
 }
 
-// markdownArticle.test.ts
+// Markdown article
 #[test]
 fn markdown_offsets_are_measured_against_the_stripped_text() {
     let body = parse_markdown_article("**one** and *two*").body;
@@ -99,7 +99,7 @@ fn markdown_offsets_are_measured_against_the_stripped_text() {
     assert_eq!((body.text.as_str(), body.entities.len()), ("click", 0));
 }
 
-// message.test.ts "preserves Cyrillic letters with diacritics" (NFKD dropped the breve of "й")
+// Preserves Cyrillic letters with diacritics (NFKD dropped the breve of "й")
 #[test]
 fn slugs_keep_cyrillic_letters_with_diacritics() {
     assert_eq!(
@@ -109,14 +109,14 @@ fn slugs_keep_cyrillic_letters_with_diacritics() {
     assert_eq!(slugify("Ёлки и йога", 55), "ёлки-и-йога");
 }
 
-// titleEmphasis.test.ts "does not bold a title twice"
+// Does not bold a title twice
 #[test]
 fn an_already_bold_title_is_not_bolded_again() {
     let bold = entities(json!([{ "type": "bold", "offset": 0, "length": 9 }]));
     assert_eq!(emphasize_title("Заголовок\n\nТело", &bold), bold);
 }
 
-// textLocale.test.ts: a list of names is not English
+// A list of names is not English
 #[test]
 fn a_list_of_names_is_not_english() {
     assert_eq!(

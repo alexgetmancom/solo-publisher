@@ -1,4 +1,4 @@
-//! `observability/cycle.ts`: the probes of one observability tick, each on
+//! The probes of one observability tick, each on
 //! its own so a throwing one cannot blind the rest, then the alerts they
 //! produced, then the cycle's own worker record.
 

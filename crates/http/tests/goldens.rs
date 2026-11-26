@@ -1,13 +1,13 @@
-//! Replay of `parity/http/goldens.json`, recorded from the TypeScript Hono app
+//! Replay of `parity/http/goldens.json`, recorded from the Hono app
 //! before the cutover: every case runs its steps on a fresh
 //! database and DATA_DIR under the same fixed clock, sends every request
 //! through the router (`tower::ServiceExt::oneshot`, no sockets) exactly as
-//! the TypeScript app saw it, against a recording transport answering the
+//! the recorded app saw it, against a recording transport answering the
 //! step's canned responses, and compares status, headers, body and the
 //! requests sent; then the stored assets, the upload scratch directory,
 //! `channel_connections`, `platform_tokens` (sealed values opened) and the
-//! live config's credentials. Randomness is scripted as the TypeScript
-//! runner scripts it; a sealed `state=` in a header is compared opened. The
+//! live config's credentials. Randomness is scripted as the recorder
+//! scripted it; a sealed `state=` in a header is compared opened. The
 //! helpers without a route in this slice are compared call by call.
 //!
 //! `content-length` is compared where the route sets it; one the Rust side
@@ -81,7 +81,7 @@ impl Clock for FixedClock {
 }
 
 /// Every draw but the 12-byte IV fills its buffer with a counter, as the
-/// TypeScript runner's `randomBytes` does; the IV is not drawn from here.
+/// recorder's `randomBytes` did; the IV is not drawn from here.
 struct ScriptedEntropy(Cell<u8>);
 
 impl Entropy for ScriptedEntropy {
@@ -99,7 +99,7 @@ struct Recorder {
 }
 
 impl Recorder {
-    /// What was sent since the last call, as the TypeScript runner records it.
+    /// What was sent since the last call, as the recorder records it.
     fn take(&self) -> Value {
         self.sent
             .take()
@@ -159,7 +159,7 @@ impl Transport for Recorder {
     }
 }
 
-/// The ported stores behind Studio's boundaries; the ones whose owner is
+/// The stores behind Studio's boundaries; the ones whose owner is
 /// elsewhere are never reached by these routes.
 struct Host {
     auth_circuit: AuthCircuitBreaker<SystemClock>,
@@ -577,7 +577,7 @@ async fn replay_all() {
     );
 }
 
-/// The rows of `table` as the TypeScript runner's `dump` writes them.
+/// The rows of `table` as the recorder's `dump` wrote them.
 fn table_lines(sqlite: &Connection, table: &str) -> Value {
     let columns: Vec<String> = sqlite
         .prepare("SELECT name FROM pragma_table_info(?) ORDER BY cid")

@@ -1,4 +1,4 @@
-//! `delivery/site-media.ts`: publication media copied into the public site
+//! Publication media copied into the public site
 //! under stable, versioned names, with the responsive WebP variants and video
 //! posters the site serves made before the post is exposed in the feed.
 

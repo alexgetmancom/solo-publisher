@@ -1,4 +1,4 @@
-//! The doorbells of the two queues a person waits on (`foundation/worker-signal.ts`).
+//! The doorbells of the two queues a person waits on.
 //!
 //! Both workers poll every five seconds; a ring wakes one now. The poll stays
 //! as the safety net. A ring made inside a transaction must not wake a worker
@@ -41,7 +41,7 @@ fn wake(queue: WorkerQueue) {
     }
 }
 
-/// `ringWorker(queue)`. Must be called inside the process's `LocalSet`.
+/// Wakes the queue's worker now. Must be called inside the process's `LocalSet`.
 pub fn ring_worker(queue: WorkerQueue) {
     if !PENDING.with_borrow_mut(|pending| pending.insert(queue)) {
         return;
@@ -52,7 +52,7 @@ pub fn ring_worker(queue: WorkerQueue) {
     });
 }
 
-/// `ringWorkerAfter(queue, delayMs)`: a durable `next_attempt_at` is due then.
+/// Wakes the queue's worker after `delay`: a durable `next_attempt_at` is due then.
 /// The polling interval remains the restart-safe fallback.
 pub fn ring_worker_after(queue: WorkerQueue, delay: Duration) {
     tokio::task::spawn_local(async move {

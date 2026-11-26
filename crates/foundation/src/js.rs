@@ -1,4 +1,4 @@
-//! The JavaScript string semantics the TypeScript code relied on implicitly.
+//! The JavaScript string semantics the recorded behaviour relies on implicitly.
 //! Configuration and schedules were parsed with `String.prototype.trim` and
 //! `Number(string)`, and Rust's own `trim` and `f64::from_str` accept a
 //! different set of inputs.

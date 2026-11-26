@@ -1,9 +1,8 @@
-//! Health, host and channel administration: `maintenance.ts` (audit, backup,
-//! restore, publication consistency), `backup-export.ts`, `disk-report.ts`,
-//! `doctor.ts`, `foundation/deployment.ts` (`readDeploymentReleases`), the
-//! date repair, the credential exports and channel commands of `registry.ts`,
-//! `format-support.ts` (`recordFormatEvidence`), `threads-authorize.ts`,
-//! `telegram-stories-login.ts`.
+//! Health, host and channel administration: audit, backup, restore and
+//! publication consistency, the backup export, the disk report, `doctor`,
+//! the deployment releases read, the date repair, the credential exports and
+//! channel commands, format-support evidence, the Threads authorization and
+//! the Telegram Stories login.
 
 mod deployment;
 mod disk;
@@ -172,7 +171,7 @@ pub fn youtube_export<'a>(context: &'a OperationContext<'a>, input: &'a Input) -
     })
 }
 
-/// `doctorChecks` (`operations/doctor.ts`) and the `doctor` entry around it.
+/// The `doctor` checks and the `doctor` entry around them.
 pub fn doctor<'a>(context: &'a OperationContext<'a>, _input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
         let config = context.config()?;

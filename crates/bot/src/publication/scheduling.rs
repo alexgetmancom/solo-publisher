@@ -1,4 +1,4 @@
-//! The schedule protocol both publication kinds share (`bot/scheduling.ts`):
+//! The schedule protocol both publication kinds share:
 //! the three schedule callbacks, the slot grid and the confirmation screen.
 //! The kind supplies its axis keys and slot values; what the axis means
 //! (`capabilities.scheduleAxis`) is the pipeline's, not the keyboard's.

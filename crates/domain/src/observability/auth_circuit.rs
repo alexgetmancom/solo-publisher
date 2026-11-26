@@ -1,4 +1,4 @@
-//! The credential circuit breaker (`observability/auth-circuit.ts`): after a
+//! The credential circuit breaker: after a
 //! few consecutive auth failures a target stops calling its provider until a
 //! cooldown passes or a call succeeds. Its state is the `details_json` of the
 //! target's `credential_checks` row, of which it rewrites only its own fields.
@@ -187,9 +187,9 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
 }
 
 impl<C: Clock> AuthCircuitBreaker<C> {
-    /// `shouldPingToken`: whether token health's live probe of `target` is
-    /// due. A stored ping time that does not parse is never due, as
-    /// TypeScript's `NaN` comparison answered.
+    /// Whether token health's live probe of `target` is due. A stored ping
+    /// time that does not parse is never due: its comparison is false, as a
+    /// `NaN` comparison is.
     pub fn should_ping_token(&self, sqlite: &Connection, target: &str, interval_seconds: i64) -> Result<bool> {
         let row = details_of(sqlite, target)?;
         let details = parse_details(row.flatten().as_deref());

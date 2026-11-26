@@ -1,5 +1,5 @@
-//! The read model's cache contract (`siteReadModel.test.ts`): what it reuses,
-//! what invalidates it, and that tracking leaves the stored database alone.
+//! The read model's cache contract: what it reuses, what invalidates it, and
+//! that tracking leaves the stored database alone.
 
 use std::cell::Cell;
 use std::path::Path;

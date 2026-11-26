@@ -1,5 +1,5 @@
-//! Parity with the TypeScript content modules, against outputs they recorded
-//! before the cutover (`tests/fixtures/`).
+//! The content modules against outputs the TypeScript backend recorded before
+//! the cutover (`tests/fixtures/`).
 
 use std::path::Path;
 

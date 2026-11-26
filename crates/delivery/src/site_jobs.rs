@@ -1,4 +1,4 @@
-//! `delivery/site-jobs.ts`: the site build queue. A cycle claims queued site
+//! The site build queue. A cycle claims queued site
 //! jobs under one lease, renders the media of their publications into the
 //! public site, stores the manifests fenced on the source version read before
 //! the render, and settles each job under that lease; IndexNow hears about the
@@ -53,7 +53,7 @@ pub fn site_enabled(delivery: &Delivery<'_>) -> Result<bool> {
 }
 
 /// Publications that could not be rendered, with why, in the order they were
-/// found (a `Map` in TypeScript: a later reason replaces an earlier one).
+/// found (a later reason replaces an earlier one).
 #[derive(Default)]
 pub struct SiteFailures(Vec<(String, String)>);
 

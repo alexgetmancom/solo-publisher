@@ -1,4 +1,4 @@
-//! `observability/token-health.ts`: each configured credential's cheapest
+//! Each configured credential's cheapest
 //! "am I still authenticated" call, on its own hourly cadence, fed into the
 //! breaker publish failures use — so a token that died between posts pauses
 //! publishing before the next real attempt burns a retry on a certain 401.

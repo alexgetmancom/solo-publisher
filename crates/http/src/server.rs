@@ -1,5 +1,5 @@
-//! The listener (`runtime/server.ts`'s `Bun.serve`): HTTP/1.1 connections,
-//! each on its own task, with Bun's limits, and `server.stop()`.
+//! The listener: HTTP/1.1 connections, each on its own task, with the
+//! request and idle limits the goldens pin, and a graceful stop.
 //!
 //! Connections are spawned with `tokio::spawn`: they only route and move
 //! bytes (the router is `Send`); route bodies reach the Studio thread through
@@ -34,8 +34,8 @@ pub const MAX_REQUEST_BODY_BYTES: u64 = STUDIO_MEDIA_MAX_BYTES + 1024 * 1024;
 pub const IDLE_TIMEOUT: Duration = Duration::from_secs(255);
 
 /// Accepts connections until `stop` completes, then stops accepting and
-/// returns once the requests in flight are answered (`await server.stop()`:
-/// an idle keep-alive connection closes at once). Must run inside the
+/// returns once the requests in flight are answered (an
+/// idle keep-alive connection closes at once). Must run inside the
 /// process's `LocalSet` (see [`router`]).
 pub async fn serve(listener: TcpListener, state: HttpState, stop: impl Future<Output = ()>) {
     let app = RequestBodyLimitLayer::new(MAX_REQUEST_BODY_BYTES as usize).layer(router(state));

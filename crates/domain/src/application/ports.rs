@@ -1,7 +1,7 @@
 //! The records application use cases read and write, the clock they run on,
 //! and [`ApplicationPorts`], the composition root that hands out the
 //! repositories. Database naming stays at the repository boundary; field names
-//! serialize as the TypeScript ports name them.
+//! serialize as the records name them, which the Studio's callers depend on.
 
 use content::message::{Entity, MediaItem};
 use content::thread::ThreadPart;
@@ -204,7 +204,7 @@ pub struct DraftRecord {
     pub thread: Vec<ThreadPart>,
 }
 
-/// `content::thread::ThreadPart` under the TypeScript port's field names.
+/// `content::thread::ThreadPart` under the field names the records carry.
 fn serialize_thread<S: Serializer>(thread: &[ThreadPart], serializer: S) -> Result<S::Ok, S::Error> {
     struct Part<'a>(&'a ThreadPart);
     impl Serialize for Part<'_> {

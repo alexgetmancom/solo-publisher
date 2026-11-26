@@ -1,4 +1,4 @@
-//! `foundation/external/youtube.ts`.
+//! YouTube OAuth credentials and access tokens, per locale.
 
 use content::Locale;
 use foundation::config::Config;
@@ -28,7 +28,7 @@ pub fn youtube_credentials(config: &Config, locale: Locale) -> YoutubeCredential
     }
 }
 
-/// `youtubeAccessToken`: a fresh OAuth access token for the locale's account.
+/// A fresh OAuth access token for the locale's account.
 pub async fn youtube_access_token(
     client: &HttpClient,
     config: &Config,
@@ -42,7 +42,7 @@ pub async fn youtube_access_token(
         ("grant_type", Some("refresh_token")),
     ]);
     let token = client.request_json(request).await?;
-    // TypeScript read the field unchecked and sent `Bearer undefined` on.
+    // A response without the field is refused, not sent on as `Bearer undefined`.
     token
         .get("access_token")
         .and_then(Value::as_str)

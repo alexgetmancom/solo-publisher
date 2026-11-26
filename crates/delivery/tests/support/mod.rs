@@ -1,5 +1,5 @@
-//! What every delivery scenario test shared with its TypeScript runner, whose
-//! results are the committed `<spec>.golden.json`: a fresh database per
+//! What every delivery scenario test shares, against the committed
+//! `<spec>.golden.json` results: a fresh database per
 //! scenario under a fixed clock and jitter, a recording transport answering
 //! the scenario's canned responses (and running the `sql` a response carries
 //! when it is served), and the same dump, scrubbing and comparison rules.
@@ -72,7 +72,7 @@ impl WorkerBell for Quiet {
     fn ring_publish_after(&self, _: u64) {}
 }
 
-/// The ported stores behind the boundaries, on the scenario's clock.
+/// The stores behind the boundaries, on the scenario's clock.
 pub struct Host {
     jitter: FixedJitter,
     auth_circuit: AuthCircuitBreaker<SharedClock>,
@@ -229,7 +229,7 @@ fn body_bytes(request: &HttpRequest) -> Vec<u8> {
     bytes
 }
 
-/// A request as the TypeScript recorder saw it through `new Request`.
+/// A request as the goldens record it.
 fn recorded(request: &HttpRequest, scrub: &Scrubber) -> Value {
     let boundary = request
         .header_value("content-type")
@@ -320,7 +320,7 @@ impl Transport for Recorder {
     }
 }
 
-/// The TypeScript runner's dump, statement for statement.
+/// The dump the goldens were recorded with, statement for statement.
 pub fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value> {
     let strings = |sql: &str, param: Option<&str>| -> Vec<String> {
         let mut statement = sqlite.prepare(sql).unwrap();
@@ -370,7 +370,7 @@ impl Scenario {
         unsafe_db(&self.db)
     }
 
-    /// The configuration as TypeScript builds it per call: the environment,
+    /// The configuration as the recorded scenarios build it per call: the environment,
     /// then the credentials stored in `platform_tokens`.
     pub fn config(&self) -> Arc<Config> {
         let mut config = load_config(self.env.iter().cloned()).unwrap();
@@ -633,8 +633,7 @@ fn run_on(runtime: tokio::runtime::Runtime, spec: &Value, call: Call, label: &st
     })
 }
 
-/// What the TypeScript backend recorded for a spec file before the cutover:
-/// `<spec>.golden.json` beside it.
+/// What was recorded for a spec file: `<spec>.golden.json` beside it.
 pub fn golden_side(spec: &Path) -> Vec<Value> {
     let path = spec.with_extension("golden.json");
     let text = std::fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
@@ -642,7 +641,7 @@ pub fn golden_side(spec: &Path) -> Vec<Value> {
     parsed["scenarios"].as_array().unwrap().clone()
 }
 
-/// Every step result, request and table, TypeScript against Rust.
+/// Every step result, request and table, golden against Rust.
 pub fn differences(expected: &[Value], actual: &[Value]) -> Vec<String> {
     assert_eq!(expected.len(), actual.len(), "scenario count");
     let mut failures = Vec::new();

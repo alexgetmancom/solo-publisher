@@ -1,4 +1,4 @@
-//! YouTube (`channels/youtube-oauth.ts`, `youtube-tokens.ts`): a consent
+//! YouTube: a consent
 //! redirect per language's channel, and the refresh token it yields stored as
 //! the channel's credential. Access tokens are minted per call from it
 //! (`runtime::external::youtube::youtube_access_token`).

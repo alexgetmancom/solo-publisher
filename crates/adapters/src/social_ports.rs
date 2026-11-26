@@ -1,4 +1,4 @@
-//! `delivery/ports/social.ts`: the preparation every non-Telegram target's job
+//! The preparation every non-Telegram target's job
 //! goes through before it is published — the media staged once per (post,
 //! part, target, media) within this instance, one preparation at a time, and
 //! a Story given its prepared vertical variant instead of a render.
@@ -26,8 +26,8 @@ use crate::ports::PrepareJob;
 
 const MAX_PREPARATION_CACHE_ENTRIES: usize = 32;
 
-/// The media work preparation hands off (`delivery/media-prepare.ts`,
-/// `delivery/story-derivatives.ts`), implemented by the delivery runtime.
+/// The media work preparation hands off (media preparation and Story
+/// derivatives), implemented by the delivery runtime.
 pub trait MediaPreparation {
     /// `prepareMediaItems(config, media, fetchImpl, target)`: the items
     /// staged where the target's platform can fetch them.

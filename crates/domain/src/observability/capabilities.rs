@@ -1,6 +1,6 @@
-//! The readiness report (`observability/capabilities.ts`, `capabilityReport`
-//! over the channel registry): which settings each connected capability needs
-//! and which of them this configuration lacks, by name only.
+//! The readiness report over the channel registry: which settings each
+//! connected capability needs and which of them this configuration lacks, by
+//! name only.
 
 use db::rusqlite::Connection;
 use foundation::config::{Config, MediaProcessorProvider, SharedConfig};

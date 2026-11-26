@@ -1,4 +1,4 @@
-//! `observability/failures.ts`: Delivery failures recorded as durable domain
+//! Delivery failures recorded as durable domain
 //! events; no alert transport is used here.
 
 use db::rusqlite::{Connection, params};

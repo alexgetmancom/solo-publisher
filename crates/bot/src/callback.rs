@@ -1,6 +1,6 @@
-//! The callback-data grammar: screen buttons
-//! (`bot/screen-callback.ts`), the publication namespace and its dialog
-//! revision prefix (`bot/publication-callback.ts`). The menu plugin's own
+//! The callback-data grammar: screen buttons,
+//! the publication namespace and its dialog
+//! revision prefix. The menu plugin's own
 //! format lives in [`crate::menu`].
 
 use std::sync::LazyLock;

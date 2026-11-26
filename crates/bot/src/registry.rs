@@ -77,7 +77,7 @@ pub struct VideoIntake {
     pub attach: for<'a> fn(&'a Ctx, VideoHandoff) -> Fut<'a, crate::Result<Vec<Effect>>>,
 }
 
-/// The stages a message passes before the publication flows (`bot.ts:147-155`),
+/// The stages a message passes before the publication flows,
 /// in this order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MessageStage {
@@ -243,8 +243,8 @@ impl Registry {
         self.menus.iter().find(|menu| menu.id == id)
     }
 
-    /// What the TypeScript bot routes and this registry does not, each with
-    /// the area that owns it. Empty once every area is ported; the golden test
+    /// What the goldens route and this registry does not, each with the
+    /// area that owns it. Empty once every area is registered; the golden test
     /// checks that everything missing belongs to an area still pending.
     pub fn missing(&self) -> Vec<(&'static str, String)> {
         let mut missing = Vec::new();

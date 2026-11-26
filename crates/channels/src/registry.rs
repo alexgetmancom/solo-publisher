@@ -1,6 +1,6 @@
 //! The registry answers the channels part of the Studio owns beyond what
-//! `domain::channels` reads for publishing (`channels/identity.ts`,
-//! `destinations.ts`, `targetRouting` of `registry.ts`).
+//! `domain::channels` reads for publishing (identity, destinations and
+//! target routing).
 
 use std::collections::BTreeMap;
 

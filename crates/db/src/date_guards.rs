@@ -9,7 +9,8 @@
 //! They are installed from what the database actually holds rather than from a
 //! list, so a column added by tomorrow's migration is guarded the next time the
 //! process starts, with nobody remembering to add it. Names and SQL text are the
-//! TypeScript Studio's, so either side finds the other's triggers already right.
+//! ones production's database already holds, so its existing triggers are found
+//! already right.
 
 use rusqlite::Connection;
 

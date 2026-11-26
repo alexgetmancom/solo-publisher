@@ -1,7 +1,7 @@
 //! SQLite repositories behind the application ports, one module per
-//! TypeScript repository. Statements keep the Drizzle text they replace —
+//! repository. Statements keep the text the goldens were recorded under —
 //! bound parameters, column order, ordering — so a query without an `ORDER BY`
-//! still returns its rows in the order the TypeScript side sees.
+//! still returns its rows in the order the goldens record.
 
 mod actionable_issues;
 mod channels;

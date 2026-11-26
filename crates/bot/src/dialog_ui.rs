@@ -1,4 +1,4 @@
-//! The keyboards dialogs share (`bot/dialog-ui.ts`).
+//! The keyboards dialogs share.
 
 use domain::application::conversation_flow::PublicationKind;
 use foundation::i18n::{Key, t};

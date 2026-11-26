@@ -1,4 +1,4 @@
-//! The MP4 → metadata → schedule conversation (`bot/video-conversation.ts`).
+//! The MP4 → metadata → schedule conversation.
 //! It is entered from the intake, which has already captured the file and
 //! asked for its language.
 

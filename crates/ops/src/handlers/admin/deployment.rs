@@ -1,4 +1,4 @@
-//! `readDeploymentReleases` (`foundation/deployment.ts`): what every target
+//! What every target
 //! the deploy agent drives is running, and what it would roll back to. A read,
 //! so it is not retried: a deployment question asked twice during a rollout
 //! answers differently. Promote and rollback are `bot::deployment`.

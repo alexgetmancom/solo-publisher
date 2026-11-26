@@ -7,7 +7,7 @@
 //!
 //! Credentials that change while the process runs are written to the live
 //! [`SharedConfig`](foundation::config::SharedConfig) as one swap per change,
-//! as TypeScript mutated its config object in place.
+//! rather than mutated in place.
 
 pub mod api_keys;
 pub mod connect;

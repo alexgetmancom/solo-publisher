@@ -1,12 +1,12 @@
-//! The one place that says what is not ported yet.
+//! The one place that says which areas are not implemented yet.
 //!
 //! A golden case replays only when its own area and every area it reaches are
-//! ported; anything else is reported as "not ported", by name, on every run.
+//! registered; anything else is reported as "not ported", by name, on every run.
 //! When an area lands, delete its line from `PENDING_AREAS` (the consistency
-//! test refuses a pending area that is in fact fully registered, and a ported
-//! area that still misses a registration).
+//! test refuses a pending area that is in fact fully registered, and a
+//! registered area that still misses a registration).
 
-/// Areas of the bot (`crates/bot/src/screens/<area>.rs`) not ported yet.
+/// Areas of the bot (`crates/bot/src/screens/<area>.rs`) not implemented yet.
 pub const PENDING_AREAS: &[&str] = &[];
 
 /// Areas a case reaches beyond its own directory (callbacks/ and entry/ belong

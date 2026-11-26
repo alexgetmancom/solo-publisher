@@ -1,4 +1,4 @@
-//! How the TypeScript read loosely typed entity JSON and measured strings:
+//! How loosely typed entity JSON is read and strings are measured, JavaScript-style:
 //! `Number(value)` over whatever a field held, and `String.length` in UTF-16
 //! code units.
 

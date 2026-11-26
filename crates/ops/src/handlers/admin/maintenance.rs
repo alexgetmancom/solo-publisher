@@ -1,4 +1,4 @@
-//! `operations/maintenance.ts`: the audit, the backup and restore of the
+//! The audit, the backup and restore of the
 //! database file, and the publication consistency report with its repair.
 //! (The retention sweep is `delivery::maintenance`.)
 

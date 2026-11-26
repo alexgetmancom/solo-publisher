@@ -1,4 +1,4 @@
-//! The MCP transport (`GET`/`POST /api/mcp`, `interfaces/http/studio.ts`):
+//! The MCP transport (`GET`/`POST /api/mcp`):
 //! JSON-RPC over POST, answered by `ops::mcp`, and a keep-alive SSE stream
 //! whose only events are the `endpoint` and a `ping` every 30 seconds. Both
 //! answer only the Studio bearer token (`mcp_studio_actor`).
@@ -133,7 +133,7 @@ async fn call(State(local): State<Local>, request: Request) -> Response {
         };
         let started = Instant::now();
         let answer = server.respond(&body, &client, actor).await;
-        // `trackUsageAsync`: the request is counted whatever it answered.
+        // The request is counted whatever it answered.
         surface.usage().record(
             db::unsafe_db(state.backend.db()),
             "studio.mcp.request",

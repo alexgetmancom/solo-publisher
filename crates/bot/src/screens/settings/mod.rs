@@ -1,4 +1,4 @@
-//! The settings area (`bot/settings/index.ts` + `shared.ts`):
+//! The settings area:
 //! the `⚙️` text trigger, the settings menus and the typed settings inputs
 //! (time zone, YouTube signature) that claim the next message.
 //!

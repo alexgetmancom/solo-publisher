@@ -1,6 +1,6 @@
-//! Delivery equivalence with TypeScript: every scenario in
-//! `delivery_scenarios.json` ran through the real TypeScript modules before
-//! the cutover (`delivery_scenarios.golden.json`) and runs through this crate over the
+//! Delivery against its goldens: every scenario in
+//! `delivery_scenarios.json` has a recorded result
+//! (`delivery_scenarios.golden.json`) and runs through this crate over the
 //! adapters, each on a fresh database under the same clock, with the same
 //! canned platform answers; every step's result, every request and every
 //! table must come out identical.
@@ -149,7 +149,7 @@ fn delivery_matches_typescript() {
 }
 
 /// The shared spec with these scenarios instead of its own: Rust-only cases
-/// for what TypeScript does differently on purpose or cannot be driven to.
+/// for what the goldens do differently on purpose or cannot be driven to.
 fn rust_only(scenarios: Value) -> Value {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/delivery_scenarios.json");
     let mut spec: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();

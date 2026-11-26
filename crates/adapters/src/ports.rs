@@ -1,4 +1,4 @@
-//! The delivery boundary (`delivery/ports.ts`): what the publish workflow
+//! The delivery boundary: what the publish workflow
 //! asks of the adapter for one durable target. Publishing owns retry policy
 //! and durable jobs; an adapter owns validation, preparation, the provider
 //! calls and post-publish verification. It never sees Telegram, MCP or HTTP
@@ -61,7 +61,7 @@ impl EditOutcome {
         }
     }
 
-    /// The record TypeScript returned, for journals and goldens.
+    /// The record kept for journals and goldens.
     pub fn to_json(&self) -> Map<String, Value> {
         let mut record = Map::new();
         record.insert("ok".into(), self.ok.into());
@@ -112,8 +112,7 @@ impl PrepareJob for Unprepared {
     }
 }
 
-/// The adapters by durable target (`DeliveryPorts`), in the order TypeScript
-/// registered them.
+/// The adapters by durable target (`DeliveryPorts`), in registration order.
 pub struct DeliveryPorts(pub(crate) Vec<(String, Box<dyn SocialAdapter>)>);
 
 impl DeliveryPorts {

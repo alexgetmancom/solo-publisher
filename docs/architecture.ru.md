@@ -64,7 +64,7 @@ cargo xtask check
 ```
 
 `cargo xtask check` запускает полный набор проверок репозитория: проверку
-языков, проверки TypeScript у инструментов deployment, `cargo fmt`, `clippy` и тесты,
+языков, `cargo fmt`, `clippy` и тесты,
 и release-сборку. Файлы
 deployment в `deploy/` привязаны к собственной установке автора — её доменам,
 путям на хосте и systemd-юнитам. Используйте их как пример реализации и

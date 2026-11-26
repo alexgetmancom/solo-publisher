@@ -1,5 +1,5 @@
-//! An upload body streamed to a private temporary file under a byte cap
-//! (`interfaces/http/media-upload.ts`), so a gigabyte video never sits in
+//! An upload body streamed to a private temporary file under a byte cap,
+//! so a gigabyte video never sits in
 //! memory.
 
 use std::fmt;
@@ -36,7 +36,7 @@ fn failed(error: impl fmt::Display) -> MediaUploadError {
     MediaUploadError::Failed(error.to_string())
 }
 
-/// `streamUploadToFile`: writes `body` to `target` (mode 0600) and returns its
+/// Writes `body` to `target` (mode 0600) and returns its
 /// size. The chunk that crosses `max_bytes` is refused before it is written.
 pub async fn stream_upload_to_file(mut body: Body, target: &Path, max_bytes: u64) -> Result<u64, MediaUploadError> {
     let mut file = tokio::fs::OpenOptions::new()

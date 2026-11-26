@@ -1,4 +1,4 @@
-//! `foundation/runtime/git.ts`.
+//! The revision the process runs.
 
 use std::path::Path;
 use std::process::{Command, Stdio};

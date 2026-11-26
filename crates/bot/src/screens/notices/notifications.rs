@@ -1,6 +1,5 @@
-//! The Telegram delivery of Studio's publication events
-//! (`interfaces/telegram/video-notifications.ts`): reminders,
-//! completions, a video target that failed or that nobody can confirm, and the
+//! The Telegram delivery of Studio's publication events:
+//! reminders, completions, a video target that failed or that nobody can confirm, and the
 //! video card redrawn in place. Every notice reaches every administrator.
 
 use content::Locale;

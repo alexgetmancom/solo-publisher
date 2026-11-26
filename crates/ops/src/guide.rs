@@ -1,4 +1,4 @@
-//! `operations/guide.ts`: which route to run operations through, and the
+//! Which route to run operations through, and the
 //! catalog this build accepts, grouped into the sections an operator reads.
 
 use std::io;

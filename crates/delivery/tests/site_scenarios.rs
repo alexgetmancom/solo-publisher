@@ -1,5 +1,5 @@
 //! The site build queue, site media materialization and IndexNow, Rust
-//! against what TypeScript recorded before the cutover over the same scenarios
+//! against the recorded goldens over the same scenarios
 //! (`site_scenarios.json`, `site_scenarios.golden.json`): real ffmpeg on both
 //! sides, every file the build
 //! leaves under the site directory compared by size, digest and link count.

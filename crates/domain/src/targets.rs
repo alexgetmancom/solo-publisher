@@ -1,4 +1,4 @@
-//! The catalogue of publication targets (`botTargets.ts`): every target id,
+//! The catalogue of publication targets: every target id,
 //! its label, language and kind, what form of publication it carries, and the
 //! on/off record drafts and presets keep their selection in.
 

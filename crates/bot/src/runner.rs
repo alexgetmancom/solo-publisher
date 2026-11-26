@@ -1,4 +1,4 @@
-//! Long polling as `@grammyjs/runner`'s `run(bot)` does it (`bot/runner.ts`):
+//! Long polling as `@grammyjs/runner`'s `run(bot)` does it:
 //! `getUpdates` with a 30 s timeout and a batch of at most 100, up to 500
 //! updates handled at once, each as soon as it arrives. Ordering within a
 //! chat is the middleware chain's `sequentialize`, not the runner's.

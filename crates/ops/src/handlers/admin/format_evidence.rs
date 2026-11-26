@@ -1,4 +1,4 @@
-//! `recordFormatEvidence` and `seedFormatSupport` (`operations/format-support.ts`):
+//! Recording format evidence and seeding format support:
 //! the message that proves which targets carry a media format.
 
 use db::rusqlite::{Connection, OptionalExtension, params};

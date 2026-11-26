@@ -1,6 +1,6 @@
 # Bot goldens — coverage
 
-Recorded from the real TypeScript bot (`createBot`) against a fake Telegram before the cutover; nothing re-records
+Recorded from the real TypeScript bot against a fake Telegram before the cutover; nothing re-records
 them. The recorder's seeds are `seeds/`, its fixtures `fixtures/`; how the Rust replay reads them is in
 `crates/bot/tests/support/mod.rs`. Every golden is
 `{ id, specRef, seed, steps: [{ update | trigger, calls: [{ method, payload, transport? }] }] }`; `seed` says in words
@@ -132,8 +132,7 @@ what state was put in place outside the bot. All screens use the actor locale `r
 
 ## Worker loops (`loops/`)
 
-Each trigger runs one loop's task exactly as `interfaces/telegram/worker.ts` (and `notifications` in
-`runtime/workers.ts`) starts it; every step after `h.watch(…)` also records what the watched queries return (`db`).
+Each trigger runs one loop's task exactly as the worker starts it; every step after `h.watch(…)` also records what the watched queries return (`db`).
 
 | Loop | Case file(s) |
 |---|---|
@@ -163,7 +162,7 @@ Each trigger runs one loop's task exactly as `interfaces/telegram/worker.ts` (an
 
 ## Findings while recording (behaviour of today's bot, recorded as is)
 
-- An actor with no stored locale reads as `en` (`studio/services/settings.ts`, `readLocale(..., "en")`), not `ru`. The recorder stores `ru` explicitly before every case.
+- An actor with no stored locale reads as `en` (the settings read defaults to `en`), not `ru`. The recorder stores `ru` explicitly before every case.
 - `setMyCommands` still sends the EN description (`entry/bootstrap`); docs/decisions.md moves it to `ru` in Rust, so that
   golden will differ on purpose.
 - Settings menu-plugin hashes contain raw control characters and U+FFFD (the plugin decodes 4 hash bytes as UTF-8);

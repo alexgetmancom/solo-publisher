@@ -1,7 +1,7 @@
 //! What publishing calls but does not own, each as the narrowest trait the
-//! TypeScript code uses. Every one has its real implementation in the area
-//! that owns it (delivery, observability, story cards, the media runtime) and
-//! a fake in the tests.
+//! code uses. Every one has its real implementation in the area that owns it
+//! (delivery, observability, story cards, the media runtime) and a fake in the
+//! tests.
 
 use std::future::Future;
 
@@ -29,7 +29,7 @@ impl Jitter for SystemJitter {
     }
 }
 
-/// The publish worker's doorbell (`foundation/worker-signal.ts`). A ring made
+/// The publish worker's doorbell. A ring made
 /// inside a transaction must wake the worker only after the commit; the
 /// implementation defers it.
 pub trait WorkerBell {
@@ -53,7 +53,7 @@ pub struct AuthCircuitState {
     pub token_expires_at: Option<String>,
 }
 
-/// The credential circuit breaker (`observability/auth-circuit.ts`), told how
+/// The credential circuit breaker, told how
 /// each settled attempt went and asked what it holds. It owns its table and
 /// works on the connection given.
 pub trait AuthCircuit {
@@ -63,7 +63,7 @@ pub trait AuthCircuit {
     fn states(&self, sqlite: &Connection) -> Result<Vec<AuthCircuitState>>;
 }
 
-/// Runtime usage telemetry (`observability/usage.ts`, `trackUsageSync`).
+/// Runtime usage telemetry.
 pub trait UsageMeter {
     fn record(&self, sqlite: &Connection, feature_key: &str, success: bool, duration_ms: u64);
     /// `flushUsage`: what is buffered, written now. A meter that buffers
@@ -87,7 +87,7 @@ pub struct StoryCardState {
     pub local_path: Option<String>,
 }
 
-/// Generated Story cards (`story-cards/store.ts`), on the connection given so
+/// Generated Story cards, on the connection given so
 /// a caller's transaction covers them.
 pub trait StoryCards {
     /// `queueDraftStoryCards`.
@@ -128,7 +128,7 @@ pub struct ProviderOutcome {
     pub failure: Option<String>,
 }
 
-/// The video publication provider (`delivery/zernio.ts`): the two calls
+/// The video publication provider: the two calls
 /// settling a video target makes. Requests are fenced by `request_id`, so
 /// asking twice returns the publication already made.
 pub trait VideoProvider {
@@ -145,7 +145,7 @@ pub trait VideoProvider {
     ) -> impl Future<Output = Result<ProviderOutcome>>;
 }
 
-/// What probing a media file answered (`foundation/runtime/ffmpeg.ts`).
+/// What probing a media file answered.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MediaMetadata {
     pub width: f64,

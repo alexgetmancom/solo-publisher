@@ -1,4 +1,4 @@
-//! Owner and Studio-wide settings commands (`studio/services/settings.ts`).
+//! Owner and Studio-wide settings commands.
 
 use foundation::errors::StudioError;
 use foundation::time::{Zone, is_valid_time_zone, time_zone_offset_label};
@@ -226,9 +226,9 @@ impl<'a> SettingsService<'a> {
     }
 
     /// The owner's zone over the Studio's, labelled the Studio's way when they
-    /// agree and by its offset when the owner picked another. TypeScript takes
-    /// the Studio zone from the configuration, which reads it from this same
-    /// profile row; here it is read directly.
+    /// agree and by its offset when the owner picked another. The Studio zone
+    /// is read directly from the profile row, the one the configuration reads
+    /// it from too.
     pub fn time_config(&self, actor_id: i64) -> Result<TimeConfig> {
         let profile = self.ports.studio_settings().profile()?;
         let timezone = self.timezone(actor_id, &profile.timezone)?;

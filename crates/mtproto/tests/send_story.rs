@@ -1,6 +1,6 @@
 //! `stories.sendStory` as this crate builds it against what mtcute 0.32.1
 //! sent for the same Story (`send_story.golden.json`, recorded from the
-//! TypeScript sidecar's own `sendStoryParams` before it was deleted). The
+//! mtcute sidecar's own `sendStoryParams` before it was deleted). The
 //! recorded wire bytes are read back with grammers' layer-233 definitions and
 //! compared constructor by constructor and field by field, then byte for
 //! byte. The upload itself is grammers' (`upload.saveFilePart`, 512 KiB parts,

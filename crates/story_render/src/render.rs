@@ -1,11 +1,10 @@
-//! `story-cards/renderer-process.ts`: the background resized to the card with
+//! The background resized to the card with
 //! `fit: cover`, the text overlay and the leading emoji's Twemoji asset drawn
 //! over it, encoded as JPEG quality 92 without chroma subsampling.
 //!
-//! TypeScript ran this in a child process because sharp is libvips over
-//! N-API: native memory and a native crash belonged in a process the worker
-//! could kill. resvg, tiny-skia and the encoders here are safe Rust, so the
-//! render runs in-process on the blocking pool; a panic comes back as an
+//! A native renderer (sharp is libvips over N-API) would need a child process
+//! the worker could kill, for its native memory and crashes. resvg, tiny-skia
+//! and the encoders here are safe Rust, so the render runs in-process on the blocking pool; a panic comes back as an
 //! error, and the worker's timeout stops waiting for it.
 
 use std::io::Write;
@@ -70,7 +69,7 @@ pub fn render_story_card(card: &StoryCardRender) -> Result<u64, String> {
     Ok(jpeg.len() as u64)
 }
 
-/// The fonts the TypeScript renderer's fontconfig saw: every font file in the
+/// The fonts the recorded renders' fontconfig saw: every font file in the
 /// assets directory, Manrope standing for `sans-serif`; a glyph Manrope lacks
 /// (an emoji inside the text) falls back to whichever font has it.
 fn fonts(assets_dir: &Path) -> fontdb::Database {

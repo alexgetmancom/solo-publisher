@@ -1,4 +1,4 @@
-//! `delivery/social/discord.ts`: a post to an announcement channel as one
+//! A post to an announcement channel as one
 //! message per text part, the media under the last one.
 
 use std::path::Path;
@@ -67,10 +67,10 @@ const MESSAGES_RESUME_KEY: &str = "_discordMessageIds";
 /// `publishToDiscord`. Every id is returned: a two-part post is two objects
 /// to verify, edit or delete later.
 ///
-/// Deliberate deviation from TypeScript, which threw when a later part was
-/// refused after the first was already in the channel, so the retry posted
-/// the first again: the ids that went out are handed back as a partial
-/// publication (as X and Threads do), and the retry sends only the rest.
+/// Deliberately does not throw when a later part is refused after the first
+/// is already in the channel, because the retry would post the first again:
+/// the ids that went out are handed back as a partial publication (as X and
+/// Threads do), and the retry sends only the rest.
 pub async fn publish_to_discord(ctx: &AdapterContext, payload: &Map<String, Value>) -> Result<PublishResult> {
     let credentials = credentials(ctx)?;
     let parts = split_text(&payload_text(payload), text_limit());

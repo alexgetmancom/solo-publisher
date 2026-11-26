@@ -1,4 +1,4 @@
-//! `operations/disk-report.ts`: what the data volume holds, and how much of
+//! What the data volume holds, and how much of
 //! it nothing points at any more. Media caches age out on a TTL; a Story
 //! variant whose source is gone is a file nothing will read or delete.
 

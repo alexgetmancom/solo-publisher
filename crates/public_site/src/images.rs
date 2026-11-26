@@ -1,6 +1,6 @@
-//! What a served image is (`public/site-images.ts`): the dimensions of the
-//! file on disk, not of the upload it was made from, and the responsive
-//! variants the publication worker has generated for it so far.
+//! What a served image is: the dimensions of the file on disk, not of the
+//! upload it was made from, and the responsive variants the publication worker
+//! has generated for it so far.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -41,7 +41,7 @@ pub struct ImageDescription {
     pub complete: bool,
 }
 
-/// The process-wide caches of `site-images.ts`, held by whoever serves the feed.
+/// The process-wide image caches, held by whoever serves the feed.
 #[derive(Default)]
 pub struct SiteImages {
     images: RefCell<HashMap<String, ImageInfo>>,

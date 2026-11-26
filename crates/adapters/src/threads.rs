@@ -1,4 +1,4 @@
-//! `delivery/social/threads.ts`: a Threads post as a resumable state machine.
+//! A Threads post as a resumable state machine.
 //! Every call makes at most one mutation and hands the next stage back to the
 //! durable queue as a deferral, so a container is persisted after one API
 //! call instead of being polled in place.

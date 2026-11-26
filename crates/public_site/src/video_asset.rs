@@ -1,6 +1,5 @@
-//! The video a platform importer fetches by content hash while it imports a
-//! Reel (`public/video-asset.ts`). Anything that is not a video under that hash
-//! does not exist here.
+//! The video a platform importer fetches by content hash while it imports a Reel.
+//! Anything that is not a video under that hash does not exist here.
 
 use db::rusqlite::OptionalExtension;
 use db::{BackendDb, unsafe_db};

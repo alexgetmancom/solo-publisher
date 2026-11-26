@@ -1,6 +1,6 @@
 # mtproto — Telegram channel Stories over MTProto (Rust)
 
-grammers 0.12 (TL layer 233), in the Studio's process. TypeScript ran mtcute 0.32 (layer 229) for the same three jobs.
+grammers 0.12 (TL layer 233), in the Studio's process. mtcute 0.32 (layer 229) did the same three jobs before it.
 
 | Module | What |
 |---|---|
@@ -16,6 +16,6 @@ connection; nothing is retried except a flood wait of at most 10 s.
 cargo test -p mtproto   # send_story.rs: the request against mtcute's (send_story.golden.json); session.rs: mtcute's own session file
 ```
 
-The golden and `tests/fixtures/mtcute.session` (a random key for DC 2) were recorded with mtcute 0.32.1 before the
-TypeScript sidecar was deleted; nothing re-records them. Against Telegram itself this crate is verified only by a real
+The golden and `tests/fixtures/mtcute.session` (a random key for DC 2) were recorded with mtcute 0.32.1 before that
+sidecar was deleted; nothing re-records them. Against Telegram itself this crate is verified only by a real
 Story posted from production's session.

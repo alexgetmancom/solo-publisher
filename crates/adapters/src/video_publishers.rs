@@ -1,7 +1,7 @@
-//! The platform side of `delivery/video-publishers.ts`: the YouTube resumable
-//! upload and its status edits, Instagram Reels containers, and whether a
-//! published video is still there. The video worker loop that drives them
-//! belongs to `delivery`.
+//! The platform side of video publishing: the YouTube resumable upload and
+//! its status edits, Instagram Reels containers, and whether a published
+//! video is still there. The video worker loop that drives them belongs to
+//! `delivery`.
 
 use std::path::Path;
 use std::sync::LazyLock;

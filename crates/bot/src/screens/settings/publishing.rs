@@ -1,4 +1,4 @@
-//! Where posts go and what is added to them (`bot/settings/publishing.ts`):
+//! Where posts go and what is added to them:
 //! channels (list, card, disable, connect), default platforms and the
 //! YouTube signature.
 

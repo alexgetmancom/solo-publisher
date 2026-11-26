@@ -1,5 +1,5 @@
-//! The provider helpers several adapters share (`foundation/external/*`).
-//! Telegram channel Stories (`telegram-session.ts`) are `crates/mtproto`.
+//! The provider helpers several adapters share.
+//! Telegram channel Stories are `crates/mtproto`.
 
 pub mod deepseek;
 pub mod instagram;

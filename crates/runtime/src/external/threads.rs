@@ -1,4 +1,4 @@
-//! `foundation/external/threads.ts`.
+//! Threads credentials, per locale.
 
 use content::Locale;
 use foundation::config::Config;

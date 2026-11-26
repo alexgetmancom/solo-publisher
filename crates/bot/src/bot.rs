@@ -1,5 +1,4 @@
-//! `createBot` and its middleware chain (`bot.ts`), in the order
-//! the TypeScript bot installs it:
+//! `createBot` and its middleware chain, in the order it is installed:
 //!
 //! 1. timing and usage around everything,
 //! 2. the admin gate,
@@ -457,7 +456,7 @@ impl Bot {
         })
     }
 
-    /// `bot.on("message")` (`bot.ts:147-155`).
+    /// `bot.on("message")`.
     async fn route_message(&self, ctx: &Ctx) -> crate::Result<()> {
         for stage in self.registry().message_stages() {
             let result = stage(ctx).await?;
@@ -472,7 +471,7 @@ impl Bot {
         Ok(())
     }
 
-    /// `bot.on("callback_query:data")` (`bot.ts:157-174`).
+    /// `bot.on("callback_query:data")`.
     async fn route_callback(&self, ctx: &Ctx) -> crate::Result<()> {
         let data = ctx.callback_data().unwrap_or_default();
         if crate::callback::parse_session_callback(data).callback.is_some() {

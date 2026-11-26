@@ -1,4 +1,4 @@
-//! `delivery/media-prepare.ts`: media staged where a platform can fetch it —
+//! Media staged where a platform can fetch it —
 //! a local copy in the cache, a video normalized to the target's bounds, and
 //! a public file under the staging URL — plus the hourly cache sweep.
 

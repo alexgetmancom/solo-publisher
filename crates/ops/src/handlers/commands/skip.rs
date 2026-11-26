@@ -1,4 +1,4 @@
-//! `operations/skip.ts` and `operations/resend.ts`: the two other answers to
+//! The two other answers to
 //! a target that did not land — finish without it, or send a settled post to
 //! a platform it never went to. Both go through Publishing, which the bot's
 //! buttons also use.

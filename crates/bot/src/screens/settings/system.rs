@@ -1,4 +1,4 @@
-//! Machine settings (`bot/settings/system.ts`): the clock and database
+//! Machine settings: the clock and database
 //! backups. The interface language has no screen (Russian only).
 
 use foundation::i18n::{Key, t};

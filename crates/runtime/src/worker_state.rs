@@ -1,6 +1,5 @@
-//! What each background loop last reported (`foundation/runtime/worker-state.ts`):
-//! the `worker_state` row a cycle writes, the heartbeat a running loop keeps
-//! fresh, and the names `status` and `/readyz` expect to find.
+//! What each background loop last reported: the `worker_state` row a cycle
+//! writes, the heartbeat a running loop keeps fresh, and the names `status` and `/readyz` expect to find.
 
 use std::cell::Cell;
 use std::fmt::Display;
@@ -19,8 +18,7 @@ use crate::scheduler::{LoopHooks, ScheduledLoop, start_loop};
 /// How often a running loop says it is still alive.
 const WORKER_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(60);
 
-/// `recordWorkerState`: a finished cycle's counters and verdict, replacing
-/// whatever the row held.
+/// A finished cycle's counters and verdict, replacing whatever the row held.
 pub fn record_worker_state(
     db: &BackendDb,
     name: &str,
@@ -44,10 +42,10 @@ pub fn record_worker_state(
     Ok(())
 }
 
-/// `recordWorkerHeartbeat`: lifecycle fields over the row's own, without
-/// touching a cycle's counters or verdict. The merge is the write itself
-/// (`json_set` keeps a key where it is and appends a new one, as the spread
-/// did), so nothing read beforehand can be stale by then.
+/// Lifecycle fields over the row's own, without touching a cycle's counters or
+/// verdict. The merge is the write itself (`json_set` keeps a key where it is
+/// and appends a new one, as an object spread does), so nothing read beforehand
+/// can be stale by then.
 fn record_worker_heartbeat(
     db: &BackendDb,
     name: &str,
@@ -119,7 +117,7 @@ pub struct WorkerLiveness {
     pub last_heartbeat_at: String,
 }
 
-/// `workerLiveness(state, updatedAt)`: a loop is stale after three missed
+/// A loop is stale after three missed
 /// heartbeats, and never sooner than two minutes.
 pub fn worker_liveness(state: &Map<String, Value>, updated_at: &str, now: Timestamp) -> WorkerLiveness {
     let last_heartbeat_at = state
@@ -140,7 +138,7 @@ pub fn worker_liveness(state: &Map<String, Value>, updated_at: &str, now: Timest
     }
 }
 
-/// `heartbeatLoop`: every loop through one factory, because a loop that
+/// Every loop through one factory, because a loop that
 /// records no heartbeat is a loop `status` cannot see. `db` reaches the
 /// database through whatever owns it.
 pub struct HeartbeatLoops<D> {

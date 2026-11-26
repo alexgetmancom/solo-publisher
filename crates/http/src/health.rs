@@ -1,4 +1,4 @@
-//! `/healthz`, `/tg-feed/healthz` and `/readyz` (`interfaces/http/health.ts`).
+//! `/healthz`, `/tg-feed/healthz` and `/readyz`.
 
 use std::path::Path;
 

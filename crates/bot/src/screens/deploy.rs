@@ -1,5 +1,5 @@
-//! The deploy area: the deploy agent's release controls
-//! (`bot/operations-screen.ts`). Deliberately outside the content
+//! The deploy area: the deploy agent's release controls.
+//! Deliberately outside the content
 //! screens. Every deploy action is ask → confirm → progress → result, all as
 //! edits of the same message, so a tap never looks like it silently did nothing.
 

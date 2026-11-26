@@ -1,4 +1,4 @@
-//! The transport-neutral video workflow (`studio/video-fsm.ts`): every step a
+//! The transport-neutral video workflow: every step a
 //! video publication passes through, what each expects and where it leads.
 //! Telegram renders the step-specific questions itself.
 

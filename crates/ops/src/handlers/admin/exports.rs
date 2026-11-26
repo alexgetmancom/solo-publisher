@@ -1,4 +1,4 @@
-//! `operations/backup-export.ts`: the backup streams a backup host pulls over
+//! The backup streams a backup host pulls over
 //! SSH, and the record of the last one `doctor` reads. Nothing is written to
 //! this host: a Studio that held its own backups would lose them with itself.
 

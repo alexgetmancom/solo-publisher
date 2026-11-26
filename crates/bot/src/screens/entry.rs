@@ -1,6 +1,5 @@
 //! The entry area: `/start`, the `☰ Меню` text triggers, the main menu
-//! (`bot/navigation.ts`, `bot/menu-render.ts`) and the two
-//! screen buttons that only lead back to it (`menu_home`, `noop`).
+//! and the two screen buttons that only lead back to it (`menu_home`, `noop`).
 
 use std::sync::LazyLock;
 

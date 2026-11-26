@@ -1,5 +1,4 @@
-//! Threads and Instagram (`channels/meta-providers.ts`, `meta-oauth.ts`,
-//! `meta-tokens.ts`): the same road for both — signed state, consent screen,
+//! Threads and Instagram: the same road for both — signed state, consent screen,
 //! code for a short-lived token, short-lived for a long-lived one, the profile
 //! behind it — and the renewal of the long-lived token before it lapses.
 

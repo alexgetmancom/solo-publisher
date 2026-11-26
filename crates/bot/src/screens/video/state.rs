@@ -1,5 +1,5 @@
-//! The video conversation's state and the screens it asks with
-//! (`bot/video-ui.ts`): every path that advances the wizard -- a typed message
+//! The video conversation's state and the screens it asks with:
+//! every path that advances the wizard -- a typed message
 //! or a tapped control -- ends on [`video_step_effects`] with the step the
 //! transition produced, so no caller decides which question comes next.
 

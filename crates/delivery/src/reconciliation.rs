@@ -1,4 +1,4 @@
-//! `delivery/publication-reconciliation.ts`: publications whose outcome was
+//! Publications whose outcome was
 //! lost at publish time, asked of the provider by their durable id. Only a
 //! case backed by such an id is resolved; one without stays for an operator —
 //! guessing by title or timestamp is not safe enough.

@@ -1,7 +1,6 @@
-//! `observability/runtime-health.ts`, over what the caller read from the
-//! process: process replacement as a durable event (escalated only when
-//! restarts of one build cluster), and memory pressure while the process is
-//! still alive to report it.
+//! Runtime health over what the caller read from the process: process
+//! replacement as a durable event (escalated only when restarts of one build
+//! cluster), and memory pressure while the process is still alive to report it.
 
 use db::rusqlite::{Connection, OptionalExtension};
 use foundation::time::{parse_iso_instant, to_iso_string};

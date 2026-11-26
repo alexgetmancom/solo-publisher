@@ -1,7 +1,6 @@
-//! `GET /api/public/site` without the HTTP framework
-//! (`interfaces/http/public-site.ts`): the body the public site renders, its
-//! strong ETag, the 304 for a site that already has it and the long poll that
-//! holds an unchanged conditional request open.
+//! `GET /api/public/site` without the HTTP framework: the body the public site
+//! renders, its strong ETag, the 304 for a site that already has it and the long
+//! poll that holds an unchanged conditional request open.
 //!
 //! The site is its own service (alexgetman-site) with no access to this
 //! Studio's database or disk, so the media it is told about are only those
@@ -274,8 +273,8 @@ impl PublicSite {
         } else {
             None
         };
-        // The TypeScript side tests the version keys here for its own cache, and
-        // a URL that does not parse fails the answer there as it does here.
+        // The version keys are tested here for the cache, and a URL that does not
+        // parse fails the answer.
         if exists && poster_exists && versioned(path)? && !poster.is_empty() {
             versioned(poster)?;
         }

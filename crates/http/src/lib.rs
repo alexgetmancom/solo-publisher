@@ -108,8 +108,7 @@ impl ChannelRegistrar for BotBackend {
     }
 }
 
-/// Everything the routes share for the life of the process (the module-level
-/// state of the TypeScript route files): the backend, the public site's read
+/// Everything the routes share for the life of the process (the backend, the public site's read
 /// model and caches, and the count of uploads in flight.
 pub struct HttpState {
     pub backend: Rc<dyn Backend>,
@@ -138,7 +137,7 @@ fn routes() -> Router<Local> {
         .merge(mcp::routes())
 }
 
-/// The whole HTTP surface (`buildApp`). Starts the local executor, so it must
+/// The whole HTTP surface. Starts the local executor, so it must
 /// be called inside the process's `LocalSet`; requests are answered while
 /// that `LocalSet` runs.
 pub fn router(state: HttpState) -> Router {

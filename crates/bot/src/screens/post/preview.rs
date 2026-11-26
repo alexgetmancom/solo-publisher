@@ -1,6 +1,4 @@
-//! The post card (`bot/preview.ts`, the post half of
-//! `bot/publication-renderers.ts`): one draft, rendered as the
-//! screen it is on.
+//! The post card: one draft, rendered as the screen it is on.
 
 use content::Locale;
 use content::draft_content::{DraftContentSource, draft_locale_content};

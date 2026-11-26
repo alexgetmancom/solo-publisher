@@ -1,4 +1,4 @@
-//! `delivery/site-content-index.ts`: the public pages a site cycle changed.
+//! The public pages a site cycle changed.
 
 use std::collections::BTreeSet;
 

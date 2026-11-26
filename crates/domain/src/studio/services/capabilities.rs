@@ -1,5 +1,5 @@
-//! The safe capability read model for Studio interfaces and AI operators
-//! (`studio/services/capabilities.ts`). It reports enabled features and
+//! The safe capability read model for Studio interfaces and AI operators.
+//! It reports enabled features and
 //! readiness, never configured values or secret names.
 
 use content::Locale;

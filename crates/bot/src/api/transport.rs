@@ -1,7 +1,7 @@
 //! The wire under the Bot API client: one HTTP POST per call. Everything above
 //! it (encoding, the retry, the timing, the unchanged-edit guard, the menu
 //! rendering) is the client's, so a test transport sits beneath all of it, the
-//! way the TypeScript recorder's `fetch` sat beneath every grammY transformer.
+//! way the golden recorder's `fetch` sat beneath every grammY transformer.
 
 use std::path::PathBuf;
 use std::time::Duration;

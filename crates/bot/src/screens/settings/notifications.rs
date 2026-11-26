@@ -1,4 +1,4 @@
-//! What the bot tells the operator and when (`bot/settings/notifications.ts`),
+//! What the bot tells the operator and when,
 //! and the database backup, which lives under System.
 
 use domain::studio::services::settings::NotificationSettingsInput;

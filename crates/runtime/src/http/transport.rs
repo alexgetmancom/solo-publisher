@@ -1,7 +1,7 @@
 //! The wire under every external call: one request in, the status and headers
-//! out, the body read afterwards at the caller's pace. It is the `fetchImpl`
-//! every TypeScript adapter took as a parameter, so a test hands a recording
-//! transport to the same code production runs over [`ReqwestTransport`].
+//! out, the body read afterwards at the caller's pace. Every adapter takes it
+//! as a parameter, so a test hands a recording transport to the same code
+//! production runs over [`ReqwestTransport`].
 
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -68,8 +68,7 @@ impl Body {
     }
 }
 
-/// One request. Headers keep the caller's order and spelling, as the
-/// TypeScript `init.headers` objects did.
+/// One request. Headers keep the caller's order and spelling.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HttpRequest {
     pub method: Method,
@@ -125,7 +124,7 @@ impl HttpRequest {
         self.body(Body(vec![BodyPart::Bytes(body.into().into_bytes())]))
     }
 
-    /// A `URLSearchParams` body (`formBody`): absent values are skipped, and
+    /// A form body: absent values are skipped, and
     /// `fetch`'s implicit content type is set unless the caller set one.
     pub fn form(self, fields: &[(&str, Option<&str>)]) -> Self {
         let encoded = super::form_body(fields);

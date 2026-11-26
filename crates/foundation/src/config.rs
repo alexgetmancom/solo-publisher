@@ -1,6 +1,6 @@
-//! The configuration .env determines, validated the way the TypeScript zod
-//! schema validated it — same defaults, same "blank is unset", same messages —
-//! plus the platform credentials whose one home is the database.
+//! The configuration .env determines, validated with the defaults, the
+//! "blank is unset" rule and the messages the goldens record, plus the platform
+//! credentials whose one home is the database.
 //!
 //! A `Config` is immutable. The running process holds it in a `SharedConfig`
 //! and swaps in a new one when a stored credential changes, so a reader always

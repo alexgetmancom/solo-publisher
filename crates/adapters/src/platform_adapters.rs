@@ -1,4 +1,4 @@
-//! `delivery/platform-adapters.ts`: one adapter per durable target, routed
+//! One adapter per durable target, routed
 //! natively or through the provider, with the validation, verification and
 //! edit/remove ports each target has.
 

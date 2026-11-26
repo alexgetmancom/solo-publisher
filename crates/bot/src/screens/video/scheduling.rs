@@ -1,4 +1,4 @@
-//! Scheduling a video (`bot/video-scheduling.ts`): one chosen time applied to
+//! Scheduling a video: one chosen time applied to
 //! whichever scheduling step the session is on, and the confirmed schedule
 //! rendered as the final card.
 

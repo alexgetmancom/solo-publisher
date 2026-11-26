@@ -1,4 +1,4 @@
-//! X (`channels/x-oauth.ts`): OAuth 2 with PKCE, the sealed state carrying the
+//! X: OAuth 2 with PKCE, the sealed state carrying the
 //! verifier, and the access token refreshed ahead of its two-hour expiry.
 
 use db::rusqlite::Connection;

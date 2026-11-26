@@ -57,9 +57,9 @@ impl<'a> ConversationSessionStore<'a> {
     /// `expected_revision` is set and the stored row carries another one, the
     /// write changes nothing and is refused with `action.session-stale`.
     ///
-    /// Deliberate deviation from TypeScript (docs/decisions.md): the revision check
-    /// is the upsert's own `WHERE` rather than a read before it, so a revision
-    /// bumped between the two cannot be overwritten.
+    /// The revision check is the upsert's own `WHERE` rather than a read before
+    /// it (docs/decisions.md), so a revision bumped between the two cannot be
+    /// overwritten.
     pub fn save(&self, input: &SaveConversationSession) -> Result<i64> {
         let data = json::stringify_object(&input.data);
         let revision = self

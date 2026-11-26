@@ -1,4 +1,4 @@
-//! Byte-for-byte replay of the TypeScript bot's goldens (parity/bot-goldens/),
+//! Byte-for-byte replay of the recorded bot goldens (parity/bot-goldens/),
 //! one test per golden directory:
 //!
 //!   cargo test -p bot --test goldens            # every area
@@ -81,7 +81,7 @@ fn video() {
 
 /// Every golden directory has its test above, every allowlist entry names a
 /// real area and a real case, and the allowlist tells the truth about the
-/// registry: a ported area misses nothing, a pending area still misses something.
+/// registry: a registered area misses nothing, a pending area still misses something.
 #[test]
 fn the_pending_allowlist_matches_the_registry() {
     let directories = areas();

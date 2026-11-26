@@ -1,4 +1,4 @@
-//! The Telegram event loop's tick (`interfaces/telegram/event-consumer.ts`):
+//! The Telegram event loop's tick:
 //! durable domain events rendered as Telegram-only side effects,
 //! at most once each.
 

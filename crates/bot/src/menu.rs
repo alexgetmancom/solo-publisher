@@ -9,7 +9,7 @@
 //!
 //! A menu is described by its id, its parent (for `back`), an optional
 //! fingerprint, `autoAnswer`, and a layout: the rows of buttons exactly as the
-//! plugin would render them (an empty row the TypeScript menu produced stays).
+//! plugin would render them (an empty row the plugin produces stays).
 
 use std::rc::Rc;
 

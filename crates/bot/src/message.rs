@@ -1,5 +1,5 @@
-//! What an operator's message carries, captured transport-neutral
-//! (`bot/message.ts`): its text or caption, their entities, and the one file
+//! What an operator's message carries, captured transport-neutral:
+//! its text or caption, their entities, and the one file
 //! of each kind it attached.
 
 use std::sync::LazyLock;

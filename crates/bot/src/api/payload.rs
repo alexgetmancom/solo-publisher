@@ -4,7 +4,7 @@
 //! JavaScript objects: `{ chat_id, text, ...other }`. Telegram ignores the order,
 //! but the unchanged-edit guard compares the serialised payload, so two payloads
 //! that grammY would serialise differently must serialise differently here too.
-//! Build options in the order the TypeScript call site spells them.
+//! Build options in the order the call site spells them.
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};

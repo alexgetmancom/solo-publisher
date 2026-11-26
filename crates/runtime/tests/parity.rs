@@ -1,7 +1,7 @@
-//! Parity with the TypeScript runtime foundation, against what it recorded
-//! before the cutover (`tests/fixtures/`). HTTP is replayed over a
-//! recording transport answering the same canned responses the TypeScript
-//! `fetchImpl` answered, and the requests both sides sent are compared.
+//! The runtime foundation against the goldens recorded before the cutover
+//! (`tests/fixtures/`). HTTP is replayed over a recording transport answering
+//! the same canned responses the recording answered, and the requests sent are
+//! compared with the recorded ones.
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -107,7 +107,7 @@ impl Recorder {
         })
     }
 
-    /// The requests as the TypeScript recorder saw them through `new Request`:
+    /// The requests as the recorder saw them through `new Request`:
     /// the normalized URL, header names lower-cased and sorted.
     fn sent(&self) -> Value {
         self.sent

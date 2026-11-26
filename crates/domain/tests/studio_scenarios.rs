@@ -1,17 +1,17 @@
-//! Studio service equivalence with TypeScript: every scenario in
-//! `studio_scenarios.json` drove the real TypeScript Studio services before
-//! the cutover (`studio_scenarios.golden.json`) and drives
-//! `domain::studio::services`, each
-//! on its own fresh database under the same fixed clock, and every step's
-//! result and every table's rows must come out identical.
+//! Studio service equivalence with the recorded goldens: every scenario in
+//! `studio_scenarios.json` drove the TypeScript backend's Studio services
+//! before the cutover (`studio_scenarios.golden.json`) and drives
+//! `domain::studio::services`, each on its own fresh database under the same
+//! fixed clock, and every step's result and every table's rows must come out
+//! identical.
 //!
 //! Reminders and Story cards run on their real stores (`domain::notifications`,
 //! `domain::story_cards`). The other boundaries Studio does not own are faked
-//! here with the TypeScript rule for exactly the states the scenarios reach,
-//! so what they write is compared too: the readiness report over the spec's
+//! here with the recorded rule for exactly the states the scenarios reach, so
+//! what they write is compared too: the readiness report over the spec's
 //! configuration, the connection links of an unconfigured Studio, the Zernio
-//! account list the spec serves, and the prober answering what ffprobe
-//! reported to the TypeScript side for the same clip.
+//! account list the spec serves, and the prober answering what ffprobe reported
+//! in the recording for the same clip.
 
 mod support;
 
@@ -710,7 +710,7 @@ fn run(spec: &Value, world: &World, scenario: &Value) -> Value {
         } else if let Some(sql) = step.get("sql") {
             sqlite.execute_batch(sql.as_str().unwrap()).unwrap();
         } else if step.get("file").is_some() {
-            // The TypeScript run wrote the file, with these bytes, before this one.
+            // The recorded run wrote the file, with these bytes, before this one.
         } else {
             let name = step["call"].as_str().expect("step without clock, sql, file or call");
             let args = resolve(step.get("args").unwrap_or(&json!([])), &vars);

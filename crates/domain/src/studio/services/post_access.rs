@@ -1,5 +1,4 @@
-//! Shared access and decoding rules for post use cases
-//! (`studio/services/post-access.ts`).
+//! Shared access and decoding rules for post use cases.
 
 use content::Locale;
 use content::message::MediaItem;

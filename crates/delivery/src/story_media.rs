@@ -1,4 +1,4 @@
-//! `delivery/story-media.ts`: one source file into the Story shapes — a
+//! One source file into the Story shapes — a
 //! 1080×1920 standard render and, for a video, a Telegram variant that fits
 //! its upload ceiling — on this host with the software encoder
 //! (`vertical_media`), or on the remote media processor.

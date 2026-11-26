@@ -1,5 +1,5 @@
-//! `delivery/social/payload.ts`. The readers themselves (`payloadText`,
-//! `payloadThread`, `payloadMedia`) live in `domain::publishing::payload`,
+//! Payload helpers for delivery. The readers themselves (`payload_text`,
+//! `payload_thread`, `payload_media`) live in `domain::publishing::payload`,
 //! where preflight reads the same payload; these are the file helpers only
 //! delivery needs.
 

@@ -1,4 +1,4 @@
-//! JSON exactly as the TypeScript side writes it. JSON columns are produced by
+//! JSON exactly as JavaScript writes it. JSON columns are produced by
 //! `JSON.stringify`, and serde's own output differs from it in ways a byte
 //! comparison sees: `1.0` against `1`, `1e21` against `1e+21`, and object keys
 //! that look like array indexes, which JavaScript always lists first.

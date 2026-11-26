@@ -36,8 +36,8 @@ impl<'a> StudioPostStore<'a> {
     }
 
     /// The model's suggestions for a draft, replacing the previous ones. Two
-    /// statements and no transaction, as in TypeScript; the insert is one
-    /// statement, so a refused row leaves none of the new ones.
+    /// statements and no transaction; the insert is one statement, so a
+    /// refused row leaves none of the new ones.
     pub fn replace_entity_candidates(
         &self,
         draft_id: i64,

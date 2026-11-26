@@ -1,4 +1,4 @@
-//! `operations/settle.ts`: a target reconciliation cannot settle by itself,
+//! A target reconciliation cannot settle by itself,
 //! answered with what the operator saw on the platform.
 
 use db::rusqlite::{OptionalExtension, params};

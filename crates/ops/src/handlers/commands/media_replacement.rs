@@ -1,4 +1,4 @@
-//! `operations/commands/media-replacement.ts`: the media a published post
+//! The media a published post
 //! carries in one locale swapped for a file on this host. The file becomes a
 //! Content asset, the target is taken down and queued again, and the site
 //! re-renders from the new asset. A target is required: a locale-wide swap

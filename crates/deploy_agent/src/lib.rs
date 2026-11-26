@@ -100,7 +100,7 @@ fn refuse(status: u16, message: impl Into<String>) -> HttpError {
     }
 }
 
-/// Anything not more specific is a 500, as an exception was in the TypeScript.
+/// Anything not more specific is a 500, as an unhandled exception is.
 impl From<String> for HttpError {
     fn from(message: String) -> Self {
         refuse(500, message)
@@ -392,8 +392,8 @@ impl Agent {
     }
 
     /// Deploys to `destination` the exact release `source` is running. The
-    /// check stands outside the deployment lock, as it did in TypeScript; the
-    /// deployment takes the lock itself.
+    /// check stands outside the deployment lock; the deployment takes the lock
+    /// itself.
     async fn promote(
         &self,
         source: &Target,

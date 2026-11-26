@@ -1,6 +1,6 @@
 //! The VAAPI recipe against `remote_recipe.golden.json`, recorded from the
-//! TypeScript media processor's builder (`deploy/media-processor/story-encode.ts`)
-//! before it was deleted: what VM-106 ran must stay byte-identical.
+//! media processor's builder before it was deleted: what VM-106 ran must stay
+//! byte-identical.
 
 use std::path::Path;
 

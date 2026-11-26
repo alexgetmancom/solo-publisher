@@ -1,4 +1,4 @@
-//! The routines of `operations/maintenance.ts` the operational-retention loop
+//! The routines the operational-retention loop
 //! runs: derived history pruned under the maintenance lock.
 
 use db::rusqlite::{Connection, OptionalExtension as _, params};

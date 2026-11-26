@@ -1,4 +1,4 @@
-//! The host of this build: the ported stores behind Studio's and publishing's
+//! The host of this build: the stores behind Studio's and publishing's
 //! boundaries (`domain::story_cards`, `domain::notifications`, the credential
 //! breaker, the readiness report, runtime usage, the video completion
 //! notice), the worker doorbells, connect links, and the process's media

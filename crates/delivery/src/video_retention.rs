@@ -1,4 +1,4 @@
-//! `delivery/video-retention.ts`: reclaims video source files whose drafts
+//! Reclaims video source files whose drafts
 //! are final and past their retention window. Runs at the tail of every video
 //! cycle; it touches no jobs, locks or targets.
 

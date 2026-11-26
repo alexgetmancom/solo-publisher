@@ -1,6 +1,6 @@
 //! Byte-for-byte replay of `parity/public-site/goldens.json`, recorded from
-//! the TypeScript route before the cutover: every case runs its steps on a fresh database and DATA_DIR under the
-//! same fixed clock, and every response (status, headers, body) and every
+//! the original backend before the cutover: every case runs its steps on a fresh
+//! database and DATA_DIR under the same fixed clock, and every response (status, headers, body) and every
 //! journalled event must come out identical.
 
 use std::cell::Cell;

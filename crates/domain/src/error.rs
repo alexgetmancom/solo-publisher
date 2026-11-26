@@ -13,7 +13,7 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Studio(#[from] StudioError),
-    /// A refusal TypeScript throws as a plain `Error` with this message.
+    /// A plain refusal that carries only its message.
     #[error("{0}")]
     Message(Cow<'static, str>),
     /// A settlement fenced by a lease that another worker has since taken.
@@ -25,7 +25,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl Error {
-    /// A plain refusal with the message TypeScript throws.
+    /// A plain refusal with the given message.
     pub fn message(text: impl Into<Cow<'static, str>>) -> Self {
         Self::Message(text.into())
     }

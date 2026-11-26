@@ -1,5 +1,5 @@
-//! The documents an MCP client probes before connecting to `/api/mcp`
-//! (`interfaces/http/discovery.ts`). They describe this Studio, so every
+//! The documents an MCP client probes before connecting to `/api/mcp`.
+//! They describe this Studio, so every
 //! install serves them, with or without a public site.
 
 use axum::Router;

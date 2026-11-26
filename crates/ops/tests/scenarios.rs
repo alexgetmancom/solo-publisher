@@ -1,6 +1,5 @@
-//! Every case of `tests/scenarios/<area>.json` replayed against what the
-//! TypeScript operations recorded in `parity/ops/scenarios/<area>.json`
-//! before the cutover: the same steps on a fresh database and
+//! Every case of `tests/scenarios/<area>.json` replayed against the goldens
+//! recorded in `parity/ops/scenarios/<area>.json`: the same steps on a fresh database and
 //! DATA_DIR under the same fixed clock, every step as its own process, the
 //! same canned HTTP answers. Compared: every step's output (key order
 //! included), every request, every table and every file.
@@ -181,9 +180,9 @@ fn rows(sqlite: &db::rusqlite::Connection, sql: &str) -> Value {
     Value::Array(out)
 }
 
-/// `withoutEncoderComment` in the TypeScript recorder: the `Lavc<version>`
-/// comment libavcodec's JPEG encoder writes right after SOI differs between
-/// ffmpeg builds while the pixels do not, so neither side compares it.
+/// The `Lavc<version>` comment libavcodec's JPEG encoder writes right after
+/// SOI differs between ffmpeg builds while the pixels do not, so neither side
+/// compares it.
 fn without_encoder_comment(bytes: Vec<u8>) -> Vec<u8> {
     if bytes.len() < 10 || bytes[..4] != [0xff, 0xd8, 0xff, 0xfe] || &bytes[6..10] != b"Lavc" {
         return bytes;

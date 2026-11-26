@@ -1,7 +1,6 @@
-//! The published-site read model (`public/site-read-model.ts`): the posts the
-//! public site shows, read only from stable publication data and cached per
-//! database connection until a publication input changes or a scheduled
-//! locale's moment arrives.
+//! The published-site read model: the posts the public site shows, read only
+//! from stable publication data and cached per database connection until a
+//! publication input changes or a scheduled locale's moment arrives.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -425,7 +424,7 @@ fn read_entities(sqlite: &Connection, draft_ids: &[i64]) -> domain::Result<HashM
 }
 
 /// What `JSON.stringify([row, entities])` would print, hashed: equal exactly
-/// when the TypeScript fingerprint is.
+/// when the recorded fingerprint is.
 fn fingerprint(row: &FeedRow, entities: &[EntityRow]) -> [u8; 32] {
     let media = |media: &Option<Value>| media.as_ref().map_or_else(|| "null".into(), domain::json::stringify);
     let mut parts = vec![

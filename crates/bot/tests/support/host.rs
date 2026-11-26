@@ -1,7 +1,7 @@
 //! The golden host: the boundaries and adapters Studio calls but the bot does
-//! not own. The ported stores (Story cards, reminders, the credential breaker,
+//! not own. The stores (Story cards, reminders, the credential breaker,
 //! the readiness report, the video completion notice) are the real ones; of
-//! the rest only what the ported areas reach is implemented, and anything
+//! the rest only what the registered areas reach is implemented, and anything
 //! else panics with its name, so a case that reaches it fails loudly instead
 //! of diverging quietly.
 
@@ -43,7 +43,7 @@ fn not_in_host(what: &str) -> ! {
     )
 }
 
-/// The ported stores run for real on the case's clock; the rest is below.
+/// The real stores run on the case's clock; the rest is below.
 pub struct GoldenHost {
     auth_circuit: AuthCircuitBreaker<Rc<FixedClock>>,
     story_cards: StoryCardStore<Rc<FixedClock>>,
@@ -161,8 +161,7 @@ fn form_encode(pairs: &[(&str, &str)]) -> String {
         .join("&")
 }
 
-/// The OAuth links as `channels/meta-oauth.ts`, `x-oauth.ts`, `youtube-oauth.ts`
-/// and `connect.ts` build them. The sealed state and the PKCE challenge are
+/// The OAuth links as the recorded Studio built them. The sealed state and the PKCE challenge are
 /// random there and recorded as `<random>`, so any value stands in for them.
 impl ChannelConnectLinks for GoldenHost {
     fn meta_oauth_connect_url(

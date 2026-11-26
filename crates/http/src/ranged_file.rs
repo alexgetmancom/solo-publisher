@@ -1,5 +1,4 @@
-//! Range-aware file serving for every route that streams a media file
-//! (`foundation/ranged-file.ts`).
+//! Range-aware file serving for every route that streams a media file.
 //!
 //! Video seeking is why this exists: a player that gets `Accept-Ranges: bytes`
 //! and then a plain 200 for its `Range` request refetches the whole file on
@@ -29,7 +28,7 @@ enum Range {
     Invalid,
 }
 
-/// `parseRange`: one `bytes=` range, a suffix range counted from the end.
+/// One `bytes=` range, a suffix range counted from the end.
 fn parse_range(value: Option<&str>, size: f64) -> Range {
     let Some(value) = value.filter(|value| !value.is_empty()) else {
         return Range::Whole;
@@ -70,7 +69,7 @@ fn parse_range(value: Option<&str>, size: f64) -> Range {
     Range::Part { start, end }
 }
 
-/// `rangedFileResponse`: `file` (of `size` bytes) for the request's `Range`,
+/// `file` (of `size` bytes) for the request's `Range`,
 /// with the route's own headers (type, caching) and the length headers.
 pub(crate) async fn ranged_file_response(
     file: &Path,

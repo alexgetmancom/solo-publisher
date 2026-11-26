@@ -1,4 +1,4 @@
-//! `foundation/external/instagram.ts`.
+//! Instagram credentials and Graph host selection, per locale.
 
 use content::Locale;
 use foundation::config::Config;

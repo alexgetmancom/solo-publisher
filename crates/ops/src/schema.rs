@@ -1,9 +1,8 @@
-//! The input schemas of the operations and the Studio MCP tools: the zod
-//! shapes `registry.ts` and `interfaces/mcp.ts` declare, as one Rust type
-//! that both parses an input the way `safeParse` did (coercion, checks in
-//! declaration order, the first issue with its path, the transforms) and
-//! emits the JSON Schema `z.toJSONSchema(schema, { io: "input" })` produced,
-//! key for key and in zod's key order.
+//! The input schemas of the operations and the Studio MCP tools, as one Rust
+//! type that both parses an input the way zod's `safeParse` does (coercion,
+//! checks in declaration order, the first issue with its path, the
+//! transforms) and emits the JSON Schema `z.toJSONSchema(schema, { io: "input" })`
+//! produces, key for key and in zod's key order, as the goldens record it.
 //!
 //! zod's emission order, which the builders reproduce: a wrapper
 //! (`.optional()`, `.default()`) contributes its own keys (`default`, then any

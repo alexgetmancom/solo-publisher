@@ -1,4 +1,4 @@
-//! Connecting an account from the browser (`interfaces/http/{meta,x,youtube}-oauth.ts`):
+//! Connecting an account from the browser:
 //! the routes of `channels::oauth_routes`, each answered on the Studio thread
 //! with the query as Hono reads it and the command-token verdict. The
 //! `/oauth/*` headers are the edge's (`edge.rs`).

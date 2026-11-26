@@ -1,4 +1,4 @@
-//! `delivery/remote-media-processor.ts`: the only client of the vertical
+//! The only client of the vertical
 //! media processor on the other host. Callers name the variants they consume;
 //! upload, manifest validation and atomic downloads are the same for site and
 //! social delivery.

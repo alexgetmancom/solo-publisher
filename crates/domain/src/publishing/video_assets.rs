@@ -1,5 +1,4 @@
-//! Where a video's source file is, and the address platforms fetch it from
-//! (`content/video-assets.ts`).
+//! Where a video's source file is, and the address platforms fetch it from.
 
 use db::rusqlite::Connection;
 use foundation::config::Config;

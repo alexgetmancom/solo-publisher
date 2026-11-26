@@ -1,4 +1,4 @@
-//! `foundation/external/zernio.ts`: the posting aggregator's API.
+//! The posting aggregator's API.
 
 use domain::studio::boundaries::ZernioAccount;
 use foundation::config::Config;
@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use crate::http::{ExternalError, HttpClient, HttpRequest, Method};
 
-/// `zernioRequest`: a request to `https://zernio.com/api/v1/<path>`
+/// A request to `https://zernio.com/api/v1/<path>`
 /// authorized with the configured key; the caller adds headers and a body.
 pub fn zernio_request(config: &Config, method: Method, path: &str) -> Result<HttpRequest, ExternalError> {
     let Some(key) = config.zernio_api_key.as_deref().filter(|key| !key.is_empty()) else {
@@ -16,7 +16,7 @@ pub fn zernio_request(config: &Config, method: Method, path: &str) -> Result<Htt
         .header("Authorization", format!("Bearer {key}")))
 }
 
-/// `listZernioAccounts`: the API answers either a bare list or `{accounts}`.
+/// The account list; the API answers either a bare list or `{accounts}`.
 pub async fn list_zernio_accounts(client: &HttpClient, config: &Config) -> Result<Vec<ZernioAccount>, ExternalError> {
     let response = client
         .request_json(zernio_request(config, Method::Get, "accounts")?)
@@ -31,7 +31,7 @@ pub async fn list_zernio_accounts(client: &HttpClient, config: &Config) -> Resul
     Ok(accounts.iter().map(account).collect())
 }
 
-/// `zernioAccount`: one account by its id.
+/// One account by its id.
 pub async fn zernio_account(
     client: &HttpClient,
     config: &Config,

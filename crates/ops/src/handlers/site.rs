@@ -1,7 +1,6 @@
-//! The public site's stored media and metadata: `site-display-repair.ts`,
-//! `site-media-backfill.ts`, `site-responsive-backfill.ts`,
-//! `site-metadata.ts`, `site-media-deduplicate.ts`. Every write after a
-//! check carries that check in its `WHERE`, as the TypeScript did.
+//! The public site's stored media and metadata: display repair, media and
+//! responsive backfills, metadata and media deduplication. Every write after a
+//! check carries that check in its `WHERE`.
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::os::unix::fs::MetadataExt as _;

@@ -1,6 +1,6 @@
-//! ffmpeg and ffprobe as child processes (`foundation/runtime/ffmpeg.ts`): at
-//! most two ffmpeg at a time across the process, SIGKILL when one outlives its
-//! timeout, and failures reduced to the lines that say why.
+//! ffmpeg and ffprobe as child processes: at most two ffmpeg at a time across
+//! the process, SIGKILL when one outlives its timeout, and failures reduced to
+//! the lines that say why.
 //!
 //! [`FfmpegMediaProbe`] is the media probe Studio's video checks call
 //! (`domain::publishing::boundaries::MediaProbe`).
@@ -28,8 +28,8 @@ pub const FFMPEG_TIMEOUT: Duration = Duration::from_secs(600);
 pub const FFMPEG_CAPTURE_TIMEOUT: Duration = Duration::from_secs(120);
 pub const FFPROBE_TIMEOUT: Duration = Duration::from_secs(30);
 
-/// A media tool failed; the message is the one TypeScript threw
-/// (`media_processing_failed: …`, `media_probe_timeout: …`).
+/// A media tool failed; the message is `media_processing_failed: …` or
+/// `media_probe_timeout: …`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MediaToolError(pub String);
 
@@ -41,7 +41,7 @@ impl fmt::Display for MediaToolError {
 
 impl std::error::Error for MediaToolError {}
 
-/// `assertFfmpegAvailable`.
+/// Whether `ffmpeg` runs here.
 pub fn ffmpeg_available() -> bool {
     std::process::Command::new("ffmpeg")
         .arg("-version")
@@ -52,7 +52,7 @@ pub fn ffmpeg_available() -> bool {
         .is_ok_and(|status| status.success())
 }
 
-/// `runFfmpeg(args, timeoutSeconds)`.
+/// Runs ffmpeg to completion within `timeout`.
 pub async fn run_ffmpeg(args: &[&str], timeout: Duration) -> Result<(), MediaToolError> {
     let _slot = LIMITER.acquire().await.expect("the limiter is never closed");
     let finished = run("ffmpeg", args, timeout, false).await?;
@@ -65,7 +65,7 @@ pub async fn run_ffmpeg(args: &[&str], timeout: Duration) -> Result<(), MediaToo
     Ok(())
 }
 
-/// `runFfmpegCapture(args, timeoutSeconds)`: what ffmpeg wrote to stdout.
+/// What ffmpeg wrote to stdout.
 ///
 /// Frame inspection wants pixels, not a file: a few kilobytes of raw RGB are
 /// cheaper read from the pipe than written to and read back from a temp path.
@@ -88,8 +88,7 @@ fn ffmpeg_timeout(timeout: Duration) -> MediaToolError {
     ))
 }
 
-/// `probeMediaMetadata(path, timeoutSeconds)`: the canonical ffprobe
-/// projection for every video workflow. Callers decide whether a probe failure
+/// The canonical ffprobe projection for every video workflow. Callers decide whether a probe failure
 /// is fatal. ffprobe is not limited: it decodes nothing.
 pub async fn probe_media_metadata(path: &str, timeout: Duration) -> Result<MediaMetadata, MediaToolError> {
     let args = [
@@ -169,7 +168,7 @@ fn present(value: Option<&Value>) -> Option<&Value> {
     value.filter(|value| !value.is_null())
 }
 
-/// `?? null` of a field TypeScript typed as a string: whatever is there.
+/// `?? null` of a field typed as a string: whatever is there.
 fn string(value: Option<&Value>) -> Option<String> {
     present(value).map(|value| match value {
         Value::String(text) => text.clone(),
@@ -211,7 +210,7 @@ const JS_SPACE: &str =
 static PROGRESS: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(&format!(r"^frame=[{JS_SPACE}]*[0-9]+[{JS_SPACE}]+fps=")).unwrap());
 
-/// `formatFfmpegFailure`: an actionable terminal reason instead of megabytes
+/// An actionable terminal reason instead of megabytes
 /// of progress frames. Exit 137 is the Linux OOM-kill convention.
 pub fn format_ffmpeg_failure(code: i32, stderr: &str) -> String {
     let stderr = stderr.replace('\r', "\n");
@@ -310,7 +309,7 @@ fn exit_code(status: ExitStatus) -> i32 {
     status.code().unwrap_or_else(|| 128 + status.signal().unwrap_or(0))
 }
 
-/// The arguments of the `astats` pass `backgroundMusicLikelyMissing` reads.
+/// The arguments of the `astats` pass the background-music check reads.
 fn audio_stats_args(path: &str) -> [&str; 12] {
     [
         "-hide_banner",

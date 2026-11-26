@@ -1,4 +1,4 @@
-//! `story-cards/svg.ts`: the card's geometry and its text overlay.
+//! The card's geometry and its text overlay.
 
 use domain::story_cards::StoryCardCopy;
 use foundation::html::escape_xml;

@@ -1,5 +1,4 @@
-//! `foundation/external/deepseek.ts`: chat completions, used for draft
-//! translation.
+//! DeepSeek chat completions, used for draft translation.
 
 use std::time::Duration;
 
@@ -41,7 +40,7 @@ pub struct ChatOptions {
     pub json: bool,
 }
 
-/// `deepSeekChat`: the first choice's text, trimmed; empty when there is none.
+/// The first choice's text, trimmed; empty when there is none.
 pub async fn deepseek_chat(
     client: &HttpClient,
     config: &Config,

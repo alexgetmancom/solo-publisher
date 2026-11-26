@@ -1,7 +1,8 @@
-//! The pure publishing rules against the TypeScript reference outputs in
-//! `fixtures/publishing.json`, recorded before the cutover:
-//! schedule and zone math across DST edges, error classes and retry curves,
-//! result normalization, preflight, job payloads, chain cuts and status folds.
+//! The pure publishing rules against the reference outputs in
+//! `fixtures/publishing.json`, recorded from the TypeScript backend before the
+//! cutover: schedule and zone math across DST edges, error classes and retry
+//! curves, result normalization, preflight, job payloads, chain cuts and status
+//! folds.
 
 mod support;
 

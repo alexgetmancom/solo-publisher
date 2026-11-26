@@ -1,4 +1,4 @@
-//! The album collector (`bot/albums.ts`): Telegram delivers an
+//! The album collector: Telegram delivers an
 //! album as separate messages; each one is appended to a `pending_albums` row,
 //! and once the group has been quiet for the settle window the
 //! `telegram-albums` worker turns the row into one draft (or one edit, or one

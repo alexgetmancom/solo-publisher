@@ -1,4 +1,4 @@
-//! `operations/commands/scope-plan.ts`: what a command scoped by `target` /
+//! What a command scoped by `target` /
 //! `locale` would actually reach, reported before it runs.
 
 use content::Locale;

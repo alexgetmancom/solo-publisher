@@ -11,7 +11,7 @@ use super::parse_ms;
 use crate::json::{self, js_string, truthy};
 use crate::{Error, Result};
 
-/// Column assignments in the order the TypeScript object literal names them.
+/// Column assignments in the order the statements name them.
 pub(crate) type Columns = Vec<(&'static str, SqlValue)>;
 
 pub(crate) fn text(value: impl Into<String>) -> SqlValue {

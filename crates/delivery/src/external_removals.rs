@@ -1,4 +1,4 @@
-//! `delivery/external-removals.ts`: published remote objects removed before a
+//! Published remote objects removed before a
 //! controlled replacement. The remote calls happen first; their outcomes are
 //! settled afterwards inside the caller's transaction — beside the requeue and
 //! the journal entry — and only onto a target that still names the object

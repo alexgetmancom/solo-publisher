@@ -1,7 +1,5 @@
-//! Commands for post drafts (`studio/services/posts.ts`, with the draft
-//! creation of `content/drafts.ts` and the Story-media trigger of
-//! `delivery/draft-story-media.ts`). Transport-free: the single entry point
-//! for Telegram, MCP and the CLI.
+//! Commands for post drafts, with draft creation and the Story-media trigger.
+//! Transport-free: the single entry point for Telegram, MCP and the CLI.
 
 use content::Locale;
 use content::draft_content::draft_locale_content;
@@ -648,7 +646,7 @@ impl<'a> PostService<'a> {
         self.save_content_mutation(&draft, &patch, event)
     }
 
-    /// Matches media by their `asset_id` field, as TypeScript does.
+    /// Matches media by their `asset_id` field.
     pub fn remove_media(&self, actor_id: i64, draft_id: i64, locale: Locale, asset_ids: &[i64]) -> Result<()> {
         let draft = self.editable(actor_id, draft_id, None)?;
         let media: Vec<MediaItem> = draft_media(&draft, locale)

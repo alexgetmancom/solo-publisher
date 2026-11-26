@@ -1,11 +1,10 @@
-//! Studio rules that pinned real bugs in TypeScript, ported:
-//! `publicationOwnership.test.ts` (every publication-scoped method refuses an
-//! actor outside the roster, and every method is classified),
-//! `postEditLock.test.ts` (the lock is per language), `draftStoryMedia.test.ts`
-//! (Story media is prepared when a draft goes to a Story, and only then) and
-//! `channelService.test.ts` (a channel reports the breaker its credential
-//! tripped). The persistence boundary — Studio writes no SQL of its own — is
-//! checked over the source.
+//! Studio rules that pinned real bugs: publication ownership (every
+//! publication-scoped method refuses an actor outside the roster, and every
+//! method is classified), the post edit lock (the lock is per language), draft
+//! Story media (it is prepared when a draft goes to a Story, and only then) and
+//! the channel service (a channel reports the breaker its credential tripped).
+//! The persistence boundary — Studio writes no SQL of its own — is checked over
+//! the source.
 
 mod support;
 

@@ -6,8 +6,8 @@
 //!
 //! AES-256-GCM, stored as `base64(iv).base64(tag).base64(ciphertext)`: the tag
 //! makes a tampered or truncated value fail loudly instead of decrypting into
-//! something that looks like a token. Byte-compatible with the TypeScript
-//! `secret-box.ts` in both directions.
+//! something that looks like a token. Byte-compatible in both directions with
+//! the values production already holds.
 
 use std::fmt;
 

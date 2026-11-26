@@ -1,4 +1,4 @@
-//! The post conversation's steps (`bot/post-flow.ts`): what each expects from
+//! The post conversation's steps: what each expects from
 //! the operator, where it leads, and how a step travels in the session row.
 //!
 //! The domain `Flow` table takes `'static` input, and a post step's `accept`

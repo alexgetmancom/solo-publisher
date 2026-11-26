@@ -1,4 +1,4 @@
-//! `operations/resume-from.ts`: a half-published target told which post it
+//! A half-published target told which post it
 //! is continuing, so the ordinary retry finishes the publication onto it.
 
 use db::rusqlite::types::Value as SqlValue;

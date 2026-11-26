@@ -1,8 +1,7 @@
-//! The platform adapters (`delivery/ports.ts`, `delivery/platform-adapters.ts`,
-//! `delivery/social/*`, `delivery/zernio.ts`, `delivery/remote-media-processor.ts`
-//! and the provider calls of `delivery/video-publishers.ts`): one module per
-//! platform, every request through `runtime::http::HttpClient` so a test
-//! transport sees exactly what production sends.
+//! The platform adapters (the adapter ports, the social platforms, Zernio, the
+//! remote media processor and the provider calls of the video publishers): one
+//! module per platform, every request through `runtime::http::HttpClient` so a
+//! test transport sees exactly what production sends.
 //!
 //! The delivery workflow builds against [`SocialAdapter`]; what reached an
 //! audience and lost its answer comes back as [`AdapterError::Ambiguous`].

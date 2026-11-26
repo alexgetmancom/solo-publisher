@@ -1,4 +1,4 @@
-//! `delivery/zernio.ts`: publications through the Zernio posting aggregator.
+//! Publications through the Zernio posting aggregator.
 //! Every create carries a request id fencing retries of one logical target,
 //! so a repeat returns the post that already exists instead of a second one.
 

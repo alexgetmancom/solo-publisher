@@ -1,4 +1,4 @@
-//! `delivery/site-media-storage.ts`: files are replaced by rename, never
+//! Files are replaced by rename, never
 //! written in place, and stable public URLs are hard links to
 //! content-addressed blobs — so a new version cannot mutate a sibling URL
 //! sharing the same inode, and a half-written file never sits under the name

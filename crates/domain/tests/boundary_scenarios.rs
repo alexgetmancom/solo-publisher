@@ -1,11 +1,11 @@
-//! Equivalence with TypeScript for the stores behind the Studio's
+//! Equivalence with the recorded goldens for the stores behind the Studio's
 //! boundaries: the Story-card store, publication reminders, the credential
 //! breaker, the readiness report, the video completion notice and runtime
-//! usage. Every scenario in `boundary_scenarios.json` ran through the real
-//! TypeScript modules before the cutover (`boundary_scenarios.golden.json`)
-//! and runs through their Rust ports, each on its own fresh database under the same fixed clock;
-//! every step's result, every table's rows and the files left in the scratch
-//! directory must come out identical.
+//! usage. Every scenario in `boundary_scenarios.json` ran through the
+//! TypeScript backend before the cutover (`boundary_scenarios.golden.json`)
+//! and runs through the Rust modules, each on its own fresh database under the
+//! same fixed clock; every step's result, every table's rows and the files left
+//! in the scratch directory must come out identical.
 
 mod support;
 

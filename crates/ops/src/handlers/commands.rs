@@ -1,6 +1,5 @@
-//! The delivery repairs (`operations/commands.ts`, `commands/*`),
-//! `publication-purge.ts`, `resume-from.ts`, `skip.ts`, `resend.ts`,
-//! `settle.ts`.
+//! The delivery repairs: content repair, media replacement, purge, requeue,
+//! resume-from, scope plans, settle, skip and resend.
 //!
 //! Every repair that reaches a live audience reports its scope unless told to
 //! act, and one that acts commits its database change and its journal entry
@@ -51,7 +50,7 @@ use self::scope_plan::{publication_scope, scope_plan};
 use super::publication_ref::{ResolvedPublicationRef, resolve_publication_ref};
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext};
 
-/// A plain refusal with the message TypeScript throws.
+/// A plain refusal carrying just the message.
 fn refusal(message: impl Into<Cow<'static, str>>) -> domain::Error {
     domain::Error::message(message)
 }

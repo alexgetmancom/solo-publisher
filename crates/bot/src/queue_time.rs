@@ -1,4 +1,4 @@
-//! How the bot writes the time of one queued or published item (`bot/queue-time.ts`).
+//! How the bot writes the time of one queued or published item.
 
 use foundation::i18n::{Key, t};
 use foundation::time::{Zone, format_zoned_clock, format_zoned_day_month, zoned_day_distance};
