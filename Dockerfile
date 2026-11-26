@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
        "target/$musl/release/deploy-agent" -t /out/
 
 # --- Runtime ---
-FROM oven/bun:1.4.0-slim@sha256:e0ee68d16ccb9927bf02aa7dd8fd4bf3369ee6d46da04faa72b05ce8bfd135f6 AS studio
+FROM oven/bun:1.4.5-slim@sha256:b780593f3e10918cbdaec3d5a08d52224b9198069a65eb47812085c2ec007643 AS studio
 # setpriv comes with util-linux in the base.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates tini \
