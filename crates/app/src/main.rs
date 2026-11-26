@@ -13,7 +13,7 @@ use bot::deployment::HttpDeployAgent;
 use bot::{Bot, BotDeps, runner};
 use db::BackendDb;
 use domain::application::ports::SystemClock;
-use foundation::config::{Config, SharedConfig, load_config};
+use foundation::config::{Config, SharedConfig, load_config, process_env};
 use foundation::logger::{LogLevel, configure_logging, log};
 use http_edge::{BotBackend, HttpState};
 use ops::host::OpsAdapters;
@@ -32,10 +32,7 @@ const SHUTDOWN_DEADLINE: Duration = Duration::from_secs(10);
 fn main() -> ExitCode {
     // The boot time the memory probe reports is the process's.
     channels::observability::memory::process_boot();
-    // A variable that is not UTF-8 is none of this Studio's settings.
-    let vars =
-        std::env::vars_os().filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?)));
-    let config = match load_config(vars) {
+    let config = match load_config(process_env()) {
         Ok(config) => config,
         Err(error) => {
             log(LogLevel::Error, &error.to_string(), None);

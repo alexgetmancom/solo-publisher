@@ -221,6 +221,12 @@ impl fmt::Display for ConfigError {
 
 impl std::error::Error for ConfigError {}
 
+/// The process environment as a Studio binary reads it: a variable that is
+/// not UTF-8 is none of this Studio's settings.
+pub fn process_env() -> impl Iterator<Item = (String, String)> {
+    std::env::vars_os().filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?)))
+}
+
 /// Reads the configuration from environment variables (`std::env::vars()` in a
 /// process). A variable set to a blank value counts as unset: that is how an
 /// .env file states a key it has no value for, and Docker passes it through.

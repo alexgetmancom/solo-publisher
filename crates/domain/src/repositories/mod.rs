@@ -48,8 +48,7 @@ pub(crate) fn stamp(clock: &dyn Clock) -> String {
 
 /// `clock.now() + offset_ms` as an ISO instant.
 pub(crate) fn stamp_offset(clock: &dyn Clock, offset_ms: i64) -> String {
-    let at = clock.now().as_millisecond() + offset_ms;
-    foundation::time::to_iso_string(jiff::Timestamp::from_millisecond(at).expect("instant within year ±9999"))
+    foundation::time::iso_at(clock.now().as_millisecond() + offset_ms)
 }
 
 /// Drizzle's `inArray`: a placeholder per value, and `false` for none.

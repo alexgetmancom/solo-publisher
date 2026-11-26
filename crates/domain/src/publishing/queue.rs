@@ -5,6 +5,7 @@
 use db::rusqlite::{OptionalExtension, Row, params};
 use foundation::js::{present, string_of};
 use foundation::logger::{LogLevel, log};
+use foundation::time::{iso_at, parse_iso_ms};
 use serde_json::{Map, Value, json};
 
 use super::Publishing;
@@ -24,7 +25,6 @@ use super::queue_state::{
     json_text, opt_text, parse_payload, publication_confirmation_source, settle_job, strings_json, text,
     upsert_post_target, verification_status,
 };
-use super::{iso_at, parse_ms};
 use crate::repositories::{random_uuid, transaction};
 use crate::{Error, Result};
 
@@ -575,7 +575,7 @@ impl Publishing<'_> {
         } else {
             delay_ms.clamp(0.0, 60_000.0)
         } as u64;
-        let next_attempt_at = iso_at(parse_ms(now).expect("the clock writes ISO instants") + delay_ms as i64);
+        let next_attempt_at = iso_at(parse_iso_ms(now).expect("the clock writes ISO instants") + delay_ms as i64);
         let published = match (result.get("resumeKey"), result.get("resumeValue")) {
             (Some(Value::String(key)), Some(value)) => Some((key.as_str(), value.clone())),
             _ => None,
@@ -1029,7 +1029,7 @@ fn answered_since(answered_at: Option<&str>, since: Option<&str>) -> Option<Stri
         answered_at.filter(|at| !at.is_empty())?,
         since.filter(|at| !at.is_empty())?,
     );
-    (parse_ms(answered_at)? > parse_ms(since)?).then(|| answered_at.to_owned())
+    (parse_iso_ms(answered_at)? > parse_iso_ms(since)?).then(|| answered_at.to_owned())
 }
 
 /// A new publish job, or a refresh of the queued one for the same target:

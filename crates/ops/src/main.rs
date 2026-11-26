@@ -5,16 +5,14 @@ use std::process::ExitCode;
 use std::rc::Rc;
 
 use domain::application::ports::{Clock, SystemClock};
+use foundation::config::process_env;
 use foundation::redact::redact_external_secrets;
 use ops::cli::{CliRun, CliSurface, run_cli};
 use ops::host::{ProcessSurface, ProcessTerminal};
 use runtime::http::{HttpClient, ReqwestTransport};
 
 fn main() -> ExitCode {
-    // A variable that is not UTF-8 is none of this Studio's settings.
-    let vars: Vec<(String, String)> = std::env::vars_os()
-        .filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?)))
-        .collect();
+    let vars: Vec<(String, String)> = process_env().collect();
     let argv: Vec<String> = std::env::args_os()
         .skip(1)
         .map(|arg| arg.to_string_lossy().into_owned())

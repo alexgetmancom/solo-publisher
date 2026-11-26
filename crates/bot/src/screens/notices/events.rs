@@ -5,7 +5,7 @@
 use db::rusqlite::{OptionalExtension, params};
 use domain::application::publication_ref::{PublicationRefKind, parse_publication_ref};
 use foundation::logger::{LogLevel, log};
-use foundation::time::to_iso_string;
+use foundation::time::{iso_at, to_iso_string};
 use serde_json::{Map, Value, json};
 
 use super::notifications::{
@@ -52,7 +52,7 @@ struct JournalEvent {
 pub async fn consume_telegram_events(bot: &Bot) -> crate::Result<usize> {
     let ctx = Ctx::worker(bot);
     let now = ctx.now().as_millisecond();
-    let since = |age_ms: i64| to_iso_string(jiff::Timestamp::from_millisecond(now - age_ms).expect("in range"));
+    let since = |age_ms: i64| iso_at(now - age_ms);
     let types = TELEGRAM_EVENT_TYPES
         .iter()
         .map(|kind| format!("'{kind}'"))

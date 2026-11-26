@@ -5,10 +5,10 @@
 use db::rusqlite::types::Value as SqlValue;
 use db::rusqlite::{Connection, OptionalExtension, params, params_from_iter};
 use foundation::js::{present, string_of, truthy};
+use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value};
 
 use super::errors::PublishResult;
-use super::parse_ms;
 use crate::json;
 use crate::{Error, Result};
 
@@ -64,7 +64,7 @@ pub fn verification_status(result: &PublishResult) -> Option<&str> {
 }
 
 pub fn duration_since(started_at: Option<&str>, finished_at: &str) -> Option<i64> {
-    let duration = parse_ms(finished_at)? - parse_ms(started_at?)?;
+    let duration = parse_iso_ms(finished_at)? - parse_iso_ms(started_at?)?;
     (duration >= 0).then_some(duration)
 }
 

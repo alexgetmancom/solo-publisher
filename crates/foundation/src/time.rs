@@ -180,6 +180,11 @@ pub fn to_iso_string(at: Timestamp) -> String {
     )
 }
 
+/// `new Date(ms).toISOString()`.
+pub fn iso_at(ms: i64) -> String {
+    to_iso_string(timestamp(ms))
+}
+
 static FULL_ISO_INSTANT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
         r"^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?(?:Z|([+-])([0-9]{2}):([0-9]{2}))$",
@@ -220,6 +225,12 @@ pub fn parse_iso_instant(value: &str) -> Result<Timestamp, TimeError> {
     let offset_ms = sign * (offset_hours * 3_600_000 + offset_minutes * 60_000);
     Timestamp::from_millisecond(civil_ms(year, month, day, hour, minute, second) + millisecond - offset_ms)
         .map_err(|_| invalid())
+}
+
+/// `Date.parse(text)` for the ISO instants this Studio writes; `None` for
+/// anything else (JavaScript's NaN).
+pub fn parse_iso_ms(text: &str) -> Option<i64> {
+    parse_iso_instant(text).ok().map(|at| at.as_millisecond())
 }
 
 pub fn is_iso_instant(value: &str) -> bool {

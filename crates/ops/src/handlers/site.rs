@@ -18,7 +18,7 @@ use delivery::site_media::{
     materialize_responsive_variants, materialize_site_media, responsive_variant_paths, site_media_source,
 };
 use delivery::site_media_storage::{deduplicate_site_media_file, extname, is_site_media_extension, sha256_file};
-use foundation::time::{parse_iso_instant, to_iso_string};
+use foundation::time::{parse_iso_ms, to_iso_string};
 use public_site::{FeedItem, FeedReader};
 use regex::Regex;
 use serde_json::{Map, Value, json};
@@ -38,10 +38,6 @@ fn json_column(text: Option<String>) -> Result<Value, OpError> {
         None => Ok(Value::Null),
         Some(text) => Ok(serde_json::from_str(&text)?),
     }
-}
-
-fn now_iso(context: &OperationContext<'_>) -> String {
-    to_iso_string(context.now())
 }
 
 /// Drizzle's synchronous `db.transaction(work)`: `BEGIN`, and a throw rolls
@@ -185,10 +181,6 @@ fn display_plan_schema() -> super::plan_schema::Kind {
     ])
 }
 
-fn instant_ms(value: &str) -> Option<i64> {
-    parse_iso_instant(value).ok().map(|at| at.as_millisecond())
-}
-
 /// `repairSiteDisplay`: a reviewed restoration is atomic and refuses
 /// intervening editorial changes.
 pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
@@ -221,7 +213,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
         };
         let raw: Value = serde_json::from_slice(&tokio::fs::read(file).await?)?;
         let plan = parse(&display_plan_schema(), &raw)?;
-        let now = now_iso(context);
+        let now = to_iso_string(context.now());
         in_transaction(sqlite, || {
             let rows = display_rows(sqlite)?;
             let by_key: HashMap<String, &DisplayRow> = rows
@@ -249,7 +241,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                 if let (Some(restore), Some(published)) = (
                     restore.filter(|text| !text.is_empty()),
                     row.published_at.as_deref().filter(|text| !text.is_empty()),
-                ) && let (Some(restore), Some(published)) = (instant_ms(restore), instant_ms(published))
+                ) && let (Some(restore), Some(published)) = (parse_iso_ms(restore), parse_iso_ms(published))
                     && restore < published
                 {
                     return Err(OpError::Failed(format!("Restored date precedes publication for {key}")));
@@ -351,7 +343,7 @@ pub fn site_media_backfill<'a>(context: &'a OperationContext<'a>, input: &'a Inp
             if published_at
                 .as_deref()
                 .filter(|text| !text.is_empty())
-                .and_then(instant_ms)
+                .and_then(parse_iso_ms)
                 .is_some_and(|at| at > now_ms)
             {
                 continue;
@@ -412,7 +404,7 @@ pub fn site_media_backfill<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                 AND "drafts"."updated_at" = ? AND "drafts"."status" IN ('published', 'failed')))"#,
                             params![
                                 domain::json::stringify(&media),
-                                now_iso(context),
+                                to_iso_string(context.now()),
                                 item.draft_id,
                                 item.locale.as_str(),
                                 1,
@@ -641,7 +633,7 @@ fn apply_site_metadata(
             );
         }
     }
-    let now = now_iso(context);
+    let now = to_iso_string(context.now());
     let items = input["items"].as_array().cloned().unwrap_or_default();
     in_transaction(sqlite, || {
         let mut seen = HashSet::new();

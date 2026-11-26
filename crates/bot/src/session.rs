@@ -9,7 +9,7 @@ use domain::application::ports::{
     SaveConversationSession,
 };
 use domain::repositories::ConversationSessionStore;
-use foundation::time::{parse_iso_instant, to_iso_string};
+use foundation::time::{iso_at, parse_iso_ms, to_iso_string};
 
 const TTL_MS: i64 = 30 * 60_000;
 
@@ -61,10 +61,6 @@ impl<'a> Sessions<'a> {
         self.clock.now().as_millisecond()
     }
 
-    fn now_iso(&self) -> String {
-        to_iso_string(self.clock.now())
-    }
-
     /// `getConversationState`: an expired or empty row is retired and reads as
     /// none, an inactive one reads as none.
     pub fn get(&self, actor_id: i64, kind: ConversationSessionKind) -> domain::Result<Option<ConversationState>> {
@@ -72,20 +68,18 @@ impl<'a> Sessions<'a> {
             return Ok(None);
         };
         let expires_at = match row.expires_at.as_deref() {
-            Some(expires_at) => parse_iso_instant(expires_at).ok().map(|at| at.as_millisecond()),
-            None => parse_iso_instant(&row.updated_at)
-                .ok()
-                .map(|at| at.as_millisecond() + TTL_MS),
+            Some(expires_at) => parse_iso_ms(expires_at),
+            None => parse_iso_ms(&row.updated_at).map(|at| at + TTL_MS),
         };
         if expires_at.is_none_or(|expires_at| expires_at <= self.now_ms()) {
-            self.store().retire(actor_id, kind, &self.now_iso())?;
+            self.store().retire(actor_id, kind, &to_iso_string(self.clock.now()))?;
             return Ok(None);
         }
         if row.active == 0 {
             return Ok(None);
         }
         let Some(step) = row.step.clone().filter(|step| !step.is_empty()) else {
-            self.store().retire(actor_id, kind, &self.now_iso())?;
+            self.store().retire(actor_id, kind, &to_iso_string(self.clock.now()))?;
             return Ok(None);
         };
         Ok(Some(ConversationState {
@@ -113,9 +107,8 @@ impl<'a> Sessions<'a> {
     /// changed, refuses a stale `revision` with `action.session-stale`.
     pub fn save(&self, actor_id: i64, input: &ConversationStateInput) -> domain::Result<ConversationState> {
         let existing = self.store().get(actor_id, input.kind)?;
-        let now = self.now_iso();
-        let expires_at =
-            to_iso_string(jiff::Timestamp::from_millisecond(self.now_ms() + TTL_MS).expect("an instant within range"));
+        let now = to_iso_string(self.clock.now());
+        let expires_at = iso_at(self.now_ms() + TTL_MS);
         for kind in [
             ConversationSessionKind::Intake,
             ConversationSessionKind::Post,
@@ -150,7 +143,7 @@ impl<'a> Sessions<'a> {
     }
 
     pub fn clear(&self, actor_id: i64, kind: ConversationSessionKind) -> domain::Result<()> {
-        self.store().retire(actor_id, kind, &self.now_iso())
+        self.store().retire(actor_id, kind, &to_iso_string(self.clock.now()))
     }
 
     /// `clearConversationStateIfCurrent`.
@@ -168,7 +161,7 @@ impl<'a> Sessions<'a> {
             kind,
             step: Some(step.to_owned()),
             expected_revision,
-            updated_at: self.now_iso(),
+            updated_at: to_iso_string(self.clock.now()),
         })
     }
 

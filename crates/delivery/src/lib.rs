@@ -78,8 +78,3 @@ impl<'a> Delivery<'a> {
         self.clock().now().as_millisecond()
     }
 }
-
-/// `new Date(ms).toISOString()`.
-pub(crate) fn iso_at(ms: i64) -> String {
-    foundation::time::to_iso_string(jiff::Timestamp::from_millisecond(ms).expect("instant within year ±9999"))
-}

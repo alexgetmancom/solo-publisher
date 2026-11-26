@@ -1,10 +1,10 @@
 //! The status vocabulary of publications, delivery jobs and video targets,
 //! and the folds from many statuses into one.
 
+use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value};
 
 use super::errors::{PublishErrorClass, classify_message};
-use super::parse_ms;
 use crate::targets::{TargetMap, is_site_target, target_locale};
 use content::Locale;
 
@@ -187,7 +187,7 @@ pub(crate) fn is_deferred_locale(plan: &PlanRecord, completed: Locale, remaining
     ) else {
         return true;
     };
-    match (parse_ms(completed_at), parse_ms(remaining_at)) {
+    match (parse_iso_ms(completed_at), parse_iso_ms(remaining_at)) {
         (Some(completed), Some(remaining)) => remaining > completed,
         _ => false,
     }

@@ -184,7 +184,7 @@ impl<'a> QueueService<'a> {
                 // operator has to see.
                 let earliest = [&draft.scheduled_at, &draft.scheduled_en_at]
                     .into_iter()
-                    .filter_map(|value| value.as_deref().and_then(crate::publishing::parse_ms))
+                    .filter_map(|value| value.as_deref().and_then(foundation::time::parse_iso_ms))
                     .min();
                 if let Some(ms) = earliest {
                     let time = Timestamp::from_millisecond(ms).expect("a parsed instant");

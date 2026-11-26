@@ -174,7 +174,7 @@ impl<'a> MediaService<'a> {
                     byte_size: byte_size as i64,
                     sha256: sha256.clone(),
                     source: input.source.as_str().into(),
-                    created_at: self.studio.now_iso(),
+                    created_at: foundation::time::to_iso_string(self.studio.now()),
                 })?
             }
         };

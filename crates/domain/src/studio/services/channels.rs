@@ -147,7 +147,7 @@ pub fn register_channel(studio: &Studio<'_>, input: &ChannelInput) -> Result<Cha
             enabled: 1,
             source: input.source.clone().unwrap_or_else(|| "interface".into()),
         },
-        &studio.now_iso(),
+        &foundation::time::to_iso_string(studio.now()),
     )?;
     channels
         .get(&id)?
@@ -366,7 +366,7 @@ impl<'a, Z: ZernioDirectory> ChannelService<'a, Z> {
             let channel = channels
                 .get(channel_id)?
                 .ok_or_else(|| Error::message(format!("Unknown channel: {channel_id}")))?;
-            channels.disable(channel_id, &self.studio.now_iso())?;
+            channels.disable(channel_id, &foundation::time::to_iso_string(self.studio.now()))?;
             Ok(channel)
         })
     }

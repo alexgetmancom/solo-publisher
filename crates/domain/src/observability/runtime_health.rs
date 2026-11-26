@@ -4,7 +4,7 @@
 
 use db::rusqlite::{Connection, OptionalExtension};
 use foundation::js;
-use foundation::time::{parse_iso_instant, to_iso_string};
+use foundation::time::{parse_iso_ms, to_iso_string};
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
 
@@ -80,10 +80,6 @@ fn write_runtime_state(
     Ok(())
 }
 
-fn parse_ms(value: &str) -> Option<i64> {
-    parse_iso_instant(value).ok().map(|at| at.as_millisecond())
-}
-
 /// `recordProcessRestart`: `true` when a restart was recorded. A single
 /// restart is normal — every deploy is one — and is recorded at `info`, which
 /// no alert transport picks up; restarts of one build clustering are `error`.
@@ -115,7 +111,7 @@ pub fn record_process_restart(
             .iter()
             .cloned()
             .chain([booted_at.clone()])
-            .filter(|at| parse_ms(at).is_some_and(|at| at >= window_start))
+            .filter(|at| parse_iso_ms(at).is_some_and(|at| at >= window_start))
             .collect();
         kept[kept.len().saturating_sub(20)..].to_vec()
     };
@@ -125,7 +121,7 @@ pub fn record_process_restart(
     // `null` without a previous boot time; NaN (written as null, printed as
     // "NaN") when that time does not parse.
     let previous_uptime: Option<Option<f64>> = previous.booted_at.as_deref().map(|previous| {
-        parse_ms(previous).map(|previous| js::round((boot.booted_at.as_millisecond() - previous) as f64 / 1000.0))
+        parse_iso_ms(previous).map(|previous| js::round((boot.booted_at.as_millisecond() - previous) as f64 / 1000.0))
     });
     let uptime_json = match previous_uptime {
         Some(Some(seconds)) => json!(seconds as i64),

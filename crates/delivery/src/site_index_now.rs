@@ -58,10 +58,6 @@ fn state_file(config: &Config) -> PathBuf {
     Path::new(&config.data_dir).join(STATE_FILE)
 }
 
-fn now_iso(ctx: &AdapterContext) -> String {
-    foundation::time::to_iso_string(ctx.clock.now())
-}
-
 /// `enqueueIndexNow`: queues a public content change without waiting for the
 /// search provider. A URL queued again gets a new revision, so a send already
 /// in flight for it cannot clear the newer change.
@@ -124,7 +120,7 @@ pub fn notify_index_now(ctx: &AdapterContext, urls: &[String]) -> Result<(), Str
     let (ctx, urls) = (ctx.clone(), urls.to_vec());
     tokio::task::spawn_local(async move {
         let outcome = attempt.await;
-        let at = now_iso(&ctx);
+        let at = foundation::time::to_iso_string(ctx.clock.now());
         PINGS.with_borrow_mut(|pings| {
             if pings.in_flight.get(&file).is_some_and(|(current, _)| *current == id) {
                 pings.in_flight.remove(&file);
@@ -187,7 +183,10 @@ async fn send_pending(ctx: &AdapterContext, file: &Path, idle: bool) -> Result<(
         return Ok(());
     }
     let key = read_or_create_key(&Path::new(&config.data_dir).join(KEY_FILE))?;
-    state.insert("last_attempt_at".into(), now_iso(ctx).into());
+    state.insert(
+        "last_attempt_at".into(),
+        foundation::time::to_iso_string(ctx.clock.now()).into(),
+    );
     state.insert("url_count".into(), batch.len().into());
     state.shift_remove("last_status");
     write_state(file, &state)?;
@@ -223,7 +222,10 @@ async fn send_pending(ctx: &AdapterContext, file: &Path, idle: bool) -> Result<(
                     }
                 }
             }
-            latest.insert("last_success_at".into(), now_iso(ctx).into());
+            latest.insert(
+                "last_success_at".into(),
+                foundation::time::to_iso_string(ctx.clock.now()).into(),
+            );
             latest.shift_remove("retry_at");
         }
         write_state(file, &latest)?;
@@ -236,7 +238,7 @@ async fn send_pending(ctx: &AdapterContext, file: &Path, idle: bool) -> Result<(
     .await;
     let Err(message) = sent else { return Ok(()) };
     let mut latest = read_state(file)?;
-    let retry_at = crate::iso_at(ctx.clock.now().as_millisecond() + RETRY_DELAY_MS);
+    let retry_at = foundation::time::iso_at(ctx.clock.now().as_millisecond() + RETRY_DELAY_MS);
     latest.insert("retry_at".into(), retry_at.into());
     write_state(file, &latest)?;
     log(

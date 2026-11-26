@@ -219,7 +219,7 @@ pub async fn settle_index_now(delivery: &Delivery<'_>) -> Result<()> {
 /// fenced on the lock it found stale.
 pub fn recover_stale_site_jobs(delivery: &Delivery<'_>, max_lock_age_seconds: u64) -> Result<usize> {
     let sqlite = delivery.sqlite();
-    let cutoff = crate::iso_at(delivery.now_ms() - (max_lock_age_seconds as i64) * 1000);
+    let cutoff = foundation::time::iso_at(delivery.now_ms() - (max_lock_age_seconds as i64) * 1000);
     let now = delivery.now();
     let stale: Vec<(i64, String, i64, String, Option<String>)> = sqlite
         .prepare(

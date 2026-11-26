@@ -60,10 +60,6 @@ impl<'a> Studio<'a> {
         self.publishing.clock.now()
     }
 
-    pub(crate) fn now_iso(&self) -> String {
-        foundation::time::to_iso_string(self.now())
-    }
-
     pub(crate) fn accessible_actor_ids(&self, actor_id: i64) -> Vec<i64> {
         access::accessible_studio_actor_ids(self.config, actor_id)
     }

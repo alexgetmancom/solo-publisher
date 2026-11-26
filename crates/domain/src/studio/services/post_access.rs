@@ -5,10 +5,10 @@ use content::message::MediaItem;
 use foundation::config::Config;
 use foundation::errors::StudioError;
 use foundation::json::json_record_array;
+use foundation::time::parse_iso_ms;
 use jiff::Timestamp;
 
 use crate::application::ports::{ApplicationPorts, DraftRecord};
-use crate::publishing::parse_ms;
 use crate::publishing::state::is_post_draft_mutable;
 use crate::studio::access::can_access_studio_owner;
 use crate::{Error, Result};
@@ -67,7 +67,7 @@ pub fn require_post_edit_allowed(
     };
     if scheduled
         .into_iter()
-        .filter_map(|value| value.as_deref().and_then(parse_ms))
+        .filter_map(|value| value.as_deref().and_then(parse_iso_ms))
         .any(|scheduled_at| scheduled_at <= lock_until)
     {
         return Err(StudioError::new("err.post-too-close-to-publish").into());

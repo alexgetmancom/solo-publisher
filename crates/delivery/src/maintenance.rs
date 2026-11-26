@@ -4,9 +4,10 @@
 use db::rusqlite::{Connection, OptionalExtension as _, params};
 use domain::application::ports::Clock;
 use domain::repositories::transaction;
+use foundation::time::iso_at;
 use serde::Serialize;
 
-use crate::{Error, Result, iso_at};
+use crate::{Error, Result};
 
 const RETENTION_BATCH_SIZE: usize = 2_000;
 const POST_EVENTS_RETENTION_DAYS: i64 = 365;

@@ -30,13 +30,14 @@ use domain::publishing::video_fence::zernio_publish_fence;
 use domain::publishing::video_types::VideoTarget;
 use domain::repositories::{StudioSettingsStore, random_uuid, record_event, transaction};
 use foundation::config::PUBLISH_MAX_ATTEMPTS;
+use foundation::time::iso_at;
 use runtime::external::instagram::{InstagramCredentials, instagram_credentials_for_locale};
 use runtime::job_heartbeat::with_job_heartbeat;
 use serde_json::{Map, Value};
 
 use crate::routing::video_channel_identity;
 use crate::video_retention::prune_expired_videos;
-use crate::{Delivery, Result, iso_at};
+use crate::{Delivery, Result};
 
 const VIDEO_HEARTBEAT_INTERVAL_SECONDS: u64 = 30;
 

@@ -22,7 +22,7 @@ use std::path::Path;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use foundation::config::load_config;
+use foundation::config::{load_config, process_env};
 use foundation::logger::{LogLevel, configure_logging, log};
 use runtime::data_dirs::{
     check_data_directories_writable, fix_data_directories_ownership, required_data_directories, resolve_unix_user,
@@ -38,9 +38,7 @@ const STUDIO_BINARY: &str = "/app/bin/solo-publisher";
 const READY_TIMEOUT: Duration = Duration::from_secs(4);
 
 fn main() -> ExitCode {
-    let vars =
-        std::env::vars_os().filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?)));
-    let config = match load_config(vars) {
+    let config = match load_config(process_env()) {
         Ok(config) => config,
         Err(error) => {
             log(LogLevel::Error, &error.to_string(), None);

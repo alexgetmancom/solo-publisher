@@ -5,7 +5,7 @@
 use db::rusqlite::types::ValueRef;
 use db::rusqlite::{Connection, OptionalExtension, Row};
 use domain::application::publication_ref::{PublicationRefKind, parse_publication_ref};
-use foundation::time::parse_iso_instant;
+use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value, json};
 
 use crate::context::OpError;
@@ -60,17 +60,16 @@ pub(crate) fn json_object(value: &Value) -> Map<String, Value> {
     }
 }
 
-fn instant_ms(value: &Value) -> Option<i64> {
-    parse_iso_instant(value.as_str()?).ok().map(|at| at.as_millisecond())
-}
-
 /// `elapsed(start, end)`: milliseconds, or null when either end is missing.
 fn elapsed(start: &Value, end: &Value) -> Value {
     let present = |value: &Value| value.as_str().is_some_and(|text| !text.is_empty());
     if !present(start) || !present(end) {
         return Value::Null;
     }
-    match (instant_ms(start), instant_ms(end)) {
+    match (
+        start.as_str().and_then(parse_iso_ms),
+        end.as_str().and_then(parse_iso_ms),
+    ) {
         (Some(start), Some(end)) if end >= start => json!(end - start),
         _ => Value::Null,
     }

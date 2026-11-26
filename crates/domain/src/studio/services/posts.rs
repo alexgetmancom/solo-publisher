@@ -661,7 +661,7 @@ impl<'a> PostService<'a> {
 
     fn media_patch(&self, locale: Locale, media: Option<String>) -> DraftPatch {
         let mut patch = DraftPatch {
-            updated_at: Some(self.studio.now_iso()),
+            updated_at: Some(foundation::time::to_iso_string(self.studio.now())),
             ..DraftPatch::default()
         };
         match locale {
@@ -787,10 +787,11 @@ impl<'a> PostService<'a> {
         candidates: &[DraftEntityCandidate],
     ) -> Result<()> {
         self.editable(actor_id, draft_id, None)?;
-        self.studio
-            .ports()
-            .studio_posts()
-            .replace_entity_candidates(draft_id, candidates, &self.studio.now_iso())?;
+        self.studio.ports().studio_posts().replace_entity_candidates(
+            draft_id,
+            candidates,
+            &foundation::time::to_iso_string(self.studio.now()),
+        )?;
         self.replan_scheduled_post_after_mutation(draft_id).map(drop)
     }
 
@@ -799,7 +800,7 @@ impl<'a> PostService<'a> {
         self.studio
             .ports()
             .studio_posts()
-            .accept_entity_candidates(draft_id, &self.studio.now_iso())?;
+            .accept_entity_candidates(draft_id, &foundation::time::to_iso_string(self.studio.now()))?;
         self.replan_scheduled_post_after_mutation(draft_id).map(drop)
     }
 
@@ -842,7 +843,7 @@ impl<'a> PostService<'a> {
                 text_ru: Some(first.text_ru),
                 text_ru_entities_json: Some(Some(json_text(&first.entities_ru))),
                 text_en_approved: Some(None),
-                updated_at: Some(self.studio.now_iso()),
+                updated_at: Some(foundation::time::to_iso_string(self.studio.now())),
                 ..DraftPatch::default()
             },
         )?;
@@ -1174,7 +1175,7 @@ impl<'a> PostService<'a> {
             }
             let draft = self.editable(actor_id, draft_id, Some(input.locale))?;
             let mut patch = DraftPatch {
-                updated_at: Some(self.studio.now_iso()),
+                updated_at: Some(foundation::time::to_iso_string(self.studio.now())),
                 ..DraftPatch::default()
             };
             let ru = input.locale == Locale::Ru;
@@ -1219,7 +1220,7 @@ impl<'a> PostService<'a> {
     fn save_targets_and_reschedule(&self, draft: &DraftRecord, targets: &TargetMap) -> Result<()> {
         let patch = DraftPatch {
             targets_json: Some(targets.to_json()),
-            updated_at: Some(self.studio.now_iso()),
+            updated_at: Some(foundation::time::to_iso_string(self.studio.now())),
             ..DraftPatch::default()
         };
         if draft.status == "scheduled" {

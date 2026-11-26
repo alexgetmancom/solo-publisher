@@ -8,10 +8,12 @@ use db::rusqlite::{OptionalExtension, params};
 use foundation::config::Config;
 use foundation::errors::StudioError;
 use foundation::js::WHITESPACE_CLASS;
+use foundation::time::{iso_at, parse_iso_ms};
 use jiff::Timestamp;
 use regex::Regex;
 use serde_json::{Map, Value, json};
 
+use super::Publishing;
 use super::boundaries::{MediaProbe, VideoProvider};
 use super::schedule::assert_future_schedule;
 use super::state::{
@@ -24,7 +26,6 @@ use super::video_data::{VideoJobKind, video_target};
 use super::video_metadata_limits::assert_video_metadata;
 use super::video_settle::SettleVideoInput;
 use super::video_types::{VideoTarget, VideoTechnicalCheck};
-use super::{Publishing, iso_at, parse_ms};
 use crate::application::ports::{DomainEventInput, Severity};
 use crate::application::publication_ref::{PublicationRefKind, publication_ref};
 use crate::channels::channel_for_video;
@@ -431,7 +432,7 @@ impl Publishing<'_> {
                 .iter()
                 .flatten()
                 .filter(|at| !at.is_empty())
-                .map(|at| parse_ms(at).ok_or_else(|| Error::message("Invalid Date")))
+                .map(|at| parse_iso_ms(at).ok_or_else(|| Error::message("Invalid Date")))
                 .collect::<Result<Vec<i64>>>()?
                 .into_iter()
                 .min();
@@ -660,7 +661,7 @@ impl Publishing<'_> {
                         && target
                             .scheduled_at
                             .as_deref()
-                            .and_then(parse_ms)
+                            .and_then(parse_iso_ms)
                             .is_some_and(|at| at > now_ms)
                 })
                 .filter_map(|target| target.external_id.clone())

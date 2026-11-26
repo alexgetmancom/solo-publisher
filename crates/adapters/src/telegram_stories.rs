@@ -11,7 +11,7 @@ use content::message::MediaItem;
 use domain::publishing::errors::PublishResult;
 use foundation::js::{number_of, utf16_len, utf16_prefix};
 use regex::Regex;
-use runtime::ffmpeg::{probe_media_metadata, run_ffmpeg};
+use runtime::ffmpeg::{FFMPEG_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use runtime::http::Fut;
 use serde_json::{Map, Value, json};
 
@@ -27,7 +27,6 @@ const STORY_TARGET_BYTES: f64 = 9.0 * 1024.0 * 1024.0;
 const CAPTION_LIMIT: usize = 2048;
 const STORY_PERIOD_SECONDS: u64 = 86_400;
 const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
-const FFMPEG_TIMEOUT: Duration = Duration::from_secs(600);
 
 /// One hidden link of a Story caption (`messageEntityTextUrl`), in UTF-16 units.
 #[derive(Clone, Debug, PartialEq, Eq)]

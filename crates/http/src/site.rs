@@ -17,6 +17,7 @@ use axum::response::Response;
 use axum::routing::get;
 use axum::{Extension, Router};
 use content::site_media_naming::RESPONSIVE_WIDTHS;
+use delivery::site_index_now::index_now_key;
 use domain::application::ports::ApplicationPorts;
 use domain::studio::config::studio_config;
 use foundation::config::Config;
@@ -176,15 +177,6 @@ async fn serve_media(
     };
     let headers = [("cache-control", cache), ("content-type", bun_file_type(&file))];
     Ok(ranged_file_response(Path::new(&file), size, range, &headers, head).await?)
-}
-
-/// The key IndexNow fetches back from `/<key>.txt`, stored in
-/// `$DATA_DIR/indexnow.key`.
-fn index_now_key(config: &Config) -> Option<String> {
-    let value = fs::read_to_string(Path::new(&config.data_dir).join("indexnow.key")).ok()?;
-    let value = foundation::js::trim(&value);
-    let valid = (8..=128).contains(&value.len()) && value.bytes().all(|b| b.is_ascii_hexdigit() || b == b'-');
-    valid.then(|| value.to_owned())
 }
 
 /// IndexNow fetches the key from the root of the host it pinged for. Only a

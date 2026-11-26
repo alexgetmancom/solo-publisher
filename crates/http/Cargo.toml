@@ -14,6 +14,7 @@ bot = { path = "../bot" }
 channels = { path = "../channels" }
 content = { path = "../content" }
 db = { path = "../db" }
+delivery = { path = "../delivery" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 hmac = "0.12"

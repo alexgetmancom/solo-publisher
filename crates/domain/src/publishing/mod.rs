@@ -84,16 +84,3 @@ impl<'a> Publishing<'a> {
         self.clock.now().as_millisecond()
     }
 }
-
-/// `new Date(ms).toISOString()`.
-pub(crate) fn iso_at(ms: i64) -> String {
-    foundation::time::to_iso_string(jiff::Timestamp::from_millisecond(ms).expect("instant within year ±9999"))
-}
-
-/// `Date.parse(text)` for the ISO instants this Studio writes; `None` for
-/// anything else (JavaScript's NaN).
-pub(crate) fn parse_ms(text: &str) -> Option<i64> {
-    foundation::time::parse_iso_instant(text)
-        .ok()
-        .map(|at| at.as_millisecond())
-}

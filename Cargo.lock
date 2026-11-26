@@ -1080,6 +1080,7 @@ dependencies = [
  "channels",
  "content",
  "db",
+ "delivery",
  "domain",
  "foundation",
  "futures-util",

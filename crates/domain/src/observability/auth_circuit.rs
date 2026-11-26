@@ -5,7 +5,7 @@
 
 use db::rusqlite::{Connection, OptionalExtension, params};
 use foundation::js::{json_number, truthy};
-use foundation::time::parse_iso_instant;
+use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value, json};
 
 use crate::Result;
@@ -63,7 +63,7 @@ fn write_details(sqlite: &Connection, target: &str, details: &Map<String, Value>
 /// `new Date(value).getTime()` of a stored instant; `None` stands for NaN.
 fn instant_ms(value: Option<&Value>) -> Option<i64> {
     match value? {
-        Value::String(text) if !text.is_empty() => parse_iso_instant(text).ok().map(|at| at.as_millisecond()),
+        Value::String(text) if !text.is_empty() => parse_iso_ms(text),
         _ => None,
     }
 }
