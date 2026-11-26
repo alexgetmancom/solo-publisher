@@ -5,13 +5,13 @@
 use std::path::Path;
 use std::time::Duration;
 
-use adapters::platform_adapters::text_target_is_absent;
-use adapters::video_publishers::{VideoTargetRef, video_target_is_absent};
 use content::Locale;
 use db::rusqlite::types::Value as SqlValue;
 use db::rusqlite::{Connection, OptionalExtension, params_from_iter};
 use domain::application::publication_ref::{PublicationRefKind, parse_publication_ref, publication_ref};
 use domain::repositories::immediate_transaction;
+use providers::adapters::platform_adapters::text_target_is_absent;
+use providers::adapters::video_publishers::{VideoTargetRef, video_target_is_absent};
 use runtime::http::HttpRequest;
 use serde_json::{Map, Value, json};
 

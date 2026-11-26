@@ -13,8 +13,6 @@ mod maintenance;
 mod rows;
 mod threads;
 
-use channels::api_keys::{ApiKeyTarget, store_api_key};
-use channels::entropy::OsEntropy;
 use content::Locale;
 use domain::application::ports::ApplicationPorts;
 use domain::observability::capabilities::capability_report;
@@ -24,8 +22,10 @@ use domain::studio::config::studio_config;
 use domain::studio::services::channels::ChannelInput;
 use foundation::config::{Config, SharedConfig};
 use mtproto::{Credentials, SignInPrompts, sign_in};
+use providers::channels::api_keys::{ApiKeyTarget, store_api_key};
+use providers::channels::entropy::OsEntropy;
+use providers::external::youtube::youtube_credentials;
 use runtime::data_dirs::{check_data_directories_writable, required_data_directories};
-use runtime::external::youtube::youtube_credentials;
 use serde_json::{Map, Value, json};
 
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext, Terminal, to_value};
@@ -43,7 +43,7 @@ fn present(value: Option<&str>) -> bool {
     value.is_some_and(|value| !value.is_empty())
 }
 
-fn channel_error(error: channels::error::Error) -> OpError {
+fn channel_error(error: providers::channels::error::Error) -> OpError {
     OpError::Failed(error.to_string())
 }
 
@@ -365,8 +365,9 @@ pub fn connect_link<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> 
     Box::pin(async move {
         let config = context.config()?;
         let platform: ConnectPlatform = serde_json::from_value(json!(input.str("platform")))?;
-        let start = channels::connect::start_connect(&config, platform, locale(input), context.now(), &OsEntropy)
-            .map_err(channel_error)?;
+        let start =
+            providers::channels::connect::start_connect(&config, platform, locale(input), context.now(), &OsEntropy)
+                .map_err(channel_error)?;
         to_value(start)
     })
 }

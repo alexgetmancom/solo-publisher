@@ -3,24 +3,6 @@
 version = 4
 
 [[package]]
-name = "adapters"
-version = "0.0.0"
-dependencies = [
- "content",
- "domain",
- "foundation",
- "futures-util",
- "getrandom 0.2.17",
- "jiff",
- "regex",
- "runtime",
- "serde_json",
- "sha2 0.10.9",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -94,9 +76,7 @@ dependencies = [
 name = "app"
 version = "0.0.0"
 dependencies = [
- "adapters",
  "bot",
- "channels",
  "db",
  "delivery",
  "domain",
@@ -104,6 +84,7 @@ dependencies = [
  "http_edge",
  "mtproto",
  "ops",
+ "providers",
  "runtime",
  "serde_json",
  "story_render",
@@ -249,6 +230,7 @@ dependencies = [
  "getrandom 0.2.17",
  "indexmap",
  "jiff",
+ "providers",
  "regex",
  "runtime",
  "rusqlite",
@@ -327,26 +309,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
  "rand_core 0.10.1",
-]
-
-[[package]]
-name = "channels"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "content",
- "db",
- "domain",
- "foundation",
- "getrandom 0.2.17",
- "jiff",
- "regex",
- "runtime",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tokio",
- "url",
 ]
 
 [[package]]
@@ -522,13 +484,13 @@ dependencies = [
 name = "delivery"
 version = "0.0.0"
 dependencies = [
- "adapters",
  "content",
  "db",
  "domain",
  "foundation",
  "futures-util",
  "jiff",
+ "providers",
  "public_site",
  "regex",
  "runtime",
@@ -1075,7 +1037,6 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "bot",
- "channels",
  "content",
  "db",
  "delivery",
@@ -1090,6 +1051,7 @@ dependencies = [
  "jiff",
  "ops",
  "percent-encoding",
+ "providers",
  "public_site",
  "regex",
  "runtime",
@@ -1508,7 +1470,6 @@ checksum = "7ebb8d8732c6a6df3d8f032a82911cfc747e00efb95cc46e8d0acd5b5b88570c"
 name = "media_processor"
 version = "0.0.0"
 dependencies = [
- "adapters",
  "domain",
  "foundation",
  "futures-util",
@@ -1517,6 +1478,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "jiff",
+ "providers",
  "runtime",
  "rustix",
  "serde_json",
@@ -1602,10 +1564,10 @@ dependencies = [
 name = "mtproto"
 version = "0.0.0"
 dependencies = [
- "adapters",
  "foundation",
  "getrandom 0.2.17",
  "grammers-client",
+ "providers",
  "runtime",
  "rusqlite",
  "serde_json",
@@ -1828,10 +1790,8 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 name = "ops"
 version = "0.0.0"
 dependencies = [
- "adapters",
  "base64 0.22.1",
  "bot",
- "channels",
  "content",
  "db",
  "delivery",
@@ -1840,6 +1800,7 @@ dependencies = [
  "futures-util",
  "jiff",
  "mtproto",
+ "providers",
  "public_site",
  "regex",
  "runtime",
@@ -1966,6 +1927,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "providers"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "content",
+ "db",
+ "domain",
+ "foundation",
+ "futures-util",
+ "getrandom 0.2.17",
+ "jiff",
+ "regex",
+ "runtime",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "url",
 ]
 
 [[package]]
@@ -2254,8 +2236,8 @@ dependencies = [
  "domain",
  "foundation",
  "futures-util",
- "getrandom 0.2.17",
  "jiff",
+ "providers",
  "regex",
  "reqwest",
  "serde_json",

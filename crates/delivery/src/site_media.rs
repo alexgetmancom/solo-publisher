@@ -6,7 +6,6 @@ use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use adapters::AdapterContext;
 use content::Locale;
 use content::message::MediaItem;
 use content::site_media_naming::{
@@ -15,7 +14,8 @@ use content::site_media_naming::{
 use domain::publishing::publication_source::PublicationLocaleSource;
 use foundation::config::Config;
 use foundation::media_types::{file_extension, image_extension};
-use runtime::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
+use providers::adapters::AdapterContext;
+use providers::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
 use runtime::ffmpeg::{FFMPEG_TIMEOUT, run_ffmpeg};
 use serde_json::Value;
 

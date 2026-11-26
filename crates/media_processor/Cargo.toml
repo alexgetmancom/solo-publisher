@@ -27,8 +27,8 @@ tokio-util = { version = "0.7", features = ["io"] }
 vertical_media = { path = "../vertical_media" }
 
 [dev-dependencies]
-adapters = { path = "../adapters" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 hyper = { version = "1", features = ["client"] }
+providers = { path = "../providers" }
 runtime = { path = "../runtime" }

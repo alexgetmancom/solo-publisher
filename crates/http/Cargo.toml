@@ -11,7 +11,6 @@ workspace = true
 [dependencies]
 axum = { version = "0.8", default-features = false }
 bot = { path = "../bot" }
-channels = { path = "../channels" }
 content = { path = "../content" }
 db = { path = "../db" }
 delivery = { path = "../delivery" }
@@ -24,6 +23,7 @@ http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["tokio", "service", "server-graceful", "http1"] }
 ops = { path = "../ops" }
 percent-encoding = "2"
+providers = { path = "../providers" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 rustix = { version = "1", features = ["fs"] }

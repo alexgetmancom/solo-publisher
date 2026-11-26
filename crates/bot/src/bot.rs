@@ -27,7 +27,7 @@ use foundation::config::{Config, SharedConfig};
 use foundation::i18n::{Key, t};
 use foundation::logger::{LogLevel, log};
 use futures_util::FutureExt as _;
-use runtime::external::telegram::BotApi;
+use providers::external::telegram::BotApi;
 use serde_json::{Value, json};
 use tokio::sync::Notify;
 use tokio::task::JoinHandle;

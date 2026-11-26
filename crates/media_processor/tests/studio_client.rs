@@ -1,4 +1,4 @@
-//! The Studio's client (`adapters::remote_media_processor`) against this
+//! The Studio's client (`providers::adapters::remote_media_processor`) against this
 //! server, over HTTP/1.1 on an in-process stream: the headers and body it
 //! sends are what the server accepts, and the manifest, the variants and the
 //! refusals the server answers with are what the client reads.
@@ -10,14 +10,16 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
-use adapters::remote_media_processor::{MediaKind, Variant, media_transform_key, process_vertical_media_remotely};
-use adapters::{AdapterContext, AdapterError};
 use domain::application::ports::SystemClock;
 use foundation::config::load_config;
 use http_body_util::{BodyExt as _, Full};
 use hyper::body::Bytes;
 use hyper_util::rt::TokioIo;
 use media_processor::{Processor, serve_connection};
+use providers::adapters::remote_media_processor::{
+    MediaKind, Variant, media_transform_key, process_vertical_media_remotely,
+};
+use providers::adapters::{AdapterContext, AdapterError};
 use runtime::http::{BodyPart, Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 use support::{Fake, TOKEN, Work, vertical_probe};
 

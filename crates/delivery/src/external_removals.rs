@@ -6,13 +6,13 @@
 
 use std::rc::Rc;
 
-use adapters::telegram_stories::{StoryError, StoryRequest};
-use adapters::{StoriesClient, TargetRouting, Unprepared, create_platform_adapters};
 use content::Locale;
 use db::rusqlite::{Connection, OptionalExtension as _, params};
 use domain::json::stringify;
 use domain::targets::target_locale;
 use foundation::js::string_of;
+use providers::adapters::telegram_stories::{StoryError, StoryRequest};
+use providers::adapters::{StoriesClient, TargetRouting, Unprepared, create_platform_adapters};
 use runtime::http::Fut;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};

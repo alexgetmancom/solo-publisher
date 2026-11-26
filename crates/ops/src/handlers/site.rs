@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::LazyLock;
 
-use adapters::AdapterContext;
 use content::Locale;
 use db::rusqlite::types::Value as SqlValue;
 use db::rusqlite::{Connection, OptionalExtension, params};
@@ -19,6 +18,7 @@ use delivery::site_media::{
 };
 use delivery::site_media_storage::{deduplicate_site_media_file, extname, is_site_media_extension, sha256_file};
 use foundation::time::{parse_iso_ms, to_iso_string};
+use providers::adapters::AdapterContext;
 use public_site::{FeedItem, FeedReader};
 use regex::Regex;
 use serde_json::{Map, Value, json};

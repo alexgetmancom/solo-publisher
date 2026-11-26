@@ -16,7 +16,7 @@ use foundation::config::{Config, SharedConfig, load_config, process_env};
 use foundation::logger::{LogLevel, configure_logging, log};
 use http_edge::{BotBackend, HttpState};
 use ops::host::OpsAdapters;
-use runtime::external::telegram::BotApi;
+use providers::external::telegram::BotApi;
 use runtime::http::{HttpClient, ReqwestTransport};
 use runtime::scheduler::ScheduledLoop;
 use runtime::worker_signal::{WorkerQueue, set_worker_wake};
@@ -31,7 +31,7 @@ const SHUTDOWN_DEADLINE: Duration = Duration::from_secs(10);
 
 fn main() -> ExitCode {
     // The boot time the memory probe reports is the process's.
-    channels::observability::memory::process_boot();
+    providers::channels::observability::memory::process_boot();
     let config = match load_config(process_env()) {
         Ok(config) => config,
         Err(error) => {

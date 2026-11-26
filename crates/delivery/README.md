@@ -1,6 +1,6 @@
 # delivery — the delivery workers (Rust)
 
-The delivery loops (the adapters are `crates/adapters`) and the operational-retention routines. Every loop body takes a `Delivery` — the database, publishing's `Boundaries`, and one
+The delivery loops (the adapters are `providers::adapters`) and the operational-retention routines. Every loop body takes a `Delivery` — the database, publishing's `Boundaries`, and one
 `AdapterContext` (configuration snapshot, HTTP client, clock) for the whole cycle. Every write after an earlier check
 carries that check in its `WHERE`; a step that may have reached an audience settles as ambiguous, never re-sent.
 
@@ -17,7 +17,7 @@ carries that check in its `WHERE`; a step that may have reached an audience sett
 | `routing` | target routing and video channel identity |
 
 Draft Story media is `Posts::prepare_draft_story_media` in `domain` (it calls `StoryDerivatives::ensure`);
-ambiguous-publication, platform-absence and media-idempotency handling live in `adapters`.
+ambiguous-publication, platform-absence and media-idempotency handling live in `providers::adapters`.
 
 ## Wiring
 

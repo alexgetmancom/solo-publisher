@@ -9,9 +9,9 @@
 
 use std::path::{Path, PathBuf};
 
-use adapters::telegram_stories::{CaptionLink, StoryCaption, StoryRequest, StoryUploadMedia};
 use grammers_client::tl::{Deserializable as _, Identifiable as _, Serializable as _, functions, types};
 use mtproto::stories::{input_media, send_story_request};
+use providers::adapters::telegram_stories::{CaptionLink, StoryCaption, StoryRequest, StoryUploadMedia};
 use serde_json::Value;
 
 fn fixtures() -> PathBuf {

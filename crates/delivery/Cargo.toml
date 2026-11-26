@@ -9,13 +9,13 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-adapters = { path = "../adapters" }
 content = { path = "../content" }
 db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 jiff = { version = "0.2", default-features = false, features = ["std"] }
+providers = { path = "../providers" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 serde = { version = "1", features = ["derive"] }

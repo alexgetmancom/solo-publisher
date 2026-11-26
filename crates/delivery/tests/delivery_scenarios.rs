@@ -9,9 +9,6 @@ mod support;
 
 use std::rc::Rc;
 
-use adapters::StoriesClient;
-use adapters::social_ports::MediaPreparation;
-use adapters::telegram_stories::{StoryError, StoryRequest};
 use delivery::external_edits::{PublishedTargetEdit, edit_published_targets};
 use delivery::external_removals::{
     RemovalOptions, attempt_published_target_removals, settle_published_target_removals,
@@ -26,6 +23,9 @@ use domain::repositories::{record_event, transaction};
 use foundation::config::SharedConfig;
 use futures_util::FutureExt as _;
 use futures_util::future::LocalBoxFuture;
+use providers::adapters::StoriesClient;
+use providers::adapters::social_ports::MediaPreparation;
+use providers::adapters::telegram_stories::{StoryError, StoryRequest};
 use runtime::http::Fut;
 use serde_json::{Value, json};
 use support::Scenario;

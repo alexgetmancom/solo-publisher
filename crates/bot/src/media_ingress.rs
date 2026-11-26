@@ -12,7 +12,7 @@ use content::message::MediaItem;
 use domain::application::ports::StudioMediaAssetRecord;
 use domain::studio::services::media::{ImportedMediaFile, MediaService, MediaSource};
 use foundation::config::Config;
-use runtime::external::telegram::TELEGRAM_DOWNLOAD_TIMEOUT;
+use providers::external::telegram::TELEGRAM_DOWNLOAD_TIMEOUT;
 use serde_json::Value;
 
 use crate::api::Api;

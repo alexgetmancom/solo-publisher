@@ -14,8 +14,6 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Instant;
 
-use adapters::social_ports::MediaPreparation;
-use adapters::{AdapterContext, AdapterError};
 use content::message::MediaItem;
 use domain::application::ports::Clock;
 use domain::studio::boundaries::StoryDerivatives;
@@ -23,6 +21,8 @@ use foundation::config::{Config, SharedConfig};
 use foundation::logger::{LogLevel, log};
 use futures_util::FutureExt as _;
 use futures_util::future::{LocalBoxFuture, Shared};
+use providers::adapters::social_ports::MediaPreparation;
+use providers::adapters::{AdapterContext, AdapterError};
 use runtime::http::{Fut, HttpClient};
 use serde_json::{Map, Value, json};
 
@@ -267,7 +267,7 @@ impl MediaPreparation for DeliveryMedia {
         config: Arc<Config>,
         media: Vec<MediaItem>,
         target: String,
-    ) -> LocalBoxFuture<'static, adapters::Result<Vec<MediaItem>>> {
+    ) -> LocalBoxFuture<'static, providers::adapters::Result<Vec<MediaItem>>> {
         let ctx = self.context(config);
         async move { prepare_media_items(&ctx, media, Some(&target)).await }.boxed_local()
     }
@@ -276,7 +276,7 @@ impl MediaPreparation for DeliveryMedia {
         &'a self,
         config: &'a Config,
         item: &'a MediaItem,
-    ) -> Fut<'a, adapters::Result<Option<MediaItem>>> {
+    ) -> Fut<'a, providers::adapters::Result<Option<MediaItem>>> {
         Box::pin(
             async move { Ok::<_, AdapterError>(DeliveryMedia::await_prepared_story_media(self, config, item).await) },
         )

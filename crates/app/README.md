@@ -16,7 +16,7 @@ after a 30 s grace (publish jobs, site jobs), then Story-card locks. The loops s
 
 | Loop | Interval | Body |
 |---|---|---|
-| `platform-tokens`, `credentials`, `x-token` | 6 h, 60 s, 10 min | `channels::loops` |
+| `platform-tokens`, `credentials`, `x-token` | 6 h, 60 s, 10 min | `providers::channels::loops` |
 | `story-cards` | `IDLE_POLL_INTERVAL_SECONDS` | `story_render::run_story_card_cycle` |
 | `queue` | `IDLE_POLL_INTERVAL_SECONDS`, rung by `WorkerQueue::Publish` | `delivery::publish_workflow::run_delivery_publish_cycle` |
 | `publish-watchdog` | 60 s | `recover_stale_publish_jobs` |
@@ -26,7 +26,7 @@ after a 30 s grace (publish jobs, site jobs), then Story-card locks. The loops s
 | `site`, `site-watchdog` | 10 s, 60 s; idle while the site is off | `run_site_job_cycle`, `recover_stale_site_jobs` |
 | `media-cache` | 1 h | `prune_media_cache` |
 | `operational-retention` | 24 h | `prune_operational_history` under the maintenance lock |
-| `observability` | `OBSERVABILITY_INTERVAL_SECONDS` | `channels::loops::observability_tick` |
+| `observability` | `OBSERVABILITY_INTERVAL_SECONDS` | `providers::channels::loops::observability_tick` |
 
 then the Telegram loops (`bot::workers`: translations, albums, events, alerts, daily backup).
 
@@ -34,10 +34,10 @@ then the Telegram loops (`bot::workers`: translations, albums, events, alerts, d
 
 The boundaries are these stores: Story cards (`domain::story_cards`), reminders (`domain::notifications`), the
 credential breaker, the readiness report and runtime usage (`domain::observability`, usage flushed at shutdown), the
-video completion notice (`domain::delivery`), connect links (`channels`). One `delivery::story_derivatives::DeliveryMedia`
+video completion notice (`domain::delivery`), connect links (`providers::channels`). One `delivery::story_derivatives::DeliveryMedia`
 is both the publish loop's `MediaPreparation` and Studio's `StoryDerivatives`; the worker bell is
 `runtime::worker_signal::WorkerSignals`. The adapters Studio waits on: the media probe runs `ffprobe`/`ffmpeg` from
-`PATH`, the provider calls are `adapters::providers`, the Zernio directory is `channels::zernio`. Telegram channel
+`PATH`, the provider calls are `providers::adapters::providers`, the Zernio directory is `providers::channels::zernio`. Telegram channel
 Stories go out over MTProto in this process (`mtproto::MtprotoStories`, with the `TELEGRAM_CHANNEL_STORIES_*` of the
 live configuration).
 

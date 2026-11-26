@@ -13,9 +13,7 @@ path = "src/main.rs"
 workspace = true
 
 [dependencies]
-adapters = { path = "../adapters" }
 bot = { path = "../bot" }
-channels = { path = "../channels" }
 delivery = { path = "../delivery" }
 db = { path = "../db" }
 domain = { path = "../domain" }
@@ -23,6 +21,7 @@ foundation = { path = "../foundation" }
 http_edge = { path = "../http" }
 mtproto = { path = "../mtproto" }
 ops = { path = "../ops" }
+providers = { path = "../providers" }
 runtime = { path = "../runtime" }
 story_render = { path = "../story_render" }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }

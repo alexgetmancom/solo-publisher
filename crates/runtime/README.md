@@ -12,11 +12,10 @@ rest of the Studio: loops, doorbells and transports run on the process's `LocalS
 | `worker_state` (`record_worker_state`, `HeartbeatLoops`, `worker_liveness`, worker names) | per-loop state rows and liveness |
 | `worker_signal` (`ring_worker`, `ring_worker_after`, `set_worker_wake`, `WorkerSignals`) | the doorbells of the two queues a person waits on |
 | `timeout`, `job_heartbeat`, `git`, `data_dirs` | deadlines, job lease heartbeat, the running revision, data directories |
-| `external::telegram` (`BotApi`, `BotParams`, `BotResponse`, `TELEGRAM_DOWNLOAD_TIMEOUT`) | the one Telegram Bot API client: method calls and the file endpoint; encoding and retries stay with callers |
-| `external::{deepseek, instagram, threads, youtube, zernio, telegram_files}` | provider helpers |
 
-Not here: the Stories session (`crates/mtproto`), deployment (promote/rollback live in `bot::deployment`; reading
-the releases is an ops read and goes with `ops`), the privilege drop (goes with the entrypoint).
+Not here: the provider helpers (`providers::external`), the Stories session (`crates/mtproto`), deployment
+(promote/rollback live in `bot::deployment`; reading the releases is an ops read and goes with `ops`), the privilege
+drop (goes with the entrypoint).
 
 ## Adapters and the transport seam
 
@@ -51,9 +50,10 @@ cargo test -p runtime   # replays tests/fixtures/runtime.json (recorded from the
 
 Recorded: Retry-After parsing, JSON request results and redacted messages, form bodies, ffmpeg failure trimming,
 ffprobe JSON → metadata (a fake ffprobe on PATH), a real clip's probe, `worker_state` rows step by step, liveness,
-scheduler cycle traces, and the requests DeepSeek, YouTube token, Zernio and Telegram file helpers sent.
+scheduler cycle traces, and the requests DeepSeek, YouTube token, Zernio and Telegram file helpers sent (those
+helpers are `providers::external`, a dev-dependency here so the one recording stays one file).
 `tests/runtime.rs` covers what a recording cannot: kills on timeout, timers, doorbells, heartbeats.
 
 Deliberate deviations: `with_timeout` drops the work it gave up on (a raced promise ran on unobserved);
-`youtube_access_token` refuses a response without `access_token` (the goldens' backend returned `undefined`); a lost
-response body is a transport error (above); the ffmpeg limit is the constant 2.
+`providers::external::youtube::youtube_access_token` refuses a response without `access_token` (the goldens' backend
+returned `undefined`); a lost response body is a transport error (above); the ffmpeg limit is the constant 2.

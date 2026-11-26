@@ -1,6 +1,6 @@
 //! Delivery: the workers that take durable publishing state to the platforms
 //! and the public site, and settle what came back (the adapters are
-//! `crates/adapters`).
+//! `providers::adapters`).
 //!
 //! Every write a worker makes after an earlier check carries that check in its
 //! `WHERE` — the lease, the status, the external id — and anything that may
@@ -24,12 +24,12 @@ pub mod story_media;
 pub mod video_retention;
 pub mod video_worker;
 
-use adapters::AdapterContext;
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
 use domain::application::ports::Clock;
 use domain::publishing::{Boundaries, Publishing};
 use foundation::config::Config;
+use providers::adapters::AdapterContext;
 
 pub use domain::{Error, Result};
 

@@ -1,7 +1,7 @@
 //! The service that runs on VM-106 and renders every Story remotely. It is
 //! reached only through an SSH tunnel from the Studio, so its contract —
 //! status codes, manifest shape, caching, the one encoder slot and the disk
-//! it leaves behind — is what `adapters::remote_media_processor` depends on.
+//! it leaves behind — is what `providers::adapters::remote_media_processor` depends on.
 //!
 //! ffmpeg and ffprobe are injected: this is about the service around them.
 

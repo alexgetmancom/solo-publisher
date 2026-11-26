@@ -5,13 +5,8 @@
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use adapters::{AdapterContext, MediaPreparation, StoriesClient};
 use bot::Bot;
 use bot::workers::start_telegram_workers;
-use channels::loops::{
-    CREDENTIALS, OBSERVABILITY, PLATFORM_TOKENS, X_TOKEN, credentials_tick, observability_interval, observability_tick,
-    platform_tokens_tick, x_token_tick,
-};
 use db::{BackendDb, unsafe_db};
 use delivery::Delivery;
 use delivery::maintenance::{prune_operational_history, with_maintenance_lock};
@@ -31,6 +26,11 @@ use domain::publishing::Publishing;
 use domain::studio::Studio;
 use foundation::logger::{LogLevel, log};
 use mtproto::MtprotoStories;
+use providers::adapters::{AdapterContext, MediaPreparation, StoriesClient};
+use providers::channels::loops::{
+    CREDENTIALS, OBSERVABILITY, PLATFORM_TOKENS, X_TOKEN, credentials_tick, observability_interval, observability_tick,
+    platform_tokens_tick, x_token_tick,
+};
 use runtime::http::HttpClient;
 use runtime::scheduler::ScheduledLoop;
 use runtime::worker_signal::{WorkerQueue, set_worker_wake};

@@ -13,11 +13,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use adapters::providers::ProviderCalls;
 use bot::{Adapters, DynAdapters, Fut};
-use channels::connect::ConnectLinks;
-use channels::entropy::OsEntropy;
-use channels::zernio::ZernioAccounts;
 use content::Locale;
 use db::BackendDb;
 use db::rusqlite::Connection;
@@ -37,6 +33,10 @@ use domain::story_cards::StoryCardStore;
 use domain::studio::Studio;
 use domain::studio::boundaries::{StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory};
 use foundation::config::{Config, SharedConfig, load_config};
+use providers::adapters::providers::ProviderCalls;
+use providers::channels::connect::ConnectLinks;
+use providers::channels::entropy::OsEntropy;
+use providers::channels::zernio::ZernioAccounts;
 use runtime::ffmpeg::FfmpegMediaProbe;
 use runtime::http::HttpClient;
 use serde_json::Value;
@@ -215,7 +215,7 @@ impl ProcessSurface {
             .map_err(|error| OpError::Failed(error.to_string()))?;
         config.pipeline_db = self.db_path.clone();
         let shared = SharedConfig::new(config);
-        channels::credentials::apply_stored_credentials(&shared, sqlite)
+        providers::channels::credentials::apply_stored_credentials(&shared, sqlite)
             .map_err(|error| OpError::Failed(error.to_string()))?;
         Ok(self
             .host

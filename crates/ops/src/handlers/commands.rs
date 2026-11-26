@@ -20,7 +20,6 @@ use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use adapters::AdapterContext;
 use content::Locale;
 use db::BackendDb;
 use db::rusqlite::{Connection, OptionalExtension, params};
@@ -38,6 +37,7 @@ use domain::targets::is_known_target;
 use foundation::config::Config;
 use foundation::time::to_iso_string;
 use jiff::Timestamp;
+use providers::adapters::AdapterContext;
 use runtime::http::HttpClient;
 use serde_json::{Map, Value, json};
 

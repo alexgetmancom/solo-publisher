@@ -3,11 +3,11 @@
 
 use std::rc::Rc;
 
-use adapters::{EditRequest, TargetRouting, Unprepared, create_platform_adapters};
 use content::Locale;
 use domain::application::publication_ref::{PublicationRefKind, parse_publication_ref};
 use domain::targets::target_locale;
 use futures_util::future::join_all;
+use providers::adapters::{EditRequest, TargetRouting, Unprepared, create_platform_adapters};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 

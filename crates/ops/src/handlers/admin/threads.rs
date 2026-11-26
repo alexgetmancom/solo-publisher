@@ -3,10 +3,10 @@
 //! is unavailable. The code is single-use and lives an hour, so it is
 //! exchanged at once.
 
-use channels::meta::{exchange_meta_code, meta_authorize_url, meta_oauth_redirect_uri};
 use content::Locale;
 use domain::studio::boundaries::MetaOauthPlatform;
 use foundation::config::Config;
+use providers::channels::meta::{exchange_meta_code, meta_authorize_url, meta_oauth_redirect_uri};
 use runtime::http::HttpClient;
 use serde_json::{Value, json};
 
@@ -55,7 +55,7 @@ pub(super) async fn authorize_threads(
             "Set THREADS_APP_ID and THREADS_APP_SECRET first. Both are in App Dashboard > App settings > Basic, under Threads App ID and Threads App secret — not the Meta app's own id and secret.",
         ));
     }
-    let channel_error = |error: channels::error::Error| OpError::failed(error.to_string());
+    let channel_error = |error: providers::channels::error::Error| OpError::failed(error.to_string());
     let redirect_uri = meta_oauth_redirect_uri(config, MetaOauthPlatform::Threads);
     let authorize_url = meta_authorize_url(config, MetaOauthPlatform::Threads, None).map_err(channel_error)?;
     // This link deliberately carries no signed state, so the callback refuses

@@ -8,7 +8,7 @@ use content::translation::{
 };
 use domain::application::ports::{DraftPatch, DraftRecord, ThreadEnglish};
 use foundation::logger::{LogLevel, log};
-use runtime::external::deepseek::{ChatOptions, DeepSeekMessage, Role, deepseek_chat};
+use providers::external::deepseek::{ChatOptions, DeepSeekMessage, Role, deepseek_chat};
 use runtime::http::HttpClient;
 use serde_json::json;
 

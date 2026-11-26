@@ -41,10 +41,10 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   Zero rows → `XRefresh::Superseded`: neither the row nor the live config is touched, and the loop logs it at info. The
   OAuth callback still writes unconditionally. A pair reconnected between read and write is kept, not overwritten by the
   older refresh.
-- `crates/adapters`: any Stories answer other than an explicit "not sent" settles as ambiguous; a YouTube upload or Reels
+- `crates/providers`: any Stories answer other than an explicit "not sent" settles as ambiguous; a YouTube upload or Reels
   publish that succeeded without returning an id is reported with no id instead of failing into a retry (a second post);
   result-object key order may differ from TypeScript where requests stay byte-identical.
-- `crates/delivery` and `crates/adapters`: a split Discord post refused on a later message returns a partial publication
+- `crates/delivery` and `crates/providers`: a split Discord post refused on a later message returns a partial publication
   (`_discordMessageIds`) and the retry sends only the rest (TypeScript threw and re-posted the first message);
   reconciliation confirms a job and its target together, the target fenced on still being the unanswered publication,
   and releases the job when it moved; a video publish job whose target is held for verification completes without
@@ -55,7 +55,7 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
 
 ## Telegram Stories (`crates/mtproto`)
 
-- Stories run in process on grammers 0.12 (`mtproto::MtprotoStories` behind `adapters::StoriesClient`); there is no
+- Stories run in process on grammers 0.12 (`mtproto::MtprotoStories` behind `providers::adapters::StoriesClient`); there is no
   sidecar, no `STORIES_SIDECAR_*` variable. `ops telegram-stories-login` signs in itself.
 - The session file stays in mtcute 0.32's SQLite layout (`auth_keys`, `key_value['dc_main']` as `serializeBasicDcOption`),
   read and written by `mtproto::session::SessionFile`, so production's signed-in account carries over. A new home DC or

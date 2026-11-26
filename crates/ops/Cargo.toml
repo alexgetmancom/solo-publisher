@@ -13,16 +13,15 @@ name = "ops"
 path = "src/main.rs"
 
 [dependencies]
-adapters = { path = "../adapters" }
 base64 = "0.22"
 bot = { path = "../bot" }
-channels = { path = "../channels" }
 content = { path = "../content" }
 db = { path = "../db" }
 delivery = { path = "../delivery" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 mtproto = { path = "../mtproto" }
+providers = { path = "../providers" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }

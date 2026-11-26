@@ -1,5 +1,5 @@
 //! Connecting an account from the browser:
-//! the routes of `channels::oauth_routes`, each answered on the Studio thread
+//! the routes of `providers::channels::oauth_routes`, each answered on the Studio thread
 //! with the query as Hono reads it and the command-token verdict. The
 //! `/oauth/*` headers are the edge's (`edge.rs`).
 
@@ -10,11 +10,11 @@ use axum::extract::{Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum::response::Response;
 use axum::routing::{MethodRouter, get};
-use channels::meta::meta_platform_name;
-use channels::oauth_routes::{
+use domain::studio::boundaries::MetaOauthPlatform;
+use providers::channels::meta::meta_platform_name;
+use providers::channels::oauth_routes::{
     OauthContext, OauthResponse, Query, meta_callback, meta_start, x_callback, x_start, youtube_callback, youtube_start,
 };
-use domain::studio::boundaries::MetaOauthPlatform;
 
 use crate::auth::command_allowed;
 use crate::local::Local;

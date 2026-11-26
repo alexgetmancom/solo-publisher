@@ -37,7 +37,7 @@ use db::BackendDb;
 use foundation::config::{SharedConfig, load_config};
 use foundation::i18n::{Key, t};
 use jiff::Timestamp;
-use runtime::external::telegram::BotApi;
+use providers::external::telegram::BotApi;
 use runtime::http::HttpClient;
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};

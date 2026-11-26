@@ -1,11 +1,11 @@
 //! What the channel registry tells delivery: target routing and video
 //! channel identity.
 
-use adapters::{Route, TargetRouting};
 use db::rusqlite::Connection;
 use domain::channels::list_channels;
 use domain::publishing::video_types::VideoTarget;
 use domain::repositories::ChannelStore;
+use providers::adapters::{Route, TargetRouting};
 
 use crate::Result;
 

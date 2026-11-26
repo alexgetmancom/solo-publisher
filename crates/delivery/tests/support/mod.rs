@@ -12,7 +12,6 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::{Arc, LazyLock};
 
-use adapters::AdapterContext;
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
 use domain::application::ports::Clock;
@@ -24,6 +23,7 @@ use domain::story_cards::StoryCardStore;
 use foundation::config::{Config, load_config};
 use futures_util::future::LocalBoxFuture;
 use jiff::Timestamp;
+use providers::adapters::AdapterContext;
 use regex::Regex;
 use runtime::http::{BodyPart, Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 use serde_json::{Map, Value, json};

@@ -6,12 +6,12 @@ use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use adapters::payload::{field, is_video, media_extension};
-use adapters::{AdapterContext, AdapterError};
 use content::message::MediaItem;
 use domain::publishing::platform_profiles::video_bounds;
 use foundation::config::Config;
-use runtime::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
+use providers::adapters::payload::{field, is_video, media_extension};
+use providers::adapters::{AdapterContext, AdapterError};
+use providers::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
 use runtime::ffmpeg::{FFMPEG_TIMEOUT, FFPROBE_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use serde_json::{Map, Value};
 use sha2::{Digest as _, Sha256};
@@ -41,7 +41,7 @@ pub async fn prepare_media_items(
     ctx: &AdapterContext,
     source_items: Vec<MediaItem>,
     target: Option<&str>,
-) -> adapters::Result<Vec<MediaItem>> {
+) -> providers::adapters::Result<Vec<MediaItem>> {
     let config = &ctx.config;
     tokio::fs::create_dir_all(&config.media_cache_dir).await.map_err(io)?;
     tokio::fs::create_dir_all(&config.remote_media_path).await.map_err(io)?;
@@ -175,7 +175,11 @@ fn modified_ms(stat: &std::fs::Metadata) -> Option<f64> {
     Some(since.as_secs() as f64 * 1000.0 + f64::from(since.subsec_nanos()) / 1e6)
 }
 
-async fn ensure_local_media(ctx: &AdapterContext, item: &MediaItem, cache_key: &str) -> adapters::Result<PathBuf> {
+async fn ensure_local_media(
+    ctx: &AdapterContext,
+    item: &MediaItem,
+    cache_key: &str,
+) -> providers::adapters::Result<PathBuf> {
     let target = ctx
         .config
         .media_cache_dir
@@ -213,7 +217,7 @@ async fn normalize_video_for_public_upload(
     input: &Path,
     cache_key: &str,
     target: Option<&str>,
-) -> adapters::Result<PathBuf> {
+) -> providers::adapters::Result<PathBuf> {
     let metadata = probe_media_metadata(&text(input), FFPROBE_TIMEOUT)
         .await
         .map_err(|error| AdapterError::Message(error.to_string()))?;
@@ -325,7 +329,7 @@ fn item_local_path(item: &MediaItem) -> Value {
     item.get("localPath").cloned().unwrap_or(Value::Null)
 }
 
-async fn copy_if_missing(source: &Path, target: &Path) -> adapters::Result<()> {
+async fn copy_if_missing(source: &Path, target: &Path) -> providers::adapters::Result<()> {
     if target.exists() {
         return Ok(());
     }

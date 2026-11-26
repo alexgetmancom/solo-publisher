@@ -7,7 +7,7 @@ The contract is the recorded goldens (`parity/bot-goldens/`). Russian only
 
 | Module | Holds |
 |---|---|
-| `api/` | Bot API client: guard, retry, timing, payload, types, over `runtime::external::telegram::BotApi` |
+| `api/` | Bot API client: guard, retry, timing, payload, types, over `providers::external::telegram::BotApi` |
 | `bot.rs`, `runner.rs` | Middleware chain, routers; long-polling runner |
 | `boundary.rs`, `sequentialize.rs`, `action_lock.rs`, `tap.rs` | Callback boundary, per-chat sequentialization, action lock, tap measurement |
 | `callback.rs` | Screen ids + arity, `p:` namespace, `sv<n>\|` |

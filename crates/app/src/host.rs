@@ -8,8 +8,6 @@
 use std::rc::Rc;
 
 use bot::Host;
-use channels::connect::ConnectLinks;
-use channels::entropy::OsEntropy;
 use db::rusqlite::Connection;
 use delivery::story_derivatives::DeliveryMedia;
 use domain::application::ports::SystemClock;
@@ -23,6 +21,8 @@ use domain::publishing::boundaries::SystemJitter;
 use domain::story_cards::StoryCardStore;
 use domain::studio::boundaries::StudioBoundaries;
 use foundation::config::SharedConfig;
+use providers::channels::connect::ConnectLinks;
+use providers::channels::entropy::OsEntropy;
 use runtime::http::HttpClient;
 use runtime::worker_signal::WorkerSignals;
 

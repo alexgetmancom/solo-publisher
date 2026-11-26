@@ -15,11 +15,11 @@ use db::BackendDb;
 use domain::publishing::boundaries::{MediaMetadata, MediaProbe};
 use foundation::config::{Config, load_config};
 use jiff::Timestamp;
+use providers::external::deepseek::{ChatOptions, DeepSeekMessage, Role, deepseek_chat};
+use providers::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
+use providers::external::youtube::youtube_access_token;
+use providers::external::zernio::{list_zernio_accounts, zernio_account};
 use regex::Regex;
-use runtime::external::deepseek::{ChatOptions, DeepSeekMessage, Role, deepseek_chat};
-use runtime::external::telegram_files::{MaterializeOptions, TelegramFileSource, materialize_telegram_file};
-use runtime::external::youtube::youtube_access_token;
-use runtime::external::zernio::{list_zernio_accounts, zernio_account};
 use runtime::ffmpeg::{
     FfmpegMediaProbe, ffprobe_failure, format_ffmpeg_failure, media_metadata_from_ffprobe, probe_media_metadata,
 };

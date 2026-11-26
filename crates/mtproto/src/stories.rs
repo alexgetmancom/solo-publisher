@@ -12,9 +12,9 @@ use std::cell::Cell;
 use std::path::Path;
 use std::time::Duration;
 
-use adapters::telegram_stories::{StoryError, StoryRequest, StoryUploadMedia};
 use grammers_client::tl::{enums, functions, types};
 use grammers_client::{Client, InvocationError};
+use providers::adapters::telegram_stories::{StoryError, StoryRequest, StoryUploadMedia};
 use tokio::io::AsyncReadExt as _;
 
 use crate::Credentials;

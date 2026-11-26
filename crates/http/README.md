@@ -9,7 +9,7 @@ The Studio's HTTP surface on axum 0.8 / hyper 1. The package is `http_edge` (a p
 | `edge.rs` | Hono's dispatch: `strict: false`, HEAD via GET, `notFound`, the `/oauth/*` + `/stats*` `unindexed` middleware |
 | `uri.rs` (`Target`) | `request.url` (WHATWG), Hono's `getPath` / `decodeURI` / `tryDecode` and `c.req.query` |
 | `health.rs`, `discovery.rs`, `studio.rs`, `site.rs` | the public routes (`site.rs` serves what the public site reads and links to) |
-| `oauth.rs` | `/oauth/{threads,instagram,x,youtube}[/start]` over `channels::oauth_routes` |
+| `oauth.rs` | `/oauth/{threads,instagram,x,youtube}[/start]` over `providers::channels::oauth_routes` |
 | `media_upload.rs`, `ranged_file.rs`, `auth.rs`, `client_identity.rs`, `response.rs` | the shared helpers |
 | `mime.rs` | `Bun.file(path).type` (the extensions Bun 1.4 names, recorded) |
 | `server.rs` (`serve`) | body cap 1 GB + 1 MB (413), idle 255 s, graceful stop |

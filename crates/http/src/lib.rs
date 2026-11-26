@@ -28,14 +28,14 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use axum::Router;
-use channels::entropy::{Entropy, OsEntropy};
-use channels::oauth_routes::ChannelRegistrar;
 use db::BackendDb;
 use domain::application::ports::{ChannelConnectionRecord, Clock};
 use domain::publishing::Publishing;
 use domain::studio::Studio;
 use domain::studio::services::channels::{ChannelInput, ChannelService};
 use foundation::config::{Config, SharedConfig};
+use providers::channels::entropy::{Entropy, OsEntropy};
+use providers::channels::oauth_routes::ChannelRegistrar;
 use runtime::http::HttpClient;
 
 pub use auth::{command_allowed, mcp_studio_actor};

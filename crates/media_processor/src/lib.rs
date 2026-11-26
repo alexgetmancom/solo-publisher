@@ -1,6 +1,6 @@
 //! The remote media processor: the Studio's `remote_http` executor for the
 //! vertical media recipe (`vertical_media`), encoding on a VAAPI render node.
-//! Its one client is `adapters::remote_media_processor`; the operations CLI
+//! Its one client is `providers::adapters::remote_media_processor`; the operations CLI
 //! reads `/health` and runs a fixture through it.
 //!
 //! - `GET /health`, unauthenticated: always 200; `ok: false`, `status: busy`

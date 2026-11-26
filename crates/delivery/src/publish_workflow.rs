@@ -5,8 +5,6 @@
 use std::rc::Rc;
 use std::time::Duration;
 
-use adapters::social_ports::MediaPreparation;
-use adapters::{AdapterError, DeliveryPorts, PreparedMedia, SocialAdapter, StoriesClient, create_platform_adapters};
 use db::rusqlite::{OptionalExtension as _, params};
 use domain::application::ports::{DomainEventInput, Severity};
 use domain::observability::auth_circuit::{is_target_auth_blocked, provider_answered_at};
@@ -17,6 +15,10 @@ use domain::repositories::record_event;
 use foundation::config::{PUBLISH_HEARTBEAT_INTERVAL_SECONDS, PUBLISH_LOCK_TIMEOUT_SECONDS};
 use foundation::logger::{LogLevel, log};
 use futures_util::future::join_all;
+use providers::adapters::social_ports::MediaPreparation;
+use providers::adapters::{
+    AdapterError, DeliveryPorts, PreparedMedia, SocialAdapter, StoriesClient, create_platform_adapters,
+};
 use runtime::job_heartbeat::with_job_heartbeat;
 use runtime::worker_state::record_worker_state;
 use serde_json::{Map, Value, json};
@@ -270,7 +272,7 @@ async fn phased(
     adapter: &dyn SocialAdapter,
     job: &ClaimedPublishJob,
     phases: &mut Map<String, Value>,
-) -> adapters::Result<PublishResult> {
+) -> providers::adapters::Result<PublishResult> {
     timed_phase(delivery, job, Phase::Validate, phases, None, async {
         adapter.validate(job).map(|()| None::<Value>)
     })
@@ -360,8 +362,8 @@ async fn timed_phase<T: PhaseOutput>(
     phase: Phase,
     timings: &mut Map<String, Value>,
     provider_result: Option<&Value>,
-    work: impl Future<Output = adapters::Result<T>>,
-) -> adapters::Result<T> {
+    work: impl Future<Output = providers::adapters::Result<T>>,
+) -> providers::adapters::Result<T> {
     let started_at = delivery.now_ms();
     let owned = delivery
         .sqlite()
@@ -455,8 +457,8 @@ fn provider_request_id(value: &Value) -> Option<String> {
 async fn within_publish_timeout(
     delivery: &Delivery<'_>,
     job: &ClaimedPublishJob,
-    work: impl Future<Output = adapters::Result<PublishResult>>,
-) -> adapters::Result<PublishResult> {
+    work: impl Future<Output = providers::adapters::Result<PublishResult>>,
+) -> providers::adapters::Result<PublishResult> {
     let limit = delivery.config().publish_job_timeout_seconds;
     match tokio::time::timeout(Duration::from_secs(limit), work).await {
         Ok(outcome) => outcome,
@@ -478,7 +480,7 @@ async fn within_publish_timeout(
                 phase.as_deref().unwrap_or("unknown")
             );
             Err(if may_have_reached_audience(phase.as_deref()) {
-                adapters::error::ambiguous_error(&job.target, &message)
+                providers::adapters::error::ambiguous_error(&job.target, &message)
             } else {
                 AdapterError::Message(message)
             })

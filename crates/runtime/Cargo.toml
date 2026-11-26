@@ -9,12 +9,10 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-content = { path = "../content" }
 db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-getrandom = "0.2"
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
@@ -24,4 +22,6 @@ tokio-util = { version = "0.7", features = ["io"] }
 url = "2"
 
 [dev-dependencies]
+content = { path = "../content" }
+providers = { path = "../providers" }
 tokio = { version = "1", features = ["test-util"] }

@@ -14,11 +14,11 @@ use std::os::unix::fs::OpenOptionsExt as _;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use adapters::AdapterContext;
 use foundation::config::Config;
 use foundation::logger::{LogLevel, log};
 use futures_util::FutureExt as _;
 use futures_util::future::{LocalBoxFuture, Shared};
+use providers::adapters::AdapterContext;
 use runtime::http::HttpRequest;
 use serde_json::{Map, Value, json};
 

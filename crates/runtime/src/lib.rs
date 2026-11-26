@@ -6,7 +6,6 @@
 //! on the process's `LocalSet`, and their futures are not `Send`.
 
 pub mod data_dirs;
-pub mod external;
 pub mod ffmpeg;
 pub mod git;
 pub mod http;

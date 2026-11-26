@@ -8,10 +8,10 @@ use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use adapters::AdapterContext;
-use adapters::remote_media_processor::{MediaKind, Variant, process_vertical_media_remotely};
 use foundation::config::{Config, MediaProcessorProvider};
 use foundation::logger::{LogLevel, log};
+use providers::adapters::AdapterContext;
+use providers::adapters::remote_media_processor::{MediaKind, Variant, process_vertical_media_remotely};
 use runtime::ffmpeg::FFPROBE_TIMEOUT;
 use runtime::ffmpeg::{FFMPEG_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use runtime::timeout::with_timeout;

@@ -21,9 +21,9 @@ use foundation::time::iso_at;
 use serde::Serialize;
 use serde_json::{Map, Value, json};
 
-use adapters::platform_adapters::verify_platform_publication;
-use adapters::video_publishers::verify_youtube_video;
-use adapters::zernio::{ZernioPlatform, verify_zernio_post, zernio_post_outcome};
+use providers::adapters::platform_adapters::verify_platform_publication;
+use providers::adapters::video_publishers::verify_youtube_video;
+use providers::adapters::zernio::{ZernioPlatform, verify_zernio_post, zernio_post_outcome};
 
 use crate::routing::{target_routing, video_channel_identity};
 use crate::{Delivery, Error, Result};
@@ -324,7 +324,7 @@ pub async fn run_publication_reconciliation(delivery: &Delivery<'_>) -> Result<R
                     confirmation = Some((Some(verified.id), Some(verified.url)));
                 }
             }
-            Ok::<_, adapters::AdapterError>(())
+            Ok::<_, providers::adapters::AdapterError>(())
         }
         .await;
         if let Err(error) = asked {
@@ -507,8 +507,8 @@ async fn verify_ordinary(
     delivery: &Delivery<'_>,
     row: &OrdinaryRow,
     external_id: &str,
-    routing: &adapters::TargetRouting,
-) -> adapters::Result<Map<String, Value>> {
+    routing: &providers::adapters::TargetRouting,
+) -> providers::adapters::Result<Map<String, Value>> {
     let provider_result = match row.raw_json.as_deref().map(serde_json::from_str::<Value>) {
         Some(Ok(Value::Object(result))) => result,
         _ => Map::new(),

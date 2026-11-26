@@ -1,8 +1,8 @@
 //! Telegram channel Stories over MTProto (grammers), in process: the
 //! account's session file, posting one Story, and the one-time sign-in.
 //!
-//! [`MtprotoStories`] is the Studio's [`adapters::StoriesClient`]; the
-//! adapter in `adapters::telegram_stories` does the guards, the caption, the
+//! [`MtprotoStories`] is the Studio's [`providers::adapters::StoriesClient`]; the
+//! adapter in `providers::adapters::telegram_stories` does the guards, the caption, the
 //! probe and the re-encode, and hands this crate one [`StoryRequest`].
 
 mod connection;
@@ -12,8 +12,8 @@ pub mod stories;
 
 use std::path::PathBuf;
 
-use adapters::telegram_stories::{StoriesClient, StoryError, StoryRequest};
 use foundation::config::{Config, SharedConfig};
+use providers::adapters::telegram_stories::{StoriesClient, StoryError, StoryRequest};
 use runtime::http::Fut;
 
 pub use sign_in::{SignInPrompts, SignedIn, sign_in};

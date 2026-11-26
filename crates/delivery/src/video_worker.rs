@@ -6,12 +6,6 @@
 
 use std::time::Duration;
 
-use adapters::video_publishers::{
-    YoutubeMetadata, instagram_container_ready, keep_youtube_upload_private, prepare_instagram_reel,
-    prepare_youtube_video, publish_instagram_reel,
-};
-use adapters::zernio::publish_zernio_instagram_reel;
-use adapters::{AdapterError, instagram::verify_instagram_publication};
 use content::Locale;
 use db::rusqlite::types::Value as SqlValue;
 use db::rusqlite::{Connection, OptionalExtension as _, Row, params, params_from_iter};
@@ -31,7 +25,13 @@ use domain::publishing::video_types::VideoTarget;
 use domain::repositories::{StudioSettingsStore, random_uuid, record_event, transaction};
 use foundation::config::PUBLISH_MAX_ATTEMPTS;
 use foundation::time::iso_at;
-use runtime::external::instagram::{InstagramCredentials, instagram_credentials_for_locale};
+use providers::adapters::video_publishers::{
+    YoutubeMetadata, instagram_container_ready, keep_youtube_upload_private, prepare_instagram_reel,
+    prepare_youtube_video, publish_instagram_reel,
+};
+use providers::adapters::zernio::publish_zernio_instagram_reel;
+use providers::adapters::{AdapterError, instagram::verify_instagram_publication};
+use providers::external::instagram::{InstagramCredentials, instagram_credentials_for_locale};
 use runtime::job_heartbeat::with_job_heartbeat;
 use serde_json::{Map, Value};
 
@@ -307,7 +307,7 @@ fn target_row(row: &Row<'_>) -> db::rusqlite::Result<Target> {
 
 /// `executeVideoJob`: the job's one platform step. `Ok(false)` is a step
 /// that did not settle the job (cancelled, published, or the lease lost).
-async fn execute_video_job(delivery: &Delivery<'_>, job: &VideoJob) -> adapters::Result<bool> {
+async fn execute_video_job(delivery: &Delivery<'_>, job: &VideoJob) -> providers::adapters::Result<bool> {
     let Some(target_id) = job.video_target_id else {
         return Err(AdapterError::message_text("Video platform job has no target."));
     };
@@ -380,7 +380,7 @@ async fn prepare_youtube(
     target: &Target,
     file_path: &str,
     locale: Locale,
-) -> adapters::Result<bool> {
+) -> providers::adapters::Result<bool> {
     let metadata = YoutubeMetadata {
         title: metadata_text(target, "title").to_owned(),
         description: compose_youtube_description(delivery.sqlite(), &target.metadata).map_err(local)?,
@@ -446,7 +446,7 @@ async fn prepare_youtube(
 
 /// `prepareZernio`: Zernio takes the public video at its publish time, so
 /// prepare is a local checkpoint only; publishing early would break the schedule.
-fn prepare_zernio(delivery: &Delivery<'_>, job: &VideoJob, target: &Target) -> adapters::Result<bool> {
+fn prepare_zernio(delivery: &Delivery<'_>, job: &VideoJob, target: &Target) -> providers::adapters::Result<bool> {
     if present(target.provider_account_id.as_deref()).is_none() {
         return Err(AdapterError::message_text("Zernio Instagram account is missing"));
     }
@@ -466,7 +466,7 @@ async fn prepare_instagram(
     target: &Target,
     draft: &VideoDraftRow,
     credentials: InstagramCredentials<'_>,
-) -> adapters::Result<bool> {
+) -> providers::adapters::Result<bool> {
     let public_url =
         video_public_url(delivery.sqlite(), delivery.config(), draft.studio_media_asset_id).map_err(local)?;
     let id = prepare_instagram_reel(
@@ -486,7 +486,7 @@ async fn prepare_instagram(
 
 /// `publishYouTube`: the upload already carries its release time, so
 /// publishing is a local settlement.
-fn publish_youtube(delivery: &Delivery<'_>, job: &VideoJob, target: &Target) -> adapters::Result<bool> {
+fn publish_youtube(delivery: &Delivery<'_>, job: &VideoJob, target: &Target) -> providers::adapters::Result<bool> {
     if present(target.external_id.as_deref()).is_none() {
         return Err(AdapterError::message_text("YouTube upload has not completed yet."));
     }
@@ -513,7 +513,7 @@ async fn publish_zernio(
     job: &VideoJob,
     target: &Target,
     draft: &VideoDraftRow,
-) -> adapters::Result<bool> {
+) -> providers::adapters::Result<bool> {
     let Some(account_id) = present(target.provider_account_id.as_deref()) else {
         return Err(AdapterError::message_text("Zernio Instagram account is missing"));
     };
@@ -538,7 +538,7 @@ async fn publish_zernio(
         if !update_active_video_target(delivery, job, target.id, &result.provider_post_id).map_err(local)? {
             return Ok(false);
         }
-        return Err(adapters::error::ambiguous_error(
+        return Err(providers::adapters::error::ambiguous_error(
             "zernio",
             "the provider accepted the publication and the platform has not confirmed it",
         ));
@@ -567,7 +567,7 @@ async fn publish_instagram(
     job: &VideoJob,
     target: &Target,
     credentials: InstagramCredentials<'_>,
-) -> adapters::Result<bool> {
+) -> providers::adapters::Result<bool> {
     let Some(container_id) = present(target.external_id.as_deref()) else {
         return Err(AdapterError::message_text("Instagram upload has not completed yet."));
     };

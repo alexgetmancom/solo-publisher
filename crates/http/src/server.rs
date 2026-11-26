@@ -104,14 +104,14 @@ mod tests {
     use std::rc::Rc;
     use std::time::Duration;
 
-    use channels::entropy::Entropy;
-    use channels::oauth_routes::ChannelRegistrar;
     use db::BackendDb;
     use domain::application::ports::{ChannelConnectionRecord, Clock};
     use domain::studio::Studio;
     use domain::studio::services::channels::ChannelInput;
     use foundation::config::{Config, SharedConfig};
     use hyper_util::server::graceful::GracefulShutdown;
+    use providers::channels::entropy::Entropy;
+    use providers::channels::oauth_routes::ChannelRegistrar;
     use runtime::http::HttpClient;
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
     use tower::Layer as _;

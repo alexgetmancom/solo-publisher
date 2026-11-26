@@ -18,7 +18,7 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use indexmap::IndexMap;
-use runtime::external::telegram::{BotApi, BotCallError, BotParams, BotResponse};
+use providers::external::telegram::{BotApi, BotCallError, BotParams, BotResponse};
 use runtime::http::{Body, BodyPart};
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
