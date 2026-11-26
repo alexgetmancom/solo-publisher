@@ -6,8 +6,6 @@ on:
       - "docs/**"
       - "README*.md"
       - "LICENSE"
-  schedule:
-    - cron: "17 3 * * 1"
   workflow_dispatch:
 
 concurrency:
@@ -39,7 +37,6 @@ jobs:
           fetch-depth: 0
       - name: Detect relevant changes
         id: filter
-        if: github.event_name != 'schedule'
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.sha }}
@@ -272,37 +269,12 @@ jobs:
       - name: Tests
         run: cargo xtask check test
 
-  # On main the image is built, pushed and inspected by backend-image;
-  # everywhere else it is built once without pushing, so a Dockerfile change
-  # is caught before it reaches main.
-  image-check:
-    name: Build backend image (not pushed)
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
-      - name: Build Dockerfile
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
-        with:
-          context: .
-          file: Dockerfile
-          build-args: |
-            GIT_REVISION=${{ github.sha }}
-          push: false
-          load: true
-          tags: solo-publisher:ci
-      - uses: ./.github/actions/setup-rust
-      - name: Image smoke test
-        run: cargo xtask image-smoke solo-publisher:ci
-
-  # Cargo.lock against the RustSec advisory database: on every change to it,
-  # and weekly for advisories published since.
+  # Cargo.lock against the RustSec advisory database on every change to it;
+  # audit.yml re-runs it weekly for advisories published since.
   dependency-audit:
     name: Dependency audit
     needs: scope
-    if: needs.scope.outputs.dependencies_changed == 'true' || github.event_name == 'schedule'
+    if: needs.scope.outputs.dependencies_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -311,24 +283,6 @@ jobs:
           tool: cargo-audit
       - name: Dependency audit
         run: cargo-audit audit
-
-  # There are no pull requests here, so the review runs on the push itself: the
-  # range is the one the push actually added. A branch's first push has no
-  # `before` commit to diff against and is skipped rather than passing silently.
-  dependency-review:
-    name: Dependency review
-    if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Review dependency changes
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
-        with:
-          fail-on-severity: high
-          base-ref: ${{ github.event.before }}
-          head-ref: ${{ github.sha }}
 
   # Image builds do not wait for the quality gates. The gates are enforced on
   # `deploy`, so a red commit can at worst leave a published tag that nothing

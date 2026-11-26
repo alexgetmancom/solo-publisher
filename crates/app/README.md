@@ -84,6 +84,5 @@ cargo xtask image-smoke solo-publisher   # what CI checks on every image it buil
 ```
 
 The healthcheck is `studio-entrypoint --ready`: `GET /readyz` on loopback at `PORT` (8788), healthy on a 2xx. Stories sign-in, once per session:
-`docker compose exec -it app ops telegram-stories-login`. CI builds the image on every push (`image-check`); on
-`main` it builds both architectures, inspects each with `cargo xtask image-smoke`, and deploys
-(`backend-image` → `deploy`).
+`docker compose exec -it app ops telegram-stories-login`. On `main` CI builds the image,
+inspects it with `cargo xtask image-smoke`, and deploys (`backend-image` → `deploy`).
