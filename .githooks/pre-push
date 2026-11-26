@@ -1,0 +1,4 @@
+#!/bin/sh
+# The fast local gate; tests and the release build run in CI, which gates the deploy.
+set -e
+cargo xtask check language fmt clippy

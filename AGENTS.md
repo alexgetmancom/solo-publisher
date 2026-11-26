@@ -59,11 +59,12 @@ is data. Convert Russian comments in lines already being edited; do not open fil
 
 # Workflow
 
-Work on `main`. Tests and a production build before every push (`cargo xtask check`: the
-language gate, `cargo fmt`/`clippy`/`test`, and the release build; `--jobs N` is passed to cargo).
-lefthook runs it as the pre-push hook: install lefthook itself (any of its distributions, e.g.
-`brew install lefthook`) and run `lefthook install` once per clone. CI/CD deploys the
-primary production revision (alex) from `main`.
+Work on `main`. The pre-push hook runs the language gate, `cargo fmt --check` and clippy
+(`cargo xtask check language fmt clippy`); tests and the release build run in CI, which gates the
+deploy. `cargo xtask check` with no steps runs all of them locally when wanted (`--jobs N` is
+passed to cargo). The hooks live in `.githooks/` (pre-commit is gitleaks, which must be
+installed); enable them once per clone with `git config core.hooksPath .githooks`. CI/CD deploys
+the primary production revision (alex) from `main`.
 
 Work that belongs to Maru carries a `Deploy-Maru: yes` trailer in the commit body. CI then promotes
 the release alex proved healthy to Maru in the same run — commit, push, and say it will land there;

@@ -272,9 +272,9 @@ jobs:
       - name: Tests
         run: cargo xtask check test
 
-  # On main the image is built, pushed and inspected per architecture by
-  # backend-image; everywhere else it is built once without pushing, so a
-  # Dockerfile change is caught before it reaches main.
+  # On main the image is built, pushed and inspected by backend-image;
+  # everywhere else it is built once without pushing, so a Dockerfile change
+  # is caught before it reaches main.
   image-check:
     name: Build backend image (not pushed)
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
@@ -351,9 +351,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # Decided once rather than inside each architecture's build: two legs
-      # reading the same tag could disagree if `latest` moved between them, and
-      # then one architecture would be rebuilt while the other was reused.
+      # Decided before the build, so an unchanged image skips the build job.
       - name: Resolve published backend image
         id: reuse
         env:
@@ -377,12 +375,7 @@ jobs:
           fi
 
   backend-image:
-    # One build per architecture on a runner of that architecture. QEMU would
-    # let one runner produce both, but emulating the Rust build turns a short
-    # build into a long one for nothing: arm64 runners are free for
-    # public repositories. Each leg pushes by digest — sharing a tag would make
-    # the two legs overwrite each other — and the manifest job joins them.
-    name: Build backend image (${{ matrix.arch }})
+    name: Build backend image
     needs: [scope, backend-image-reuse]
     if: >-
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
@@ -392,15 +385,9 @@ jobs:
       contents: read
       actions: read
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-latest
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build_image.outputs.digest }}
     steps:
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
@@ -418,97 +405,21 @@ jobs:
           file: Dockerfile
           build-args: |
             GIT_REVISION=${{ github.sha }}
-          # Pushed by digest with no tag: the two architectures are joined into
-          # one tag by the manifest job. `latest` is moved by the deploy job,
+          # Tagged with the commit only. `latest` is moved by the deploy job,
           # because the reuse check above reads it and it must keep meaning
           # "the image production is running".
-          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/solo-publisher,push-by-digest=true,name-canonical=true,push=true
+          tags: ghcr.io/${{ github.repository_owner }}/solo-publisher:${{ github.sha }}
+          push: true
+          # Layers only: the cargo build's `--mount=type=cache` target directory
+          # is not exported, so the Rust compile itself is not cached here.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Set up Rust for image smoke test
         uses: ./.github/actions/setup-rust
-      # Runs on each architecture's own runner against that architecture's
-      # image, so a self-hosted arm64 install gets the same inspection of the
-      # binaries, the entrypoint, the config check and the ops CLI as amd64.
       - name: Image smoke test
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher@${{ steps.build_image.outputs.digest }}
         run: cargo xtask image-smoke "$IMAGE"
-      - name: Record digest
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/digests
-          printf '%s' '${{ steps.build_image.outputs.digest }}' > "/tmp/digests/${{ matrix.arch }}"
-      - name: Upload digest
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: backend-digest-${{ matrix.arch }}
-          path: /tmp/digests/*
-          retention-days: 1
-
-  backend-manifest:
-    name: Join backend architectures
-    needs: [scope, backend-image-reuse, backend-image]
-    if: >-
-      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.scope.outputs.deployment_required == 'true' &&
-      (needs.backend-image.result == 'success' || needs.backend-image.result == 'skipped')
-    permissions:
-      contents: read
-      packages: write
-    runs-on: ubuntu-latest
-    outputs:
-      image_digest: ${{ steps.image.outputs.digest }}
-    steps:
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download digests
-        if: needs.backend-image-reuse.outputs.digest == ''
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: backend-digest-*
-          merge-multiple: true
-          path: /tmp/digests
-      - name: Join or reuse
-        id: image
-        env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher
-          TAG: ${{ github.sha }}
-          REUSED_DIGEST: ${{ needs.backend-image-reuse.outputs.digest }}
-        run: |
-          set -euo pipefail
-
-          if [ -n "$REUSED_DIGEST" ]; then
-            printf '%s\n' "$REUSED_DIGEST" | grep -Eq '^sha256:[0-9a-fA-F]{64}$'
-            echo "digest=$REUSED_DIGEST" >> "$GITHUB_OUTPUT"
-            echo "Reusing $IMAGE@$REUSED_DIGEST"
-            exit 0
-          fi
-
-          # Every architecture must be present. A missing one would silently
-          # publish a single-architecture image under a name the README tells
-          # people to run on both.
-          sources=()
-          for arch in amd64 arm64; do
-            digest=$(cat "/tmp/digests/$arch")
-            printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-fA-F]{64}$'
-            sources+=("$IMAGE@$digest")
-          done
-          docker buildx imagetools create -t "$IMAGE:$TAG" "${sources[@]}"
-
-          # Read the digest with a format string rather than through a pipe.
-          # `awk ... exit` closes the pipe on the first match, docker dies of
-          # EPIPE with status 255, and pipefail turns a finished push into a
-          # failed job — which is exactly what happened the first time this ran.
-          digest=$(docker buildx imagetools inspect "$IMAGE:$TAG" --format "{{.Manifest.Digest}}")
-          printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-fA-F]{64}$'
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-
-          platforms=$(docker buildx imagetools inspect "$IMAGE@$digest" | awk '$1 == "Platform:" { print $2 }' | sort -u | tr '\n' ' ')
-          echo "Published $IMAGE:$TAG@$digest for: $platforms"
-          grep -q "linux/amd64" <<<"$platforms"
-          grep -q "linux/arm64" <<<"$platforms"
 
   media-processor-image:
     name: Build media processor image
@@ -534,7 +445,8 @@ jobs:
         quality-analysis,
         rust,
         dependency-audit,
-        backend-manifest,
+        backend-image-reuse,
+        backend-image,
         media-processor-image,
       ]
     if: >-
@@ -544,7 +456,9 @@ jobs:
       needs.quality-analysis.result == 'success' &&
       needs.rust.result == 'success' &&
       (needs.dependency-audit.result == 'success' || needs.dependency-audit.result == 'skipped') &&
-      needs.backend-manifest.result == 'success' &&
+      needs.backend-image-reuse.result == 'success' &&
+      (needs.backend-image.result == 'success' ||
+        (needs.backend-image.result == 'skipped' && needs.backend-image-reuse.outputs.digest != '')) &&
       needs.media-processor-image.result == 'success'
     permissions:
       contents: read
@@ -554,6 +468,9 @@ jobs:
     concurrency:
       group: production-deploy
       cancel-in-progress: false
+    env:
+      # The published image when nothing in it changed, otherwise this run's build.
+      BACKEND_IMAGE_DIGEST: ${{ needs.backend-image-reuse.outputs.digest || needs.backend-image.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-rust
@@ -571,7 +488,7 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_AGENT_TOKEN: ${{ secrets.DEPLOY_AGENT_TOKEN }}
-          IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher@${{ needs.backend-manifest.outputs.image_digest }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher@${{ env.BACKEND_IMAGE_DIGEST }}
           MEDIA_PROCESSOR_IMAGE: ghcr.io/${{ github.repository_owner }}/alexgetman-media-processor@${{ needs.media-processor-image.outputs.image_digest }}
           RELEASE: ${{ github.sha }}
           MARU_DEPLOY_ENABLED: ${{ vars.MARU_DEPLOY_ENABLED }}
@@ -588,8 +505,7 @@ jobs:
       - name: Point latest at the deployed image
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/solo-publisher
-          DIGEST: ${{ needs.backend-manifest.outputs.image_digest }}
-        run: docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE@$DIGEST"
+        run: docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE@$BACKEND_IMAGE_DIGEST"
       # Published here rather than from a follow-up job: a whole runner boot for
       # one API call sat on the tail of every green deployment.
       - name: Publish production status
@@ -648,7 +564,7 @@ jobs:
         quality-analysis,
         rust,
         dependency-audit,
-        backend-manifest,
+        backend-image,
         media-processor-image,
         deploy,
       ]

@@ -2,9 +2,8 @@
 
 # Installing and running a Studio
 
-Requirements: Docker, and a domain whose DNS already points at the machine. The
-image is published for linux/amd64 and linux/arm64, so an ARM server needs no
-build.
+Requirements: an amd64 (x86_64) machine with Docker, and a domain whose DNS
+already points at it. The image is published for linux/amd64 only.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/install.sh | sh -s -- publisher.example.com

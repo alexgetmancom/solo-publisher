@@ -1,9 +1,0 @@
-pre-commit:
-  commands:
-    gitleaks:
-      run: gitleaks protect --staged --redact --no-banner
-
-pre-push:
-  commands:
-    quality:
-      run: cargo xtask check

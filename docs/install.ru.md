@@ -2,9 +2,8 @@
 
 # Установка и запуск Studio
 
-Понадобятся Docker и домен, DNS которого уже указывает на эту машину. Образ
-публикуется для linux/amd64 и linux/arm64, поэтому на ARM-сервере ничего
-собирать не нужно.
+Понадобятся машина amd64 (x86_64) с Docker и домен, DNS которого уже указывает
+на неё. Образ публикуется только для linux/amd64.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/alexgetmancom/solo-publisher/main/install.sh | sh -s -- publisher.example.com

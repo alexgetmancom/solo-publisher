@@ -1,5 +1,6 @@
-//! `cargo xtask check`: the gate before every push (lefthook's pre-push), and
-//! the steps CI runs one by one. Steps run in order and stop at the first failure.
+//! `cargo xtask check`: the steps CI runs one by one, and the subset the
+//! pre-push hook runs (`.githooks/pre-push`). Steps run in order and stop at the
+//! first failure.
 
 use std::ffi::OsString;
 use std::path::Path;
@@ -103,9 +104,12 @@ fn run(command: &mut Command, root: &Path) -> Result<(), String> {
 
 /// The repository is Rust; anything in TypeScript, JavaScript, Python or a
 /// shell script outside these is a second language creeping back in.
-const ALLOWED: [&str; 1] = [
+const ALLOWED: [&str; 3] = [
     // It runs on a bare host through `curl … | sh`, before Docker has pulled anything.
     "install.sh",
+    // Git runs hooks as executables; each one hands off to gitleaks or `cargo xtask`.
+    ".githooks/pre-commit",
+    ".githooks/pre-push",
 ];
 const SCRIPT_EXTENSIONS: [&str; 10] = ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "py", "pyi"];
 const IGNORED_DIRECTORIES: [&str; 6] = [".git", "node_modules", "target", "_trash-rust", "dist", "coverage"];

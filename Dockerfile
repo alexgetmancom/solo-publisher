@@ -27,11 +27,10 @@ ARG CARGO_JOBS=
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops \
-  && musl="$(uname -m)-unknown-linux-musl" \
-  && rustup target add "$musl" \
-  && cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} --target "$musl" -p deploy_agent \
+  && rustup target add x86_64-unknown-linux-musl \
+  && cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} --target x86_64-unknown-linux-musl -p deploy_agent \
   && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint target/release/ops \
-       "target/$musl/release/deploy-agent" -t /out/
+       target/x86_64-unknown-linux-musl/release/deploy-agent -t /out/
 
 # --- Runtime ---
 FROM debian:trixie-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0 AS studio

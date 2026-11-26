@@ -97,9 +97,9 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
 ## Tooling
 
 - Developer and CI tooling is `cargo xtask` (`crates/xtask`, alias in `.cargo/config.toml`): `check [--jobs N]
-  [STEP...]` (language, fmt, clippy, test, build — serial, stops at the first failure; lefthook's pre-push and CI's
-  `rust` job run it), `ops-prod`, `image-smoke <image>` (the image as an argument, not `IMAGE`), `deploy-release`
-  (CI's deployment), `family-routes` (CI pipes `caddy adapt` into it). The language gate fails on any TypeScript,
+  [STEP...]` (language, fmt, clippy, test, build — serial, stops at the first failure; CI's `rust` job runs it step by
+  step, `.githooks/pre-push` runs `language fmt clippy`), `ops-prod`, `image-smoke <image>` (the image as an argument,
+  not `IMAGE`), `deploy-release` (CI's deployment), `family-routes` (CI pipes `caddy adapt` into it). The language gate fails on any TypeScript,
   JavaScript or Python source outside the allow-list in `crates/xtask/src/check.rs`. Dropped with the TypeScript: knip,
   biome, taze, the Dockerfile workspace gate, `package.json`, `bun.lock`, `bunfig.toml`, the coverage ratchet, the
   `typescript` check step. `bun audit` is `cargo-audit audit` on `Cargo.lock`, when it changes and weekly.
@@ -131,12 +131,13 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   agent as `POST /v1/deploy`); `DEPLOY_DEFAULT_TARGET` stays removed and the single-target variables are not read
   (`deploy/README.md` derives `DEPLOY_TARGETS_JSON` from them once).
 - The agent binary ships in the Studio image (`/app/bin/deploy-agent`, built in the same Dockerfile stage for
-  `$(uname -m)-unknown-linux-musl`, so it runs on the host whatever its glibc). `cargo xtask deploy-release` copies it out
+  `x86_64-unknown-linux-musl`, so it runs on the host whatever its glibc). `cargo xtask deploy-release` copies it out
   of the image it is deploying (`docker create` + `docker cp`) into `/home/deploy/bin/deploy-agent` on every run and
   restarts the unit only when the bytes differ. Which agent the restart runs is the unit's `ExecStart`, switched once per
   host by hand. VM-106's agent is not updated by any deployment.
 - `deploy-release` reads the agent's state file with `cat` and parses it in the xtask (not `bun -e` on the host), and
   `IMAGE` must be a `ghcr.io/alexgetmancom/solo-publisher` digest before anything runs.
+- The Studio image is built for linux/amd64 only.
 - The Studio image runs on `debian:trixie-slim@sha256:8aa5a7bf…` (the media processor's pin) with `ca-certificates`,
   `tini`, setpriv from util-linux and the static ffmpeg/ffprobe 6.1.1 from `mwader/static-ffmpeg:6.1.1@sha256:a44cd22b…`;
   no Bun. Both hosts run the Rust deploy agent, which runs `studio-entrypoint --check-config` itself.
