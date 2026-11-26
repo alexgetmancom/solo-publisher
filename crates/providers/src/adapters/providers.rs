@@ -1,16 +1,16 @@
-//! The provider calls Studio waits on through the bot's `Adapters`
-//! (`domain`'s `VideoProvider`, `YoutubeUploads`; the Zernio directory is
-//! `providers::channels::zernio`): the
-//! same functions the delivery adapters use, over the live configuration.
+//! The adapters Studio's services wait on: the provider calls, the Zernio
+//! directory, and this machine's ffprobe and ffmpeg — the same functions the
+//! delivery adapters use, over the live configuration.
 
 use std::rc::Rc;
 use std::sync::Arc;
 
 use content::Locale;
 use domain::application::ports::SystemClock;
-use domain::publishing::boundaries::{ProviderOutcome, VideoProvider};
-use domain::studio::boundaries::YoutubeUploads;
+use domain::publishing::boundaries::{MediaMetadata, MediaProbe, ProviderOutcome, VideoProvider};
+use domain::studio::boundaries::{YoutubeUploads, ZernioAccount, ZernioDirectory};
 use foundation::config::{Config, SharedConfig};
+use runtime::ffmpeg::FfmpegMediaProbe;
 use runtime::http::HttpClient;
 use serde_json::Value;
 
@@ -18,6 +18,7 @@ use crate::adapters::error::AdapterError;
 use crate::adapters::ports::AdapterContext;
 use crate::adapters::video_publishers::keep_youtube_upload_private;
 use crate::adapters::zernio::{ZernioPlatform, publish_zernio_instagram_reel, zernio_post_outcome};
+use crate::external::zernio::list_zernio_accounts;
 
 pub struct ProviderCalls {
     client: HttpClient,
@@ -91,5 +92,22 @@ impl YoutubeUploads for ProviderCalls {
         keep_youtube_upload_private(&self.context(Arc::new(config.clone())), video_id, locale)
             .await
             .map_err(refused)
+    }
+}
+
+impl ZernioDirectory for ProviderCalls {
+    async fn accounts(&self, config: &Config) -> domain::Result<Vec<ZernioAccount>> {
+        list_zernio_accounts(&self.client, config)
+            .await
+            .map_err(|error| domain::Error::message(error.to_string()))
+    }
+}
+
+impl MediaProbe for ProviderCalls {
+    async fn probe(&self, path: &str) -> Result<MediaMetadata, String> {
+        FfmpegMediaProbe.probe(path).await
+    }
+    async fn audio_stats(&self, path: &str) -> Result<String, String> {
+        FfmpegMediaProbe.audio_stats(path).await
     }
 }

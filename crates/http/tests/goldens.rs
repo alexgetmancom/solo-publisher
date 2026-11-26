@@ -34,7 +34,7 @@ use content::Locale;
 use db::rusqlite::Connection;
 use db::rusqlite::types::Value as SqlValue;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::{ChannelConnectionRecord, Clock, SystemClock};
+use domain::application::ports::{ChannelConnectionRecord, Clock, FixedClock, SystemClock};
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
@@ -70,14 +70,6 @@ fn repo_root() -> PathBuf {
         .join("../..")
         .canonicalize()
         .unwrap()
-}
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
 }
 
 /// Every draw but the 12-byte IV fills its buffer with a counter, as the

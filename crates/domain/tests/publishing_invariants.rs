@@ -6,15 +6,12 @@
 mod support;
 
 use std::cell::{Cell, RefCell};
-use std::future::Future;
-use std::pin::pin;
-use std::task::{Context, Poll, Waker};
 
 use db::rusqlite::{Connection, OptionalExtension};
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::{DraftPatch, StoryPublishMode};
+use domain::application::ports::{DraftPatch, FixedClock, StoryPublishMode};
 use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia,
+    AuthCircuit, AuthCircuitState, Boundaries, MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia,
     StoryCardState, StoryCards, UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
 };
 use domain::publishing::delivery_payload::{
@@ -43,17 +40,11 @@ use foundation::config::{PUBLISH_MAX_ATTEMPTS, PUBLISH_PARTIAL_MAX_ATTEMPTS};
 use foundation::time::{Zone, parse_iso_instant, to_iso_string};
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
-use support::FixedClock;
+use support::{FixedJitter, ready};
 
 const T0: &str = "2026-03-01T10:00:00.000Z";
 
-struct Half;
-
-impl Jitter for Half {
-    fn unit(&self) -> f64 {
-        0.5
-    }
-}
+const HALF: FixedJitter = FixedJitter(0.5);
 
 /// Records what publishing told the boundaries it reports to.
 #[derive(Default)]
@@ -146,7 +137,7 @@ impl World {
             unsafe_db(&self.db),
             &self.clock,
             Boundaries {
-                jitter: &Half,
+                jitter: &HALF,
                 bell: recorder,
                 auth_circuit: recorder,
                 usage: recorder,
@@ -267,13 +258,6 @@ fn scope(post_id: i64) -> RequeueScope {
     }
 }
 
-fn ready<T>(future: impl Future<Output = T>) -> T {
-    match pin!(future).poll(&mut Context::from_waker(Waker::noop())) {
-        Poll::Ready(value) => value,
-        Poll::Pending => panic!("a fake boundary never waits"),
-    }
-}
-
 const POLICY: RetryPolicy = RetryPolicy {
     max_attempts: 4,
     backoff_base_seconds: 60,
@@ -289,7 +273,7 @@ fn retries_transient_errors_within_the_configured_budget() {
         0,
         POLICY,
         0,
-        &Half,
+        &HALF,
     );
     assert_eq!(
         (transition.attempt, transition.error_class, transition.status),
@@ -301,18 +285,18 @@ fn retries_transient_errors_within_the_configured_budget() {
 #[test]
 fn gives_unknown_errors_one_safe_retry_and_never_retries_permanent_errors() {
     let unknown = PublishFailure::new("unexpected parser failure");
-    assert_eq!(failed_job_transition(&unknown, 0, POLICY, 0, &Half).status, "queued");
-    assert_eq!(failed_job_transition(&unknown, 1, POLICY, 0, &Half).status, "failed");
+    assert_eq!(failed_job_transition(&unknown, 0, POLICY, 0, &HALF).status, "queued");
+    assert_eq!(failed_job_transition(&unknown, 1, POLICY, 0, &HALF).status, "failed");
     assert_eq!(
-        failed_job_transition(&PublishFailure::new("HTTP 403 forbidden"), 0, POLICY, 0, &Half).status,
+        failed_job_transition(&PublishFailure::new("HTTP 403 forbidden"), 0, POLICY, 0, &HALF).status,
         "failed"
     );
 }
 
 #[test]
 fn a_partial_publication_uses_the_same_curve() {
-    assert_eq!(partial_publication_transition(0, POLICY, 0, &Half).status, "queued");
-    let last = partial_publication_transition(3, POLICY, 0, &Half);
+    assert_eq!(partial_publication_transition(0, POLICY, 0, &HALF).status, "queued");
+    let last = partial_publication_transition(3, POLICY, 0, &HALF);
     assert_eq!((last.attempt, last.status, last.next_attempt_at), (4, "failed", None));
 }
 
@@ -373,11 +357,11 @@ fn auth_is_its_own_class_and_an_open_breaker_is_transient() {
 fn next_retry_honours_and_caps_a_provider_delay() {
     let now = parse_iso_instant("2026-01-01T00:00:00.000Z").unwrap().as_millisecond();
     assert_eq!(
-        next_retry_at(1, 60, 3600, now, Some(45.0), &Half),
+        next_retry_at(1, 60, 3600, now, Some(45.0), &HALF),
         "2026-01-01T00:00:45.000Z"
     );
     assert_eq!(
-        next_retry_at(1, 60, 300, now, Some(10_000.0), &Half),
+        next_retry_at(1, 60, 300, now, Some(10_000.0), &HALF),
         "2026-01-01T00:05:00.000Z"
     );
 }

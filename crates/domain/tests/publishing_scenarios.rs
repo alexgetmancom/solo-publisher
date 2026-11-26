@@ -5,24 +5,18 @@
 //! fixed clock and jitter, and every step's result and every table's rows must
 //! come out identical. The tables the spec ignores belong to boundaries faked
 //! here (the credential breaker, runtime usage); the video completion notice is
-//! faked with the same rule, so its journal entry is compared.
+//! the real one, so its journal entry is compared.
 
 mod support;
 
 use std::cell::Cell;
-use std::future::Future;
 use std::path::{Path, PathBuf};
-use std::pin::pin;
-use std::task::{Context, Poll, Waker};
 
 use content::Locale;
-use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::{DomainEventInput, DraftPatch, DraftRecord, Severity, StoryPublishMode};
-use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Boundaries, Jitter, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards,
-    UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
-};
+use domain::application::ports::{DomainEventInput, DraftPatch, DraftRecord, FixedClock};
+use domain::delivery::VideoCompletionNotice;
+use domain::publishing::boundaries::{Boundaries, NoWorker, ProviderOutcome, VideoProvider};
 use domain::publishing::errors::PublishFailure;
 use domain::publishing::extra_delivery::ExtraDeliveryScope;
 use domain::publishing::publication_plan::PublishMode;
@@ -32,133 +26,15 @@ use domain::publishing::requeue::{AudienceReached, RETRY_UNLESS_HELD, RequeueOpt
 use domain::publishing::scheduled_draft_mutation::ScheduledDraftMutation;
 use domain::publishing::video_settle::{KnownPublication, SettleVideoInput};
 use domain::publishing::video_types::VideoTarget;
-use domain::publishing::{Publishing, delivery_payload, preflight, queue, state};
-use domain::repositories::{DraftStore, record_event};
+use domain::publishing::{Publishing, delivery_payload, preflight, queue};
+use domain::repositories::DraftStore;
 use jiff::Timestamp;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
-use support::{FixedClock, arg, differences, dump, instant, out, resolve};
+use support::{FixedJitter, Inert, arg, differences, dump, instant, out, ready, resolve};
 
 fn spec_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/publishing_scenarios.json")
-}
-
-struct FixedJitter(f64);
-
-impl Jitter for FixedJitter {
-    fn unit(&self) -> f64 {
-        self.0
-    }
-}
-
-/// Rings, breaker reports and usage go nowhere: the tables they own are
-/// ignored on both sides.
-struct Silent;
-
-impl WorkerBell for Silent {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
-}
-
-impl AuthCircuit for Silent {
-    fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        Ok(())
-    }
-    fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        Ok(())
-    }
-    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
-        Ok(Vec::new())
-    }
-}
-
-impl UsageMeter for Silent {
-    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
-}
-
-/// No scenario renders Story cards: there are none to read or discard.
-impl StoryCards for Silent {
-    fn queue(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        panic!("no scenario queues Story cards")
-    }
-    fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
-        Ok(None)
-    }
-    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
-        Ok(Vec::new())
-    }
-    fn set_publish_mode(&self, _: &Connection, _: i64, _: StoryPublishMode) -> domain::Result<()> {
-        panic!("no scenario sets a Story publish mode")
-    }
-    fn discard(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        Ok(())
-    }
-}
-
-/// The delivery rule for the video completion notice, so the notice it
-/// journals is compared with the golden's.
-struct Completion<'a>(&'a FixedClock);
-
-impl VideoCompletion for Completion<'_> {
-    fn record_if_final(&self, sqlite: &Connection, video_draft_id: i64) -> domain::Result<()> {
-        const GRACE_MS: i64 = 15 * 60 * 1000;
-        let targets: Vec<(String, Option<String>, String)> = sqlite
-            .prepare(
-                r#"select "status", "provider_post_id", "updated_at" from "video_targets" where "video_draft_id" = ?"#,
-            )?
-            .query_map([video_draft_id], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
-            .collect::<Result<_, _>>()?;
-        if targets.is_empty() || !targets.iter().all(|(status, ..)| state::is_video_target_final(status)) {
-            return Ok(());
-        }
-        let now = self.0.0.get().as_millisecond();
-        let awaiting_provider = targets.iter().any(|(status, provider_post_id, updated_at)| {
-            status == "verification_required"
-                && provider_post_id.as_deref().is_some_and(|id| !id.is_empty())
-                && now
-                    - foundation::time::parse_iso_instant(updated_at)
-                        .unwrap()
-                        .as_millisecond()
-                    < GRACE_MS
-        });
-        if awaiting_provider {
-            return Ok(());
-        }
-        let count = |wanted: &str| targets.iter().filter(|(status, ..)| status == wanted).count();
-        let (failed, awaiting) = (count("failed"), count("verification_required"));
-        record_event(
-            sqlite,
-            self.0,
-            &DomainEventInput {
-                publication_ref: Some(format!("video:{video_draft_id}")),
-                event_type: "delivery.video.completed".into(),
-                severity: if failed + awaiting > 0 {
-                    Severity::Warn
-                } else {
-                    Severity::Info
-                },
-                target: None,
-                message: if failed > 0 {
-                    format!("Video #{video_draft_id} completed with {failed} failed target(s)")
-                } else if awaiting > 0 {
-                    format!("Video #{video_draft_id} completed with {awaiting} unconfirmed target(s)")
-                } else {
-                    format!("Video #{video_draft_id} published successfully")
-                },
-                details: Some(
-                    json!({
-                        "videoDraftId": video_draft_id, "total": targets.len(), "failed": failed,
-                        "awaiting": awaiting, "published": count("published"),
-                    })
-                    .as_object()
-                    .unwrap()
-                    .clone(),
-                ),
-                cooldown_seconds: Some(60 * 60),
-            },
-        )?;
-        Ok(())
-    }
 }
 
 /// The scenarios never reach a provider.
@@ -170,14 +46,6 @@ impl VideoProvider for NoProvider {
     }
     async fn publish_instagram_reel(&self, _: &str, _: &str, _: &Value, _: &str) -> domain::Result<ProviderOutcome> {
         panic!("the scenarios never reach a provider")
-    }
-}
-
-/// The fakes are synchronous, so every future is ready on its first poll.
-fn ready<T>(future: impl Future<Output = T>) -> T {
-    match pin!(future).poll(&mut Context::from_waker(Waker::noop())) {
-        Poll::Ready(value) => value,
-        Poll::Pending => panic!("a fake boundary never waits"),
     }
 }
 
@@ -620,16 +488,16 @@ fn run(spec: &Value, scenario: &Value) -> Value {
     let clock = FixedClock(Cell::new(instant(&spec["clock"])));
     let sqlite = unsafe_db(&backend_db);
     let jitter = FixedJitter(spec["jitter"].as_f64().unwrap());
-    let completion = Completion(&clock);
+    let completion = VideoCompletionNotice::new(&clock);
     let publishing = Publishing::new(
         sqlite,
         &clock,
         Boundaries {
             jitter: &jitter,
-            bell: &Silent,
-            auth_circuit: &Silent,
-            usage: &Silent,
-            story_cards: &Silent,
+            bell: &NoWorker,
+            auth_circuit: &Inert,
+            usage: &Inert,
+            story_cards: &Inert,
             video_completion: &completion,
         },
     );

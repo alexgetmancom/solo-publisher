@@ -16,31 +16,25 @@
 mod support;
 
 use std::cell::Cell;
-use std::future::Future;
 use std::path::{Path, PathBuf};
-use std::pin::pin;
-use std::task::{Context, Poll, Waker};
 
 use content::Locale;
 use content::message::DraftMessage;
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
 use domain::application::conversation_flow::{accept_flow, back_flow};
-use domain::application::ports::ApplicationPorts;
+use domain::application::ports::{ApplicationPorts, FixedClock};
 use domain::notifications::ReminderJobs;
 use domain::publishing::Publishing;
 use domain::publishing::article_publish::PublishArticleInput;
-use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, UsageMeter,
-    VideoCompletion, VideoProvider, WorkerBell,
-};
+use domain::publishing::boundaries::{Boundaries, MediaMetadata, MediaProbe, NoWorker, ProviderOutcome, VideoProvider};
 use domain::publishing::platform_profiles::platform_profile;
 use domain::publishing::video_types::VideoTarget;
 use domain::story_cards::StoryCardStore;
 use domain::studio::Studio;
 use domain::studio::boundaries::{
     CapabilityReportEntry, CapabilityStatus, ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform,
-    Readiness, StoryDerivatives, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory,
+    Readiness, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory,
 };
 use domain::studio::config::studio_config;
 use domain::studio::services::create_studio_services;
@@ -54,7 +48,7 @@ use foundation::config::Config;
 use jiff::Timestamp;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
-use support::{FixedClock, arg, differences, dump, instant, out, resolve};
+use support::{FixedJitter, Inert, arg, differences, dump, instant, out, ready, resolve};
 
 fn spec_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/studio_scenarios.json")
@@ -62,49 +56,6 @@ fn spec_path() -> PathBuf {
 
 fn base_dir() -> PathBuf {
     support::repo_root().join("_trash-rust/tmp/studio-scenarios")
-}
-
-struct Silent;
-
-impl Jitter for Silent {
-    fn unit(&self) -> f64 {
-        0.5
-    }
-}
-
-impl WorkerBell for Silent {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
-}
-
-/// No scenario settles an attempt, and the breaker has no records.
-impl AuthCircuit for Silent {
-    fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        panic!("no scenario settles a publish attempt")
-    }
-    fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        panic!("no scenario settles a publish attempt")
-    }
-    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
-        Ok(Vec::new())
-    }
-}
-
-impl UsageMeter for Silent {
-    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
-}
-
-impl VideoCompletion for Silent {
-    fn record_if_final(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        Ok(())
-    }
-}
-
-/// Media of drafts going to a Story: no scenario's draft goes to one.
-impl StoryDerivatives for Silent {
-    fn ensure(&self, local_path: &str, _: bool, _: i64) {
-        panic!("no scenario prepares Story media ({local_path})")
-    }
 }
 
 /// `capabilityReport` over the registry for the spec's configuration.
@@ -184,7 +135,9 @@ impl Readiness for Report<'_> {
 }
 
 /// A Studio with no OAuth app configured.
-impl ChannelConnectLinks for Silent {
+struct Unconfigured;
+
+impl ChannelConnectLinks for Unconfigured {
     fn meta_oauth_connect_url(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
         Err(domain::Error::message("Meta OAuth is not configured"))
     }
@@ -249,14 +202,6 @@ impl ZernioDirectory for World {
             return Err(domain::Error::message("ZERNIO_API_KEY is missing"));
         }
         Ok(self.accounts.clone())
-    }
-}
-
-/// The fakes are synchronous, so every future is ready on its first poll.
-fn ready<T>(future: impl Future<Output = T>) -> T {
-    match pin!(future).poll(&mut Context::from_waker(Waker::noop())) {
-        Poll::Ready(value) => value,
-        Poll::Pending => panic!("a fake boundary never waits"),
     }
 }
 
@@ -676,20 +621,20 @@ fn run(spec: &Value, world: &World, scenario: &Value) -> Value {
             sqlite,
             &clock,
             Boundaries {
-                jitter: &Silent,
-                bell: &Silent,
-                auth_circuit: &Silent,
-                usage: &Silent,
+                jitter: &FixedJitter(0.5),
+                bell: &NoWorker,
+                auth_circuit: &Inert,
+                usage: &Inert,
                 story_cards: &cards,
-                video_completion: &Silent,
+                video_completion: &Inert,
             },
         ),
         &config,
         StudioBoundaries {
             reminders: &jobs,
-            story_derivatives: &Silent,
+            story_derivatives: &Inert,
             readiness: &report,
-            connect_links: &Silent,
+            connect_links: &Unconfigured,
         },
     );
     let ignored: Vec<String> = serde_json::from_value(spec["ignoredTables"].clone()).unwrap();

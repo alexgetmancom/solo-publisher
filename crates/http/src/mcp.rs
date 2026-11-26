@@ -15,7 +15,6 @@ use axum::extract::{Request, State};
 use axum::http::HeaderMap;
 use axum::response::Response;
 use axum::routing::get;
-use bot::DynAdapters;
 use db::BackendDb;
 use domain::application::ports::{Clock as _, SystemClock};
 use domain::publishing::boundaries::UsageMeter;
@@ -24,8 +23,8 @@ use foundation::config::Config;
 use http_body::Frame;
 use http_body_util::BodyExt as _;
 use ops::context::{OpError, Surface};
-use ops::host::OpsAdapters;
 use ops::mcp::McpServer;
+use providers::adapters::ProviderCalls;
 use runtime::http::HttpClient;
 use serde_json::{Value, json};
 
@@ -158,7 +157,7 @@ struct BackendSurface<'a> {
     backend: &'a dyn Backend,
     config: Arc<Config>,
     http: HttpClient,
-    adapters: OnceCell<DynAdapters>,
+    adapters: OnceCell<ProviderCalls>,
 }
 
 impl<'a> BackendSurface<'a> {
@@ -185,10 +184,10 @@ impl Surface for BackendSurface<'_> {
         Ok(self.backend.studio(config))
     }
 
-    fn adapters(&self) -> Result<&DynAdapters, OpError> {
+    fn adapters(&self) -> Result<&ProviderCalls, OpError> {
         Ok(self
             .adapters
-            .get_or_init(|| OpsAdapters::boxed(self.http.clone(), self.backend.config().clone())))
+            .get_or_init(|| ProviderCalls::new(self.http.clone(), self.backend.config().clone())))
     }
 
     fn usage(&self) -> &dyn UsageMeter {

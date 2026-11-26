@@ -18,7 +18,6 @@
 pub(crate) mod deepseek;
 pub(crate) mod deploy_agent;
 pub(crate) mod host;
-pub(crate) mod media_probe;
 pub(crate) mod pending;
 pub(crate) mod telegram;
 pub(crate) mod triggers;
@@ -32,11 +31,12 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use bot::api::types::Update;
-use bot::{Bot, BotDeps, DynAdapters};
+use bot::{Bot, BotDeps};
 use db::BackendDb;
 use foundation::config::{SharedConfig, load_config};
 use foundation::i18n::{Key, t};
 use jiff::Timestamp;
+use providers::adapters::ProviderCalls;
 use providers::external::telegram::BotApi;
 use runtime::http::HttpClient;
 use serde_json::{Value, json};
@@ -45,7 +45,8 @@ use std::future::Future;
 
 use deepseek::GoldenDeepSeek;
 use deploy_agent::GoldenDeployAgent;
-use host::{FixedClock, GoldenAdapters, GoldenHost};
+use domain::application::ports::FixedClock;
+use host::GoldenHost;
 use telegram::FakeTelegram;
 use zernio::GoldenZernio;
 
@@ -505,8 +506,8 @@ impl Harness {
             db,
             clock: clock.clone(),
             config: config.clone(),
-            host: Rc::new(GoldenHost::new(config, clock.clone())),
-            adapters: DynAdapters(Box::new(GoldenAdapters { zernio: zernio.clone() })),
+            host: Rc::new(GoldenHost::new(config.clone(), clock.clone())),
+            adapters: ProviderCalls::new(HttpClient::new(zernio.clone()), config),
             telegram: bot_api,
             deploy_agent: deploy_agent.clone(),
         });

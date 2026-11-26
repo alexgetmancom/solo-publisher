@@ -15,7 +15,7 @@ use domain::application::ports::SystemClock;
 use foundation::config::{Config, SharedConfig, load_config, process_env};
 use foundation::logger::{LogLevel, configure_logging, log};
 use http_edge::{BotBackend, HttpState};
-use ops::host::OpsAdapters;
+use providers::adapters::ProviderCalls;
 use providers::external::telegram::BotApi;
 use runtime::http::{HttpClient, ReqwestTransport};
 use runtime::scheduler::ScheduledLoop;
@@ -127,7 +127,7 @@ async fn run(
         clock: Rc::new(SystemClock),
         config: config.clone(),
         host: Rc::clone(&host) as _,
-        adapters: OpsAdapters::boxed(http.clone(), config),
+        adapters: ProviderCalls::new(http.clone(), config),
         telegram,
         deploy_agent: Rc::new(HttpDeployAgent::new(http.clone())),
     });

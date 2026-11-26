@@ -14,7 +14,7 @@ use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::Clock;
+use domain::application::ports::FixedClock;
 use foundation::config::{Config, load_config};
 use jiff::Timestamp;
 use public_site::{PublicSite, SiteRequest, SiteResponse};
@@ -27,14 +27,6 @@ fn repo_root() -> PathBuf {
         .join("../..")
         .canonicalize()
         .unwrap()
-}
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
 }
 
 fn instant(value: &str) -> Timestamp {

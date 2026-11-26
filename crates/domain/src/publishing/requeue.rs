@@ -18,7 +18,7 @@ use super::delivery_payload::{
 use super::job_policy::{requeued_post_target, requeued_publish_job_columns};
 use super::payload::localize_target_payload;
 use super::publication_source::PublicationSource;
-use super::queue_state::{assignments, insert_event, int, parse_payload, text};
+use super::queue_state::{JournalEntry, assignments, insert_event, int, parse_payload, text};
 use crate::Result;
 use crate::repositories::transaction;
 use crate::targets::{is_site_target, target_locale};
@@ -398,10 +398,14 @@ fn mirror_requeued_target(
         sqlite,
         Some(publication_key),
         Some(target),
-        "publish.target.identity_dropped",
-        "warn",
-        &format!("{target} was requeued while it still named a live post; that post is no longer referenced"),
-        &json!({ "external_id": external_id, "url": url }),
+        JournalEntry {
+            event_type: "publish.target.identity_dropped",
+            severity: "warn",
+            message: &format!(
+                "{target} was requeued while it still named a live post; that post is no longer referenced"
+            ),
+            details: json!({ "external_id": external_id, "url": url }),
+        },
         now,
     )
 }

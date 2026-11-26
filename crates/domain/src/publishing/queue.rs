@@ -191,10 +191,12 @@ impl Publishing<'_> {
                     sqlite,
                     Some(&row.publication_key),
                     Some(&row.target),
-                    "publish.job.duplicate_refused",
-                    "error",
-                    &error,
-                    &json!({ "job_id": row.job_id, "external_id": external_id }),
+                    JournalEntry {
+                        event_type: "publish.job.duplicate_refused",
+                        severity: "error",
+                        message: &error,
+                        details: json!({ "job_id": row.job_id, "external_id": external_id }),
+                    },
                     &now,
                 )?;
                 return Ok(None);
@@ -271,10 +273,12 @@ impl Publishing<'_> {
                     sqlite,
                     Some(&row.publication_key),
                     Some(&row.target),
-                    "publish.job.cancelled",
-                    "warn",
-                    &message,
-                    &json!({ "job_id": row.job_id }),
+                    JournalEntry {
+                        event_type: "publish.job.cancelled",
+                        severity: "warn",
+                        message: &message,
+                        details: json!({ "job_id": row.job_id }),
+                    },
                     &now,
                 )?;
                 return Ok(None);
@@ -300,10 +304,12 @@ impl Publishing<'_> {
                 sqlite,
                 Some(&row.publication_key),
                 Some(&row.target),
-                "publish.job.claimed",
-                "info",
-                &format!("Publishing {}", row.target),
-                &json!({ "job_id": row.job_id, "worker": worker }),
+                JournalEntry {
+                    event_type: "publish.job.claimed",
+                    severity: "info",
+                    message: &format!("Publishing {}", row.target),
+                    details: json!({ "job_id": row.job_id, "worker": worker }),
+                },
                 &now,
             )?;
             Ok(Some(ClaimedPublishJob {
@@ -383,7 +389,6 @@ impl Publishing<'_> {
                 delete_superseded_jobs(sqlite, &job.target, job.job_id, &job.publication_key)?;
                 settle_job(
                     sqlite,
-                    job.job_id,
                     None,
                     &job.publication_key,
                     &job.target,
@@ -456,12 +461,8 @@ impl Publishing<'_> {
             && let Some(Value::String(resume_key)) = result.get("resumeKey")
             && !resume_key.is_empty()
         {
-            let ids: Vec<String> = match result.get("ids") {
-                Some(Value::Array(ids)) => ids.iter().map(string_of).filter(|id| !id.is_empty()).collect(),
-                _ => Vec::new(),
-            };
             let retry =
-                self.settle_partial_publication(&job, &ids, resume_key, result, &now, lock_id, provider_answered_at)?;
+                self.settle_partial_publication(&job, resume_key, result, &now, lock_id, provider_answered_at)?;
             if !retry {
                 refresh_publication_owner(self, &job.publication_key)?;
             }
@@ -484,8 +485,8 @@ impl Publishing<'_> {
         let settled = self.with_lease(job_id, || {
             settle_job(
                 sqlite,
-                job_id,
                 Some(FencedPatch {
+                    job_id,
                     patch: vec![
                         ("status", text(normalized.status)),
                         ("current_phase", opt_text(None::<String>)),
@@ -591,8 +592,8 @@ impl Publishing<'_> {
         let settled = self.with_lease(job.job_id, || {
             settle_job(
                 sqlite,
-                job.job_id,
                 Some(FencedPatch {
+                    job_id: job.job_id,
                     patch: vec![
                         ("status", text("queued")),
                         ("current_phase", opt_text(None::<String>)),
@@ -647,8 +648,8 @@ impl Publishing<'_> {
             delete_superseded_jobs(sqlite, &job.target, job.job_id, &job.publication_key)?;
             settle_job(
                 sqlite,
-                job.job_id,
                 Some(FencedPatch {
+                    job_id: job.job_id,
                     patch: vec![
                         ("status", text("verification_required")),
                         ("current_phase", opt_text(None::<String>)),
@@ -690,17 +691,19 @@ impl Publishing<'_> {
 
     /// Puts a half-finished publication back in the queue carrying what it
     /// already published, and reports whether it is going to run again.
-    #[allow(clippy::too_many_arguments)]
     fn settle_partial_publication(
         &self,
         job: &PublishJobRow,
-        ids: &[String],
         payload_key: &str,
         result: &PublishResult,
         now: &str,
         lock_id: &str,
         provider_answered_at: Option<&str>,
     ) -> Result<bool> {
+        let ids: Vec<String> = match result.get("ids") {
+            Some(Value::Array(ids)) => ids.iter().map(string_of).filter(|id| !id.is_empty()).collect(),
+            _ => Vec::new(),
+        };
         let transition = partial_publication_transition(
             job.attempt_count as u32,
             partial_retry_policy(),
@@ -745,8 +748,8 @@ impl Publishing<'_> {
             delete_superseded_jobs(sqlite, &job.target, job.job_id, &job.publication_key)?;
             settle_job(
                 sqlite,
-                job.job_id,
                 Some(FencedPatch {
+                    job_id: job.job_id,
                     patch: vec![
                         ("status", text(status)),
                         ("current_phase", opt_text(None::<String>)),
@@ -765,7 +768,7 @@ impl Publishing<'_> {
                 &vec![
                     ("status", text(status)),
                     ("external_id", opt_text(ids.first().cloned())),
-                    ("external_ids_json", strings_json(ids)),
+                    ("external_ids_json", strings_json(&ids)),
                     ("error", text(error.as_str())),
                     ("skipped", int(0)),
                     ("updated_at", text(now)),
@@ -837,8 +840,8 @@ impl Publishing<'_> {
             delete_superseded_jobs(sqlite, &job.target, job_id, &job.publication_key)?;
             settle_job(
                 sqlite,
-                job_id,
                 Some(FencedPatch {
+                    job_id,
                     patch: vec![
                         ("status", text(transition.status)),
                         ("current_phase", opt_text(None::<String>)),
@@ -911,8 +914,8 @@ impl Publishing<'_> {
             delete_superseded_jobs(sqlite, &job.target, job_id, &job.publication_key)?;
             settle_job(
                 sqlite,
-                job_id,
                 Some(FencedPatch {
+                    job_id,
                     patch: vec![
                         ("status", text("verification_required")),
                         ("attempt_count", int(job.attempt_count + 1)),

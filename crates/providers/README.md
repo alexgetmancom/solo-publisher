@@ -29,7 +29,7 @@ The delivery workflow (a later slice) drives the adapters through `SocialAdapter
 | `zernio` | The Zernio adapter |
 | `video_publishers` | The provider calls of the video worker: YouTube resumable upload, keep-private, verify; Reels container, ready, publish; the video absence check |
 | `remote_media_processor` | The remote media processor client (media transform key, atomic response write) |
-| `providers` | `ProviderCalls`: what the bot's `Adapters` calls (Zernio post outcome, Zernio Instagram Reel publish, keep a YouTube upload private, list Zernio accounts) |
+| `providers` | `ProviderCalls`: the adapters Studio's services wait on (Zernio post outcome, Zernio Instagram Reel publish, keep a YouTube upload private, list Zernio accounts, ffprobe/ffmpeg) |
 
 ### The port
 
@@ -50,8 +50,8 @@ anything else goes to `failPublishJob` via `to_publish_failure()` / `class()`.
 
 Wiring for the integrator: `PreparedMedia::new(Rc<dyn MediaPreparation>)` is the `prepare` (the delivery slice
 implements `MediaPreparation` with `prepareMediaItems` and `awaitPreparedStoryMedia`); `ProviderCalls::new(client,
-config)` implements `VideoProvider` and `YoutubeUploads`, so `AppAdapters` forwards `post_outcome`,
-`publish_instagram_reel` and `keep_youtube_private` to it (`zernio_accounts` is `channels::zernio::ZernioAccounts`);
+config)` implements `MediaProbe`, `VideoProvider`, `YoutubeUploads` and `ZernioDirectory`, and is what the bot, the
+CLI and the MCP server hand Studio's services;
 `mtproto::MtprotoStories::new(config)` is the `stories`.
 
 ### Telegram Stories over MTProto
@@ -118,7 +118,6 @@ needs stay in `domain::channels`; channel administration (register, Zernio route
 | `x`, `youtube`, `api_keys` | X and YouTube OAuth and tokens; API-key services |
 | `connect` | `start_connect`, `ConnectLinks` (the real `ChannelConnectLinks`) |
 | `registry` | channel identity, destinations and target routing |
-| `zernio` | `ZernioAccounts`: the Zernio directory over its account list |
 | `oauth_routes` | the browser side of connecting an account, framework-free |
 | `observability::{cycle, memory, token_health}` | the observability tick, process memory and the process half of runtime health, token health |
 | `loops` | the `platform-tokens`, `credentials`, `x-token`, `observability` loop bodies |
@@ -134,7 +133,7 @@ loops.start(X_TOKEN.0, X_TOKEN.1, move || x_token_tick(&config, &db, &http));
 loops.start(OBSERVABILITY, observability_interval(&config), move || observability_tick(&config, &db, &http));
 ```
 
-Call `observability::memory::process_boot()` once at startup so the boot time is the process's. `app/src/host.rs` uses `ConnectLinks::new(SystemClock, OsEntropy)` and `ZernioAccounts`.
+Call `observability::memory::process_boot()` once at startup so the boot time is the process's. `app/src/host.rs` uses `ConnectLinks::new(SystemClock, OsEntropy)`.
 
 `crates/http` (`oauth.rs`) mounts `oauth_routes::{meta_start, meta_callback, x_start, x_callback, youtube_start,
 youtube_callback}` with an `OauthContext` (live config, connection, `HttpClient`, clock, entropy, and the Studio's

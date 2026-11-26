@@ -21,7 +21,8 @@ use settings::SettingsService;
 use videos::VideoService;
 
 use super::Studio;
-use super::boundaries::StudioAdapters;
+use super::boundaries::{YoutubeUploads, ZernioDirectory};
+use crate::publishing::boundaries::{MediaProbe, VideoProvider};
 
 /// Every Studio service over one handle and one set of adapters.
 #[derive(Clone, Copy)]
@@ -36,7 +37,10 @@ pub struct StudioServices<'a, A> {
 }
 
 /// `createStudioServices`.
-pub fn create_studio_services<'a, A: StudioAdapters>(studio: Studio<'a>, adapters: &'a A) -> StudioServices<'a, A> {
+pub fn create_studio_services<'a, A: MediaProbe + VideoProvider + YoutubeUploads + ZernioDirectory>(
+    studio: Studio<'a>,
+    adapters: &'a A,
+) -> StudioServices<'a, A> {
     StudioServices {
         posts: PostService::new(studio),
         media: MediaService::new(studio),

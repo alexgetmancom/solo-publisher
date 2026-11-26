@@ -2,7 +2,7 @@
 //! complete publication plan.
 
 use content::Locale;
-use content::draft_content::draft_locale_content;
+use content::draft_content::{DraftLocaleContent, draft_locale_content};
 use content::message::{MediaItem, first_line, slugify};
 use content::text::entities_to_html;
 use content::thread::{LocalizedThreadPart, joined_thread, localized_thread};
@@ -90,11 +90,8 @@ pub struct PublicationPlan {
     pub locales: [PlanLocale; 2],
 }
 
-#[allow(clippy::too_many_arguments)]
 fn locale_source(
-    text: &str,
-    entities: &[content::message::Entity],
-    media: &[MediaItem],
+    content: &DraftLocaleContent,
     story_media: Vec<MediaItem>,
     slug: String,
     publish_at: Option<String>,
@@ -102,15 +99,16 @@ fn locale_source(
     thread: Vec<LocalizedThreadPart>,
 ) -> PublicationLocaleSource {
     // The site shows a thread as one page: every post's pictures belong to it.
-    let site_media = media
+    let site_media = content
+        .media
         .iter()
         .chain(thread.iter().flat_map(|part| part.media.iter()))
         .cloned()
         .collect();
     PublicationLocaleSource {
-        text: text.to_owned(),
-        entities: entities.to_vec(),
-        media: media.to_vec(),
+        text: content.text.clone(),
+        entities: content.entities.clone(),
+        media: content.media.clone(),
         story_media,
         site_media,
         slug,
@@ -153,9 +151,7 @@ pub fn create_publication_plan(
         draft_id,
         post_id,
         ru: locale_source(
-            &ru.text,
-            &ru.entities,
-            &ru.media,
+            &ru,
             story_cards.map(|cards| vec![cards.ru.clone()]).unwrap_or_default(),
             slug_ru,
             schedule.ru_at.clone(),
@@ -163,9 +159,7 @@ pub fn create_publication_plan(
             thread_ru,
         ),
         en: locale_source(
-            &en.text,
-            &en.entities,
-            &en.media,
+            &en,
             story_cards.map(|cards| vec![cards.en.clone()]).unwrap_or_default(),
             slug_en,
             schedule.en_at.clone(),

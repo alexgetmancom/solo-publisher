@@ -23,6 +23,5 @@ pub mod registry;
 pub mod token_store;
 pub mod x;
 pub mod youtube;
-pub mod zernio;
 
 pub use error::{Error, Result};

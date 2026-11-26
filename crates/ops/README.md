@@ -10,7 +10,7 @@ are projections of it.
 | `guide.rs` | the `guide` catalog and routing |
 | `cli.rs`, `main.rs` | the binary `ops` and its argument parsing |
 | `context.rs` | `OperationContext`, `Surface`, `Terminal`, `Input`, `OpError` |
-| `host.rs` | `ProcessSurface`, `OpsHost`, `OpsAdapters`, `ProcessTerminal`: the services built inside the CLI process |
+| `host.rs` | `ProcessSurface`, `OpsHost`, `ProcessTerminal`: the services built inside the CLI process |
 | `mcp.rs` | `McpServer::respond`, 39 `studio_*` tools, `ops_*` projection, `submit_feedback` |
 | `handlers/{reads,commands,lifecycle,media,admin}.rs` | the operation handlers, by area |
 

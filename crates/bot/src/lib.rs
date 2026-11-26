@@ -40,7 +40,7 @@ pub mod workers;
 use std::future::Future;
 use std::pin::Pin;
 
-pub use bot::{Adapters, Bot, BotDeps, DynAdapters, Host};
+pub use bot::{Bot, BotDeps, Host};
 pub use context::Ctx;
 
 /// A boxed future on the bot's thread.

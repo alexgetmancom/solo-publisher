@@ -13,7 +13,7 @@ use std::cell::Cell;
 use std::path::{Path, PathBuf};
 
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::StoryPublishMode;
+use domain::application::ports::{FixedClock, StoryPublishMode};
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
@@ -24,7 +24,7 @@ use domain::story_cards::{StoryCardStore, story_card_copy};
 use domain::studio::boundaries::{Reminder, ReminderPolicy, Reminders};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
-use support::{FixedClock, arg, differences, dump, instant, out, resolve};
+use support::{arg, differences, dump, instant, out, resolve};
 
 fn spec_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/boundary_scenarios.json")

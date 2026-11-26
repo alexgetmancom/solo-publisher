@@ -17,22 +17,20 @@ use std::panic::AssertUnwindSafe;
 use std::rc::Rc;
 use std::time::Instant;
 
-use content::Locale;
 use db::BackendDb;
 use domain::application::ports::Clock;
 use domain::publishing::Boundaries;
-use domain::publishing::boundaries::{MediaMetadata, MediaProbe, ProviderOutcome, VideoProvider};
-use domain::studio::boundaries::{StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory};
-use foundation::config::{Config, SharedConfig};
+use domain::studio::boundaries::StudioBoundaries;
+use foundation::config::SharedConfig;
 use foundation::i18n::{Key, t};
 use foundation::logger::{LogLevel, log};
 use futures_util::FutureExt as _;
+use providers::adapters::ProviderCalls;
 use providers::external::telegram::BotApi;
-use serde_json::{Value, json};
+use serde_json::json;
 use tokio::sync::Notify;
 use tokio::task::JoinHandle;
 
-use crate::Fut;
 use crate::action_lock::ActionLocks;
 use crate::api::Api;
 use crate::api::types::{Update, User};
@@ -51,79 +49,14 @@ pub trait Host {
     fn studio(&self) -> StudioBoundaries<'_>;
 }
 
-/// The asynchronous adapters Studio waits on, as one object-safe trait
-/// (`StudioAdapters` is generic; [`DynAdapters`] bridges the two).
-pub trait Adapters {
-    fn probe<'a>(&'a self, path: &'a str) -> Fut<'a, Result<MediaMetadata, String>>;
-    fn audio_stats<'a>(&'a self, path: &'a str) -> Fut<'a, Result<String, String>>;
-    fn post_outcome<'a>(
-        &'a self,
-        provider_post_id: &'a str,
-        platform: &'a str,
-    ) -> Fut<'a, domain::Result<ProviderOutcome>>;
-    fn publish_instagram_reel<'a>(
-        &'a self,
-        account_id: &'a str,
-        public_url: &'a str,
-        metadata: &'a Value,
-        request_id: &'a str,
-    ) -> Fut<'a, domain::Result<ProviderOutcome>>;
-    fn keep_youtube_private<'a>(
-        &'a self,
-        config: &'a Config,
-        video_id: &'a str,
-        locale: Locale,
-    ) -> Fut<'a, domain::Result<()>>;
-    fn zernio_accounts<'a>(&'a self, config: &'a Config) -> Fut<'a, domain::Result<Vec<ZernioAccount>>>;
-}
-
-pub struct DynAdapters(pub Box<dyn Adapters>);
-
-impl MediaProbe for DynAdapters {
-    async fn probe(&self, path: &str) -> Result<MediaMetadata, String> {
-        self.0.probe(path).await
-    }
-    async fn audio_stats(&self, path: &str) -> Result<String, String> {
-        self.0.audio_stats(path).await
-    }
-}
-
-impl VideoProvider for DynAdapters {
-    async fn post_outcome(&self, provider_post_id: &str, platform: &str) -> domain::Result<ProviderOutcome> {
-        self.0.post_outcome(provider_post_id, platform).await
-    }
-    async fn publish_instagram_reel(
-        &self,
-        account_id: &str,
-        public_url: &str,
-        metadata: &Value,
-        request_id: &str,
-    ) -> domain::Result<ProviderOutcome> {
-        self.0
-            .publish_instagram_reel(account_id, public_url, metadata, request_id)
-            .await
-    }
-}
-
-impl YoutubeUploads for DynAdapters {
-    async fn keep_private(&self, config: &Config, video_id: &str, locale: Locale) -> domain::Result<()> {
-        self.0.keep_youtube_private(config, video_id, locale).await
-    }
-}
-
-impl ZernioDirectory for DynAdapters {
-    async fn accounts(&self, config: &Config) -> domain::Result<Vec<ZernioAccount>> {
-        self.0.zernio_accounts(config).await
-    }
-}
-
 /// Everything a bot is built from.
 pub struct BotDeps {
     pub db: BackendDb,
     pub clock: Rc<dyn Clock>,
     pub config: SharedConfig,
     pub host: Rc<dyn Host>,
-    pub adapters: DynAdapters,
+    /// The adapters Studio's services wait on.
+    pub adapters: ProviderCalls,
     /// The controller bot's Bot API.
     pub telegram: BotApi,
     /// Where the release controls send promote and rollback requests.

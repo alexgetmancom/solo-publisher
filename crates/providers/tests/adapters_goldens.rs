@@ -4,7 +4,7 @@
 //! asserts the same requests went out — order, method, URL, headers, body
 //! bytes (multipart as its parts) — and the same result or error class.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -12,10 +12,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use content::Locale;
-use domain::application::ports::Clock;
+use domain::application::ports::FixedClock;
 use domain::publishing::queue::ClaimedPublishJob;
 use foundation::config::{Config, load_config};
-use jiff::Timestamp;
 use providers::adapters::remote_media_processor::{MediaKind, Variant, process_vertical_media_remotely};
 use providers::adapters::telegram_stories::{
     StoriesClient, StoryCaption, StoryError, StoryRequest, StoryUploadMedia, StoryVideoMetadata,
@@ -282,14 +281,6 @@ impl Transport for Recorder {
                 body,
             ))
         })
-    }
-}
-
-struct FixedClock;
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        NOW.parse().unwrap()
     }
 }
 
@@ -640,7 +631,7 @@ fn replay(path: &Path) -> Option<String> {
     let ctx = AdapterContext {
         config: Arc::new(config_of(&golden)),
         client: HttpClient::new(recorder.clone()),
-        clock: Rc::new(FixedClock),
+        clock: Rc::new(FixedClock(Cell::new(NOW.parse().unwrap()))),
     };
     let inputs = with_files(&golden["inputs"], &files.0);
     let operation = golden["operation"].as_str().unwrap();

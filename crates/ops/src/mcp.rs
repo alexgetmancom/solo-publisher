@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
-use bot::DynAdapters;
 use content::Locale;
 use content::message::DraftMessage;
 use domain::application::ports::{Clock, DomainEventInput, Severity, StoryPublishMode};
@@ -21,6 +20,7 @@ use domain::studio::services::posts::{DraftConfiguration, EditInput, PostSchedul
 use domain::studio::services::settings::NotificationSettingsInput;
 use foundation::logger::{LogLevel, log};
 use foundation::redact::redact_external_secrets;
+use providers::adapters::ProviderCalls;
 use runtime::http::HttpClient;
 use serde_json::{Map, Value, json};
 
@@ -65,7 +65,7 @@ fn unique_int_array(min: f64, max: f64) -> crate::schema::Field {
 }
 
 /// The tool handler: Studio services as the authenticated actor.
-type ToolHandler = for<'a> fn(StudioServices<'a, DynAdapters>, i64, &'a Input) -> Fut<'a, OpResult>;
+type ToolHandler = for<'a> fn(StudioServices<'a, ProviderCalls>, i64, &'a Input) -> Fut<'a, OpResult>;
 /// The domain-event ref a mutating tool journals against.
 type ToolRef = fn(&Input, &Value) -> Option<String>;
 

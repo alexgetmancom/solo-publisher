@@ -1791,7 +1791,6 @@ name = "ops"
 version = "0.0.0"
 dependencies = [
  "base64 0.22.1",
- "bot",
  "content",
  "db",
  "delivery",

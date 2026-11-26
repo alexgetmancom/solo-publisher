@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde_json::json;
 
 use super::Publishing;
-use super::queue_state::insert_event;
+use super::queue_state::{JournalEntry, insert_event};
 use super::requeue::RequeueScope;
 use crate::Result;
 use crate::repositories::transaction;
@@ -145,10 +145,12 @@ fn settle(
         sqlite,
         Some(publication_key),
         Some(target),
-        "publish.target.abandoned",
-        "warn",
-        &format!("{target} was abandoned by the operator and will not be published"),
-        &json!({ "previous_status": previous_status }),
+        JournalEntry {
+            event_type: "publish.target.abandoned",
+            severity: "warn",
+            message: &format!("{target} was abandoned by the operator and will not be published"),
+            details: json!({ "previous_status": previous_status }),
+        },
         now,
     )?;
     Ok(AbandonResult {

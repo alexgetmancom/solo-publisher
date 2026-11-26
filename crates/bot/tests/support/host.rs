@@ -1,41 +1,28 @@
-//! The golden host: the boundaries and adapters Studio calls but the bot does
+//! The golden host: the boundaries Studio calls but the bot does
 //! not own. The stores (Story cards, reminders, the credential breaker,
 //! the readiness report, the video completion notice) are the real ones; of
 //! the rest only what the registered areas reach is implemented, and anything
 //! else panics with its name, so a case that reaches it fails loudly instead
 //! of diverging quietly.
 
-use std::cell::Cell;
 use std::rc::Rc;
 
-use bot::{Adapters, Fut, Host};
+use bot::Host;
 use content::Locale;
 use db::rusqlite::Connection;
-use domain::application::ports::Clock;
+use domain::application::ports::FixedClock;
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
 use domain::observability::capabilities::CapabilityReadiness;
 use domain::publishing::Boundaries;
-use domain::publishing::boundaries::{Jitter, MediaMetadata, ProviderOutcome, UsageMeter, WorkerBell};
+use domain::publishing::boundaries::{Jitter, NoWorker, UsageMeter};
 use domain::story_cards::StoryCardStore;
 use domain::studio::boundaries::{
     ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives, StudioBoundaries,
-    ZernioAccount,
 };
 use foundation::config::{Config, SharedConfig};
 use jiff::Timestamp;
-use serde_json::Value;
-
-use super::zernio::GoldenZernio;
-
-pub(crate) struct FixedClock(pub Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
 
 fn not_in_host(what: &str) -> ! {
     panic!(
@@ -68,12 +55,6 @@ impl Jitter for GoldenHost {
     fn unit(&self) -> f64 {
         not_in_host("retry jitter")
     }
-}
-
-/// Ringing the publish worker has no visible effect in a golden.
-impl WorkerBell for GoldenHost {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
 }
 
 /// Usage counters are observability rows no golden shows.
@@ -267,7 +248,8 @@ impl Host for GoldenHost {
     fn publishing(&self) -> Boundaries<'_> {
         Boundaries {
             jitter: self,
-            bell: self,
+            // Ringing the publish worker has no visible effect in a golden.
+            bell: &NoWorker,
             auth_circuit: &self.auth_circuit,
             usage: self,
             story_cards: &self.story_cards,
@@ -282,40 +264,5 @@ impl Host for GoldenHost {
             readiness: &self.readiness,
             connect_links: self,
         }
-    }
-}
-
-pub(crate) struct GoldenAdapters {
-    pub zernio: Rc<GoldenZernio>,
-}
-
-impl Adapters for GoldenAdapters {
-    fn probe<'a>(&'a self, path: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
-        Box::pin(async move { super::media_probe::probe(path) })
-    }
-    fn audio_stats<'a>(&'a self, path: &'a str) -> Fut<'a, Result<String, String>> {
-        Box::pin(async move { super::media_probe::audio_stats(path) })
-    }
-    fn post_outcome<'a>(
-        &'a self,
-        provider_post_id: &'a str,
-        platform: &'a str,
-    ) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        Box::pin(async move { self.zernio.post_outcome(provider_post_id, platform) })
-    }
-    fn publish_instagram_reel<'a>(
-        &'a self,
-        _: &'a str,
-        _: &'a str,
-        _: &'a Value,
-        _: &'a str,
-    ) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        not_in_host("the video provider")
-    }
-    fn keep_youtube_private<'a>(&'a self, _: &'a Config, _: &'a str, _: Locale) -> Fut<'a, domain::Result<()>> {
-        not_in_host("YouTube uploads")
-    }
-    fn zernio_accounts<'a>(&'a self, config: &'a Config) -> Fut<'a, domain::Result<Vec<ZernioAccount>>> {
-        Box::pin(async move { self.zernio.accounts(config) })
     }
 }

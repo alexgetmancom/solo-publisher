@@ -10,7 +10,7 @@ use std::rc::Rc;
 use axum::body::Body;
 use axum::http::Request;
 use db::BackendDb;
-use domain::application::ports::{ChannelConnectionRecord, Clock};
+use domain::application::ports::{ChannelConnectionRecord, Clock, FixedClock};
 use domain::observability::usage::UsageRecorder;
 use domain::publishing::Publishing;
 use domain::studio::Studio;
@@ -18,21 +18,12 @@ use domain::studio::services::channels::{ChannelInput, ChannelService};
 use foundation::config::{Config, SharedConfig, load_config};
 use http_body_util::BodyExt as _;
 use http_edge::{Backend, HttpState, router};
-use jiff::Timestamp;
 use ops::host::OpsHost;
 use providers::channels::entropy::{Entropy, OsEntropy};
 use providers::channels::oauth_routes::ChannelRegistrar;
 use runtime::http::{HttpClient, ReqwestTransport};
 use serde_json::{Map, Value};
 use tower::ServiceExt as _;
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
 
 struct TestBackend {
     db: BackendDb,

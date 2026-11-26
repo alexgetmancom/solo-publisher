@@ -9,19 +9,10 @@
 use std::cell::Cell;
 
 use db::BackendDb;
-use domain::application::ports::Clock;
+use domain::application::ports::FixedClock;
 use foundation::config::load_config;
-use jiff::Timestamp;
 use public_site::{PublicSite, SiteRequest};
 use sha2::{Digest, Sha256};
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
 
 #[tokio::test(flavor = "current_thread")]
 #[ignore = "needs PUBLIC_SITE_DB and PUBLIC_SITE_NOW"]

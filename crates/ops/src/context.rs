@@ -11,7 +11,6 @@ use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use bot::DynAdapters;
 use db::BackendDb;
 use db::rusqlite::Connection;
 use domain::application::ports::Clock;
@@ -19,6 +18,7 @@ use domain::publishing::boundaries::UsageMeter;
 use domain::studio::Studio;
 use domain::studio::services::{StudioServices, create_studio_services};
 use foundation::config::Config;
+use providers::adapters::ProviderCalls;
 use runtime::http::HttpClient;
 use serde_json::{Map, Value};
 
@@ -120,7 +120,7 @@ pub trait Surface {
     /// Studio over the surface's database, its clock and its boundaries.
     fn studio<'a>(&'a self, config: &'a Config) -> Result<Studio<'a>, OpError>;
     /// The adapters Studio waits on.
-    fn adapters(&self) -> Result<&DynAdapters, OpError>;
+    fn adapters(&self) -> Result<&ProviderCalls, OpError>;
     /// Where `recordUsage` buffers.
     fn usage(&self) -> &dyn UsageMeter;
 }
@@ -180,7 +180,7 @@ impl<'a> OperationContext<'a> {
     }
 
     /// `createStudioServices(context.db(), context.config())`.
-    pub fn services<'c>(&self, config: &'c Config) -> Result<StudioServices<'c, DynAdapters>, OpError>
+    pub fn services<'c>(&self, config: &'c Config) -> Result<StudioServices<'c, ProviderCalls>, OpError>
     where
         'a: 'c,
     {
@@ -190,7 +190,7 @@ impl<'a> OperationContext<'a> {
         ))
     }
 
-    pub fn adapters(&self) -> Result<&'a DynAdapters, OpError> {
+    pub fn adapters(&self) -> Result<&'a ProviderCalls, OpError> {
         self.surface.adapters()
     }
 

@@ -1,14 +1,24 @@
 //! What every SQL-equivalence test shares with the run recorded in its golden:
-//! how arguments name earlier results, how a database is dumped, and how two
-//! runs are compared.
+//! how arguments name earlier results, how a database is dumped, how two runs
+//! are compared, and the boundary fakes that answer as an empty Studio would.
 
 #![allow(dead_code)]
 
-use std::cell::Cell;
+use std::future::Future;
 use std::path::{Path, PathBuf};
+use std::pin::pin;
+use std::task::{Context, Poll, Waker};
 
+use content::Locale;
 use db::rusqlite::Connection;
-use domain::application::ports::Clock;
+use domain::application::ports::StoryPublishMode;
+use domain::publishing::boundaries::{
+    AuthCircuit, AuthCircuitState, Jitter, StoryCardMedia, StoryCardState, StoryCards, UsageMeter, VideoCompletion,
+};
+use domain::studio::boundaries::{
+    ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives,
+};
+use foundation::config::Config;
 use jiff::Timestamp;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -21,11 +31,86 @@ pub(crate) fn repo_root() -> PathBuf {
         .unwrap()
 }
 
-pub(crate) struct FixedClock(pub Cell<Timestamp>);
+/// Retry jitter that always draws the same value.
+pub(crate) struct FixedJitter(pub f64);
 
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
+impl Jitter for FixedJitter {
+    fn unit(&self) -> f64 {
+        self.0
+    }
+}
+
+/// The boundaries as an empty Studio answers them: nothing recorded, nothing
+/// held, and no OAuth app configured.
+pub(crate) struct Inert;
+
+impl AuthCircuit for Inert {
+    fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
+        Ok(())
+    }
+    fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
+        Ok(())
+    }
+    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
+        Ok(Vec::new())
+    }
+}
+
+impl UsageMeter for Inert {
+    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
+}
+
+impl StoryCards for Inert {
+    fn queue(&self, _: &Connection, _: i64) -> domain::Result<()> {
+        Ok(())
+    }
+    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
+        Ok(Vec::new())
+    }
+    fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
+        Ok(None)
+    }
+    fn set_publish_mode(&self, _: &Connection, _: i64, _: StoryPublishMode) -> domain::Result<()> {
+        Ok(())
+    }
+    fn discard(&self, _: &Connection, _: i64) -> domain::Result<()> {
+        Ok(())
+    }
+}
+
+impl VideoCompletion for Inert {
+    fn record_if_final(&self, _: &Connection, _: i64) -> domain::Result<()> {
+        Ok(())
+    }
+}
+
+impl StoryDerivatives for Inert {
+    fn ensure(&self, _: &str, _: bool, _: i64) {}
+}
+
+impl ChannelConnectLinks for Inert {
+    fn meta_oauth_connect_url(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
+        Err(domain::Error::message("not configured"))
+    }
+    fn meta_oauth_connect_path(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
+        Err(domain::Error::message("not configured"))
+    }
+    fn x_oauth_connect_url(&self, _: &Config) -> domain::Result<String> {
+        Err(domain::Error::message("not configured"))
+    }
+    fn x_oauth_connect_path(&self, _: &Config) -> domain::Result<String> {
+        Err(domain::Error::message("not configured"))
+    }
+    fn start_connect(&self, _: &Config, _: ConnectPlatform, _: Locale, _: Timestamp) -> domain::Result<ConnectStart> {
+        Err(domain::Error::message("not configured"))
+    }
+}
+
+/// The fakes are synchronous, so every future is ready on its first poll.
+pub(crate) fn ready<T>(future: impl Future<Output = T>) -> T {
+    match pin!(future).poll(&mut Context::from_waker(Waker::noop())) {
+        Poll::Ready(value) => value,
+        Poll::Pending => panic!("a fake boundary never waits"),
     }
 }
 

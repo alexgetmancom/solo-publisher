@@ -43,7 +43,7 @@ fn media(scenario: &Scenario) -> Rc<dyn MediaPreparation> {
     Rc::new(DeliveryMedia::new(
         scenario.client.clone(),
         SharedConfig::new((*scenario.config()).clone()),
-        Rc::new(scenario.clock.clone()),
+        scenario.clock.clone(),
     ))
 }
 
@@ -110,7 +110,7 @@ fn call<'a>(scenario: &'a Scenario, name: &'a str, args: Vec<Value>) -> LocalBox
                 let media = DeliveryMedia::new(
                     scenario.client.clone(),
                     SharedConfig::new((*scenario.config()).clone()),
-                    Rc::new(scenario.clock.clone()),
+                    scenario.clock.clone(),
                 );
                 let label = json!({"source": "scenario"}).as_object().unwrap().clone();
                 let force = args.get(2).and_then(Value::as_bool).unwrap_or(false);

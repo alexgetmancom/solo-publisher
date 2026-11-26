@@ -7,17 +7,8 @@ use std::rc::Rc;
 
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::Clock;
-use jiff::Timestamp;
+use domain::application::ports::FixedClock;
 use public_site::FeedReader;
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
 
 fn clock() -> FixedClock {
     FixedClock(Cell::new(

@@ -1,6 +1,7 @@
 //! The media processor and the stored files: the media processor, the Story
 //! media backfill and prune, and the site media operations of [`super::site`].
 
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::rc::Rc;
@@ -12,7 +13,7 @@ use content::message::MediaItem;
 use db::rusqlite::Connection;
 use delivery::story_derivatives::{DeliveryMedia, prepared_story_media, story_derivative_present, story_variant_paths};
 use delivery::story_media::story_directory;
-use domain::application::ports::Clock;
+use domain::application::ports::FixedClock;
 use domain::channels::{publishes_story, registered_post_target_ids};
 use domain::publishing::media_policy::select_media_for_target;
 use domain::publishing::payload::payload_media;
@@ -31,23 +32,12 @@ pub use super::site::{
     site_display_repair, site_media_backfill, site_media_deduplicate, site_metadata, site_responsive_backfill,
 };
 
-/// The command's clock, frozen at its start, for the boundaries that hold a
-/// clock of their own. A command is one short run: the renders it waits on
-/// read no time from it.
-pub(crate) struct ClockAt(pub Timestamp);
-
-impl Clock for ClockAt {
-    fn now(&self) -> Timestamp {
-        self.0
-    }
-}
-
 /// The process's media runtime: the CLI renders Stories in its own process.
 pub(crate) fn delivery_media(context: &OperationContext<'_>, config: &Arc<Config>) -> DeliveryMedia {
     DeliveryMedia::new(
         context.http.clone(),
         SharedConfig::new((**config).clone()),
-        Rc::new(ClockAt(context.now())),
+        Rc::new(FixedClock(Cell::new(context.now()))),
     )
 }
 

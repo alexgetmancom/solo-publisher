@@ -14,7 +14,6 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = "0.22"
-bot = { path = "../bot" }
 content = { path = "../content" }
 db = { path = "../db" }
 delivery = { path = "../delivery" }

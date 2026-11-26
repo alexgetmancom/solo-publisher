@@ -3,6 +3,8 @@
 //! repositories. Database naming stays at the repository boundary; field names
 //! serialize as the records name them, which the Studio's callers depend on.
 
+use std::cell::Cell;
+
 use content::message::{Entity, MediaItem};
 use content::thread::ThreadPart;
 use db::rusqlite::Connection;
@@ -32,6 +34,16 @@ pub struct SystemClock;
 impl Clock for SystemClock {
     fn now(&self) -> Timestamp {
         Timestamp::now()
+    }
+}
+
+/// A clock that reads the instant it was last set to: a command frozen at its
+/// start, or a test that moves time itself.
+pub struct FixedClock(pub Cell<Timestamp>);
+
+impl Clock for FixedClock {
+    fn now(&self) -> Timestamp {
+        self.0.get()
     }
 }
 

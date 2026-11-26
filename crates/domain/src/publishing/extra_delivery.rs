@@ -6,7 +6,7 @@ use serde_json::json;
 
 use super::Publishing;
 use super::publication_source::PublicationSource;
-use super::queue_state::insert_event;
+use super::queue_state::{JournalEntry, insert_event};
 use super::requeue::{AudienceReached, RequeueOptions, RequeueOutcome, RequeueResult, RequeueScope};
 use super::state::AUDIENCE_MUTATION_RETRYABLE_STATUSES;
 use crate::repositories::transaction;
@@ -68,10 +68,12 @@ impl Publishing<'_> {
                 sqlite,
                 Some(&scope.publication_key),
                 Some(target),
-                "delivery.post.target.added",
-                "info",
-                &format!("Post #{} was sent to {target} after publication", scope.post_id),
-                &json!({ "draft_id": scope.draft_id, "post_id": scope.post_id, "target": target }),
+                JournalEntry {
+                    event_type: "delivery.post.target.added",
+                    severity: "info",
+                    message: &format!("Post #{} was sent to {target} after publication", scope.post_id),
+                    details: json!({ "draft_id": scope.draft_id, "post_id": scope.post_id, "target": target }),
+                },
                 &now,
             )?;
             Ok(result)

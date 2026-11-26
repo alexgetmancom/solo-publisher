@@ -8,7 +8,6 @@ mod support;
 
 use content::thread::{LocalizedThreadPart, ThreadPart};
 use domain::application::ports::DraftRecord;
-use domain::publishing::boundaries::Jitter;
 use domain::publishing::chain_plan::planned_target_deliveries;
 use domain::publishing::errors::{
     PublishFailure, classify_message, classify_publish_error, next_retry_at, normalize_publish_result,
@@ -36,19 +35,11 @@ use domain::publishing::video_metadata_limits::youtube_tags_length;
 use domain::targets::TargetMap;
 use foundation::time::{Zone, parse_iso_instant, to_iso_string};
 use serde_json::{Map, Value, json};
-use support::out;
+use support::{FixedJitter, out};
 
 fn fixture() -> Value {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/publishing.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
-}
-
-struct FixedJitter(f64);
-
-impl Jitter for FixedJitter {
-    fn unit(&self) -> f64 {
-        self.0
-    }
 }
 
 fn rows<'a>(fixture: &'a Value, key: &str) -> &'a Vec<Value> {

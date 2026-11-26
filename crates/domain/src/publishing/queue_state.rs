@@ -140,26 +140,22 @@ pub struct JournalEntry<'a> {
     pub details: Value,
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn insert_event(
     sqlite: &Connection,
     publication_key: Option<&str>,
     target: Option<&str>,
-    event_type: &str,
-    severity: &str,
-    message: &str,
-    details: &Value,
+    event: JournalEntry<'_>,
     created_at: &str,
 ) -> Result<()> {
     sqlite.execute(
         r#"insert into "publication_events" ("id", "publication_key", "event_type", "severity", "target", "message", "details_json", "created_at", "acked_at") values (null, ?, ?, ?, ?, ?, ?, ?, null)"#,
         params![
             publication_key,
-            event_type,
-            severity,
+            event.event_type,
+            event.severity,
             target,
-            message,
-            json::stringify(details),
+            event.message,
+            json::stringify(&event.details),
             created_at
         ],
     )?;
@@ -169,6 +165,7 @@ pub fn insert_event(
 /// A job update and the lease that earns it. The fence travels with the
 /// patch, so there is no way to ask for a job update without naming a lease.
 pub struct FencedPatch<'a> {
+    pub job_id: i64,
     pub patch: Columns,
     pub fence: &'a str,
 }
@@ -177,10 +174,8 @@ pub struct FencedPatch<'a> {
 /// atomically. `job` is `None` only on the stale-lock path, which already won
 /// the job row on its own `locked_at` fence. A lost lease is
 /// [`Error::PublishLockLost`], which rolls the caller's transaction back.
-#[allow(clippy::too_many_arguments)]
 pub fn settle_job(
     sqlite: &Connection,
-    job_id: i64,
     job: Option<FencedPatch<'_>>,
     publication_key: &str,
     target: &str,
@@ -193,7 +188,7 @@ pub fn settle_job(
             .patch
             .iter()
             .map(|(_, value)| value.clone())
-            .chain([int(job_id), text(job.fence)]);
+            .chain([int(job.job_id), text(job.fence)]);
         let updated = sqlite
             .query_row(
                 &format!(
@@ -205,18 +200,9 @@ pub fn settle_job(
             )
             .optional()?;
         if updated.is_none() {
-            return Err(Error::PublishLockLost(job_id));
+            return Err(Error::PublishLockLost(job.job_id));
         }
     }
     upsert_post_target(sqlite, publication_key, target, target_patch)?;
-    insert_event(
-        sqlite,
-        Some(publication_key),
-        Some(target),
-        event.event_type,
-        event.severity,
-        event.message,
-        &event.details,
-        updated_at,
-    )
+    insert_event(sqlite, Some(publication_key), Some(target), event, updated_at)
 }

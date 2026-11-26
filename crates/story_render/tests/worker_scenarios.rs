@@ -13,27 +13,22 @@ use std::cell::Cell;
 use std::path::{Path, PathBuf};
 
 use content::message::DraftMessage;
-use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::StoryPublishMode;
+use domain::application::ports::{FixedClock, StoryPublishMode};
 use domain::notifications::ReminderJobs;
 use domain::observability::capabilities::CapabilityReadiness;
 use domain::publishing::Publishing;
-use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Boundaries, Jitter, UsageMeter, VideoCompletion, WorkerBell,
-};
+use domain::publishing::boundaries::{Boundaries, NoWorker};
 use domain::story_cards::StoryCardStore;
 use domain::studio::Studio;
-use domain::studio::boundaries::{
-    ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, StoryDerivatives, StudioBoundaries,
-};
+use domain::studio::boundaries::StudioBoundaries;
 use domain::studio::services::posts::{DraftConfiguration, PostScheduleInput, PostService};
-use foundation::config::{Config, SharedConfig};
+use foundation::config::SharedConfig;
 use foundation::logger::{LogLevel, configure_logging};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 use story_render::{recover_story_card_jobs, run_story_card_cycle};
-use support::{FixedClock, arg, differences, dump, instant, out, resolve};
+use support::{FixedJitter, Inert, arg, differences, dump, instant, out, resolve};
 
 fn spec_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/worker_scenarios.json")
@@ -41,74 +36,6 @@ fn spec_path() -> PathBuf {
 
 fn files_dir() -> PathBuf {
     support::repo_root().join("_trash-rust/tmp/story-worker-scenarios")
-}
-
-/// The boundaries no scenario reaches: nothing is published, retried or
-/// connected, and no draft carries media.
-struct Unreached;
-
-impl Jitter for Unreached {
-    fn unit(&self) -> f64 {
-        panic!("no scenario retries a publication")
-    }
-}
-
-impl WorkerBell for Unreached {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
-}
-
-impl AuthCircuit for Unreached {
-    fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        panic!("no scenario settles a publish attempt")
-    }
-    fn record_success(&self, _: &Connection, _: &str) -> domain::Result<()> {
-        panic!("no scenario settles a publish attempt")
-    }
-    fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
-        Ok(Vec::new())
-    }
-}
-
-/// Usage rows are not compared: the recorded worker timed renders on its fixed clock.
-impl UsageMeter for Unreached {
-    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
-}
-
-impl VideoCompletion for Unreached {
-    fn record_if_final(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        panic!("no scenario has a video")
-    }
-}
-
-impl StoryDerivatives for Unreached {
-    fn ensure(&self, local_path: &str, _: bool, _: i64) {
-        panic!("no scenario's draft carries media ({local_path})")
-    }
-}
-
-impl ChannelConnectLinks for Unreached {
-    fn meta_oauth_connect_url(&self, _: &Config, _: MetaOauthPlatform, _: content::Locale) -> domain::Result<String> {
-        panic!("no scenario connects a channel")
-    }
-    fn meta_oauth_connect_path(&self, _: &Config, _: MetaOauthPlatform, _: content::Locale) -> domain::Result<String> {
-        panic!("no scenario connects a channel")
-    }
-    fn x_oauth_connect_url(&self, _: &Config) -> domain::Result<String> {
-        panic!("no scenario connects a channel")
-    }
-    fn x_oauth_connect_path(&self, _: &Config) -> domain::Result<String> {
-        panic!("no scenario connects a channel")
-    }
-    fn start_connect(
-        &self,
-        _: &Config,
-        _: ConnectPlatform,
-        _: content::Locale,
-        _: jiff::Timestamp,
-    ) -> domain::Result<ConnectStart> {
-        panic!("no scenario connects a channel")
-    }
 }
 
 #[derive(Deserialize)]
@@ -203,20 +130,20 @@ async fn run(spec: &Value, scenario: &Value) -> Value {
             sqlite,
             &clock,
             Boundaries {
-                jitter: &Unreached,
-                bell: &Unreached,
-                auth_circuit: &Unreached,
-                usage: &Unreached,
+                jitter: &FixedJitter(0.5),
+                bell: &NoWorker,
+                auth_circuit: &Inert,
+                usage: &Inert,
                 story_cards: &cards,
-                video_completion: &Unreached,
+                video_completion: &Inert,
             },
         ),
         &config,
         StudioBoundaries {
             reminders: &reminders,
-            story_derivatives: &Unreached,
+            story_derivatives: &Inert,
             readiness: &readiness,
-            connect_links: &Unreached,
+            connect_links: &Inert,
         },
     );
     let files = files_dir();

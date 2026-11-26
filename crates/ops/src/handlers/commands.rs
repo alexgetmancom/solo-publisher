@@ -16,6 +16,7 @@ mod settle;
 mod skip;
 
 use std::borrow::Cow;
+use std::cell::Cell;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -28,7 +29,7 @@ use delivery::external_edits::{PublishedTargetEdit, edit_published_targets};
 use delivery::external_removals::{
     RemovalOptions, attempt_published_target_removals, settle_published_target_removals,
 };
-use domain::application::ports::{Clock, DomainEventInput, Severity};
+use domain::application::ports::{DomainEventInput, FixedClock, Severity};
 use domain::publishing::Publishing;
 use domain::publishing::publication_source::PublicationSource;
 use domain::repositories::{record_event, transaction};
@@ -62,17 +63,6 @@ fn object(value: Value) -> Map<String, Value> {
     }
 }
 
-/// The instant a command started, as the clock the adapters are handed. The
-/// edit, removal and presence ports never read it — only publishing does,
-/// and it is never reached from here — so it cannot move under them.
-struct Started(Timestamp);
-
-impl Clock for Started {
-    fn now(&self) -> Timestamp {
-        self.0
-    }
-}
-
 /// What a repair runs on: publishing over the command's connection and
 /// clock, the configuration, and the HTTP client platforms are reached by.
 pub(crate) struct CommandHandle<'c> {
@@ -91,7 +81,10 @@ impl<'c> CommandHandle<'c> {
         AdapterContext {
             config: Arc::clone(&self.config),
             client: self.http.clone(),
-            clock: Rc::new(Started(self.publishing.clock.now())),
+            // The instant the command started: the edit, removal and presence
+            // ports never read it — only publishing does, and it is never
+            // reached from here — so it cannot move under them.
+            clock: Rc::new(FixedClock(Cell::new(self.publishing.clock.now()))),
         }
     }
 

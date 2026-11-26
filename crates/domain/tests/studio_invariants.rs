@@ -9,26 +9,22 @@
 mod support;
 
 use std::cell::{Cell, RefCell};
-use std::future::Future;
 use std::path::Path;
-use std::pin::pin;
-use std::task::{Context, Poll, Waker};
 
 use content::Locale;
 use content::message::DraftMessage;
 use db::rusqlite::{Connection, params};
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::{ApplicationPorts, NewThreadPart, StoryPublishMode};
+use domain::application::ports::{ApplicationPorts, FixedClock, NewThreadPart, StoryPublishMode};
 use domain::publishing::Publishing;
 use domain::publishing::boundaries::{
-    AuthCircuit, AuthCircuitState, Boundaries, Jitter, MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia,
-    StoryCardState, StoryCards, UsageMeter, VideoCompletion, VideoProvider, WorkerBell,
+    AuthCircuit, AuthCircuitState, Boundaries, MediaMetadata, MediaProbe, NoWorker, ProviderOutcome, VideoProvider,
 };
 use domain::publishing::video_types::VideoTarget;
 use domain::studio::Studio;
 use domain::studio::boundaries::{
-    CapabilityReportEntry, ChannelConnectLinks, ConnectPlatform, ConnectStart, MetaOauthPlatform, Readiness, Reminder,
-    Reminders, StoryDerivatives, StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory,
+    CapabilityReportEntry, Readiness, Reminder, Reminders, StoryDerivatives, StudioBoundaries, YoutubeUploads,
+    ZernioAccount, ZernioDirectory,
 };
 use domain::studio::services::channels::ChannelStatus;
 use domain::studio::services::create_studio_services;
@@ -36,9 +32,8 @@ use domain::studio::services::post_access::require_post_edit_allowed;
 use domain::studio::services::posts::{DraftConfiguration, EditInput, PostScheduleInput, PostScheduleScope};
 use domain::studio::video_fsm::VideoWizardStep;
 use foundation::config::Config;
-use jiff::Timestamp;
 use serde_json::{Map, Value, json};
-use support::FixedClock;
+use support::{FixedJitter, Inert, ready};
 
 const OWNER: i64 = 42;
 /// Not on the roster: one installation is one editorial boundary, so the
@@ -52,15 +47,6 @@ struct Recorder {
     circuits: Vec<AuthCircuitState>,
 }
 
-impl Jitter for Recorder {
-    fn unit(&self) -> f64 {
-        0.5
-    }
-}
-impl WorkerBell for Recorder {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
-}
 impl AuthCircuit for Recorder {
     fn record_failure(&self, _: &Connection, _: &str) -> domain::Result<()> {
         Ok(())
@@ -70,31 +56,6 @@ impl AuthCircuit for Recorder {
     }
     fn states(&self, _: &Connection) -> domain::Result<Vec<AuthCircuitState>> {
         Ok(self.circuits.clone())
-    }
-}
-impl UsageMeter for Recorder {
-    fn record(&self, _: &Connection, _: &str, _: bool, _: u64) {}
-}
-impl VideoCompletion for Recorder {
-    fn record_if_final(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        Ok(())
-    }
-}
-impl StoryCards for Recorder {
-    fn queue(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        Ok(())
-    }
-    fn for_draft(&self, _: &Connection, _: i64) -> domain::Result<Vec<StoryCardState>> {
-        Ok(Vec::new())
-    }
-    fn ready_media(&self, _: &Connection, _: i64) -> domain::Result<Option<StoryCardMedia>> {
-        Ok(None)
-    }
-    fn set_publish_mode(&self, _: &Connection, _: i64, _: StoryPublishMode) -> domain::Result<()> {
-        Ok(())
-    }
-    fn discard(&self, _: &Connection, _: i64) -> domain::Result<()> {
-        Ok(())
     }
 }
 impl Reminders for Recorder {
@@ -115,23 +76,6 @@ impl StoryDerivatives for Recorder {
 impl Readiness for Recorder {
     fn capability_report(&self, _: &Connection) -> domain::Result<Vec<CapabilityReportEntry>> {
         Ok(Vec::new())
-    }
-}
-impl ChannelConnectLinks for Recorder {
-    fn meta_oauth_connect_url(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
-        Err(domain::Error::message("not configured"))
-    }
-    fn meta_oauth_connect_path(&self, _: &Config, _: MetaOauthPlatform, _: Locale) -> domain::Result<String> {
-        Err(domain::Error::message("not configured"))
-    }
-    fn x_oauth_connect_url(&self, _: &Config) -> domain::Result<String> {
-        Err(domain::Error::message("not configured"))
-    }
-    fn x_oauth_connect_path(&self, _: &Config) -> domain::Result<String> {
-        Err(domain::Error::message("not configured"))
-    }
-    fn start_connect(&self, _: &Config, _: ConnectPlatform, _: Locale, _: Timestamp) -> domain::Result<ConnectStart> {
-        Err(domain::Error::message("not configured"))
     }
 }
 impl MediaProbe for Recorder {
@@ -158,13 +102,6 @@ impl YoutubeUploads for Recorder {
 impl ZernioDirectory for Recorder {
     async fn accounts(&self, _: &Config) -> domain::Result<Vec<ZernioAccount>> {
         Ok(Vec::new())
-    }
-}
-
-fn ready<T>(future: impl Future<Output = T>) -> T {
-    match pin!(future).poll(&mut Context::from_waker(Waker::noop())) {
-        Poll::Ready(value) => value,
-        Poll::Pending => panic!("a fake boundary never waits"),
     }
 }
 
@@ -205,12 +142,12 @@ impl Fixture {
                 unsafe_db(&self.db),
                 &self.clock,
                 Boundaries {
-                    jitter: recorder,
-                    bell: recorder,
+                    jitter: &FixedJitter(0.5),
+                    bell: &NoWorker,
                     auth_circuit: recorder,
-                    usage: recorder,
-                    story_cards: recorder,
-                    video_completion: recorder,
+                    usage: &Inert,
+                    story_cards: &Inert,
+                    video_completion: &Inert,
                 },
             ),
             &self.config,
@@ -218,7 +155,7 @@ impl Fixture {
                 reminders: recorder,
                 story_derivatives: recorder,
                 readiness: recorder,
-                connect_links: recorder,
+                connect_links: &Inert,
             },
         )
     }

@@ -13,103 +13,27 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 
-use bot::{Adapters, DynAdapters, Fut};
-use content::Locale;
 use db::BackendDb;
-use db::rusqlite::Connection;
 use delivery::story_derivatives::DeliveryMedia;
-use domain::application::ports::{Clock, StoryPublishMode};
+use domain::application::ports::Clock;
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
 use domain::observability::capabilities::CapabilityReadiness;
 use domain::observability::usage::UsageRecorder;
-use domain::publishing::boundaries::{
-    MediaMetadata, MediaProbe, ProviderOutcome, StoryCardMedia, StoryCardState, StoryCards, SystemJitter, UsageMeter,
-    VideoProvider, WorkerBell,
-};
+use domain::publishing::boundaries::{NoWorker, SystemJitter, UsageMeter};
 use domain::publishing::{Boundaries, Publishing};
 use domain::story_cards::StoryCardStore;
 use domain::studio::Studio;
-use domain::studio::boundaries::{StudioBoundaries, YoutubeUploads, ZernioAccount, ZernioDirectory};
+use domain::studio::boundaries::StudioBoundaries;
 use foundation::config::{Config, SharedConfig, load_config};
-use providers::adapters::providers::ProviderCalls;
+use providers::adapters::ProviderCalls;
 use providers::channels::connect::ConnectLinks;
 use providers::channels::entropy::OsEntropy;
-use providers::channels::zernio::ZernioAccounts;
-use runtime::ffmpeg::FfmpegMediaProbe;
 use runtime::http::HttpClient;
-use serde_json::Value;
 
 use crate::cli::CliSurface;
 use crate::context::{OpError, Surface, Terminal};
-
-/// The adapters Studio waits on: ffprobe/ffmpeg for media, the platforms for
-/// the provider calls, channels' Zernio directory.
-pub struct OpsAdapters {
-    providers: ProviderCalls,
-    zernio: ZernioAccounts,
-}
-
-impl OpsAdapters {
-    pub fn new(http: HttpClient, config: SharedConfig) -> Self {
-        Self {
-            providers: ProviderCalls::new(http.clone(), config),
-            zernio: ZernioAccounts::new(http),
-        }
-    }
-
-    pub fn boxed(http: HttpClient, config: SharedConfig) -> DynAdapters {
-        DynAdapters(Box::new(Self::new(http, config)))
-    }
-}
-
-impl Adapters for OpsAdapters {
-    fn probe<'a>(&'a self, path: &'a str) -> Fut<'a, Result<MediaMetadata, String>> {
-        Box::pin(FfmpegMediaProbe.probe(path))
-    }
-    fn audio_stats<'a>(&'a self, path: &'a str) -> Fut<'a, Result<String, String>> {
-        Box::pin(FfmpegMediaProbe.audio_stats(path))
-    }
-    fn post_outcome<'a>(
-        &'a self,
-        provider_post_id: &'a str,
-        platform: &'a str,
-    ) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        Box::pin(self.providers.post_outcome(provider_post_id, platform))
-    }
-    fn publish_instagram_reel<'a>(
-        &'a self,
-        account_id: &'a str,
-        public_url: &'a str,
-        metadata: &'a Value,
-        request_id: &'a str,
-    ) -> Fut<'a, domain::Result<ProviderOutcome>> {
-        Box::pin(
-            self.providers
-                .publish_instagram_reel(account_id, public_url, metadata, request_id),
-        )
-    }
-    fn keep_youtube_private<'a>(
-        &'a self,
-        config: &'a Config,
-        video_id: &'a str,
-        locale: Locale,
-    ) -> Fut<'a, domain::Result<()>> {
-        Box::pin(self.providers.keep_private(config, video_id, locale))
-    }
-    fn zernio_accounts<'a>(&'a self, config: &'a Config) -> Fut<'a, domain::Result<Vec<ZernioAccount>>> {
-        Box::pin(self.zernio.accounts(config))
-    }
-}
-
-/// A doorbell with no worker behind it (see the module comment).
-struct NoWorker;
-
-impl WorkerBell for NoWorker {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _delay_ms: u64) {}
-}
 
 /// Studio's and publishing's boundaries over the stores.
 pub struct OpsHost {
@@ -121,7 +45,7 @@ pub struct OpsHost {
     readiness: CapabilityReadiness,
     connect_links: ConnectLinks<Rc<dyn Clock>, OsEntropy>,
     media: DeliveryMedia,
-    pub adapters: DynAdapters,
+    pub adapters: ProviderCalls,
 }
 
 impl OpsHost {
@@ -134,7 +58,7 @@ impl OpsHost {
             readiness: CapabilityReadiness::new(config.clone()),
             connect_links: ConnectLinks::new(Rc::clone(&clock), OsEntropy),
             media: DeliveryMedia::new(http.clone(), config.clone(), clock),
-            adapters: OpsAdapters::boxed(http, config.clone()),
+            adapters: ProviderCalls::new(http, config.clone()),
             config,
         }
     }
@@ -145,7 +69,7 @@ impl OpsHost {
             bell: &NoWorker,
             auth_circuit: &self.auth_circuit,
             usage,
-            story_cards: self,
+            story_cards: &self.story_cards,
             video_completion: &self.video_completion,
         }
     }
@@ -157,24 +81,6 @@ impl OpsHost {
             readiness: &self.readiness,
             connect_links: &self.connect_links,
         }
-    }
-}
-
-impl StoryCards for OpsHost {
-    fn queue(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.queue(sqlite, draft_id)
-    }
-    fn for_draft(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Vec<StoryCardState>> {
-        self.story_cards.for_draft(sqlite, draft_id)
-    }
-    fn ready_media(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Option<StoryCardMedia>> {
-        self.story_cards.ready_media(sqlite, draft_id)
-    }
-    fn set_publish_mode(&self, sqlite: &Connection, draft_id: i64, mode: StoryPublishMode) -> domain::Result<()> {
-        self.story_cards.set_publish_mode(sqlite, draft_id, mode)
-    }
-    fn discard(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.discard(sqlite, draft_id)
     }
 }
 
@@ -246,7 +152,7 @@ impl Surface for ProcessSurface {
         ))
     }
 
-    fn adapters(&self) -> Result<&DynAdapters, OpError> {
+    fn adapters(&self) -> Result<&ProviderCalls, OpError> {
         Ok(&self.host()?.adapters)
     }
 

@@ -2,6 +2,7 @@
 //! responsive backfills, metadata and media deduplication. Every write after a
 //! check carries that check in its `WHERE`.
 
+use std::cell::Cell;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::os::unix::fs::MetadataExt as _;
 use std::path::{Path, PathBuf};
@@ -17,6 +18,7 @@ use delivery::site_media::{
     materialize_responsive_variants, materialize_site_media, responsive_variant_paths, site_media_source,
 };
 use delivery::site_media_storage::{deduplicate_site_media_file, extname, is_site_media_extension, sha256_file};
+use domain::application::ports::FixedClock;
 use foundation::time::{parse_iso_ms, to_iso_string};
 use providers::adapters::AdapterContext;
 use public_site::{FeedItem, FeedReader};
@@ -24,7 +26,6 @@ use regex::Regex;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-use super::media::ClockAt;
 use super::plan_schema::{array, array_min, literal, locale, object, parse, positive_int, string};
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext};
 
@@ -392,7 +393,7 @@ pub fn site_media_backfill<'a>(context: &'a OperationContext<'a>, input: &'a Inp
             let ctx = AdapterContext {
                 config: config.clone(),
                 client: context.http.clone(),
-                clock: Rc::new(ClockAt(context.now())),
+                clock: Rc::new(FixedClock(Cell::new(context.now()))),
             };
             for item in &selected {
                 let outcome: Result<(), String> = async {

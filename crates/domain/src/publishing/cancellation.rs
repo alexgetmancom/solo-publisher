@@ -9,7 +9,7 @@ use serde_json::json;
 
 use super::Publishing;
 use super::delivery_payload::has_resume_state;
-use super::queue_state::{insert_event, parse_payload};
+use super::queue_state::{JournalEntry, insert_event, parse_payload};
 use crate::Result;
 use crate::application::publication_ref::{PublicationRefKind, publication_ref};
 use crate::repositories::transaction;
@@ -195,10 +195,12 @@ impl Publishing<'_> {
                 sqlite,
                 Some(&key),
                 None,
-                "publish.remaining.cancelled",
-                "warn",
-                &format!("Remaining delivery cancelled: {stopped}{finishing}"),
-                &json!({ "actor_id": actor_id, "stopped": report.stopped, "finishing": report.finishing }),
+                JournalEntry {
+                    event_type: "publish.remaining.cancelled",
+                    severity: "warn",
+                    message: &format!("Remaining delivery cancelled: {stopped}{finishing}"),
+                    details: json!({ "actor_id": actor_id, "stopped": report.stopped, "finishing": report.finishing }),
+                },
                 &now,
             )?;
             Ok(report)

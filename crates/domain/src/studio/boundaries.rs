@@ -13,7 +13,6 @@ use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
-use crate::publishing::boundaries::{MediaProbe, VideoProvider};
 
 /// Whether a publication kind is reminded about, and how early.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -158,8 +157,3 @@ pub struct ZernioAccount {
 pub trait ZernioDirectory {
     fn accounts(&self, config: &Config) -> impl Future<Output = Result<Vec<ZernioAccount>>>;
 }
-
-/// Every adapter a Studio waits on, as one type the services are generic over.
-pub trait StudioAdapters: MediaProbe + VideoProvider + YoutubeUploads + ZernioDirectory {}
-
-impl<T: MediaProbe + VideoProvider + YoutubeUploads + ZernioDirectory> StudioAdapters for T {}

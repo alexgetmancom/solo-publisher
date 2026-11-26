@@ -39,6 +39,15 @@ pub trait WorkerBell {
     fn ring_publish_after(&self, delay_ms: u64);
 }
 
+/// A doorbell with no worker behind it: a process whose worker polls the
+/// queue on its own, as a ring with no registered wake does.
+pub struct NoWorker;
+
+impl WorkerBell for NoWorker {
+    fn ring_publish(&self) {}
+    fn ring_publish_after(&self, _delay_ms: u64) {}
+}
+
 /// What the breaker holds for one target's credential (`AuthCircuitState`).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]

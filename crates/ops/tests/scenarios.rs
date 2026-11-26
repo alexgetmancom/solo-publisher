@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use db::rusqlite::types::ValueRef;
-use domain::application::ports::Clock;
+use domain::application::ports::FixedClock;
 use jiff::Timestamp;
 use ops::cli::{CliRun, CliSurface, run_cli};
 use ops::context::{OpError, OperationContext, Terminal};
@@ -27,14 +27,6 @@ fn repo() -> PathBuf {
         .join("../..")
         .canonicalize()
         .unwrap()
-}
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
 }
 
 fn instant(text: &str) -> Timestamp {

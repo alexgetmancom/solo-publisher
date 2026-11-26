@@ -14,11 +14,11 @@ use std::sync::{Arc, LazyLock};
 
 use db::rusqlite::Connection;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::Clock;
+use domain::application::ports::{Clock, FixedClock};
 use domain::delivery::VideoCompletionNotice;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
 use domain::observability::usage::UsageRecorder;
-use domain::publishing::boundaries::{Boundaries, Jitter, StoryCardMedia, StoryCardState, StoryCards, WorkerBell};
+use domain::publishing::boundaries::{Boundaries, Jitter, NoWorker};
 use domain::story_cards::StoryCardStore;
 use foundation::config::{Config, load_config};
 use futures_util::future::LocalBoxFuture;
@@ -42,16 +42,6 @@ pub(crate) fn repo_root() -> PathBuf {
         .unwrap()
 }
 
-/// The scenario's clock, shared by every boundary that stamps with it.
-#[derive(Clone)]
-pub(crate) struct SharedClock(pub Rc<Cell<Timestamp>>);
-
-impl Clock for SharedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
-
 pub(crate) fn instant(value: &str) -> Timestamp {
     foundation::time::parse_iso_instant(value).unwrap()
 }
@@ -64,56 +54,25 @@ impl Jitter for FixedJitter {
     }
 }
 
-/// Rings go nowhere.
-struct Quiet;
-
-impl WorkerBell for Quiet {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
-}
-
 /// The stores behind the boundaries, on the scenario's clock.
 pub(crate) struct Host {
     jitter: FixedJitter,
-    auth_circuit: AuthCircuitBreaker<SharedClock>,
-    usage: UsageRecorder<SharedClock>,
-    story_cards: StoryCardStore<SharedClock>,
-    video_completion: VideoCompletionNotice<SharedClock>,
+    auth_circuit: AuthCircuitBreaker<Rc<FixedClock>>,
+    usage: UsageRecorder<Rc<FixedClock>>,
+    story_cards: StoryCardStore<Rc<FixedClock>>,
+    video_completion: VideoCompletionNotice<Rc<FixedClock>>,
 }
 
 impl Host {
     pub(crate) fn boundaries(&self) -> Boundaries<'_> {
         Boundaries {
             jitter: &self.jitter,
-            bell: &Quiet,
+            bell: &NoWorker,
             auth_circuit: &self.auth_circuit,
             usage: &self.usage,
-            story_cards: self,
+            story_cards: &self.story_cards,
             video_completion: &self.video_completion,
         }
-    }
-}
-
-impl StoryCards for Host {
-    fn queue(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.queue(sqlite, draft_id)
-    }
-    fn for_draft(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Vec<StoryCardState>> {
-        self.story_cards.for_draft(sqlite, draft_id)
-    }
-    fn ready_media(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<Option<StoryCardMedia>> {
-        self.story_cards.ready_media(sqlite, draft_id)
-    }
-    fn set_publish_mode(
-        &self,
-        sqlite: &Connection,
-        draft_id: i64,
-        mode: domain::application::ports::StoryPublishMode,
-    ) -> domain::Result<()> {
-        self.story_cards.set_publish_mode(sqlite, draft_id, mode)
-    }
-    fn discard(&self, sqlite: &Connection, draft_id: i64) -> domain::Result<()> {
-        self.story_cards.discard(sqlite, draft_id)
     }
 }
 
@@ -358,7 +317,8 @@ pub(crate) fn dump(sqlite: &Connection, ignored: &[String]) -> Map<String, Value
 pub(crate) struct Scenario {
     pub db: Rc<BackendDb>,
     pub host: Host,
-    pub clock: SharedClock,
+    /// The scenario's clock, shared by every boundary that stamps with it.
+    pub clock: Rc<FixedClock>,
     pub client: HttpClient,
     pub data: PathBuf,
     env: Vec<(String, String)>,
@@ -386,7 +346,7 @@ impl Scenario {
         AdapterContext {
             config: self.config(),
             client: self.client.clone(),
-            clock: Rc::new(self.clock.clone()),
+            clock: self.clock.clone(),
         }
     }
 
@@ -532,7 +492,7 @@ async fn run(spec: &Value, scenario: &Value, call: Call, label: &str) -> Value {
                 .into(),
         ),
     });
-    let clock = SharedClock(Rc::new(Cell::new(instant(spec["clock"].as_str().unwrap()))));
+    let clock = Rc::new(FixedClock(Cell::new(instant(spec["clock"].as_str().unwrap()))));
     let jitter = spec["jitter"].as_f64().unwrap();
     let context = Scenario {
         db: Rc::clone(&db),

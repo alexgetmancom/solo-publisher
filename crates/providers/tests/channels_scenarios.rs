@@ -18,7 +18,7 @@ use content::Locale;
 use db::rusqlite::Connection;
 use db::rusqlite::types::Value as SqlValue;
 use db::{BackendDb, unsafe_db};
-use domain::application::ports::Clock;
+use domain::application::ports::{Clock, FixedClock};
 use domain::delivery::VideoCompletionNotice;
 use domain::notifications::ReminderJobs;
 use domain::observability::auth_circuit::AuthCircuitBreaker;
@@ -28,7 +28,7 @@ use domain::observability::dates::{date_integrity, repair_stored_dates};
 use domain::observability::failures::record_publication_failures;
 use domain::observability::runtime_health::{ProcessBoot, record_memory_pressure, record_process_restart};
 use domain::observability::usage::UsageRecorder;
-use domain::publishing::boundaries::{SystemJitter, WorkerBell};
+use domain::publishing::boundaries::{NoWorker, SystemJitter};
 use domain::publishing::video_types::VideoTarget;
 use domain::publishing::{Boundaries, Publishing};
 use domain::story_cards::StoryCardStore;
@@ -37,7 +37,7 @@ use domain::studio::boundaries::{ConnectPlatform, MetaOauthPlatform, StoryDeriva
 use domain::studio::services::channels::{ChannelInput, ChannelService, ZernioConnectionKey};
 use foundation::config::{Config, SharedConfig, load_config};
 use foundation::secret_box::{SecretKey, encryption_key, fingerprint, open, seal};
-use jiff::Timestamp;
+use providers::adapters::ProviderCalls;
 use providers::channels::api_keys::{ApiKeyTarget, store_api_key};
 use providers::channels::connect::{ConnectLinks, start_connect};
 use providers::channels::credentials::{Setting, apply_stored_credentials};
@@ -58,7 +58,6 @@ use providers::channels::x::{
     exchange_x_code, refresh_x_token, x_oauth_authorize_url, x_oauth_connect_path, x_oauth_connect_url,
 };
 use providers::channels::youtube::{exchange_youtube_code, install_youtube_token, youtube_oauth_authorize_url};
-use providers::channels::zernio::ZernioAccounts;
 use regex::Regex;
 use runtime::http::{Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 use serde::Deserialize;
@@ -80,14 +79,6 @@ fn spec_path() -> PathBuf {
 }
 
 // ---- the world ------------------------------------------------------------
-
-struct FixedClock(Cell<Timestamp>);
-
-impl Clock for FixedClock {
-    fn now(&self) -> Timestamp {
-        self.0.get()
-    }
-}
 
 /// Every draw but the 12-byte IV fills its buffer with a counter, as the
 /// the recording's scripted `randomBytes` does; the IV is not drawn from here.
@@ -178,11 +169,6 @@ impl Transport for Recorder {
 /// The boundaries a Studio handle needs that these scenarios never reach.
 struct Quiet;
 
-impl WorkerBell for Quiet {
-    fn ring_publish(&self) {}
-    fn ring_publish_after(&self, _: u64) {}
-}
-
 impl StoryDerivatives for Quiet {
     fn ensure(&self, _: &str, _: bool, _: i64) {}
 }
@@ -206,7 +192,7 @@ fn studio_parts<'a>(world: &'a World<'a>, config: &'a Config, parts: &'a StudioP
             world.clock,
             Boundaries {
                 jitter: &SystemJitter,
-                bell: &Quiet,
+                bell: &NoWorker,
                 auth_circuit: &parts.breaker,
                 usage: &parts.usage,
                 story_cards: &parts.cards,
@@ -295,7 +281,7 @@ async fn call(world: &World<'_>, name: &str, args: &[Value]) -> Outcome {
     let http = &world.http;
     let parts = parts(world);
     let studio = studio_parts(world, &config, &parts);
-    let directory = ZernioAccounts::new(world.http.clone());
+    let directory = ProviderCalls::new(world.http.clone(), world.config.clone());
     let service = ChannelService::new(studio, &directory);
     match name {
         "tokens.seed" => {

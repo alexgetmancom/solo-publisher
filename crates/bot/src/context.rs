@@ -14,12 +14,13 @@ use domain::studio::Studio;
 use domain::studio::services::{StudioServices, create_studio_services};
 use foundation::config::Config;
 use jiff::Timestamp;
+use providers::adapters::ProviderCalls;
 use serde_json::Value;
 
 use crate::api::FileSource;
 use crate::api::payload::{Field, Payload};
 use crate::api::types::{Message, Update};
-use crate::bot::{Bot, DynAdapters};
+use crate::bot::Bot;
 use crate::boundary::TapState;
 use crate::menu::{self, MenuId};
 use crate::session::Sessions;
@@ -106,7 +107,7 @@ impl Ctx {
         )
     }
 
-    pub fn services(&self) -> StudioServices<'_, DynAdapters> {
+    pub fn services(&self) -> StudioServices<'_, ProviderCalls> {
         create_studio_services(self.studio(), &self.bot.deps().adapters)
     }
 
