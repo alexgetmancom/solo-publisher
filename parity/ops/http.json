@@ -129,7 +129,7 @@
       "method": "POST",
       "target": "/api/mcp",
       "headers": [["content-type", "application/json"]],
-      "body": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"studio_locale\",\"arguments\":{}}}"
+      "body": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"studio_youtube_signature\",\"arguments\":{}}}"
     },
     "status": 200,
     "headers": {
@@ -142,13 +142,13 @@
       "method": "POST",
       "target": "/api/mcp",
       "headers": [["content-type", "application/json"], ["authorization", "Bearer studio-token-for-tests-0001"]],
-      "body": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"studio_locale\",\"arguments\":{}}}"
+      "body": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"studio_youtube_signature\",\"arguments\":{}}}"
     },
     "status": 200,
     "headers": {
       "content-type": "application/json; charset=utf-8"
     },
-    "body": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"locale\\\":\\\"en\\\"}\"}]}}"
+    "body": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\\"signature\\\":\\\"\\\"}\"}]}}"
   },
   {
     "request": {

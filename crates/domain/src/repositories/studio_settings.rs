@@ -153,17 +153,6 @@ impl<'a> StudioSettingsStore<'a> {
             .optional()?)
     }
 
-    pub fn locale(&self, actor_id: i64) -> Result<Option<String>> {
-        Ok(self
-            .sqlite
-            .query_row(
-                r#"select "locale" from "bot_ui_settings" where "bot_ui_settings"."actor_id" = ?"#,
-                [actor_id],
-                |row| row.get(0),
-            )
-            .optional()?)
-    }
-
     pub fn timezone(&self, actor_id: i64) -> Result<Option<String>> {
         Ok(self
             .sqlite
@@ -272,19 +261,12 @@ impl<'a> StudioSettingsStore<'a> {
         Ok(())
     }
 
-    pub fn save_locale(&self, actor_id: i64, locale: &str, updated_at: &str) -> Result<()> {
-        self.sqlite.execute(
-            r#"insert into "bot_ui_settings" ("actor_id", "locale", "timezone", "updated_at") values (?, ?, null, ?) on conflict ("bot_ui_settings"."actor_id") do update set "locale" = ?, "updated_at" = ?"#,
-            params![actor_id, locale, updated_at, locale, updated_at],
-        )?;
-        Ok(())
-    }
-
-    /// A first row for the actor starts with the schema's default locale.
+    /// The row's `locale` column is the retired interface language: nothing
+    /// reads it, and a first row takes the schema default.
     pub fn save_timezone(&self, actor_id: i64, timezone: &str, updated_at: &str) -> Result<()> {
         self.sqlite.execute(
-            r#"insert into "bot_ui_settings" ("actor_id", "locale", "timezone", "updated_at") values (?, ?, ?, ?) on conflict ("bot_ui_settings"."actor_id") do update set "timezone" = ?, "updated_at" = ?"#,
-            params![actor_id, "en", timezone, updated_at, timezone, updated_at],
+            r#"insert into "bot_ui_settings" ("actor_id", "timezone", "updated_at") values (?, ?, ?) on conflict ("bot_ui_settings"."actor_id") do update set "timezone" = ?, "updated_at" = ?"#,
+            params![actor_id, timezone, updated_at, timezone, updated_at],
         )?;
         Ok(())
     }

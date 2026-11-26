@@ -46,7 +46,6 @@ use domain::studio::config::studio_config;
 use domain::studio::services::create_studio_services;
 use domain::studio::services::media::{ImportedMedia, ImportedMediaFile, MediaSource};
 use domain::studio::services::posts::PostScheduleScope;
-use domain::studio::services::settings::StudioLocale;
 use domain::studio::video_fsm::{
     VIDEO_FLOW, VideoWizardStep, advance_video_metadata, first_video_metadata_step, is_video_wizard_step,
     video_schedule_dates,
@@ -552,11 +551,6 @@ fn call(studio: Studio<'_>, world: &World, name: &str, args: &[Value]) -> domain
         "queue.snapshot" => out(queue.snapshot(int(0), optional_int(1))?),
         "settings.studioProfile" => out(settings.studio_profile()?),
         "settings.setStudioProfile" => out(settings.set_studio_profile(&arg(args, 0))?),
-        "settings.locale" => out(settings.locale(int(0))?),
-        "settings.setLocale" => {
-            settings.set_locale(int(0), arg::<StudioLocale>(args, 1))?;
-            Value::Null
-        }
         "settings.timezone" => out(settings.timezone(int(0), &text(1))?),
         "settings.setTimezone" => {
             settings.set_timezone(int(0), &text(1))?;

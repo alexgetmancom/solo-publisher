@@ -1945,14 +1945,6 @@
           }
         },
         {
-          "name": "studio_locale",
-          "description": "Read the authenticated owner's Studio interface locale.",
-          "inputSchema": {
-            "type": "object",
-            "properties": {}
-          }
-        },
-        {
           "name": "studio_channels",
           "description": "List connected Studio channels without exposing stored credentials.",
           "inputSchema": {
@@ -1969,20 +1961,6 @@
               "locale": {
                 "type": "string",
                 "enum": ["ru", "en"]
-              }
-            },
-            "required": ["locale"]
-          }
-        },
-        {
-          "name": "studio_locale_update",
-          "description": "Update the authenticated owner's shared interface locale.",
-          "inputSchema": {
-            "type": "object",
-            "properties": {
-              "locale": {
-                "type": "string",
-                "enum": ["en", "ru"]
               }
             },
             "required": ["locale"]

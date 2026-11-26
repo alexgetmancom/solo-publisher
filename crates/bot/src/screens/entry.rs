@@ -24,13 +24,9 @@ pub const MAIN_MENU: MenuId = "main-menu";
 /// The settings root, registered by the settings area under the main menu.
 pub const SETTINGS_MENU: MenuId = "settings-menu";
 
-/// The English `menu.button`: keyboards sent before the interface became
-/// Russian-only still type it, so it stays a trigger.
-pub(crate) const MENU_BUTTON_EN: &str = "☰ Menu";
-
 pub fn register(registry: &mut Registry) {
     registry.command("start", show_bot_menu);
-    registry.hears(&[MENU_BUTTON_EN, "☰ Меню"], show_main_menu);
+    registry.hears(&["☰ Меню"], show_main_menu);
     registry.screen(ScreenId::Noop, noop);
     registry.screen(ScreenId::MenuHome, menu_home);
     registry.menu(MenuDef {

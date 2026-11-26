@@ -124,18 +124,6 @@
           "args": []
         },
         {
-          "call": "settings.locale",
-          "args": [42]
-        },
-        {
-          "call": "settings.setLocale",
-          "args": [42, "ru"]
-        },
-        {
-          "call": "settings.locale",
-          "args": [42]
-        },
-        {
           "call": "settings.timezone",
           "args": [42, "Europe/Moscow"]
         },

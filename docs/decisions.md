@@ -12,6 +12,16 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   purpose). An actor with no stored locale reads as `en` in TypeScript; Rust always renders `ru`, and the goldens are
   recorded with `ru` stored explicitly. `ru.json` was exported with the EN value wherever the `ru` key was missing,
   because `t()` fell back to `catalog.en`, which kept the rendered output.
+- Removed the English reply-keyboard triggers (`☰ Menu`, `📝 Text`, `🎬 Video`); `parity/bot-goldens/entry/menu-button.json`
+  and its seed meta lost step 2 (`☰ Menu`).
+- Removed the interface-locale setting: MCP `studio_locale`/`studio_locale_update`, the `settings` report's per-admin
+  `locale`, and the domain/repository reads and writes. `bot_ui_settings.locale` stays in the schema, unread; a first
+  timezone row takes its default. Goldens: `parity/ops/catalog.json` lost both tools; `parity/ops/scenarios/mcp.json`
+  and `crates/ops/tests/scenarios/mcp.json` lost the three locale steps of "studio reads and settings" (its journal
+  and `bot_ui_settings` rows follow); `parity/ops/scenarios/reads.json` lost `administrators[].locale`;
+  `parity/ops/http.json` calls `studio_youtube_signature` instead of `studio_locale` for the MCP auth checks;
+  `crates/domain/tests/{scenarios,studio_scenarios}{,.golden}.json` lost the locale calls, and their `bot_ui_settings`
+  rows now show the column default `en`.
 - `crates/foundation/locales/ru.json` is the source of truth for the interface catalog, edited by hand since the one
   export from the old catalog. First edit: `settings.category-system-body` drops «язык» (there is no language setting) —
   «⚙️ Система\n\nЧасы, копия базы и цифры, которые вводятся руками.»; the golden harness asserts the recorded TypeScript

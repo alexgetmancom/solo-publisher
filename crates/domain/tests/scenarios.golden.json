@@ -2671,15 +2671,7 @@
           }
         },
         {
-          "call": "studioSettings.locale",
-          "result": null
-        },
-        {
           "call": "studioSettings.timezone",
-          "result": null
-        },
-        {
-          "call": "studioSettings.saveLocale",
           "result": null
         },
         {
@@ -2693,22 +2685,10 @@
         {
           "call": "studioSettings.saveTimezone",
           "result": null
-        },
-        {
-          "call": "studioSettings.saveLocale",
-          "result": null
-        },
-        {
-          "call": "studioSettings.locale",
-          "result": "ru"
         },
         {
           "call": "studioSettings.timezone",
           "result": "Asia/Tbilisi"
-        },
-        {
-          "call": "studioSettings.locale",
-          "result": "ru"
         },
         {
           "call": "studioSettings.backup",
@@ -2810,8 +2790,8 @@
           "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
         ],
         "bot_ui_settings": [
-          "1 integer:1 text:'ru' text:'Asia/Tbilisi' text:'2026-03-01T10:05:00.000Z'",
-          "2 integer:2 text:'ru' text:'UTC' text:'2026-03-01T10:06:00.000Z'"
+          "1 integer:1 text:'en' text:'Asia/Tbilisi' text:'2026-03-01T10:05:00.000Z'",
+          "2 integer:2 text:'en' text:'UTC' text:'2026-03-01T10:05:00.000Z'"
         ],
         "knowledge_entities": [
           "3 integer:3 text:'company' null:NULL text:'anthropic' text:'Anthropic' text:'Anthropic' text:'1970-01-01T00:00:00.000Z' text:'1970-01-01T00:00:00.000Z'",

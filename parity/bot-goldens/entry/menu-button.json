@@ -56,60 +56,6 @@
         },
         "update_id": 1
       }
-    },
-    {
-      "calls": [
-        {
-          "method": "sendMessage",
-          "payload": {
-            "chat_id": 1001,
-            "reply_markup": {
-              "inline_keyboard": [
-                [
-                  {
-                    "callback_data": "main-menu/0/0//f1��{",
-                    "text": "📝 Текст"
-                  },
-                  {
-                    "callback_data": "main-menu/0/1//f1��{",
-                    "text": "🎬 Видео"
-                  }
-                ],
-                [
-                  {
-                    "callback_data": "main-menu/1/0//f1��{",
-                    "text": "📋 Очередь"
-                  },
-                  {
-                    "callback_data": "main-menu/1/1//f1��{",
-                    "text": "⚙️ Настройки"
-                  }
-                ]
-              ]
-            },
-            "text": "✅ Очередь пуста"
-          }
-        }
-      ],
-      "update": {
-        "message": {
-          "chat": {
-            "first_name": "Admin",
-            "id": 1001,
-            "type": "private"
-          },
-          "date": 1787216400,
-          "from": {
-            "first_name": "Admin",
-            "id": 1001,
-            "is_bot": false,
-            "language_code": "ru"
-          },
-          "message_id": 3,
-          "text": "☰ Menu"
-        },
-        "update_id": 2
-      }
     }
   ]
 }

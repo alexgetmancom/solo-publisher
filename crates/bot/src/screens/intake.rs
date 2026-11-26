@@ -60,10 +60,10 @@ const MARKDOWN_DOWNLOAD_LIMIT: u64 = 1_000_000;
 const MARKDOWN_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub fn register(registry: &mut Registry) {
-    registry.hears(&["📝 Text", "📝 Текст"], |ctx| {
+    registry.hears(&["📝 Текст"], |ctx| {
         Box::pin(open_intake(ctx, Entry::Text))
     });
-    registry.hears(&["🎬 Video", "🎬 Видео"], |ctx| {
+    registry.hears(&["🎬 Видео"], |ctx| {
         Box::pin(open_intake(ctx, Entry::Video))
     });
     registry.message_stage(MessageStage::Intake, handle_intake_message);

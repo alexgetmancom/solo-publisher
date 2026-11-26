@@ -96,7 +96,6 @@ fn call(ports: &ApplicationPorts<'_>, name: &str, args: &[Value]) -> domain::Res
         "studioSettings.profile" => out(ports.studio_settings().profile()?),
         "studioSettings.saveProfile" => out(ports.studio_settings().save_profile(&arg(args, 0))?),
         "studioSettings.notifications" => out(ports.studio_settings().notifications(int(0))?),
-        "studioSettings.locale" => out(ports.studio_settings().locale(int(0))?),
         "studioSettings.timezone" => out(ports.studio_settings().timezone(int(0))?),
         "studioSettings.backup" => out(ports.studio_settings().backup()?),
         "studioSettings.saveBackup" => out(ports
@@ -112,11 +111,6 @@ fn call(ports: &ApplicationPorts<'_>, name: &str, args: &[Value]) -> domain::Res
         "studioSettings.saveYoutubeSettings" => out(ports
             .studio_settings()
             .save_youtube_settings(&field::<String>(args, "signature"), &field::<String>(args, "updatedAt"))?),
-        "studioSettings.saveLocale" => out(ports.studio_settings().save_locale(
-            field(args, "actorId"),
-            &field::<String>(args, "locale"),
-            &field::<String>(args, "updatedAt"),
-        )?),
         "studioSettings.saveTimezone" => out(ports.studio_settings().save_timezone(
             field(args, "actorId"),
             &field::<String>(args, "timezone"),

@@ -397,44 +397,6 @@
       {
         "response": {
           "jsonrpc": "2.0",
-          "id": 1,
-          "result": {
-            "content": [
-              {
-                "type": "text",
-                "text": "{\"locale\":\"en\"}"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "response": {
-          "jsonrpc": "2.0",
-          "id": 2,
-          "result": {
-            "content": [
-              {
-                "type": "text",
-                "text": "{\"locale\":\"en\",\"updated\":true}"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "response": {
-          "jsonrpc": "2.0",
-          "id": 3,
-          "error": {
-            "code": -32602,
-            "message": "locale: Invalid option: expected one of \"en\"|\"ru\""
-          }
-        }
-      },
-      {
-        "response": {
-          "jsonrpc": "2.0",
           "id": 4,
           "result": {
             "content": [
@@ -616,7 +578,6 @@
         "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
         "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
       ],
-      "bot_ui_settings": ["42 integer:42 text:'en' null:NULL text:'2026-11-01T10:00:00.000Z'"],
       "channel_connections": [
         "1 text:'telegram' text:'telegram' text:'ru' text:'native' null:NULL text:'telegram' text:'telegram' integer:1 text:'config' text:'2026-11-01T09:00:00.000Z' text:'2026-11-01T09:00:00.000Z'",
         "2 text:'x' text:'x' text:'en' text:'native' text:'acct-x' text:'x' text:'x' integer:1 text:'config' text:'2026-11-01T09:00:00.000Z' text:'2026-11-01T09:00:00.000Z'",
@@ -648,15 +609,14 @@
         "11 integer:9 text:'GPT 5.6 Sol' text:'1970-01-01T00:00:00.000Z'"
       ],
       "publication_events": [
-        "1 integer:1 null:NULL text:'studio.mcp.command' text:'info' text:'mcp' text:'Studio MCP studio_locale_update executed' text:'{\"actorId\":42,\"tool\":\"studio_locale_update\"}' text:'2026-11-01T10:00:00.000Z' null:NULL",
-        "2 integer:2 null:NULL text:'studio.mcp.command' text:'info' text:'mcp' text:'Studio MCP studio_notification_settings_update executed' text:'{\"actorId\":42,\"tool\":\"studio_notification_settings_update\"}' text:'2026-11-01T10:00:00.000Z' null:NULL",
-        "3 integer:3 null:NULL text:'studio.mcp.command' text:'info' text:'mcp' text:'Studio MCP studio_youtube_signature_update executed' text:'{\"actorId\":42,\"tool\":\"studio_youtube_signature_update\"}' text:'2026-11-01T10:00:00.000Z' null:NULL"
+        "1 integer:1 null:NULL text:'studio.mcp.command' text:'info' text:'mcp' text:'Studio MCP studio_notification_settings_update executed' text:'{\"actorId\":42,\"tool\":\"studio_notification_settings_update\"}' text:'2026-11-01T10:00:00.000Z' null:NULL",
+        "2 integer:2 null:NULL text:'studio.mcp.command' text:'info' text:'mcp' text:'Studio MCP studio_youtube_signature_update executed' text:'{\"actorId\":42,\"tool\":\"studio_youtube_signature_update\"}' text:'2026-11-01T10:00:00.000Z' null:NULL"
       ],
       "sqlite_sequence": [
         "1 text:'knowledge_entities' integer:12",
         "2 text:'drafts' integer:0",
         "3 text:'metric_samples' integer:0",
-        "4 text:'publication_events' integer:3",
+        "4 text:'publication_events' integer:2",
         "5 text:'publish_jobs' integer:0",
         "6 text:'site_jobs' integer:0",
         "7 text:'video_drafts' integer:0"

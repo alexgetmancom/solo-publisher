@@ -855,19 +855,14 @@
           ]
         },
         { "call": "studioSettings.notifications", "args": [1] },
-        { "call": "studioSettings.locale", "args": [1] },
         { "call": "studioSettings.timezone", "args": [1] },
-        { "call": "studioSettings.saveLocale", "args": [{ "actorId": 1, "locale": "ru", "updatedAt": "2026-03-01T10:04:00.000Z" }] },
         { "call": "studioSettings.timezone", "args": [1] },
         {
           "call": "studioSettings.saveTimezone",
           "args": [{ "actorId": 1, "timezone": "Asia/Tbilisi", "updatedAt": "2026-03-01T10:05:00.000Z" }]
         },
         { "call": "studioSettings.saveTimezone", "args": [{ "actorId": 2, "timezone": "UTC", "updatedAt": "2026-03-01T10:05:00.000Z" }] },
-        { "call": "studioSettings.saveLocale", "args": [{ "actorId": 2, "locale": "ru", "updatedAt": "2026-03-01T10:06:00.000Z" }] },
-        { "call": "studioSettings.locale", "args": [1] },
         { "call": "studioSettings.timezone", "args": [1] },
-        { "call": "studioSettings.locale", "args": [2] },
         { "call": "studioSettings.backup", "args": [] },
         { "call": "studioSettings.saveBackup", "args": [{ "enabled": 0, "updatedAt": "2026-03-01T10:07:00.000Z" }] },
         { "call": "studioSettings.saveBackup", "args": [{ "enabled": 1, "updatedAt": "2026-03-01T10:08:00.000Z" }] },

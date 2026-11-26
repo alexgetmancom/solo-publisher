@@ -20,7 +20,7 @@ use crate::context::Ctx;
 use crate::effects::show_screen;
 use crate::menu::{MenuAction, MenuButton, MenuDef, MenuId, MenuLayout, action};
 use crate::registry::{MessageResult, MessageStage, Registry};
-use crate::screens::entry::{MAIN_MENU, MENU_BUTTON_EN, SETTINGS_MENU, main_menu_text};
+use crate::screens::entry::{MAIN_MENU, SETTINGS_MENU, main_menu_text};
 use crate::session::ConversationStateInput;
 
 const PUBLISHING_MENU: MenuId = "settings-publishing";
@@ -243,7 +243,7 @@ fn show_settings(ctx: &Ctx) -> Fut<'_, crate::Result<()>> {
 
 /// Commands and persistent keyboard navigation leave an open settings input.
 fn is_navigation_message(text: &str) -> bool {
-    text.starts_with('/') || text == MENU_BUTTON_EN || text == t(Key::MenuButton, &[])
+    text.starts_with('/') || text == t(Key::MenuButton, &[])
 }
 
 /// `handleSettingsMessage`: the open settings input claims the next message.

@@ -11,33 +11,6 @@ use crate::application::ports::{
 };
 use crate::targets::{PublicationForm, TargetMap, is_known_target, targets_record};
 
-/// The owner's interface language as stored. The Rust interface renders
-/// Russian only; this is the setting MCP reads and writes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum StudioLocale {
-    En,
-    Ru,
-}
-
-impl StudioLocale {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::En => "en",
-            Self::Ru => "ru",
-        }
-    }
-
-    /// `parseStudioLocale(value, fallback)`.
-    pub fn parse(value: Option<&str>, fallback: Self) -> Self {
-        match value {
-            Some("en") => Self::En,
-            Some("ru") => Self::Ru,
-            _ => fallback,
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationSettings {
@@ -200,21 +173,6 @@ impl<'a> SettingsService<'a> {
             updated_at: self.now(),
         })?;
         self.studio_profile()
-    }
-
-    /// English for an owner who never chose: the stored value is the only
-    /// signal, and an unset one predates the picker.
-    pub fn locale(&self, actor_id: i64) -> Result<StudioLocale> {
-        Ok(StudioLocale::parse(
-            self.ports.studio_settings().locale(actor_id)?.as_deref(),
-            StudioLocale::En,
-        ))
-    }
-
-    pub fn set_locale(&self, actor_id: i64, locale: StudioLocale) -> Result<()> {
-        self.ports
-            .studio_settings()
-            .save_locale(actor_id, locale.as_str(), &self.now())
     }
 
     pub fn timezone(&self, actor_id: i64, fallback: &str) -> Result<String> {

@@ -153,18 +153,6 @@
           }
         },
         {
-          "call": "settings.locale",
-          "result": "en"
-        },
-        {
-          "call": "settings.setLocale",
-          "result": null
-        },
-        {
-          "call": "settings.locale",
-          "result": "ru"
-        },
-        {
           "call": "settings.timezone",
           "result": "Europe/Moscow"
         },
@@ -432,7 +420,7 @@
           "36 null:NULL text:'16c78209293b6a2d9c7a980a267c1bee12ecb059affc6f15285f551083163717' integer:1793484000000",
           "37 null:NULL text:'311d9a3af65ee0086ec2df97d4d39d9dff38121b7cf70c8dcbc5dc7e56b684af' integer:1793538000000"
         ],
-        "bot_ui_settings": ["42 integer:42 text:'ru' text:'America/New_York' text:'2026-03-01T10:00:00.000Z'"],
+        "bot_ui_settings": ["42 integer:42 text:'en' text:'America/New_York' text:'2026-03-01T10:00:00.000Z'"],
         "channel_connections": [
           "1 text:'telegram' text:'telegram' text:'ru' text:'native' null:NULL text:'telegram' text:'telegram' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",
           "2 text:'threads_ru' text:'threads_ru' text:'ru' text:'native' null:NULL text:'threads_ru' text:'threads_ru' integer:1 text:'config' text:'2026-03-01T10:00:00.000Z' text:'2026-03-01T10:00:00.000Z'",

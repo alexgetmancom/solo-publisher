@@ -28,7 +28,7 @@ Everything is registered in `register`, never by editing shared files:
 - publication control → `registry.action(kind, "name", ActionDef { handler, entity, args, fresh_card, session_revision })`;
   card → `registry.renderer(kind, fn)`; conversation messages → `registry.publication_messages(kind, fn)`.
   `view`/`retry` are shared and already registered.
-- text trigger → `registry.hears(&["📝 Text", "📝 Текст"], handler)` (EN variants stay: old keyboards send them);
+- text trigger → `registry.hears(&["📝 Текст"], handler)`;
   message stage → `registry.message_stage(MessageStage::Settings | Intake, fn)`; menu → `registry.menu(MenuDef { … })`.
 - intake routes: wrap in `publication::run_callback_action(ctx, "<actor>:intake", …)` as every intake route does. The video area
   registers `registry.video_intake(VideoIntake { store, attach })`: storing the intake's captured video and opening

@@ -268,8 +268,8 @@ impl Registry {
         }
         for (texts, area) in [
             (["⚙️"].as_slice(), "settings"),
-            (["📝 Text", "📝 Текст"].as_slice(), "intake"),
-            (["🎬 Video", "🎬 Видео"].as_slice(), "intake"),
+            (["📝 Текст"].as_slice(), "intake"),
+            (["🎬 Видео"].as_slice(), "intake"),
         ] {
             for text in texts {
                 if self.hears_handler(text).is_none() {

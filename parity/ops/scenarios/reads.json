@@ -12,7 +12,6 @@
           "administrators": [
             {
               "actorId": 42,
-              "locale": "en",
               "notifications": {
                 "videoRemindersEnabled": true,
                 "postRemindersEnabled": true,
@@ -22,7 +21,6 @@
             },
             {
               "actorId": 77,
-              "locale": "en",
               "notifications": {
                 "videoRemindersEnabled": true,
                 "postRemindersEnabled": true,
@@ -3416,7 +3414,6 @@
           "administrators": [
             {
               "actorId": 42,
-              "locale": "en",
               "notifications": {
                 "videoRemindersEnabled": true,
                 "postRemindersEnabled": true,
@@ -3426,7 +3423,6 @@
             },
             {
               "actorId": 77,
-              "locale": "en",
               "notifications": {
                 "videoRemindersEnabled": true,
                 "postRemindersEnabled": true,
@@ -3783,7 +3779,6 @@
           "administrators": [
             {
               "actorId": 42,
-              "locale": "en",
               "notifications": {
                 "videoRemindersEnabled": true,
                 "postRemindersEnabled": true,
@@ -3793,7 +3788,6 @@
             },
             {
               "actorId": 77,
-              "locale": "en",
               "notifications": {
                 "videoRemindersEnabled": false,
                 "postRemindersEnabled": true,

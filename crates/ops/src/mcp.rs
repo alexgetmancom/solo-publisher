@@ -18,7 +18,7 @@ use domain::publishing::video_types::VideoTarget;
 use domain::repositories::record_event;
 use domain::studio::services::StudioServices;
 use domain::studio::services::posts::{DraftConfiguration, EditInput, PostScheduleInput};
-use domain::studio::services::settings::{NotificationSettingsInput, StudioLocale};
+use domain::studio::services::settings::NotificationSettingsInput;
 use foundation::logger::{LogLevel, log};
 use foundation::redact::redact_external_secrets;
 use runtime::http::HttpClient;
@@ -54,8 +54,6 @@ fn positive_int() -> crate::schema::Field {
 }
 
 const LOCALES: &[&str] = &["ru", "en"];
-/// `STUDIO_LOCALES`: the interface languages the locale registry knows.
-const UI_LOCALES: &[&str] = &["en", "ru"];
 const VIDEO_TARGETS: &[&str] = &["youtube_shorts", "instagram_reels"];
 
 fn iso_date_or_null() -> crate::schema::Field {
@@ -238,9 +236,6 @@ fn studio_tool_defs() -> Vec<ToolDef> {
         tool("studio_notification_settings", "Read the authenticated owner's Studio notification policy.",
             object(vec![]),
             |studio, actor, _| ready(studio.settings.notifications(actor).map_err(OpError::from).and_then(to_value))),
-        tool("studio_locale", "Read the authenticated owner's Studio interface locale.",
-            object(vec![]),
-            |studio, actor, _| ready(studio.settings.locale(actor).map_err(OpError::from).map(|locale| json!({"locale": locale.as_str()})))),
         tool("studio_channels", "List connected Studio channels without exposing stored credentials.",
             object(vec![]),
             |studio, _, _| ready(studio.channels.list(false).map_err(OpError::from).map(|channels| {
@@ -272,13 +267,6 @@ fn studio_tool_defs() -> Vec<ToolDef> {
                 }).collect();
                 Ok(Value::Array(options))
             })),
-        tool("studio_locale_update", "Update the authenticated owner's shared interface locale.",
-            object(vec![("locale", enumeration(UI_LOCALES))]),
-            |studio, actor, input| {
-                let ui = StudioLocale::parse(input.opt_str("locale"), StudioLocale::Ru);
-                ready(studio.settings.set_locale(actor, ui).map_err(OpError::from)
-                    .map(|()| json!({"locale": ui.as_str(), "updated": true})))
-            }).mutation(None),
         tool("studio_youtube_signature", "Read this Studio's YouTube description signature.",
             object(vec![]),
             |studio, _, _| ready(studio.settings.youtube_signature().map_err(OpError::from).map(|signature| json!({"signature": signature})))),

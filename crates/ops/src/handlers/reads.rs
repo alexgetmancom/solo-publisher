@@ -71,7 +71,6 @@ pub fn settings<'a>(context: &'a OperationContext<'a>, _input: &'a Input) -> Fut
             .map(|actor_id| {
                 Ok(json!({
                     "actorId": actor_id,
-                    "locale": settings.locale(*actor_id)?.as_str(),
                     "notifications": to_value(settings.notifications(*actor_id)?)?,
                 }))
             })

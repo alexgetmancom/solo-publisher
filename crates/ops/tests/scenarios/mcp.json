@@ -199,43 +199,6 @@
         {
           "mcp": {
             "jsonrpc": "2.0",
-            "id": 1,
-            "method": "tools/call",
-            "params": {
-              "name": "studio_locale",
-              "arguments": {}
-            }
-          }
-        },
-        {
-          "mcp": {
-            "jsonrpc": "2.0",
-            "id": 2,
-            "method": "tools/call",
-            "params": {
-              "name": "studio_locale_update",
-              "arguments": {
-                "locale": "en"
-              }
-            }
-          }
-        },
-        {
-          "mcp": {
-            "jsonrpc": "2.0",
-            "id": 3,
-            "method": "tools/call",
-            "params": {
-              "name": "studio_locale_update",
-              "arguments": {
-                "locale": "de"
-              }
-            }
-          }
-        },
-        {
-          "mcp": {
-            "jsonrpc": "2.0",
             "id": 4,
             "method": "tools/call",
             "params": {
