@@ -12,10 +12,10 @@
 
 use std::sync::LazyLock;
 
+use foundation::js::{WHITESPACE_CLASS, utf16_len};
 use regex::Regex;
 
 use crate::Locale;
-use crate::js::{WHITESPACE_CLASS, utf16_len};
 
 /// Links, handles, hashtags and code are Latin in both languages, so they are
 /// noise here: without this a short Russian post carrying a URL reads English.

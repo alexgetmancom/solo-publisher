@@ -4,11 +4,12 @@
 
 use db::rusqlite::types::Value as SqlValue;
 use db::rusqlite::{Connection, OptionalExtension, params, params_from_iter};
+use foundation::js::{present, string_of, truthy};
 use serde_json::{Map, Value};
 
-use super::errors::{PublishResult, present};
+use super::errors::PublishResult;
 use super::parse_ms;
-use crate::json::{self, js_string, truthy};
+use crate::json;
 use crate::{Error, Result};
 
 /// Column assignments in the order the statements name them.
@@ -90,7 +91,7 @@ pub fn parse_payload(value: Option<&str>) -> Map<String, Value> {
 pub fn external_ids(result: &PublishResult) -> Vec<String> {
     if let Some(Value::Array(ids)) = result.get("ids") {
         let mut distinct: Vec<String> = Vec::new();
-        for id in ids.iter().map(js_string).filter(|id| !id.is_empty()) {
+        for id in ids.iter().map(string_of).filter(|id| !id.is_empty()) {
             if !distinct.contains(&id) {
                 distinct.push(id);
             }
@@ -99,7 +100,7 @@ pub fn external_ids(result: &PublishResult) -> Vec<String> {
             return distinct;
         }
     }
-    present(result, "id").map(js_string).into_iter().collect()
+    present(result.get("id")).map(string_of).into_iter().collect()
 }
 
 /// `{ ...record }.field` read for its truthiness.

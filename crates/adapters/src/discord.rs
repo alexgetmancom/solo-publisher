@@ -8,12 +8,12 @@ use content::text::split_text;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::platform_profiles::platform_profile;
+use foundation::js::encode_uri_component;
 use foundation::logger::{LogLevel, log};
 use runtime::http::{HttpRequest, Method, Response};
 use serde_json::{Map, Value, json};
 
 use crate::error::{AdapterError, Result, ambiguous_mutation, publish_json, refused};
-use crate::js::encode_uri_component;
 use crate::multipart::Form;
 use crate::payload::{exists, field, guess_content_type, media_extension, payload_media, payload_text};
 use crate::ports::{AdapterContext, EditOutcome, EditRequest};
@@ -167,7 +167,7 @@ pub async fn edit_discord(ctx: &AdapterContext, edit: &EditRequest) -> Result<Ed
     if edit.external_id_count > 1 {
         return Ok(EditOutcome::skipped("discord_post_is_split"));
     }
-    if crate::js::utf16_len(&edit.text) > text_limit() {
+    if foundation::js::utf16_len(&edit.text) > text_limit() {
         return Ok(EditOutcome::skipped("edit_exceeds_discord_limit"));
     }
     let credentials = credentials(ctx)?;

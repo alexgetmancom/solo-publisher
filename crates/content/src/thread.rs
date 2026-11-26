@@ -1,7 +1,6 @@
-use foundation::js::{is_integer, trim, trim_end, trim_start};
+use foundation::js::{is_integer, json_number, number_of_scalar, trim, trim_end, trim_start, utf16_len};
 
 use crate::Locale;
-use crate::js::{number, number_value, utf16_len};
 use crate::message::{Entity, MediaItem};
 use crate::text::split_text;
 
@@ -63,13 +62,13 @@ pub fn joined_thread<M>(text: &str, entities: &[Entity], rest: &[LocalizedThread
         text = format!("{text}\n\n{body}");
         let body_length = utf16_len(body) as f64;
         for entity in &part.entities {
-            let start = number(entity.get("offset")) - lead;
-            let length = number(entity.get("length"));
+            let start = number_of_scalar(entity.get("offset")) - lead;
+            let length = number_of_scalar(entity.get("length"));
             if !is_integer(start) || !is_integer(length) || start < 0.0 || start + length > body_length {
                 continue;
             }
             let mut moved = entity.clone();
-            moved.insert("offset".into(), number_value(offset + start));
+            moved.insert("offset".into(), json_number(offset + start));
             entities.push(moved);
         }
     }
@@ -101,7 +100,10 @@ pub fn chain_posts<M: Clone>(posts: &[LocalizedThreadPart<M>], limit: usize) -> 
                         entities: if index == 0 {
                             post.entities
                                 .iter()
-                                .filter(|entity| number(entity.get("offset")) + number(entity.get("length")) <= length)
+                                .filter(|entity| {
+                                    number_of_scalar(entity.get("offset")) + number_of_scalar(entity.get("length"))
+                                        <= length
+                                })
                                 .cloned()
                                 .collect()
                         } else {

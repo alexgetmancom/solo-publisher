@@ -5,12 +5,13 @@
 
 use content::message::MediaItem;
 use foundation::media_types::{file_extension, media_content_type};
+use serde_json::Value;
 
 pub use domain::publishing::payload::{payload_media, payload_text, payload_thread};
 
 /// A media item's text field, when set (`item.localPath`, `item.vpsUrl`, …).
 pub fn field<'a>(item: &'a MediaItem, key: &str) -> Option<&'a str> {
-    crate::js::non_empty(item, key)
+    item.get(key).and_then(Value::as_str).filter(|text| !text.is_empty())
 }
 
 pub fn is_video(item: &MediaItem) -> bool {

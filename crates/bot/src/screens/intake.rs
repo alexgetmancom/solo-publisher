@@ -252,7 +252,7 @@ impl Captured {
         if self.markdown.is_some() {
             return Some(MaterialKind::Article);
         }
-        (utf16_len(&self.message.text) <= POST_WITHOUT_ASKING).then_some(MaterialKind::Post)
+        (js::utf16_len(&self.message.text) <= POST_WITHOUT_ASKING).then_some(MaterialKind::Post)
     }
 
     fn article_markdown(&self) -> String {
@@ -264,26 +264,10 @@ impl Captured {
         let rest = match source.find(first) {
             Some(index) => &source[index + first.len()..],
             // `indexOf` missed: `slice(-1 + first.length)`.
-            None => utf16_slice_from(source, utf16_len(first) - 1),
+            None => js::utf16_slice_from(source, js::utf16_len(first) - 1),
         };
         format!("# {first}\n\n{}", js::trim_start(rest))
     }
-}
-
-fn utf16_len(text: &str) -> usize {
-    text.encode_utf16().count()
-}
-
-/// `text.slice(units)` for a start in UTF-16 code units.
-fn utf16_slice_from(text: &str, units: usize) -> &str {
-    let mut seen = 0;
-    for (index, character) in text.char_indices() {
-        if seen >= units {
-            return &text[index..];
-        }
-        seen += character.len_utf16();
-    }
-    ""
 }
 
 /// `/^#\s+\S/m`: a line that starts with `#`, whitespace, then something.
@@ -493,7 +477,7 @@ fn choose_kind_screen(captured: &Captured) -> crate::Result<Effect> {
         t(
             Key::IntakeChooseKind,
             &[
-                ("characters", &utf16_len(&captured.message.text)),
+                ("characters", &js::utf16_len(&captured.message.text)),
                 ("media", &captured.message.media.len()),
             ],
         ),
@@ -564,7 +548,7 @@ async fn download_document(ctx: &Ctx, document: &MediaFile) -> crate::Result<Str
         return Err(too_large());
     }
     let text = String::from_utf8_lossy(&response.body).into_owned();
-    if utf16_len(&text) as u64 > MARKDOWN_DOWNLOAD_LIMIT {
+    if js::utf16_len(&text) as u64 > MARKDOWN_DOWNLOAD_LIMIT {
         return Err(too_large());
     }
     Ok(text)
@@ -618,7 +602,7 @@ async fn apply_intake_kind(ctx: &Ctx, kind: MaterialKind) -> crate::Result<Vec<E
             Ok(vec![Effect::screen(
                 t(
                     Key::IntakeArticleReview,
-                    &[("title", &parsed.title), ("characters", &utf16_len(&parsed.body.text))],
+                    &[("title", &parsed.title), ("characters", &js::utf16_len(&parsed.body.text))],
                 ),
                 Payload::new().reply_markup(keyboard),
             )])

@@ -9,12 +9,11 @@
 
 use std::sync::LazyLock;
 
-use foundation::js::{trim, trim_end};
+use foundation::js::{WHITESPACE_CLASS, trim, trim_end, utf16_len};
 use foundation::url::is_http_url;
 use regex::Regex;
 use serde_json::{Map, Value};
 
-use crate::js::{WHITESPACE_CLASS, utf16_len};
 use crate::message::{DraftMessage, Entity};
 
 #[derive(Clone, Debug, PartialEq)]

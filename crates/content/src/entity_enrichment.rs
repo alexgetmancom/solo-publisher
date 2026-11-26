@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use foundation::js::trim;
+use foundation::js::{WHITESPACE_CLASS, trim, utf16_len};
 use regex::Regex;
-
-use crate::js::{WHITESPACE_CLASS, utf16_len};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LocaleText {

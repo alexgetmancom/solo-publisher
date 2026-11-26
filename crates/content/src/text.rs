@@ -1,11 +1,13 @@
 use std::collections::BTreeMap;
 
 use foundation::html::escape_html;
-use foundation::js::{is_integer, is_whitespace, number_to_string, trim, trim_start};
+use foundation::js::{
+    is_integer, is_whitespace, number_of_scalar, number_to_string, trim, trim_start, utf16_len, utf16_prefix,
+    utf16_to_byte,
+};
 use foundation::url::is_http_url;
 use serde_json::Value;
 
-use crate::js::{number, utf16_len, utf16_prefix, utf16_to_byte};
 use crate::message::Entity;
 
 struct Wrapper {
@@ -30,7 +32,10 @@ pub fn entities_to_html(text: &str, entities: &[Entity]) -> String {
     let mut spans: Vec<(usize, usize, Wrapper)> = entities
         .iter()
         .filter_map(|entity| {
-            let (offset, length) = (number(entity.get("offset")), number(entity.get("length")));
+            let (offset, length) = (
+                number_of_scalar(entity.get("offset")),
+                number_of_scalar(entity.get("length")),
+            );
             if !(is_integer(offset) && is_integer(length) && offset >= 0.0 && length > 0.0) {
                 return None;
             }
@@ -94,7 +99,7 @@ fn entity_wrapper(entity: &Entity, raw: &str) -> Option<Wrapper> {
         "heading" => {
             let level = match entity.get("level") {
                 None | Some(Value::Null) => 2.0,
-                level => number(level),
+                level => number_of_scalar(level),
             };
             // `Math.min(Math.max(level, 1), 6)`: NaN survives both, as `<hNaN>`.
             let level = number_to_string(if level.is_nan() { level } else { level.clamp(1.0, 6.0) });
@@ -135,7 +140,7 @@ fn render_text(units: &[u16]) -> String {
 pub fn first_text_link_url(entities: &[Entity]) -> Option<&str> {
     let offset = |entity: &Entity| match entity.get("offset") {
         None | Some(Value::Null) => 0.0,
-        offset => number(offset),
+        offset => number_of_scalar(offset),
     };
     let mut ordered: Vec<&Entity> = entities.iter().collect();
     ordered.sort_by(|left, right| offset(left).total_cmp(&offset(right)));

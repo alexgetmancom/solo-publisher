@@ -259,7 +259,7 @@ fn channel_connect_layout(ctx: &Ctx) -> crate::Result<Vec<Vec<MenuButton>>> {
                             show_screen(ctx, &text, Payload::new()).await
                         }
                         Err(error) => {
-                            let text = js_slice(&describe_error(&error), 190);
+                            let text = foundation::js::utf16_prefix_lossy(&describe_error(&error), 190);
                             ctx.answer_callback_query(Some(&text), true).await
                         }
                     }
@@ -426,13 +426,6 @@ pub(super) async fn collect_youtube_signature(ctx: &Ctx, text: &str) -> crate::R
             .reply_markup(Field::Menu(YOUTUBE_SIGNATURE_MENU)),
     )
     .await
-}
-
-/// JavaScript's `text.slice(0, end)`: UTF-16 code units, a split pair dropped
-/// to its lone half as `String.fromCharCode` would keep it (lossy here).
-fn js_slice(text: &str, end: usize) -> String {
-    let units: Vec<u16> = text.encode_utf16().take(end).collect();
-    String::from_utf16_lossy(&units)
 }
 
 fn native_label(platform: &str, locale: &str) -> String {

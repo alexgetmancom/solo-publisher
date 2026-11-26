@@ -17,7 +17,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::credentials::{ConfigPatch, Setting, assign, encryption_key};
-use crate::encode::{base_url, base64url, encode_uri_component, hmac_sha256, search_params};
+use crate::encode::{base_url, base64url, hmac_sha256, search_params};
 use crate::entropy::{Entropy, random_bytes};
 use crate::registry::channel_identity;
 use crate::token_store::{TokenWrite, platform_token, store_platform_token};
@@ -167,7 +167,7 @@ pub fn meta_oauth_connect_url(
         "{}/oauth/{}/start?state={}",
         base_url(config),
         meta_platform_name(platform),
-        encode_uri_component(&meta_oauth_state(config, platform, locale, now, entropy)?)
+        foundation::js::encode_uri_component(&meta_oauth_state(config, platform, locale, now, entropy)?)
     ))
 }
 
@@ -443,7 +443,7 @@ impl MetaToken {
             "https://{}/refresh_access_token?grant_type={}&access_token={}",
             self.refresh_host,
             self.refresh_grant,
-            encode_uri_component(token)
+            foundation::js::encode_uri_component(token)
         )
     }
 

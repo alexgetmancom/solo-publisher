@@ -2,12 +2,12 @@
 
 use content::message::{Entity, MediaItem, first_line};
 use content::thread::{LocalizedThreadPart, joined_thread};
+use foundation::js::string_of;
 use serde_json::{Map, Value, json};
 
 use super::media_policy::select_media_for_target;
 use super::platform_profiles::platform_profile;
 use super::publication_source::PublicationSource;
-use crate::json::js_string;
 use crate::targets::{is_story_target, target_locale};
 
 /// Resolves the dual-locale publication source into the job payload for one
@@ -153,7 +153,7 @@ pub fn payload_media(payload: &Map<String, Value>) -> Vec<Map<String, Value>> {
             }
             let kind = match record.get("type") {
                 None | Some(Value::Null) => String::new(),
-                Some(kind) => js_string(kind).to_lowercase(),
+                Some(kind) => string_of(kind).to_lowercase(),
             };
             let kind = match kind.as_str() {
                 "image" | "photo" => "IMAGE",

@@ -8,6 +8,7 @@ use content::text::split_text;
 use content::title_emphasis::emphasize_title;
 use content::translation::translation_wanted;
 use foundation::errors::StudioError;
+use foundation::js::string_of;
 use foundation::json::json_record_array;
 use foundation::time::Zone;
 use jiff::Timestamp;
@@ -27,7 +28,7 @@ use crate::application::publication_ref::{PublicationRefKind, publication_ref};
 use crate::channels::{
     channel_upload_limits, effective_post_targets, post_locales, publishes_story, registered_post_target_ids,
 };
-use crate::json::{js_string, stringify};
+use crate::json::stringify;
 use crate::publishing::abandon::{AbandonOutcome, AbandonResult};
 use crate::publishing::article_publish::{PublishArticleInput, PublishedArticle};
 use crate::publishing::boundaries::StoryCardState;
@@ -207,18 +208,6 @@ fn event(publication_ref: String, event_type: &str, message: String, details: Va
     }
 }
 
-/// `Number(value)` of a JSON field, `NaN` when absent.
-fn js_number(value: Option<&Value>) -> f64 {
-    match value {
-        None => f64::NAN,
-        Some(Value::Null) => 0.0,
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
-        Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(text)) => foundation::js::number(text),
-        Some(_) => f64::NAN,
-    }
-}
-
 /// A persisted schedule column as an instant; unset or unparsable is no schedule.
 fn scheduled_date(value: Option<&str>) -> Option<Timestamp> {
     value
@@ -250,7 +239,11 @@ fn thread_posts(part: &NewThreadPart) -> Vec<NewThreadPart> {
                 entities_ru: if index == 0 {
                     part.entities_ru
                         .iter()
-                        .filter(|entity| js_number(entity.get("offset")) + js_number(entity.get("length")) <= length)
+                        .filter(|entity| {
+                            foundation::js::number_of_scalar(entity.get("offset"))
+                                + foundation::js::number_of_scalar(entity.get("length"))
+                                <= length
+                        })
                         .cloned()
                         .collect()
                 } else {
@@ -417,7 +410,7 @@ impl<'a> PostService<'a> {
             let Some(local_path) = local_path else { continue };
             let kind = match item.get("type") {
                 None | Some(Value::Null) => String::new(),
-                Some(kind) => js_string(kind),
+                Some(kind) => string_of(kind),
             };
             self.studio.boundaries.story_derivatives.ensure(
                 local_path,
@@ -652,7 +645,7 @@ impl<'a> PostService<'a> {
         let media: Vec<MediaItem> = draft_media(&draft, locale)
             .into_iter()
             .filter(|item| {
-                let id = js_number(item.get("asset_id"));
+                let id = foundation::js::number_of_scalar(item.get("asset_id"));
                 !asset_ids.iter().any(|removed| *removed as f64 == id)
             })
             .collect();

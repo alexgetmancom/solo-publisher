@@ -2,6 +2,7 @@
 
 use content::Locale;
 use foundation::errors::StudioError;
+use foundation::js::{string_of, truthy};
 use foundation::time::Zone;
 use jiff::Timestamp;
 use serde::Serialize;
@@ -17,7 +18,6 @@ use crate::application::publication_pipeline::{
     PublicationScheduleAxis, PublicationView,
 };
 use crate::application::publication_ref::{PublicationRefKind, publication_ref};
-use crate::json::{js_string, truthy};
 use crate::publishing::boundaries::{MediaProbe, VideoProvider};
 use crate::publishing::schedule::{
     immediate_schedule_time, is_immediate_schedule, parse_manual_schedule, publication_slot_time,
@@ -566,7 +566,7 @@ impl<'a, A: MediaProbe + VideoProvider + YoutubeUploads> VideoService<'a, A> {
             .save_video_metadata(publication_id, target, &metadata)?;
         if field == VideoWizardStep::YoutubeTitle {
             let label = if truthy(value) {
-                js_string(value)
+                string_of(value)
             } else {
                 "YouTube Shorts".into()
             };

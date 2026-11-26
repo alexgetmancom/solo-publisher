@@ -76,20 +76,20 @@ const DUPLICATE_ERROR: &str =
 /// `post._id ?? post.id ?? post.post?._id ?? … ?? post.existingPost?.id`.
 fn post_id(post: &Value) -> Option<String> {
     let id = |value: &Value| {
-        crate::js::present(value.get("_id"))
-            .or_else(|| crate::js::present(value.get("id")))
+        foundation::js::present(value.get("_id"))
+            .or_else(|| foundation::js::present(value.get("id")))
             .cloned()
     };
     id(post)
         .or_else(|| post.get("post").and_then(id))
         .or_else(|| post.get("existingPost").and_then(id))
-        .map(|id| domain::json::js_string(&id))
+        .map(|id| foundation::js::string_of(&id))
 }
 
 /// `zernioPublishResult(post, platform, expectedPostId)`.
 fn publication_of(post: &Value, platform: ZernioPlatform, expected: Option<&str>) -> Result<ZernioPublication> {
-    let resolved = crate::js::present(post.get("post"))
-        .or_else(|| crate::js::present(post.get("existingPost")))
+    let resolved = foundation::js::present(post.get("post"))
+        .or_else(|| foundation::js::present(post.get("existingPost")))
         .unwrap_or(post);
     let entries = |key: &str| -> Vec<&Value> {
         resolved
@@ -266,12 +266,12 @@ pub async fn zernio_post_outcome(
     provider_post_id: &str,
     platform: ZernioPlatform,
 ) -> Result<ZernioOutcome> {
-    let path = format!("posts/{}", crate::js::encode_uri_component(provider_post_id));
+    let path = format!("posts/{}", foundation::js::encode_uri_component(provider_post_id));
     let response = ctx
         .client
         .request_json(zernio_request(&ctx.config, Method::Get, &path)?)
         .await?;
-    let post = crate::js::present(response.get("post")).unwrap_or(&response);
+    let post = foundation::js::present(response.get("post")).unwrap_or(&response);
     let find = |key: &str| {
         post.get(key).and_then(Value::as_array).and_then(|items| {
             items
@@ -289,8 +289,8 @@ pub async fn zernio_post_outcome(
         || status(platform_analytics) == Some("failed");
     let detail = |entry: Option<&Value>, key: &str| {
         entry
-            .and_then(|entry| crate::js::present(entry.get(key)))
-            .map(domain::json::js_string)
+            .and_then(|entry| foundation::js::present(entry.get(key)))
+            .map(foundation::js::string_of)
     };
     Ok(ZernioOutcome {
         publication: publication_of(post, platform, Some(provider_post_id))?,
@@ -308,7 +308,7 @@ pub async fn verify_zernio_post(
     provider_post_id: &str,
     platform: ZernioPlatform,
 ) -> Result<ZernioPublication> {
-    let path = format!("posts/{}", crate::js::encode_uri_component(provider_post_id));
+    let path = format!("posts/{}", foundation::js::encode_uri_component(provider_post_id));
     let post = ctx
         .client
         .request_json(zernio_request(&ctx.config, Method::Get, &path)?)

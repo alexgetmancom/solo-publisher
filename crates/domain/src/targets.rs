@@ -157,7 +157,7 @@ impl TargetMap {
     pub fn from_json(object: &Map<String, Value>) -> Self {
         Self(
             json::object_entries(object)
-                .map(|(key, value)| (key.clone(), json::truthy(value)))
+                .map(|(key, value)| (key.clone(), foundation::js::truthy(value)))
                 .collect(),
         )
     }

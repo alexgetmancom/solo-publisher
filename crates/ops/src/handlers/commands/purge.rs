@@ -357,7 +357,7 @@ fn stored_external_ids(target: &TargetState) -> Vec<String> {
         .as_deref()
         .and_then(|json| serde_json::from_str::<Value>(json).ok())
         .and_then(|value| value.as_array().cloned())
-        .map(|ids| ids.iter().map(domain::json::js_string).collect())
+        .map(|ids| ids.iter().map(foundation::js::string_of).collect())
         .unwrap_or_default();
     if !listed.is_empty() {
         return listed;

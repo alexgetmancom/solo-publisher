@@ -28,7 +28,7 @@ fn cell(value: ValueRef<'_>) -> Value {
     match value {
         ValueRef::Null | ValueRef::Blob(_) => Value::Null,
         ValueRef::Integer(number) => json!(number),
-        ValueRef::Real(number) => crate::schema::number_value(number),
+        ValueRef::Real(number) => foundation::js::json_number(number),
         ValueRef::Text(text) => Value::from(String::from_utf8_lossy(text).into_owned()),
     }
 }
@@ -192,7 +192,7 @@ pub fn status<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
                 _ => Map::new(),
             };
             let scheduler_error = state.get("scheduler_error").unwrap_or(&Value::Null);
-            let ok = state.get("ok") != Some(&Value::Bool(false)) && !domain::json::truthy(scheduler_error);
+            let ok = state.get("ok") != Some(&Value::Bool(false)) && !foundation::js::truthy(scheduler_error);
             let last_run_at = match state.get("last_run_at") {
                 Some(Value::String(at)) => at.clone(),
                 _ => updated_at.clone(),
@@ -604,7 +604,7 @@ fn describe(row: &RawRow, expected: &[String]) -> PublicationRow {
 fn headline(text: &str) -> String {
     let first = js::trim(text.split('\n').next().unwrap_or_default());
     if first.encode_utf16().count() > 60 {
-        format!("{}…", js::slice_utf16(first, 59))
+        format!("{}…", js::utf16_prefix(first, 59))
     } else {
         first.to_owned()
     }
@@ -689,7 +689,7 @@ fn publication_line(post: &Value) -> String {
     .filter(|part| !part.is_empty())
     .collect::<Vec<_>>()
     .join("  ");
-    let at = js::slice_utf16(post["at"].as_str().unwrap_or_default(), 16).replacen('T', " ", 1);
+    let at = js::utf16_prefix(post["at"].as_str().unwrap_or_default(), 16).replacen('T', " ", 1);
     format!(
         "{} {at}  {} targets  {trailer}\n            {}",
         pad_end(post["ref"].as_str().unwrap_or_default(), 9),

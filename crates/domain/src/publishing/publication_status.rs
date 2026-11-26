@@ -128,7 +128,7 @@ impl Publishing<'_> {
         };
         let mut enabled_locales: Vec<Locale> = Vec::new();
         for (target, enabled) in crate::json::object_entries(&plan_object(plan.get("targets"))) {
-            if crate::json::truthy(enabled)
+            if foundation::js::truthy(enabled)
                 && let Some(locale) = target_locale(target)
                 && !enabled_locales.contains(&locale)
             {

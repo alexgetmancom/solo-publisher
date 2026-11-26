@@ -97,8 +97,3 @@ pub(crate) fn parse_ms(text: &str) -> Option<i64> {
         .ok()
         .map(|at| at.as_millisecond())
 }
-
-/// `text.length`: JavaScript counts UTF-16 code units.
-pub(crate) fn js_length(text: &str) -> usize {
-    text.encode_utf16().count()
-}

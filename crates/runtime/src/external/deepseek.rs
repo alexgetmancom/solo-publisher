@@ -59,7 +59,7 @@ pub async fn deepseek_chat(
             .map(|message| json!({"role": message.role.as_str(), "content": message.content}))
             .collect(),
     );
-    body.insert("temperature".into(), js_number(options.temperature));
+    body.insert("temperature".into(), js::json_number(options.temperature));
     if options.json {
         body.insert("response_format".into(), json!({"type": "json_object"}));
     }
@@ -74,13 +74,4 @@ pub async fn deepseek_chat(
         .and_then(Value::as_str)
         .unwrap_or_default();
     Ok(js::trim(content).to_owned())
-}
-
-/// A number as `JSON.stringify` writes it: `1`, not `1.0`.
-fn js_number(value: f64) -> Value {
-    if js::is_safe_integer(value) {
-        Value::from(value as i64)
-    } else {
-        Value::from(value)
-    }
 }

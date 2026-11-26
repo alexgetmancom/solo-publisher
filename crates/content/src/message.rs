@@ -1,11 +1,9 @@
 use std::sync::LazyLock;
 
-use foundation::js::trim;
+use foundation::js::{WHITESPACE_CLASS, trim};
 use regex::Regex;
 use serde_json::{Map, Value};
 use unicode_normalization::UnicodeNormalization;
-
-use crate::js::WHITESPACE_CLASS;
 
 /// A Telegram-shaped formatting entity: `type`, `offset`, `length` (UTF-16) and
 /// whatever else its type carries (`url`, `level`, `language`, ...), kept as

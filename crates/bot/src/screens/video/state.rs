@@ -76,7 +76,7 @@ impl VideoState {
     }
 
     pub(super) fn single_edit(&self) -> bool {
-        self.data.get("is_single_edit").is_some_and(domain::json::truthy)
+        self.data.get("is_single_edit").is_some_and(foundation::js::truthy)
     }
 
     /// `{ ...session.data, selectedTargets: session.selected }`: what the flow

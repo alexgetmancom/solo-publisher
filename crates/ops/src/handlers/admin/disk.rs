@@ -150,29 +150,12 @@ fn post_media(sqlite: &Connection) -> Result<Vec<Map<String, Value>>, OpError> {
         .collect())
 }
 
-/// `Number(value)`.
-fn js_number(value: Option<&Value>) -> f64 {
-    match value {
-        None => f64::NAN,
-        Some(Value::Null) => 0.0,
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
-        Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(text)) => js::number(text),
-        Some(Value::Array(items)) => match items.as_slice() {
-            [] => 0.0,
-            [only] if !only.is_array() && !only.is_object() => js_number(Some(only)),
-            _ => f64::NAN,
-        },
-        Some(Value::Object(_)) => f64::NAN,
-    }
-}
-
 /// Post media names its asset by id, by path, or by both; this reads it the
 /// way retention does.
 fn referenced_post_asset_ids(sqlite: &Connection) -> Result<HashSet<i64>, OpError> {
     let mut ids = HashSet::new();
     for item in post_media(sqlite)? {
-        let id = js_number(item.get("asset_id"));
+        let id = js::number_of_flat(item.get("asset_id"));
         if js::is_safe_integer(id) && id > 0.0 {
             ids.insert(id as i64);
         }

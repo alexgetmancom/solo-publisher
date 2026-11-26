@@ -1,11 +1,11 @@
 //! A read-only projection of the delivery contract declared in platform
 //! profiles: what each target does with the media it is given.
 
+use foundation::js::string_of;
 use serde::Serialize;
 use serde_json::Value;
 
 use super::platform_profiles::{MediaRule, platform_profile};
-use crate::json::js_string;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -77,5 +77,5 @@ fn is_video(item: &Value) -> bool {
         Some(kind) if !kind.is_null() => Some(kind),
         _ => value.get("media_type").filter(|kind| !kind.is_null()),
     };
-    kind.map_or(String::new(), js_string).to_lowercase() == "video"
+    kind.map_or(String::new(), string_of).to_lowercase() == "video"
 }

@@ -119,7 +119,7 @@ pub struct RequeueOptions<'a> {
 fn unpublishable(payload: &Map<String, Value>, target: &str) -> Option<RequeueRefusal> {
     let text = match payload.get("text") {
         None | Some(Value::Null) => String::new(),
-        Some(value) => crate::json::js_string(value),
+        Some(value) => foundation::js::string_of(value),
     };
     let text = foundation::js::trim(&text);
     let has_media = payload

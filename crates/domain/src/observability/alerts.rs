@@ -124,7 +124,7 @@ where
             event.target.as_deref().unwrap_or(&event.event_type),
             event.message
         );
-        match send(foundation::js::slice_utf16(&text, 4000).to_owned()).await {
+        match send(foundation::js::utf16_prefix(&text, 4000).to_owned()).await {
             Ok(()) => alerts += 1,
             // A transport error may still mean the message was accepted, so
             // retrying could alert twice; the attempt stays settled.

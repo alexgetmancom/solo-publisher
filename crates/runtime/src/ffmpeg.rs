@@ -11,7 +11,7 @@ use std::sync::LazyLock;
 use std::time::Duration;
 
 use domain::publishing::boundaries::{MediaMetadata, MediaProbe};
-use foundation::js;
+use foundation::js::{self, WHITESPACE_CLASS};
 use regex::Regex;
 use serde_json::Value;
 use tokio::io::AsyncReadExt as _;
@@ -122,10 +122,10 @@ pub fn media_metadata_from_ffprobe(stdout: &str) -> Result<MediaMetadata, MediaT
             .find(|stream| stream.get("codec_type").and_then(Value::as_str) == Some(kind))
     };
     let video = stream("video")
-        .filter(|video| truthy(video.get("width")) && truthy(video.get("height")))
+        .filter(|video| video.get("width").is_some_and(js::truthy) && video.get("height").is_some_and(js::truthy))
         .ok_or_else(|| MediaToolError("media_probe_failed: ffprobe did not find a video stream".into()))?;
     let audio = stream("audio");
-    let rate = match present(video.get("avg_frame_rate")) {
+    let rate = match js::present(video.get("avg_frame_rate")) {
         None => "0/1".to_owned(),
         Some(Value::String(rate)) => rate.clone(),
         Some(other) => other.to_string(),
@@ -133,13 +133,13 @@ pub fn media_metadata_from_ffprobe(stdout: &str) -> Result<MediaMetadata, MediaT
     let mut parts = rate.split('/').map(js::number);
     let numerator = parts.next().unwrap_or(0.0);
     let denominator = parts.next().unwrap_or(1.0);
-    let duration = present(data.get("format").and_then(|format| format.get("duration")))
-        .or_else(|| present(video.get("duration")))
-        .map_or(0.0, number);
-    let audio_bitrate = audio.map_or(f64::NAN, |audio| number_or_nan(audio.get("bit_rate")));
+    let duration = js::present(data.get("format").and_then(|format| format.get("duration")))
+        .or_else(|| js::present(video.get("duration")))
+        .map_or(0.0, |duration| js::number_of_scalar(Some(duration)));
+    let audio_bitrate = audio.map_or(f64::NAN, |audio| js::number_of_scalar(audio.get("bit_rate")));
     Ok(MediaMetadata {
-        width: number(&video["width"]),
-        height: number(&video["height"]),
+        width: js::number_of_scalar(Some(&video["width"])),
+        height: js::number_of_scalar(Some(&video["height"])),
         duration_seconds: if duration.is_nan() { f64::NAN } else { duration.max(0.0) },
         video_codec: string(video.get("codec_name")).unwrap_or_else(|| "video".into()),
         audio_codec: audio.and_then(|audio| string(audio.get("codec_name"))),
@@ -152,52 +152,16 @@ pub fn media_metadata_from_ffprobe(stdout: &str) -> Result<MediaMetadata, MediaT
     })
 }
 
-/// Present and not `null`: what `??` falls through.
-fn present(value: Option<&Value>) -> Option<&Value> {
-    value.filter(|value| !value.is_null())
-}
-
 /// `?? null` of a field typed as a string: whatever is there.
 fn string(value: Option<&Value>) -> Option<String> {
-    present(value).map(|value| match value {
+    js::present(value).map(|value| match value {
         Value::String(text) => text.clone(),
         other => other.to_string(),
     })
 }
 
-/// `Number(value)`.
-fn number(value: &Value) -> f64 {
-    match value {
-        Value::Null => 0.0,
-        Value::Bool(flag) => f64::from(u8::from(*flag)),
-        Value::Number(number) => number.as_f64().unwrap_or(f64::NAN),
-        Value::String(text) => js::number(text),
-        Value::Array(_) | Value::Object(_) => f64::NAN,
-    }
-}
-
-/// `Number(value)` where `undefined` (a missing field) is NaN.
-fn number_or_nan(value: Option<&Value>) -> f64 {
-    value.map_or(f64::NAN, number)
-}
-
-/// JavaScript truthiness.
-fn truthy(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(flag)) => *flag,
-        Some(Value::Number(number)) => number.as_f64().is_some_and(|number| number != 0.0 && !number.is_nan()),
-        Some(Value::String(text)) => !text.is_empty(),
-        Some(Value::Array(_) | Value::Object(_)) => true,
-    }
-}
-
-/// The JavaScript `\s` class, for the progress-line test below.
-const JS_SPACE: &str =
-    r"\t\n\x0B\x0C\r \u{A0}\u{1680}\u{2000}-\u{200A}\u{2028}\u{2029}\u{202F}\u{205F}\u{3000}\u{FEFF}";
-
 static PROGRESS: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(&format!(r"^frame=[{JS_SPACE}]*[0-9]+[{JS_SPACE}]+fps=")).unwrap());
+    LazyLock::new(|| Regex::new(&format!(r"^frame=[{WHITESPACE_CLASS}]*[0-9]+[{WHITESPACE_CLASS}]+fps=")).unwrap());
 
 /// An actionable terminal reason instead of megabytes
 /// of progress frames. Exit 137 is the Linux OOM-kill convention.
@@ -216,7 +180,7 @@ pub fn format_ffmpeg_failure(code: i32, stderr: &str) -> String {
     } else {
         &meaningful
     };
-    js::slice_utf16(&format!("media_processing_failed: ffmpeg exit {code}: {reason}"), 1200).to_owned()
+    js::utf16_prefix(&format!("media_processing_failed: ffmpeg exit {code}: {reason}"), 1200).to_owned()
 }
 
 /// The last `count` UTF-16 code units (`slice(-count)`); a surrogate pair the

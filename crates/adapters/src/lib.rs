@@ -9,7 +9,6 @@
 pub mod discord;
 pub mod error;
 pub mod instagram;
-mod js;
 pub mod multipart;
 pub mod payload;
 pub mod platform_adapters;

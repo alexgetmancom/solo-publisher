@@ -5,9 +5,8 @@
 
 use content::message::Entity;
 use content::text::first_text_link_url;
-use foundation::js::trim;
+use foundation::js::{trim, utf16_len};
 
-use super::js_length;
 use super::platform_profiles::platform_profile;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -45,7 +44,7 @@ pub fn threads_body(target: &str, text: &str, entities: &[Entity]) -> ThreadsBod
     };
     let with_url = format!("{body}\n\n🔗 {url}");
     let limit = threads_text_limit(target);
-    if js_length(&with_url) <= limit {
+    if utf16_len(&with_url) <= limit {
         return ThreadsBody {
             text: with_url,
             url: Some(url.to_owned()),
@@ -54,7 +53,7 @@ pub fn threads_body(target: &str, text: &str, entities: &[Entity]) -> ThreadsBod
         };
     }
     ThreadsBody {
-        shortfall: js_length(&with_url) - limit,
+        shortfall: utf16_len(&with_url) - limit,
         text: body,
         url: None,
         dropped_url: Some(url.to_owned()),

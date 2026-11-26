@@ -5,6 +5,7 @@
 use std::sync::LazyLock;
 
 use content::Locale;
+use foundation::js::WHITESPACE_CLASS;
 use regex::Regex;
 
 use crate::targets::{TARGETS, TargetKind};
@@ -231,12 +232,7 @@ pub fn platform_profile(target: &str) -> Option<&'static PlatformProfile> {
 }
 
 /// JavaScript's `\S`: anything but its whitespace and line terminators.
-static URL: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        r"https?://[^\t\n\x0B\x0C\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]+",
-    )
-    .unwrap()
-});
+static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("https?://[^{WHITESPACE_CLASS}]+")).unwrap());
 static SPACES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]{2,}").unwrap());
 static BEFORE_NEWLINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]+\n").unwrap());
 static AFTER_NEWLINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[ \t]+").unwrap());

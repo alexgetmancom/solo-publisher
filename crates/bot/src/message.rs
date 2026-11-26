@@ -92,7 +92,7 @@ fn item(kind: &str, file: &MediaFile, fields: &[&str]) -> MediaItem {
         let value = match *field {
             "width" => file.width.map(Value::from),
             "height" => file.height.map(Value::from),
-            "duration" => file.duration.map(js_number),
+            "duration" => file.duration.map(foundation::js::json_number),
             "file_size" => file.file_size.map(Value::from),
             "file_name" => file.file_name.clone().map(Value::from),
             "mime_type" => file.mime_type.clone().map(Value::from),
@@ -103,15 +103,6 @@ fn item(kind: &str, file: &MediaFile, fields: &[&str]) -> MediaItem {
         }
     }
     item
-}
-
-/// A JavaScript number: integral values are integers.
-fn js_number(value: f64) -> Value {
-    if value.fract() == 0.0 && value.abs() < 9_007_199_254_740_992.0 {
-        Value::from(value as i64)
-    } else {
-        Value::from(value)
-    }
 }
 
 #[cfg(test)]

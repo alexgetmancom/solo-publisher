@@ -877,7 +877,7 @@ fn compose_youtube_description(sqlite: &Connection, metadata: &Map<String, Value
         .optional()?;
     let description = metadata.get("description").and_then(Value::as_str).unwrap_or_default();
     let game_line = match metadata.get("gameUrl") {
-        Some(url) if domain::json::truthy(url) => format!("📀 Steam: {}", domain::json::js_string(url)),
+        Some(url) if foundation::js::truthy(url) => format!("📀 Steam: {}", foundation::js::string_of(url)),
         _ => String::new(),
     };
     Ok([

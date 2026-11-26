@@ -332,7 +332,7 @@ async fn finalize(ctx: &Ctx, row: &PendingAlbum) -> crate::Result<Option<Finaliz
             text_en_approved: None,
         };
         let position = row.step_data.get("position").map_or(f64::NAN, |value| {
-            foundation::js::number(&domain::json::js_string(value))
+            foundation::js::number(&foundation::js::string_of(value))
         });
         if thread_step == "thread_edit" && locale == Some(Locale::En) {
             services

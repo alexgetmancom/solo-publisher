@@ -6,12 +6,12 @@ use std::convert::Infallible;
 
 use content::message::fix_url_slashes;
 use foundation::errors::StudioError;
+use foundation::js::string_of;
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
 
 use crate::application::conversation_flow::{Flow, FlowAcceptance, FlowStep, FlowStepInput, PublicationKind};
 use crate::application::ports::JsonObject;
-use crate::json::js_string;
 use crate::publishing::video_metadata_limits::{
     assert_instagram_caption, assert_youtube_description, assert_youtube_tags, assert_youtube_title,
 };
@@ -95,12 +95,12 @@ fn pending_schedule_target(selected: &[VideoTarget], schedule: &JsonObject) -> O
     selected
         .iter()
         .copied()
-        .find(|target| !schedule.get(target.as_str()).is_some_and(crate::json::truthy))
+        .find(|target| !schedule.get(target.as_str()).is_some_and(foundation::js::truthy))
 }
 
 /// `new Date(String(input)).toISOString()`: a time the transport resolved.
 fn iso_time(input: &Value) -> Result<String> {
-    foundation::time::parse_iso_instant(&js_string(input))
+    foundation::time::parse_iso_instant(&string_of(input))
         .map(foundation::time::to_iso_string)
         .map_err(|_| Error::message("Invalid time value"))
 }
@@ -116,7 +116,7 @@ fn require_schedule_target(data: &JsonObject) -> Result<VideoTarget> {
 fn accept_metadata(step: VideoWizardStep, input: Value, data: JsonObject) -> Accepted {
     Ok(FlowAcceptance::data(advance_video_metadata(
         step,
-        &js_string(&input),
+        &string_of(&input),
         data,
     )?))
 }
@@ -323,7 +323,7 @@ pub fn video_schedule_dates(schedule: &JsonObject) -> Result<Vec<(VideoTarget, T
         .iter()
         .filter_map(|(target, at)| VideoTarget::parse(target).map(|target| (target, at)))
         .map(|(target, at)| {
-            foundation::time::parse_iso_instant(&js_string(at))
+            foundation::time::parse_iso_instant(&string_of(at))
                 .map(|at| (target, at))
                 .map_err(|_| Error::message("Invalid time value"))
         })

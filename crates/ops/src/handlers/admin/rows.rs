@@ -28,7 +28,7 @@ fn cell(value: ValueRef<'_>) -> Value {
     match value {
         ValueRef::Null => Value::Null,
         ValueRef::Integer(number) => Value::from(number),
-        ValueRef::Real(number) => crate::schema::number_value(number),
+        ValueRef::Real(number) => foundation::js::json_number(number),
         ValueRef::Text(text) => Value::from(String::from_utf8_lossy(text).into_owned()),
         ValueRef::Blob(bytes) => Value::Array(bytes.iter().map(|byte| Value::from(*byte)).collect()),
     }

@@ -9,7 +9,7 @@ use content::message::Entity;
 use foundation::url::is_http_url;
 use serde_json::{Map, Value, json};
 
-use crate::js::{js_number, utf16_slice};
+use foundation::js::{number_of, utf16_slice};
 
 struct Span<'a> {
     start: usize,
@@ -20,7 +20,7 @@ struct Span<'a> {
 fn entity_type(entity: &Entity) -> String {
     match entity.get("type") {
         None | Some(Value::Null) => String::new(),
-        Some(value) => domain::json::js_string(value),
+        Some(value) => foundation::js::string_of(value),
     }
 }
 
@@ -143,7 +143,7 @@ fn block_type_of(covering: &[&Span], line_start: usize, line_end: usize) -> &'st
         }
         let level = match span.entity.get("level") {
             None | Some(Value::Null) => 2.0,
-            level => js_number(level),
+            level => number_of(level),
         };
         return if level <= 1.0 { "header-one" } else { "header-two" };
     }
@@ -154,8 +154,8 @@ fn normalize_spans(text_length: usize, entities: &[Entity]) -> Vec<Span<'_>> {
     let mut spans: Vec<Span> = entities
         .iter()
         .filter_map(|entity| {
-            let offset = js_number(entity.get("offset"));
-            let length = js_number(entity.get("length"));
+            let offset = number_of(entity.get("offset"));
+            let length = number_of(entity.get("length"));
             let integer = |value: f64| value.is_finite() && value.fract() == 0.0;
             if !integer(offset) || !integer(length) || offset < 0.0 || length <= 0.0 {
                 return None;

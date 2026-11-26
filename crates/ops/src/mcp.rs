@@ -677,7 +677,7 @@ impl McpServer<'_> {
                     let shown = match method {
                         None => "undefined".to_owned(),
                         Some(Value::String(text)) => text.clone(),
-                        Some(other) => js_string(other),
+                        Some(other) => foundation::js::string_of(other),
                     };
                     return Some(rpc_error(id, -32601, &format!("Unknown method: {shown}")));
                 }
@@ -794,23 +794,5 @@ impl McpServer<'_> {
         record_event(db::unsafe_db(db), self.clock, &event)
             .map_err(|error| ToolError::new(-32603, error.to_string()))?;
         Ok(format!("Thank you, {name}! Your feedback has been logged."))
-    }
-}
-
-/// `String(value)` for a JSON value that is not a string.
-fn js_string(value: &Value) -> String {
-    match value {
-        Value::Null => "null".into(),
-        Value::Bool(b) => b.to_string(),
-        Value::Number(n) => n
-            .as_f64()
-            .map_or_else(|| n.to_string(), foundation::js::number_to_string),
-        Value::String(s) => s.clone(),
-        Value::Array(items) => items
-            .iter()
-            .map(|item| if item.is_null() { String::new() } else { js_string(item) })
-            .collect::<Vec<_>>()
-            .join(","),
-        Value::Object(_) => "[object Object]".into(),
     }
 }

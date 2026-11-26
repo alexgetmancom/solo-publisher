@@ -8,12 +8,11 @@ use content::thread::LocalizedThreadPart;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::media_policy::select_media_for_target;
-use foundation::js::is_safe_integer;
+use foundation::js::{is_safe_integer, json_number, number_of, present, utf16_len, utf16_prefix};
 use runtime::http::HttpRequest;
 use serde_json::{Map, Value, json};
 
 use crate::error::{Result, ambiguous_mutation};
-use crate::js::{as_record, js_number, json_number, present, utf16_len, utf16_prefix};
 use crate::multipart::Form;
 use crate::payload::{basename, field, is_video, payload_media, payload_text, payload_thread};
 use crate::ports::{AdapterContext, EditOutcome, EditRequest};
@@ -249,7 +248,7 @@ impl Telegram<'_> {
     /// `normalizeTelegramResult`.
     fn normalize(&self, response: Value) -> PublishResult {
         let mut result = Map::new();
-        if !response.get("ok").is_some_and(domain::json::truthy) {
+        if !response.get("ok").is_some_and(foundation::js::truthy) {
             result.insert("ok".into(), false.into());
             result.insert(
                 "error".into(),
@@ -272,8 +271,8 @@ impl Telegram<'_> {
         let channel = self.chat_id.strip_prefix('@');
         let first = ids.first().cloned();
         let url = match (channel, &first) {
-            (Some(channel), Some(id)) if domain::json::truthy(id) => {
-                Value::from(format!("https://t.me/{channel}/{}", domain::json::js_string(id)))
+            (Some(channel), Some(id)) if foundation::js::truthy(id) => {
+                Value::from(format!("https://t.me/{channel}/{}", foundation::js::string_of(id)))
             }
             _ => Value::Null,
         };
@@ -288,7 +287,7 @@ impl Telegram<'_> {
     /// The heart reaction. Its permission is optional, and failing it must not
     /// retry a post that is already published.
     async fn react(&self, result: PublishResult) -> PublishResult {
-        let ok = result.get("ok").is_some_and(domain::json::truthy);
+        let ok = result.get("ok").is_some_and(foundation::js::truthy);
         let Some(id) = present(result.get("id")).filter(|_| ok) else {
             return result;
         };
@@ -332,7 +331,7 @@ fn rich_html(text: &str, entities: &[Entity]) -> String {
 
 /// The first `text_link` whose URL is http(s), for a small link preview.
 fn link_preview(entities: Option<&Vec<Value>>) -> Option<&str> {
-    entities?.iter().filter_map(as_record).find_map(|entity| {
+    entities?.iter().filter_map(Value::as_object).find_map(|entity| {
         let url = entity.get("url").and_then(Value::as_str)?;
         (entity.get("type").and_then(Value::as_str) == Some("text_link")
             && url::Url::parse(url).is_ok_and(|parsed| matches!(parsed.scheme(), "http" | "https")))
@@ -354,10 +353,10 @@ fn telegram_caption(text: &str, entities: Option<&Vec<Value>>) -> Caption {
     let entities = entities
         .into_iter()
         .flatten()
-        .filter_map(as_record)
+        .filter_map(Value::as_object)
         .filter_map(|value| {
-            let offset = js_number(value.get("offset"));
-            let entity_length = js_number(value.get("length"));
+            let offset = number_of(value.get("offset"));
+            let entity_length = number_of(value.get("length"));
             if !is_safe_integer(offset)
                 || !is_safe_integer(entity_length)
                 || offset < 0.0
@@ -396,7 +395,7 @@ pub async fn edit_telegram_message(ctx: &AdapterContext, edit: &EditRequest) -> 
     let chat_id = edit
         .chat_id
         .clone()
-        .filter(domain::json::truthy)
+        .filter(foundation::js::truthy)
         .unwrap_or_else(|| ctx.config.telegram_channel_username.clone().into());
     let mut body = Map::new();
     body.insert("chat_id".into(), chat_id);

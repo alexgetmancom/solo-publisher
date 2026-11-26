@@ -9,13 +9,13 @@ use std::time::Duration;
 
 use content::message::MediaItem;
 use domain::publishing::errors::PublishResult;
+use foundation::js::{number_of, utf16_len, utf16_prefix};
 use regex::Regex;
 use runtime::ffmpeg::{probe_media_metadata, run_ffmpeg};
 use runtime::http::Fut;
 use serde_json::{Map, Value, json};
 
 use crate::error::{AdapterError, Result, ambiguous_error};
-use crate::js::{as_record, js_number, utf16_len, utf16_prefix};
 use crate::payload::{field, is_video, payload_media, payload_text};
 use crate::ports::AdapterContext;
 
@@ -115,10 +115,10 @@ pub fn telegram_story_caption_input(text: &str, entities: &[Value]) -> StoryCapt
     let length = utf16_len(&caption) as f64;
     let links = entities
         .iter()
-        .filter_map(as_record)
+        .filter_map(Value::as_object)
         .filter_map(|entity| {
-            let offset = js_number(entity.get("offset"));
-            let span = js_number(entity.get("length"));
+            let offset = number_of(entity.get("offset"));
+            let span = number_of(entity.get("length"));
             let url = entity.get("url").and_then(Value::as_str)?;
             let valid = foundation::js::is_safe_integer(offset)
                 && foundation::js::is_safe_integer(span)
@@ -169,11 +169,6 @@ const FALLBACK: StoryVideoMetadata = StoryVideoMetadata {
     audio_bitrate: 320_000.0,
 };
 
-/// `Math.round`: halves up.
-fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
-}
-
 async fn probe_video(path: &Path, video: bool) -> StoryVideoMetadata {
     if !video {
         return FALLBACK;
@@ -182,7 +177,7 @@ async fn probe_video(path: &Path, video: bool) -> StoryVideoMetadata {
         Ok(metadata) => StoryVideoMetadata {
             width: metadata.width,
             height: metadata.height,
-            duration: js_round(
+            duration: foundation::js::round(
                 if metadata.duration_seconds != 0.0 && !metadata.duration_seconds.is_nan() {
                     metadata.duration_seconds
                 } else {

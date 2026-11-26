@@ -134,21 +134,10 @@ async fn telegram_file_path(
         .header("Content-Type", "application/json")
         .text(json!({"file_id": file_id}).to_string());
     let info = client.request_json(request).await?;
-    let ok = info.get("ok").is_some_and(truthy);
+    let ok = info.get("ok").is_some_and(foundation::js::truthy);
     match info.pointer("/result/file_path") {
         Some(Value::String(path)) if ok && !path.is_empty() => Ok(path.clone()),
         _ => Err(ExternalError::message(format!("Telegram getFile failed for {file_id}"))),
-    }
-}
-
-/// JavaScript truthiness of a JSON value.
-fn truthy(value: &Value) -> bool {
-    match value {
-        Value::Null => false,
-        Value::Bool(flag) => *flag,
-        Value::Number(number) => number.as_f64().is_some_and(|number| number != 0.0),
-        Value::String(text) => !text.is_empty(),
-        Value::Array(_) | Value::Object(_) => true,
     }
 }
 

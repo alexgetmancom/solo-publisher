@@ -5,20 +5,6 @@ use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use foundation::config::Config;
 use sha2::{Digest, Sha256};
 
-/// `encodeURIComponent`.
-pub(crate) fn encode_uri_component(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'!' | b'~' | b'*' | b'\'' | b'(' | b')' => {
-                out.push(char::from(byte));
-            }
-            other => out.push_str(&format!("%{other:02X}")),
-        }
-    }
-    out
-}
-
 /// `new URLSearchParams(pairs).toString()`.
 pub(crate) fn search_params(pairs: &[(&str, &str)]) -> String {
     let mut query = url::form_urlencoded::Serializer::new(String::new());
@@ -95,10 +81,5 @@ mod tests {
             )),
             "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"
         );
-    }
-
-    #[test]
-    fn uri_component_keeps_what_javascript_keeps() {
-        assert_eq!(encode_uri_component("a b+c/é!~*'()"), "a%20b%2Bc%2F%C3%A9!~*'()");
     }
 }

@@ -82,7 +82,7 @@ pub async fn send_daily_backup(bot: &Bot) -> crate::Result<BackupDeliveryStatus>
             // tomorrow; an operator who is never told cannot know.
             let text = t(
                 Key::SettingsBackupFailedNotice,
-                &[("error", &foundation::js::slice_utf16(&error, 1_000))],
+                &[("error", &foundation::js::utf16_prefix(&error, 1_000))],
             );
             for &actor_id in admins {
                 if let Err(notify_error) = ctx.bot.api().send_message(actor_id, &text, Payload::new()).await {

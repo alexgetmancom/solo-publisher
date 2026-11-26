@@ -15,7 +15,7 @@ fn cell(row: &Row<'_>, index: usize) -> db::rusqlite::Result<Value> {
     Ok(match row.get_ref(index)? {
         ValueRef::Null => Value::Null,
         ValueRef::Integer(number) => json!(number),
-        ValueRef::Real(number) => crate::schema::number_value(number),
+        ValueRef::Real(number) => foundation::js::json_number(number),
         ValueRef::Text(text) => Value::from(String::from_utf8_lossy(text).into_owned()),
         ValueRef::Blob(bytes) => Value::from(bytes.to_vec()),
     })

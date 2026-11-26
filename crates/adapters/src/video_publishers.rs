@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use content::Locale;
 use domain::json::stringify;
+use foundation::js::encode_uri_component;
 use regex::Regex;
 use runtime::external::instagram::{InstagramCredentials, instagram_credentials_for_locale, instagram_graph_host};
 use runtime::external::youtube::youtube_access_token;
@@ -17,7 +18,6 @@ use serde_json::{Map, Value, json};
 
 use crate::error::{AdapterError, Result, absent_if_missing, ambiguous_error, ambiguous_mutation, refused};
 use crate::instagram::is_expired_container;
-use crate::js::encode_uri_component;
 use crate::ports::AdapterContext;
 use crate::zernio::{ZernioPlatform, verify_zernio_post};
 
@@ -221,7 +221,7 @@ pub async fn keep_youtube_upload_private(ctx: &AdapterContext, video_id: &str, l
     let mut next = Map::new();
     next.insert("privacyStatus".into(), "private".into());
     for field in PRESERVED_YOUTUBE_STATUS_FIELDS {
-        if let Some(value) = crate::js::present(status.get(field)) {
+        if let Some(value) = foundation::js::present(status.get(field)) {
             next.insert(field.into(), value.clone());
         }
     }
@@ -376,7 +376,7 @@ pub async fn instagram_container_ready(
     let code = status.get("status_code").and_then(Value::as_str);
     if matches!(code, Some("ERROR" | "EXPIRED")) {
         let detail = match status.get("status") {
-            Some(detail) if !detail.is_null() => domain::json::js_string(detail),
+            Some(detail) if !detail.is_null() => foundation::js::string_of(detail),
             _ => "unknown error".into(),
         };
         return Err(AdapterError::ContainerInvalid(format!(

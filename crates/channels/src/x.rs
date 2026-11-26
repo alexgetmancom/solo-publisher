@@ -78,26 +78,15 @@ pub fn x_oauth_authorize_url(config: &Config, now: Timestamp, entropy: &dyn Entr
     Ok(format!("{AUTHORIZE_URL}?{query}"))
 }
 
-/// JavaScript truthiness of a JSON field.
-fn truthy(value: Option<&Value>) -> bool {
-    match value {
-        None | Some(Value::Null) => false,
-        Some(Value::Bool(flag)) => *flag,
-        Some(Value::Number(number)) => number.as_f64().is_some_and(|number| number != 0.0 && !number.is_nan()),
-        Some(Value::String(text)) => !text.is_empty(),
-        Some(_) => true,
-    }
-}
-
 fn read_state(config: &Config, state: &str, now: Timestamp) -> Result<String> {
     let parsed = required_key(config)
         .ok()
         .and_then(|key| open(state, &key).ok())
         .and_then(|opened| serde_json::from_str::<Value>(&opened).ok())
         .ok_or_else(|| Error::message("X OAuth state is invalid"))?;
-    let expired = !truthy(parsed.get("verifier"))
-        || !truthy(parsed.get("nonce"))
-        || !truthy(parsed.get("expiresAt"))
+    let expired = !parsed.get("verifier").is_some_and(js::truthy)
+        || !parsed.get("nonce").is_some_and(js::truthy)
+        || !parsed.get("expiresAt").is_some_and(js::truthy)
         || parsed
             .get("expiresAt")
             .and_then(Value::as_f64)
@@ -152,7 +141,7 @@ pub async fn exchange_x_code(
         .await?;
     let Some(id) = profile
         .pointer("/data/id")
-        .filter(|id| truthy(Some(id)))
+        .filter(|id| js::truthy(id))
         .and_then(id_text)
     else {
         return Err(Error::message("X returned no account id"));

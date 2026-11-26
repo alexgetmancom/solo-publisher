@@ -609,7 +609,7 @@ fn handle_settle<'a>(context: &'a ActionContext<'a>) -> Fut<'a, Effects> {
         let (ctx, actor, id) = (context.ctx, context.actor_id, context.draft_id());
         let target = require_video_target(context.arg("target").unwrap_or_default())?;
         let settled = ctx.services().videos.settle_target(actor, id, target).await?;
-        let confirmed = settled.get("url").is_some_and(domain::json::truthy);
+        let confirmed = settled.get("url").is_some_and(foundation::js::truthy);
         let mut effects = show_video_card(ctx, actor, id)?;
         effects.push(Effect::toast(t(
             if confirmed {

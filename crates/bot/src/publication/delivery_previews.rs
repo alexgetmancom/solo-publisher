@@ -280,8 +280,8 @@ fn safe_entities(entities: &[Entity], length: usize) -> Vec<Value> {
     entities
         .iter()
         .filter_map(|entity| {
-            let offset = js_number(entity.get("offset"));
-            let entity_length = js_number(entity.get("length"));
+            let offset = foundation::js::number_of_scalar(entity.get("offset"));
+            let entity_length = foundation::js::number_of_scalar(entity.get("length"));
             let safe = |value: f64| foundation::js::is_safe_integer(value);
             if !safe(offset) || !safe(entity_length) || offset < 0.0 || entity_length <= 0.0 || offset >= length {
                 return None;
@@ -292,18 +292,6 @@ fn safe_entities(entities: &[Entity], length: usize) -> Vec<Value> {
             Some(Value::Object(entity))
         })
         .collect()
-}
-
-/// `Number(value)`.
-fn js_number(value: Option<&Value>) -> f64 {
-    match value {
-        None => f64::NAN,
-        Some(Value::Null) => 0.0,
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
-        Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(text)) => foundation::js::number(text),
-        Some(_) => f64::NAN,
-    }
 }
 
 fn string_field<'a>(media: &'a MediaItem, key: &str) -> Option<&'a str> {
@@ -326,8 +314,8 @@ fn format_metadata(metadata: &Map<String, Value>) -> String {
     let text = |key: &str| {
         metadata
             .get(key)
-            .filter(|value| domain::json::truthy(value))
-            .map(domain::json::js_string)
+            .filter(|value| foundation::js::truthy(value))
+            .map(foundation::js::string_of)
     };
     let mut lines = Vec::new();
     if let Some(title) = text("title") {
@@ -342,7 +330,7 @@ fn format_metadata(metadata: &Map<String, Value>) -> String {
     if let Some(Value::Array(tags)) = metadata.get("tags")
         && !tags.is_empty()
     {
-        let tags: Vec<String> = tags.iter().map(domain::json::js_string).collect();
+        let tags: Vec<String> = tags.iter().map(foundation::js::string_of).collect();
         lines.push(format!("{}: {}", t(Key::PreviewMetadataTags, &[]), tags.join(", ")));
     }
     if let Some(game) = text("gameUrl") {

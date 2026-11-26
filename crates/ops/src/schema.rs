@@ -362,13 +362,13 @@ fn core_schema(core: &Core) -> Vec<(String, Value)> {
                 }
             }
             match (exclusive, minimum) {
-                (Some(e), Some(m)) if e >= m => out.push(("exclusiveMinimum".into(), number_value(e))),
-                (Some(e), None) => out.push(("exclusiveMinimum".into(), number_value(e))),
-                (_, Some(m)) => out.push(("minimum".into(), number_value(m))),
+                (Some(e), Some(m)) if e >= m => out.push(("exclusiveMinimum".into(), js::json_number(e))),
+                (Some(e), None) => out.push(("exclusiveMinimum".into(), js::json_number(e))),
+                (_, Some(m)) => out.push(("minimum".into(), js::json_number(m))),
                 (None, None) => {}
             }
             if let Some(m) = maximum {
-                out.push(("maximum".into(), number_value(m)));
+                out.push(("maximum".into(), js::json_number(m)));
             }
         }
         Core::Bool => out.push(("type".into(), json!("boolean"))),
@@ -394,15 +394,6 @@ fn core_schema(core: &Core) -> Vec<(String, Value)> {
         }
     }
     out
-}
-
-/// A JavaScript number as JSON: integral values without a fraction.
-pub fn number_value(value: f64) -> Value {
-    if js::is_integer(value) && value.abs() <= MAX_SAFE_INTEGER {
-        Value::from(value as i64)
-    } else {
-        serde_json::Number::from_f64(value).map_or(Value::Null, Value::Number)
-    }
 }
 
 /// zod's name for what it received.
@@ -552,7 +543,7 @@ fn parse_core(core: &Core, value: Option<&Value>, path: &[String]) -> Result<Val
                     _ => {}
                 }
             }
-            Ok(number_value(number))
+            Ok(js::json_number(number))
         }
         Core::Bool => match value {
             Some(Value::Bool(b)) => Ok(Value::Bool(*b)),

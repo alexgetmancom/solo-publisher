@@ -740,6 +740,7 @@ dependencies = [
  "arc-swap",
  "base64 0.22.1",
  "jiff",
+ "percent-encoding",
  "regex",
  "serde",
  "serde_json",

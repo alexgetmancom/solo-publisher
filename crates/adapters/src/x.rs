@@ -7,12 +7,12 @@ use content::message::Entity;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::platform_profiles::format_platform_text;
+use foundation::js::encode_uri_component;
 use runtime::http::{HttpRequest, Response};
 use serde_json::{Map, Value, json};
 use tokio::io::{AsyncReadExt as _, AsyncSeekExt as _};
 
 use crate::error::{AdapterError, Result, ambiguous_mutation, publish_json, refused};
-use crate::js::encode_uri_component;
 use crate::multipart::Form;
 use crate::payload::{exists, field, guess_content_type, is_video, payload_media, payload_text, payload_thread};
 use crate::ports::AdapterContext;
@@ -203,7 +203,7 @@ pub async fn publish_x_article(ctx: &AdapterContext, payload: &Map<String, Value
     match publish {
         Ok(result) => {
             let id = match result.pointer("/data/id") {
-                Some(id) if !id.is_null() => domain::json::js_string(id),
+                Some(id) if !id.is_null() => foundation::js::string_of(id),
                 _ => article_id.clone(),
             };
             let mut published = Map::new();
@@ -322,7 +322,7 @@ async fn wait_for_processing(ctx: &AdapterContext, media_id: &str, initial: Opti
         }
         let check_after = match info.get("check_after_secs") {
             None | Some(Value::Null) => 5.0,
-            value => crate::js::js_number(value),
+            value => foundation::js::number_of(value),
         };
         tokio::time::sleep(Duration::from_secs_f64(check_after.max(1.0))).await;
         let query = url::form_urlencoded::Serializer::new(String::new())

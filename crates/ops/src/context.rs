@@ -102,7 +102,7 @@ pub fn js_numbers(value: Value) -> Value {
     match value {
         Value::Number(number) if number.is_f64() => {
             let float = number.as_f64().unwrap_or_default();
-            crate::schema::number_value(if float == 0.0 { 0.0 } else { float })
+            foundation::js::json_number(if float == 0.0 { 0.0 } else { float })
         }
         Value::Array(items) => Value::Array(items.into_iter().map(js_numbers).collect()),
         Value::Object(map) => Value::Object(map.into_iter().map(|(key, value)| (key, js_numbers(value))).collect()),

@@ -3,6 +3,7 @@
 //! cluster), and memory pressure while the process is still alive to report it.
 
 use db::rusqlite::{Connection, OptionalExtension};
+use foundation::js;
 use foundation::time::{parse_iso_instant, to_iso_string};
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
@@ -83,11 +84,6 @@ fn parse_ms(value: &str) -> Option<i64> {
     parse_iso_instant(value).ok().map(|at| at.as_millisecond())
 }
 
-/// `Math.round`: halves round up.
-fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
-}
-
 /// `recordProcessRestart`: `true` when a restart was recorded. A single
 /// restart is normal — every deploy is one — and is recorded at `info`, which
 /// no alert transport picks up; restarts of one build clustering are `error`.
@@ -129,7 +125,7 @@ pub fn record_process_restart(
     // `null` without a previous boot time; NaN (written as null, printed as
     // "NaN") when that time does not parse.
     let previous_uptime: Option<Option<f64>> = previous.booted_at.as_deref().map(|previous| {
-        parse_ms(previous).map(|previous| js_round((boot.booted_at.as_millisecond() - previous) as f64 / 1000.0))
+        parse_ms(previous).map(|previous| js::round((boot.booted_at.as_millisecond() - previous) as f64 / 1000.0))
     });
     let uptime_json = match previous_uptime {
         Some(Some(seconds)) => json!(seconds as i64),
@@ -138,7 +134,7 @@ pub fn record_process_restart(
     let uptime_text = match previous_uptime {
         None => "?".to_owned(),
         Some(None) => "NaN".to_owned(),
-        Some(Some(seconds)) => foundation::js::number_to_string(seconds),
+        Some(Some(seconds)) => js::number_to_string(seconds),
     };
     let Value::Object(details) = json!({
         "bootedAt": booted_at,
@@ -190,11 +186,11 @@ pub fn record_memory_pressure(
     let Some(limit) = limit_bytes.filter(|limit| *limit > 0) else {
         return Ok(false);
     };
-    let used_percent = js_round(rss_bytes as f64 / limit as f64 * 100.0);
+    let used_percent = js::round(rss_bytes as f64 / limit as f64 * 100.0);
     if used_percent < MEMORY_ALERT_PERCENT {
         return Ok(false);
     }
-    let to_mb = |bytes: u64| js_round(bytes as f64 / 1024.0 / 1024.0) as i64;
+    let to_mb = |bytes: u64| js::round(bytes as f64 / 1024.0 / 1024.0) as i64;
     let mut details = Map::new();
     details.insert("rssMb".into(), to_mb(rss_bytes).into());
     details.insert("limitMb".into(), to_mb(limit).into());

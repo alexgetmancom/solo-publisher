@@ -6,7 +6,6 @@ use db::rusqlite::{Connection, OptionalExtension as _, params};
 use domain::repositories::StudioSettingsStore;
 use foundation::config::Config;
 use foundation::json::json_record_array;
-use serde_json::Value;
 
 use crate::story_derivatives::story_variant_paths;
 use crate::{Delivery, Result, iso_at};
@@ -133,19 +132,8 @@ pub fn post_draft_references_asset(sqlite: &Connection, asset_id: i64) -> Result
     Ok(media.iter().any(|media| {
         json_record_array(media.as_deref())
             .iter()
-            .any(|item| js_number(item.get("asset_id")) == asset_id as f64)
+            .any(|item| foundation::js::number_of_scalar(item.get("asset_id")) == asset_id as f64)
     }))
-}
-
-/// `Number(value)`; an absent field is `undefined`, NaN.
-fn js_number(value: Option<&Value>) -> f64 {
-    match value {
-        None | Some(Value::Array(_) | Value::Object(_)) => f64::NAN,
-        Some(Value::Null) => 0.0,
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
-        Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(text)) => foundation::js::number(text),
-    }
 }
 
 /// `isManagedVideoSource`: only files under the Studio media directory are

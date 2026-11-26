@@ -1,7 +1,7 @@
 //! `buildStoryCardCopy`: the headline and leading emoji a card row stores,
 //! and the lines the renderer draws them on.
 
-use foundation::js::{is_whitespace, slice_utf16, trim, trim_end};
+use foundation::js::{is_whitespace, trim, trim_end, utf16_len, utf16_prefix};
 use regex::Regex;
 use std::sync::LazyLock;
 use unicode_segmentation::UnicodeSegmentation;
@@ -115,19 +115,19 @@ fn leading_emoji(value: &str) -> (Option<&str>, &str) {
 
 /// `truncateAtWord(value, limit)`, lengths in UTF-16 code units as in
 /// JavaScript. A cut through a surrogate pair drops the pair whole, as
-/// [`slice_utf16`] does everywhere; JavaScript keeps the lone high half, which
+/// [`utf16_prefix`] does everywhere; JavaScript keeps the lone high half, which
 /// bun's SQLite binding then fuses with the ellipsis into an unrelated emoji.
 fn truncate_at_word(value: &str, limit: usize) -> String {
     if utf16_len(value) <= limit {
         return value.to_owned();
     }
-    let window = slice_utf16(value, limit + 1);
+    let window = utf16_prefix(value, limit + 1);
     let boundary = window.rfind(' ').map(|index| utf16_len(&window[..index]));
     let cut = match boundary {
         Some(boundary) if boundary as f64 > limit as f64 * 0.6 => boundary,
         _ => limit,
     };
-    format!("{}…", trim(slice_utf16(value, cut)))
+    format!("{}…", trim(utf16_prefix(value, cut)))
 }
 
 /// `wrapHeadline`: words into lines of at most [`MAX_LINE_UNITS`]; a word
@@ -215,10 +215,6 @@ fn text_units(value: &str) -> f64 {
         };
     }
     units
-}
-
-fn utf16_len(value: &str) -> usize {
-    value.encode_utf16().count()
 }
 
 #[cfg(test)]

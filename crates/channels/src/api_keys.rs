@@ -14,7 +14,6 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::credentials::{ConfigPatch, Setting, assign, encryption_key};
-use crate::encode::encode_uri_component;
 use crate::meta::id_text;
 use crate::token_store::{TokenWrite, platform_token, store_platform_token};
 use crate::{Error, Result};
@@ -160,7 +159,7 @@ async fn upload_limit_bytes(http: &HttpClient, config: &Config, target: ApiKeyTa
         .request_json(
             HttpRequest::get(format!(
                 "https://discord.com/api/v10/guilds/{}",
-                encode_uri_component(guild_id)
+                foundation::js::encode_uri_component(guild_id)
             ))
             .header("Authorization", format!("Bot {token}")),
         )

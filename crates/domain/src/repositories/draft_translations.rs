@@ -119,7 +119,7 @@ impl<'a> DraftTranslationStore<'a> {
                 retry.then(|| stamp_offset(self.clock, attempt * 5_000)),
                 None::<String>,
                 None::<String>,
-                utf16_prefix(error, 500),
+                foundation::js::utf16_prefix_lossy(error, 500),
                 now,
                 draft_id,
                 locked_by
@@ -127,11 +127,4 @@ impl<'a> DraftTranslationStore<'a> {
         )?;
         Ok(())
     }
-}
-
-/// `text.slice(0, units)`: JavaScript counts UTF-16 code units, and a cut
-/// through a surrogate pair leaves half of it, which reaches SQLite as U+FFFD.
-fn utf16_prefix(text: &str, units: usize) -> String {
-    let encoded: Vec<u16> = text.encode_utf16().take(units).collect();
-    String::from_utf16_lossy(&encoded)
 }

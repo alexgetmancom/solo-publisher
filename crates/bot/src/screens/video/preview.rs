@@ -2,7 +2,7 @@
 
 use domain::application::conversation_flow::PublicationKind;
 use domain::application::ports::{JsonObject, StudioVideoDraftRecord, StudioVideoTargetRecord};
-use domain::json::{js_string, truthy};
+use foundation::js::{string_of, truthy};
 use domain::publishing::state::{
     is_audience_mutation_retryable, is_video_target_editable, is_video_target_metadata_editable,
     is_video_target_schedulable,
@@ -186,7 +186,7 @@ fn video_preview(
 
 /// `metadata.<key>`, when truthy, as text.
 fn field(metadata: &JsonObject, key: &str) -> Option<String> {
-    metadata.get(key).filter(|value| truthy(value)).map(js_string)
+    metadata.get(key).filter(|value| truthy(value)).map(string_of)
 }
 
 /// The fields one platform carries, as its own card section.
@@ -213,7 +213,7 @@ fn target_lines(target: VideoTarget, metadata: &JsonObject) -> Vec<String> {
         if let Some(Value::Array(tags)) = metadata.get("tags")
             && !tags.is_empty()
         {
-            let tags: Vec<String> = tags.iter().map(js_string).collect();
+            let tags: Vec<String> = tags.iter().map(string_of).collect();
             lines.push(format!(
                 "{}: {}",
                 t(Key::VpreviewTags, &[]),

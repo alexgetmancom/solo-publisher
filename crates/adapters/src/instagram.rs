@@ -228,8 +228,8 @@ pub async fn publish_instagram_story(
                 return Err(AdapterError::message_text("instagram_story_state_missing_container"));
             };
             let status = graph.get(&container_id, "status_code,status").await?;
-            let code = crate::js::present(status.get("status_code"))
-                .or_else(|| crate::js::present(status.get("status")))
+            let code = foundation::js::present(status.get("status_code"))
+                .or_else(|| foundation::js::present(status.get("status")))
                 .cloned();
             let code_text = code.as_ref().and_then(Value::as_str);
             if code_text == Some("FINISHED") {
@@ -259,11 +259,15 @@ pub async fn publish_instagram_story(
                 }
                 detail.insert(
                     "providerStatus".into(),
-                    crate::js::present(status.get("status")).cloned().unwrap_or(Value::Null),
+                    foundation::js::present(status.get("status"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
                 );
                 detail.insert(
                     "providerError".into(),
-                    crate::js::present(status.get("error")).cloned().unwrap_or(Value::Null),
+                    foundation::js::present(status.get("error"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
                 );
                 detail.insert(
                     "mediaType".into(),
@@ -346,7 +350,7 @@ pub async fn publish_instagram_story(
             result.insert("id".into(), published_id.clone().into());
             result.insert(
                 "url".into(),
-                crate::js::present(published.get("permalink"))
+                foundation::js::present(published.get("permalink"))
                     .cloned()
                     .unwrap_or(Value::Null),
             );
@@ -374,7 +378,7 @@ pub async fn verify_instagram_publication(
     }
     Ok((
         id.to_owned(),
-        crate::js::present(media.get("permalink"))
+        foundation::js::present(media.get("permalink"))
             .cloned()
             .unwrap_or(Value::Null),
     ))

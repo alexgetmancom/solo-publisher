@@ -144,7 +144,7 @@ impl HttpClient {
             // would carry the unredacted body into logs.
             let redacted = redact_external_secrets(&body);
             ExternalError::Http(ExternalHttpError {
-                message: format!("{label} returned a non-JSON body: {}", js::slice_utf16(&redacted, 200)),
+                message: format!("{label} returned a non-JSON body: {}", js::utf16_prefix(&redacted, 200)),
                 status,
                 body: Some(redacted),
                 retry_after_seconds: None,
@@ -239,22 +239,17 @@ pub fn retry_after_seconds(headers: &Headers, now: Timestamp) -> Option<f64> {
             return Some(non_negative(seconds));
         }
         if let Some(date_ms) = parse_date(&retry_after) {
-            return Some(non_negative(js_round((date_ms - now_ms) / 1000.0)));
+            return Some(non_negative(js::round((date_ms - now_ms) / 1000.0)));
         }
     }
     // `Number(null)` is 0: an absent header is no reset.
     let reset = headers.get("x-ratelimit-reset").map_or(0.0, |value| js::number(&value));
-    (reset.is_finite() && reset > 0.0).then(|| non_negative(js_round(reset - now_ms / 1000.0)))
+    (reset.is_finite() && reset > 0.0).then(|| non_negative(js::round(reset - now_ms / 1000.0)))
 }
 
 /// `Math.max(0, value)`, with JavaScript's `-0` read as the `0` it prints.
 fn non_negative(value: f64) -> f64 {
     if value > 0.0 { value } else { 0.0 }
-}
-
-/// `Math.round`: halves round up.
-fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
 }
 
 /// The `Date.parse` forms a `Retry-After` date takes: the HTTP date

@@ -4,8 +4,9 @@
 //! target's `credential_checks` row, of which it rewrites only its own fields.
 
 use db::rusqlite::{Connection, OptionalExtension, params};
+use foundation::js::{json_number, truthy};
 use foundation::time::parse_iso_instant;
-use serde_json::{Map, Number, Value, json};
+use serde_json::{Map, Value, json};
 
 use crate::Result;
 use crate::application::ports::{Clock, DomainEventInput, Severity};
@@ -108,7 +109,7 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
             details.get("blockedUntil").cloned().unwrap_or(Value::Null)
         };
         // The unrelated fields (token health's `lastPingAt`) stay as they were.
-        details.insert("authFailureStreak".into(), number(streak));
+        details.insert("authFailureStreak".into(), json_number(streak));
         details.insert("blockedUntil".into(), blocked_until.clone());
         details.insert("lastAuthFailureAt".into(), Value::String(now.clone()));
         if row.is_some() {
@@ -121,7 +122,7 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
         }
         if tripped && streak == AUTH_FAILURE_THRESHOLD {
             let Value::Object(event_details) =
-                json!({"target": target, "streak": number(streak), "blockedUntil": blocked_until})
+                json!({"target": target, "streak": json_number(streak), "blockedUntil": blocked_until})
             else {
                 unreachable!("built as an object")
             };
@@ -234,25 +235,5 @@ impl<C: Clock> AuthCircuitBreaker<C> {
             )?,
         };
         Ok(())
-    }
-}
-
-/// JavaScript truthiness of a JSON value.
-fn truthy(value: &Value) -> bool {
-    match value {
-        Value::Null => false,
-        Value::Bool(flag) => *flag,
-        Value::Number(number) => number.as_f64().is_some_and(|number| number != 0.0 && !number.is_nan()),
-        Value::String(text) => !text.is_empty(),
-        Value::Array(_) | Value::Object(_) => true,
-    }
-}
-
-/// A JavaScript number as JSON: integral values without a fraction.
-fn number(value: f64) -> Value {
-    if value.fract() == 0.0 && value.abs() < 9_007_199_254_740_992.0 {
-        json!(value as i64)
-    } else {
-        Number::from_f64(value).map_or(Value::Null, Value::Number)
     }
 }

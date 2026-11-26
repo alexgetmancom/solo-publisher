@@ -169,7 +169,7 @@ fn rows(sqlite: &db::rusqlite::Connection, sql: &str) -> Value {
             let value = match row.get_ref(index).unwrap() {
                 ValueRef::Null => Value::Null,
                 ValueRef::Integer(n) => json!(n),
-                ValueRef::Real(f) => ops::schema::number_value(f),
+                ValueRef::Real(f) => foundation::js::json_number(f),
                 ValueRef::Text(text) => Value::from(String::from_utf8_lossy(text).into_owned()),
                 ValueRef::Blob(_) => Value::from("<blob>"),
             };

@@ -189,13 +189,13 @@ pub fn media_diagnose<'a>(context: &'a OperationContext<'a>, _input: &'a Input) 
             Ok((ok, status, text))
         }
         .await;
-        let health_ok = health.get("ok").is_some_and(domain::json::truthy);
+        let health_ok = health.get("ok").is_some_and(foundation::js::truthy);
         Ok(match attempt {
             Ok((ok, status, text)) => {
                 let result = serde_json::from_str::<Value>(&text)
                     .ok()
                     .filter(|parsed| !parsed.is_null())
-                    .unwrap_or_else(|| json!(utf16_prefix(&text, 800)));
+                    .unwrap_or_else(|| json!(foundation::js::utf16_prefix(&text, 800)));
                 json!({
                     "ok": health_ok && ok,
                     "health": health,
@@ -221,20 +221,6 @@ pub fn media_diagnose<'a>(context: &'a OperationContext<'a>, _input: &'a Input) 
     })
 }
 
-/// `text.slice(0, n)` in UTF-16 units.
-fn utf16_prefix(text: &str, units: usize) -> String {
-    let mut taken = 0;
-    let mut out = String::new();
-    for c in text.chars() {
-        taken += c.len_utf16();
-        if taken > units {
-            break;
-        }
-        out.push(c);
-    }
-    out
-}
-
 /// `mediaJobReport`: the media events of one publication's timeline.
 pub fn media_job<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
@@ -247,7 +233,7 @@ pub fn media_job<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut
             .filter(|event| {
                 let phase = match event["details"].get("phase") {
                     None | Some(Value::Null) => String::new(),
-                    Some(phase) => domain::json::js_string(phase),
+                    Some(phase) => foundation::js::string_of(phase),
                 };
                 event["type"] == "publish.job.phase" || phase.contains("media")
             })
@@ -362,7 +348,7 @@ pub fn media_reprocess<'a>(context: &'a OperationContext<'a>, input: &'a Input) 
 fn is_video_item(item: &Map<String, Value>) -> bool {
     let kind = match item.get("type") {
         None | Some(Value::Null) => String::new(),
-        Some(kind) => domain::json::js_string(kind),
+        Some(kind) => foundation::js::string_of(kind),
     };
     kind.to_lowercase().contains("video")
 }

@@ -109,7 +109,7 @@ pub async fn process_vertical_media_remotely(
             .map(|header| foundation::js::number(&header))
             .filter(|seconds| seconds.is_finite());
         let text = response.text().await?;
-        let detail = crate::js::utf16_prefix(&text, DETAIL_UNITS);
+        let detail = foundation::js::utf16_prefix(&text, DETAIL_UNITS);
         return Err(AdapterError::Http(ExternalHttpError {
             message: if detail.is_empty() {
                 format!("media_processor_failed: {status}")
@@ -135,7 +135,7 @@ pub async fn process_vertical_media_remotely(
         !manifest
             .get("outputs")
             .and_then(|outputs| outputs.get(&variant.name))
-            .is_some_and(domain::json::truthy)
+            .is_some_and(foundation::js::truthy)
     }) {
         return Err(AdapterError::Message(format!(
             "media_processor_failed: missing {} output",

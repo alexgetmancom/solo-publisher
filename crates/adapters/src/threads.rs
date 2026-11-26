@@ -8,13 +8,13 @@ use content::message::{Entity, MediaItem};
 use content::thread::{LocalizedThreadPart, chain_posts};
 use domain::publishing::errors::PublishResult;
 use domain::publishing::threads_text::{threads_body, threads_text_limit};
+use foundation::js::{encode_uri_component, utf16_len};
 use foundation::logger::{LogLevel, log};
 use runtime::external::threads::threads_credentials;
 use runtime::http::{HttpRequest, form_body};
 use serde_json::{Map, Value, json};
 
 use crate::error::{AdapterError, Result, ambiguous_mutation};
-use crate::js::{encode_uri_component, utf16_len};
 use crate::payload::{field, is_video, payload_media, payload_text, payload_thread};
 use crate::ports::AdapterContext;
 
@@ -151,7 +151,7 @@ impl State {
         state.insert("polls".into(), self.polls.into());
         state.insert("carouselRebuilds".into(), self.carousel_rebuilds.into());
         state.insert("mediaFetchRetries".into(), self.media_fetch_retries.into());
-        state.insert("startedAtMs".into(), crate::js::json_number(self.started_at_ms));
+        state.insert("startedAtMs".into(), foundation::js::json_number(self.started_at_ms));
         Value::Object(state)
     }
 
@@ -378,7 +378,7 @@ pub async fn publish_to_threads(
             let code = status.get("status").and_then(Value::as_str);
             if matches!(code, Some("ERROR" | "EXPIRED")) {
                 let reason = match status.get("error_message") {
-                    Some(message) if !message.is_null() => domain::json::js_string(message),
+                    Some(message) if !message.is_null() => foundation::js::string_of(message),
                     _ => code.unwrap_or_default().to_owned(),
                 };
                 return Err(AdapterError::Message(format!(

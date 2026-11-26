@@ -10,7 +10,6 @@
 pub mod assets;
 pub mod draft_content;
 pub mod entity_enrichment;
-mod js;
 pub mod markdown;
 pub mod media_size_advice;
 pub mod message;

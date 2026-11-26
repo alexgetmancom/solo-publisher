@@ -62,7 +62,7 @@ async fn import_item(
         .ok_or_else(|| crate::error("Telegram did not return a media file path."))?;
     let kind = match item.get("type") {
         None | Some(Value::Null) => "photo".to_owned(),
-        Some(value) => domain::json::js_string(value).to_lowercase(),
+        Some(value) => foundation::js::string_of(value).to_lowercase(),
     };
     let (extension, content_type) = if kind == "video" {
         (".mp4", "video/mp4")

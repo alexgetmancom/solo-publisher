@@ -11,11 +11,10 @@ use content::text::split_text;
 use content::text_locale::text_locale;
 use content::thread::{LocalizedThreadPart, chain_posts, joined_thread, localized_thread};
 use foundation::errors::StudioError;
-use foundation::js::trim;
+use foundation::js::{trim, utf16_len};
 use serde_json::Value;
 
 use super::chain_plan::draft_content;
-use super::js_length;
 use super::platform_profiles::{ThreadMode, format_platform_text, platform_profile};
 use super::targets::assert_known_targets;
 use super::threads_text::{is_threads_target, threads_body, threads_text_limit};
@@ -169,7 +168,7 @@ pub fn publication_preflight(draft: &DraftRecord, upload_limits: &UploadLimits) 
             }) = mode
                 && !thread.is_empty()
             {
-                let joined = js_length(&joined_thread(&value.text, &value.entities, &thread).0);
+                let joined = utf16_len(&joined_thread(&value.text, &value.entities, &thread).0);
                 let media = value.media.len() + thread_media;
                 if joined > text_limit {
                     return vec![PublicationPreflightIssue {
@@ -230,7 +229,7 @@ pub fn publication_preflight(draft: &DraftRecord, upload_limits: &UploadLimits) 
                 .iter()
                 .enumerate()
                 .flat_map(|(index, (text, media))| {
-                    let length = js_length(text);
+                    let length = utf16_len(text);
                     [
                         (PreflightKind::TextLimit, text_limit, true),
                         (PreflightKind::CaptionLimit, caption_limit, *media > 0),

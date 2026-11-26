@@ -7,6 +7,7 @@ use content::Locale;
 use db::rusqlite::{OptionalExtension, params};
 use foundation::config::Config;
 use foundation::errors::StudioError;
+use foundation::js::WHITESPACE_CLASS;
 use jiff::Timestamp;
 use regex::Regex;
 use serde_json::{Map, Value, json};
@@ -35,15 +36,12 @@ use crate::{Error, Result};
 /// around this.
 const VIDEO_MAX_BYTES: u64 = 1_000_000_000;
 
-/// JavaScript's whitespace, for patterns written with `\s`.
-const JS_SPACE: &str =
-    r"\t\n\x0B\x0C\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}";
-
 /// Pronunciation written for whoever reads the script aloud — "Capcom
 /// (Кáпком)" — and never said.
-static SAID_ALOUD: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!(r"[{JS_SPACE}]*[(\[][^)\]]*[)\]]")).unwrap());
+static SAID_ALOUD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(&format!(r"[{WHITESPACE_CLASS}]*[(\[][^)\]]*[)\]]")).unwrap());
 static SPACE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]+").unwrap());
-static PARAGRAPH_BREAK: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!(r"\n[{JS_SPACE}]*\n")).unwrap());
+static PARAGRAPH_BREAK: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!(r"\n[{WHITESPACE_CLASS}]*\n")).unwrap());
 static FIRST_SENTENCE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[^.!?]{10,}?[.!?]").unwrap());
 
 /// `Math.round(seconds * 1000)`.

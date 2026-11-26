@@ -4,6 +4,7 @@
 use std::sync::LazyLock;
 
 use foundation::errors::StudioError;
+use foundation::js::WHITESPACE_CLASS;
 use foundation::time::{Zone, zoned_date_parts, zoned_slot};
 use jiff::Timestamp;
 use regex::Regex;
@@ -31,10 +32,7 @@ pub fn publication_slot_time(clock: &str, zone: &Zone, now: Timestamp) -> Result
 }
 
 /// JavaScript's `\s+`.
-static WHITESPACE_RUN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"[\t\n\x0B\x0C\r \x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]+")
-        .unwrap()
-});
+static WHITESPACE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("[{WHITESPACE_CLASS}]+")).unwrap());
 static CLOCK_ONLY: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^([0-9]{1,2}):([0-9]{2})$").unwrap());
 static DATE_AND_CLOCK: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]{4}))? ([0-9]{1,2}):([0-9]{2})$").unwrap());

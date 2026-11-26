@@ -103,11 +103,11 @@ fn site_editorial_fingerprint(row: &DisplayRow) -> String {
             let identity = first_present(item, &["asset_id", "file_id", "fileId", "local_path", "localPath"])
                 .cloned()
                 .unwrap_or_else(|| {
-                    let path = first_present(item, &["path"]).map_or_else(String::new, domain::json::js_string);
+                    let path = first_present(item, &["path"]).map_or_else(String::new, foundation::js::string_of);
                     let path = path.split('?').next().unwrap_or_default();
                     json!(VERTICAL_SUFFIX.replace(path, ".$1"))
                 });
-            let kind = first_present(item, &["type"]).map_or_else(|| "image".into(), domain::json::js_string);
+            let kind = first_present(item, &["type"]).map_or_else(|| "image".into(), foundation::js::string_of);
             json!([
                 identity,
                 if kind.to_lowercase() == "video" {
@@ -359,7 +359,7 @@ pub fn site_media_backfill<'a>(context: &'a OperationContext<'a>, input: &'a Inp
             let media = json_column(media)?;
             let vertical = media_list(&media).is_some_and(|items| {
                 items.iter().any(|item| {
-                    let path = first_present(item, &["path"]).map_or_else(String::new, domain::json::js_string);
+                    let path = first_present(item, &["path"]).map_or_else(String::new, foundation::js::string_of);
                     VERTICAL_PATH.is_match(&path)
                 })
             });
@@ -481,10 +481,10 @@ pub fn site_responsive_backfill<'a>(context: &'a OperationContext<'a>, input: &'
                 } else {
                     "path"
                 };
-                let Some(url) = media.get(key).filter(|url| domain::json::truthy(url)) else {
+                let Some(url) = media.get(key).filter(|url| foundation::js::truthy(url)) else {
                     continue;
                 };
-                let url = domain::json::js_string(url);
+                let url = foundation::js::string_of(url);
                 let relative = url.trim_start_matches('/');
                 let relative = relative.split(['?', '#']).next().unwrap_or_default();
                 let file = public_site::paths::resolve(&public_dir, relative);
@@ -591,7 +591,7 @@ fn inventory_items(feed: &[Rc<FeedItem>]) -> Vec<Value> {
                 })
                 .collect();
             let mut item = Map::new();
-            item.insert("post_id".into(), crate::schema::number_value(post.post_id));
+            item.insert("post_id".into(), foundation::js::json_number(post.post_id));
             item.insert("locale".into(), json!(locale));
             item.insert("text".into(), json!(text));
             item.insert("text_sha256".into(), json!(sha256_hex(text)));
@@ -636,7 +636,7 @@ fn apply_site_metadata(
     for post in feed {
         for (locale, media) in [("ru", &post.media), ("en", &post.media_en)] {
             public_media.insert(
-                format!("{}:{locale}", crate::schema::number_value(post.post_id)),
+                format!("{}:{locale}", foundation::js::json_number(post.post_id)),
                 media.clone(),
             );
         }
@@ -726,7 +726,7 @@ fn apply_site_metadata(
                     return Err(OpError::Failed(format!("Duplicate image for {key}: {path}")));
                 }
                 let asset = media.iter_mut().find(|asset| {
-                    let stored = first_present(asset, &["path"]).map_or_else(String::new, domain::json::js_string);
+                    let stored = first_present(asset, &["path"]).map_or_else(String::new, foundation::js::string_of);
                     stored.trim_start_matches('/') == path && asset.get("type") != Some(&json!("video"))
                 });
                 let Some(Value::Object(asset)) = asset else {
@@ -744,7 +744,7 @@ fn apply_site_metadata(
                             return Err(OpError::Failed(format!("Alt changed for {key}: {path}")));
                         }
                     }
-                    if asset.get("alt").is_some_and(domain::json::truthy) && image.get("expected_alt").is_none() {
+                    if asset.get("alt").is_some_and(foundation::js::truthy) && image.get("expected_alt").is_none() {
                         return Err(OpError::Failed(format!("Alt already edited for {key}: {path}")));
                     }
                     asset.insert("alt".into(), alt.clone());

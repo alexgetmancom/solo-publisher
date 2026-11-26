@@ -3,6 +3,7 @@
 //! started it, so a worker that lost its job writes nothing.
 
 use db::rusqlite::{OptionalExtension, Row, params};
+use foundation::js::{present, string_of};
 use foundation::logger::{LogLevel, log};
 use serde_json::{Map, Value, json};
 
@@ -11,7 +12,7 @@ use super::cancellation::{DELIVERY_NOT_CANCELLED, is_cancellation_declared};
 use super::delivery_payload::{DeliveryPayload, deferred_delivery_payload, has_resume_state, resumed_delivery_payload};
 use super::errors::{
     PublishErrorClass, PublishFailure, PublishResult, classify_message, classify_publish_error,
-    normalize_publish_result, present,
+    normalize_publish_result,
 };
 use super::job_policy::{
     failed_job_transition, may_have_reached_audience, partial_publication_transition, partial_retry_policy,
@@ -24,7 +25,6 @@ use super::queue_state::{
     upsert_post_target, verification_status,
 };
 use super::{iso_at, parse_ms};
-use crate::json::js_string;
 use crate::repositories::{random_uuid, transaction};
 use crate::{Error, Result};
 
@@ -457,7 +457,7 @@ impl Publishing<'_> {
             && !resume_key.is_empty()
         {
             let ids: Vec<String> = match result.get("ids") {
-                Some(Value::Array(ids)) => ids.iter().map(js_string).filter(|id| !id.is_empty()).collect(),
+                Some(Value::Array(ids)) => ids.iter().map(string_of).filter(|id| !id.is_empty()).collect(),
                 _ => Vec::new(),
             };
             let retry =
@@ -568,10 +568,13 @@ impl Publishing<'_> {
         now: &str,
         lock_id: &str,
     ) -> Result<()> {
-        let delay_ms = js_number(result.get("retryAfterMs"))
-            .filter(|ms| *ms != 0.0)
-            .unwrap_or(0.0);
-        let delay_ms = delay_ms.clamp(0.0, 60_000.0) as u64;
+        // `Number(value) || 0` before the clamp.
+        let delay_ms = foundation::js::number_of(result.get("retryAfterMs"));
+        let delay_ms = if delay_ms.is_nan() {
+            0.0
+        } else {
+            delay_ms.clamp(0.0, 60_000.0)
+        } as u64;
         let next_attempt_at = iso_at(parse_ms(now).expect("the clock writes ISO instants") + delay_ms as i64);
         let published = match (result.get("resumeKey"), result.get("resumeValue")) {
             (Some(Value::String(key)), Some(value)) => Some((key.as_str(), value.clone())),
@@ -637,8 +640,8 @@ impl Publishing<'_> {
         now: &str,
         lock_id: &str,
     ) -> Result<()> {
-        let error = present(result, "error")
-            .map_or_else(|| "external publication requires reconciliation".to_owned(), js_string);
+        let error = present(result.get("error"))
+            .map_or_else(|| "external publication requires reconciliation".to_owned(), string_of);
         let sqlite = self.sqlite;
         let settled = self.with_lease(job.job_id, || {
             delete_superseded_jobs(sqlite, &job.target, job.job_id, &job.publication_key)?;
@@ -719,7 +722,8 @@ impl Publishing<'_> {
         } else {
             None
         };
-        let base = present(result, "error").map_or_else(|| format!("{} partial publication", job.target), js_string);
+        let base =
+            present(result.get("error")).map_or_else(|| format!("{} partial publication", job.target), string_of);
         let error = match &answered_since {
             Some(at) => format!(
                 "{base} (stopped early: {} published something else at {at}, so this is not the platform being down)",
@@ -1016,21 +1020,6 @@ impl Publishing<'_> {
         }
         Ok(updated)
     }
-}
-
-/// `Number(value) || 0` before the clamp: `None` for NaN.
-fn js_number(value: Option<&Value>) -> Option<f64> {
-    let number = match value {
-        None => f64::NAN,
-        Some(Value::Null) => 0.0,
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
-        Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(text)) => foundation::js::number(text),
-        Some(Value::Array(items)) if items.is_empty() => 0.0,
-        Some(Value::Array(items)) if items.len() == 1 => js_number(items.first()).unwrap_or(f64::NAN),
-        Some(_) => f64::NAN,
-    };
-    (!number.is_nan()).then_some(number)
 }
 
 /// The provider's last answer, but only when it lands after this job's last

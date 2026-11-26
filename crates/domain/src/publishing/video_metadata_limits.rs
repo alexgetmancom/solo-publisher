@@ -4,9 +4,9 @@
 //! before it is sent.
 
 use foundation::errors::StudioError;
+use foundation::js::utf16_len;
 use serde_json::{Map, Value};
 
-use super::js_length;
 use super::video_types::VideoTarget;
 
 /// YouTube: 100.
@@ -25,7 +25,7 @@ pub const INSTAGRAM_CAPTION: usize = 2_100;
 /// quotes, and every one of those characters counts against the 500.
 pub fn youtube_tags_length(tags: &[String]) -> usize {
     tags.iter()
-        .map(|tag| js_length(tag) + if tag.contains(' ') { 2 } else { 0 })
+        .map(|tag| utf16_len(tag) + if tag.contains(' ') { 2 } else { 0 })
         .sum::<usize>()
         + tags.len().saturating_sub(1)
 }
@@ -51,13 +51,13 @@ pub fn assert_video_metadata(target: VideoTarget, metadata: &Map<String, Value>)
     let tags: Vec<String> = metadata
         .get("tags")
         .and_then(Value::as_array)
-        .map(|tags| tags.iter().map(crate::json::js_string).collect())
+        .map(|tags| tags.iter().map(foundation::js::string_of).collect())
         .unwrap_or_default();
     assert_youtube_tags(&tags)
 }
 
 pub fn assert_instagram_caption(caption: &str) -> Result<(), StudioError> {
-    let used = js_length(caption);
+    let used = utf16_len(caption);
     if used > INSTAGRAM_CAPTION {
         return Err(over("err.video-caption-too-long", used, INSTAGRAM_CAPTION));
     }
@@ -65,7 +65,7 @@ pub fn assert_instagram_caption(caption: &str) -> Result<(), StudioError> {
 }
 
 pub fn assert_youtube_title(title: &str) -> Result<(), StudioError> {
-    let used = js_length(title);
+    let used = utf16_len(title);
     if used > YOUTUBE_TITLE {
         return Err(over("err.video-title-too-long", used, YOUTUBE_TITLE));
     }
@@ -77,7 +77,7 @@ pub fn assert_youtube_title(title: &str) -> Result<(), StudioError> {
 }
 
 pub fn assert_youtube_description(description: &str) -> Result<(), StudioError> {
-    let used = js_length(description);
+    let used = utf16_len(description);
     if used > YOUTUBE_DESCRIPTION {
         return Err(over("err.video-description-too-long", used, YOUTUBE_DESCRIPTION));
     }
@@ -86,7 +86,7 @@ pub fn assert_youtube_description(description: &str) -> Result<(), StudioError> 
 
 /// No cap on how many: YouTube has none, and the budget is the real constraint.
 pub fn assert_youtube_tags(tags: &[String]) -> Result<(), StudioError> {
-    if let Some(long) = tags.iter().find(|tag| js_length(tag) > YOUTUBE_TAG) {
+    if let Some(long) = tags.iter().find(|tag| utf16_len(tag) > YOUTUBE_TAG) {
         return Err(StudioError::new("err.video-tag-too-long")
             .with_param("tag", long)
             .with_param("limit", YOUTUBE_TAG));

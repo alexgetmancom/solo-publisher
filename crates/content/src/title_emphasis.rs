@@ -1,10 +1,9 @@
 use std::sync::LazyLock;
 
-use foundation::js::trim_end;
+use foundation::js::{WHITESPACE_CLASS, number_of_scalar, trim_end, utf16_len};
 use regex::Regex;
 use serde_json::{Map, Value};
 
-use crate::js::{WHITESPACE_CLASS, number, utf16_len};
 use crate::message::Entity;
 
 /// The longest first line still read as a title. Above this the "line, blank
@@ -35,7 +34,8 @@ pub fn emphasize_title(text: &str, entities: &[Entity]) -> Vec<Entity> {
         return entities.to_vec();
     };
     let covered = entities.iter().any(|entity| {
-        entity.get("type").and_then(Value::as_str) == Some("bold") && number(entity.get("offset")) < title_length as f64
+        entity.get("type").and_then(Value::as_str) == Some("bold")
+            && number_of_scalar(entity.get("offset")) < title_length as f64
     });
     if covered {
         return entities.to_vec();
