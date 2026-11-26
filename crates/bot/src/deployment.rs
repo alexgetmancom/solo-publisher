@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use foundation::config::Config;
 use regex::Regex;
+use runtime::http::{HttpClient, HttpRequest};
 use serde_json::{Value, json};
 
 use crate::Fut;
@@ -19,6 +20,10 @@ static TARGET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[a-z][a-z0-9_-]{
 const RETRY_ATTEMPTS: u32 = 3;
 const RETRY_BACKOFF_MS: u64 = 5_000;
 const RETRYABLE_STATUSES: [u16; 6] = [408, 425, 429, 502, 503, 504];
+/// The agent's own healthcheck loop alone runs up to 90s; leave enough
+/// margin for the image pull and container recreate around it so a slow
+/// deploy reports its real outcome instead of a false "unavailable".
+const AGENT_TIMEOUT: Duration = Duration::from_secs(150);
 
 /// What answered a request: its status and body, whatever they are.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -34,45 +39,29 @@ pub trait DeployAgent {
     fn post<'a>(&'a self, url: &'a str, token: &'a str, body: &'a str) -> Fut<'a, Result<AgentResponse, String>>;
 }
 
-/// The real agent over HTTP.
+/// The real agent over the process's HTTP client.
 pub struct HttpDeployAgent {
-    client: reqwest::Client,
+    http: HttpClient,
 }
 
 impl HttpDeployAgent {
-    /// The agent's own healthcheck loop alone runs up to 90s; leave enough
-    /// margin for the image pull and container recreate around it so a slow
-    /// deploy reports its real outcome instead of a false "unavailable".
-    pub fn new() -> Result<Self, String> {
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(150))
-            .build()
-            .map_err(|error| error.to_string())?;
-        Ok(Self { client })
+    pub fn new(http: HttpClient) -> Self {
+        Self { http }
     }
 }
 
 impl DeployAgent for HttpDeployAgent {
     fn post<'a>(&'a self, url: &'a str, token: &'a str, body: &'a str) -> Fut<'a, Result<AgentResponse, String>> {
         Box::pin(async move {
-            let response = self
-                .client
-                .post(url)
+            let request = HttpRequest::post(url)
                 .header("authorization", format!("Bearer {token}"))
                 .header("content-type", "application/json")
-                .body(body.to_owned())
-                .send()
-                .await
-                .map_err(|error| error.without_url().to_string())?;
-            let status = response.status().as_u16();
-            let body = response
-                .bytes()
-                .await
-                .map_err(|error| error.without_url().to_string())?;
-            Ok(AgentResponse {
-                status,
-                body: body.to_vec(),
-            })
+                .text(body)
+                .deadline(AGENT_TIMEOUT);
+            let response = self.http.exchange(request).await.map_err(|failure| failure.message)?;
+            let status = response.status;
+            let body = response.bytes().await.map_err(|error| error.to_string())?;
+            Ok(AgentResponse { status, body })
         })
     }
 }

@@ -9,7 +9,7 @@ use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::media_policy::select_media_for_target;
 use foundation::js::{is_safe_integer, json_number, number_of, present, utf16_len, utf16_prefix};
-use runtime::http::HttpRequest;
+use runtime::external::telegram::{BotApi, BotParams};
 use serde_json::{Map, Value, json};
 
 use crate::error::{Result, ambiguous_mutation};
@@ -45,7 +45,10 @@ pub async fn publish_to_telegram(ctx: &AdapterContext, payload: &Map<String, Val
     let media = payload_media(payload);
     let entities = payload.get("entities").and_then(Value::as_array);
     let thread = payload_thread(payload);
-    let telegram = Telegram { ctx, token, chat_id };
+    let telegram = Telegram {
+        api: bot_api(ctx, token),
+        chat_id,
+    };
     if !thread.is_empty() {
         let first = LocalizedThreadPart {
             text,
@@ -167,19 +170,15 @@ enum Call {
     Form(Vec<(&'static str, String)>, Vec<Attachment>),
 }
 
-struct Telegram<'a> {
-    ctx: &'a AdapterContext,
-    token: &'a str,
+struct Telegram {
+    api: BotApi,
     chat_id: String,
 }
 
-impl Telegram<'_> {
+impl Telegram {
     async fn call(&self, method: &str, body: Call) -> Result<Value> {
-        let request = HttpRequest::post(bot_url(&self.ctx.config.telegram_api_base_url, self.token, method));
-        let request = match body {
-            Call::Json(value) => request
-                .header("Content-Type", "application/json")
-                .text(stringify(&value)),
+        let params = match body {
+            Call::Json(value) => BotParams::json(stringify(&value)),
             Call::Form(fields, attachments) => {
                 let mut form = Form::new();
                 for (name, value) in &fields {
@@ -193,10 +192,11 @@ impl Telegram<'_> {
                         crate::payload::guess_content_type(&attachment.local_path),
                     );
                 }
-                form.attach(request)
+                let (boundary, body) = form.finish();
+                BotParams::multipart(&boundary, body)
             }
         };
-        Ok(self.ctx.client.request_json(request).await?)
+        Ok(self.api.request_json(method, params).await?)
     }
 
     /// A thread is one rich message (Bot API 10.1): each part's text as a
@@ -302,9 +302,8 @@ impl Telegram<'_> {
     }
 }
 
-/// `${TELEGRAM_API_BASE_URL without one trailing slash}/bot<token>/<method>`.
-fn bot_url(base: &str, token: &str, method: &str) -> String {
-    format!("{}/bot{token}/{method}", base.strip_suffix('/').unwrap_or(base))
+fn bot_api(ctx: &AdapterContext, token: &str) -> BotApi {
+    BotApi::new(ctx.client.clone(), &ctx.config.telegram_api_base_url, token)
 }
 
 /// `telegramMediaSource`: a file id or public URL is sent as it is; a local
@@ -404,10 +403,9 @@ pub async fn edit_telegram_message(ctx: &AdapterContext, edit: &EditRequest) -> 
         json_number(foundation::js::number(&edit.external_id)),
     );
     body.insert(key.into(), edit.text.clone().into());
-    let request = HttpRequest::post(bot_url(&ctx.config.telegram_api_base_url, token, method))
-        .header("Content-Type", "application/json")
-        .text(stringify(&Value::Object(body)));
-    let response = ctx.client.request_json(request).await?;
+    let response = bot_api(ctx, token)
+        .request_json(method, BotParams::json(stringify(&Value::Object(body))))
+        .await?;
     Ok(EditOutcome {
         ok: response.get("ok") != Some(&Value::Bool(false)),
         skipped: false,
@@ -430,8 +428,7 @@ pub async fn delete_telegram_message(ctx: &AdapterContext, external_id: &str) ->
         "chat_id": ctx.config.telegram_channel_username,
         "message_id": json_number(foundation::js::number(external_id)),
     });
-    let request = HttpRequest::post(bot_url(&ctx.config.telegram_api_base_url, token, "deleteMessage"))
-        .header("Content-Type", "application/json")
-        .text(stringify(&body));
-    Ok(ctx.client.request_json(request).await?)
+    Ok(bot_api(ctx, token)
+        .request_json("deleteMessage", BotParams::json(stringify(&body)))
+        .await?)
 }

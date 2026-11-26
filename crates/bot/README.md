@@ -7,7 +7,7 @@ The contract is the recorded goldens (`parity/bot-goldens/`). Russian only
 
 | Module | Holds |
 |---|---|
-| `api/` | Bot API client: guard, retry, timing, payload, types, transport |
+| `api/` | Bot API client: guard, retry, timing, payload, types, over `runtime::external::telegram::BotApi` |
 | `bot.rs`, `runner.rs` | Middleware chain, routers; long-polling runner |
 | `boundary.rs`, `sequentialize.rs`, `action_lock.rs`, `tap.rs` | Callback boundary, per-chat sequentialization, action lock, tap measurement |
 | `callback.rs` | Screen ids + arity, `p:` namespace, `sv<n>\|` |
@@ -65,8 +65,8 @@ its own `Scratch` dir, `_trash-rust/tmp/bot-tests/<pid>-<n>-<label>/`, removed a
 runs are safe. Cross-area needs per case: `CASE_NEEDS` in `tests/support/pending.rs`. Recorder triggers (worker
 ticks) replay from `tests/support/triggers.rs`, one row per trigger name. Boundaries the replay reaches
 are implemented in `tests/support/host.rs` (unimplemented ones panic with their name). Plain HTTP the bot made
-(`method: "http"` in goldens) is recorded by the fakes beneath it: Telegram file downloads go through
-`Transport::download` (the fake serves the local file, as the recorder's `fileDownload` did), the deploy agent through
+(`method: "http"` in goldens) is recorded by the fakes beneath it: Telegram file downloads reach the fake Telegram's `runtime::http::Transport` at the
+file endpoint (it serves the local file, as the recorder's `fileDownload` did), the deploy agent through
 its own boundary. Steps feeding several updates at once compare per chat.
 Loop cases (`loops/`) replay each loop's task and also compare the database effects the
 recorder watched (`db` in a step: the same SQL run on the Rust database, rows with sorted keys); the translator is the

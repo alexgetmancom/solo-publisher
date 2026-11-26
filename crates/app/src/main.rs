@@ -8,7 +8,6 @@ use std::process::ExitCode;
 use std::rc::Rc;
 use std::time::Duration;
 
-use bot::api::transport::HttpTransport;
 use bot::deployment::HttpDeployAgent;
 use bot::{Bot, BotDeps, runner};
 use db::BackendDb;
@@ -17,6 +16,7 @@ use foundation::config::{Config, SharedConfig, load_config, process_env};
 use foundation::logger::{LogLevel, configure_logging, log};
 use http_edge::{BotBackend, HttpState};
 use ops::host::OpsAdapters;
+use runtime::external::telegram::BotApi;
 use runtime::http::{HttpClient, ReqwestTransport};
 use runtime::scheduler::ScheduledLoop;
 use runtime::worker_signal::{WorkerQueue, set_worker_wake};
@@ -121,22 +121,15 @@ async fn run(
     token: &str,
     db: BackendDb,
 ) -> (Option<Bot>, ExitCode) {
-    let transport = match HttpTransport::new(&config.load().telegram_api_base_url, token) {
-        Ok(transport) => transport,
-        Err(error) => return failed(None, "Telegram transport could not be built", &error.0),
-    };
-    let deploy_agent = match HttpDeployAgent::new() {
-        Ok(agent) => agent,
-        Err(error) => return failed(None, "deploy agent client could not be built", &error),
-    };
+    let telegram = BotApi::new(http.clone(), &config.load().telegram_api_base_url, token);
     let bot = Bot::new(BotDeps {
         db,
         clock: Rc::new(SystemClock),
         config: config.clone(),
         host: Rc::clone(&host) as _,
         adapters: OpsAdapters::boxed(http.clone(), config),
-        transport: Rc::new(transport),
-        deploy_agent: Rc::new(deploy_agent),
+        telegram,
+        deploy_agent: Rc::new(HttpDeployAgent::new(http.clone())),
     });
     let (mut interrupt, mut terminate) = match (signal(SignalKind::interrupt()), signal(SignalKind::terminate())) {
         (Ok(interrupt), Ok(terminate)) => (interrupt, terminate),

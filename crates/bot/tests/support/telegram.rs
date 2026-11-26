@@ -9,9 +9,8 @@ use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::rc::Rc;
 use std::sync::LazyLock;
 
-use bot::Fut;
-use bot::api::transport::{BodyChunk, Downloaded, HttpRequest, Transport, TransportError};
 use regex::Regex;
+use runtime::http::{BodyPart, Fut, HttpRequest, HttpResponse, Transport, TransportFailure};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 use tokio::sync::Semaphore;
@@ -346,20 +345,19 @@ impl FakeTelegram {
 
     fn parse(&self, request: &HttpRequest) -> (Value, bool) {
         let mut bytes = Vec::new();
-        for chunk in &request.body {
-            match chunk {
-                BodyChunk::Bytes(data) => bytes.extend_from_slice(data),
-                BodyChunk::File(path) => {
-                    bytes.extend(std::fs::read(path).unwrap_or_else(|error| panic!("{}: {error}", path.display())))
+        for part in &request.body.0 {
+            match part {
+                BodyPart::Bytes(data) => bytes.extend_from_slice(data),
+                BodyPart::File { path, offset } => {
+                    let file = std::fs::read(path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+                    bytes.extend_from_slice(&file[*offset as usize..]);
                 }
             }
         }
-        if request.content_type.starts_with("multipart/") {
+        let content_type = request.header_value("content-type").unwrap_or_default();
+        if content_type.starts_with("multipart/") {
             let opaque = self.state.borrow().opaque_uploads;
-            (
-                multipart_payload(&bytes, &request.content_type, opaque, &self.tmp),
-                true,
-            )
+            (multipart_payload(&bytes, content_type, opaque, &self.tmp), true)
         } else {
             let text = String::from_utf8(bytes).expect("a JSON body is UTF-8");
             let value: Value = serde_json::from_str(if text.is_empty() { "{}" } else { &text }).expect("a JSON body");
@@ -388,25 +386,24 @@ fn js_string(value: &Value) -> String {
 /// The file endpoint the recorder's `fileDownload` stub answers.
 const FILE_ROOT: &str = "http://telegram.invalid/file/bot123456:TEST-TOKEN/";
 
-impl Transport for FakeTelegram {
+impl FakeTelegram {
     /// The recorder's `fileDownload`: the path after the token is a local
     /// file, served whole with its length.
-    fn download(&self, file_path: &str, _: u64, _: std::time::Duration) -> Fut<'_, Result<Downloaded, TransportError>> {
-        self.record_http(json!({"method": "GET", "url": format!("{FILE_ROOT}{file_path}")}));
+    fn download(&self, url: &str, file_path: &str) -> Fut<'_, Result<HttpResponse, TransportFailure>> {
+        self.record_http(json!({"method": "GET", "url": url}));
         let body = std::fs::read(file_path).unwrap_or_else(|error| panic!("no HTTP stub for {file_path}: {error}"));
-        let content_length = Some(body.len() as u64);
-        Box::pin(async move {
-            Ok(Downloaded {
-                status: 200,
-                content_length,
-                body,
-            })
-        })
+        let length = vec![("content-length".to_owned(), body.len().to_string())];
+        Box::pin(async move { Ok(HttpResponse::buffered(200, length, body)) })
     }
+}
 
-    fn send(&self, request: HttpRequest) -> Fut<'_, Result<Vec<u8>, TransportError>> {
+impl Transport for FakeTelegram {
+    fn send(&self, request: HttpRequest) -> Fut<'_, Result<HttpResponse, TransportFailure>> {
+        if let Some(file_path) = request.url.strip_prefix(FILE_ROOT) {
+            return self.download(&request.url, file_path);
+        }
         let (payload, multipart) = self.parse(&request);
-        let method = request.method.clone();
+        let method = request.url.rsplit('/').next().unwrap_or_default().to_owned();
         let mut call = Map::new();
         // In the recorder's key order (sorted): method, payload, transport.
         call.insert("method".into(), method.clone().into());
@@ -448,7 +445,7 @@ impl Transport for FakeTelegram {
                     Err((code, description)) => json!({"ok": false, "error_code": code, "description": description}),
                 },
             };
-            Ok(response.to_string().into_bytes())
+            Ok(HttpResponse::buffered(200, Vec::new(), response.to_string()))
         })
     }
 }

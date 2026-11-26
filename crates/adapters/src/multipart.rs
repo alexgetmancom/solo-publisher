@@ -63,17 +63,20 @@ impl Form {
         ));
     }
 
-    /// The request with this form as its body and the content type `fetch`
-    /// sets for a `FormData`.
-    pub fn attach(mut self, request: HttpRequest) -> HttpRequest {
+    /// The boundary and the closed body.
+    pub fn finish(mut self) -> (String, Body) {
         self.parts
             .push(BodyPart::Bytes(format!("--{}--\r\n", self.boundary).into_bytes()));
+        (self.boundary, Body(self.parts))
+    }
+
+    /// The request with this form as its body and the content type `fetch`
+    /// sets for a `FormData`.
+    pub fn attach(self, request: HttpRequest) -> HttpRequest {
+        let (boundary, body) = self.finish();
         request
-            .header(
-                "content-type",
-                format!("multipart/form-data; boundary={}", self.boundary),
-            )
-            .body(Body(self.parts))
+            .header("content-type", format!("multipart/form-data; boundary={boundary}"))
+            .body(body)
     }
 }
 

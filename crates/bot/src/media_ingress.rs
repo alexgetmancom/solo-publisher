@@ -5,19 +5,18 @@
 //! publishes one.
 
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use content::assets::STUDIO_MEDIA_MAX_BYTES;
 use content::message::MediaItem;
 use domain::application::ports::StudioMediaAssetRecord;
 use domain::studio::services::media::{ImportedMediaFile, MediaService, MediaSource};
 use foundation::config::Config;
+use runtime::external::telegram::TELEGRAM_DOWNLOAD_TIMEOUT;
 use serde_json::Value;
 
 use crate::api::Api;
 use crate::tap;
-
-const TELEGRAM_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(300);
 
 /// `importTelegramMedia`: every item that is still only a Telegram file id
 /// becomes a Content asset, in order; an item that already is one is kept.

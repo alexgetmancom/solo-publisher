@@ -181,6 +181,12 @@ impl Response {
         (200..300).contains(&self.status)
     }
 
+    /// The next piece of the body, `None` once it has ended, a loss as the
+    /// transport reported it: for a caller that stops reading early.
+    pub async fn chunk(&mut self) -> Result<Option<Vec<u8>>, TransportFailure> {
+        self.body.next_chunk().await
+    }
+
     pub async fn bytes(mut self) -> Result<Vec<u8>, ExternalError> {
         let mut bytes = Vec::new();
         loop {

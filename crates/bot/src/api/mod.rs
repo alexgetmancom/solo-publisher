@@ -7,10 +7,9 @@
 //! 3. the API timing, around every attempt,
 //!
 //! and then the encoding grammY does (JSON, or multipart when a file is
-//! attached) onto a [`Transport`].
+//! attached) onto the shared [`BotApi`], read as the Bot API answers.
 
 pub mod payload;
-pub mod transport;
 pub mod types;
 
 use std::cell::RefCell;
@@ -19,12 +18,13 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use indexmap::IndexMap;
+use runtime::external::telegram::{BotApi, BotCallError, BotParams, BotResponse};
+use runtime::http::{Body, BodyPart};
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
 
 use crate::tap;
 use payload::{Payload, multipart_value, upload_filename, wire_json};
-use transport::{BodyChunk, HttpRequest, Transport};
 use types::{File, Message, Update, User};
 
 /// How many messages the guard remembers the contents of.
@@ -33,6 +33,8 @@ const MAX_RETRY_ATTEMPTS: u32 = 3;
 const MAX_RETRY_DELAY_SECONDS: f64 = 30.0;
 const INITIAL_BACKOFF_SECONDS: f64 = 3.0;
 const MAX_BACKOFF_SECONDS: f64 = 3600.0;
+/// grammY's default request timeout; the long poll waits 30 s of it.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(500);
 
 /// A failed call, worded as grammY words it: these texts reach the operator
 /// through `describeError` and the logs through `String(error)`.
@@ -110,55 +112,6 @@ pub fn is_unchanged_message_edit(error: &(dyn std::error::Error + 'static)) -> b
     error.to_string().contains("message is not modified")
 }
 
-/// A Bot API response before grammY turns `ok: false` into an error.
-#[derive(Clone, Debug, PartialEq)]
-struct Response {
-    ok: bool,
-    result: Value,
-    error_code: i64,
-    description: String,
-    parameters: Map<String, Value>,
-}
-
-impl Response {
-    fn success(result: Value) -> Self {
-        Self {
-            ok: true,
-            result,
-            error_code: 0,
-            description: String::new(),
-            parameters: Map::new(),
-        }
-    }
-
-    fn parse(method: &str, bytes: &[u8]) -> Result<Self, ApiError> {
-        let malformed = |detail: String| ApiError::Malformed {
-            method: method.to_owned(),
-            detail,
-        };
-        let value: Value = serde_json::from_slice(bytes).map_err(|error| malformed(error.to_string()))?;
-        let ok = value
-            .get("ok")
-            .and_then(Value::as_bool)
-            .ok_or_else(|| malformed("no `ok`".into()))?;
-        Ok(Self {
-            ok,
-            result: value.get("result").cloned().unwrap_or(Value::Null),
-            error_code: value.get("error_code").and_then(Value::as_i64).unwrap_or(0),
-            description: value
-                .get("description")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_owned(),
-            parameters: value
-                .get("parameters")
-                .and_then(Value::as_object)
-                .cloned()
-                .unwrap_or_default(),
-        })
-    }
-}
-
 /// The guard's memory: what each recently written message shows.
 #[derive(Default)]
 struct EditMemory {
@@ -198,21 +151,31 @@ fn content_of(payload: &Map<String, Value>) -> String {
 }
 
 struct Inner {
-    transport: Rc<dyn Transport>,
+    telegram: BotApi,
     memory: RefCell<EditMemory>,
 }
 
-/// One bot's API handle; clones share the transport and the guard's memory.
+/// One bot's API handle; clones share the Bot API and the guard's memory.
 #[derive(Clone)]
 pub struct Api {
     inner: Rc<Inner>,
 }
 
+/// What the Bot API file endpoint answered: its status, the length it
+/// announced, and the body, read up to one chunk past the caller's limit so an
+/// oversized file is told apart without being read whole.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Downloaded {
+    pub status: u16,
+    pub content_length: Option<u64>,
+    pub body: Vec<u8>,
+}
+
 impl Api {
-    pub fn new(transport: Rc<dyn Transport>) -> Self {
+    pub fn new(telegram: BotApi) -> Self {
         Self {
             inner: Rc::new(Inner {
-                transport,
+                telegram,
                 memory: RefCell::default(),
             }),
         }
@@ -247,7 +210,12 @@ impl Api {
     }
 
     /// The unchanged-edit guard (`installUnchangedEditGuard`).
-    async fn guarded(&self, method: &str, payload: &Payload, json: &Map<String, Value>) -> Result<Response, ApiError> {
+    async fn guarded(
+        &self,
+        method: &str,
+        payload: &Payload,
+        json: &Map<String, Value>,
+    ) -> Result<BotResponse, ApiError> {
         let key = message_key(json);
         if let Some(key) = key.as_ref()
             && method == "editMessageText"
@@ -255,7 +223,7 @@ impl Api {
             let content = content_of(json);
             if self.inner.memory.borrow().contents.get(key) == Some(&content) {
                 tap::record_unchanged_edit();
-                return Ok(Response::success(Value::Bool(true)));
+                return Ok(BotResponse::success(Value::Bool(true)));
             }
             let response = self.retried(method, payload, json).await?;
             if response.ok {
@@ -285,7 +253,12 @@ impl Api {
     /// long as it lasts; a `retry_after` of at most 30 s is waited out, up to
     /// three more attempts; a 5xx is returned as it is (a retried 500 can send
     /// the same message twice).
-    async fn retried(&self, method: &str, payload: &Payload, json: &Map<String, Value>) -> Result<Response, ApiError> {
+    async fn retried(
+        &self,
+        method: &str,
+        payload: &Payload,
+        json: &Map<String, Value>,
+    ) -> Result<BotResponse, ApiError> {
         let mut remaining = MAX_RETRY_ATTEMPTS;
         let mut next_delay = INITIAL_BACKOFF_SECONDS;
         loop {
@@ -313,25 +286,29 @@ impl Api {
     }
 
     /// `installApiTiming`: every attempt is billed to the update making it.
-    async fn timed(&self, method: &str, payload: &Payload, json: &Map<String, Value>) -> Result<Response, ApiError> {
+    async fn timed(&self, method: &str, payload: &Payload, json: &Map<String, Value>) -> Result<BotResponse, ApiError> {
         let started = Instant::now();
         let response = self.raw(method, payload, json).await;
         tap::record_api_call(method, started.elapsed().as_secs_f64() * 1000.0);
         response
     }
 
-    async fn raw(&self, method: &str, payload: &Payload, json: &Map<String, Value>) -> Result<Response, ApiError> {
-        let request = encode(method, payload, json);
-        let bytes = self
+    async fn raw(&self, method: &str, payload: &Payload, json: &Map<String, Value>) -> Result<BotResponse, ApiError> {
+        let answer = self
             .inner
-            .transport
-            .send(request)
-            .await
-            .map_err(|error| ApiError::Network {
+            .telegram
+            .answer(method, encode(payload, json), REQUEST_TIMEOUT)
+            .await;
+        answer.map_err(|error| match error {
+            BotCallError::Network(detail) => ApiError::Network {
                 method: method.to_owned(),
-                detail: error.0,
-            })?;
-        Response::parse(method, &bytes)
+                detail,
+            },
+            BotCallError::Malformed(detail) => ApiError::Malformed {
+                method: method.to_owned(),
+                detail,
+            },
+        })
     }
 
     // ---- the methods the bot calls, shaped as grammY's `Api` shapes them ----
@@ -391,14 +368,32 @@ impl Api {
     }
 
     /// The bytes of a file `getFile` named by a relative path, past no
-    /// transformer: it is the file endpoint, not a method.
+    /// transformer: it is the file endpoint, not a method. `Err` is what the
+    /// transport said when the file did not arrive.
     pub async fn download_file(
         &self,
         file_path: &str,
         max_bytes: u64,
         timeout: Duration,
-    ) -> Result<transport::Downloaded, transport::TransportError> {
-        self.inner.transport.download(file_path, max_bytes, timeout).await
+    ) -> Result<Downloaded, String> {
+        let lost = |failure: runtime::http::TransportFailure| failure.message;
+        let mut response = self.inner.telegram.download(file_path, timeout).await.map_err(lost)?;
+        let content_length = response
+            .headers
+            .get("content-length")
+            .and_then(|length| length.parse().ok());
+        let mut body = Vec::new();
+        while let Some(chunk) = response.chunk().await.map_err(lost)? {
+            body.extend_from_slice(&chunk);
+            if body.len() as u64 > max_bytes {
+                break;
+            }
+        }
+        Ok(Downloaded {
+            status: response.status,
+            content_length,
+            body,
+        })
     }
 
     /// `{ chat_id, <key>: file, ...other }` for `sendPhoto`, `sendVideo`,
@@ -446,33 +441,29 @@ fn boundary() -> String {
 }
 
 /// grammY's `createJsonPayload` / `createFormDataPayload`.
-fn encode(method: &str, payload: &Payload, json: &Map<String, Value>) -> HttpRequest {
+fn encode(payload: &Payload, json: &Map<String, Value>) -> BotParams {
     if payload.uploads().is_empty() {
-        return HttpRequest {
-            method: method.to_owned(),
-            content_type: "application/json".into(),
-            body: vec![BodyChunk::Bytes(wire_json(&Value::Object(json.clone())).into_bytes())],
-        };
+        return BotParams::json(wire_json(&Value::Object(json.clone())));
     }
     let boundary = boundary();
-    let mut body = vec![BodyChunk::Bytes(format!("--{boundary}\r\n").into_bytes())];
+    let mut body = vec![BodyPart::Bytes(format!("--{boundary}\r\n").into_bytes())];
     let separator = format!("\r\n--{boundary}\r\n");
     let mut first = true;
     for (key, value) in json {
         let Some(text) = multipart_value(value) else { continue };
         if !first {
-            body.push(BodyChunk::Bytes(separator.clone().into_bytes()));
+            body.push(BodyPart::Bytes(separator.clone().into_bytes()));
         }
-        body.push(BodyChunk::Bytes(
+        body.push(BodyPart::Bytes(
             format!("content-disposition:form-data;name=\"{key}\"\r\n\r\n{text}").into_bytes(),
         ));
         first = false;
     }
     for upload in payload.uploads() {
         if !first {
-            body.push(BodyChunk::Bytes(separator.clone().into_bytes()));
+            body.push(BodyPart::Bytes(separator.clone().into_bytes()));
         }
-        body.push(BodyChunk::Bytes(
+        body.push(BodyPart::Bytes(
             format!(
                 "content-disposition:form-data;name=\"{}\";filename={}\r\ncontent-type:application/octet-stream\r\n\r\n",
                 upload.id,
@@ -481,24 +472,22 @@ fn encode(method: &str, payload: &Payload, json: &Map<String, Value>) -> HttpReq
             .into_bytes(),
         ));
         body.push(match &upload.file {
-            payload::InputFile::Path(path) => BodyChunk::File(path.clone()),
-            payload::InputFile::Bytes { data, .. } => BodyChunk::Bytes(data.clone()),
+            payload::InputFile::Path(path) => BodyPart::File {
+                path: path.clone(),
+                offset: 0,
+            },
+            payload::InputFile::Bytes { data, .. } => BodyPart::Bytes(data.clone()),
         });
         first = false;
     }
-    body.push(BodyChunk::Bytes(format!("\r\n--{boundary}--\r\n").into_bytes()));
-    HttpRequest {
-        method: method.to_owned(),
-        content_type: format!("multipart/form-data; boundary={boundary}"),
-        body,
-    }
+    body.push(BodyPart::Bytes(format!("\r\n--{boundary}--\r\n").into_bytes()));
+    BotParams::multipart(&boundary, Body(body))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Fut;
-    use transport::TransportError;
+    use runtime::http::{Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 
     /// Answers from a script and records what it was asked.
     struct Scripted {
@@ -507,24 +496,22 @@ mod tests {
     }
 
     impl Transport for Scripted {
-        fn send(&self, request: HttpRequest) -> Fut<'_, Result<Vec<u8>, TransportError>> {
+        fn send(&self, request: HttpRequest) -> Fut<'_, Result<HttpResponse, TransportFailure>> {
             let body: Vec<u8> = request
                 .body
+                .0
                 .iter()
-                .flat_map(|chunk| match chunk {
-                    BodyChunk::Bytes(bytes) => bytes.clone(),
-                    BodyChunk::File(_) => b"<file>".to_vec(),
+                .flat_map(|part| match part {
+                    BodyPart::Bytes(bytes) => bytes.clone(),
+                    BodyPart::File { .. } => b"<file>".to_vec(),
                 })
                 .collect();
+            let method = request.url.rsplit('/').next().unwrap_or_default().to_owned();
             self.seen
                 .borrow_mut()
-                .push((request.method, String::from_utf8_lossy(&body).into_owned()));
+                .push((method, String::from_utf8_lossy(&body).into_owned()));
             let answer = self.answers.borrow_mut().remove(0);
-            Box::pin(async move { Ok(answer.to_string().into_bytes()) })
-        }
-
-        fn download(&self, _: &str, _: u64, _: Duration) -> Fut<'_, Result<transport::Downloaded, TransportError>> {
-            unreachable!("the client tests download nothing")
+            Box::pin(async move { Ok(HttpResponse::buffered(200, Vec::new(), answer.to_string())) })
         }
     }
 
@@ -533,7 +520,8 @@ mod tests {
             answers: RefCell::new(answers),
             seen: RefCell::default(),
         });
-        (Api::new(transport.clone()), transport)
+        let telegram = BotApi::new(HttpClient::new(transport.clone()), "http://telegram.invalid", "1:T");
+        (Api::new(telegram), transport)
     }
 
     fn run<F: Future>(future: F) -> F::Output {

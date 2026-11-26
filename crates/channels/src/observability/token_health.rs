@@ -16,6 +16,7 @@ use foundation::logger::{LogLevel, log};
 use foundation::time::{parse_iso_instant, to_iso_string};
 use jiff::Timestamp;
 use runtime::external::instagram::{instagram_credentials_for_locale, instagram_graph_host};
+use runtime::external::telegram::BotApi;
 use runtime::external::threads::threads_credentials;
 use runtime::external::youtube::{youtube_access_token, youtube_credentials};
 use runtime::http::{ExternalError, HttpClient, HttpRequest};
@@ -90,11 +91,9 @@ impl Probe {
         match self {
             Self::ControllerBot => {
                 let token = config.controller_bot_token.as_deref().unwrap_or_default();
-                http.request_json(HttpRequest::get(format!(
-                    "{}/bot{token}/getMe",
-                    config.telegram_api_base_url
-                )))
-                .await?;
+                BotApi::new(http.clone(), &config.telegram_api_base_url, token)
+                    .get_me()
+                    .await?;
                 Ok(ProbeResult::default())
             }
             Self::X => {

@@ -2,14 +2,12 @@
 //! already answered.
 
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use foundation::config::Config;
 use serde_json::{Value, json};
 
-use crate::http::{ExternalError, HttpClient, HttpRequest};
-
-const TELEGRAM_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(300);
+use super::telegram::{BotApi, BotParams, TELEGRAM_DOWNLOAD_TIMEOUT};
+use crate::http::{ExternalError, HttpClient};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TelegramFileSource<'a> {
@@ -49,9 +47,10 @@ pub async fn materialize_telegram_file(
         .filter(|token| !token.is_empty())
         .or(config.controller_bot_token.as_deref().filter(|token| !token.is_empty()))
         .ok_or_else(|| ExternalError::message("Telegram bot token is not configured."))?;
+    let api = BotApi::new(client.clone(), &config.telegram_api_base_url, token);
     let file_path = match source {
         TelegramFileSource::FilePath(path) => path.to_owned(),
-        TelegramFileSource::FileId(file_id) => telegram_file_path(client, config, file_id, token).await?,
+        TelegramFileSource::FileId(file_id) => telegram_file_path(&api, file_id).await?,
     };
     if Path::new(&file_path).is_absolute() && options.target.is_none() {
         return Ok(Materialized {
@@ -67,20 +66,14 @@ pub async fn materialize_telegram_file(
             options.extension.unwrap_or_else(|| extname(&file_path))
         )),
     };
-    place(client, config, token, &file_path, &target).await?;
+    place(&api, &file_path, &target).await?;
     Ok(Materialized {
         path: target,
         temporary: options.target.is_none(),
     })
 }
 
-async fn place(
-    client: &HttpClient,
-    config: &Config,
-    token: &str,
-    file_path: &str,
-    target: &Path,
-) -> Result<(), ExternalError> {
+async fn place(api: &BotApi, file_path: &str, target: &Path) -> Result<(), ExternalError> {
     let io = |error: std::io::Error| ExternalError::message(error.to_string());
     tokio::fs::create_dir_all(target.parent().unwrap_or(Path::new("/")))
         .await
@@ -95,19 +88,19 @@ async fn place(
         if Path::new(file_path).is_absolute() {
             tokio::fs::copy(file_path, &temporary).await.map_err(io)?;
         } else {
-            let base = config.telegram_api_base_url.trim_end_matches('/');
-            let request =
-                HttpRequest::get(format!("{base}/file/bot{token}/{file_path}")).deadline(TELEGRAM_DOWNLOAD_TIMEOUT);
-            let response = client.exchange(request).await.map_err(|failure| {
-                ExternalError::message(if failure.timed_out {
-                    format!(
-                        "Telegram file download timed out after {}s.",
-                        TELEGRAM_DOWNLOAD_TIMEOUT.as_secs()
-                    )
-                } else {
-                    "Telegram file download failed.".to_owned()
-                })
-            })?;
+            let response = api
+                .download(file_path, TELEGRAM_DOWNLOAD_TIMEOUT)
+                .await
+                .map_err(|failure| {
+                    ExternalError::message(if failure.timed_out {
+                        format!(
+                            "Telegram file download timed out after {}s.",
+                            TELEGRAM_DOWNLOAD_TIMEOUT.as_secs()
+                        )
+                    } else {
+                        "Telegram file download failed.".to_owned()
+                    })
+                })?;
             if !response.ok() {
                 return Err(ExternalError::message(format!(
                     "Telegram file download failed: {}",
@@ -123,17 +116,10 @@ async fn place(
     placed
 }
 
-async fn telegram_file_path(
-    client: &HttpClient,
-    config: &Config,
-    file_id: &str,
-    token: &str,
-) -> Result<String, ExternalError> {
-    let base = config.telegram_api_base_url.trim_end_matches('/');
-    let request = HttpRequest::post(format!("{base}/bot{token}/getFile"))
-        .header("Content-Type", "application/json")
-        .text(json!({"file_id": file_id}).to_string());
-    let info = client.request_json(request).await?;
+async fn telegram_file_path(api: &BotApi, file_id: &str) -> Result<String, ExternalError> {
+    let info = api
+        .request_json("getFile", BotParams::json(json!({"file_id": file_id}).to_string()))
+        .await?;
     let ok = info.get("ok").is_some_and(foundation::js::truthy);
     match info.pointer("/result/file_path") {
         Some(Value::String(path)) if ok && !path.is_empty() => Ok(path.clone()),

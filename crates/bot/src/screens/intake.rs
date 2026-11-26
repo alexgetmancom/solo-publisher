@@ -535,7 +535,7 @@ async fn download_document(ctx: &Ctx, document: &MediaFile) -> crate::Result<Str
         .api()
         .download_file(&file_path, read_limit, MARKDOWN_DOWNLOAD_TIMEOUT)
         .await
-        .map_err(|error| crate::error(error.0))?;
+        .map_err(crate::error)?;
     if !(200..300).contains(&response.status) {
         return Err(crate::error(format!(
             "Telegram file download failed: {}",

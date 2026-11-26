@@ -3,6 +3,7 @@
 
 pub mod deepseek;
 pub mod instagram;
+pub mod telegram;
 pub mod telegram_files;
 pub mod threads;
 pub mod youtube;

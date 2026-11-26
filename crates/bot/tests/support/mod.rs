@@ -37,6 +37,7 @@ use db::BackendDb;
 use foundation::config::{SharedConfig, load_config};
 use foundation::i18n::{Key, t};
 use jiff::Timestamp;
+use runtime::external::telegram::BotApi;
 use runtime::http::HttpClient;
 use serde_json::{Value, json};
 use sha2::{Digest as _, Sha256};
@@ -494,6 +495,11 @@ impl Harness {
         let zernio = Rc::new(GoldenZernio::new(telegram.clone()));
         let deepseek = Rc::new(GoldenDeepSeek::new(telegram.clone()));
         let http = HttpClient::new(deepseek.clone());
+        let bot_api = BotApi::new(
+            HttpClient::new(telegram.clone()),
+            &config.telegram_api_base_url,
+            BOT_TOKEN,
+        );
         let config = SharedConfig::new(config);
         let bot = Bot::new(BotDeps {
             db,
@@ -501,7 +507,7 @@ impl Harness {
             config: config.clone(),
             host: Rc::new(GoldenHost::new(config, clock.clone())),
             adapters: DynAdapters(Box::new(GoldenAdapters { zernio: zernio.clone() })),
-            transport: telegram.clone(),
+            telegram: bot_api,
             deploy_agent: deploy_agent.clone(),
         });
         let mut info = bot_user();

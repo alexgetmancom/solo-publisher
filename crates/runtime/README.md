@@ -12,6 +12,7 @@ rest of the Studio: loops, doorbells and transports run on the process's `LocalS
 | `worker_state` (`record_worker_state`, `HeartbeatLoops`, `worker_liveness`, worker names) | per-loop state rows and liveness |
 | `worker_signal` (`ring_worker`, `ring_worker_after`, `set_worker_wake`, `WorkerSignals`) | the doorbells of the two queues a person waits on |
 | `timeout`, `job_heartbeat`, `git`, `data_dirs` | deadlines, job lease heartbeat, the running revision, data directories |
+| `external::telegram` (`BotApi`, `BotParams`, `BotResponse`, `TELEGRAM_DOWNLOAD_TIMEOUT`) | the one Telegram Bot API client: method calls and the file endpoint; encoding and retries stay with callers |
 | `external::{deepseek, instagram, threads, youtube, zernio, telegram_files}` | provider helpers |
 
 Not here: the Stories session (`crates/mtproto`), deployment (promote/rollback live in `bot::deployment`; reading
