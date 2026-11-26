@@ -1,6 +1,6 @@
 //! The publication controls (`p:post:…`, `p:video:…`): the action contract
 //! (`bot/publication-action-contract.ts`), the router that checks a tap before
-//! any action runs (`bot/callback-router.ts`, spec §5.2), the actions both
+//! any action runs (`bot/callback-router.ts`), the actions both
 //! kinds share (`view`, `retry`), the card a publication renders as
 //! (`bot/publication-renderers.ts`) and `runCallbackAction`
 //! (`bot/callback-effects.ts`).
@@ -266,7 +266,7 @@ fn timezone_label(ctx: &Ctx) -> String {
         .unwrap_or_default()
 }
 
-/// `handlePublicationCallback`: the checks of spec §5.2, in order, then the action.
+/// `handlePublicationCallback`: the checks in order, then the action.
 pub async fn handle_publication_callback(ctx: &Ctx) -> crate::Result<bool> {
     let Some(raw) = ctx.callback_data() else {
         return Ok(false);

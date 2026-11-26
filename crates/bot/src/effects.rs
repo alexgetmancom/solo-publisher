@@ -1,4 +1,4 @@
-//! Effects and the screen anchor (`bot/effects.ts`, spec §1.7–1.8).
+//! Effects and the screen anchor (`bot/effects.ts`).
 //!
 //! Handlers return an ordered list of effects; one executor runs them, so
 //! "edit the tapped message or send a new one" is answered in one place: the

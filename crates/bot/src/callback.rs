@@ -1,4 +1,4 @@
-//! The callback-data grammar (spec §5.1): screen buttons
+//! The callback-data grammar: screen buttons
 //! (`bot/screen-callback.ts`), the publication namespace and its dialog
 //! revision prefix (`bot/publication-callback.ts`). The menu plugin's own
 //! format lives in [`crate::menu`].

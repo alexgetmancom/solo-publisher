@@ -1,5 +1,5 @@
 //! The queue area: the work queue and its "needs attention" list
-//! (`bot/queue.ts`, spec §4.2–4.3). Items open their post or video card.
+//! (`bot/queue.ts`). Items open their post or video card.
 
 use domain::application::conversation_flow::PublicationKind;
 use domain::studio::services::queue::{StudioQueueItem, StudioQueueSnapshot};

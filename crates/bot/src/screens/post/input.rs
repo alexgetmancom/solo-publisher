@@ -1,5 +1,5 @@
 //! A message answering an open post step (`bot/post-input-actions.ts`, the
-//! `accept` half of `bot/post-flow.ts`, spec §6.2): the step takes it, the
+//! `accept` half of `bot/post-flow.ts`): the step takes it, the
 //! dialog advances one revision, and the operator sees what came of it.
 
 use content::Locale;

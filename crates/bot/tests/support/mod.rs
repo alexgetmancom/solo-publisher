@@ -336,7 +336,7 @@ pub fn reseed(sqlite: &db::rusqlite::Connection, path: &Path) {
 }
 
 /// Where the Rust bot differs from the recording on purpose
-/// (plans/rust/DECISIONS.md), applied to the expected calls and checked to be
+/// (docs/decisions.md), applied to the expected calls and checked to be
 /// exactly what the decision says.
 fn deliberate_deviations(area: &str, case: &str, steps: &mut [Value]) {
     if (area, case) == ("entry", "bootstrap") {
@@ -353,7 +353,7 @@ fn deliberate_deviations(area: &str, case: &str, steps: &mut [Value]) {
 }
 
 /// The System screen's body no longer names the language setting
-/// (plans/rust/DECISIONS.md): every recorded body carries the TypeScript text,
+/// (docs/decisions.md): every recorded body carries the TypeScript text,
 /// and the Rust bot sends the catalog's, in the calls and in the updates that
 /// tap a message showing it.
 fn without_language_in_system_body(steps: &mut [Value]) {

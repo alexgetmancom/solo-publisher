@@ -1,4 +1,4 @@
-//! The post controls (`bot/post-actions.ts`, spec §5.2.2): the 25 actions of
+//! The post controls (`bot/post-actions.ts`): the 25 actions of
 //! the post card beside the two every publication shares.
 
 use content::Locale;

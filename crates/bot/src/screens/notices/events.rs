@@ -1,5 +1,5 @@
-//! The Telegram event loop's tick (`interfaces/telegram/event-consumer.ts`,
-//! spec §7.1): durable domain events rendered as Telegram-only side effects,
+//! The Telegram event loop's tick (`interfaces/telegram/event-consumer.ts`):
+//! durable domain events rendered as Telegram-only side effects,
 //! at most once each.
 
 use db::rusqlite::{OptionalExtension, params};

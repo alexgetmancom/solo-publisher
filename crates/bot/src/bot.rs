@@ -1,4 +1,4 @@
-//! `createBot` and its middleware chain (`bot.ts`, spec §1.3), in the order
+//! `createBot` and its middleware chain (`bot.ts`), in the order
 //! the TypeScript bot installs it:
 //!
 //! 1. timing and usage around everything,
@@ -188,8 +188,8 @@ pub struct Bot {
 
 impl Bot {
     /// `createBot`: registers every area's screens and configures the command
-    /// menu in the background (spec §1.1; the description is the `ru` one, see
-    /// plans/rust/DECISIONS.md). Must be called inside a `LocalSet`.
+    /// menu in the background (the description is the `ru` one, see
+    /// docs/decisions.md). Must be called inside a `LocalSet`.
     pub fn new(deps: BotDeps) -> Self {
         let mut registry = Registry::default();
         publication::register_shared_actions(&mut registry);

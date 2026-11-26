@@ -1,4 +1,4 @@
-//! The video controls (`bot/video-actions.ts`, spec §5.2.2): the 23 actions
+//! The video controls (`bot/video-actions.ts`): the 23 actions
 //! of the video card and its conversation, beside the two every publication
 //! shares.
 

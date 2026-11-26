@@ -7,14 +7,14 @@ them. The recorder's seeds are `seeds/`, its fixtures `fixtures/`; how the Rust 
 what state was put in place outside the bot. All screens use the actor locale `ru`. Paths below are relative to
 `parity/bot-goldens/`.
 
-## §10 parity checklist
+## Screen and state checklist
 
 | # | Screen / state | Case file(s) | Status |
 |---|---|---|---|
 | 1 | /start hint + persistent reply keyboard | entry/start | recorded |
 | 2 | Main menu (empty, headline, count) | entry/start, entry/menu-button, queue/queue-pages, queue/menu-headline-tomorrow | recorded |
 | 3 | Intake prompt (text / video) | intake/intake-menu-buttons, video/video-intake-destination | recorded |
-| 4 | Intake unsupported / rejected | intake/intake-unsupported, video/video-intake-rejects-text, intake/intake-text-entry-video (§11.4) | recorded |
+| 4 | Intake unsupported / rejected | intake/intake-unsupported, video/video-intake-rejects-text, intake/intake-text-entry-video | recorded |
 | 5 | Intake kind choice | intake/intake-kind-choice, intake/intake-kind-post | recorded |
 | 6 | Article review (asked / decided) | intake/intake-kind-choice, intake/intake-markdown-article, intake/intake-markdown-rather-post | recorded |
 | 7 | Article queued (result) | intake/intake-markdown-article | recorded |
@@ -89,8 +89,8 @@ what state was put in place outside the bot. All screens use the actor locale `r
 | 76 | Publication notifications | settings/settings-notifications | recorded |
 | 77 | System | settings/settings-system-timezone, settings/settings-system-backup | recorded |
 | 78 | Time zone (+ custom prompt, zone outside the list) | settings/settings-system-timezone | recorded |
-| 79 | Language | — | not recorded: excluded by plans/rust/DECISIONS.md (no 🌐 Language screen in the Rust bot) |
-| 80 | Keyboard-updated message (+ reply kb) | — | not recorded: only reachable from the Language switch (§4.10.6), which is excluded |
+| 79 | Language | — | not recorded: excluded by docs/decisions.md (no 🌐 Language screen in the Rust bot) |
+| 80 | Keyboard-updated message (+ reply kb) | — | not recorded: only reachable from the Language switch, which is excluded |
 | 81 | Backup | settings/settings-system-backup | recorded |
 | 82 | Settings typed-input replies (tz set / invalid, YT saved) | settings/settings-system-timezone, settings/settings-youtube-signature | recorded |
 | 83 | Deploy confirmation | deploy/deploy-promote, deploy/deploy-rollback-failed | recorded |
@@ -107,7 +107,7 @@ what state was put in place outside the bot. All screens use the actor locale `r
 
 91 of 93 rows recorded; the two missing rows are the excluded Language screen and the message only it produces.
 
-## §6 flows
+## Flows
 
 | Flow | Case file(s) |
 |---|---|
@@ -118,7 +118,7 @@ what state was put in place outside the bot. All screens use the actor locale `r
 | 6.5 album collector (new draft, edit step, thread part, give-up) | intake/post-album, intake/post-album-edit, intake/post-album-thread-part, intake/post-album-give-up |
 | 6.6 settings text input (time zone, YouTube signature, navigation message) | settings/settings-system-timezone, settings/settings-youtube-signature |
 
-## §7 messages the bot sends on its own
+## Messages the bot sends on its own
 
 | Source | Case file(s) |
 |---|---|
@@ -144,14 +144,14 @@ Each trigger runs one loop's task exactly as `interfaces/telegram/worker.ts` (an
 | telegram-albums (before / after the settle window) | loops/loop-albums |
 | telegram-daily-backup (before 04:00, switched off, once a day, next day) | loops/loop-daily-backup |
 
-## §5 callback data (stale and foreign)
+## Callback data (stale and foreign)
 
 | Rule | Case file |
 |---|---|
 | 5.1 unknown screen id, wrong arity, bad numbers, intake choice with no effect | callbacks/callback-unknown |
 | 5.2 steps 1-6: unknown action (post/video), invalid draft id, arity, missing / wrong `sv` revision, unreadable draft | callbacks/callback-publication-stale |
 | 5.2 step 7 / 5.5: tap on a superseded card → stale + current card re-sent | callbacks/callback-stale-card, notices/notice-video-unresolved |
-| 5.2.3 unversioned confirm_now (§11.10) | video/video-publish-now |
+| 5.2.3 unversioned confirm_now | video/video-publish-now |
 | 5.3 intake_download of a replaced screen (intake expired) | video/video-download-cancel |
 | 5.3 deploy validation | deploy/deploy-invalid |
 | 5.4 supersession | callbacks/callback-superseded |
@@ -159,13 +159,12 @@ Each trigger runs one loop's task exactly as `interfaces/telegram/worker.ts` (an
 | 5.7 menu-plugin format: outdated hash, unknown menu, malformed position | callbacks/callback-menu-legacy |
 | 1.3 admin gate | entry/admin-gate |
 | 1.1 setMyCommands at construction | entry/bootstrap |
-| 1.1 / §11.5 internal error: a tap gets the raw error as a message, a message handler gets no reply | callbacks/callback-internal-error |
+| 1.1 internal error: a tap gets the raw error as a message, a message handler gets no reply | callbacks/callback-internal-error |
 
 ## Findings while recording (behaviour of today's bot, recorded as is)
 
-- An actor with no stored locale reads as `en` (`studio/services/settings.ts`, `readLocale(..., "en")`), not `ru` as spec
-  §1.4/§8 say. The recorder stores `ru` explicitly before every case.
-- `setMyCommands` still sends the EN description (`entry/bootstrap`); DECISIONS.md moves it to `ru` in Rust, so that
+- An actor with no stored locale reads as `en` (`studio/services/settings.ts`, `readLocale(..., "en")`), not `ru`. The recorder stores `ru` explicitly before every case.
+- `setMyCommands` still sends the EN description (`entry/bootstrap`); docs/decisions.md moves it to `ru` in Rust, so that
   golden will differ on purpose.
 - Settings menu-plugin hashes contain raw control characters and U+FFFD (the plugin decodes 4 hash bytes as UTF-8);
   they are recorded exactly and the Rust side must reproduce the plugin's `tinyHash` + lossy decode to match.

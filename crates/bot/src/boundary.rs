@@ -1,4 +1,4 @@
-//! The callback boundary (`bot/callback-boundary.ts`, spec §5.4–5.6).
+//! The callback boundary (`bot/callback-boundary.ts`).
 //!
 //! A tap is acknowledged the moment it arrives, ahead of the per-chat queue;
 //! the acknowledgement is the only real answer it gets, and every later answer

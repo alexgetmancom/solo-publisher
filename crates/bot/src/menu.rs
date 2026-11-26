@@ -1,4 +1,4 @@
-//! `@grammyjs/menu` 1.4, reproduced on the wire (spec §5.7): a menu button's
+//! `@grammyjs/menu` 1.4, reproduced on the wire: a menu button's
 //! callback data is `<menuId>/<row>/<col>/<payload>/<type><hash>`, where the
 //! hash is the plugin's `tinyHash` of the menu's fingerprint (`f`) or of the
 //! keyboard shape and the button's label (`h`), its four bytes decoded as UTF-8

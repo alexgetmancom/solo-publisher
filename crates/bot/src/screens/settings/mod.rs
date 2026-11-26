@@ -1,8 +1,8 @@
-//! The settings area (`bot/settings/index.ts` + `shared.ts`, spec §4.10, §6.6):
+//! The settings area (`bot/settings/index.ts` + `shared.ts`):
 //! the `⚙️` text trigger, the settings menus and the typed settings inputs
 //! (time zone, YouTube signature) that claim the next message.
 //!
-//! Russian only (plans/rust/DECISIONS.md): there is no 🌐 Language screen, so
+//! Russian only (docs/decisions.md): there is no 🌐 Language screen, so
 //! the System menu has no language button.
 
 mod notifications;

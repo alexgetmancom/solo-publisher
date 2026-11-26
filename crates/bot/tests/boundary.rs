@@ -1,5 +1,5 @@
 //! The callback boundary and the menu plugin's format, checked on the core
-//! alone: the boundary rules (spec §5.4–5.7) driven through the main menu,
+//! alone: the boundary rules driven through the main menu,
 //! the one menu the core owns.
 
 #[allow(dead_code)]

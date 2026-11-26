@@ -1,6 +1,5 @@
-//! The post area: the text post card and everything on it (spec §4.5, §6.2,
-//! §6.3): its 25 controls, the card renderer, the message handler of the post
-//! conversation, the Story-card choice and the publication-progress card.
+//! The post area: the text post card and everything on it: its 25 controls, the card renderer, the
+//! message handler of the post conversation, the Story-card choice and the publication-progress card.
 
 mod actions;
 mod flow;

@@ -126,7 +126,7 @@ An empty database is normal, not a bug — never write INSERTs by hand. The test
 committed goldens (`parity/`, `crates/*/tests/*.golden.json`, the bot seeds in
 `parity/bot-goldens/seeds/`), recorded from the TypeScript backend before the cutover under the
 production ffmpeg build (6.1.1, which CI installs). Nothing re-records them: a deliberate behaviour
-change edits its golden in the same commit and names the change in `plans/rust/DECISIONS.md`.
+change edits its golden in the same commit and names the change in `docs/decisions.md`.
 
 The public site is not in this repository. It is its own service (alexgetman-site) that reads
 `GET /api/public/site` and links to `/media/*` and `/generated/responsive/media-*`, which this

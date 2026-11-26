@@ -1,6 +1,5 @@
-//! The video area: the video publication card and everything on it (spec
-//! §4.6, §6.4): its 23 controls, the card renderer, the MP4 → metadata →
-//! schedule conversation, the source preview and the intake's handoff into it.
+//! The video area: the video publication card and everything on it: its 23 controls, the card renderer, the
+//! MP4 → metadata → schedule conversation, the source preview and the intake's handoff into it.
 
 mod actions;
 mod conversation;

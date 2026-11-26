@@ -1,5 +1,5 @@
-//! The publication-progress card (`bot/progress.ts`, `bot/progress-screen.ts`,
-//! spec §4.5.8): one durable card, updated in place, and its four screen buttons.
+//! The publication-progress card (`bot/progress.ts`, `bot/progress-screen.ts`):
+//! one durable card, updated in place, and its four screen buttons.
 
 use domain::studio::services::post_progress::{PostProgressState, PostProgressStatus};
 use domain::targets::target_definition;

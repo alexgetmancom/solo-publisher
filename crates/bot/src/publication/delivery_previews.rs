@@ -1,5 +1,5 @@
-//! The delivery previews (`interfaces/telegram/delivery-previews.ts`, spec
-//! §7.6): what each platform will receive, rendered from Studio's delivery
+//! The delivery previews (`interfaces/telegram/delivery-previews.ts`):
+//! what each platform will receive, rendered from Studio's delivery
 //! projections. It owns no planning decisions.
 
 use content::message::{Entity, MediaItem};

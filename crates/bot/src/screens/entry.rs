@@ -1,5 +1,5 @@
 //! The entry area: `/start`, the `☰ Меню` text triggers, the main menu
-//! (`bot/navigation.ts`, `bot/menu-render.ts`, spec §2, §4.1) and the two
+//! (`bot/navigation.ts`, `bot/menu-render.ts`) and the two
 //! screen buttons that only lead back to it (`menu_home`, `noop`).
 
 use std::sync::LazyLock;
@@ -39,7 +39,7 @@ pub fn register(registry: &mut Registry) {
         parent: None,
         // A fingerprint instead of the per-label hash, so the live queue count
         // never makes the menu "outdated"; it names everything the shape
-        // depends on (spec §4.1). The interface is Russian only.
+        // depends on. The interface is Russian only.
         fingerprint: Some(|_| "publishing:ru".to_owned()),
         auto_answer: true,
         layout: main_menu_layout,

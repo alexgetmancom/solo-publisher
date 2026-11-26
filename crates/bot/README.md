@@ -1,7 +1,7 @@
 # bot — the Studio Telegram bot (Rust)
 
-Port of the TypeScript `bot.ts` + `bot/**`; contract: `plans/rust/telegram-bot-spec.md`. Russian only
-(`plans/rust/DECISIONS.md`). Everything runs on one thread inside a tokio `LocalSet`.
+Port of the TypeScript `bot.ts` + `bot/**`; the contract is the recorded goldens (`parity/bot-goldens/`). Russian only
+(`docs/decisions.md`). Everything runs on one thread inside a tokio `LocalSet`.
 
 ## Core (shared; edit only with a reason)
 

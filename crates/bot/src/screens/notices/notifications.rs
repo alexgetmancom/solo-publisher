@@ -1,5 +1,5 @@
 //! The Telegram delivery of Studio's publication events
-//! (`interfaces/telegram/video-notifications.ts`, spec §7.2-§7.5): reminders,
+//! (`interfaces/telegram/video-notifications.ts`): reminders,
 //! completions, a video target that failed or that nobody can confirm, and the
 //! video card redrawn in place. Every notice reaches every administrator.
 
