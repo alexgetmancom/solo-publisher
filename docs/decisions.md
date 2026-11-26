@@ -89,6 +89,8 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   time: the mpeg4 clip came out different per core count (slice threading), and the site golden hashes what is derived
   from it. What ffmpeg's encoders write (WebP variants, posters) is compared by path and links, with names taken from
   their hashes read as the file they name, because those bytes follow the ffmpeg build.
+- Sampled time.json/text.json/plural.json down to their signal rows (950→80 KB, 709→104 KB, 7.4→1.6 KB): recorded rows
+  are kept verbatim, dropped only; the plural test's row floor went from 200 to 40 with it.
 
 ## Media processor (`crates/media_processor`, binary `media-processor`)
 

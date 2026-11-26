@@ -119,7 +119,7 @@ fn time_matches_intl() {
 fn plural_matches_intl_plural_rules() {
     let plurals = fixture("plural.json");
     let cases = plurals.as_array().unwrap();
-    assert!(cases.len() > 200);
+    assert!(cases.len() > 40);
     for case in cases {
         let n = case["n"].as_u64().unwrap();
         assert_eq!(plural(n, "one", "few", "many"), text(&case["category"]), "n = {n}");
