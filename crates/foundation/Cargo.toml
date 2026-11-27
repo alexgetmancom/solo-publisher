@@ -9,7 +9,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 arc-swap = "1"
 base64 = "0.22"
 jiff = { version = "0.2", default-features = false, features = ["std", "tzdb-bundle-always"] }
