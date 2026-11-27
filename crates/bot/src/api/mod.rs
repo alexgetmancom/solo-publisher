@@ -18,8 +18,8 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use indexmap::IndexMap;
+use providers::adapters::multipart::Form;
 use providers::external::telegram::{BotApi, BotCallError, BotParams, BotResponse};
-use runtime::http::{Body, BodyPart};
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value, json};
 
@@ -428,66 +428,35 @@ impl FileSource {
     }
 }
 
-/// A random-enough multipart boundary (`"----------" + randomId(32)`).
-fn boundary() -> String {
-    const ALPHABET: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
-    let mut bytes = [0u8; 32];
-    getrandom::getrandom(&mut bytes).expect("the system has randomness");
-    let id: String = bytes
-        .iter()
-        .map(|byte| ALPHABET[usize::from(*byte) % ALPHABET.len()] as char)
-        .collect();
-    format!("----------{id}")
-}
-
-/// grammY's `createJsonPayload` / `createFormDataPayload`.
+/// JSON, or a multipart form when the call uploads a file (grammY's
+/// `createJsonPayload` / `createFormDataPayload`).
 fn encode(payload: &Payload, json: &Map<String, Value>) -> BotParams {
     if payload.uploads().is_empty() {
         return BotParams::json(wire_json(&Value::Object(json.clone())));
     }
-    let boundary = boundary();
-    let mut body = vec![BodyPart::Bytes(format!("--{boundary}\r\n").into_bytes())];
-    let separator = format!("\r\n--{boundary}\r\n");
-    let mut first = true;
+    let mut form = Form::new();
     for (key, value) in json {
-        let Some(text) = multipart_value(value) else { continue };
-        if !first {
-            body.push(BodyPart::Bytes(separator.clone().into_bytes()));
+        if let Some(text) = multipart_value(value) {
+            form.text(key, &text);
         }
-        body.push(BodyPart::Bytes(
-            format!("content-disposition:form-data;name=\"{key}\"\r\n\r\n{text}").into_bytes(),
-        ));
-        first = false;
     }
     for upload in payload.uploads() {
-        if !first {
-            body.push(BodyPart::Bytes(separator.clone().into_bytes()));
+        let filename = upload_filename(upload);
+        match &upload.file {
+            payload::InputFile::Path(path) => form.file(&upload.id, path, &filename, "application/octet-stream"),
+            payload::InputFile::Bytes { data, .. } => {
+                form.blob(&upload.id, data.clone(), &filename, "application/octet-stream")
+            }
         }
-        body.push(BodyPart::Bytes(
-            format!(
-                "content-disposition:form-data;name=\"{}\";filename={}\r\ncontent-type:application/octet-stream\r\n\r\n",
-                upload.id,
-                upload_filename(upload)
-            )
-            .into_bytes(),
-        ));
-        body.push(match &upload.file {
-            payload::InputFile::Path(path) => BodyPart::File {
-                path: path.clone(),
-                offset: 0,
-            },
-            payload::InputFile::Bytes { data, .. } => BodyPart::Bytes(data.clone()),
-        });
-        first = false;
     }
-    body.push(BodyPart::Bytes(format!("\r\n--{boundary}--\r\n").into_bytes()));
-    BotParams::multipart(&boundary, Body(body))
+    let (boundary, body) = form.finish();
+    BotParams::multipart(&boundary, body)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use runtime::http::{Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
+    use runtime::http::{BodyPart, Fut, HttpClient, HttpRequest, HttpResponse, Transport, TransportFailure};
 
     /// Answers from a script and records what it was asked.
     struct Scripted {
@@ -594,7 +563,7 @@ mod tests {
     }
 
     #[test]
-    fn files_go_as_multipart_with_grammy_parts() {
+    fn files_go_as_multipart_parts() {
         let (api, transport) = scripted(vec![sent(1)]);
         let photo = payload::InputFile::Bytes {
             data: b"JPEG".to_vec(),
@@ -621,7 +590,7 @@ mod tests {
         assert_eq!(
             body,
             format!(
-                "{boundary}\r\ncontent-disposition:form-data;name=\"chat_id\"\r\n\r\n1\r\n{boundary}\r\ncontent-disposition:form-data;name=\"photo\"\r\n\r\nattach://{id}\r\n{boundary}\r\ncontent-disposition:form-data;name=\"caption\"\r\n\r\nc\r\n{boundary}\r\ncontent-disposition:form-data;name=\"{id}\";filename=photo.jpg\r\ncontent-type:application/octet-stream\r\n\r\nJPEG\r\n{boundary}--\r\n"
+                "{boundary}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n1\r\n{boundary}\r\nContent-Disposition: form-data; name=\"photo\"\r\n\r\nattach://{id}\r\n{boundary}\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\nc\r\n{boundary}\r\nContent-Disposition: form-data; name=\"{id}\"; filename=\"photo.jpg\"\r\nContent-Type: application/octet-stream\r\n\r\nJPEG\r\n{boundary}--\r\n"
             )
         );
     }
