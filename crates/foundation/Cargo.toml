@@ -16,7 +16,7 @@ jiff = { version = "0.2", default-features = false, features = ["std", "tzdb-bun
 percent-encoding = "2"
 regex = "1"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 url = "2"
 
 [build-dependencies]

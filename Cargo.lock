@@ -236,7 +236,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "tokio",
 ]
 
@@ -476,7 +476,7 @@ version = "0.0.0"
 dependencies = [
  "rusqlite",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "thiserror",
 ]
 
@@ -496,7 +496,7 @@ dependencies = [
  "runtime",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "tokio",
  "url",
  "vertical_media",
@@ -573,7 +573,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "thiserror",
  "unicode-segmentation",
 ]
@@ -704,7 +704,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "url",
 ]
 
@@ -875,7 +875,7 @@ dependencies = [
  "num-traits",
  "pbkdf2",
  "sha1",
- "sha2 0.11.1",
+ "sha2",
 ]
 
 [[package]]
@@ -1057,7 +1057,7 @@ dependencies = [
  "runtime",
  "rustix",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "subtle",
  "tokio",
  "tokio-io-timeout",
@@ -1807,7 +1807,7 @@ dependencies = [
  "rustix",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "tokio",
  "url",
 ]
@@ -1944,7 +1944,7 @@ dependencies = [
  "runtime",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "tokio",
  "url",
 ]
@@ -1960,7 +1960,7 @@ dependencies = [
  "foundation",
  "jiff",
  "serde_json",
- "sha2 0.10.9",
+ "sha2",
  "tokio",
  "url",
 ]
@@ -2402,17 +2402,6 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
  "digest 0.11.3",
-]
-
-[[package]]
-name = "sha2"
-version = "0.10.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
-dependencies = [
- "cfg-if",
- "cpufeatures 0.2.17",
- "digest 0.10.7",
 ]
 
 [[package]]

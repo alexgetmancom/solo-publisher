@@ -28,7 +28,7 @@ public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 rustix = { version = "1", features = ["fs"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 subtle = "2"
 tokio = { version = "1", features = ["rt", "net", "fs", "io-util", "sync", "macros", "time"] }
 tokio-io-timeout = "1"
