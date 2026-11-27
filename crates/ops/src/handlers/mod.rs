@@ -8,6 +8,7 @@ pub mod media;
 pub(crate) mod publication_ref;
 pub mod reads;
 mod reviewed_plan;
+mod rows;
 mod site;
 mod timeline;
 mod usage;

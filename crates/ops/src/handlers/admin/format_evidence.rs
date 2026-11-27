@@ -8,8 +8,8 @@ use foundation::time::to_iso_string;
 use jiff::Timestamp;
 use serde_json::Value;
 
-use super::rows;
 use crate::context::OpError;
+use crate::handlers::rows;
 
 const MEDIA_TEST_CASES: [(&str, &str, &str, &str); 9] = [
     ("T01", "text_only", "Text only", "Send a plain text message."),

@@ -2,23 +2,16 @@
 //! event log of one publication, in order. `media-job` reads its media
 //! events out of it.
 
-use db::rusqlite::types::ValueRef;
 use db::rusqlite::{Connection, OptionalExtension, Row};
 use domain::application::publication_ref::{PublicationRefKind, parse_publication_ref};
 use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value, json};
 
+use super::rows;
 use crate::context::OpError;
 
-/// A column as `bun:sqlite` hands it over.
 fn cell(row: &Row<'_>, index: usize) -> db::rusqlite::Result<Value> {
-    Ok(match row.get_ref(index)? {
-        ValueRef::Null => Value::Null,
-        ValueRef::Integer(number) => json!(number),
-        ValueRef::Real(number) => foundation::js::json_number(number),
-        ValueRef::Text(text) => Value::from(String::from_utf8_lossy(text).into_owned()),
-        ValueRef::Blob(bytes) => Value::from(bytes.to_vec()),
-    })
+    Ok(rows::cell(row.get_ref(index)?))
 }
 
 /// Every row of `sql` as an object with `names`, in order.
@@ -37,14 +30,6 @@ fn records(
         Ok(record)
     })?;
     Ok(rows.collect::<Result<_, _>>()?)
-}
-
-/// `JSON.parse` of a `{ mode: "json" }` column, as drizzle reads it.
-fn json_column(value: &Value) -> Result<Value, OpError> {
-    match value {
-        Value::String(text) => Ok(serde_json::from_str(text)?),
-        other => Ok(other.clone()),
-    }
 }
 
 /// `jsonObject`.
@@ -167,7 +152,7 @@ fn video_timeline(sqlite: &Connection, reference: &str, video_draft_id: i64) -> 
         ],
     )?;
     for target in &mut targets {
-        let metadata = json_column(&target["metadata"])?;
+        let metadata = rows::json_column(target["metadata"].as_str())?;
         target.insert("metadata".into(), metadata);
     }
     let jobs: Vec<Value> = records(

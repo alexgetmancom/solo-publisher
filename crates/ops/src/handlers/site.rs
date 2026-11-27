@@ -27,34 +27,11 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 use super::reviewed_plan::{DisplayPlan, MetadataPlan};
+use super::rows::json_column;
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext};
 
 fn sha256_hex(text: &str) -> String {
     format!("{:x}", Sha256::digest(text.as_bytes()))
-}
-
-/// A `{ mode: "json" }` column as drizzle reads it.
-fn json_column(text: Option<String>) -> Result<Value, OpError> {
-    match text {
-        None => Ok(Value::Null),
-        Some(text) => Ok(serde_json::from_str(&text)?),
-    }
-}
-
-/// Drizzle's synchronous `db.transaction(work)`: `BEGIN`, and a throw rolls
-/// it back.
-fn in_transaction<T>(sqlite: &Connection, work: impl FnOnce() -> Result<T, OpError>) -> Result<T, OpError> {
-    sqlite.execute_batch("BEGIN")?;
-    match work() {
-        Ok(value) => {
-            sqlite.execute_batch("COMMIT")?;
-            Ok(value)
-        }
-        Err(error) => {
-            let _ = sqlite.execute_batch("ROLLBACK");
-            Err(error)
-        }
-    }
 }
 
 fn media_list(value: &Value) -> Option<&Vec<Value>> {
@@ -157,7 +134,7 @@ fn display_rows(sqlite: &Connection) -> Result<Vec<DisplayRow>, OpError> {
     let mut out = Vec::new();
     for row in rows {
         let (post_id, mut display, media) = row?;
-        display.site_media = json_column(media)?;
+        display.site_media = json_column(media.as_deref())?;
         let Some(post_id) = post_id.filter(|id| *id != 0) else {
             continue;
         };
@@ -202,7 +179,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
         };
         let plan = DisplayPlan::parse(&tokio::fs::read(file).await?)?;
         let now = to_iso_string(context.now());
-        in_transaction(sqlite, || {
+        Ok(domain::repositories::transaction(sqlite, || {
             let rows = display_rows(sqlite)?;
             let by_key: HashMap<String, &DisplayRow> = rows
                 .iter()
@@ -213,7 +190,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
             for item in &plan.dates {
                 let key = format!("{}:{}", item.post_id, item.locale.as_str());
                 if !seen.insert(key.clone()) {
-                    return Err(OpError::Failed(format!("Duplicate date restoration: {key}")));
+                    return Err(domain::Error::message(format!("Duplicate date restoration: {key}")));
                 }
                 let expected = item.expected_updated_at.as_str();
                 let row = by_key.get(&key).copied().filter(|row| {
@@ -221,7 +198,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                         && site_editorial_fingerprint(row) == item.content_sha256
                 });
                 let Some(row) = row else {
-                    return Err(OpError::Failed(format!(
+                    return Err(domain::Error::message(format!(
                         "Editorial content or modification date changed for {key}"
                     )));
                 };
@@ -232,7 +209,9 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                 ) && let (Some(restore), Some(published)) = (parse_iso_ms(restore), parse_iso_ms(published))
                     && restore < published
                 {
-                    return Err(OpError::Failed(format!("Restored date precedes publication for {key}")));
+                    return Err(domain::Error::message(format!(
+                        "Restored date precedes publication for {key}"
+                    )));
                 }
                 if apply {
                     let changed = sqlite.execute(
@@ -240,7 +219,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                         params![restore, row.draft_id, row.locale, 1, row.updated_at, expected],
                     )?;
                     if changed != 1 {
-                        return Err(OpError::Failed(format!("Concurrent date change for {key}")));
+                        return Err(domain::Error::message(format!("Concurrent date change for {key}")));
                     }
                 }
                 restored += 1;
@@ -268,7 +247,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                         ],
                     )?;
                     if changed != 1 {
-                        return Err(OpError::Failed(format!(
+                        return Err(domain::Error::message(format!(
                             "Concurrent gallery change for {}:{}",
                             row.draft_id, row.locale
                         )));
@@ -277,7 +256,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                 cards += 1;
             }
             Ok(json!({"ok": true, "apply": apply, "restored_dates": restored, "removed_story_card_locales": cards}))
-        })
+        })?)
     })
 }
 
@@ -336,7 +315,7 @@ pub fn site_media_backfill<'a>(context: &'a OperationContext<'a>, input: &'a Inp
             {
                 continue;
             }
-            let media = json_column(media)?;
+            let media = json_column(media.as_deref())?;
             let vertical = media_list(&media).is_some_and(|items| {
                 items.iter().any(|item| {
                     let path = first_present(item, &["path"])
@@ -591,21 +570,21 @@ fn apply_site_metadata(
         }
     }
     let now = to_iso_string(context.now());
-    in_transaction(sqlite, || {
+    Ok(domain::repositories::transaction(sqlite, || {
         let mut seen = HashSet::new();
         let (mut changed, mut images) = (0, 0);
         let mut keys: Vec<String> = Vec::new();
         for item in &plan.items {
             let key = format!("{}:{}", item.post_id, item.locale.as_str());
             if !seen.insert(key.clone()) {
-                return Err(OpError::Failed(format!("Duplicate metadata for {key}")));
+                return Err(domain::Error::message(format!("Duplicate metadata for {key}")));
             }
             let expected_hash = item.text_sha256.as_str();
             let Some(current) = published
                 .get(&key)
                 .filter(|current| current["text_sha256"] == expected_hash)
             else {
-                return Err(OpError::Failed(format!(
+                return Err(domain::Error::message(format!(
                     "Published text changed for {key}; regenerate metadata"
                 )));
             };
@@ -628,7 +607,7 @@ fn apply_site_metadata(
             let row = match row {
                 Some((draft_id, media, media_raw, seo_title, source_text, approved_text)) => Some(MetadataRow {
                     draft_id,
-                    media: json_column(media)?,
+                    media: json_column(media.as_deref())?,
                     media_raw,
                     seo_title,
                     source_text,
@@ -639,7 +618,7 @@ fn apply_site_metadata(
             let Some(row) =
                 row.filter(|row| sha256_hex(row.approved_text.as_deref().unwrap_or(&row.source_text)) == expected_hash)
             else {
-                return Err(OpError::Failed(format!("Published text changed for {key}")));
+                return Err(domain::Error::message(format!("Published text changed for {key}")));
             };
             let seo_title = item.seo_title.as_deref();
             if let Some(seo_title) = seo_title.filter(|title| !title.is_empty())
@@ -648,11 +627,11 @@ fn apply_site_metadata(
                 if let Some(expected) = &item.expected_seo_title
                     && expected.as_deref() != row.seo_title.as_deref()
                 {
-                    return Err(OpError::Failed(format!("SEO title changed for {key}")));
+                    return Err(domain::Error::message(format!("SEO title changed for {key}")));
                 }
                 if row.seo_title.as_deref().is_some_and(|title| !title.is_empty()) && item.expected_seo_title.is_none()
                 {
-                    return Err(OpError::Failed(format!("SEO title already edited for {key}")));
+                    return Err(domain::Error::message(format!("SEO title already edited for {key}")));
                 }
             }
             let stored = media_list(&row.media).filter(|media| !media.is_empty());
@@ -667,7 +646,7 @@ fn apply_site_metadata(
             for image in &item.images {
                 let path = image.path.trim_start_matches('/').to_owned();
                 if !paths.insert(path.clone()) {
-                    return Err(OpError::Failed(format!("Duplicate image for {key}: {path}")));
+                    return Err(domain::Error::message(format!("Duplicate image for {key}: {path}")));
                 }
                 let asset = media.iter_mut().find(|asset| {
                     let stored = first_present(asset, &["path"])
@@ -676,7 +655,9 @@ fn apply_site_metadata(
                     stored.trim_start_matches('/') == path && asset.get("type") != Some(&json!("video"))
                 });
                 let Some(Value::Object(asset)) = asset else {
-                    return Err(OpError::Failed(format!("Published image changed for {key}: {path}")));
+                    return Err(domain::Error::message(format!(
+                        "Published image changed for {key}: {path}"
+                    )));
                 };
                 if asset.get("alt").and_then(Value::as_str) != Some(image.alt.as_str()) {
                     if let Some(expected) = &image.expected_alt {
@@ -686,7 +667,7 @@ fn apply_site_metadata(
                             .cloned()
                             .unwrap_or(json!(""));
                         if *expected != current {
-                            return Err(OpError::Failed(format!("Alt changed for {key}: {path}")));
+                            return Err(domain::Error::message(format!("Alt changed for {key}: {path}")));
                         }
                     }
                     if asset
@@ -695,7 +676,7 @@ fn apply_site_metadata(
                         .is_some_and(|alt| !alt.is_empty())
                         && image.expected_alt.is_none()
                     {
-                        return Err(OpError::Failed(format!("Alt already edited for {key}: {path}")));
+                        return Err(domain::Error::message(format!("Alt already edited for {key}: {path}")));
                     }
                     asset.insert("alt".into(), image.alt.clone().into());
                     images += 1;
@@ -732,7 +713,7 @@ fn apply_site_metadata(
                     ],
                 )?;
                 if written != 1 {
-                    return Err(OpError::Failed(format!("Concurrent metadata edit for {key}")));
+                    return Err(domain::Error::message(format!("Concurrent metadata edit for {key}")));
                 }
             }
         }
@@ -745,7 +726,7 @@ fn apply_site_metadata(
             "publication_keys": keys,
         });
         Ok((result, keys.into_iter().collect()))
-    })
+    })?)
 }
 
 /// `siteMetadata`: the inventory without a file; with one, the reviewed plan

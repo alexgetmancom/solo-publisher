@@ -10,7 +10,6 @@ pub(crate) use disk::orphaned_story_variants;
 mod exports;
 mod format_evidence;
 mod maintenance;
-mod rows;
 mod threads;
 
 use content::Locale;

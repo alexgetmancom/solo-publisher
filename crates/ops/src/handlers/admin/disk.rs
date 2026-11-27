@@ -14,8 +14,8 @@ use regex::Regex;
 use runtime::data_dirs::required_data_directories;
 use serde_json::{Map, Value, json};
 
-use super::rows;
 use crate::context::OpError;
+use crate::handlers::rows;
 
 static VARIANT_SUFFIX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"-story-(standard|telegram)\.[^.]+$").unwrap());
 

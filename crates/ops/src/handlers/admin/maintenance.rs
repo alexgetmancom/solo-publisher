@@ -15,8 +15,8 @@ use foundation::time::to_iso_string;
 use jiff::{SignedDuration, Timestamp};
 use serde_json::{Map, Value, json};
 
-use super::rows::{self, Row};
 use crate::context::{OpError, to_value};
+use crate::handlers::rows::{self, Row};
 
 /// How far back `audit` counts journal events.
 const AUDIT_EVENT_WINDOW_DAYS: i64 = 30;

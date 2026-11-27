@@ -59,6 +59,15 @@ impl From<domain::Error> for OpError {
     }
 }
 
+/// Work a domain transaction runs fails with the operation's own message.
+impl From<OpError> for domain::Error {
+    fn from(error: OpError) -> Self {
+        match error {
+            OpError::Input(message) | OpError::Failed(message) => domain::Error::message(message),
+        }
+    }
+}
+
 impl From<db::Error> for OpError {
     fn from(error: db::Error) -> Self {
         Self::Failed(error.to_string())

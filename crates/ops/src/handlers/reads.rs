@@ -5,8 +5,8 @@
 use std::collections::HashSet;
 use std::time::Duration;
 
-use db::rusqlite::types::{Value as SqlValue, ValueRef};
-use db::rusqlite::{Connection, Params, params, params_from_iter};
+use db::rusqlite::types::Value as SqlValue;
+use db::rusqlite::{Connection, params, params_from_iter};
 use domain::application::ports::{LocalizedProfiles, LocalizedText};
 use domain::application::publication_ref::{PublicationRefKind, publication_ref};
 use domain::publishing::state::is_partial_delivery;
@@ -18,43 +18,9 @@ use serde::Serialize;
 use serde_json::{Map, Value, json};
 
 use super::publication_ref::resolve_publication_ref;
+use super::rows::{self, Row, json_column};
 use super::usage::usage_report;
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext, to_value};
-
-type Row = Map<String, Value>;
-
-fn cell(value: ValueRef<'_>) -> Value {
-    match value {
-        ValueRef::Null | ValueRef::Blob(_) => Value::Null,
-        ValueRef::Integer(number) => json!(number),
-        ValueRef::Real(number) => foundation::js::json_number(number),
-        ValueRef::Text(text) => Value::from(String::from_utf8_lossy(text).into_owned()),
-    }
-}
-
-/// Every row of `sql` as an object keyed by its column names, in order.
-fn select(sqlite: &Connection, sql: &str, values: impl Params) -> db::rusqlite::Result<Vec<Row>> {
-    let mut statement = sqlite.prepare(sql)?;
-    let names: Vec<String> = statement.column_names().map(str::to_owned).collect();
-    statement
-        .query_map(values, |row| {
-            let mut out = Map::new();
-            for (index, name) in names.iter().enumerate() {
-                out.insert(name.clone(), cell(row.get_ref(index)?));
-            }
-            Ok(out)
-        })?
-        .collect()
-}
-
-/// A drizzle `json` column as read: `JSON.parse` of what is stored.
-fn json_column(row: &mut Row, name: &str) -> Result<(), OpError> {
-    if let Some(Value::String(text)) = row.get(name) {
-        let parsed: Value = serde_json::from_str(text)?;
-        row.insert(name.to_owned(), parsed);
-    }
-    Ok(())
-}
 
 // --- settings and profile -------------------------------------------------------
 
@@ -377,7 +343,7 @@ pub fn events<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
         } else {
             format!(" WHERE {}", filters.join(" AND "))
         };
-        let rows = select(
+        let rows = rows::all(
             sqlite,
             &format!(
                 "SELECT id, publication_key AS ref, event_type AS eventType, severity, target, message,
@@ -420,19 +386,19 @@ pub fn video_library<'a>(context: &'a OperationContext<'a>, _input: &'a Input) -
         let sqlite = context.sqlite()?;
         let exported_at = to_iso_string(context.now());
         let (targets, videos, mut games) = domain::repositories::transaction(sqlite, || {
-            let targets = select(
+            let targets = rows::all(
                 sqlite,
                 "SELECT id, video_draft_id, target, status, external_id, external_url, published_at
                    FROM video_targets ORDER BY id ASC",
                 [],
             )?;
-            let videos = select(
+            let videos = rows::all(
                 sqlite,
                 "SELECT id, locale, label, status, game, script, script_source, opening_line, updated_at
                    FROM video_drafts ORDER BY id ASC",
                 [],
             )?;
-            let games = select(
+            let games = rows::all(
                 sqlite,
                 "SELECT name, steam_app_id, genres, player_modes, release_date, developer, source, captured_at
                    FROM games ORDER BY name ASC",
@@ -441,8 +407,10 @@ pub fn video_library<'a>(context: &'a OperationContext<'a>, _input: &'a Input) -
             Ok((targets, videos, games))
         })?;
         for game in &mut games {
-            json_column(game, "genres")?;
-            json_column(game, "player_modes")?;
+            for key in ["genres", "player_modes"] {
+                let parsed = json_column(game[key].as_str())?;
+                game.insert(key.into(), parsed);
+            }
         }
         let videos: Vec<Value> = videos
             .into_iter()
@@ -733,7 +701,7 @@ pub fn post_text<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut
         let sqlite = context.sqlite()?;
         let resolved = resolve_publication_ref(sqlite, reference)?
             .ok_or_else(|| OpError::Failed(format!("no publication matches {reference}")))?;
-        let row = select(
+        let row = rows::all(
             sqlite,
             "SELECT drafts.post_id AS postId,
                     coalesce(post_text_ru.published_at, post_text_en.published_at, drafts.updated_at) AS dateUtc,
@@ -807,7 +775,7 @@ pub fn verify<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
             .trim()
             .parse::<i64>()
             .unwrap_or(-1);
-        let post_id = select(
+        let post_id = rows::all(
             sqlite,
             "SELECT post_id AS postId FROM drafts WHERE post_id = ? LIMIT 1",
             params![id],
@@ -817,7 +785,7 @@ pub fn verify<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
         .and_then(|row| row["postId"].as_i64())
         .filter(|post_id| *post_id != 0)
         .ok_or_else(|| OpError::Failed(format!("post not found: {reference}")))?;
-        let targets = select(
+        let targets = rows::all(
             sqlite,
             "SELECT target, status, url, error, external_id AS externalId FROM publication_targets
               WHERE publication_key = ? ORDER BY target ASC",
@@ -951,7 +919,7 @@ pub fn timeline<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<
 /// proved, the targets as SQLite's own JSON text.
 pub fn format_support<'a>(context: &'a OperationContext<'a>, _input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
-        let rows = select(
+        let rows = rows::all(
             context.sqlite()?,
             r#"SELECT "media_test_cases"."test_id" AS testId, "media_test_cases"."title" AS title,
                       "media_test_cases"."format_key" AS formatKey, "media_test_cases"."status" AS status,

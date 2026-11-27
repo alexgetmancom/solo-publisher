@@ -25,6 +25,7 @@ use runtime::http::{Body, BodyPart, HttpRequest};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
+use super::rows::json_column;
 use super::timeline::publication_timeline;
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext};
 
@@ -388,14 +389,6 @@ struct StorySource {
     wanted: bool,
 }
 
-/// A `{ mode: "json" }` column as drizzle reads it.
-fn json_column(text: Option<String>) -> Result<Value, OpError> {
-    match text {
-        None => Ok(Value::Null),
-        Some(text) => Ok(serde_json::from_str(&text)?),
-    }
-}
-
 /// `mediaItems`: an array of `jsonObject`s.
 fn media_items(value: &Value) -> Vec<Map<String, Value>> {
     let parsed = match value {
@@ -429,7 +422,7 @@ fn collect_sources(sqlite: &Connection) -> Result<Vec<StorySource>, OpError> {
         .collect::<Result<_, _>>()?;
     for (targets_json, media_json) in locales {
         let draft_wants_story = publishes_story(sqlite, &targets_json)?;
-        for item in media_items(&json_column(media_json)?) {
+        for item in media_items(&json_column(media_json.as_deref())?) {
             let Some(local_path) = path_of(&item) else { continue };
             if draft_wants_story {
                 wanted.insert(local_path.clone());
@@ -567,7 +560,7 @@ fn payload_named_files(sqlite: &Connection) -> Result<HashSet<String>, OpError> 
     let mut statement = sqlite.prepare(r#"select "payload_json" from "publish_jobs""#)?;
     let payloads: Vec<Option<String>> = statement.query_map([], |row| row.get(0))?.collect::<Result<_, _>>()?;
     for payload in payloads {
-        let text = match json_column(payload)? {
+        let text = match json_column(payload.as_deref())? {
             Value::String(text) => text,
             parsed => domain::json::stringify(&parsed),
         };
