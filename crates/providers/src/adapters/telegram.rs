@@ -9,7 +9,7 @@ use content::thread::LocalizedThreadPart;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::media_policy::select_media_for_target;
-use foundation::text::{utf16_len, utf16_prefix};
+use foundation::text::{TrimText, utf16_len, utf16_prefix};
 use serde_json::{Map, Value, json};
 
 use crate::adapters::error::{Result, ambiguous_mutation};
@@ -207,7 +207,7 @@ impl Telegram {
         let mut media = Vec::new();
         let mut blocks = Vec::new();
         for post in posts {
-            if !post.text.trim().is_empty() {
+            if !post.text.trim_text().is_empty() {
                 blocks.push(format!("<p>{}</p>", rich_html(&post.text, &post.entities)));
             }
             for item in &post.media {

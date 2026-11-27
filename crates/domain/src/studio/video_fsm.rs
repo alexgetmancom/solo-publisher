@@ -6,6 +6,7 @@ use std::convert::Infallible;
 
 use content::message::fix_url_slashes;
 use foundation::errors::StudioError;
+use foundation::text::TrimText;
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
 
@@ -303,7 +304,7 @@ pub fn advance_video_metadata(step: VideoWizardStep, text: &str, data: JsonObjec
                 Vec::new()
             } else {
                 text.split(',')
-                    .map(|tag| tag.trim().to_owned())
+                    .map(|tag| tag.trim_text().to_owned())
                     .filter(|tag| !tag.is_empty())
                     .collect()
             };

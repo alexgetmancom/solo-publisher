@@ -11,24 +11,16 @@ use std::sync::LazyLock;
 use regex::Regex;
 use serde_json::Value;
 
-/// ECMAScript WhiteSpace and LineTerminator: what `trim()` and `Number()` strip.
-/// Unlike `char::is_whitespace` it includes U+FEFF and excludes U+0085.
-fn is_whitespace(c: char) -> bool {
-    matches!(
-        c,
-        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
-            ..='\u{200a}' | '\u{2028}' | '\u{2029}' | '\u{202f}' | '\u{205f}' | '\u{3000}' | '\u{feff}'
-    )
-}
+use crate::text::TrimText;
 
-/// `String.prototype.trim`.
+/// `String.prototype.trim`, which trims what [`crate::text::is_text_blank`] calls blank.
 pub fn trim(value: &str) -> &str {
-    value.trim_matches(is_whitespace)
+    value.trim_text()
 }
 
 /// `String.prototype.trimStart`.
 pub fn trim_start(value: &str) -> &str {
-    value.trim_start_matches(is_whitespace)
+    value.trim_text_start()
 }
 
 static DECIMAL: LazyLock<Regex> =

@@ -8,6 +8,7 @@ use content::draft_content::{DraftContentSource, draft_locale_content};
 use content::message::MediaItem;
 use db::rusqlite::{Connection, OptionalExtension, params};
 use foundation::logger::{LogLevel, log};
+use foundation::text::TrimText;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -91,7 +92,7 @@ impl<C: Clock> StoryCards for StoryCardStore<C> {
                 let text = draft_locale_content(&source, locale).text;
                 // A locale with no text has no card to render: preflight
                 // refuses to publish that locale anyway.
-                if text.trim().is_empty() {
+                if text.trim_text().is_empty() {
                     continue;
                 }
                 let copy = story_card_copy(&text);

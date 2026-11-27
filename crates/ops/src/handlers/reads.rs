@@ -12,6 +12,7 @@ use domain::application::publication_ref::{PublicationRefKind, publication_ref};
 use domain::publishing::state::is_partial_delivery;
 use domain::repositories::ActionableIssueStore;
 use domain::studio::services::settings::StudioProfileInput;
+use foundation::text::TrimText;
 use foundation::time::to_iso_string;
 use runtime::http::HttpRequest;
 use serde::Serialize;
@@ -569,7 +570,7 @@ fn describe(row: &RawRow, expected: &[String]) -> PublicationRow {
 
 /// The first line is the post's own headline.
 fn headline(text: &str) -> String {
-    let first = text.split('\n').next().unwrap_or_default().trim();
+    let first = text.split('\n').next().unwrap_or_default().trim_text();
     if first.encode_utf16().count() > 60 {
         format!("{}…", foundation::text::utf16_prefix(first, 59))
     } else {
@@ -734,7 +735,7 @@ pub fn post_text<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut
 /// `formatPostText`.
 pub fn format_post_text(value: &Value) -> String {
     let text = |locale: &str| {
-        let trimmed = value[locale].as_str().unwrap_or_default().trim();
+        let trimmed = value[locale].as_str().unwrap_or_default().trim_text();
         if trimmed.is_empty() {
             "(no text)".to_owned()
         } else {

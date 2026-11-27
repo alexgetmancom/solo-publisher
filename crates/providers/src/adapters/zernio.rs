@@ -7,6 +7,7 @@ use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::queue::ClaimedPublishJob;
 use foundation::json::id_text;
+use foundation::text::TrimText;
 use runtime::http::Method;
 use serde_json::{Map, Value, json};
 
@@ -213,7 +214,7 @@ pub async fn publish_through_zernio(
         PublicationInput {
             account_id,
             platform,
-            content: content.trim(),
+            content: content.trim_text(),
             media_items: if story {
                 media.into_iter().take(1).collect()
             } else {
@@ -253,7 +254,7 @@ pub async fn publish_zernio_instagram_reel(
         PublicationInput {
             account_id,
             platform: ZernioPlatform::Instagram,
-            content: caption.trim(),
+            content: caption.trim_text(),
             media_items: vec![json!({"type": "video", "url": public_url})],
             platform_specific_data: Some(json!({"contentType": "reels", "shareToFeed": true})),
             request_id,

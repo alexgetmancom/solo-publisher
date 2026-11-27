@@ -21,6 +21,7 @@ use domain::studio::access::primary_studio_actor_id;
 use domain::studio::services::posts::{DraftConfiguration, PostScheduleScope};
 use domain::targets::{TargetMap, is_story_target, target_locale};
 use foundation::errors::StudioError;
+use foundation::text::TrimText;
 use foundation::time::{Zone, parse_iso_instant, to_iso_string};
 use jiff::Timestamp;
 use regex::Regex;
@@ -500,7 +501,7 @@ pub fn video_script<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> 
             Some(file) => String::from_utf8_lossy(&tokio::fs::read(file).await?).into_owned(),
             None => input.opt_str("text").unwrap_or_default().to_owned(),
         };
-        let trimmed = script.trim();
+        let trimmed = script.trim_text();
         if trimmed.is_empty() {
             return Err(OpError::failed(
                 "Pass --file with a path on this host, or --text with the script itself.",

@@ -36,6 +36,7 @@ use domain::repositories::{record_event, transaction};
 use domain::studio::services::posts::PostScheduleScope;
 use domain::targets::is_known_target;
 use foundation::config::Config;
+use foundation::text::TrimText;
 use foundation::time::to_iso_string;
 use jiff::Timestamp;
 use providers::adapters::AdapterContext;
@@ -251,7 +252,7 @@ async fn edit_text(
 ) -> OpResult {
     let locale = input.locale.unwrap_or("en");
     let text = input.text.unwrap_or_default();
-    let trimmed = text.trim();
+    let trimmed = text.trim_text();
     if trimmed.is_empty() {
         return Err(OpError::failed(format!("text_{locale} is required")));
     }

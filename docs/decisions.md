@@ -81,15 +81,16 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
 
 ## Plain Rust in place of JavaScript coercions
 
-- Text is trimmed and regex-matched (`\s`) as Rust defines whitespace: a U+FEFF at either edge of a text now stays and
-  a U+0085 is trimmed, the reverse of ECMAScript. Goldens: `content/tests/fixtures/message.json` (`first_line`,
-  `first_non_empty_line`), `content/tests/fixtures/text.json` (`split`), `domain/tests/boundary_scenarios.golden.json`
-  (the story card headline), `foundation/tests/fixtures/text.json` (`redact`: a U+0085 ends the redacted token).
+- Post and user text is trimmed by `foundation::text::TrimText`: Unicode whitespace and U+FEFF, not U+0085, as the
+  TypeScript backend trimmed it, so a pasted byte-order mark never reaches a publication. Machine strings (headers,
+  environment, ids, operator arguments) use `str::trim`, and regexes use Rust's `\s`; the one golden this reaches is
+  `foundation/tests/fixtures/text.json` (`redact`: a U+0085 ends the redacted token).
 - JSON numbers are read as numbers. An entity's offset and length, a media item's `asset_id`, a stored id and a
   result's `retryAfterMs` are also read from their decimal text; hex, `Infinity` and a blank-as-0 are not numbers, so
   `Retry-After: 0x10` asks for no delay (`runtime/tests/fixtures/runtime.json`).
-- A flag counts only when it is `true`: a result with `"ok": 1` no longer reads as published
-  (`domain/tests/fixtures/publishing.json`), a plan target enabled by `1` or `"yes"` is off.
+- An adapter result's `ok`, `skipped`, `deferred`, `partial` and `retryable` keep the queue's truthiness
+  (`errors::result_flag`): an answer that says published in any JSON form must not be retried. Other flags count only
+  when `true`: a plan target enabled by `1` or `"yes"` is off.
 - An entity whose length is negative is dropped where it used to move with its part (`content/tests/fixtures/thread.json`,
   `joined` and `chains`); a heading level that is no integer renders `<h2>`, was `<hNaN>` (`text.json`, `html`).
 - A result's non-string `error` is recorded as its JSON (`{"status":502}`, was `[object Object]`), and null ids are left

@@ -19158,7 +19158,7 @@
     {
       "input": { "ok": 1, "skipped": true },
       "output": {
-        "status": "skipped",
+        "status": "published",
         "externalId": null,
         "externalIds": null,
         "url": null,

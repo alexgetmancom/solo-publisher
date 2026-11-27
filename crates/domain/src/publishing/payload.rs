@@ -2,6 +2,7 @@
 
 use content::message::{Entity, MediaItem, first_line};
 use content::thread::{LocalizedThreadPart, joined_thread};
+use foundation::text::TrimText;
 use serde_json::{Map, Value, json};
 
 use super::media_policy::select_media_for_target;
@@ -164,7 +165,7 @@ pub fn payload_media(payload: &Map<String, Value>) -> Vec<Map<String, Value>> {
                 record
                     .get(key)
                     .and_then(Value::as_str)
-                    .map(str::trim)
+                    .map(TrimText::trim_text)
                     .unwrap_or("")
                     .to_owned()
             };
@@ -201,7 +202,7 @@ pub fn payload_text(payload: &Map<String, Value>) -> String {
     payload
         .get("text")
         .and_then(Value::as_str)
-        .map_or("", str::trim)
+        .map_or("", TrimText::trim_text)
         .to_owned()
 }
 

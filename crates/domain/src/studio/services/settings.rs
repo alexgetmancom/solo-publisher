@@ -1,6 +1,7 @@
 //! Owner and Studio-wide settings commands.
 
 use foundation::errors::StudioError;
+use foundation::text::TrimText;
 use foundation::time::{Zone, is_valid_time_zone, time_zone_offset_label};
 use serde::{Deserialize, Serialize};
 
@@ -262,7 +263,7 @@ impl<'a> SettingsService<'a> {
             .ports
             .studio_settings()
             .youtube_settings()?
-            .map(|row| row.signature.trim().to_owned())
+            .map(|row| row.signature.trim_text().to_owned())
             .unwrap_or_default())
     }
 

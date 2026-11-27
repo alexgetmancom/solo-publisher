@@ -1,5 +1,6 @@
 use std::sync::LazyLock;
 
+use foundation::text::TrimText;
 use regex::Regex;
 use serde_json::{Map, Value};
 use unicode_normalization::UnicodeNormalization;
@@ -56,12 +57,12 @@ pub struct DraftMessage {
 /// The fallback is explicit at every call site: there is no generic name for a
 /// post that would not be one installation's name on another's permanent URL.
 pub fn first_line<'a>(text: Option<&'a str>, fallback: &'a str) -> &'a str {
-    let line = text.map_or("", |text| text.split('\n').next().unwrap_or("").trim());
+    let line = text.map_or("", |text| text.split('\n').next().unwrap_or("").trim_text());
     if line.is_empty() { fallback } else { line }
 }
 
 pub fn first_non_empty_line<'a>(text: Option<&'a str>, fallback: &'a str) -> &'a str {
-    text.and_then(|text| text.split('\n').map(str::trim).find(|line| !line.is_empty()))
+    text.and_then(|text| text.split('\n').map(TrimText::trim_text).find(|line| !line.is_empty()))
         .unwrap_or(fallback)
 }
 

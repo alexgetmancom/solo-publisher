@@ -72,3 +72,43 @@ pub fn utf16_to_byte(value: &str, unit: usize) -> Option<usize> {
     }
     (units == unit).then_some(value.len())
 }
+
+/// What reads as blank in text a person wrote or pasted: Unicode whitespace
+/// and U+FEFF, the invisible mark a paste can leave at either end, but not
+/// U+0085, which post text has always kept.
+pub fn is_text_blank(c: char) -> bool {
+    c == '\u{feff}' || (c.is_whitespace() && c != '\u{85}')
+}
+
+/// Post and user text trimmed of what [`is_text_blank`] calls blank, so an
+/// invisible U+FEFF never reaches a publication.
+pub trait TrimText {
+    fn trim_text(&self) -> &str;
+    fn trim_text_start(&self) -> &str;
+    fn trim_text_end(&self) -> &str;
+}
+
+impl TrimText for str {
+    fn trim_text(&self) -> &str {
+        self.trim_matches(is_text_blank)
+    }
+    fn trim_text_start(&self) -> &str {
+        self.trim_start_matches(is_text_blank)
+    }
+    fn trim_text_end(&self) -> &str {
+        self.trim_end_matches(is_text_blank)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn text_trims_the_byte_order_mark_but_keeps_next_line() {
+        assert_eq!(" \u{feff}\u{a0}текст\u{3000}\u{feff}".trim_text(), "текст");
+        assert_eq!("\u{85}начало\u{85}".trim_text(), "\u{85}начало\u{85}");
+        assert_eq!("\u{feff} x ".trim_text_start(), "x ");
+        assert_eq!(" x \u{feff}".trim_text_end(), " x");
+    }
+}

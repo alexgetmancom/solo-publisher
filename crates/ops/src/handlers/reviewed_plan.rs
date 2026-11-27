@@ -4,7 +4,7 @@
 //! units, as the plans' first validator did.
 
 use content::Locale;
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 use foundation::time::is_iso_instant;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
@@ -100,7 +100,7 @@ impl MetadataPlan {
             require(item.post_id > 0, &at("post_id"), "must be a positive integer")?;
             require(is_sha256(&item.text_sha256), &at("text_sha256"), SHA256)?;
             if let Some(title) = &mut item.seo_title {
-                *title = title.trim().to_owned();
+                *title = title.trim_text().to_owned();
                 require(
                     (1..=65).contains(&utf16_len(title)),
                     &at("seo_title"),
@@ -117,7 +117,7 @@ impl MetadataPlan {
             for (image_index, image) in item.images.iter_mut().enumerate() {
                 let at = |field: &str| format!("items[{index}].images[{image_index}].{field}");
                 require(!image.path.is_empty(), &at("path"), "must not be empty")?;
-                image.alt = image.alt.trim().to_owned();
+                image.alt = image.alt.trim_text().to_owned();
                 require(
                     (1..=500).contains(&utf16_len(&image.alt)),
                     &at("alt"),

@@ -94,6 +94,21 @@ fn classify_value(value: &Value) -> PublishErrorClass {
     }
 }
 
+/// A flag of an adapter's answer, read as the queue has always read it: any
+/// truthy JSON value (`true`, a non-zero number, a non-empty string, an
+/// array or object). A publication an answer calls done must never read as
+/// undone, because undone is retried and a second post is worse than an
+/// unclear status.
+pub fn result_flag(value: Option<&Value>) -> bool {
+    match value {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(flag)) => *flag,
+        Some(Value::Number(number)) => number.as_f64().is_some_and(|number| number != 0.0),
+        Some(Value::String(text)) => !text.is_empty(),
+        Some(Value::Array(_) | Value::Object(_)) => true,
+    }
+}
+
 /// A result's `error` as the text a row records: a string as it is, anything
 /// else as its JSON.
 pub fn error_text(value: &Value) -> String {
@@ -217,8 +232,8 @@ pub struct NormalizedResult {
 
 pub fn normalize_publish_result(record: &PublishResult) -> NormalizedResult {
     let mut result = record.clone();
-    let ok = result.get("ok") == Some(&Value::Bool(true));
-    let skipped = result.get("skipped") == Some(&Value::Bool(true));
+    let ok = result_flag(result.get("ok"));
+    let skipped = result_flag(result.get("skipped"));
     let status = if ok {
         "published"
     } else if skipped {
@@ -259,5 +274,24 @@ pub fn normalize_publish_result(record: &PublishResult) -> NormalizedResult {
         error: error.as_ref().map(error_text),
         skipped: i64::from(skipped),
         raw_json: json::stringify_object(&result),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn a_truthy_ok_settles_as_published() {
+        for ok in [json!(true), json!(1), json!("true"), json!("yes"), json!({}), json!([])] {
+            let result = json!({"ok": ok, "id": "7"}).as_object().unwrap().clone();
+            assert_eq!(normalize_publish_result(&result).status, "published", "{ok}");
+        }
+        for ok in [json!(false), json!(0), json!(""), Value::Null] {
+            assert!(!result_flag(Some(&ok)), "{ok}");
+        }
+        assert!(!result_flag(None));
     }
 }

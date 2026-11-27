@@ -7,6 +7,7 @@ use content::message::Entity;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::platform_profiles::format_platform_text;
+use foundation::text::TrimText;
 use foundation::url::encode_uri_component;
 use runtime::http::{HttpRequest, Response};
 use serde_json::{Map, Value, json};
@@ -171,7 +172,7 @@ pub async fn publish_x_article(ctx: &AdapterContext, payload: &Map<String, Value
         let title = payload
             .get("title")
             .and_then(Value::as_str)
-            .map(str::trim)
+            .map(TrimText::trim_text)
             .unwrap_or_default();
         if title.is_empty() {
             return Ok(refusal("x_article_title_missing"));

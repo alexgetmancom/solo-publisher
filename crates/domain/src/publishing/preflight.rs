@@ -11,7 +11,7 @@ use content::text::split_text;
 use content::text_locale::text_locale;
 use content::thread::{LocalizedThreadPart, chain_posts, joined_thread, localized_thread};
 use foundation::errors::StudioError;
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 use serde_json::Value;
 
 use super::chain_plan::draft_content;
@@ -117,7 +117,7 @@ pub fn publication_preflight(draft: &DraftRecord, upload_limits: &UploadLimits) 
             // A target publishes into one language, and the draft either has
             // that language or it does not. Its own media counts, not the
             // Russian images it would borrow.
-            if value.text.trim().is_empty() && value.own_media.is_empty() {
+            if value.text.trim_text().is_empty() && value.own_media.is_empty() {
                 return vec![issue(PreflightKind::Empty)];
             }
             // A platform that refuses an oversized attachment refuses the whole
@@ -142,7 +142,7 @@ pub fn publication_preflight(draft: &DraftRecord, upload_limits: &UploadLimits) 
                 }];
             }
             // A part whose English has not arrived would be an empty reply.
-            if let Some(index) = thread.iter().position(|part| part.text.trim().is_empty()) {
+            if let Some(index) = thread.iter().position(|part| part.text.trim_text().is_empty()) {
                 return vec![PublicationPreflightIssue {
                     part: Some(index + 2),
                     ..issue(PreflightKind::Empty)

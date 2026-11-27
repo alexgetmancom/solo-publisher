@@ -5,6 +5,7 @@
 use std::sync::LazyLock;
 
 use content::Locale;
+use foundation::text::TrimText;
 use regex::Regex;
 
 use crate::targets::{TARGETS, TargetKind};
@@ -246,7 +247,7 @@ pub fn format_platform_text(target: &str, text: &str) -> String {
     let text = SPACES.replace_all(&text, " ");
     let text = BEFORE_NEWLINE.replace_all(&text, "\n");
     let text = AFTER_NEWLINE.replace_all(&text, "\n");
-    text.trim().to_owned()
+    text.trim_text().to_owned()
 }
 
 /// The largest frame a platform takes for a video of this shape.

@@ -9,6 +9,7 @@ use content::title_emphasis::emphasize_title;
 use content::translation::translation_wanted;
 use foundation::errors::StudioError;
 use foundation::json::json_record_array;
+use foundation::text::TrimText;
 use foundation::time::Zone;
 use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
@@ -229,7 +230,7 @@ fn issue_status(status: IssueStatus) -> &'static str {
 /// budget, its links kept where they still fit the first piece, its media on
 /// that piece.
 fn thread_posts(part: &NewThreadPart) -> Vec<NewThreadPart> {
-    split_text(part.text_ru.trim(), threads_text_limit("threads_ru"))
+    split_text(part.text_ru.trim_text(), threads_text_limit("threads_ru"))
         .into_iter()
         .enumerate()
         .map(|(index, text_ru)| {
@@ -908,7 +909,7 @@ impl<'a> PostService<'a> {
     /// no later translation pass overwrites it, and it is not queued for one.
     pub fn edit_thread_part_english(&self, actor_id: i64, draft_id: i64, position: i64, text_en: &str) -> Result<()> {
         self.editable(actor_id, draft_id, None)?;
-        let text = text_en.trim();
+        let text = text_en.trim_text();
         if text.is_empty() {
             return Err(StudioError::new("err.thread-part-empty").into());
         }
@@ -1302,7 +1303,7 @@ impl<'a> PostService<'a> {
             enabled: notifications.post_reminders_enabled,
             minutes: notifications.reminder_minutes,
         };
-        let first_line = draft.text_ru.trim().split('\n').next().unwrap_or("");
+        let first_line = draft.text_ru.trim_text().split('\n').next().unwrap_or("");
         let title = foundation::text::truncate_unicode(first_line, 100);
         let title = if title.is_empty() {
             format!("Post #{post_id}")

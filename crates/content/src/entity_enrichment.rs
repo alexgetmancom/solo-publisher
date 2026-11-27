@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 use regex::Regex;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,7 +68,7 @@ pub fn enrich_published_post_entities<S: EntityEnrichmentStore>(
         .collect::<Vec<_>>()
         .join("\n")
         .to_lowercase();
-    if text.trim().is_empty() {
+    if text.trim_text().is_empty() {
         return Ok(0);
     }
     let headlines: Vec<String> = locales
@@ -150,7 +150,7 @@ fn entity_is_focus(entity: &CatalogEntity, aliases: &[String], headlines: &[Stri
 }
 
 fn headline(value: &str) -> String {
-    value.split('\n').next().unwrap_or("").trim().to_lowercase()
+    value.split('\n').next().unwrap_or("").trim_text().to_lowercase()
 }
 
 fn entity_matches(text: &str, entity: &CatalogEntity, aliases: &[String]) -> bool {
@@ -162,7 +162,7 @@ fn entity_matches(text: &str, entity: &CatalogEntity, aliases: &[String]) -> boo
     ]
     .into_iter()
     .chain(aliases.iter().map(String::as_str))
-    .map(|name| name.trim().to_lowercase())
+    .map(|name| name.trim_text().to_lowercase())
     .filter(|name| utf16_len(name) >= 3)
     .any(|name| contains_name(text, &name))
 }

@@ -8,7 +8,7 @@ use foundation::json::id_text;
 use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value};
 
-use super::errors::PublishResult;
+use super::errors::{PublishResult, result_flag};
 use crate::json;
 use crate::{Error, Result};
 
@@ -103,9 +103,9 @@ pub fn external_ids(result: &PublishResult) -> Vec<String> {
     result.get("id").and_then(id_text).into_iter().collect()
 }
 
-/// A result flag the adapter set to `true`.
+/// A result flag, read by [`result_flag`].
 pub(crate) fn flag(result: &PublishResult, key: &str) -> bool {
-    result.get(key) == Some(&Value::Bool(true))
+    result_flag(result.get(key))
 }
 
 /// Keeps target state updates consistent across claim, completion and

@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 use regex::Regex;
 use serde_json::{Map, Value};
 
@@ -43,7 +43,7 @@ pub fn emphasize_title(text: &str, entities: &[Entity]) -> Vec<Entity> {
 }
 
 fn title_length(text: &str) -> Option<usize> {
-    let title = TITLE.captures(text)?.get(1)?.as_str().trim_end();
+    let title = TITLE.captures(text)?.get(1)?.as_str().trim_text_end();
     let length = utf16_len(title);
     (length > 0 && length <= TITLE_LIMIT).then_some(length)
 }

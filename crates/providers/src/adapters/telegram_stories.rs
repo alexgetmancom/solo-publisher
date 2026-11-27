@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use content::message::{MediaItem, entity_span};
 use domain::publishing::errors::PublishResult;
-use foundation::text::{utf16_len, utf16_prefix};
+use foundation::text::{TrimText, utf16_len, utf16_prefix};
 use regex::Regex;
 use runtime::ffmpeg::{FFMPEG_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use runtime::http::Fut;
@@ -97,7 +97,7 @@ pub fn telegram_story_caption(text: &str) -> String {
     let text = URL.replace_all(text, "");
     let text = BEFORE_NEWLINE.replace_all(&text, "\n");
     let text = BLANK_LINES.replace_all(&text, "\n\n");
-    utf16_prefix(text.trim(), CAPTION_LIMIT).to_owned()
+    utf16_prefix(text.trim_text(), CAPTION_LIMIT).to_owned()
 }
 
 /// `telegramStoryCaptionInput`. URL removal shifts offsets, so entities
@@ -105,7 +105,7 @@ pub fn telegram_story_caption(text: &str) -> String {
 /// visible URL, which is the supported authoring flow.
 pub fn telegram_story_caption_input(text: &str, entities: &[Value]) -> StoryCaption {
     let caption = telegram_story_caption(text);
-    if caption != utf16_prefix(text.trim(), CAPTION_LIMIT) {
+    if caption != utf16_prefix(text.trim_text(), CAPTION_LIMIT) {
         return StoryCaption {
             text: caption,
             links: Vec::new(),

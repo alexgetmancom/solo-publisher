@@ -5,7 +5,7 @@
 
 use content::message::Entity;
 use content::text::first_text_link_url;
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 
 use super::platform_profiles::platform_profile;
 
@@ -33,7 +33,7 @@ pub fn threads_text_limit(target: &str) -> usize {
 /// and only if it fits — it is a postscript, not part of a sentence. URLs the
 /// author typed stay untouched and count as text.
 pub fn threads_body(target: &str, text: &str, entities: &[Entity]) -> ThreadsBody {
-    let body = text.trim().to_owned();
+    let body = text.trim_text().to_owned();
     let Some(url) = first_text_link_url(entities) else {
         return ThreadsBody {
             text: body,

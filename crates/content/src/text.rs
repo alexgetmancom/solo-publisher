@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use foundation::html::escape_html;
-use foundation::text::{utf16_len, utf16_prefix, utf16_to_byte};
+use foundation::text::{TrimText, is_text_blank, utf16_len, utf16_prefix, utf16_to_byte};
 use foundation::url::is_http_url;
 use serde_json::Value;
 
@@ -147,7 +147,7 @@ pub fn first_text_link_url(entities: &[Entity]) -> Option<&str> {
 /// because a cut in the middle of a sentence is what makes a thread read like a
 /// machine wrote it. Every piece fits `limit` UTF-16 units, and nothing is dropped.
 pub fn split_text(text: &str, limit: usize) -> Vec<String> {
-    let normalized = text.trim();
+    let normalized = text.trim_text();
     if normalized.is_empty() {
         return vec![String::new()];
     }
@@ -155,8 +155,8 @@ pub fn split_text(text: &str, limit: usize) -> Vec<String> {
     let mut remaining = normalized;
     while utf16_len(remaining) > limit {
         let take = cut_point(remaining, limit);
-        parts.push(remaining[..take].trim().to_owned());
-        remaining = remaining[take..].trim();
+        parts.push(remaining[..take].trim_text().to_owned());
+        remaining = remaining[take..].trim_text();
     }
     if !remaining.is_empty() {
         parts.push(remaining.to_owned());
@@ -211,12 +211,12 @@ fn last_sentence_end(window: &str, limit: usize) -> Option<usize> {
         let closers = rest[terminators..]
             .find(|c| !SENTENCE_CLOSERS.contains(&c))
             .map_or(rest.len(), |closers| terminators + closers);
-        if !rest[closers..].chars().next().is_some_and(char::is_whitespace) {
+        if !rest[closers..].chars().next().is_some_and(is_text_blank) {
             cursor += c.len_utf8();
             continue;
         }
         let match_end = cursor + closers;
-        let after = window[match_end..].trim_start().chars().next();
+        let after = window[match_end..].trim_text_start().chars().next();
         if !after.is_some_and(is_lowercase_letter) && utf16_len(&window[..match_end]) <= limit {
             end = Some(match_end);
         }

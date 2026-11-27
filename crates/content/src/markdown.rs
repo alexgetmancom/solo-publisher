@@ -9,7 +9,7 @@
 
 use std::sync::LazyLock;
 
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 use foundation::url::is_http_url;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -40,9 +40,9 @@ static ORDERED: LazyLock<Regex> = LazyLock::new(|| regex(r"^\s*[0-9]+[.)]\s+(.*)
 /// so the caller decides what to do rather than being handed a guess.
 pub fn parse_markdown_article(source: &str) -> ParsedArticle {
     let normalized = source.replace("\r\n", "\n").replace('\r', "\n");
-    let mut lines: Vec<&str> = normalized.trim_end().split('\n').collect();
+    let mut lines: Vec<&str> = normalized.trim_text_end().split('\n').collect();
     let title = match lines.iter().position(|line| TITLE_LINE.is_match(line)) {
-        Some(index) => TITLE_MARKER.replace(lines.remove(index), "").trim().to_owned(),
+        Some(index) => TITLE_MARKER.replace(lines.remove(index), "").trim_text().to_owned(),
         None => String::new(),
     };
     ParsedArticle {
@@ -94,15 +94,15 @@ fn entity(kind: &str, offset: i64, length: i64) -> Entity {
 fn block_of(line: &str) -> (&str, Option<(&'static str, Option<usize>)>) {
     if let Some(heading) = HEADING.captures(line) {
         return (
-            heading.get(2).unwrap().as_str().trim(),
+            heading.get(2).unwrap().as_str().trim_text(),
             Some(("heading", Some(heading[1].len()))),
         );
     }
     if let Some(quote) = QUOTE.captures(line) {
-        return (quote.get(1).unwrap().as_str().trim(), Some(("quote", None)));
+        return (quote.get(1).unwrap().as_str().trim_text(), Some(("quote", None)));
     }
     if let Some(item) = ITEM.captures(line).or_else(|| ORDERED.captures(line)) {
-        return (item.get(1).unwrap().as_str().trim(), Some(("list_item", None)));
+        return (item.get(1).unwrap().as_str().trim_text(), Some(("list_item", None)));
     }
     (line, None)
 }
@@ -237,11 +237,11 @@ fn inline_entities(line: &str) -> (String, Vec<Entity>) {
 fn trim_blank_edges<'a, 'b>(lines: &'b [&'a str]) -> &'b [&'a str] {
     let start = lines
         .iter()
-        .position(|line| !line.trim().is_empty())
+        .position(|line| !line.trim_text().is_empty())
         .unwrap_or(lines.len());
     let end = lines
         .iter()
-        .rposition(|line| !line.trim().is_empty())
+        .rposition(|line| !line.trim_text().is_empty())
         .map_or(start, |last| last + 1);
     &lines[start..end.max(start)]
 }

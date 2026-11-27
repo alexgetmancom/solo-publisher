@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use foundation::config::Config;
+use foundation::text::TrimText;
 use serde_json::{Map, Value, json};
 
 use runtime::http::{ExternalError, HttpClient, HttpRequest};
@@ -72,5 +73,5 @@ pub async fn deepseek_chat(
         .pointer("/choices/0/message/content")
         .and_then(Value::as_str)
         .unwrap_or_default();
-    Ok(content.trim().to_owned())
+    Ok(content.trim_text().to_owned())
 }

@@ -6,7 +6,7 @@
 //! per platform. Offsets are UTF-16 units throughout.
 
 use content::message::{Entity, entity_span};
-use foundation::text::utf16_slice;
+use foundation::text::{TrimText, utf16_slice};
 use foundation::url::is_http_url;
 use serde_json::{Map, Value, json};
 
@@ -63,7 +63,7 @@ pub fn to_content_state(text: &str, entities: &[Entity], media: &[String]) -> Va
         let line_text = String::from_utf16_lossy(line);
         // A blank line separates paragraphs in the source and carries no
         // content of its own; emitting it would double every paragraph gap.
-        if line_text.trim().is_empty() {
+        if line_text.trim_text().is_empty() {
             continue;
         }
         let covering: Vec<&Span> = spans

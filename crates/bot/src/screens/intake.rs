@@ -23,6 +23,7 @@ use domain::targets::{PublicationForm, targets_for};
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, t};
 use foundation::logger::{LogLevel, log};
+use foundation::text::TrimText;
 use serde_json::{Map, Value, json};
 use tokio::sync::Notify;
 
@@ -265,7 +266,7 @@ impl Captured {
             // `indexOf` missed: `slice(-1 + first.length)`.
             None => foundation::text::utf16_slice_from(source, foundation::text::utf16_len(first) - 1),
         };
-        format!("# {first}\n\n{}", rest.trim_start())
+        format!("# {first}\n\n{}", rest.trim_text_start())
     }
 }
 
@@ -281,7 +282,7 @@ fn has_title_line(source: &str) -> bool {
         let Some(rest) = source[start..].strip_prefix('#') else {
             return false;
         };
-        let after = rest.trim_start();
+        let after = rest.trim_text_start();
         after.len() < rest.len() && !after.is_empty()
     })
 }
@@ -426,7 +427,7 @@ fn handle_intake_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
         // A voice note, a sticker, a PDF: the bot has no publication that
         // carries it, and capturing it anyway made an empty draft. The intake
         // stays open, so the next message is still the first one.
-        if markdown.is_none() && message.text.trim().is_empty() && message.media.is_empty() {
+        if markdown.is_none() && message.text.trim_text().is_empty() && message.media.is_empty() {
             return Ok(MessageResult::handled(vec![Effect::screen(
                 t(Key::IntakeUnsupported, &[]),
                 Payload::new(),

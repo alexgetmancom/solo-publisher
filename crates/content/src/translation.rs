@@ -6,6 +6,7 @@ use std::sync::LazyLock;
 use std::time::Duration;
 
 use foundation::errors::StudioError;
+use foundation::text::TrimText;
 use regex::Regex;
 
 pub const SYSTEM_PROMPT: &str = "\
@@ -30,7 +31,7 @@ pub enum TranslationStep<'a> {
 }
 
 pub fn translation_step(text: &str, has_translator: bool) -> TranslationStep<'_> {
-    let source = text.trim();
+    let source = text.trim_text();
     if source.is_empty() || !has_translator || !has_cyrillic(source) {
         TranslationStep::Unchanged(source)
     } else {
@@ -54,7 +55,7 @@ pub fn checked_translation(answer: &str) -> Result<&str, StudioError> {
 /// written when the answer is yes, so a row waiting to be worked is exactly the
 /// drafts whose English is still coming.
 pub fn translation_wanted(text: &str, has_translator: bool, publishes_english: bool) -> bool {
-    !text.trim().is_empty() && has_translator && has_cyrillic(text) && publishes_english
+    !text.trim_text().is_empty() && has_translator && has_cyrillic(text) && publishes_english
 }
 
 fn has_cyrillic(value: &str) -> bool {

@@ -7,6 +7,7 @@ use content::Locale;
 use db::rusqlite::{OptionalExtension, params};
 use foundation::config::Config;
 use foundation::errors::StudioError;
+use foundation::text::TrimText;
 use foundation::time::{iso_at, parse_iso_ms};
 use jiff::Timestamp;
 use regex::Regex;
@@ -55,17 +56,17 @@ fn opening_line(text: &str, source: &str) -> String {
     let cleaned = SAID_ALOUD.replace_all(text, "");
     let cleaned = SPACE_RUN.replace_all(&cleaned, " ");
     if source == "operator"
-        && let Some(paragraph) = PARAGRAPH_BREAK.split(&cleaned).next().map(str::trim)
+        && let Some(paragraph) = PARAGRAPH_BREAK.split(&cleaned).next().map(TrimText::trim_text)
         && !paragraph.is_empty()
     {
         return paragraph.to_owned();
     }
-    let trimmed = cleaned.trim();
+    let trimmed = cleaned.trim_text();
     let line = match FIRST_SENTENCE.find(trimmed) {
         Some(sentence) => sentence.as_str().to_owned(),
         None => String::from_utf16_lossy(&trimmed.encode_utf16().take(160).collect::<Vec<_>>()),
     };
-    line.trim().to_owned()
+    line.trim_text().to_owned()
 }
 
 /// Already-public targets are deliberately not deleted by automation; private
@@ -126,7 +127,7 @@ impl Publishing<'_> {
     /// out is exactly the one whose opening is worth knowing.
     pub fn update_video_script(&self, id: i64, script: &str, source: &str) -> Result<()> {
         self.get_video_draft(id)?;
-        let text = script.trim();
+        let text = script.trim_text();
         let present = !text.is_empty();
         self.sqlite.execute(
             r#"update "video_drafts" set "script" = ?, "script_source" = ?, "opening_line" = ?, "updated_at" = ? where "video_drafts"."id" = ?"#,
@@ -148,7 +149,7 @@ impl Publishing<'_> {
         }
         self.sqlite.execute(
             r#"update "video_drafts" set "label" = ?, "updated_at" = ? where "video_drafts"."id" = ?"#,
-            params![label.trim(), self.now(), id],
+            params![label.trim_text(), self.now(), id],
         )?;
         Ok(())
     }

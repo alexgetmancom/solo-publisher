@@ -24,6 +24,7 @@ use domain::publishing::video_fence::zernio_publish_fence;
 use domain::publishing::video_types::VideoTarget;
 use domain::repositories::{StudioSettingsStore, random_uuid, record_event, transaction};
 use foundation::config::PUBLISH_MAX_ATTEMPTS;
+use foundation::text::TrimText;
 use foundation::time::iso_at;
 use providers::adapters::video_publishers::{
     YoutubeMetadata, instagram_container_ready, keep_youtube_upload_private, prepare_instagram_reel,
@@ -882,9 +883,9 @@ fn compose_youtube_description(sqlite: &Connection, metadata: &Map<String, Value
         _ => String::new(),
     };
     Ok([
-        description.trim(),
+        description.trim_text(),
         &game_line,
-        signature.as_deref().map(str::trim).unwrap_or_default(),
+        signature.as_deref().map(TrimText::trim_text).unwrap_or_default(),
     ]
     .into_iter()
     .filter(|part| !part.is_empty())

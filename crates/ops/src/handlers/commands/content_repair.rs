@@ -4,6 +4,7 @@
 use content::message::{Entity, MediaItem};
 use db::rusqlite::{Connection, OptionalExtension, params};
 use domain::json::stringify;
+use foundation::text::TrimText;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
@@ -20,7 +21,7 @@ pub(crate) fn edit_locale_content_tx(
     entities: &[Entity],
     expected_text_hash: Option<&str>,
 ) -> domain::Result<Map<String, Value>> {
-    let value = text.trim();
+    let value = text.trim_text();
     if value.is_empty() {
         return Err(refusal(format!("text_{locale} is required")));
     }

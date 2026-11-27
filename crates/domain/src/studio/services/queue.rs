@@ -2,6 +2,7 @@
 //! It returns entity references, not
 //! callbacks or display markup.
 
+use foundation::text::{TrimText, is_text_blank};
 use jiff::Timestamp;
 use serde::{Serialize, Serializer};
 
@@ -80,7 +81,7 @@ fn shorten(value: &str) -> String {
     let mut collapsed = String::with_capacity(value.len());
     let mut in_space = false;
     for c in value.chars() {
-        if c.is_whitespace() {
+        if is_text_blank(c) {
             if !in_space {
                 collapsed.push(' ');
             }
@@ -90,11 +91,13 @@ fn shorten(value: &str) -> String {
             in_space = false;
         }
     }
-    foundation::text::truncate_unicode(&collapsed, 38).trim().to_owned()
+    foundation::text::truncate_unicode(&collapsed, 38)
+        .trim_text()
+        .to_owned()
 }
 
 fn first_line(text: &str) -> &str {
-    text.split('\n').next().unwrap_or("").trim()
+    text.split('\n').next().unwrap_or("").trim_text()
 }
 
 #[derive(Clone, Copy)]
@@ -245,7 +248,7 @@ impl<'a> QueueService<'a> {
                 .filter_map(|target| target.scheduled_at.as_deref())
                 .map(|at| instant(at).map(|at| at.as_millisecond()))
                 .collect::<Result<_>>()?;
-            let trimmed = video.label.trim();
+            let trimmed = video.label.trim_text();
             let label = shorten(&if trimmed.is_empty() {
                 format!("Video #{}", video.id)
             } else {

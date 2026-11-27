@@ -11,6 +11,7 @@ use crate::external::instagram::{InstagramCredentials, instagram_credentials_for
 use crate::external::youtube::youtube_access_token;
 use content::Locale;
 use domain::json::stringify;
+use foundation::text::TrimText;
 use foundation::url::encode_uri_component;
 use regex::Regex;
 use runtime::http::{Body, BodyPart, HttpRequest, Response};
@@ -350,7 +351,7 @@ pub async fn prepare_instagram_reel(
     let request = HttpRequest::post(format!("{}/{user_id}/media", graph_base(ctx, token))).form(&[
         ("media_type", Some("REELS")),
         ("video_url", Some(public_url)),
-        ("caption", Some(caption.trim())),
+        ("caption", Some(caption.trim_text())),
         ("share_to_feed", Some("true")),
         ("access_token", Some(token)),
     ]);

@@ -1,4 +1,4 @@
-use foundation::text::utf16_len;
+use foundation::text::{TrimText, utf16_len};
 
 use crate::Locale;
 use crate::message::{Entity, MediaItem, entity_span};
@@ -50,14 +50,14 @@ pub fn localized_thread(thread: &[ThreadPart], locale: Locale) -> Vec<LocalizedT
 /// The whole thread as one text, for the places that publish a single post:
 /// the parts become paragraphs, and each part's entities move with it.
 pub fn joined_thread<M>(text: &str, entities: &[Entity], rest: &[LocalizedThreadPart<M>]) -> (String, Vec<Entity>) {
-    let mut text = text.trim_end().to_owned();
+    let mut text = text.trim_text_end().to_owned();
     let mut entities = entities.to_vec();
     for part in rest {
-        let body = part.text.trim();
+        let body = part.text.trim_text();
         if body.is_empty() {
             continue;
         }
-        let lead = (utf16_len(&part.text) - utf16_len(part.text.trim_start())) as u64;
+        let lead = (utf16_len(&part.text) - utf16_len(part.text.trim_text_start())) as u64;
         let offset = (utf16_len(&text) + 2) as u64;
         text = format!("{text}\n\n{body}");
         let body_length = utf16_len(body) as u64;

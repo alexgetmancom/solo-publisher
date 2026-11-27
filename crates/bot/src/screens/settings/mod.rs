@@ -13,6 +13,7 @@ use std::rc::Rc;
 
 use domain::application::ports::{ConversationSessionKind, JsonObject};
 use foundation::i18n::{Key, t};
+use foundation::text::TrimText;
 
 use crate::Fut;
 use crate::api::payload::{Field, Payload};
@@ -258,7 +259,7 @@ fn settings_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
             .message
             .as_ref()
             .and_then(|message| message.text.as_deref())
-            .map(str::trim)
+            .map(TrimText::trim_text)
             .unwrap_or_default();
         clear_input(ctx)?;
         if is_navigation_message(text) {
