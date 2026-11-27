@@ -1,4 +1,4 @@
-//! `solo-publisher`: the Studio process: the configuration, the database, the Telegram bot on long polling, the
+//! `solo-publisher`, the Studio process: the configuration, the database, the Telegram bot on long polling, the
 //! workers and the HTTP surface, over the host's boundaries (`host.rs`).
 
 mod host;
