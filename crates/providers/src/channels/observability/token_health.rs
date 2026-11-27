@@ -164,7 +164,7 @@ async fn debug_token(
     version: &str,
     token: &str,
 ) -> (Option<String>, Option<Vec<String>>) {
-    let token = foundation::js::encode_uri_component(token);
+    let token = foundation::url::encode_uri_component(token);
     let looked_up = async {
         let data = http
             .request_json(HttpRequest::get(format!(
@@ -224,7 +224,7 @@ async fn graph_me_check(
 ) -> Result<ProbeResult, ExternalError> {
     http.request_json(HttpRequest::get(format!(
         "https://{host}/{version}/{id}?fields=id&access_token={}",
-        foundation::js::encode_uri_component(token)
+        foundation::url::encode_uri_component(token)
     )))
     .await?;
     let (expires_at, scopes) = debug_token(http, target, host, version, token).await;

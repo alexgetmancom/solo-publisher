@@ -3,7 +3,7 @@
 
 use db::rusqlite::Connection;
 use foundation::config::{Config, SharedConfig};
-use foundation::js;
+use foundation::json::id_text;
 use foundation::secret_box::{SecretKey, open, seal};
 use foundation::time::{parse_iso_instant, to_iso_string};
 use jiff::Timestamp;
@@ -14,7 +14,7 @@ use serde_json::{Value, json};
 use crate::channels::credentials::{ConfigPatch, Setting, assign, encryption_key};
 use crate::channels::encode::{base_url, base64, base64url, hex, pkce_challenge, search_params};
 use crate::channels::entropy::{Entropy, random_bytes};
-use crate::channels::meta::{id_text, required};
+use crate::channels::meta::required;
 use crate::channels::token_store::{
     PlatformToken, TokenWrite, platform_token, store_platform_token, store_platform_token_unless_changed,
 };
@@ -84,13 +84,18 @@ fn read_state(config: &Config, state: &str, now: Timestamp) -> Result<String> {
         .and_then(|key| open(state, &key).ok())
         .and_then(|opened| serde_json::from_str::<Value>(&opened).ok())
         .ok_or_else(|| Error::message("X OAuth state is invalid"))?;
-    let expired = !parsed.get("verifier").is_some_and(js::truthy)
-        || !parsed.get("nonce").is_some_and(js::truthy)
-        || !parsed.get("expiresAt").is_some_and(js::truthy)
+    let present = |key: &str| {
+        parsed
+            .get(key)
+            .and_then(Value::as_str)
+            .is_some_and(|text| !text.is_empty())
+    };
+    let expired = !present("verifier")
+        || !present("nonce")
         || parsed
             .get("expiresAt")
-            .and_then(Value::as_f64)
-            .is_some_and(|expires_at| expires_at < now.as_millisecond() as f64);
+            .and_then(Value::as_i64)
+            .is_none_or(|expires_at| expires_at == 0 || expires_at < now.as_millisecond());
     if expired {
         return Err(Error::message("X OAuth link has expired"));
     }
@@ -141,8 +146,8 @@ pub async fn exchange_x_code(
         .await?;
     let Some(id) = profile
         .pointer("/data/id")
-        .filter(|id| js::truthy(id))
         .and_then(id_text)
+        .filter(|id| !id.is_empty())
     else {
         return Err(Error::message("X returned no account id"));
     };
@@ -151,7 +156,7 @@ pub async fn exchange_x_code(
         username: profile
             .pointer("/data/username")
             .and_then(Value::as_str)
-            .map(|name| js::trim(name).to_owned())
+            .map(|name| name.trim().to_owned())
             .unwrap_or_default(),
         id,
     })
@@ -237,8 +242,7 @@ fn expires_in_ms(tokens: &Value) -> Result<i64> {
     let seconds = match tokens.get("expires_in") {
         None | Some(Value::Null) => 7200.0,
         Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(text)) => js::number(text),
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
+        Some(Value::String(text)) => text.parse().unwrap_or(f64::NAN),
         Some(_) => f64::NAN,
     };
     let ms = seconds * 1000.0;

@@ -3,7 +3,7 @@
 //! started it, so a worker that lost its job writes nothing.
 
 use db::rusqlite::{OptionalExtension, Row, params};
-use foundation::js::{present, string_of};
+use foundation::json::id_text;
 use foundation::logger::{LogLevel, log};
 use foundation::time::{iso_at, parse_iso_ms};
 use serde_json::{Map, Value, json};
@@ -12,7 +12,7 @@ use super::Publishing;
 use super::cancellation::{DELIVERY_NOT_CANCELLED, is_cancellation_declared};
 use super::delivery_payload::{DeliveryPayload, deferred_delivery_payload, has_resume_state, resumed_delivery_payload};
 use super::errors::{
-    PublishErrorClass, PublishFailure, PublishResult, classify_message, classify_publish_error,
+    PublishErrorClass, PublishFailure, PublishResult, classify_message, classify_publish_error, error_text,
     normalize_publish_result,
 };
 use super::job_policy::{
@@ -569,13 +569,10 @@ impl Publishing<'_> {
         now: &str,
         lock_id: &str,
     ) -> Result<()> {
-        // `Number(value) || 0` before the clamp.
-        let delay_ms = foundation::js::number_of(result.get("retryAfterMs"));
-        let delay_ms = if delay_ms.is_nan() {
-            0.0
-        } else {
-            delay_ms.clamp(0.0, 60_000.0)
-        } as u64;
+        let delay_ms = result
+            .get("retryAfterMs")
+            .and_then(|delay| delay.as_f64().or_else(|| delay.as_str()?.trim().parse().ok()))
+            .map_or(0.0, |delay_ms| delay_ms.clamp(0.0, 60_000.0)) as u64;
         let next_attempt_at = iso_at(parse_iso_ms(now).expect("the clock writes ISO instants") + delay_ms as i64);
         let published = match (result.get("resumeKey"), result.get("resumeValue")) {
             (Some(Value::String(key)), Some(value)) => Some((key.as_str(), value.clone())),
@@ -641,8 +638,10 @@ impl Publishing<'_> {
         now: &str,
         lock_id: &str,
     ) -> Result<()> {
-        let error = present(result.get("error"))
-            .map_or_else(|| "external publication requires reconciliation".to_owned(), string_of);
+        let error = result
+            .get("error")
+            .filter(|error| !error.is_null())
+            .map_or_else(|| "external publication requires reconciliation".to_owned(), error_text);
         let sqlite = self.sqlite;
         let settled = self.with_lease(job.job_id, || {
             delete_superseded_jobs(sqlite, &job.target, job.job_id, &job.publication_key)?;
@@ -701,7 +700,7 @@ impl Publishing<'_> {
         provider_answered_at: Option<&str>,
     ) -> Result<bool> {
         let ids: Vec<String> = match result.get("ids") {
-            Some(Value::Array(ids)) => ids.iter().map(string_of).filter(|id| !id.is_empty()).collect(),
+            Some(Value::Array(ids)) => ids.iter().filter_map(id_text).filter(|id| !id.is_empty()).collect(),
             _ => Vec::new(),
         };
         let transition = partial_publication_transition(
@@ -725,8 +724,10 @@ impl Publishing<'_> {
         } else {
             None
         };
-        let base =
-            present(result.get("error")).map_or_else(|| format!("{} partial publication", job.target), string_of);
+        let base = result
+            .get("error")
+            .filter(|error| !error.is_null())
+            .map_or_else(|| format!("{} partial publication", job.target), error_text);
         let error = match &answered_since {
             Some(at) => format!(
                 "{base} (stopped early: {} published something else at {at}, so this is not the platform being down)",

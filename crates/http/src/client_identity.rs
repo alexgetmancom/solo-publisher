@@ -14,7 +14,7 @@ use crate::headers::header;
 /// limit conservative.
 pub fn client_ip_hash(headers: &HeaderMap, config: &Config) -> String {
     let value = header(headers, config.trusted_client_ip_header.as_str()).unwrap_or_default();
-    let address = match foundation::js::trim(&value) {
+    let address = match value.trim() {
         "" => "unknown",
         address => address,
     };

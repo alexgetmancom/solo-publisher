@@ -149,7 +149,7 @@ fn probe_local(database_path: &Path, cwd: &Path) -> Value {
 /// What the launcher said about itself, or the plain local spelling.
 fn read_invocation(route: &str, env: &dyn Fn(&str) -> Option<String>) -> Value {
     let given = env("OPS_INVOCATION")
-        .map(|value| foundation::js::trim(&value).to_owned())
+        .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty());
     let prefix = given.unwrap_or_else(|| {
         if route == "local" {
@@ -161,7 +161,7 @@ fn read_invocation(route: &str, env: &dyn Fn(&str) -> Option<String>) -> Value {
     let mut out = Map::new();
     out.insert("prefix".into(), json!(prefix));
     if let Some(instance) = env("OPS_INSTANCE")
-        .map(|value| foundation::js::trim(&value).to_owned())
+        .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty())
     {
         out.insert("instance".into(), json!(instance));
@@ -169,7 +169,7 @@ fn read_invocation(route: &str, env: &dyn Fn(&str) -> Option<String>) -> Value {
     let instances: Vec<String> = env("OPS_INSTANCES")
         .unwrap_or_default()
         .split(',')
-        .map(|name| foundation::js::trim(name).to_owned())
+        .map(|name| name.trim().to_owned())
         .filter(|name| !name.is_empty())
         .collect();
     if instances.len() > 1 {
@@ -191,19 +191,19 @@ fn has_configured_ssh_target(path: &Path) -> bool {
         let Some(captures) = SSH_TARGET_LINE.captures(line) else {
             continue;
         };
-        let raw = foundation::js::trim(captures.get(1).map_or("", |m| m.as_str()));
+        let raw = captures.get(1).map_or("", |m| m.as_str()).trim();
         let unquoted = QUOTED
             .captures(raw)
             .and_then(|quoted| quoted.get(1).or_else(|| quoted.get(2)))
             .map_or(raw, |m| m.as_str());
-        return !foundation::js::trim(unquoted).is_empty();
+        return !unquoted.trim().is_empty();
     }
     false
 }
 
 fn production_launcher_configured(env: &dyn Fn(&str) -> Option<String>, cwd: &Path) -> bool {
     if let Some(target) = env("OPS_SSH_TARGET") {
-        return !foundation::js::trim(&target).is_empty();
+        return !target.trim().is_empty();
     }
     [
         resolve(cwd, Path::new(".env.local")),

@@ -1,7 +1,7 @@
-use foundation::js::{is_integer, json_number, number_of_scalar, trim, trim_end, trim_start, utf16_len};
+use foundation::text::utf16_len;
 
 use crate::Locale;
-use crate::message::{Entity, MediaItem};
+use crate::message::{Entity, MediaItem, entity_span};
 use crate::text::split_text;
 
 /// A post of a thread after the first, as it is stored. Positions start at 2.
@@ -50,25 +50,26 @@ pub fn localized_thread(thread: &[ThreadPart], locale: Locale) -> Vec<LocalizedT
 /// The whole thread as one text, for the places that publish a single post:
 /// the parts become paragraphs, and each part's entities move with it.
 pub fn joined_thread<M>(text: &str, entities: &[Entity], rest: &[LocalizedThreadPart<M>]) -> (String, Vec<Entity>) {
-    let mut text = trim_end(text).to_owned();
+    let mut text = text.trim_end().to_owned();
     let mut entities = entities.to_vec();
     for part in rest {
-        let body = trim(&part.text);
+        let body = part.text.trim();
         if body.is_empty() {
             continue;
         }
-        let lead = (utf16_len(&part.text) - utf16_len(trim_start(&part.text))) as f64;
-        let offset = (utf16_len(&text) + 2) as f64;
+        let lead = (utf16_len(&part.text) - utf16_len(part.text.trim_start())) as u64;
+        let offset = (utf16_len(&text) + 2) as u64;
         text = format!("{text}\n\n{body}");
-        let body_length = utf16_len(body) as f64;
+        let body_length = utf16_len(body) as u64;
         for entity in &part.entities {
-            let start = number_of_scalar(entity.get("offset")) - lead;
-            let length = number_of_scalar(entity.get("length"));
-            if !is_integer(start) || !is_integer(length) || start < 0.0 || start + length > body_length {
+            let Some((start, length)) = entity_span(entity) else {
                 continue;
-            }
+            };
+            let Some(start) = start.checked_sub(lead).filter(|start| start + length <= body_length) else {
+                continue;
+            };
             let mut moved = entity.clone();
-            moved.insert("offset".into(), json_number(offset + start));
+            moved.insert("offset".into(), (offset + start).into());
             entities.push(moved);
         }
     }
@@ -95,14 +96,13 @@ pub fn chain_posts<M: Clone>(posts: &[LocalizedThreadPart<M>], limit: usize) -> 
                 .into_iter()
                 .enumerate()
                 .map(|(index, text)| {
-                    let length = utf16_len(&text) as f64;
+                    let length = utf16_len(&text) as u64;
                     LocalizedThreadPart {
                         entities: if index == 0 {
                             post.entities
                                 .iter()
                                 .filter(|entity| {
-                                    number_of_scalar(entity.get("offset")) + number_of_scalar(entity.get("length"))
-                                        <= length
+                                    entity_span(entity).is_some_and(|(offset, span)| offset + span <= length)
                                 })
                                 .cloned()
                                 .collect()

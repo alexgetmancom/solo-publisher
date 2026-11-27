@@ -97,13 +97,7 @@ impl State {
     fn parse(value: Option<&Value>) -> Option<Self> {
         let state = value?.as_object()?;
         let stage = Stage::parse(state.get("stage").and_then(Value::as_str)?)?;
-        let integer = |key: &str| {
-            state
-                .get(key)
-                .and_then(Value::as_f64)
-                .filter(|value| foundation::js::is_safe_integer(*value))
-                .map_or(0, |value| value.max(0.0) as usize)
-        };
+        let integer = |key: &str| state.get(key).and_then(Value::as_u64).map_or(0, |value| value as usize);
         Some(Self {
             stage,
             container_id: state.get("containerId").and_then(Value::as_str).map(str::to_owned),
@@ -228,8 +222,10 @@ pub async fn publish_instagram_story(
                 return Err(AdapterError::message_text("instagram_story_state_missing_container"));
             };
             let status = graph.get(&container_id, "status_code,status").await?;
-            let code = foundation::js::present(status.get("status_code"))
-                .or_else(|| foundation::js::present(status.get("status")))
+            let code = status
+                .get("status_code")
+                .filter(|code| !code.is_null())
+                .or_else(|| status.get("status").filter(|code| !code.is_null()))
                 .cloned();
             let code_text = code.as_ref().and_then(Value::as_str);
             if code_text == Some("FINISHED") {
@@ -259,15 +255,11 @@ pub async fn publish_instagram_story(
                 }
                 detail.insert(
                     "providerStatus".into(),
-                    foundation::js::present(status.get("status"))
-                        .cloned()
-                        .unwrap_or(Value::Null),
+                    status.get("status").cloned().unwrap_or(Value::Null),
                 );
                 detail.insert(
                     "providerError".into(),
-                    foundation::js::present(status.get("error"))
-                        .cloned()
-                        .unwrap_or(Value::Null),
+                    status.get("error").cloned().unwrap_or(Value::Null),
                 );
                 detail.insert(
                     "mediaType".into(),
@@ -348,12 +340,7 @@ pub async fn publish_instagram_story(
             let mut result = Map::new();
             result.insert("ok".into(), true.into());
             result.insert("id".into(), published_id.clone().into());
-            result.insert(
-                "url".into(),
-                foundation::js::present(published.get("permalink"))
-                    .cloned()
-                    .unwrap_or(Value::Null),
-            );
+            result.insert("url".into(), published.get("permalink").cloned().unwrap_or(Value::Null));
             result.insert("raw".into(), published);
             result.insert(
                 "verification".into(),
@@ -376,12 +363,7 @@ pub async fn verify_instagram_publication(
             "Instagram verification did not return the expected media",
         ));
     }
-    Ok((
-        id.to_owned(),
-        foundation::js::present(media.get("permalink"))
-            .cloned()
-            .unwrap_or(Value::Null),
-    ))
+    Ok((id.to_owned(), media.get("permalink").cloned().unwrap_or(Value::Null)))
 }
 
 /// What the staged URL answered when Meta rejected the media, for the error.

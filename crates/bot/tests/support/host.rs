@@ -70,7 +70,7 @@ impl StoryDerivatives for GoldenHost {
 
 /// `required(value, name)` of the OAuth links: a trimmed, non-blank value.
 fn required(value: &Option<String>, name: &str) -> domain::Result<()> {
-    match value.as_deref().map(foundation::js::trim) {
+    match value.as_deref().map(str::trim) {
         Some(value) if !value.is_empty() => Ok(()),
         _ => Err(domain::Error::message(format!("{name} is required for browser OAuth"))),
     }

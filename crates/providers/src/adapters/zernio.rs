@@ -6,6 +6,7 @@ use crate::external::zernio::zernio_request;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::queue::ClaimedPublishJob;
+use foundation::json::id_text;
 use runtime::http::Method;
 use serde_json::{Map, Value, json};
 
@@ -75,21 +76,24 @@ const DUPLICATE_ERROR: &str =
 
 /// `post._id ?? post.id ?? post.post?._id ?? … ?? post.existingPost?.id`.
 fn post_id(post: &Value) -> Option<String> {
-    let id = |value: &Value| {
-        foundation::js::present(value.get("_id"))
-            .or_else(|| foundation::js::present(value.get("id")))
-            .cloned()
-    };
+    fn id(value: &Value) -> Option<&Value> {
+        value
+            .get("_id")
+            .filter(|id| !id.is_null())
+            .or_else(|| value.get("id").filter(|id| !id.is_null()))
+    }
     id(post)
         .or_else(|| post.get("post").and_then(id))
         .or_else(|| post.get("existingPost").and_then(id))
-        .map(|id| foundation::js::string_of(&id))
+        .and_then(id_text)
 }
 
 /// `zernioPublishResult(post, platform, expectedPostId)`.
 fn publication_of(post: &Value, platform: ZernioPlatform, expected: Option<&str>) -> Result<ZernioPublication> {
-    let resolved = foundation::js::present(post.get("post"))
-        .or_else(|| foundation::js::present(post.get("existingPost")))
+    let resolved = post
+        .get("post")
+        .filter(|value| !value.is_null())
+        .or_else(|| post.get("existingPost").filter(|value| !value.is_null()))
         .unwrap_or(post);
     let entries = |key: &str| -> Vec<&Value> {
         resolved
@@ -209,7 +213,7 @@ pub async fn publish_through_zernio(
         PublicationInput {
             account_id,
             platform,
-            content: foundation::js::trim(&content),
+            content: content.trim(),
             media_items: if story {
                 media.into_iter().take(1).collect()
             } else {
@@ -249,7 +253,7 @@ pub async fn publish_zernio_instagram_reel(
         PublicationInput {
             account_id,
             platform: ZernioPlatform::Instagram,
-            content: foundation::js::trim(caption),
+            content: caption.trim(),
             media_items: vec![json!({"type": "video", "url": public_url})],
             platform_specific_data: Some(json!({"contentType": "reels", "shareToFeed": true})),
             request_id,
@@ -266,12 +270,12 @@ pub async fn zernio_post_outcome(
     provider_post_id: &str,
     platform: ZernioPlatform,
 ) -> Result<ZernioOutcome> {
-    let path = format!("posts/{}", foundation::js::encode_uri_component(provider_post_id));
+    let path = format!("posts/{}", foundation::url::encode_uri_component(provider_post_id));
     let response = ctx
         .client
         .request_json(zernio_request(&ctx.config, Method::Get, &path)?)
         .await?;
-    let post = foundation::js::present(response.get("post")).unwrap_or(&response);
+    let post = response.get("post").filter(|post| !post.is_null()).unwrap_or(&response);
     let find = |key: &str| {
         post.get(key).and_then(Value::as_array).and_then(|items| {
             items
@@ -288,9 +292,11 @@ pub async fn zernio_post_outcome(
         || status(platform_result) == Some("failed")
         || status(platform_analytics) == Some("failed");
     let detail = |entry: Option<&Value>, key: &str| {
-        entry
-            .and_then(|entry| foundation::js::present(entry.get(key)))
-            .map(foundation::js::string_of)
+        entry.and_then(|entry| entry.get(key)).and_then(|detail| match detail {
+            Value::Null => None,
+            Value::String(text) => Some(text.clone()),
+            other => Some(other.to_string()),
+        })
     };
     Ok(ZernioOutcome {
         publication: publication_of(post, platform, Some(provider_post_id))?,
@@ -308,7 +314,7 @@ pub async fn verify_zernio_post(
     provider_post_id: &str,
     platform: ZernioPlatform,
 ) -> Result<ZernioPublication> {
-    let path = format!("posts/{}", foundation::js::encode_uri_component(provider_post_id));
+    let path = format!("posts/{}", foundation::url::encode_uri_component(provider_post_id));
     let post = ctx
         .client
         .request_json(zernio_request(&ctx.config, Method::Get, &path)?)

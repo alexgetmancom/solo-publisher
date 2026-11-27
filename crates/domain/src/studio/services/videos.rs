@@ -2,7 +2,6 @@
 
 use content::Locale;
 use foundation::errors::StudioError;
-use foundation::js::{string_of, truthy};
 use foundation::time::Zone;
 use jiff::Timestamp;
 use serde::Serialize;
@@ -547,7 +546,7 @@ impl<'a, A: MediaProbe + VideoProvider + YoutubeUploads> VideoService<'a, A> {
                 metadata.insert("description".into(), value.clone());
             }
             VideoWizardStep::YoutubeGameUrl => {
-                if truthy(value) {
+                if value.as_str().is_some_and(|url| !url.is_empty()) {
                     metadata.insert("gameUrl".into(), value.clone());
                 } else {
                     metadata.remove("gameUrl");
@@ -565,12 +564,11 @@ impl<'a, A: MediaProbe + VideoProvider + YoutubeUploads> VideoService<'a, A> {
             .publishing
             .save_video_metadata(publication_id, target, &metadata)?;
         if field == VideoWizardStep::YoutubeTitle {
-            let label = if truthy(value) {
-                string_of(value)
-            } else {
-                "YouTube Shorts".into()
-            };
-            self.studio.publishing.update_video_label(publication_id, &label)?;
+            let label = value
+                .as_str()
+                .filter(|title| !title.is_empty())
+                .unwrap_or("YouTube Shorts");
+            self.studio.publishing.update_video_label(publication_id, label)?;
         }
         Ok(())
     }

@@ -331,17 +331,19 @@ async fn finalize(ctx: &Ctx, row: &PendingAlbum) -> crate::Result<Option<Finaliz
             text_en: None,
             text_en_approved: None,
         };
-        let position = row.step_data.get("position").map_or(f64::NAN, |value| {
-            foundation::js::number(&foundation::js::string_of(value))
-        });
+        let position = row
+            .step_data
+            .get("position")
+            .and_then(|value| value.as_i64().or_else(|| value.as_str()?.trim().parse().ok()))
+            .unwrap_or(0);
         if thread_step == "thread_edit" && locale == Some(Locale::En) {
             services
                 .posts
-                .edit_thread_part_english(row.actor_id, draft_id, position as i64, &row.text_ru)?;
+                .edit_thread_part_english(row.actor_id, draft_id, position, &row.text_ru)?;
         } else if thread_step == "thread_edit" {
             services
                 .posts
-                .edit_thread_part(row.actor_id, draft_id, position as i64, &part)?;
+                .edit_thread_part(row.actor_id, draft_id, position, &part)?;
         } else {
             services.posts.append_thread_part(row.actor_id, draft_id, &part)?;
         }

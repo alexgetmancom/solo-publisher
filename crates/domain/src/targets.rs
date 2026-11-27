@@ -157,7 +157,7 @@ impl TargetMap {
     pub fn from_json(object: &Map<String, Value>) -> Self {
         Self(
             json::object_entries(object)
-                .map(|(key, value)| (key.clone(), foundation::js::truthy(value)))
+                .map(|(key, value)| (key.clone(), *value == true))
                 .collect(),
         )
     }
@@ -309,8 +309,8 @@ mod tests {
         assert_eq!(preset_name(&TargetMap::parse(Some(r#"{"x":true}"#))), "manual");
         assert_eq!(TargetMap::parse(Some("[1]")), TargetMap::default());
         assert_eq!(
-            TargetMap::parse(Some(r#"{"telegram":1,"x":0,"discord":"yes"}"#)).to_json(),
-            r#"{"telegram":true,"x":false,"discord":true}"#
+            TargetMap::parse(Some(r#"{"telegram":true,"x":1,"discord":"yes"}"#)).to_json(),
+            r#"{"telegram":true,"x":false,"discord":false}"#
         );
     }
 }

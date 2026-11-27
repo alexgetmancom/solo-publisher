@@ -128,7 +128,7 @@ impl<'a> SettingsService<'a> {
     pub fn set_studio_profile(&self, input: &StudioProfileInput) -> Result<StudioProfileView> {
         let invalid_zone = || StudioError::new("err.timezone-invalid");
         if let Some(zone) = &input.timezone
-            && !is_valid_time_zone(foundation::js::trim(zone))
+            && !is_valid_time_zone(zone.trim())
         {
             return Err(invalid_zone().into());
         }
@@ -137,7 +137,7 @@ impl<'a> SettingsService<'a> {
         // as a raw ISO string and nobody finds out until a reader says so.
         if let Some(zones) = &input.site_timezone {
             for zone in [&zones.en, &zones.ru] {
-                let zone = foundation::js::trim(zone);
+                let zone = zone.trim();
                 if !zone.is_empty() && !is_valid_time_zone(zone) {
                     return Err(invalid_zone().into());
                 }
@@ -152,14 +152,8 @@ impl<'a> SettingsService<'a> {
             .map(|value| integer_in(value, 24..=720).ok_or_else(|| StudioError::new("err.video-retention-range")))
             .transpose()?;
         self.ports.studio_settings().save_profile(&StudioProfilePatch {
-            timezone: input
-                .timezone
-                .as_deref()
-                .map(|zone| foundation::js::trim(zone).to_owned()),
-            timezone_label: input
-                .timezone_label
-                .as_deref()
-                .map(|label| foundation::js::trim(label).to_owned()),
+            timezone: input.timezone.as_deref().map(|zone| zone.trim().to_owned()),
+            timezone_label: input.timezone_label.as_deref().map(|label| label.trim().to_owned()),
             site_enabled: input.site_enabled.map(i64::from),
             video_prepare_lead_minutes: prepare_lead_minutes,
             video_retention_hours: retention_hours,
@@ -177,7 +171,7 @@ impl<'a> SettingsService<'a> {
 
     pub fn timezone(&self, actor_id: i64, fallback: &str) -> Result<String> {
         let stored = self.ports.studio_settings().timezone(actor_id)?;
-        Ok(match stored.as_deref().map(foundation::js::trim) {
+        Ok(match stored.as_deref().map(str::trim) {
             Some(zone) if !zone.is_empty() && is_valid_time_zone(zone) => zone.to_owned(),
             _ => fallback.to_owned(),
         })
@@ -268,7 +262,7 @@ impl<'a> SettingsService<'a> {
             .ports
             .studio_settings()
             .youtube_settings()?
-            .map(|row| foundation::js::trim(&row.signature).to_owned())
+            .map(|row| row.signature.trim().to_owned())
             .unwrap_or_default())
     }
 
@@ -313,7 +307,7 @@ impl<'a> SettingsService<'a> {
     }
 
     pub fn set_timezone(&self, actor_id: i64, timezone: &str) -> Result<()> {
-        let value = foundation::js::trim(timezone);
+        let value = timezone.trim();
         if !is_valid_time_zone(value) {
             return Err(StudioError::new("err.timezone-invalid").into());
         }

@@ -3,13 +3,13 @@
 use std::path::Path;
 
 use crate::external::telegram::{BotApi, BotParams};
-use content::message::{Entity, MediaItem};
+use content::message::{Entity, MediaItem, entity_span};
 use content::text::entities_to_html;
 use content::thread::LocalizedThreadPart;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::media_policy::select_media_for_target;
-use foundation::js::{is_safe_integer, json_number, number_of, present, utf16_len, utf16_prefix};
+use foundation::text::{utf16_len, utf16_prefix};
 use serde_json::{Map, Value, json};
 
 use crate::adapters::error::{Result, ambiguous_mutation};
@@ -207,7 +207,7 @@ impl Telegram {
         let mut media = Vec::new();
         let mut blocks = Vec::new();
         for post in posts {
-            if !foundation::js::trim(&post.text).is_empty() {
+            if !post.text.trim().is_empty() {
                 blocks.push(format!("<p>{}</p>", rich_html(&post.text, &post.entities)));
             }
             for item in &post.media {
@@ -248,11 +248,13 @@ impl Telegram {
     /// `normalizeTelegramResult`.
     fn normalize(&self, response: Value) -> PublishResult {
         let mut result = Map::new();
-        if !response.get("ok").is_some_and(foundation::js::truthy) {
+        if response["ok"] != true {
             result.insert("ok".into(), false.into());
             result.insert(
                 "error".into(),
-                present(response.get("description"))
+                response
+                    .get("description")
+                    .filter(|description| !description.is_null())
                     .cloned()
                     .unwrap_or_else(|| "telegram_api_failed".into()),
             );
@@ -270,10 +272,8 @@ impl Telegram {
             .collect();
         let channel = self.chat_id.strip_prefix('@');
         let first = ids.first().cloned();
-        let url = match (channel, &first) {
-            (Some(channel), Some(id)) if foundation::js::truthy(id) => {
-                Value::from(format!("https://t.me/{channel}/{}", foundation::js::string_of(id)))
-            }
+        let url = match (channel, first.as_ref().and_then(Value::as_i64)) {
+            (Some(channel), Some(id)) if id != 0 => Value::from(format!("https://t.me/{channel}/{id}")),
             _ => Value::Null,
         };
         result.insert("ok".into(), true.into());
@@ -287,8 +287,7 @@ impl Telegram {
     /// The heart reaction. Its permission is optional, and failing it must not
     /// retry a post that is already published.
     async fn react(&self, result: PublishResult) -> PublishResult {
-        let ok = result.get("ok").is_some_and(foundation::js::truthy);
-        let Some(id) = present(result.get("id")).filter(|_| ok) else {
+        let Some(id) = result.get("id").filter(|id| result["ok"] == true && !id.is_null()) else {
             return result;
         };
         let body = json!({
@@ -348,25 +347,19 @@ struct Caption {
 /// the entities that would point past it.
 fn telegram_caption(text: &str, entities: Option<&Vec<Value>>) -> Caption {
     let caption = utf16_prefix(text, CAPTION_LIMIT).to_owned();
-    let length = utf16_len(&caption) as f64;
+    let length = utf16_len(&caption) as u64;
     let entities = entities
         .into_iter()
         .flatten()
         .filter_map(Value::as_object)
         .filter_map(|value| {
-            let offset = number_of(value.get("offset"));
-            let entity_length = number_of(value.get("length"));
-            if !is_safe_integer(offset)
-                || !is_safe_integer(entity_length)
-                || offset < 0.0
-                || entity_length <= 0.0
-                || offset >= length
-            {
+            let (offset, entity_length) = entity_span(value)?;
+            if entity_length == 0 || offset >= length {
                 return None;
             }
             let mut entity = value.clone();
-            entity.insert("offset".into(), json_number(offset));
-            entity.insert("length".into(), json_number(entity_length.min(length - offset)));
+            entity.insert("offset".into(), offset.into());
+            entity.insert("length".into(), entity_length.min(length - offset).into());
             Some(Value::Object(entity))
         })
         .collect();
@@ -394,14 +387,11 @@ pub async fn edit_telegram_message(ctx: &AdapterContext, edit: &EditRequest) -> 
     let chat_id = edit
         .chat_id
         .clone()
-        .filter(foundation::js::truthy)
+        .filter(|chat_id| !chat_id.is_null())
         .unwrap_or_else(|| ctx.config.telegram_channel_username.clone().into());
     let mut body = Map::new();
     body.insert("chat_id".into(), chat_id);
-    body.insert(
-        "message_id".into(),
-        json_number(foundation::js::number(&edit.external_id)),
-    );
+    body.insert("message_id".into(), edit.external_id.parse::<i64>().ok().into());
     body.insert(key.into(), edit.text.clone().into());
     let response = bot_api(ctx, token)
         .request_json(method, BotParams::json(stringify(&Value::Object(body))))
@@ -428,7 +418,7 @@ pub async fn delete_telegram_message(ctx: &AdapterContext, external_id: &str) ->
     };
     let body = json!({
         "chat_id": ctx.config.telegram_channel_username,
-        "message_id": json_number(foundation::js::number(external_id)),
+        "message_id": external_id.parse::<i64>().ok(),
     });
     Ok(bot_api(ctx, token)
         .request_json("deleteMessage", BotParams::json(stringify(&body)))

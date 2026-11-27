@@ -179,13 +179,13 @@ pub fn media_diagnose<'a>(context: &'a OperationContext<'a>, _input: &'a Input) 
             Ok((ok, status, text))
         }
         .await;
-        let health_ok = health.get("ok").is_some_and(foundation::js::truthy);
+        let health_ok = health["ok"] == true;
         Ok(match attempt {
             Ok((ok, status, text)) => {
                 let result = serde_json::from_str::<Value>(&text)
                     .ok()
                     .filter(|parsed| !parsed.is_null())
-                    .unwrap_or_else(|| json!(foundation::js::utf16_prefix(&text, 800)));
+                    .unwrap_or_else(|| json!(foundation::text::utf16_prefix(&text, 800)));
                 json!({
                     "ok": health_ok && ok,
                     "health": health,
@@ -221,10 +221,10 @@ pub fn media_job<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut
             .into_iter()
             .flatten()
             .filter(|event| {
-                let phase = match event["details"].get("phase") {
-                    None | Some(Value::Null) => String::new(),
-                    Some(phase) => foundation::js::string_of(phase),
-                };
+                let phase = event["details"]
+                    .get("phase")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
                 event["type"] == "publish.job.phase" || phase.contains("media")
             })
             .cloned()
@@ -336,10 +336,7 @@ pub fn media_reprocess<'a>(context: &'a OperationContext<'a>, input: &'a Input) 
 }
 
 fn is_video_item(item: &Map<String, Value>) -> bool {
-    let kind = match item.get("type") {
-        None | Some(Value::Null) => String::new(),
-        Some(kind) => foundation::js::string_of(kind),
-    };
+    let kind = item.get("type").and_then(Value::as_str).unwrap_or_default();
     kind.to_lowercase().contains("video")
 }
 

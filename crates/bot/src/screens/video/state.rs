@@ -9,7 +9,6 @@ use domain::publishing::video_types::VideoTarget;
 use domain::studio::video_fsm::{VIDEO_FLOW, VideoWizardStep, is_video_wizard_step};
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, t};
-use foundation::js::number_to_string;
 use foundation::time::{Zone, format_zoned_locale_string, manual_schedule_example};
 use jiff::Timestamp;
 use serde_json::{Map, Value};
@@ -76,7 +75,7 @@ impl VideoState {
     }
 
     pub(super) fn single_edit(&self) -> bool {
-        self.data.get("is_single_edit").is_some_and(foundation::js::truthy)
+        self.data.get("is_single_edit") == Some(&Value::Bool(true))
     }
 
     /// `{ ...session.data, selectedTargets: session.selected }`: what the flow
@@ -219,8 +218,8 @@ pub(super) fn advance(
 pub(super) fn video_duration_label(seconds: f64) -> String {
     format!(
         "{:0>2}:{:0>2}",
-        number_to_string((seconds / 60.0).floor()),
-        number_to_string(seconds % 60.0)
+        (seconds / 60.0).floor(),
+        seconds % 60.0
     )
 }
 

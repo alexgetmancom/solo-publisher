@@ -156,7 +156,7 @@ fn message_value(message: &DraftMessage) -> Value {
 }
 
 fn is_clear_media_command(text: &str) -> bool {
-    let clean = foundation::js::trim(text).to_lowercase();
+    let clean = text.trim().to_lowercase();
     matches!(clean.as_str(), "/delmedia" | "очистить" | "без медиа" | "clear media")
 }
 

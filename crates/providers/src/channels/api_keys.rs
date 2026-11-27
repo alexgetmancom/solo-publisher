@@ -4,7 +4,7 @@
 
 use db::rusqlite::Connection;
 use foundation::config::{Config, SharedConfig};
-use foundation::js;
+use foundation::json::id_text;
 use foundation::logger::{LogLevel, log};
 use foundation::secret_box::{open, seal};
 use foundation::time::to_iso_string;
@@ -14,7 +14,6 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::channels::credentials::{ConfigPatch, Setting, assign, encryption_key};
-use crate::channels::meta::id_text;
 use crate::channels::token_store::{TokenWrite, platform_token, store_platform_token};
 use crate::channels::{Error, Result};
 
@@ -88,7 +87,7 @@ pub async fn store_api_key(
     let Some(key) = encryption_key(&current)? else {
         return Err(Error::message("TOKEN_ENCRYPTION_KEY is required to store a credential"));
     };
-    let trimmed = js::trim(value);
+    let trimmed = value.trim();
     if trimmed.is_empty() {
         return Err(Error::message(format!("no {} key was given", target.as_str())));
     }
@@ -159,7 +158,7 @@ async fn upload_limit_bytes(http: &HttpClient, config: &Config, target: ApiKeyTa
         .request_json(
             HttpRequest::get(format!(
                 "https://discord.com/api/v10/guilds/{}",
-                foundation::js::encode_uri_component(guild_id)
+                foundation::url::encode_uri_component(guild_id)
             ))
             .header("Authorization", format!("Bot {token}")),
         )

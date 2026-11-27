@@ -172,7 +172,7 @@ fn offset_instant(text: &str) -> Option<Timestamp> {
 /// An explicit offset is honoured as written; a bare wall clock belongs to
 /// the Studio's time zone.
 pub(crate) fn parse_operation_schedule(sqlite: &Connection, value: &str, now: Timestamp) -> Result<Timestamp, OpError> {
-    let trimmed = foundation::js::trim(value);
+    let trimmed = value.trim();
     if EXPLICIT_OFFSET.is_match(trimmed) {
         return offset_instant(trimmed).ok_or_else(|| OpError::Failed(format!("invalid schedule time: {value}")));
     }
@@ -284,7 +284,7 @@ pub fn draft_schedule<'a>(context: &'a OperationContext<'a>, input: &'a Input) -
     Box::pin(async move {
         let config = context.config()?;
         let raw_at = input.str("at");
-        if foundation::js::trim(raw_at).is_empty() {
+        if raw_at.trim().is_empty() {
             return Err(OpError::failed("missing schedule time"));
         }
         let scope_name = input.opt_str("locale").unwrap_or("both");
@@ -371,7 +371,7 @@ pub fn video_schedule<'a>(context: &'a OperationContext<'a>, input: &'a Input) -
     Box::pin(async move {
         let config = context.config()?;
         let raw_at = input.str("at");
-        if foundation::js::trim(raw_at).is_empty() {
+        if raw_at.trim().is_empty() {
             return Err(OpError::failed("missing schedule time"));
         }
         let sqlite = context.sqlite()?;
@@ -500,7 +500,7 @@ pub fn video_script<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> 
             Some(file) => String::from_utf8_lossy(&tokio::fs::read(file).await?).into_owned(),
             None => input.opt_str("text").unwrap_or_default().to_owned(),
         };
-        let trimmed = foundation::js::trim(&script);
+        let trimmed = script.trim();
         if trimmed.is_empty() {
             return Err(OpError::failed(
                 "Pass --file with a path on this host, or --text with the script itself.",

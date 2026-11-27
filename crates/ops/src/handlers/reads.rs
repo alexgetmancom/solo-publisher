@@ -12,7 +12,6 @@ use domain::application::publication_ref::{PublicationRefKind, publication_ref};
 use domain::publishing::state::is_partial_delivery;
 use domain::repositories::ActionableIssueStore;
 use domain::studio::services::settings::StudioProfileInput;
-use foundation::js;
 use foundation::time::to_iso_string;
 use runtime::http::HttpRequest;
 use serde::Serialize;
@@ -192,7 +191,7 @@ pub fn status<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
                 _ => Map::new(),
             };
             let scheduler_error = state.get("scheduler_error").unwrap_or(&Value::Null);
-            let ok = state.get("ok") != Some(&Value::Bool(false)) && !foundation::js::truthy(scheduler_error);
+            let ok = state.get("ok") != Some(&Value::Bool(false)) && scheduler_error.as_str().is_none_or(str::is_empty);
             let last_run_at = match state.get("last_run_at") {
                 Some(Value::String(at)) => at.clone(),
                 _ => updated_at.clone(),
@@ -602,9 +601,9 @@ fn describe(row: &RawRow, expected: &[String]) -> PublicationRow {
 
 /// The first line is the post's own headline.
 fn headline(text: &str) -> String {
-    let first = js::trim(text.split('\n').next().unwrap_or_default());
+    let first = text.split('\n').next().unwrap_or_default().trim();
     if first.encode_utf16().count() > 60 {
-        format!("{}…", js::utf16_prefix(first, 59))
+        format!("{}…", foundation::text::utf16_prefix(first, 59))
     } else {
         first.to_owned()
     }
@@ -630,7 +629,7 @@ pub fn recent<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
 pub fn find<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
     Box::pin(async move {
         let query = input.str("query");
-        let needle = js::trim(query).to_lowercase();
+        let needle = query.trim().to_lowercase();
         if needle.is_empty() {
             return Err(OpError::failed("--query must not be empty"));
         }
@@ -689,7 +688,7 @@ fn publication_line(post: &Value) -> String {
     .filter(|part| !part.is_empty())
     .collect::<Vec<_>>()
     .join("  ");
-    let at = js::utf16_prefix(post["at"].as_str().unwrap_or_default(), 16).replacen('T', " ", 1);
+    let at = foundation::text::utf16_prefix(post["at"].as_str().unwrap_or_default(), 16).replacen('T', " ", 1);
     format!(
         "{} {at}  {} targets  {trailer}\n            {}",
         pad_end(post["ref"].as_str().unwrap_or_default(), 9),
@@ -767,7 +766,7 @@ pub fn post_text<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut
 /// `formatPostText`.
 pub fn format_post_text(value: &Value) -> String {
     let text = |locale: &str| {
-        let trimmed = js::trim(value[locale].as_str().unwrap_or_default());
+        let trimmed = value[locale].as_str().unwrap_or_default().trim();
         if trimmed.is_empty() {
             "(no text)".to_owned()
         } else {
@@ -801,13 +800,13 @@ pub fn verify<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a
     Box::pin(async move {
         let reference = input.str("ref");
         let sqlite = context.sqlite()?;
-        let numeric = js::number(reference.strip_prefix("post:").unwrap_or(reference));
-        // A non-numeric ref must not reach the query as NaN.
-        let id = if js::is_safe_integer(numeric) {
-            numeric as i64
-        } else {
-            -1
-        };
+        // A non-numeric ref matches no post.
+        let id = reference
+            .strip_prefix("post:")
+            .unwrap_or(reference)
+            .trim()
+            .parse::<i64>()
+            .unwrap_or(-1);
         let post_id = select(
             sqlite,
             "SELECT post_id AS postId FROM drafts WHERE post_id = ? LIMIT 1",

@@ -14,7 +14,6 @@ use std::rc::Rc;
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use foundation::js;
 use foundation::redact::redact_external_secrets;
 use jiff::Timestamp;
 use regex::Regex;
@@ -144,7 +143,10 @@ impl HttpClient {
             // would carry the unredacted body into logs.
             let redacted = redact_external_secrets(&body);
             ExternalError::Http(ExternalHttpError {
-                message: format!("{label} returned a non-JSON body: {}", js::utf16_prefix(&redacted, 200)),
+                message: format!(
+                    "{label} returned a non-JSON body: {}",
+                    foundation::text::utf16_prefix(&redacted, 200)
+                ),
                 status,
                 body: Some(redacted),
                 retry_after_seconds: None,
@@ -240,17 +242,23 @@ impl Response {
 pub fn retry_after_seconds(headers: &Headers, now: Timestamp) -> Option<f64> {
     let now_ms = now.as_millisecond() as f64;
     if let Some(retry_after) = headers.get("retry-after").filter(|value| !value.is_empty()) {
-        let seconds = js::number(&retry_after);
-        if seconds.is_finite() {
+        if let Some(seconds) = retry_after
+            .trim()
+            .parse::<f64>()
+            .ok()
+            .filter(|seconds| seconds.is_finite())
+        {
             return Some(non_negative(seconds));
         }
         if let Some(date_ms) = parse_date(&retry_after) {
-            return Some(non_negative(js::round((date_ms - now_ms) / 1000.0)));
+            return Some(non_negative(((date_ms - now_ms) / 1000.0).round()));
         }
     }
-    // `Number(null)` is 0: an absent header is no reset.
-    let reset = headers.get("x-ratelimit-reset").map_or(0.0, |value| js::number(&value));
-    (reset.is_finite() && reset > 0.0).then(|| non_negative(js::round(reset - now_ms / 1000.0)))
+    let reset = headers
+        .get("x-ratelimit-reset")
+        .and_then(|value| value.trim().parse::<f64>().ok())
+        .unwrap_or(0.0);
+    (reset.is_finite() && reset > 0.0).then(|| non_negative((reset - now_ms / 1000.0).round()))
 }
 
 /// `Math.max(0, value)`, with JavaScript's `-0` read as the `0` it prints.
@@ -261,7 +269,7 @@ fn non_negative(value: f64) -> f64 {
 /// The `Date.parse` forms a `Retry-After` date takes: the HTTP date
 /// (RFC 7231's IMF-fixdate, an RFC 2822 date) or an ISO instant.
 fn parse_date(value: &str) -> Option<f64> {
-    let value = js::trim(value);
+    let value = value.trim();
     let parsed = jiff::fmt::rfc2822::parse(value)
         .map(|zoned| zoned.timestamp())
         .or_else(|_| value.parse::<Timestamp>());

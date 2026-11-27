@@ -3,7 +3,6 @@
 use std::time::Duration;
 
 use foundation::config::Config;
-use foundation::js;
 use serde_json::{Map, Value, json};
 
 use runtime::http::{ExternalError, HttpClient, HttpRequest};
@@ -59,7 +58,7 @@ pub async fn deepseek_chat(
             .map(|message| json!({"role": message.role.as_str(), "content": message.content}))
             .collect(),
     );
-    body.insert("temperature".into(), js::json_number(options.temperature));
+    body.insert("temperature".into(), options.temperature.into());
     if options.json {
         body.insert("response_format".into(), json!({"type": "json_object"}));
     }
@@ -73,5 +72,5 @@ pub async fn deepseek_chat(
         .pointer("/choices/0/message/content")
         .and_then(Value::as_str)
         .unwrap_or_default();
-    Ok(js::trim(content).to_owned())
+    Ok(content.trim().to_owned())
 }

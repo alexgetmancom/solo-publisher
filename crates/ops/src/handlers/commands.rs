@@ -170,7 +170,7 @@ const AUDIENCE_ACTIONS: [&str; 5] = ["retry", "edit", "replace_media", "use_othe
 
 /// `runOperationCommand`.
 async fn run_operation_command(context: &OperationContext<'_>, input: &Command<'_>) -> OpResult {
-    let reference = foundation::js::trim(input.reference);
+    let reference = input.reference.trim();
     if reference.is_empty() {
         return Err(OpError::failed("missing publication ref"));
     }
@@ -251,7 +251,7 @@ async fn edit_text(
 ) -> OpResult {
     let locale = input.locale.unwrap_or("en");
     let text = input.text.unwrap_or_default();
-    let trimmed = foundation::js::trim(text);
+    let trimmed = text.trim();
     if trimmed.is_empty() {
         return Err(OpError::failed(format!("text_{locale} is required")));
     }
@@ -401,7 +401,7 @@ fn reschedule_post(
     let Some(locale) = locale else {
         return Err(OpError::failed("missing schedule locale"));
     };
-    let Some(raw_at) = raw_at.filter(|at| !foundation::js::trim(at).is_empty()) else {
+    let Some(raw_at) = raw_at.filter(|at| !at.trim().is_empty()) else {
         return Err(OpError::failed("missing schedule time"));
     };
     let sqlite = context.sqlite()?;

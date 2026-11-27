@@ -145,7 +145,7 @@ fn cache_key(job: &ClaimedPublishJob, media: &[MediaItem], config: &Config, part
         "post": job.publication_key,
         "part": part,
         "target": job.target,
-        "locale": foundation::js::present(job.payload.get("locale")).cloned().unwrap_or_else(|| "en".into()),
+        "locale": job.payload.get("locale").filter(|locale| !locale.is_null()).cloned().unwrap_or_else(|| "en".into()),
         "story": is_story_target(&job.target),
         "media": media.iter().map(item).collect::<Vec<_>>(),
         "remote": config.remote_media_path,

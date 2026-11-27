@@ -19040,7 +19040,7 @@
       "output": {
         "status": "published",
         "externalId": "a",
-        "externalIds": ["a", "2", "null"],
+        "externalIds": ["a", "2"],
         "url": null,
         "error": null,
         "skipped": 0,
@@ -19126,7 +19126,7 @@
         "externalId": null,
         "externalIds": null,
         "url": null,
-        "error": "[object Object]",
+        "error": "{\"status\":502}",
         "skipped": 0,
         "rawJson": "{\"ok\":false,\"error\":{\"status\":502},\"retryable\":true}"
       }
@@ -19158,7 +19158,7 @@
     {
       "input": { "ok": 1, "skipped": true },
       "output": {
-        "status": "published",
+        "status": "skipped",
         "externalId": null,
         "externalIds": null,
         "url": null,

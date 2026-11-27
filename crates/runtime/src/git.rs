@@ -3,13 +3,11 @@
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-use foundation::js;
-
 /// The revision this process runs: `GIT_REVISION` when the build injected one,
 /// else what git says about `cwd`.
 pub fn git_revision(cwd: &Path) -> Option<String> {
     let injected = std::env::var("GIT_REVISION").unwrap_or_default();
-    let injected = js::trim(&injected);
+    let injected = injected.trim();
     if !injected.is_empty() && injected != "unknown" {
         return Some(injected.to_owned());
     }
@@ -23,5 +21,5 @@ pub fn git_revision(cwd: &Path) -> Option<String> {
     output
         .status
         .success()
-        .then(|| js::trim(&String::from_utf8_lossy(&output.stdout)).to_owned())
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }

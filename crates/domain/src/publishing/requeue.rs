@@ -117,11 +117,7 @@ pub struct RequeueOptions<'a> {
 /// and the only one on this path: a requeue builds no draft, so preflight
 /// never sees it.
 fn unpublishable(payload: &Map<String, Value>, target: &str) -> Option<RequeueRefusal> {
-    let text = match payload.get("text") {
-        None | Some(Value::Null) => String::new(),
-        Some(value) => foundation::js::string_of(value),
-    };
-    let text = foundation::js::trim(&text);
+    let text = payload.get("text").and_then(Value::as_str).unwrap_or_default().trim();
     let has_media = payload
         .get("media")
         .and_then(Value::as_array)

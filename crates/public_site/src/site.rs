@@ -89,7 +89,7 @@ fn requested_wait(prefer: Option<&str>) -> Duration {
     let seconds = prefer
         .and_then(|value| value.strip_prefix("wait="))
         .filter(|digits| !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()))
-        .map_or(0.0, foundation::js::number);
+        .map_or(0.0, |digits| digits.parse().unwrap_or(f64::INFINITY));
     Duration::from_millis((seconds.min(MAX_WAIT_SECONDS) * 1000.0) as u64)
 }
 

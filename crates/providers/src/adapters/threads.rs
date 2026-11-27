@@ -9,8 +9,9 @@ use content::message::{Entity, MediaItem};
 use content::thread::{LocalizedThreadPart, chain_posts};
 use domain::publishing::errors::PublishResult;
 use domain::publishing::threads_text::{threads_body, threads_text_limit};
-use foundation::js::{encode_uri_component, utf16_len};
 use foundation::logger::{LogLevel, log};
+use foundation::text::utf16_len;
+use foundation::url::encode_uri_component;
 use runtime::http::{HttpRequest, form_body};
 use serde_json::{Map, Value, json};
 
@@ -78,7 +79,7 @@ struct State {
     polls: usize,
     carousel_rebuilds: usize,
     media_fetch_retries: usize,
-    started_at_ms: f64,
+    started_at_ms: i64,
 }
 
 impl State {
@@ -97,7 +98,7 @@ impl State {
             polls: 0,
             carousel_rebuilds: 0,
             media_fetch_retries: 0,
-            started_at_ms: now_ms as f64,
+            started_at_ms: now_ms,
         }
     }
 
@@ -113,13 +114,7 @@ impl State {
                 .map(|ids| ids.iter().filter_map(Value::as_str).map(str::to_owned).collect())
                 .unwrap_or_default()
         };
-        let integer = |key: &str| {
-            state
-                .get(key)
-                .and_then(Value::as_f64)
-                .filter(|value| foundation::js::is_safe_integer(*value) && *value >= 0.0)
-                .map_or(0, |value| value as usize)
-        };
+        let integer = |key: &str| state.get(key).and_then(Value::as_u64).map_or(0, |value| value as usize);
         Some(Self {
             stage,
             container_id: state.get("containerId").and_then(Value::as_str).map(str::to_owned),
@@ -130,11 +125,7 @@ impl State {
             polls: integer("polls"),
             carousel_rebuilds: integer("carouselRebuilds"),
             media_fetch_retries: integer("mediaFetchRetries"),
-            started_at_ms: state
-                .get("startedAtMs")
-                .and_then(Value::as_f64)
-                .filter(|value| value.is_finite())
-                .unwrap_or(now_ms as f64),
+            started_at_ms: state.get("startedAtMs").and_then(Value::as_i64).unwrap_or(now_ms),
         })
     }
 
@@ -151,7 +142,7 @@ impl State {
         state.insert("polls".into(), self.polls.into());
         state.insert("carouselRebuilds".into(), self.carousel_rebuilds.into());
         state.insert("mediaFetchRetries".into(), self.media_fetch_retries.into());
-        state.insert("startedAtMs".into(), foundation::js::json_number(self.started_at_ms));
+        state.insert("startedAtMs".into(), self.started_at_ms.into());
         Value::Object(state)
     }
 
@@ -165,7 +156,7 @@ impl State {
             stage,
             container_id: Some(container_id),
             polls: 0,
-            started_at_ms: now_ms as f64,
+            started_at_ms: now_ms,
             ..self.clone()
         }
     }
@@ -377,17 +368,17 @@ pub async fn publish_to_threads(
             let status = threads.get(&container_id, "status,error_message").await?;
             let code = status.get("status").and_then(Value::as_str);
             if matches!(code, Some("ERROR" | "EXPIRED")) {
-                let reason = match status.get("error_message") {
-                    Some(message) if !message.is_null() => foundation::js::string_of(message),
-                    _ => code.unwrap_or_default().to_owned(),
-                };
+                let reason = status
+                    .get("error_message")
+                    .and_then(Value::as_str)
+                    .unwrap_or(code.unwrap_or_default());
                 return Err(AdapterError::Message(format!(
                     "Threads container {container_id} failed: {reason}"
                 )));
             }
             if code != Some("FINISHED") {
                 let timeout_ms = ctx.config.threads_container_timeout_seconds as f64 * 1000.0;
-                if ctx.now_ms() as f64 >= state.started_at_ms + timeout_ms {
+                if (ctx.now_ms() - state.started_at_ms) as f64 >= timeout_ms {
                     return Err(AdapterError::Message(format!(
                         "Threads container {container_id} timed out"
                     )));

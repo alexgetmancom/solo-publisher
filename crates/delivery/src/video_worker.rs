@@ -877,14 +877,14 @@ fn compose_youtube_description(sqlite: &Connection, metadata: &Map<String, Value
         )
         .optional()?;
     let description = metadata.get("description").and_then(Value::as_str).unwrap_or_default();
-    let game_line = match metadata.get("gameUrl") {
-        Some(url) if foundation::js::truthy(url) => format!("📀 Steam: {}", foundation::js::string_of(url)),
+    let game_line = match metadata.get("gameUrl").and_then(Value::as_str) {
+        Some(url) if !url.is_empty() => format!("📀 Steam: {url}"),
         _ => String::new(),
     };
     Ok([
-        foundation::js::trim(description),
+        description.trim(),
         &game_line,
-        signature.as_deref().map(foundation::js::trim).unwrap_or_default(),
+        signature.as_deref().map(str::trim).unwrap_or_default(),
     ]
     .into_iter()
     .filter(|part| !part.is_empty())

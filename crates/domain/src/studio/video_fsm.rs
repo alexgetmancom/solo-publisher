@@ -6,7 +6,6 @@ use std::convert::Infallible;
 
 use content::message::fix_url_slashes;
 use foundation::errors::StudioError;
-use foundation::js::string_of;
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
 
@@ -92,15 +91,17 @@ fn current_schedule(data: &JsonObject) -> JsonObject {
 }
 
 fn pending_schedule_target(selected: &[VideoTarget], schedule: &JsonObject) -> Option<VideoTarget> {
-    selected
-        .iter()
-        .copied()
-        .find(|target| !schedule.get(target.as_str()).is_some_and(foundation::js::truthy))
+    selected.iter().copied().find(|target| {
+        !schedule
+            .get(target.as_str())
+            .and_then(Value::as_str)
+            .is_some_and(|at| !at.is_empty())
+    })
 }
 
-/// `new Date(String(input)).toISOString()`: a time the transport resolved.
+/// A time the transport resolved, as an ISO instant.
 fn iso_time(input: &Value) -> Result<String> {
-    foundation::time::parse_iso_instant(&string_of(input))
+    foundation::time::parse_iso_instant(input.as_str().unwrap_or_default())
         .map(foundation::time::to_iso_string)
         .map_err(|_| Error::message("Invalid time value"))
 }
@@ -116,7 +117,7 @@ fn require_schedule_target(data: &JsonObject) -> Result<VideoTarget> {
 fn accept_metadata(step: VideoWizardStep, input: Value, data: JsonObject) -> Accepted {
     Ok(FlowAcceptance::data(advance_video_metadata(
         step,
-        &string_of(&input),
+        input.as_str().unwrap_or_default(),
         data,
     )?))
 }
@@ -302,7 +303,7 @@ pub fn advance_video_metadata(step: VideoWizardStep, text: &str, data: JsonObjec
                 Vec::new()
             } else {
                 text.split(',')
-                    .map(|tag| foundation::js::trim(tag).to_owned())
+                    .map(|tag| tag.trim().to_owned())
                     .filter(|tag| !tag.is_empty())
                     .collect()
             };
@@ -323,7 +324,7 @@ pub fn video_schedule_dates(schedule: &JsonObject) -> Result<Vec<(VideoTarget, T
         .iter()
         .filter_map(|(target, at)| VideoTarget::parse(target).map(|target| (target, at)))
         .map(|(target, at)| {
-            foundation::time::parse_iso_instant(&string_of(at))
+            foundation::time::parse_iso_instant(at.as_str().unwrap_or_default())
                 .map(|at| (target, at))
                 .map_err(|_| Error::message("Invalid time value"))
         })

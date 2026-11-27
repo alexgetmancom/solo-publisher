@@ -1,7 +1,6 @@
 //! A read-only projection of the delivery contract declared in platform
 //! profiles: what each target does with the media it is given.
 
-use foundation::js::string_of;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -77,5 +76,5 @@ fn is_video(item: &Value) -> bool {
         Some(kind) if !kind.is_null() => Some(kind),
         _ => value.get("media_type").filter(|kind| !kind.is_null()),
     };
-    kind.map_or(String::new(), string_of).to_lowercase() == "video"
+    kind.and_then(Value::as_str).unwrap_or_default().to_lowercase() == "video"
 }

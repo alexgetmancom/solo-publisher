@@ -22,7 +22,6 @@ use domain::publishing::video_types::{VIDEO_TARGETS, VideoTarget};
 use domain::targets::{PublicationForm, targets_for};
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, t};
-use foundation::js;
 use foundation::logger::{LogLevel, log};
 use serde_json::{Map, Value, json};
 use tokio::sync::Notify;
@@ -252,7 +251,7 @@ impl Captured {
         if self.markdown.is_some() {
             return Some(MaterialKind::Article);
         }
-        (js::utf16_len(&self.message.text) <= POST_WITHOUT_ASKING).then_some(MaterialKind::Post)
+        (foundation::text::utf16_len(&self.message.text) <= POST_WITHOUT_ASKING).then_some(MaterialKind::Post)
     }
 
     fn article_markdown(&self) -> String {
@@ -264,9 +263,9 @@ impl Captured {
         let rest = match source.find(first) {
             Some(index) => &source[index + first.len()..],
             // `indexOf` missed: `slice(-1 + first.length)`.
-            None => js::utf16_slice_from(source, js::utf16_len(first) - 1),
+            None => foundation::text::utf16_slice_from(source, foundation::text::utf16_len(first) - 1),
         };
-        format!("# {first}\n\n{}", js::trim_start(rest))
+        format!("# {first}\n\n{}", rest.trim_start())
     }
 }
 
@@ -282,7 +281,7 @@ fn has_title_line(source: &str) -> bool {
         let Some(rest) = source[start..].strip_prefix('#') else {
             return false;
         };
-        let after = rest.trim_start_matches(js::is_whitespace);
+        let after = rest.trim_start();
         after.len() < rest.len() && !after.is_empty()
     })
 }
@@ -427,7 +426,7 @@ fn handle_intake_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
         // A voice note, a sticker, a PDF: the bot has no publication that
         // carries it, and capturing it anyway made an empty draft. The intake
         // stays open, so the next message is still the first one.
-        if markdown.is_none() && js::trim(&message.text).is_empty() && message.media.is_empty() {
+        if markdown.is_none() && message.text.trim().is_empty() && message.media.is_empty() {
             return Ok(MessageResult::handled(vec![Effect::screen(
                 t(Key::IntakeUnsupported, &[]),
                 Payload::new(),
@@ -477,7 +476,7 @@ fn choose_kind_screen(captured: &Captured) -> crate::Result<Effect> {
         t(
             Key::IntakeChooseKind,
             &[
-                ("characters", &js::utf16_len(&captured.message.text)),
+                ("characters", &foundation::text::utf16_len(&captured.message.text)),
                 ("media", &captured.message.media.len()),
             ],
         ),
@@ -548,7 +547,7 @@ async fn download_document(ctx: &Ctx, document: &MediaFile) -> crate::Result<Str
         return Err(too_large());
     }
     let text = String::from_utf8_lossy(&response.body).into_owned();
-    if js::utf16_len(&text) as u64 > MARKDOWN_DOWNLOAD_LIMIT {
+    if foundation::text::utf16_len(&text) as u64 > MARKDOWN_DOWNLOAD_LIMIT {
         return Err(too_large());
     }
     Ok(text)
@@ -602,7 +601,7 @@ async fn apply_intake_kind(ctx: &Ctx, kind: MaterialKind) -> crate::Result<Vec<E
             Ok(vec![Effect::screen(
                 t(
                     Key::IntakeArticleReview,
-                    &[("title", &parsed.title), ("characters", &js::utf16_len(&parsed.body.text))],
+                    &[("title", &parsed.title), ("characters", &foundation::text::utf16_len(&parsed.body.text))],
                 ),
                 Payload::new().reply_markup(keyboard),
             )])

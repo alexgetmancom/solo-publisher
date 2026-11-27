@@ -15,7 +15,7 @@ use crate::context::{OpError, Terminal};
 /// `authorizationCode`: whatever the operator copied out of the browser —
 /// the bare code or the whole address, with or without Meta's trailing `#_`.
 pub(super) fn authorization_code(pasted: &str) -> Result<String, OpError> {
-    let trimmed = foundation::js::trim(pasted);
+    let trimmed = pasted.trim();
     let trimmed = trimmed.strip_suffix("#_").unwrap_or(trimmed);
     if trimmed.is_empty() {
         return Err(OpError::failed(

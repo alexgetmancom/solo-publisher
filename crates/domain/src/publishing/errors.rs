@@ -3,7 +3,7 @@
 
 use std::sync::LazyLock;
 
-use foundation::js::{present, string_of, truthy};
+use foundation::json::id_text;
 use foundation::time::iso_at;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -88,9 +88,18 @@ fn classify_value(value: &Value) -> PublishErrorClass {
                 .and_then(Value::as_f64)
                 .filter(|status| status.fract() == 0.0 && (0.0..=f64::from(u16::MAX)).contains(status))
                 .map(|status| status as u16),
-            &string_of(value),
+            "",
         ),
-        other => classify(None, &string_of(other)),
+        other => classify(None, &error_text(other)),
+    }
+}
+
+/// A result's `error` as the text a row records: a string as it is, anything
+/// else as its JSON.
+pub fn error_text(value: &Value) -> String {
+    match value {
+        Value::String(text) => text.clone(),
+        other => other.to_string(),
     }
 }
 
@@ -208,8 +217,8 @@ pub struct NormalizedResult {
 
 pub fn normalize_publish_result(record: &PublishResult) -> NormalizedResult {
     let mut result = record.clone();
-    let ok = result.get("ok").is_some_and(truthy);
-    let skipped = result.get("skipped").is_some_and(truthy);
+    let ok = result.get("ok") == Some(&Value::Bool(true));
+    let skipped = result.get("skipped") == Some(&Value::Bool(true));
     let status = if ok {
         "published"
     } else if skipped {
@@ -220,8 +229,8 @@ pub fn normalize_publish_result(record: &PublishResult) -> NormalizedResult {
     let ids: Option<Vec<String>> = result
         .get("ids")
         .and_then(Value::as_array)
-        .map(|ids| ids.iter().map(string_of).collect());
-    let mut external_id = present(result.get("id")).map(string_of);
+        .map(|ids| ids.iter().filter_map(id_text).collect());
+    let mut external_id = result.get("id").and_then(id_text);
     let url = result.get("url").and_then(Value::as_str).map(str::to_owned);
     if external_id.as_deref().is_none_or(str::is_empty)
         && let Some(first) = ids.as_ref().and_then(|ids| ids.first())
@@ -233,10 +242,12 @@ pub fn normalize_publish_result(record: &PublishResult) -> NormalizedResult {
     {
         external_id = Some(url.clone());
     }
-    let error = present(result.get("error"))
-        .or_else(|| present(result.get("reason")))
+    let error = result
+        .get("error")
+        .filter(|error| !error.is_null())
+        .or_else(|| result.get("reason").filter(|reason| !reason.is_null()))
         .cloned();
-    if !ok && !skipped && present(result.get("retryable")).is_none() {
+    if !ok && !skipped && result.get("retryable").is_none_or(Value::is_null) {
         let transient = classify_value(error.as_ref().unwrap_or(&Value::Null)) == PublishErrorClass::Transient;
         result.insert("retryable".into(), Value::Bool(transient));
     }
@@ -245,7 +256,7 @@ pub fn normalize_publish_result(record: &PublishResult) -> NormalizedResult {
         url: url.or_else(|| external_id.clone().filter(|id| id.starts_with("http"))),
         external_id,
         external_ids: ids,
-        error: error.as_ref().map(string_of),
+        error: error.as_ref().map(error_text),
         skipped: i64::from(skipped),
         raw_json: json::stringify_object(&result),
     }

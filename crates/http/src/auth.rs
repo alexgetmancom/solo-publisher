@@ -32,7 +32,7 @@ pub fn command_allowed(
         None
     };
     let token = [
-        payload_token.map(|token| foundation::js::trim(token).to_owned()),
+        payload_token.map(|token| token.trim().to_owned()),
         header(headers, "x-command-token"),
         header(headers, "x-admin-token"),
         query,
@@ -50,7 +50,7 @@ pub fn command_allowed(
 /// authorization rather than the request.
 fn cookie_value(cookie_header: Option<&str>, name: &str) -> String {
     for chunk in cookie_header.unwrap_or_default().split(';') {
-        let mut parts = foundation::js::trim(chunk).split('=');
+        let mut parts = chunk.trim().split('=');
         if parts.next() == Some(name) {
             let value = parts.collect::<Vec<_>>().join("=");
             return decode_uri_component(&value).unwrap_or(value);

@@ -9,7 +9,6 @@ use domain::studio::services::posts::PostScheduleInput;
 use domain::targets::target_definition;
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, plural, t};
-use foundation::js::number_to_string;
 use foundation::time::{Zone, manual_schedule_example};
 use jiff::Timestamp;
 
@@ -375,12 +374,10 @@ fn thread_locale(value: Option<&str>) -> Locale {
 }
 
 fn thread_position(value: Option<&str>) -> crate::Result<i64> {
-    // `Number(undefined)` is NaN.
-    let position = value.map_or(f64::NAN, foundation::js::number);
-    if !foundation::js::is_integer(position) || position < 2.0 {
-        return Err(StudioError::new("action.invalid-callback-argument").into());
+    match value.and_then(|value| value.parse::<i64>().ok()) {
+        Some(position) if position >= 2 => Ok(position),
+        _ => Err(StudioError::new("action.invalid-callback-argument").into()),
     }
-    Ok(position as i64)
 }
 
 fn handle_schedule<'a>(context: &'a ActionContext<'a>) -> Fut<'a, Effects> {
@@ -616,9 +613,9 @@ fn show_publication_preflight(context: &ActionContext<'_>) -> crate::Result<Opti
     }]))
 }
 
-/// `value ?? 0`, as JavaScript prints it.
+/// A limit figure, 0 when unknown.
 fn number(value: Option<f64>) -> String {
-    number_to_string(value.unwrap_or(0.0))
+    value.unwrap_or(0.0).to_string()
 }
 
 /// A refusal an author can act on: the limit issues count characters, the
@@ -643,7 +640,7 @@ fn preflight_toast(issue: &PublicationPreflightIssue) -> String {
         },
         PreflightKind::MediaSize => {
             let megabytes = |value: Option<f64>, round: fn(f64) -> f64| {
-                number_to_string(round(value.unwrap_or(0.0) / 1_048_576.0))
+                round(value.unwrap_or(0.0) / 1_048_576.0).to_string()
             };
             t(
                 Key::ActionPreflightMediaSize,

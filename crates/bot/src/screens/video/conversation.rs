@@ -10,7 +10,6 @@ use domain::publishing::video_types::{VIDEO_LENGTH_WARNING_SECONDS, VideoTarget,
 use domain::studio::video_fsm::{VIDEO_FLOW, VideoWizardStep, advance_video_metadata};
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, t};
-use foundation::js;
 use foundation::logger::{LogLevel, log};
 use regex::Regex;
 use serde_json::{Map, Value, json};
@@ -68,7 +67,7 @@ pub(super) fn handle_video_conversation_message(ctx: &Ctx) -> Fut<'_, crate::Res
                 .message
                 .as_ref()
                 .and_then(|message| message.text.as_deref())
-                .map(js::trim)
+                .map(str::trim)
                 .unwrap_or_default()
                 .to_owned();
             if input == FlowStepInput::Text && text.is_empty() {
@@ -298,7 +297,7 @@ async fn accept_video_script(ctx: &Ctx, actor_id: i64, session: &VideoState, tex
         Some(script) => script,
         None => text.to_owned(),
     };
-    if js::trim(&script).is_empty() {
+    if script.trim().is_empty() {
         return Err(StudioError::new("video.await-text").into());
     }
     ctx.services().videos.set_script(actor_id, draft_id, &script)?;

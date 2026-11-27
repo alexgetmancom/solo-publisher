@@ -7,7 +7,6 @@ use std::sync::LazyLock;
 
 use domain::application::conversation_flow::PublicationKind;
 use foundation::errors::StudioError;
-use foundation::js;
 use regex::Regex;
 
 /// Every button that is not a publication control or a menu button, with the
@@ -144,11 +143,15 @@ pub fn supersedable_screen(data: &str) -> Option<ScreenId> {
         .filter(|id| id.supersedable())
 }
 
-/// `screenNumber(value, { min })`: `Number(value)` when it is a safe integer
-/// of at least `min` (so `""` reads as 0, as it does in JavaScript).
+/// A screen argument as an integer of at least `min`. Buttons sent with an
+/// empty argument mean 0.
 pub fn screen_number(value: &str, min: i64) -> Option<i64> {
-    let parsed = js::number(value);
-    (js::is_safe_integer(parsed) && parsed >= min as f64).then_some(parsed as i64)
+    let parsed = if value.is_empty() {
+        0
+    } else {
+        value.parse::<i64>().ok()?
+    };
+    (parsed >= min).then_some(parsed)
 }
 
 /// A tap in the publication namespace: `p:<kind>:<action>[:<arg>…]`.
@@ -220,15 +223,10 @@ pub fn parse_session_callback(data: &str) -> SessionCallback {
     let payload = prefix
         .as_ref()
         .map_or(data, |captures| captures.get(2).map_or("", |m| m.as_str()));
-    // `Number("<digits>")`: a huge revision is a number no session carries.
-    let revision = prefix.as_ref().map(|captures| {
-        let parsed = js::number(&captures[1]);
-        if parsed <= i64::MAX as f64 {
-            parsed as i64
-        } else {
-            i64::MAX
-        }
-    });
+    // The revision is digits; one past i64 is a revision no session carries.
+    let revision = prefix
+        .as_ref()
+        .map(|captures| captures[1].parse::<i64>().unwrap_or(i64::MAX));
     SessionCallback {
         data: payload.to_owned(),
         callback: parse_publication_callback(payload),
@@ -236,11 +234,9 @@ pub fn parse_session_callback(data: &str) -> SessionCallback {
     }
 }
 
-/// `parseDraftId`: a positive safe integer.
+/// `parseDraftId`: a positive integer.
 pub fn parse_draft_id(value: Option<&str>) -> Option<i64> {
-    let value = value.filter(|value| !value.is_empty())?;
-    let parsed = js::number(value);
-    (js::is_safe_integer(parsed) && parsed > 0.0).then_some(parsed as i64)
+    value?.parse::<i64>().ok().filter(|id| *id > 0)
 }
 
 /// `requireSessionRevision`.
@@ -295,11 +291,12 @@ mod tests {
     }
 
     #[test]
-    fn numbers_read_as_javascript_reads_them() {
+    fn callback_numbers_are_decimal_and_empty_is_zero() {
         assert_eq!(screen_number("x", 0), None);
         assert_eq!(screen_number("-1", 0), None);
         assert_eq!(screen_number("", 0), Some(0));
-        assert_eq!(screen_number("0x10", 0), Some(16));
+        assert_eq!(screen_number("0x10", 0), None);
+        assert_eq!(screen_number("16", 0), Some(16));
         assert_eq!(screen_number("0", 1), None);
         assert_eq!(parse_draft_id(Some("abc")), None);
         assert_eq!(parse_draft_id(Some("0")), None);

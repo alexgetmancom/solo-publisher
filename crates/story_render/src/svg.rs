@@ -2,7 +2,6 @@
 
 use domain::story_cards::StoryCardCopy;
 use foundation::html::escape_xml;
-use foundation::js::number_to_string;
 
 pub const STORY_CARD_WIDTH: u32 = 1080;
 pub const STORY_CARD_HEIGHT: u32 = 1920;
@@ -65,7 +64,7 @@ pub fn story_card_overlay_svg(copy: &StoryCardCopy, wordmark: &str) -> String {
         .map(|(index, line)| {
             format!(
                 r#"<text x="{TEXT_LEFT}" y="{}" class="copy" font-weight="{}">{}</text>"#,
-                number_to_string(baseline + index as f64 * LINE_HEIGHT),
+                baseline + index as f64 * LINE_HEIGHT,
                 if index < copy.bold_line_count {
                     BOLD_WEIGHT
                 } else {
@@ -95,12 +94,11 @@ pub fn story_card_overlay_svg(copy: &StoryCardCopy, wordmark: &str) -> String {
     </filter>
     <style>
       text {{ font-family: Manrope, sans-serif; fill: #f3eee4; }}
-      .copy {{ font-size: {}px; letter-spacing: -1.15px; }}
+      .copy {{ font-size: {FONT_SIZE}px; letter-spacing: -1.15px; }}
     </style>
   </defs>
   {wordmark}
   <g filter="url(#glow)">{text}</g>
-</svg>"##,
-        number_to_string(FONT_SIZE)
+</svg>"##
     )
 }

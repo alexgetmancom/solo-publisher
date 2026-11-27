@@ -144,7 +144,7 @@ fn has_pending_locale_schedule(plan: Option<&PlanRecord>, registered: &[String],
         .map(|(target, enabled)| {
             (
                 target.clone(),
-                foundation::js::truthy(enabled)
+                *enabled == true
                     && registered.iter().any(|known| known == target)
                     && !queued.contains(&target.as_str()),
             )

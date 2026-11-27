@@ -104,7 +104,7 @@
       "rest": [{ "text": " про.\n@alexgetman — пост… длинный ", "entities": [{ "type": "pre", "offset": 9, "length": -1 }], "media": [] }],
       "joined": {
         "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude\n\nпро.\n@alexgetman — пост… длинный",
-        "entities": [{ "type": "strikethrough", "offset": "279", "length": 33 }, { "type": "pre", "offset": 373, "length": -1 }]
+        "entities": [{ "type": "strikethrough", "offset": "279", "length": 33 }]
       }
     },
     {
@@ -1966,7 +1966,6 @@
           "text": "Привет.) про! @alexgetman:\n• e.g..» 😀.\nDr.. Привет. длинный йога? (скобки) API Привет\n\nпост.) 👍🏽.\nDr.? т.е.… 👨‍💻 #тег.\nCode! Code Привет, Threads ….) e.g.? ….) агентов Claude — v2.1.\nAPI Telegram мир. 2*3 2*3.» e.g.. агентов — Claude, агентов",
           "entities": [
             { "type": "text_link", "offset": 232, "length": 4, "url": " https://padded.example " },
-            { "type": "strikethrough", "offset": 246, "length": -1 },
             { "type": "code", "offset": 227, "length": 5 }
           ],
           "media": [{ "type": "video" }]

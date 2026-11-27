@@ -1,7 +1,7 @@
 //! `buildStoryCardCopy`: the headline and leading emoji a card row stores,
 //! and the lines the renderer draws them on.
 
-use foundation::js::{is_whitespace, trim, trim_end, utf16_len, utf16_prefix};
+use foundation::text::{utf16_len, utf16_prefix};
 use regex::Regex;
 use std::sync::LazyLock;
 use unicode_segmentation::UnicodeSegmentation;
@@ -34,15 +34,15 @@ pub struct StoryCardCopy {
 /// first paragraph, its leading emoji apart.
 pub fn story_card_copy(text: &str) -> StoryCardCopy {
     let normalized = text.replace('\r', "");
-    let normalized = trim(&normalized);
+    let normalized = normalized.trim();
     let first_paragraph = first_paragraph(normalized);
     let first_line = first_paragraph
         .split('\n')
-        .find(|line| !trim(line).is_empty())
-        .map(trim)
+        .find(|line| !line.trim().is_empty())
+        .map(str::trim)
         .unwrap_or_default();
     let sentence = if first_line.is_empty() {
-        first_sentence(trim(&collapse_whitespace(first_paragraph)))
+        first_sentence(collapse_whitespace(first_paragraph).trim())
     } else {
         first_sentence(first_line)
     };
@@ -65,7 +65,7 @@ fn first_paragraph(text: &str) -> &str {
             continue;
         }
         let rest = &text[index + 1..];
-        if rest.chars().take_while(|c| is_whitespace(*c)).any(|c| c == '\n') {
+        if rest.chars().take_while(|c| c.is_whitespace()).any(|c| c == '\n') {
             return &text[..index];
         }
     }
@@ -77,7 +77,7 @@ fn collapse_whitespace(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     let mut in_space = false;
     for c in value.chars() {
-        if is_whitespace(c) {
+        if c.is_whitespace() {
             if !in_space {
                 out.push(' ');
             }
@@ -98,18 +98,18 @@ fn first_sentence(value: &str) -> String {
         if matches!(c, '\n' | '\r' | '\u{2028}' | '\u{2029}') {
             break;
         }
-        if matches!(c, '.' | '!' | '?') && chars.peek().is_none_or(|(_, next)| is_whitespace(*next)) {
-            return trim(&value[..index + c.len_utf8()]).to_owned();
+        if matches!(c, '.' | '!' | '?') && chars.peek().is_none_or(|(_, next)| next.is_whitespace()) {
+            return value[..index + c.len_utf8()].trim().to_owned();
         }
     }
-    trim(value).to_owned()
+    value.trim().to_owned()
 }
 
 /// `leadingEmoji`: the first grapheme, when it is a pictograph or a flag.
 fn leading_emoji(value: &str) -> (Option<&str>, &str) {
     match value.graphemes(true).next() {
-        Some(candidate) if EMOJI.is_match(candidate) => (Some(candidate), trim(&value[candidate.len()..])),
-        _ => (None, trim(value)),
+        Some(candidate) if EMOJI.is_match(candidate) => (Some(candidate), value[candidate.len()..].trim()),
+        _ => (None, value.trim()),
     }
 }
 
@@ -127,14 +127,17 @@ fn truncate_at_word(value: &str, limit: usize) -> String {
         Some(boundary) if boundary as f64 > limit as f64 * 0.6 => boundary,
         _ => limit,
     };
-    format!("{}…", trim(utf16_prefix(value, cut)))
+    format!("{}…", utf16_prefix(value, cut).trim())
 }
 
 /// `wrapHeadline`: words into lines of at most [`MAX_LINE_UNITS`]; a word
 /// wider than a line is broken by width (SVG text does not clip, so it would
 /// run off the card), and a headline that does not fit ends in an ellipsis.
 fn wrap_headline(headline: &str) -> Vec<String> {
-    let words: Vec<&str> = headline.split(is_whitespace).filter(|word| !word.is_empty()).collect();
+    let words: Vec<&str> = headline
+        .split(char::is_whitespace)
+        .filter(|word| !word.is_empty())
+        .collect();
     let mut lines: Vec<String> = Vec::new();
     let mut current = String::new();
     let mut index = 0;
@@ -198,7 +201,7 @@ fn ellipsize(line: &str) -> String {
     let base = line.strip_suffix(ELLIPSIS).unwrap_or(line);
     format!(
         "{}{ELLIPSIS}",
-        trim_end(take_units(base, MAX_LINE_UNITS - text_units(ELLIPSIS)))
+        take_units(base, MAX_LINE_UNITS - text_units(ELLIPSIS)).trim_end()
     )
 }
 

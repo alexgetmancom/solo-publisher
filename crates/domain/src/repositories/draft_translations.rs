@@ -119,7 +119,7 @@ impl<'a> DraftTranslationStore<'a> {
                 retry.then(|| stamp_offset(self.clock, attempt * 5_000)),
                 None::<String>,
                 None::<String>,
-                foundation::js::utf16_prefix_lossy(error, 500),
+                foundation::text::utf16_prefix_lossy(error, 500),
                 now,
                 draft_id,
                 locked_by

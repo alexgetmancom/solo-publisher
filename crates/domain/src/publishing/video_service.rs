@@ -7,7 +7,6 @@ use content::Locale;
 use db::rusqlite::{OptionalExtension, params};
 use foundation::config::Config;
 use foundation::errors::StudioError;
-use foundation::js::WHITESPACE_CLASS;
 use foundation::time::{iso_at, parse_iso_ms};
 use jiff::Timestamp;
 use regex::Regex;
@@ -39,10 +38,9 @@ const VIDEO_MAX_BYTES: u64 = 1_000_000_000;
 
 /// Pronunciation written for whoever reads the script aloud — "Capcom
 /// (Кáпком)" — and never said.
-static SAID_ALOUD: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(&format!(r"[{WHITESPACE_CLASS}]*[(\[][^)\]]*[)\]]")).unwrap());
+static SAID_ALOUD: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s*[(\[][^)\]]*[)\]]").unwrap());
 static SPACE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]+").unwrap());
-static PARAGRAPH_BREAK: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!(r"\n[{WHITESPACE_CLASS}]*\n")).unwrap());
+static PARAGRAPH_BREAK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n\s*\n").unwrap());
 static FIRST_SENTENCE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[^.!?]{10,}?[.!?]").unwrap());
 
 /// `Math.round(seconds * 1000)`.
@@ -57,17 +55,17 @@ fn opening_line(text: &str, source: &str) -> String {
     let cleaned = SAID_ALOUD.replace_all(text, "");
     let cleaned = SPACE_RUN.replace_all(&cleaned, " ");
     if source == "operator"
-        && let Some(paragraph) = PARAGRAPH_BREAK.split(&cleaned).next().map(foundation::js::trim)
+        && let Some(paragraph) = PARAGRAPH_BREAK.split(&cleaned).next().map(str::trim)
         && !paragraph.is_empty()
     {
         return paragraph.to_owned();
     }
-    let trimmed = foundation::js::trim(&cleaned);
+    let trimmed = cleaned.trim();
     let line = match FIRST_SENTENCE.find(trimmed) {
         Some(sentence) => sentence.as_str().to_owned(),
         None => String::from_utf16_lossy(&trimmed.encode_utf16().take(160).collect::<Vec<_>>()),
     };
-    foundation::js::trim(&line).to_owned()
+    line.trim().to_owned()
 }
 
 /// Already-public targets are deliberately not deleted by automation; private
@@ -128,7 +126,7 @@ impl Publishing<'_> {
     /// out is exactly the one whose opening is worth knowing.
     pub fn update_video_script(&self, id: i64, script: &str, source: &str) -> Result<()> {
         self.get_video_draft(id)?;
-        let text = foundation::js::trim(script);
+        let text = script.trim();
         let present = !text.is_empty();
         self.sqlite.execute(
             r#"update "video_drafts" set "script" = ?, "script_source" = ?, "opening_line" = ?, "updated_at" = ? where "video_drafts"."id" = ?"#,
@@ -150,7 +148,7 @@ impl Publishing<'_> {
         }
         self.sqlite.execute(
             r#"update "video_drafts" set "label" = ?, "updated_at" = ? where "video_drafts"."id" = ?"#,
-            params![foundation::js::trim(label), self.now(), id],
+            params![label.trim(), self.now(), id],
         )?;
         Ok(())
     }

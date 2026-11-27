@@ -70,10 +70,7 @@ pub fn story_derivative_present(config: &Config, source: &str, video: bool) -> b
 }
 
 fn story_item_is_video(item: &MediaItem) -> bool {
-    let kind = match item.get("type") {
-        None | Some(Value::Null) => String::new(),
-        Some(kind) => foundation::js::string_of(kind),
-    };
+    let kind = item.get("type").and_then(Value::as_str).unwrap_or_default();
     kind.to_lowercase().contains("video")
 }
 

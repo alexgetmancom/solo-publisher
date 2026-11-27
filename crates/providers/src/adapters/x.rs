@@ -7,7 +7,7 @@ use content::message::Entity;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::platform_profiles::format_platform_text;
-use foundation::js::encode_uri_component;
+use foundation::url::encode_uri_component;
 use runtime::http::{HttpRequest, Response};
 use serde_json::{Map, Value, json};
 use tokio::io::{AsyncReadExt as _, AsyncSeekExt as _};
@@ -171,7 +171,7 @@ pub async fn publish_x_article(ctx: &AdapterContext, payload: &Map<String, Value
         let title = payload
             .get("title")
             .and_then(Value::as_str)
-            .map(foundation::js::trim)
+            .map(str::trim)
             .unwrap_or_default();
         if title.is_empty() {
             return Ok(refusal("x_article_title_missing"));
@@ -205,10 +205,10 @@ pub async fn publish_x_article(ctx: &AdapterContext, payload: &Map<String, Value
     .await;
     match publish {
         Ok(result) => {
-            let id = match result.pointer("/data/id") {
-                Some(id) if !id.is_null() => foundation::js::string_of(id),
-                _ => article_id.clone(),
-            };
+            let id = result
+                .pointer("/data/id")
+                .and_then(foundation::json::id_text)
+                .unwrap_or_else(|| article_id.clone());
             let mut published = Map::new();
             published.insert("ok".into(), true.into());
             published.insert("id".into(), id.clone().into());
@@ -323,10 +323,7 @@ async fn wait_for_processing(ctx: &AdapterContext, media_id: &str, initial: Opti
         if tokio::time::Instant::now() >= deadline {
             return Err(AdapterError::message_text("X media processing timeout"));
         }
-        let check_after = match info.get("check_after_secs") {
-            None | Some(Value::Null) => 5.0,
-            value => foundation::js::number_of(value),
-        };
+        let check_after = info.get("check_after_secs").and_then(Value::as_f64).unwrap_or(5.0);
         tokio::time::sleep(Duration::from_secs_f64(check_after.max(1.0))).await;
         let query = url::form_urlencoded::Serializer::new(String::new())
             .append_pair("media_id", media_id)

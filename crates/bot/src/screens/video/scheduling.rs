@@ -7,7 +7,6 @@ use domain::publishing::video_types::{VideoTarget, VideoTechnicalCheck};
 use domain::studio::video_fsm::video_schedule_dates;
 use foundation::errors::StudioError;
 use foundation::i18n::{Key, t};
-use foundation::js::number_to_string;
 use foundation::time::to_iso_string;
 use jiff::Timestamp;
 use serde_json::{Value, json};
@@ -83,7 +82,7 @@ fn video_check_summary(technical: &VideoTechnicalCheck) -> String {
     let has_audio = technical.audio_codec.as_deref().is_some_and(|codec| !codec.is_empty());
     let fps = if technical.fps != 0.0 && !technical.fps.is_nan() {
         // `toFixed(0)`: ties of a positive rate round up, as `round` does.
-        format!("{} FPS", number_to_string(technical.fps.round()))
+        format!("{} FPS", technical.fps.round())
     } else {
         t(Key::VideoFpsUnknown, &[])
     };
@@ -92,11 +91,7 @@ fn video_check_summary(technical: &VideoTechnicalCheck) -> String {
         &[
             (
                 "dims",
-                &format!(
-                    "{}×{}",
-                    number_to_string(technical.width),
-                    number_to_string(technical.height)
-                ),
+                &format!("{}×{}", technical.width, technical.height),
             ),
             ("dur", &video_duration_label(technical.seconds)),
             (
@@ -118,7 +113,7 @@ fn video_check_summary(technical: &VideoTechnicalCheck) -> String {
             ("fps", &fps),
             (
                 "mb",
-                &number_to_string((technical.size_bytes as f64 / 1024.0 / 1024.0).ceil()),
+                &(technical.size_bytes as f64 / 1024.0 / 1024.0).ceil().to_string(),
             ),
         ],
     )

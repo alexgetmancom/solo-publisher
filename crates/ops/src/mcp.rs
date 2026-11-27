@@ -677,7 +677,7 @@ impl McpServer<'_> {
                     let shown = match method {
                         None => "undefined".to_owned(),
                         Some(Value::String(text)) => text.clone(),
-                        Some(other) => foundation::js::string_of(other),
+                        Some(other) => other.to_string(),
                     };
                     return Some(rpc_error(id, -32601, &format!("Unknown method: {shown}")));
                 }

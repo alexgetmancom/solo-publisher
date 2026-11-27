@@ -258,7 +258,7 @@ fn settings_message(ctx: &Ctx) -> Fut<'_, crate::Result<MessageResult>> {
             .message
             .as_ref()
             .and_then(|message| message.text.as_deref())
-            .map(foundation::js::trim)
+            .map(str::trim)
             .unwrap_or_default();
         clear_input(ctx)?;
         if is_navigation_message(text) {

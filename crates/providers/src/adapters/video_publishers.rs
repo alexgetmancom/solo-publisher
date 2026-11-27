@@ -11,7 +11,7 @@ use crate::external::instagram::{InstagramCredentials, instagram_credentials_for
 use crate::external::youtube::youtube_access_token;
 use content::Locale;
 use domain::json::stringify;
-use foundation::js::encode_uri_component;
+use foundation::url::encode_uri_component;
 use regex::Regex;
 use runtime::http::{Body, BodyPart, HttpRequest, Response};
 use serde_json::{Map, Value, json};
@@ -151,11 +151,11 @@ async fn upload_resumable(ctx: &AdapterContext, location: &str, file_path: &Path
 
 static RANGE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"bytes=0-(\d+)").unwrap());
 
-/// `Number(range.match(/bytes=0-(\d+)/)?.[1] ?? -1) + 1`.
+/// The bytes a `Range: bytes=0-<last>` answer says are stored, 0 without one.
 fn committed_bytes(range: Option<&str>) -> f64 {
     range
         .and_then(|range| RANGE.captures(range))
-        .map_or(-1.0, |captures| foundation::js::number(&captures[1]))
+        .map_or(-1.0, |captures| captures[1].parse().unwrap_or(f64::NAN))
         + 1.0
 }
 
@@ -221,7 +221,7 @@ pub async fn keep_youtube_upload_private(ctx: &AdapterContext, video_id: &str, l
     let mut next = Map::new();
     next.insert("privacyStatus".into(), "private".into());
     for field in PRESERVED_YOUTUBE_STATUS_FIELDS {
-        if let Some(value) = foundation::js::present(status.get(field)) {
+        if let Some(value) = status.get(field).filter(|value| !value.is_null()) {
             next.insert(field.into(), value.clone());
         }
     }
@@ -350,7 +350,7 @@ pub async fn prepare_instagram_reel(
     let request = HttpRequest::post(format!("{}/{user_id}/media", graph_base(ctx, token))).form(&[
         ("media_type", Some("REELS")),
         ("video_url", Some(public_url)),
-        ("caption", Some(foundation::js::trim(caption))),
+        ("caption", Some(caption.trim())),
         ("share_to_feed", Some("true")),
         ("access_token", Some(token)),
     ]);
@@ -375,10 +375,7 @@ pub async fn instagram_container_ready(
     let status = ctx.client.request_json(HttpRequest::get(url)).await?;
     let code = status.get("status_code").and_then(Value::as_str);
     if matches!(code, Some("ERROR" | "EXPIRED")) {
-        let detail = match status.get("status") {
-            Some(detail) if !detail.is_null() => foundation::js::string_of(detail),
-            _ => "unknown error".into(),
-        };
+        let detail = status.get("status").and_then(Value::as_str).unwrap_or("unknown error");
         return Err(AdapterError::ContainerInvalid(format!(
             "Instagram container {}: {detail}",
             code.unwrap_or_default()

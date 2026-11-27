@@ -4,7 +4,6 @@
 use std::sync::LazyLock;
 
 use foundation::i18n::{Key, t};
-use foundation::js;
 use foundation::text::truncate_unicode;
 use foundation::time::{Zone, format_zoned_clock, zoned_day_distance};
 use jiff::Timestamp;
@@ -168,10 +167,10 @@ static LEADING_EMOJI: LazyLock<Regex> =
 /// `headlineLabel`: without its leading emoji, cut to 20 characters at a word.
 fn headline_label(value: &str) -> String {
     let stripped = match LEADING_EMOJI.find(value) {
-        Some(emoji) => js::trim_start(&value[emoji.end()..]),
+        Some(emoji) => value[emoji.end()..].trim_start(),
         None => value,
     };
-    let label = match js::trim(stripped) {
+    let label = match stripped.trim() {
         "" => value,
         label => label,
     };
@@ -181,11 +180,11 @@ fn headline_label(value: &str) -> String {
         return label.to_owned();
     }
     let clipped = truncate_unicode(label, LIMIT);
-    let whole = js::trim_end(clipped).len() < clipped.len() || characters[LIMIT] == ' ';
+    let whole = clipped.trim_end().len() < clipped.len() || characters[LIMIT] == ' ';
     let last_space = clipped.rfind(' ');
     let kept = match last_space {
         Some(index) if !whole && index > 0 => &clipped[..index],
-        _ => js::trim_end(clipped),
+        _ => clipped.trim_end(),
     };
     format!("{kept}...")
 }

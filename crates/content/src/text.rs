@@ -1,14 +1,11 @@
 use std::collections::BTreeMap;
 
 use foundation::html::escape_html;
-use foundation::js::{
-    is_integer, is_whitespace, number_of_scalar, number_to_string, trim, trim_start, utf16_len, utf16_prefix,
-    utf16_to_byte,
-};
+use foundation::text::{utf16_len, utf16_prefix, utf16_to_byte};
 use foundation::url::is_http_url;
 use serde_json::Value;
 
-use crate::message::Entity;
+use crate::message::{Entity, entity_span};
 
 struct Wrapper {
     open: String,
@@ -32,14 +29,8 @@ pub fn entities_to_html(text: &str, entities: &[Entity]) -> String {
     let mut spans: Vec<(usize, usize, Wrapper)> = entities
         .iter()
         .filter_map(|entity| {
-            let (offset, length) = (
-                number_of_scalar(entity.get("offset")),
-                number_of_scalar(entity.get("length")),
-            );
-            if !(is_integer(offset) && is_integer(length) && offset >= 0.0 && length > 0.0) {
-                return None;
-            }
-            if offset + length > units.len() as f64 {
+            let (offset, length) = entity_span(entity)?;
+            if length == 0 || offset + length > units.len() as u64 {
                 return None;
             }
             let (start, end) = (offset as usize, (offset + length) as usize);
@@ -98,11 +89,11 @@ fn entity_wrapper(entity: &Entity, raw: &str) -> Option<Wrapper> {
         // Article renderer builds from the same text and entities.
         "heading" => {
             let level = match entity.get("level") {
-                None | Some(Value::Null) => 2.0,
-                level => number_of_scalar(level),
+                Some(Value::Number(level)) => level.as_u64(),
+                Some(Value::String(level)) => level.trim().parse().ok(),
+                _ => None,
             };
-            // `Math.min(Math.max(level, 1), 6)`: NaN survives both, as `<hNaN>`.
-            let level = number_to_string(if level.is_nan() { level } else { level.clamp(1.0, 6.0) });
+            let level = level.unwrap_or(2).clamp(1, 6);
             Some(Wrapper {
                 open: format!("<h{level}>"),
                 close: format!("</h{level}>"),
@@ -140,7 +131,8 @@ fn render_text(units: &[u16]) -> String {
 pub fn first_text_link_url(entities: &[Entity]) -> Option<&str> {
     let offset = |entity: &Entity| match entity.get("offset") {
         None | Some(Value::Null) => 0.0,
-        offset => number_of_scalar(offset),
+        Some(Value::String(offset)) => offset.trim().parse().unwrap_or(f64::NAN),
+        Some(offset) => offset.as_f64().unwrap_or(f64::NAN),
     };
     let mut ordered: Vec<&Entity> = entities.iter().collect();
     ordered.sort_by(|left, right| offset(left).total_cmp(&offset(right)));
@@ -155,7 +147,7 @@ pub fn first_text_link_url(entities: &[Entity]) -> Option<&str> {
 /// because a cut in the middle of a sentence is what makes a thread read like a
 /// machine wrote it. Every piece fits `limit` UTF-16 units, and nothing is dropped.
 pub fn split_text(text: &str, limit: usize) -> Vec<String> {
-    let normalized = trim(text);
+    let normalized = text.trim();
     if normalized.is_empty() {
         return vec![String::new()];
     }
@@ -163,8 +155,8 @@ pub fn split_text(text: &str, limit: usize) -> Vec<String> {
     let mut remaining = normalized;
     while utf16_len(remaining) > limit {
         let take = cut_point(remaining, limit);
-        parts.push(trim(&remaining[..take]).to_owned());
-        remaining = trim(&remaining[take..]);
+        parts.push(remaining[..take].trim().to_owned());
+        remaining = remaining[take..].trim();
     }
     if !remaining.is_empty() {
         parts.push(remaining.to_owned());
@@ -219,12 +211,12 @@ fn last_sentence_end(window: &str, limit: usize) -> Option<usize> {
         let closers = rest[terminators..]
             .find(|c| !SENTENCE_CLOSERS.contains(&c))
             .map_or(rest.len(), |closers| terminators + closers);
-        if !rest[closers..].chars().next().is_some_and(is_whitespace) {
+        if !rest[closers..].chars().next().is_some_and(char::is_whitespace) {
             cursor += c.len_utf8();
             continue;
         }
         let match_end = cursor + closers;
-        let after = trim_start(&window[match_end..]).chars().next();
+        let after = window[match_end..].trim_start().chars().next();
         if !after.is_some_and(is_lowercase_letter) && utf16_len(&window[..match_end]) <= limit {
             end = Some(match_end);
         }

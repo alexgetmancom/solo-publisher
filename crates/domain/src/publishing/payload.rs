@@ -2,7 +2,6 @@
 
 use content::message::{Entity, MediaItem, first_line};
 use content::thread::{LocalizedThreadPart, joined_thread};
-use foundation::js::string_of;
 use serde_json::{Map, Value, json};
 
 use super::media_policy::select_media_for_target;
@@ -151,10 +150,11 @@ pub fn payload_media(payload: &Map<String, Value>) -> Vec<Map<String, Value>> {
             {
                 return None;
             }
-            let kind = match record.get("type") {
-                None | Some(Value::Null) => String::new(),
-                Some(kind) => string_of(kind).to_lowercase(),
-            };
+            let kind = record
+                .get("type")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_lowercase();
             let kind = match kind.as_str() {
                 "image" | "photo" => "IMAGE",
                 "video" => "VIDEO",
@@ -164,7 +164,7 @@ pub fn payload_media(payload: &Map<String, Value>) -> Vec<Map<String, Value>> {
                 record
                     .get(key)
                     .and_then(Value::as_str)
-                    .map(foundation::js::trim)
+                    .map(str::trim)
                     .unwrap_or("")
                     .to_owned()
             };
@@ -201,7 +201,7 @@ pub fn payload_text(payload: &Map<String, Value>) -> String {
     payload
         .get("text")
         .and_then(Value::as_str)
-        .map_or("", foundation::js::trim)
+        .map_or("", str::trim)
         .to_owned()
 }
 

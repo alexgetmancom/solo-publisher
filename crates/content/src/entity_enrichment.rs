@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use foundation::js::{WHITESPACE_CLASS, trim, utf16_len};
+use foundation::text::utf16_len;
 use regex::Regex;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,7 +68,7 @@ pub fn enrich_published_post_entities<S: EntityEnrichmentStore>(
         .collect::<Vec<_>>()
         .join("\n")
         .to_lowercase();
-    if trim(&text).is_empty() {
+    if text.trim().is_empty() {
         return Ok(0);
     }
     let headlines: Vec<String> = locales
@@ -121,15 +121,14 @@ fn supports_automatic_matching(kind: &str, slug: &str) -> bool {
     kind == "company" || kind == "model" || (kind == "topic" && slug == "codex")
 }
 
-static CODEX_VIA: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(&format!("(?:с помощью|через)[{WHITESPACE_CLASS}]+codex")).unwrap());
+static CODEX_VIA: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?:с помощью|через)\s+codex").unwrap());
 // JavaScript's `\b` is an ASCII word boundary, so Cyrillic around a keyword
 // still counts as a boundary. `[\s\S]{0,80}` counted UTF-16 units; this counts
 // characters.
 static BUILT_WITH_CODEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(&format!(
-        r"(?-u:\b)(?:built|build|created|made|ported|developed)(?-u:\b)(?s:.){{0,80}}(?-u:\b)(?:with|using|via)[{WHITESPACE_CLASS}]+codex"
-    ))
+    Regex::new(
+        r"(?-u:\b)(?:built|build|created|made|ported|developed)(?-u:\b)(?s:.){0,80}(?-u:\b)(?:with|using|via)\s+codex",
+    )
     .unwrap()
 });
 static COMPARISON: LazyLock<Regex> = LazyLock::new(|| {
@@ -151,7 +150,7 @@ fn entity_is_focus(entity: &CatalogEntity, aliases: &[String], headlines: &[Stri
 }
 
 fn headline(value: &str) -> String {
-    trim(value.split('\n').next().unwrap_or("")).to_lowercase()
+    value.split('\n').next().unwrap_or("").trim().to_lowercase()
 }
 
 fn entity_matches(text: &str, entity: &CatalogEntity, aliases: &[String]) -> bool {
@@ -163,7 +162,7 @@ fn entity_matches(text: &str, entity: &CatalogEntity, aliases: &[String]) -> boo
     ]
     .into_iter()
     .chain(aliases.iter().map(String::as_str))
-    .map(|name| trim(name).to_lowercase())
+    .map(|name| name.trim().to_lowercase())
     .filter(|name| utf16_len(name) >= 3)
     .any(|name| contains_name(text, &name))
 }

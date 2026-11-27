@@ -11,7 +11,6 @@ use std::sync::LazyLock;
 use std::time::Duration;
 
 use domain::publishing::boundaries::{MediaMetadata, MediaProbe};
-use foundation::js::{self, WHITESPACE_CLASS};
 use regex::Regex;
 use serde_json::Value;
 use tokio::io::AsyncReadExt as _;
@@ -73,7 +72,7 @@ pub async fn run_ffmpeg_capture(args: &[&str], timeout: Duration) -> Result<Vec<
 fn ffmpeg_timeout(timeout: Duration) -> MediaToolError {
     MediaToolError(format!(
         "media_processing_timeout: ffmpeg exceeded {}s",
-        js::number_to_string(timeout.as_secs_f64())
+        timeout.as_secs_f64()
     ))
 }
 
@@ -92,7 +91,7 @@ pub async fn probe_media_metadata(path: &str, timeout: Duration) -> Result<Media
     let Some(finished) = run("ffprobe", &args, timeout, true).await? else {
         return Err(MediaToolError(format!(
             "media_probe_timeout: ffprobe exceeded {}s",
-            js::number_to_string(timeout.as_secs_f64())
+            timeout.as_secs_f64()
         )));
     };
     if finished.code != 0 {
@@ -103,15 +102,15 @@ pub async fn probe_media_metadata(path: &str, timeout: Duration) -> Result<Media
 
 /// A non-zero ffprobe exit: the tail of what it said.
 pub fn ffprobe_failure(code: i32, stderr: &str) -> MediaToolError {
-    let tail = slice_utf16_tail(js::trim(stderr), 800);
+    let tail = slice_utf16_tail(stderr.trim(), 800);
     MediaToolError(format!(
         "media_probe_failed: ffprobe exit {code}: {}",
         if tail.is_empty() { "no diagnostic output" } else { tail }
     ))
 }
 
-/// The metadata in ffprobe's JSON, read with JavaScript's coercions: numeric
-/// strings are numbers, a missing duration falls back to the stream's.
+/// The metadata in ffprobe's JSON: numeric strings are numbers, a missing
+/// duration falls back to the stream's.
 pub fn media_metadata_from_ffprobe(stdout: &str) -> Result<MediaMetadata, MediaToolError> {
     let data: Value = serde_json::from_str(if stdout.is_empty() { "{}" } else { stdout })
         .map_err(|_| MediaToolError("media_probe_failed: ffprobe returned invalid JSON".into()))?;
@@ -122,24 +121,35 @@ pub fn media_metadata_from_ffprobe(stdout: &str) -> Result<MediaMetadata, MediaT
             .find(|stream| stream.get("codec_type").and_then(Value::as_str) == Some(kind))
     };
     let video = stream("video")
-        .filter(|video| video.get("width").is_some_and(js::truthy) && video.get("height").is_some_and(js::truthy))
+        .filter(|video| {
+            let dimension = |key: &str| {
+                let size = probed_number(video.get(key));
+                size != 0.0 && !size.is_nan()
+            };
+            dimension("width") && dimension("height")
+        })
         .ok_or_else(|| MediaToolError("media_probe_failed: ffprobe did not find a video stream".into()))?;
     let audio = stream("audio");
-    let rate = match js::present(video.get("avg_frame_rate")) {
+    let rate = match video.get("avg_frame_rate").filter(|rate| !rate.is_null()) {
         None => "0/1".to_owned(),
         Some(Value::String(rate)) => rate.clone(),
         Some(other) => other.to_string(),
     };
-    let mut parts = rate.split('/').map(js::number);
+    let mut parts = rate
+        .split('/')
+        .map(|part| part.trim().parse::<f64>().unwrap_or(f64::NAN));
     let numerator = parts.next().unwrap_or(0.0);
     let denominator = parts.next().unwrap_or(1.0);
-    let duration = js::present(data.get("format").and_then(|format| format.get("duration")))
-        .or_else(|| js::present(video.get("duration")))
-        .map_or(0.0, |duration| js::number_of_scalar(Some(duration)));
-    let audio_bitrate = audio.map_or(f64::NAN, |audio| js::number_of_scalar(audio.get("bit_rate")));
+    let duration = data
+        .get("format")
+        .and_then(|format| format.get("duration"))
+        .filter(|duration| !duration.is_null())
+        .or_else(|| video.get("duration").filter(|duration| !duration.is_null()))
+        .map_or(0.0, |duration| probed_number(Some(duration)));
+    let audio_bitrate = audio.map_or(f64::NAN, |audio| probed_number(audio.get("bit_rate")));
     Ok(MediaMetadata {
-        width: js::number_of_scalar(Some(&video["width"])),
-        height: js::number_of_scalar(Some(&video["height"])),
+        width: probed_number(video.get("width")),
+        height: probed_number(video.get("height")),
         duration_seconds: if duration.is_nan() { f64::NAN } else { duration.max(0.0) },
         video_codec: string(video.get("codec_name")).unwrap_or_else(|| "video".into()),
         audio_codec: audio.and_then(|audio| string(audio.get("codec_name"))),
@@ -152,16 +162,25 @@ pub fn media_metadata_from_ffprobe(stdout: &str) -> Result<MediaMetadata, MediaT
     })
 }
 
-/// `?? null` of a field typed as a string: whatever is there.
+/// A number ffprobe printed, which it does as a JSON number or, for
+/// durations and bit rates, as a decimal string. Anything else is NaN.
+fn probed_number(value: Option<&Value>) -> f64 {
+    match value {
+        Some(Value::Number(number)) => number.as_f64().unwrap_or(f64::NAN),
+        Some(Value::String(text)) => text.trim().parse().unwrap_or(f64::NAN),
+        _ => f64::NAN,
+    }
+}
+
+/// A field typed as a string: whatever is there, absent when null.
 fn string(value: Option<&Value>) -> Option<String> {
-    js::present(value).map(|value| match value {
+    value.filter(|value| !value.is_null()).map(|value| match value {
         Value::String(text) => text.clone(),
         other => other.to_string(),
     })
 }
 
-static PROGRESS: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(&format!(r"^frame=[{WHITESPACE_CLASS}]*[0-9]+[{WHITESPACE_CLASS}]+fps=")).unwrap());
+static PROGRESS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^frame=\s*[0-9]+\s+fps=").unwrap());
 
 /// An actionable terminal reason instead of megabytes
 /// of progress frames. Exit 137 is the Linux OOM-kill convention.
@@ -169,7 +188,7 @@ pub fn format_ffmpeg_failure(code: i32, stderr: &str) -> String {
     let stderr = stderr.replace('\r', "\n");
     let lines: Vec<&str> = stderr
         .split('\n')
-        .map(js::trim)
+        .map(str::trim)
         .filter(|line| !line.is_empty() && !PROGRESS.is_match(line))
         .collect();
     let meaningful = lines[lines.len().saturating_sub(6)..].join(" · ");
@@ -180,7 +199,7 @@ pub fn format_ffmpeg_failure(code: i32, stderr: &str) -> String {
     } else {
         &meaningful
     };
-    js::utf16_prefix(&format!("media_processing_failed: ffmpeg exit {code}: {reason}"), 1200).to_owned()
+    foundation::text::utf16_prefix(&format!("media_processing_failed: ffmpeg exit {code}: {reason}"), 1200).to_owned()
 }
 
 /// The last `count` UTF-16 code units (`slice(-count)`); a surrogate pair the

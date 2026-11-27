@@ -10,7 +10,6 @@ use std::rc::Rc;
 use std::time::UNIX_EPOCH;
 
 use content::site_media_naming::RESPONSIVE_WIDTHS;
-use foundation::js::number_to_string;
 use sha2::{Digest, Sha256};
 
 use crate::image_size::image_size_from_file;
@@ -74,7 +73,7 @@ impl SiteImages {
             return Ok(None);
         };
         let version = if query.is_empty() {
-            let stamp = format!("{}:{}", number_to_string(source.modified), source.size);
+            let stamp = format!("{}:{}", source.modified, source.size);
             let digest = Sha256::digest(stamp.as_bytes());
             let hex: String = digest.iter().map(|b| format!("{b:02x}")).collect();
             format!("?v={}", &hex[..12])
@@ -132,7 +131,7 @@ impl SiteImages {
             let mtime = stat
                 .as_ref()
                 .and_then(mtime_ms)
-                .map_or_else(|| "undefined".into(), number_to_string);
+                .map_or_else(|| "undefined".into(), |mtime| mtime.to_string());
             let size = stat.map_or_else(|| "undefined".into(), |stat| stat.len().to_string());
             format!("{file}?mtime={mtime}&size={size}")
         } else {

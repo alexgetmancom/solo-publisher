@@ -133,7 +133,7 @@ pub fn post_draft_references_asset(sqlite: &Connection, asset_id: i64) -> Result
     Ok(media.iter().any(|media| {
         json_record_array(media.as_deref())
             .iter()
-            .any(|item| foundation::js::number_of_scalar(item.get("asset_id")) == asset_id as f64)
+            .any(|item| content::message::media_asset_id(item) == Some(asset_id))
     }))
 }
 

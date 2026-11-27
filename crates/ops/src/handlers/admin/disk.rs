@@ -9,7 +9,6 @@ use std::sync::LazyLock;
 use db::rusqlite::Connection;
 use delivery::story_media::story_directory;
 use foundation::config::Config;
-use foundation::js;
 use foundation::json::json_record_array;
 use regex::Regex;
 use runtime::data_dirs::required_data_directories;
@@ -155,9 +154,8 @@ fn post_media(sqlite: &Connection) -> Result<Vec<Map<String, Value>>, OpError> {
 fn referenced_post_asset_ids(sqlite: &Connection) -> Result<HashSet<i64>, OpError> {
     let mut ids = HashSet::new();
     for item in post_media(sqlite)? {
-        let id = js::number_of_flat(item.get("asset_id"));
-        if js::is_safe_integer(id) && id > 0.0 {
-            ids.insert(id as i64);
+        if let Some(id) = content::message::media_asset_id(&item).filter(|id| *id > 0) {
+            ids.insert(id);
         }
     }
     Ok(ids)

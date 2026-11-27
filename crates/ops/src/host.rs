@@ -199,7 +199,7 @@ impl Terminal for ProcessTerminal {
         let mut line = String::new();
         match io::stdin().read_line(&mut line) {
             Ok(0) | Err(_) => String::new(),
-            Ok(_) => foundation::js::trim(&line).to_owned(),
+            Ok(_) => line.trim().to_owned(),
         }
     }
 }

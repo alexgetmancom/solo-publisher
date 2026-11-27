@@ -140,12 +140,12 @@ static SQLITE_STAMP: LazyLock<Regex> =
 static ISO_INSTANT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}").unwrap());
 
-/// `String(value)` of a stored cell, as JavaScript renders it.
+/// A stored cell as text.
 fn text_of(value: &SqlValue) -> String {
     match value {
         SqlValue::Null => "null".into(),
         SqlValue::Integer(number) => number.to_string(),
-        SqlValue::Real(number) => foundation::js::number_to_string(*number),
+        SqlValue::Real(number) => number.to_string(),
         SqlValue::Text(text) => text.clone(),
         SqlValue::Blob(bytes) => String::from_utf8_lossy(bytes).into_owned(),
     }

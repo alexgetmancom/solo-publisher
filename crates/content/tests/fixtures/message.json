@@ -17,8 +17,8 @@
     },
     { "text": "", "result": "fallback" },
     { "text": "   ", "result": "fallback" },
-    { "text": " ﻿ текст 　", "result": "текст" },
-    { "text": "начало с U+0085", "result": "начало с U+0085" },
+    { "text": " ﻿ текст 　", "result": "﻿ текст" },
+    { "text": "начало с U+0085", "result": "начало с U+0085" },
     { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "result": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb" },
     {
       "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",
@@ -37,7 +37,7 @@
     { "text": "  Первая строка  \nвторая", "result": "Первая строка", "empty": "Первая строка" },
     { "text": "\r\n\r\n  третья\r\n", "result": "третья", "empty": "третья" },
     { "text": "один\rдва\nтри", "result": "один\rдва", "empty": "один\rдва" },
-    { "text": " \n﻿x", "result": "x", "empty": "x" },
+    { "text": " \n﻿x", "result": "﻿x", "empty": "﻿x" },
     {
       "text": "🚀 Claude Code получил встроенный браузер\n\nТеперь агент сам открывает страницу, т.е. не нужен отдельный Playwright. Работает в версии 2.1 и выше… Проверил на трёх проектах!\n\nЧто изменилось:\n• скриншоты (без лишних шагов)\n• логи консоли — прямо в контексте\n• «умные» ожидания?! Да.\n\nПодробнее: https://alexgetman.com/blog/claude-code и в канале @alexgetman #claude",
       "result": "🚀 Claude Code получил встроенный браузер",
@@ -50,8 +50,8 @@
     },
     { "text": "", "result": "fallback", "empty": "" },
     { "text": "   ", "result": "fallback", "empty": "" },
-    { "text": " ﻿ текст 　", "result": "текст", "empty": "текст" },
-    { "text": "начало с U+0085", "result": "начало с U+0085", "empty": "начало с U+0085" },
+    { "text": " ﻿ текст 　", "result": "﻿ текст", "empty": "﻿ текст" },
+    { "text": "начало с U+0085", "result": "начало с U+0085", "empty": "начало с U+0085" },
     { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "result": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "empty": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb" },
     {
       "text": "👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦",

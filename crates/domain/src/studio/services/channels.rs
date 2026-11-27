@@ -185,7 +185,7 @@ fn zernio_platform(account: &ZernioAccount) -> String {
     let value = account
         .platform
         .as_deref()
-        .map(|platform| foundation::js::trim(platform).to_lowercase())
+        .map(|platform| platform.trim().to_lowercase())
         .unwrap_or_default();
     for known in ["threads", "instagram", "youtube", "tiktok"] {
         if value.contains(known) {

@@ -5,11 +5,10 @@
 //! offset/length entities — so an article body is written once and rendered
 //! per platform. Offsets are UTF-16 units throughout.
 
-use content::message::Entity;
+use content::message::{Entity, entity_span};
+use foundation::text::utf16_slice;
 use foundation::url::is_http_url;
 use serde_json::{Map, Value, json};
-
-use foundation::js::{number_of, utf16_slice};
 
 struct Span<'a> {
     start: usize,
@@ -18,10 +17,11 @@ struct Span<'a> {
 }
 
 fn entity_type(entity: &Entity) -> String {
-    match entity.get("type") {
-        None | Some(Value::Null) => String::new(),
-        Some(value) => foundation::js::string_of(value),
-    }
+    entity
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned()
 }
 
 fn inline_style(kind: &str) -> Option<&'static str> {
@@ -63,7 +63,7 @@ pub fn to_content_state(text: &str, entities: &[Entity], media: &[String]) -> Va
         let line_text = String::from_utf16_lossy(line);
         // A blank line separates paragraphs in the source and carries no
         // content of its own; emitting it would double every paragraph gap.
-        if foundation::js::trim(&line_text).is_empty() {
+        if line_text.trim().is_empty() {
             continue;
         }
         let covering: Vec<&Span> = spans
@@ -141,10 +141,7 @@ fn block_type_of(covering: &[&Span], line_start: usize, line_end: usize) -> &'st
         if kind != "header-two" {
             return kind;
         }
-        let level = match span.entity.get("level") {
-            None | Some(Value::Null) => 2.0,
-            level => number_of(level),
-        };
+        let level = span.entity.get("level").and_then(Value::as_f64).unwrap_or(2.0);
         return if level <= 1.0 { "header-one" } else { "header-two" };
     }
     "unstyled"
@@ -154,18 +151,14 @@ fn normalize_spans(text_length: usize, entities: &[Entity]) -> Vec<Span<'_>> {
     let mut spans: Vec<Span> = entities
         .iter()
         .filter_map(|entity| {
-            let offset = number_of(entity.get("offset"));
-            let length = number_of(entity.get("length"));
-            let integer = |value: f64| value.is_finite() && value.fract() == 0.0;
-            if !integer(offset) || !integer(length) || offset < 0.0 || length <= 0.0 {
-                return None;
-            }
-            if offset + length > text_length as f64 {
+            let (offset, length) = entity_span(entity)?;
+            let (offset, length) = (offset as usize, length as usize);
+            if length == 0 || offset + length > text_length {
                 return None;
             }
             Some(Span {
-                start: offset as usize,
-                end: (offset + length) as usize,
+                start: offset,
+                end: offset + length,
                 entity,
             })
         })

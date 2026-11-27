@@ -4,7 +4,6 @@
 use std::sync::LazyLock;
 
 use foundation::errors::StudioError;
-use foundation::js::WHITESPACE_CLASS;
 use foundation::time::{Zone, zoned_date_parts, zoned_slot};
 use jiff::Timestamp;
 use regex::Regex;
@@ -31,8 +30,7 @@ pub fn publication_slot_time(clock: &str, zone: &Zone, now: Timestamp) -> Result
     slot(calendar_date_after(today.year, today.month, today.day))
 }
 
-/// JavaScript's `\s+`.
-static WHITESPACE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("[{WHITESPACE_CLASS}]+")).unwrap());
+static WHITESPACE_RUN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s+").unwrap());
 static CLOCK_ONLY: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^([0-9]{1,2}):([0-9]{2})$").unwrap());
 static DATE_AND_CLOCK: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]{4}))? ([0-9]{1,2}):([0-9]{2})$").unwrap());
@@ -44,7 +42,7 @@ fn parse_error() -> StudioError {
 /// An operator's typed time: `HH:MM` (today, or tomorrow once it has passed)
 /// or `DD.MM[.YYYY] HH:MM`, in the Studio's zone.
 pub fn parse_manual_schedule(value: &str, zone: &Zone, now: Timestamp) -> std::result::Result<Timestamp, StudioError> {
-    let input = WHITESPACE_RUN.replace_all(foundation::js::trim(value), " ");
+    let input = WHITESPACE_RUN.replace_all(value.trim(), " ");
     let today = zoned_date_parts(now, zone);
     let number = |text: &str| text.parse::<i64>().expect("matched digits");
     if let Some(found) = CLOCK_ONLY.captures(&input) {

@@ -92,7 +92,7 @@ fn item(kind: &str, file: &MediaFile, fields: &[&str]) -> MediaItem {
         let value = match *field {
             "width" => file.width.map(Value::from),
             "height" => file.height.map(Value::from),
-            "duration" => file.duration.map(foundation::js::json_number),
+            "duration" => file.duration.map(Value::from),
             "file_size" => file.file_size.map(Value::from),
             "file_name" => file.file_name.clone().map(Value::from),
             "mime_type" => file.mime_type.clone().map(Value::from),

@@ -30,7 +30,7 @@ pub fn site_urls_for_index_now(
         .iter()
         .filter(|post| publication_keys.contains(&post.id))
         .flat_map(|post| {
-            let id = foundation::js::number_to_string(post.post_id);
+            let id = post.post_id.to_string();
             let en = post
                 .slug_en
                 .as_deref()

@@ -62,9 +62,7 @@ pub fn planned_target_deliveries(draft: &DraftRecord) -> Vec<TargetDelivery> {
                 written.extend(thread.iter().cloned());
                 chain_posts(
                     &written,
-                    profile
-                        .and_then(|profile| profile.limits.text)
-                        .unwrap_or(foundation::js::MAX_SAFE_INTEGER as usize),
+                    profile.and_then(|profile| profile.limits.text).unwrap_or(usize::MAX),
                 )
             } else {
                 let (text, entities) = joined_thread(&value.text, &value.entities, &thread);

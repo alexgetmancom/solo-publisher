@@ -11,6 +11,7 @@ use domain::publishing::errors::PublishResult;
 use domain::publishing::platform_profiles::platform_profile;
 use domain::publishing::queue::ClaimedPublishJob;
 use domain::targets::{INSTAGRAM_STORY_TARGETS, TELEGRAM_STORY_TARGETS, THREADS_TARGETS};
+use foundation::json::id_text;
 use runtime::http::Fut;
 use serde_json::{Map, Value, json};
 
@@ -234,7 +235,7 @@ async fn verify_zernio_publication(
     mut result: PublishResult,
     platform: ZernioPlatform,
 ) -> PublishResult {
-    if !result.get("ok").is_some_and(foundation::js::truthy) {
+    if result.get("ok") != Some(&Value::Bool(true)) {
         return result;
     }
     let Some(provider_post_id) = result
@@ -257,7 +258,7 @@ async fn verify_zernio_publication(
             let url = verified
                 .url
                 .map(Value::from)
-                .or_else(|| foundation::js::present(result.get("url")).cloned())
+                .or_else(|| result.get("url").cloned())
                 .unwrap_or(Value::Null);
             result.insert("id".into(), external_id.clone().into());
             result.insert("url".into(), url);
@@ -276,15 +277,12 @@ pub async fn verify_platform_publication(
     target: &str,
     mut result: PublishResult,
 ) -> PublishResult {
-    let deferred = result.get("deferred").is_some_and(foundation::js::truthy);
+    let deferred = result.get("deferred") == Some(&Value::Bool(true));
     if deferred || result.get("verification").is_some_and(Value::is_object) {
         return result;
     }
-    let ok = result.get("ok").is_some_and(foundation::js::truthy);
-    let Some(id) = foundation::js::present(result.get("id"))
-        .filter(|_| ok)
-        .map(foundation::js::string_of)
-    else {
+    let ok = result.get("ok") == Some(&Value::Bool(true));
+    let Some(id) = result.get("id").filter(|_| ok).and_then(id_text) else {
         return result;
     };
     // x_article deliberately falls through to "unsupported": whether its
@@ -314,7 +312,7 @@ pub async fn verify_platform_publication(
         Err(error) => unavailable(result, error.message()),
         Ok((provider_id, url)) => {
             if let Some(url) = url
-                && foundation::js::present(result.get("url")).is_none()
+                && result.get("url").is_none_or(Value::is_null)
             {
                 result.insert("url".into(), url);
             }

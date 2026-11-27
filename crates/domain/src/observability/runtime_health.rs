@@ -3,7 +3,6 @@
 //! cluster), and memory pressure while the process is still alive to report it.
 
 use db::rusqlite::{Connection, OptionalExtension};
-use foundation::js;
 use foundation::time::{parse_iso_ms, to_iso_string};
 use jiff::Timestamp;
 use serde_json::{Map, Value, json};
@@ -118,19 +117,20 @@ pub fn record_process_restart(
     let looping = restarts_at.len() >= RESTART_ALERT_THRESHOLD;
     write_runtime_state(sqlite, clock, boot.id, &booted_at, revision, &restarts_at)?;
 
-    // `null` without a previous boot time; NaN (written as null, printed as
-    // "NaN") when that time does not parse.
-    let previous_uptime: Option<Option<f64>> = previous.booted_at.as_deref().map(|previous| {
-        parse_iso_ms(previous).map(|previous| js::round((boot.booted_at.as_millisecond() - previous) as f64 / 1000.0))
+    // `null` without a previous boot time; written as null and printed as
+    // "NaN" when that time does not parse.
+    let previous_uptime: Option<Option<i64>> = previous.booted_at.as_deref().map(|previous| {
+        parse_iso_ms(previous)
+            .map(|previous| ((boot.booted_at.as_millisecond() - previous) as f64 / 1000.0).round() as i64)
     });
     let uptime_json = match previous_uptime {
-        Some(Some(seconds)) => json!(seconds as i64),
+        Some(Some(seconds)) => json!(seconds),
         _ => Value::Null,
     };
     let uptime_text = match previous_uptime {
         None => "?".to_owned(),
         Some(None) => "NaN".to_owned(),
-        Some(Some(seconds)) => js::number_to_string(seconds),
+        Some(Some(seconds)) => seconds.to_string(),
     };
     let Value::Object(details) = json!({
         "bootedAt": booted_at,
@@ -182,11 +182,11 @@ pub fn record_memory_pressure(
     let Some(limit) = limit_bytes.filter(|limit| *limit > 0) else {
         return Ok(false);
     };
-    let used_percent = js::round(rss_bytes as f64 / limit as f64 * 100.0);
+    let used_percent = (rss_bytes as f64 / limit as f64 * 100.0).round();
     if used_percent < MEMORY_ALERT_PERCENT {
         return Ok(false);
     }
-    let to_mb = |bytes: u64| js::round(bytes as f64 / 1024.0 / 1024.0) as i64;
+    let to_mb = |bytes: u64| (bytes as f64 / 1024.0 / 1024.0).round() as i64;
     let mut details = Map::new();
     details.insert("rssMb".into(), to_mb(rss_bytes).into());
     details.insert("limitMb".into(), to_mb(limit).into());

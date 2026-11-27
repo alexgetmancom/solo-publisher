@@ -4,7 +4,7 @@
 //! before it is sent.
 
 use foundation::errors::StudioError;
-use foundation::js::utf16_len;
+use foundation::text::utf16_len;
 use serde_json::{Map, Value};
 
 use super::video_types::VideoTarget;
@@ -51,7 +51,7 @@ pub fn assert_video_metadata(target: VideoTarget, metadata: &Map<String, Value>)
     let tags: Vec<String> = metadata
         .get("tags")
         .and_then(Value::as_array)
-        .map(|tags| tags.iter().map(foundation::js::string_of).collect())
+        .map(|tags| tags.iter().filter_map(Value::as_str).map(str::to_owned).collect())
         .unwrap_or_default();
     assert_youtube_tags(&tags)
 }

@@ -7,9 +7,9 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use content::message::MediaItem;
+use content::message::{MediaItem, entity_span};
 use domain::publishing::errors::PublishResult;
-use foundation::js::{number_of, utf16_len, utf16_prefix};
+use foundation::text::{utf16_len, utf16_prefix};
 use regex::Regex;
 use runtime::ffmpeg::{FFMPEG_TIMEOUT, probe_media_metadata, run_ffmpeg};
 use runtime::http::Fut;
@@ -97,7 +97,7 @@ pub fn telegram_story_caption(text: &str) -> String {
     let text = URL.replace_all(text, "");
     let text = BEFORE_NEWLINE.replace_all(&text, "\n");
     let text = BLANK_LINES.replace_all(&text, "\n\n");
-    utf16_prefix(foundation::js::trim(&text), CAPTION_LIMIT).to_owned()
+    utf16_prefix(text.trim(), CAPTION_LIMIT).to_owned()
 }
 
 /// `telegramStoryCaptionInput`. URL removal shifts offsets, so entities
@@ -105,28 +105,23 @@ pub fn telegram_story_caption(text: &str) -> String {
 /// visible URL, which is the supported authoring flow.
 pub fn telegram_story_caption_input(text: &str, entities: &[Value]) -> StoryCaption {
     let caption = telegram_story_caption(text);
-    if caption != utf16_prefix(foundation::js::trim(text), CAPTION_LIMIT) {
+    if caption != utf16_prefix(text.trim(), CAPTION_LIMIT) {
         return StoryCaption {
             text: caption,
             links: Vec::new(),
         };
     }
-    let length = utf16_len(&caption) as f64;
+    let length = utf16_len(&caption) as u64;
     let links = entities
         .iter()
         .filter_map(Value::as_object)
         .filter_map(|entity| {
-            let offset = number_of(entity.get("offset"));
-            let span = number_of(entity.get("length"));
+            let (offset, span) = entity_span(entity)?;
             let url = entity.get("url").and_then(Value::as_str)?;
-            let valid = foundation::js::is_safe_integer(offset)
-                && foundation::js::is_safe_integer(span)
-                && offset >= 0.0
-                && span > 0.0
-                && offset + span <= length;
+            let valid = span > 0 && offset + span <= length;
             (entity.get("type").and_then(Value::as_str) == Some("text_link") && valid).then(|| CaptionLink {
-                offset: offset as u64,
-                length: span as u64,
+                offset,
+                length: span,
                 url: url.to_owned(),
             })
         })
@@ -176,7 +171,7 @@ async fn probe_video(path: &Path, video: bool) -> StoryVideoMetadata {
         Ok(metadata) => StoryVideoMetadata {
             width: metadata.width,
             height: metadata.height,
-            duration: foundation::js::round(
+            duration: f64::round(
                 if metadata.duration_seconds != 0.0 && !metadata.duration_seconds.is_nan() {
                     metadata.duration_seconds
                 } else {

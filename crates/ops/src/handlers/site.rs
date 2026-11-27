@@ -100,11 +100,15 @@ fn site_editorial_fingerprint(row: &DisplayRow) -> String {
             let identity = first_present(item, &["asset_id", "file_id", "fileId", "local_path", "localPath"])
                 .cloned()
                 .unwrap_or_else(|| {
-                    let path = first_present(item, &["path"]).map_or_else(String::new, foundation::js::string_of);
+                    let path = first_present(item, &["path"])
+                        .and_then(Value::as_str)
+                        .unwrap_or_default();
                     let path = path.split('?').next().unwrap_or_default();
                     json!(VERTICAL_SUFFIX.replace(path, ".$1"))
                 });
-            let kind = first_present(item, &["type"]).map_or_else(|| "image".into(), foundation::js::string_of);
+            let kind = first_present(item, &["type"])
+                .and_then(Value::as_str)
+                .unwrap_or("image");
             json!([
                 identity,
                 if kind.to_lowercase() == "video" {
@@ -352,8 +356,10 @@ pub fn site_media_backfill<'a>(context: &'a OperationContext<'a>, input: &'a Inp
             let media = json_column(media)?;
             let vertical = media_list(&media).is_some_and(|items| {
                 items.iter().any(|item| {
-                    let path = first_present(item, &["path"]).map_or_else(String::new, foundation::js::string_of);
-                    VERTICAL_PATH.is_match(&path)
+                    let path = first_present(item, &["path"])
+                        .and_then(Value::as_str)
+                        .unwrap_or_default();
+                    VERTICAL_PATH.is_match(path)
                 })
             });
             if !vertical {
@@ -474,10 +480,9 @@ pub fn site_responsive_backfill<'a>(context: &'a OperationContext<'a>, input: &'
                 } else {
                     "path"
                 };
-                let Some(url) = media.get(key).filter(|url| foundation::js::truthy(url)) else {
+                let Some(url) = media.get(key).and_then(Value::as_str).filter(|url| !url.is_empty()) else {
                     continue;
                 };
-                let url = foundation::js::string_of(url);
                 let relative = url.trim_start_matches('/');
                 let relative = relative.split(['?', '#']).next().unwrap_or_default();
                 let file = public_site::paths::resolve(&public_dir, relative);
@@ -584,7 +589,7 @@ fn inventory_items(feed: &[Rc<FeedItem>]) -> Vec<Value> {
                 })
                 .collect();
             let mut item = Map::new();
-            item.insert("post_id".into(), foundation::js::json_number(post.post_id));
+            item.insert("post_id".into(), (post.post_id as i64).into());
             item.insert("locale".into(), json!(locale));
             item.insert("text".into(), json!(text));
             item.insert("text_sha256".into(), json!(sha256_hex(text)));
@@ -628,10 +633,7 @@ fn apply_site_metadata(
     let mut public_media: HashMap<String, Vec<Map<String, Value>>> = HashMap::new();
     for post in feed {
         for (locale, media) in [("ru", &post.media), ("en", &post.media_en)] {
-            public_media.insert(
-                format!("{}:{locale}", foundation::js::json_number(post.post_id)),
-                media.clone(),
-            );
+            public_media.insert(format!("{}:{locale}", post.post_id), media.clone());
         }
     }
     let now = to_iso_string(context.now());
@@ -719,7 +721,9 @@ fn apply_site_metadata(
                     return Err(OpError::Failed(format!("Duplicate image for {key}: {path}")));
                 }
                 let asset = media.iter_mut().find(|asset| {
-                    let stored = first_present(asset, &["path"]).map_or_else(String::new, foundation::js::string_of);
+                    let stored = first_present(asset, &["path"])
+                        .and_then(Value::as_str)
+                        .unwrap_or_default();
                     stored.trim_start_matches('/') == path && asset.get("type") != Some(&json!("video"))
                 });
                 let Some(Value::Object(asset)) = asset else {
@@ -737,7 +741,12 @@ fn apply_site_metadata(
                             return Err(OpError::Failed(format!("Alt changed for {key}: {path}")));
                         }
                     }
-                    if asset.get("alt").is_some_and(foundation::js::truthy) && image.get("expected_alt").is_none() {
+                    if asset
+                        .get("alt")
+                        .and_then(Value::as_str)
+                        .is_some_and(|alt| !alt.is_empty())
+                        && image.get("expected_alt").is_none()
+                    {
                         return Err(OpError::Failed(format!("Alt already edited for {key}: {path}")));
                     }
                     asset.insert("alt".into(), alt.clone());

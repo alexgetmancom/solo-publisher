@@ -166,10 +166,7 @@ pub(super) async fn stream_media_archive(
     let status = child.wait().await?;
     if !status.success() {
         let code = status.code().map_or_else(|| "null".to_owned(), |code| code.to_string());
-        return Err(OpError::failed(format!(
-            "tar failed ({code}): {}",
-            foundation::js::trim(&stderr)
-        )));
+        return Err(OpError::failed(format!("tar failed ({code}): {}", stderr.trim())));
     }
     record_export(sqlite, ExportKind::Media, None, now)?;
     Ok(Value::Null)

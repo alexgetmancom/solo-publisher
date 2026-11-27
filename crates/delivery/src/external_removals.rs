@@ -10,7 +10,7 @@ use content::Locale;
 use db::rusqlite::{Connection, OptionalExtension as _, params};
 use domain::json::stringify;
 use domain::targets::target_locale;
-use foundation::js::string_of;
+use foundation::json::id_text;
 use providers::adapters::telegram_stories::{StoryError, StoryRequest};
 use providers::adapters::{StoriesClient, TargetRouting, Unprepared, create_platform_adapters};
 use runtime::http::Fut;
@@ -115,7 +115,7 @@ pub async fn attempt_published_target_removals(
                 target: row.get(1)?,
                 external_id: row.get(2)?,
                 external_ids: match ids.as_deref().map(serde_json::from_str::<Value>) {
-                    Some(Ok(Value::Array(ids))) => Some(ids.iter().map(string_of).collect()),
+                    Some(Ok(Value::Array(ids))) => Some(ids.iter().filter_map(id_text).collect()),
                     _ => None,
                 },
             })

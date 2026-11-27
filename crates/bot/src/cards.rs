@@ -61,7 +61,7 @@ fn get_binding(sqlite: &Connection, entity_type: &str, entity_id: i64) -> domain
     let Some((chat, message, state)) = row else {
         return Ok(None);
     };
-    let number = |text: &str| foundation::js::number(text) as i64;
+    let number = |text: &str| text.parse::<i64>().unwrap_or(0);
     let state: Map<String, Value> = serde_json::from_str(&state)?;
     Ok(Some((number(&chat), number(&message), state)))
 }

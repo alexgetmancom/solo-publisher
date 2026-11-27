@@ -20,7 +20,7 @@ pub(crate) fn edit_locale_content_tx(
     entities: &[Entity],
     expected_text_hash: Option<&str>,
 ) -> domain::Result<Map<String, Value>> {
-    let value = foundation::js::trim(text);
+    let value = text.trim();
     if value.is_empty() {
         return Err(refusal(format!("text_{locale} is required")));
     }
@@ -101,20 +101,16 @@ pub(crate) fn parse_locale_entities(raw: Option<&str>, text: &str) -> Result<Vec
         Value::Array(entities) if entities.len() <= 1_000 => entities,
         _ => return Err("entities_json must be an array of at most 1000 entities".into()),
     };
-    let length = text.encode_utf16().count() as f64;
-    let safe = |value: Option<&Value>| {
-        value
-            .and_then(Value::as_f64)
-            .filter(|number| foundation::js::is_safe_integer(*number))
-    };
+    let length = text.encode_utf16().count() as u64;
     entities
         .into_iter()
         .map(|entity| {
             let Value::Object(entity) = entity else {
                 return Err("Each formatting entity must fit the replacement text".to_owned());
             };
-            match (safe(entity.get("offset")), safe(entity.get("length"))) {
-                (Some(offset), Some(span)) if offset >= 0.0 && span >= 1.0 && offset + span <= length => Ok(entity),
+            let units = |key: &str| entity.get(key).and_then(Value::as_u64);
+            match (units("offset"), units("length")) {
+                (Some(offset), Some(span)) if span >= 1 && offset + span <= length => Ok(entity),
                 _ => Err("Each formatting entity must fit the replacement text".to_owned()),
             }
         })
@@ -200,7 +196,7 @@ pub(crate) fn parse_locale_media(raw: Option<&str>) -> Result<Option<Vec<MediaIt
     let Some(raw) = raw.filter(|raw| !raw.is_empty()) else {
         return Ok(None);
     };
-    if ["none", "null", "ru", "fallback"].contains(&foundation::js::trim(raw).to_lowercase().as_str()) {
+    if ["none", "null", "ru", "fallback"].contains(&raw.trim().to_lowercase().as_str()) {
         return Ok(None);
     }
     let parsed: Value = serde_json::from_str(raw).map_err(|error| format!("JSON Parse error: {error}"))?;

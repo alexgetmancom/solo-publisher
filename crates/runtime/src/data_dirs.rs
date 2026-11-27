@@ -5,7 +5,6 @@ use std::os::unix::fs::MetadataExt as _;
 use std::path::{Component, Path, PathBuf};
 
 use foundation::config::Config;
-use foundation::js;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataDirectory {
@@ -141,10 +140,7 @@ pub fn resolve_unix_user(username: &str, passwd_file: &Path) -> Result<(u32, u32
         if name != Some(username) {
             continue;
         }
-        let id = |text: Option<&str>| {
-            let value = text.map_or(f64::NAN, js::number);
-            (js::is_integer(value) && (0.0..=f64::from(u32::MAX)).contains(&value)).then_some(value as u32)
-        };
+        let id = |text: Option<&str>| text?.trim().parse::<u32>().ok();
         if let (Some(uid), Some(gid)) = (id(uid), id(gid)) {
             return Ok((uid, gid));
         }

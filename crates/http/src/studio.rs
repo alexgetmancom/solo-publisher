@@ -85,7 +85,7 @@ async fn import(
         .unwrap_or_else(|| "application/octet-stream".into())
         .split(';')
         .next()
-        .map(|value| foundation::js::trim(value).to_lowercase())
+        .map(|value| value.trim().to_lowercase())
         .unwrap_or_default();
     if content_type == "multipart/form-data" {
         return Ok(json_response(
@@ -126,8 +126,8 @@ async fn import_temporary(
     body: Body,
     temporary: &Path,
 ) -> Result<domain::application::ports::StudioMediaAssetRecord, MediaUploadError> {
-    let content_length = header(&parts.headers, "content-length").map_or(0.0, |value| foundation::js::number(&value));
-    if content_length.is_finite() && content_length > STUDIO_MEDIA_MAX_BYTES as f64 {
+    let content_length = header(&parts.headers, "content-length").and_then(|value| value.trim().parse::<f64>().ok());
+    if content_length.is_some_and(|length| length > STUDIO_MEDIA_MAX_BYTES as f64) {
         return Err(MediaUploadError::TooLarge {
             max_bytes: STUDIO_MEDIA_MAX_BYTES,
         });

@@ -4,7 +4,7 @@
 
 use db::rusqlite::types::Value as SqlValue;
 use db::rusqlite::{Connection, OptionalExtension, params, params_from_iter};
-use foundation::js::{present, string_of, truthy};
+use foundation::json::id_text;
 use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value};
 
@@ -91,7 +91,7 @@ pub fn parse_payload(value: Option<&str>) -> Map<String, Value> {
 pub fn external_ids(result: &PublishResult) -> Vec<String> {
     if let Some(Value::Array(ids)) = result.get("ids") {
         let mut distinct: Vec<String> = Vec::new();
-        for id in ids.iter().map(string_of).filter(|id| !id.is_empty()) {
+        for id in ids.iter().filter_map(id_text).filter(|id| !id.is_empty()) {
             if !distinct.contains(&id) {
                 distinct.push(id);
             }
@@ -100,12 +100,12 @@ pub fn external_ids(result: &PublishResult) -> Vec<String> {
             return distinct;
         }
     }
-    present(result.get("id")).map(string_of).into_iter().collect()
+    result.get("id").and_then(id_text).into_iter().collect()
 }
 
-/// `{ ...record }.field` read for its truthiness.
+/// A result flag the adapter set to `true`.
 pub(crate) fn flag(result: &PublishResult, key: &str) -> bool {
-    result.get(key).is_some_and(truthy)
+    result.get(key) == Some(&Value::Bool(true))
 }
 
 /// Keeps target state updates consistent across claim, completion and

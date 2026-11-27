@@ -8,8 +8,8 @@ use content::text::split_text;
 use domain::json::stringify;
 use domain::publishing::errors::PublishResult;
 use domain::publishing::platform_profiles::platform_profile;
-use foundation::js::encode_uri_component;
 use foundation::logger::{LogLevel, log};
+use foundation::url::encode_uri_component;
 use runtime::http::{HttpRequest, Method, Response};
 use serde_json::{Map, Value, json};
 
@@ -167,7 +167,7 @@ pub async fn edit_discord(ctx: &AdapterContext, edit: &EditRequest) -> Result<Ed
     if edit.external_id_count > 1 {
         return Ok(EditOutcome::skipped("discord_post_is_split"));
     }
-    if foundation::js::utf16_len(&edit.text) > text_limit() {
+    if foundation::text::utf16_len(&edit.text) > text_limit() {
         return Ok(EditOutcome::skipped("edit_exceeds_discord_limit"));
     }
     let credentials = credentials(ctx)?;

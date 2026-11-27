@@ -5,7 +5,6 @@
 use std::sync::LazyLock;
 
 use content::Locale;
-use foundation::js::WHITESPACE_CLASS;
 use regex::Regex;
 
 use crate::targets::{TARGETS, TargetKind};
@@ -231,8 +230,7 @@ pub fn platform_profile(target: &str) -> Option<&'static PlatformProfile> {
     PLATFORM_PROFILES.iter().find(|profile| profile.id == target)
 }
 
-/// JavaScript's `\S`: anything but its whitespace and line terminators.
-static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(&format!("https?://[^{WHITESPACE_CLASS}]+")).unwrap());
+static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://\S+").unwrap());
 static SPACES: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]{2,}").unwrap());
 static BEFORE_NEWLINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[ \t]+\n").unwrap());
 static AFTER_NEWLINE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\n[ \t]+").unwrap());
@@ -248,7 +246,7 @@ pub fn format_platform_text(target: &str, text: &str) -> String {
     let text = SPACES.replace_all(&text, " ");
     let text = BEFORE_NEWLINE.replace_all(&text, "\n");
     let text = AFTER_NEWLINE.replace_all(&text, "\n");
-    foundation::js::trim(&text).to_owned()
+    text.trim().to_owned()
 }
 
 /// The largest frame a platform takes for a video of this shape.

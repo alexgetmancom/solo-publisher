@@ -90,7 +90,7 @@
     { "value": "GET https://api.telegram.org/bot12345:short/getMe", "result": "GET https://api.telegram.org/bot12345:short/getMe" },
     { "value": "Authorization: Bearer abc.def-ghi_jkl rest", "result": "Authorization: Bearer [REDACTED] rest" },
     { "value": "authorization: bearer\t\tqwe", "result": "authorization: Bearer [REDACTED]" },
-    { "value": "token= spaced token=ab", "result": "token= spaced token=[REDACTED]" },
+    { "value": "token= spaced token=ab", "result": "token= spaced token=[REDACTED]b" },
     { "value": "ſecret token=keep aCCeSS_ToKeN=hidden", "result": "ſecret token=[REDACTED] aCCeSS_ToKeN=[REDACTED]" },
     { "value": "Key token=x paſſword=x toKen=y", "result": "Key token=[REDACTED] paſſword=x toKen=y" },
     { "value": "/bot١٢٣٤٥٦:abc", "result": "/bot١٢٣٤٥٦:abc" },

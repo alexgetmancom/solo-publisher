@@ -176,12 +176,12 @@
     { "text": "   ", "limit": 280, "parts": [""] },
     { "text": "   ", "limit": 64, "parts": [""] },
     { "text": "   ", "limit": 280, "parts": [""] },
-    { "text": " ﻿ текст 　", "limit": 33, "parts": ["текст"] },
-    { "text": " ﻿ текст 　", "limit": 1000, "parts": ["текст"] },
-    { "text": " ﻿ текст 　", "limit": 280, "parts": ["текст"] },
-    { "text": "начало с U+0085", "limit": 4096, "parts": ["начало с U+0085"] },
-    { "text": "начало с U+0085", "limit": 64, "parts": ["начало с U+0085"] },
-    { "text": "начало с U+0085", "limit": 280, "parts": ["начало с U+0085"] },
+    { "text": " ﻿ текст 　", "limit": 33, "parts": ["﻿ текст"] },
+    { "text": " ﻿ текст 　", "limit": 1000, "parts": ["﻿ текст"] },
+    { "text": " ﻿ текст 　", "limit": 280, "parts": ["﻿ текст"] },
+    { "text": "начало с U+0085", "limit": 4096, "parts": ["начало с U+0085"] },
+    { "text": "начало с U+0085", "limit": 64, "parts": ["начало с U+0085"] },
+    { "text": "начало с U+0085", "limit": 280, "parts": ["начало с U+0085"] },
     { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "limit": 16, "parts": ["aaaaaaaaa👨🏽‍🚀", "bbbbbbbbb"] },
     { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "limit": 100, "parts": ["aaaaaaaaa👨🏽‍🚀bbbbbbbbb"] },
     { "text": "aaaaaaaaa👨🏽‍🚀bbbbbbbbb", "limit": 280, "parts": ["aaaaaaaaa👨🏽‍🚀bbbbbbbbb"] },
@@ -767,7 +767,7 @@
     { "text": "short", "entities": [{ "type": "bold", "offset": 2, "length": 99 }], "html": "short" },
     { "text": "😀😀 жирный", "entities": [{ "type": "bold", "offset": 5, "length": 6 }], "html": "😀😀 <strong>жирный</strong>" },
     { "text": "a😀b", "entities": [{ "type": "bold", "offset": 2, "length": 2 }], "html": "a�<strong>�b</strong>" },
-    { "text": "x", "entities": [{ "type": "heading", "offset": 0, "length": 1, "level": "abc" }], "html": "<hNaN>x</hNaN>" },
+    { "text": "x", "entities": [{ "type": "heading", "offset": 0, "length": 1, "level": "abc" }], "html": "<h2>x</h2>" },
     {
       "text": "See link\nnext",
       "entities": [

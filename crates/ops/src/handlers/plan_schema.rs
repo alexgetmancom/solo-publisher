@@ -236,7 +236,7 @@ fn check(kind: &Kind, value: Option<&Value>, path: &[Value], issues: &mut Vec<Va
                 issues.push(invalid_type("string", value, path));
                 return value.cloned();
             };
-            let text = if *trim { foundation::js::trim(text) } else { text };
+            let text = if *trim { text.trim() } else { text };
             if let Some(min) = min
                 && length(text) < *min
             {

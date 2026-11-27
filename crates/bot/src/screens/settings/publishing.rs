@@ -259,7 +259,7 @@ fn channel_connect_layout(ctx: &Ctx) -> crate::Result<Vec<Vec<MenuButton>>> {
                             show_screen(ctx, &text, Payload::new()).await
                         }
                         Err(error) => {
-                            let text = foundation::js::utf16_prefix_lossy(&describe_error(&error), 190);
+                            let text = foundation::text::utf16_prefix_lossy(&describe_error(&error), 190);
                             ctx.answer_callback_query(Some(&text), true).await
                         }
                     }

@@ -80,7 +80,7 @@ fn shorten(value: &str) -> String {
     let mut collapsed = String::with_capacity(value.len());
     let mut in_space = false;
     for c in value.chars() {
-        if foundation::js::is_whitespace(c) {
+        if c.is_whitespace() {
             if !in_space {
                 collapsed.push(' ');
             }
@@ -90,11 +90,11 @@ fn shorten(value: &str) -> String {
             in_space = false;
         }
     }
-    foundation::js::trim(foundation::text::truncate_unicode(&collapsed, 38)).to_owned()
+    foundation::text::truncate_unicode(&collapsed, 38).trim().to_owned()
 }
 
 fn first_line(text: &str) -> &str {
-    foundation::js::trim(text.split('\n').next().unwrap_or(""))
+    text.split('\n').next().unwrap_or("").trim()
 }
 
 #[derive(Clone, Copy)]
@@ -245,7 +245,7 @@ impl<'a> QueueService<'a> {
                 .filter_map(|target| target.scheduled_at.as_deref())
                 .map(|at| instant(at).map(|at| at.as_millisecond()))
                 .collect::<Result<_>>()?;
-            let trimmed = foundation::js::trim(&video.label);
+            let trimmed = video.label.trim();
             let label = shorten(&if trimmed.is_empty() {
                 format!("Video #{}", video.id)
             } else {

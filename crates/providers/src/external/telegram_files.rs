@@ -120,7 +120,7 @@ async fn telegram_file_path(api: &BotApi, file_id: &str) -> Result<String, Exter
     let info = api
         .request_json("getFile", BotParams::json(json!({"file_id": file_id}).to_string()))
         .await?;
-    let ok = info.get("ok").is_some_and(foundation::js::truthy);
+    let ok = info["ok"] == true;
     match info.pointer("/result/file_path") {
         Some(Value::String(path)) if ok && !path.is_empty() => Ok(path.clone()),
         _ => Err(ExternalError::message(format!("Telegram getFile failed for {file_id}"))),

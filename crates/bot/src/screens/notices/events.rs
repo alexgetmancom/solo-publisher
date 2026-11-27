@@ -165,13 +165,9 @@ fn claim_delivery(ctx: &Ctx, event_id: i64) -> crate::Result<bool> {
         .is_some())
 }
 
-/// A safe-integer number under `key`.
+/// An integer under `key`.
 fn number_detail(details: &Map<String, Value>, key: &str) -> Option<i64> {
-    details
-        .get(key)
-        .and_then(Value::as_f64)
-        .filter(|value| foundation::js::is_safe_integer(*value))
-        .map(|value| value as i64)
+    details.get(key).and_then(Value::as_i64)
 }
 
 /// The details column as an object: JSON text, possibly holding JSON text

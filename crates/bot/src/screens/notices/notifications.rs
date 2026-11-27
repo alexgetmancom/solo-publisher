@@ -11,7 +11,6 @@ use domain::publishing::video_types::VideoTarget;
 use domain::studio::services::settings::TimeConfig;
 use domain::targets::{is_site_target, target_definition, target_locale};
 use foundation::i18n::{Key, t};
-use foundation::js::number_to_string;
 use foundation::logger::{LogLevel, log};
 use foundation::time::{Zone, format_zoned_date_time, parse_iso_instant};
 use serde_json::{Map, Value, json};
@@ -88,7 +87,7 @@ fn short_error(value: &str) -> String {
     let mut collapsed = String::with_capacity(value.len());
     let mut in_space = false;
     for c in value.chars() {
-        if foundation::js::is_whitespace(c) {
+        if c.is_whitespace() {
             if !in_space {
                 collapsed.push(' ');
             }
@@ -352,12 +351,12 @@ pub(super) async fn send_studio_reminder(ctx: &Ctx, event: &StudioEvent<'_>) -> 
             };
             let text = format!(
                 "{}\n\n🎬 {title}{locale_line}\n\n{}{time}",
-                t(Key::NotifReminderHead, &[("minutes", &number_to_string(minutes))]),
+                t(Key::NotifReminderHead, &[("minutes", &minutes.to_string())]),
                 lines.join("\n")
             );
             ctx.bot
                 .api()
-                .send_message(actor_id, foundation::js::trim(&text), Payload::new())
+                .send_message(actor_id, text.trim(), Payload::new())
                 .await?;
             Ok(())
         }
@@ -417,7 +416,7 @@ pub(super) async fn send_studio_completion(ctx: &Ctx, event: &StudioEvent<'_>) -
                 },
                 &[],
             );
-            let n = |value: f64| number_to_string(value);
+            let n = |value: f64| value.to_string();
             // `published || total`: nothing published reads as the total.
             let done = n(if published == 0.0 || published.is_nan() {
                 total

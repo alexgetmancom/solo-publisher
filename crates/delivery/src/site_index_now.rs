@@ -259,13 +259,13 @@ fn is_valid_key(value: &str) -> bool {
 /// into the site, which is a separate service with no disk of ours.
 pub fn index_now_key(config: &Config) -> Option<String> {
     let value = std::fs::read_to_string(Path::new(&config.data_dir).join(KEY_FILE)).ok()?;
-    let value = foundation::js::trim(&value);
+    let value = value.trim();
     is_valid_key(value).then(|| value.to_owned())
 }
 
 fn read_or_create_key(file: &Path) -> Result<String, String> {
     if let Ok(value) = std::fs::read_to_string(file) {
-        let value = foundation::js::trim(&value);
+        let value = value.trim();
         if is_valid_key(value) {
             return Ok(value.to_owned());
         }

@@ -84,7 +84,7 @@ impl StudioConfig<'_> {
     /// operator to that clock. Unset falls back to the operator's zone.
     pub fn site_timezone(&self, locale: Locale) -> Result<String> {
         let row = self.read()?;
-        let zone = foundation::js::trim(localized(&row.site_timezone_json, locale));
+        let zone = localized(&row.site_timezone_json, locale).trim();
         Ok(if zone.is_empty() { row.timezone } else { zone.to_owned() })
     }
 

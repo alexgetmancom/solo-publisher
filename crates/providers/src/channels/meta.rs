@@ -7,7 +7,7 @@ use db::rusqlite::Connection;
 use domain::studio::boundaries::MetaOauthPlatform;
 use domain::studio::services::channels::ChannelInput;
 use foundation::config::{Config, SharedConfig};
-use foundation::js;
+use foundation::json::id_text;
 use foundation::logger::{LogLevel, log};
 use foundation::secret_box::{fingerprint, open, seal};
 use foundation::time::{parse_iso_instant, to_iso_string};
@@ -141,7 +141,7 @@ pub struct MetaOauthState {
 
 /// `required(value, name)`: the trimmed value, or the refusal browser OAuth gives.
 pub(crate) fn required<'a>(value: Option<&'a str>, name: &str) -> Result<&'a str> {
-    match value.map(js::trim).filter(|value| !value.is_empty()) {
+    match value.map(str::trim).filter(|value| !value.is_empty()) {
         Some(value) => Ok(value),
         None => Err(Error::message(format!("{name} is required for browser OAuth"))),
     }
@@ -167,7 +167,7 @@ pub fn meta_oauth_connect_url(
         "{}/oauth/{}/start?state={}",
         base_url(config),
         meta_platform_name(platform),
-        foundation::js::encode_uri_component(&meta_oauth_state(config, platform, locale, now, entropy)?)
+        foundation::url::encode_uri_component(&meta_oauth_state(config, platform, locale, now, entropy)?)
     ))
 }
 
@@ -311,17 +311,6 @@ pub struct MetaIdentity {
     pub username: String,
 }
 
-/// `String(value)` of an id a provider answered as a string or a number
-/// (a number past 2^53 printed as JavaScript prints it).
-pub(crate) fn id_text(value: &Value) -> Option<String> {
-    match value {
-        Value::String(text) => Some(text.clone()),
-        Value::Number(number) => Some(js::number_to_string(number.as_f64().unwrap_or(f64::NAN))),
-        Value::Bool(flag) => Some(flag.to_string()),
-        _ => None,
-    }
-}
-
 fn token_of(value: &Value) -> Option<&str> {
     value
         .get("access_token")
@@ -389,7 +378,7 @@ pub async fn exchange_meta_code(
         username: profile
             .get("username")
             .and_then(Value::as_str)
-            .map(|name| js::trim(name).to_owned())
+            .map(|name| name.trim().to_owned())
             .unwrap_or_default(),
     })
 }
@@ -443,7 +432,7 @@ impl MetaToken {
             "https://{}/refresh_access_token?grant_type={}&access_token={}",
             self.refresh_host,
             self.refresh_grant,
-            foundation::js::encode_uri_component(token)
+            foundation::url::encode_uri_component(token)
         )
     }
 

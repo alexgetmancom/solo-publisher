@@ -5,7 +5,7 @@
     { "headers": [["retry-after", "-5"]], "nowMs": 1795255200000, "seconds": 0 },
     { "headers": [["retry-after", " "]], "nowMs": 1795255200000, "seconds": null },
     { "headers": [["retry-after", ""]], "nowMs": 1795255200000, "seconds": null },
-    { "headers": [["retry-after", "0x10"]], "nowMs": 1795255200000, "seconds": 16 },
+    { "headers": [["retry-after", "0x10"]], "nowMs": 1795255200000, "seconds": null },
     { "headers": [["retry-after", "Sat, 21 Nov 2026 10:02:00 GMT"]], "nowMs": 1795255200000, "seconds": 120 },
     { "headers": [["retry-after", "Sat, 21 Nov 2026 09:58:00 GMT"]], "nowMs": 1795255200000, "seconds": 0 },
     { "headers": [["retry-after", "Sat, 21 Nov 2026 10:00:00 GMT"]], "nowMs": 1795255200000, "seconds": 0 },
@@ -620,7 +620,7 @@
           "method": "POST",
           "url": "https://api.deepseek.com/v1/chat/completions",
           "headers": [["authorization", "Bearer fixture-deepseek-key"], ["content-type", "application/json"]],
-          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":1}"
+          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":1.0}"
         }
       ],
       "result": { "ok": "" }
@@ -633,7 +633,7 @@
           "method": "POST",
           "url": "https://api.deepseek.com/v1/chat/completions",
           "headers": [["authorization", "Bearer fixture-deepseek-key"], ["content-type", "application/json"]],
-          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":0}"
+          "body": "{\"model\":\"deepseek-chat\",\"messages\":[{\"role\":\"system\",\"content\":\"Translate to English.\"},{\"role\":\"user\",\"content\":\"Привет\"}],\"temperature\":0.0}"
         }
       ],
       "result": {

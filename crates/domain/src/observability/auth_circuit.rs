@@ -4,7 +4,6 @@
 //! target's `credential_checks` row, of which it rewrites only its own fields.
 
 use db::rusqlite::{Connection, OptionalExtension, params};
-use foundation::js::{json_number, truthy};
 use foundation::time::parse_iso_ms;
 use serde_json::{Map, Value, json};
 
@@ -13,7 +12,7 @@ use crate::application::ports::{Clock, DomainEventInput, Severity};
 use crate::publishing::boundaries::{AuthCircuit, AuthCircuitState};
 use crate::repositories::{record_event, stamp, stamp_offset};
 
-const AUTH_FAILURE_THRESHOLD: f64 = 3.0;
+const AUTH_FAILURE_THRESHOLD: i64 = 3;
 const AUTH_BLOCK_COOLDOWN_SECONDS: i64 = 30 * 60;
 
 /// The breaker on the connection a caller hands it.
@@ -101,7 +100,7 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
         let now = stamp(&self.clock);
         let row = details_of(sqlite, target)?;
         let mut details = parse_details(row.as_ref().and_then(|json| json.as_deref()));
-        let streak = details.get("authFailureStreak").and_then(Value::as_f64).unwrap_or(0.0) + 1.0;
+        let streak = details.get("authFailureStreak").and_then(Value::as_i64).unwrap_or(0) + 1;
         let tripped = streak >= AUTH_FAILURE_THRESHOLD;
         let blocked_until = if tripped {
             Value::String(stamp_offset(&self.clock, AUTH_BLOCK_COOLDOWN_SECONDS * 1000))
@@ -109,7 +108,7 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
             details.get("blockedUntil").cloned().unwrap_or(Value::Null)
         };
         // The unrelated fields (token health's `lastPingAt`) stay as they were.
-        details.insert("authFailureStreak".into(), json_number(streak));
+        details.insert("authFailureStreak".into(), streak.into());
         details.insert("blockedUntil".into(), blocked_until.clone());
         details.insert("lastAuthFailureAt".into(), Value::String(now.clone()));
         if row.is_some() {
@@ -122,7 +121,7 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
         }
         if tripped && streak == AUTH_FAILURE_THRESHOLD {
             let Value::Object(event_details) =
-                json!({"target": target, "streak": json_number(streak), "blockedUntil": blocked_until})
+                json!({"target": target, "streak": streak, "blockedUntil": blocked_until})
             else {
                 unreachable!("built as an object")
             };
@@ -136,7 +135,7 @@ impl<C: Clock> AuthCircuit for AuthCircuitBreaker<C> {
                     target: Some(target.to_owned()),
                     message: format!(
                         "{target}: {} consecutive auth failures, pausing publishes for {}m",
-                        foundation::js::number_to_string(streak),
+                        streak,
                         AUTH_BLOCK_COOLDOWN_SECONDS / 60
                     ),
                     details: Some(event_details),
@@ -194,7 +193,10 @@ impl<C: Clock> AuthCircuitBreaker<C> {
     pub fn should_ping_token(&self, sqlite: &Connection, target: &str, interval_seconds: i64) -> Result<bool> {
         let row = details_of(sqlite, target)?;
         let details = parse_details(row.flatten().as_deref());
-        let Some(last_ping) = details.get("lastPingAt").filter(|value| truthy(value)) else {
+        let Some(last_ping) = details
+            .get("lastPingAt")
+            .filter(|value| value.as_str().is_some_and(|at| !at.is_empty()))
+        else {
             return Ok(true);
         };
         Ok(instant_ms(Some(last_ping))

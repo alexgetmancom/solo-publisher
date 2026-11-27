@@ -14,3 +14,14 @@ pub fn json_record_array(value: Option<&str>) -> Vec<Map<String, Value>> {
         })
         .collect()
 }
+
+/// A JSON id as text: a string as it is, a number as JSON writes it, anything
+/// else as absent. Stored ids are either, because the TypeScript backend wrote
+/// both.
+pub fn id_text(value: &Value) -> Option<String> {
+    match value {
+        Value::String(text) => Some(text.clone()),
+        Value::Number(number) => Some(number.to_string()),
+        _ => None,
+    }
+}

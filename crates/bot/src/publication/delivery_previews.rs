@@ -276,19 +276,17 @@ fn entity_options(key: &str, entities: &[Entity], length: usize) -> Payload {
 }
 
 fn safe_entities(entities: &[Entity], length: usize) -> Vec<Value> {
-    let length = length as f64;
+    let length = length as u64;
     entities
         .iter()
         .filter_map(|entity| {
-            let offset = foundation::js::number_of_scalar(entity.get("offset"));
-            let entity_length = foundation::js::number_of_scalar(entity.get("length"));
-            let safe = |value: f64| foundation::js::is_safe_integer(value);
-            if !safe(offset) || !safe(entity_length) || offset < 0.0 || entity_length <= 0.0 || offset >= length {
+            let (offset, entity_length) = content::message::entity_span(entity)?;
+            if entity_length == 0 || offset >= length {
                 return None;
             }
             let mut entity = entity.clone();
-            entity.insert("offset".into(), json!(offset as i64));
-            entity.insert("length".into(), json!(entity_length.min(length - offset) as i64));
+            entity.insert("offset".into(), json!(offset));
+            entity.insert("length".into(), json!(entity_length.min(length - offset)));
             Some(Value::Object(entity))
         })
         .collect()
@@ -314,8 +312,8 @@ fn format_metadata(metadata: &Map<String, Value>) -> String {
     let text = |key: &str| {
         metadata
             .get(key)
-            .filter(|value| foundation::js::truthy(value))
-            .map(foundation::js::string_of)
+            .and_then(Value::as_str)
+            .filter(|text| !text.is_empty())
     };
     let mut lines = Vec::new();
     if let Some(title) = text("title") {
@@ -330,7 +328,7 @@ fn format_metadata(metadata: &Map<String, Value>) -> String {
     if let Some(Value::Array(tags)) = metadata.get("tags")
         && !tags.is_empty()
     {
-        let tags: Vec<String> = tags.iter().map(foundation::js::string_of).collect();
+        let tags: Vec<&str> = tags.iter().filter_map(Value::as_str).collect();
         lines.push(format!("{}: {}", t(Key::PreviewMetadataTags, &[]), tags.join(", ")));
     }
     if let Some(game) = text("gameUrl") {

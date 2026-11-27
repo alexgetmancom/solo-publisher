@@ -49,7 +49,7 @@ pub struct MediaFile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<f64>,
+    pub duration: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mime_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

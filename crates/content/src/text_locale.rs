@@ -12,17 +12,14 @@
 
 use std::sync::LazyLock;
 
-use foundation::js::{WHITESPACE_CLASS, utf16_len};
+use foundation::text::utf16_len;
 use regex::Regex;
 
 use crate::Locale;
 
 /// Links, handles, hashtags and code are Latin in both languages, so they are
 /// noise here: without this a short Russian post carrying a URL reads English.
-static NOT_PROSE: LazyLock<Regex> = LazyLock::new(|| {
-    let word = format!("[^{WHITESPACE_CLASS}]+");
-    Regex::new(&format!(r"https?://{word}|www\.{word}|[@#]{word}|`[^`]*`")).unwrap()
-});
+static NOT_PROSE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://\S+|www\.\S+|[@#]\S+|`[^`]*`").unwrap());
 static CYRILLIC: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\p{Script=Cyrillic}").unwrap());
 static LATIN: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\p{Script=Latin}").unwrap());
 static LETTERS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\p{L}+").unwrap());

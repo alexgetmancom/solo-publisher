@@ -83,16 +83,14 @@ fn parse_locale(value: Option<&Value>) -> Option<Locale> {
     }
 }
 
-/// `Number(value)` as an integer of at least 2, the way a thread position is read.
+/// A thread position: an integer of at least 2, stored as a number or as text.
 fn parse_position(value: Option<&Value>) -> Option<i64> {
-    let number = match value {
-        Some(Value::Number(number)) => number.as_f64()?,
-        Some(Value::String(text)) => foundation::js::number(text),
-        Some(Value::Bool(flag)) => f64::from(u8::from(*flag)),
-        Some(Value::Null) => 0.0,
+    let number = match value? {
+        Value::Number(number) => number.as_i64()?,
+        Value::String(text) => text.parse().ok()?,
         _ => return None,
     };
-    (foundation::js::is_integer(number) && number >= 2.0).then_some(number as i64)
+    (number >= 2).then_some(number)
 }
 
 /// `postStateStep`: the open step of a stored session, or none.

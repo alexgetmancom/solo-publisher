@@ -8,7 +8,6 @@ use content::text::split_text;
 use content::title_emphasis::emphasize_title;
 use content::translation::translation_wanted;
 use foundation::errors::StudioError;
-use foundation::js::string_of;
 use foundation::json::json_record_array;
 use foundation::time::Zone;
 use jiff::Timestamp;
@@ -230,19 +229,17 @@ fn issue_status(status: IssueStatus) -> &'static str {
 /// budget, its links kept where they still fit the first piece, its media on
 /// that piece.
 fn thread_posts(part: &NewThreadPart) -> Vec<NewThreadPart> {
-    split_text(foundation::js::trim(&part.text_ru), threads_text_limit("threads_ru"))
+    split_text(part.text_ru.trim(), threads_text_limit("threads_ru"))
         .into_iter()
         .enumerate()
         .map(|(index, text_ru)| {
-            let length = text_ru.encode_utf16().count() as f64;
+            let length = text_ru.encode_utf16().count() as u64;
             NewThreadPart {
                 entities_ru: if index == 0 {
                     part.entities_ru
                         .iter()
                         .filter(|entity| {
-                            foundation::js::number_of_scalar(entity.get("offset"))
-                                + foundation::js::number_of_scalar(entity.get("length"))
-                                <= length
+                            content::message::entity_span(entity).is_some_and(|(offset, span)| offset + span <= length)
                         })
                         .cloned()
                         .collect()
@@ -408,10 +405,7 @@ impl<'a> PostService<'a> {
                 .and_then(Value::as_str)
                 .or_else(|| item.get("localPath").and_then(Value::as_str));
             let Some(local_path) = local_path else { continue };
-            let kind = match item.get("type") {
-                None | Some(Value::Null) => String::new(),
-                Some(kind) => string_of(kind),
-            };
+            let kind = item.get("type").and_then(Value::as_str).unwrap_or_default();
             self.studio.boundaries.story_derivatives.ensure(
                 local_path,
                 kind.to_lowercase().contains("video"),
@@ -645,8 +639,8 @@ impl<'a> PostService<'a> {
         let media: Vec<MediaItem> = draft_media(&draft, locale)
             .into_iter()
             .filter(|item| {
-                let id = foundation::js::number_of_scalar(item.get("asset_id"));
-                !asset_ids.iter().any(|removed| *removed as f64 == id)
+                let id = content::message::media_asset_id(item);
+                !asset_ids.iter().any(|removed| Some(*removed) == id)
             })
             .collect();
         let patch = self.media_patch(locale, Some(json_text(&media)));
@@ -914,7 +908,7 @@ impl<'a> PostService<'a> {
     /// no later translation pass overwrites it, and it is not queued for one.
     pub fn edit_thread_part_english(&self, actor_id: i64, draft_id: i64, position: i64, text_en: &str) -> Result<()> {
         self.editable(actor_id, draft_id, None)?;
-        let text = foundation::js::trim(text_en);
+        let text = text_en.trim();
         if text.is_empty() {
             return Err(StudioError::new("err.thread-part-empty").into());
         }
@@ -1308,7 +1302,7 @@ impl<'a> PostService<'a> {
             enabled: notifications.post_reminders_enabled,
             minutes: notifications.reminder_minutes,
         };
-        let first_line = foundation::js::trim(&draft.text_ru).split('\n').next().unwrap_or("");
+        let first_line = draft.text_ru.trim().split('\n').next().unwrap_or("");
         let title = foundation::text::truncate_unicode(first_line, 100);
         let title = if title.is_empty() {
             format!("Post #{post_id}")

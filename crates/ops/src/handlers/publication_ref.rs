@@ -10,16 +10,16 @@ pub(crate) struct ResolvedPublicationRef {
     pub publication_key: String,
 }
 
-/// The post a draft row carries under `post_id`, read the way Drizzle binds
-/// a JavaScript number: only an integral value can match the integer column.
-fn post_with_id(sqlite: &Connection, id: f64) -> Result<Option<i64>, db::rusqlite::Error> {
-    if !id.is_finite() || id.fract() != 0.0 || id.abs() > i64::MAX as f64 {
+/// The post a draft row carries under `post_id`; a reference that is no
+/// integer names none.
+fn post_with_id(sqlite: &Connection, id: Option<i64>) -> Result<Option<i64>, db::rusqlite::Error> {
+    let Some(id) = id else {
         return Ok(None);
-    }
+    };
     Ok(sqlite
         .query_row(
             r#"select "post_id" from "drafts" where "drafts"."post_id" = ?"#,
-            [id as i64],
+            [id],
             |row| row.get::<_, Option<i64>>(0),
         )
         .optional()?
@@ -33,9 +33,9 @@ pub(crate) fn resolve_publication_ref(
     sqlite: &Connection,
     reference: &str,
 ) -> Result<Option<ResolvedPublicationRef>, db::rusqlite::Error> {
-    let trimmed = foundation::js::trim(reference);
+    let trimmed = reference.trim();
     if let Some(rest) = trimmed.strip_prefix("post:")
-        && let Some(post_id) = post_with_id(sqlite, foundation::js::number(rest))?
+        && let Some(post_id) = post_with_id(sqlite, rest.trim().parse().ok())?
     {
         return Ok(Some(ResolvedPublicationRef {
             post_id,
@@ -49,7 +49,7 @@ pub(crate) fn resolve_publication_ref(
         _ => return Ok(None),
     };
     Ok(
-        post_with_id(sqlite, foundation::js::number(numeric))?.map(|post_id| ResolvedPublicationRef {
+        post_with_id(sqlite, numeric.parse().ok())?.map(|post_id| ResolvedPublicationRef {
             post_id,
             publication_key: publication_ref(PublicationRefKind::Post, post_id),
         }),

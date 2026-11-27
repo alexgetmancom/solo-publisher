@@ -174,7 +174,7 @@ pub async fn run_publication_reconciliation(delivery: &Delivery<'_>) -> Result<R
             }
             let id = match result.get("id") {
                 None | Some(Value::Null) => row.external_id.clone(),
-                Some(id) => Some(foundation::js::string_of(id)),
+                Some(id) => foundation::json::id_text(id),
             };
             let url = match result.get("url") {
                 Some(Value::String(url)) => Some(url.clone()),

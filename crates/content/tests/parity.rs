@@ -16,7 +16,6 @@ use content::thread::{LocalizedThreadPart, ThreadPart, chain_posts, joined_threa
 use content::title_emphasis::emphasize_title;
 use content::translation::*;
 use foundation::html::escape_html;
-use foundation::js::trim;
 use foundation::url::is_http_url;
 use serde_json::{Value, json};
 
@@ -368,7 +367,7 @@ fn translation_asks_and_accepts_alike() {
                     "messages": [{ "role": "system", "content": SYSTEM_PROMPT }, { "role": "user", "content": source }],
                     "temperature": TEMPERATURE,
                 }),
-                json!(checked_translation(trim(text(&case["response"]))).ok()),
+                json!(checked_translation(text(&case["response"]).trim()).ok()),
             ),
         };
         assert_eq!(request, case["request"], "{case}");

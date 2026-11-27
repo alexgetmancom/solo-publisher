@@ -1,22 +1,17 @@
 use std::sync::LazyLock;
 
-use foundation::js::{WHITESPACE_CLASS, number_of_scalar, trim_end, utf16_len};
+use foundation::text::utf16_len;
 use regex::Regex;
 use serde_json::{Map, Value};
 
-use crate::message::Entity;
+use crate::message::{Entity, entity_offset};
 
 /// The longest first line still read as a title. Above this the "line, blank
 /// line, body" shape is an opening paragraph, not a headline, and bolding it
 /// would shout a whole paragraph at the reader.
 const TITLE_LIMIT: usize = 120;
 
-static TITLE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(&format!(
-        r"^([^\n\r]+)\r?\n[ \t]*\r?\n[{WHITESPACE_CLASS}]*[^{WHITESPACE_CLASS}]"
-    ))
-    .unwrap()
-});
+static TITLE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^([^\n\r]+)\r?\n[ \t]*\r?\n\s*\S").unwrap());
 
 /// The entities of a text, with its title bold.
 ///
@@ -35,7 +30,7 @@ pub fn emphasize_title(text: &str, entities: &[Entity]) -> Vec<Entity> {
     };
     let covered = entities.iter().any(|entity| {
         entity.get("type").and_then(Value::as_str) == Some("bold")
-            && number_of_scalar(entity.get("offset")) < title_length as f64
+            && entity_offset(entity).is_some_and(|offset| offset < title_length as u64)
     });
     if covered {
         return entities.to_vec();
@@ -48,7 +43,7 @@ pub fn emphasize_title(text: &str, entities: &[Entity]) -> Vec<Entity> {
 }
 
 fn title_length(text: &str) -> Option<usize> {
-    let title = trim_end(TITLE.captures(text)?.get(1)?.as_str());
+    let title = TITLE.captures(text)?.get(1)?.as_str().trim_end();
     let length = utf16_len(title);
     (length > 0 && length <= TITLE_LIMIT).then_some(length)
 }

@@ -33,7 +33,8 @@ fn parse_range(value: Option<&str>, size: f64) -> Range {
     let Some(value) = value.filter(|value| !value.is_empty()) else {
         return Range::Whole;
     };
-    let Some((first, second)) = foundation::js::trim(value)
+    let Some((first, second)) = value
+        .trim()
         .strip_prefix("bytes=")
         .and_then(|spec| spec.split_once('-'))
         .filter(|(first, second)| {
@@ -44,12 +45,13 @@ fn parse_range(value: Option<&str>, size: f64) -> Range {
     else {
         return Range::Invalid;
     };
-    let number = foundation::js::number;
-    let integer = foundation::js::is_integer;
+    // Both parts are digits only, so a part reads as an integer or, past
+    // f64's range, as infinity.
+    let number = |digits: &str| digits.parse::<f64>().unwrap_or(f64::NAN);
     // `bytes=-500` is the last 500 bytes, not the first 500.
     if first.is_empty() {
         let suffix = number(second);
-        if second.is_empty() || !integer(suffix) || suffix <= 0.0 {
+        if second.is_empty() || !suffix.is_finite() || suffix <= 0.0 {
             return Range::Invalid;
         }
         return Range::Part {
@@ -63,7 +65,7 @@ fn parse_range(value: Option<&str>, size: f64) -> Range {
     } else {
         number(second).min(size - 1.0)
     };
-    if !integer(start) || !integer(end) || start < 0.0 || start > end || start >= size {
+    if !start.is_finite() || !end.is_finite() || start > end || start >= size {
         return Range::Invalid;
     }
     Range::Part { start, end }
@@ -90,20 +92,8 @@ pub(crate) async fn ranged_file_response(
         }
         Range::Part { start, end } => {
             let length = end - start + 1.0;
-            set(
-                &mut response,
-                "content-length",
-                &foundation::js::number_to_string(length),
-            );
-            set(
-                &mut response,
-                "content-range",
-                &format!(
-                    "bytes {}-{}/{size}",
-                    foundation::js::number_to_string(start),
-                    foundation::js::number_to_string(end)
-                ),
-            );
+            set(&mut response, "content-length", &length.to_string());
+            set(&mut response, "content-range", &format!("bytes {start}-{end}/{size}"));
             *response.status_mut() = StatusCode::PARTIAL_CONTENT;
             if !head_only {
                 *response.body_mut() = file_body(file, start.max(0.0) as u64, length.max(0.0) as u64).await?;
