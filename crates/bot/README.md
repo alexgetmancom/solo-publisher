@@ -61,8 +61,8 @@ cargo test -p bot --test boundary                       # core boundary rules
 Each case replays on the database the recorder seeded right before its first step, committed as SQL in
 `parity/bot-goldens/seeds/` (recorded from the TypeScript backend before the cutover; nothing re-records them) and built by the test into
 `_trash-rust/tmp/bot-goldens-seeds/` when the committed seeds change; shared, read-only. Whatever a case or boundary test writes (its database copy, `DATA_DIR`) lives in
-its own `Scratch` dir, `_trash-rust/tmp/bot-tests/<pid>-<n>-<label>/`, removed afterwards, so concurrent `cargo test`
-runs are safe. Cross-area needs per case: `CASE_NEEDS` in `tests/support/pending.rs`. Recorder triggers (worker
+its own `Scratch` dir, `_trash-rust/tmp/bot-tests/<pid>-<n>-<label>/`, removed afterwards, so tests in separate
+processes are safe — nextest runs each test as its own — and the seed build is serialized by `bot-goldens-seeds.lock`. Cross-area needs per case: `CASE_NEEDS` in `tests/support/pending.rs`. Recorder triggers (worker
 ticks) replay from `tests/support/triggers.rs`, one row per trigger name. Boundaries the replay reaches
 are implemented in `tests/support/host.rs` (unimplemented ones panic with their name). Plain HTTP the bot made
 (`method: "http"` in goldens) is recorded by the fakes beneath it: Telegram file downloads reach the fake Telegram's `runtime::http::Transport` at the
