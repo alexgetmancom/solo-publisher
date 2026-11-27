@@ -32,7 +32,7 @@ the goldens' key order; `run_operation` prints integral floats as JavaScript doe
 
 ```
 cargo test -p ops                               # catalog.rs (catalog, schemas, tools/list, the binary as a process)
-                                                # scenarios.rs (OPS_SCENARIOS=area,… limits it)
+                                                # scenarios.rs (one test per area: --test scenarios media)
 cargo test -p http_edge --test mcp              # the transport through the router (oneshot)
 ```
 

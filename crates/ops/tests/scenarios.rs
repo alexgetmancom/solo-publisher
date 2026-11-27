@@ -2,9 +2,8 @@
 //! recorded in `parity/ops/scenarios/<area>.json`: the same steps on a fresh database and
 //! DATA_DIR under the same fixed clock, every step as its own process, the
 //! same canned HTTP answers. Compared: every step's output (key order
-//! included), every request, every table and every file.
-//!
-//! `OPS_SCENARIOS=area[,area…]` limits the run to those specs.
+//! included), every request, every table and every file. Each area is its own
+//! test: `cargo test -p ops --test scenarios media` replays one.
 
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
@@ -495,13 +494,13 @@ async fn run_spec(area: &str, spec: &Value, goldens: &[Value], scratch: &Path) -
     failures
 }
 
+/// Every spec in `tests/scenarios/`, each replayed as its own test so the
+/// runner can spread them over the cores.
+const AREAS: [&str; 6] = ["admin", "commands", "lifecycle", "mcp", "media", "reads"];
+
 #[test]
-fn scenarios() {
-    let only: Vec<String> = std::env::var("OPS_SCENARIOS")
-        .map(|value| value.split(',').map(str::to_owned).collect())
-        .unwrap_or_default();
-    let specs = repo().join("crates/ops/tests/scenarios");
-    let mut areas: Vec<String> = std::fs::read_dir(&specs)
+fn every_spec_is_replayed() {
+    let mut specs: Vec<String> = std::fs::read_dir(repo().join("crates/ops/tests/scenarios"))
         .unwrap()
         .flatten()
         .filter_map(|entry| {
@@ -511,32 +510,33 @@ fn scenarios() {
                 .strip_suffix(".json")
                 .map(str::to_owned)
         })
-        .filter(|area| only.is_empty() || only.contains(area))
         .collect();
-    areas.sort();
-    let scratch = repo().join(format!("_trash-rust/tmp/ops-scenarios-rs-{}", std::process::id()));
+    specs.sort();
+    assert_eq!(specs, AREAS, "AREAS lists every spec, each with its own test");
+}
+
+fn replay(area: &str) {
+    assert!(AREAS.contains(&area), "{area} is not in AREAS");
+    let spec_path = repo().join(format!("crates/ops/tests/scenarios/{area}.json"));
+    let spec: Value = serde_json::from_str(&std::fs::read_to_string(spec_path).unwrap()).unwrap();
+    let golden_path = repo().join(format!("parity/ops/scenarios/{area}.json"));
+    let goldens: Vec<Value> = serde_json::from_str(
+        &std::fs::read_to_string(&golden_path)
+            .unwrap_or_else(|_| panic!("{} is missing: every area has a recorded golden", golden_path.display())),
+    )
+    .unwrap();
+    assert_eq!(
+        spec["cases"].as_array().unwrap().len(),
+        goldens.len(),
+        "{area}: the goldens are stale; re-record them"
+    );
+    let scratch = repo().join(format!("_trash-rust/tmp/ops-scenarios-{area}-{}", std::process::id()));
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .unwrap();
     let local = tokio::task::LocalSet::new();
-    let mut failures = Vec::new();
-    for area in &areas {
-        let spec: Value =
-            serde_json::from_str(&std::fs::read_to_string(specs.join(format!("{area}.json"))).unwrap()).unwrap();
-        let golden_path = repo().join(format!("parity/ops/scenarios/{area}.json"));
-        let goldens: Vec<Value> = serde_json::from_str(
-            &std::fs::read_to_string(&golden_path)
-                .unwrap_or_else(|_| panic!("{} is missing: every area has a recorded golden", golden_path.display())),
-        )
-        .unwrap();
-        assert_eq!(
-            spec["cases"].as_array().unwrap().len(),
-            goldens.len(),
-            "{area}: the goldens are stale; re-record them"
-        );
-        failures.extend(local.block_on(&runtime, run_spec(area, &spec, &goldens, &scratch)));
-    }
+    let failures = local.block_on(&runtime, run_spec(area, &spec, &goldens, &scratch));
     let _ = std::fs::remove_dir_all(&scratch);
     assert!(
         failures.is_empty(),
@@ -544,4 +544,34 @@ fn scenarios() {
         failures.len(),
         failures.join("\n")
     );
+}
+
+#[test]
+fn admin() {
+    replay("admin");
+}
+
+#[test]
+fn commands() {
+    replay("commands");
+}
+
+#[test]
+fn lifecycle() {
+    replay("lifecycle");
+}
+
+#[test]
+fn mcp() {
+    replay("mcp");
+}
+
+#[test]
+fn media() {
+    replay("media");
+}
+
+#[test]
+fn reads() {
+    replay("reads");
 }

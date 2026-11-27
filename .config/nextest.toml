@@ -1,0 +1,8 @@
+# `priority` is from 0.9.91.
+nextest-version = "0.9.91"
+
+# The longest tests start first: started last, under the load of the rest,
+# they alone set how long the run takes.
+[[profile.default.overrides]]
+filter = 'binary_id(ops::scenarios) | binary_id(story_render::worker_scenarios) | binary_id(story_render::render_parity) | binary_id(delivery::delivery_scenarios) | binary_id(bot::goldens)'
+priority = 100
