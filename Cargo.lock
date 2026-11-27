@@ -698,7 +698,7 @@ version = "0.0.0"
 dependencies = [
  "aes-gcm",
  "arc-swap",
- "base64 0.22.1",
+ "base64 0.23.1",
  "jiff",
  "percent-encoding",
  "regex",
@@ -1035,7 +1035,7 @@ name = "http_edge"
 version = "0.0.0"
 dependencies = [
  "axum",
- "base64 0.22.1",
+ "base64 0.23.1",
  "bot",
  "content",
  "db",
@@ -1790,7 +1790,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 name = "ops"
 version = "0.0.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "content",
  "db",
  "delivery",
@@ -1932,7 +1932,7 @@ dependencies = [
 name = "providers"
 version = "0.0.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "content",
  "db",
  "domain",
@@ -1953,7 +1953,7 @@ dependencies = [
 name = "public_site"
 version = "0.0.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "content",
  "db",
  "domain",
