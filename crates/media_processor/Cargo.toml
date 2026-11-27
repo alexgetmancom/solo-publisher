@@ -14,7 +14,7 @@ workspace = true
 
 [dependencies]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-getrandom = "0.2"
+getrandom = "0.4"
 http-body-util = "0.1"
 hyper = { version = "1", features = ["server", "http1"] }
 hyper-util = { version = "0.1", features = ["tokio"] }

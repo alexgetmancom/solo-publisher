@@ -12,7 +12,7 @@ workspace = true
 content = { path = "../content" }
 db = { path = "../db" }
 foundation = { path = "../foundation" }
-getrandom = "0.2"
+getrandom = "0.4"
 regex = "1"
 jiff = { version = "0.2", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }
