@@ -1,3 +1,10 @@
 [alias]
 # Developer and CI tooling (crates/xtask): `cargo xtask help`.
 xtask = "run --quiet --package xtask --"
+
+# The tests render story cards and pixels through the image and font crates;
+# unoptimized, those dependencies made the render tests the longest in CI.
+# The workspace itself stays at opt-level 0, so a rebuild after an edit is
+# as fast as before; only the first build of the dependencies is slower.
+[profile.dev.package."*"]
+opt-level = 2
