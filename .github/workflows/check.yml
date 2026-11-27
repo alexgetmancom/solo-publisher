@@ -355,8 +355,9 @@ jobs:
           # "the image production is running".
           tags: ghcr.io/${{ github.repository_owner }}/solo-publisher:${{ github.sha }}
           push: true
-          # Layers only: the cargo build's `--mount=type=cache` target directory
-          # is not exported, so the Rust compile itself is not cached here.
+          # BuildKit can reuse the completed Rust build layer when its inputs
+          # match. On a layer miss, the Cargo cache mounts start empty on a
+          # fresh runner because their contents are outside the layer export.
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Set up Rust for image smoke test
