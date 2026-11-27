@@ -169,7 +169,7 @@ fn cards_match_typescript_pixels() {
     let out = root().join("_trash-rust/tmp/story-render");
     std::fs::create_dir_all(&out).unwrap();
     let assets = root().join("crates/story_render/assets/story-card");
-    // A debug-build render is seconds; the cards are independent.
+    // A render takes a while even on optimized dependencies; the cards are independent.
     let measured: Vec<(String, f64, f64, f64)> = std::thread::scope(|scope| {
         let renders: Vec<_> = cards
             .iter()
