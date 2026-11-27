@@ -16,7 +16,7 @@ db = { path = "../db" }
 delivery = { path = "../delivery" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
-hmac = "0.12"
+hmac = "0.13"
 http-body = "1"
 hyper = { version = "1", features = ["server", "http1"] }
 http-body-util = "0.1"
@@ -28,18 +28,18 @@ public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 rustix = { version = "1", features = ["fs"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 subtle = "2"
 tokio = { version = "1", features = ["rt", "net", "fs", "io-util", "sync", "macros", "time"] }
 tokio-io-timeout = "1"
 tokio-util = { version = "0.7", features = ["io"] }
 tower = { version = "0.5", default-features = false }
-tower-http = { version = "0.6", default-features = false, features = ["limit"] }
+tower-http = { version = "0.7", default-features = false, features = ["limit"] }
 url = "2"
 
 [dev-dependencies]
-base64 = "0.22"
+base64 = "0.23"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-jiff = { version = "0.2", default-features = false, features = ["std"] }
+jiff = { version = "1.0", default-features = false, features = ["std"] }
 regex = "1"
 tower = { version = "0.5", default-features = false, features = ["util"] }

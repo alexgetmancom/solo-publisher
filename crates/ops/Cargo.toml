@@ -13,7 +13,7 @@ name = "ops"
 path = "src/main.rs"
 
 [dependencies]
-base64 = "0.22"
+base64 = "0.23"
 content = { path = "../content" }
 db = { path = "../db" }
 delivery = { path = "../delivery" }
@@ -24,13 +24,13 @@ providers = { path = "../providers" }
 public_site = { path = "../public_site" }
 runtime = { path = "../runtime" }
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
-jiff = { version = "0.2", default-features = false, features = ["std"] }
+jiff = { version = "1.0", default-features = false, features = ["std"] }
 regex = "1"
 rusqlite = { version = "0.43", features = ["serialize"] }
 rustix = { version = "1", features = ["fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 tokio = { version = "1", features = ["rt", "time", "sync", "macros", "fs", "io-util", "process"] }
 url = "2"
 

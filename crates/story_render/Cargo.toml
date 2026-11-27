@@ -14,7 +14,7 @@ db = { path = "../db" }
 domain = { path = "../domain" }
 foundation = { path = "../foundation" }
 fontdb = { version = "0.24", default-features = false, features = ["fs", "memmap"] }
-jiff = { version = "0.2", default-features = false, features = ["std"] }
+jiff = { version = "1.0", default-features = false, features = ["std"] }
 jpeg-encoder = "0.7"
 resvg = { version = "0.50", default-features = false, features = ["text", "memmap-fonts", "raster-images"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }

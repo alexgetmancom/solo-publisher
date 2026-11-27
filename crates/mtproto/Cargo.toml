@@ -14,7 +14,7 @@ grammers-client = "0.12"
 rusqlite = { version = "0.43", features = ["bundled"] }
 providers = { path = "../providers" }
 runtime = { path = "../runtime" }
-getrandom = "0.2"
+getrandom = "0.4"
 tokio = { version = "1", features = ["rt", "time", "fs", "io-util", "macros"] }
 
 [dev-dependencies]

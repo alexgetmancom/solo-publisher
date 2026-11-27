@@ -9,14 +9,14 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 arc-swap = "1"
-base64 = "0.22"
-jiff = { version = "0.2", default-features = false, features = ["std", "tzdb-bundle-always"] }
+base64 = "0.23"
+jiff = { version = "1.0", default-features = false, features = ["std", "tzdb-bundle-always"] }
 percent-encoding = "2"
 regex = "1"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 url = "2"
 
 [build-dependencies]

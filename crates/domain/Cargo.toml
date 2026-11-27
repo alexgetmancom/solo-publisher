@@ -12,11 +12,11 @@ workspace = true
 content = { path = "../content" }
 db = { path = "../db" }
 foundation = { path = "../foundation" }
-getrandom = "0.2"
+getrandom = "0.4"
 regex = "1"
-jiff = { version = "0.2", default-features = false, features = ["std"] }
+jiff = { version = "1.0", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-sha2 = "0.10"
+sha2 = "0.11"
 thiserror = "2"
 unicode-segmentation = "1"
