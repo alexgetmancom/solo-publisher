@@ -15,19 +15,34 @@
 # Build context: the repository root, filtered by Dockerfile.dockerignore.
 
 # --- Studio binaries ---
-FROM rust:1.100-bookworm@sha256:ade39a710ef85f3506cffcfec3e8a24ba090badef1dff2fb798f71d878833fea AS studio-build
+# cargo-chef's image is rust:1.100-bookworm with cargo-chef on it.
+FROM lukemathwalker/cargo-chef:0.1.78-rust-1.100-bookworm@sha256:9573268a2a874efc1c755a0094a50c25988b2c6a0b7a520ddb7fd08d868d1c43 AS chef
 WORKDIR /src
+RUN rustup target add x86_64-unknown-linux-musl
+
+# The workspace reduced to what its dependencies depend on: unchanged while
+# Cargo.toml and Cargo.lock are, whatever the sources do.
+FROM chef AS planner
+COPY Cargo.toml Cargo.lock ./
+COPY crates ./crates
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS studio-build
+COPY --from=planner /src/recipe.json recipe.json
+# Empty means one job per CPU; a memory-tight builder passes a number.
+ARG CARGO_JOBS=
+# The dependencies as their own layer, which the build cache keeps while
+# recipe.json is unchanged: they were 279 of the 297 crates every release
+# compiled. No cache mounts, so the registry and target live in the layer.
+RUN cargo chef cook --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops --recipe-path recipe.json \
+  && cargo chef cook --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} --target x86_64-unknown-linux-musl -p deploy_agent \
+       --recipe-path recipe.json
 # rust-toolchain.toml stays out of the context: the image is the toolchain, and
 # the file's component list would make rustup download clippy and rustfmt.
 COPY Cargo.toml Cargo.lock ./
 # crates/db/build.rs embeds crates/db/migrations, the single source of the schema.
 COPY crates ./crates
-# Empty means one job per CPU; a memory-tight builder passes a number.
-ARG CARGO_JOBS=
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/src/target \
-    cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops \
-  && rustup target add x86_64-unknown-linux-musl \
+RUN cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} -p app -p entrypoint -p ops \
   && cargo build --release --locked ${CARGO_JOBS:+-j $CARGO_JOBS} --target x86_64-unknown-linux-musl -p deploy_agent \
   && install -D -m 0755 target/release/solo-publisher target/release/studio-entrypoint target/release/ops \
        target/x86_64-unknown-linux-musl/release/deploy-agent -t /out/

@@ -356,9 +356,8 @@ jobs:
           # "the image production is running".
           tags: ghcr.io/${{ github.repository_owner }}/solo-publisher:${{ github.sha }}
           push: true
-          # BuildKit can reuse the completed Rust build layer when its inputs
-          # match. On a layer miss, the Cargo cache mounts start empty on a
-          # fresh runner because their contents are outside the layer export.
+          # The dependency layer (`cargo chef cook`) comes back from here while
+          # Cargo.toml and Cargo.lock are unchanged; only the workspace builds.
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Set up Rust for image smoke test
