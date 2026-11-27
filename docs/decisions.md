@@ -96,6 +96,10 @@ tests rely on. A deliberate behaviour change edits its golden in the same commit
   out of `externalIds` (`publishing.json`).
 - DeepSeek's `temperature` is written as serde writes an f64: the fixture's `1` and `0` are `1.0` and `0.0`
   (`runtime.json`); production's `0.1` is unchanged.
+- `site-display-repair` and `site-metadata` read their reviewed plan into serde structs (`ops/src/handlers/reviewed_plan.rs`):
+  a refused plan names its first problem, `Invalid plan: <serde's message at line and column>` or `Invalid plan: <field>
+  <rule>`, where zod listed every issue as JSON (`parity/ops/scenarios/media.json`, three refusals). A timestamp is
+  checked by `is_iso_instant`, not zod's pattern.
 
 ## Test data
 

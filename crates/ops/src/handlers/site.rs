@@ -26,7 +26,7 @@ use regex::Regex;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-use super::plan_schema::{array, array_min, literal, locale, object, parse, positive_int, string};
+use super::reviewed_plan::{DisplayPlan, MetadataPlan};
 use crate::context::{Fut, Input, OpError, OpResult, OperationContext};
 
 fn sha256_hex(text: &str) -> String {
@@ -170,22 +170,6 @@ fn display_rows(sqlite: &Connection) -> Result<Vec<DisplayRow>, OpError> {
     Ok(out)
 }
 
-fn display_plan_schema() -> super::plan_schema::Kind {
-    object(vec![
-        ("version", literal(1)),
-        (
-            "dates",
-            array(object(vec![
-                ("post_id", positive_int()),
-                ("locale", locale()),
-                ("expected_updated_at", string().datetime()),
-                ("restore_updated_at", string().datetime().nullable()),
-                ("content_sha256", string().sha256()),
-            ])),
-        ),
-    ])
-}
-
 /// `repairSiteDisplay`: a reviewed restoration is atomic and refuses
 /// intervening editorial changes.
 pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Input) -> Fut<'a, OpResult> {
@@ -216,8 +200,7 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                 .count();
             return Ok(json!({"ok": true, "apply": false, "dates": dates, "story_card_locales": cards}));
         };
-        let raw: Value = serde_json::from_slice(&tokio::fs::read(file).await?)?;
-        let plan = parse(&display_plan_schema(), &raw)?;
+        let plan = DisplayPlan::parse(&tokio::fs::read(file).await?)?;
         let now = to_iso_string(context.now());
         in_transaction(sqlite, || {
             let rows = display_rows(sqlite)?;
@@ -227,22 +210,22 @@ pub fn site_display_repair<'a>(context: &'a OperationContext<'a>, input: &'a Inp
                 .collect();
             let mut seen = HashSet::new();
             let mut restored = 0;
-            for item in plan["dates"].as_array().into_iter().flatten() {
-                let key = format!("{}:{}", item["post_id"], item["locale"].as_str().unwrap_or_default());
+            for item in &plan.dates {
+                let key = format!("{}:{}", item.post_id, item.locale.as_str());
                 if !seen.insert(key.clone()) {
                     return Err(OpError::Failed(format!("Duplicate date restoration: {key}")));
                 }
-                let expected = item["expected_updated_at"].as_str().unwrap_or_default();
+                let expected = item.expected_updated_at.as_str();
                 let row = by_key.get(&key).copied().filter(|row| {
                     row.site_updated_at.as_deref() == Some(expected)
-                        && site_editorial_fingerprint(row) == item["content_sha256"].as_str().unwrap_or_default()
+                        && site_editorial_fingerprint(row) == item.content_sha256
                 });
                 let Some(row) = row else {
                     return Err(OpError::Failed(format!(
                         "Editorial content or modification date changed for {key}"
                     )));
                 };
-                let restore = item["restore_updated_at"].as_str();
+                let restore = item.restore_updated_at.as_deref();
                 if let (Some(restore), Some(published)) = (
                     restore.filter(|text| !text.is_empty()),
                     row.published_at.as_deref().filter(|text| !text.is_empty()),
@@ -532,34 +515,6 @@ pub fn site_responsive_backfill<'a>(context: &'a OperationContext<'a>, input: &'
     })
 }
 
-fn metadata_schema() -> super::plan_schema::Kind {
-    object(vec![
-        ("version", literal(1)),
-        (
-            "items",
-            array_min(
-                object(vec![
-                    ("post_id", positive_int()),
-                    ("locale", locale()),
-                    ("text_sha256", string().sha256()),
-                    ("seo_title", string().trim().min(1).max(65).optional()),
-                    ("expected_seo_title", string().max(65).nullable().optional()),
-                    (
-                        "images",
-                        array(object(vec![
-                            ("path", string().min(1)),
-                            ("alt", string().trim().min(1).max(500)),
-                            ("expected_alt", string().max(500).optional()),
-                        ]))
-                        .default_empty(),
-                    ),
-                ]),
-                1,
-            ),
-        ),
-    ])
-}
-
 /// One published locale of `siteMetadataInventory`.
 fn inventory_items(feed: &[Rc<FeedItem>]) -> Vec<Value> {
     let mut items = Vec::new();
@@ -616,10 +571,9 @@ struct MetadataRow {
 fn apply_site_metadata(
     context: &OperationContext<'_>,
     feed: &[Rc<FeedItem>],
-    raw: &Value,
+    plan: &MetadataPlan,
     apply: bool,
 ) -> Result<(Value, BTreeSet<String>), OpError> {
-    let input = parse(&metadata_schema(), raw)?;
     let sqlite = context.sqlite()?;
     let published: HashMap<String, Value> = inventory_items(feed)
         .into_iter()
@@ -637,17 +591,16 @@ fn apply_site_metadata(
         }
     }
     let now = to_iso_string(context.now());
-    let items = input["items"].as_array().cloned().unwrap_or_default();
     in_transaction(sqlite, || {
         let mut seen = HashSet::new();
         let (mut changed, mut images) = (0, 0);
         let mut keys: Vec<String> = Vec::new();
-        for item in &items {
-            let key = format!("{}:{}", item["post_id"], item["locale"].as_str().unwrap_or_default());
+        for item in &plan.items {
+            let key = format!("{}:{}", item.post_id, item.locale.as_str());
             if !seen.insert(key.clone()) {
                 return Err(OpError::Failed(format!("Duplicate metadata for {key}")));
             }
-            let expected_hash = item["text_sha256"].as_str().unwrap_or_default();
+            let expected_hash = item.text_sha256.as_str();
             let Some(current) = published
                 .get(&key)
                 .filter(|current| current["text_sha256"] == expected_hash)
@@ -659,7 +612,7 @@ fn apply_site_metadata(
             let row = sqlite
                 .query_row(
                     r#"select "post_locales"."draft_id", "post_locales"."site_media_json", CAST("post_locales"."site_media_json" AS TEXT), "post_locales"."seo_title", "post_locales"."source_text", "post_locales"."approved_text" from "post_locales" inner join "drafts" on "drafts"."id" = "post_locales"."draft_id" where ("drafts"."post_id" = ? and "post_locales"."locale" = ? and "post_locales"."site_enabled" = ?)"#,
-                    params![item["post_id"].as_i64(), item["locale"].as_str(), 1],
+                    params![item.post_id, item.locale.as_str(), 1],
                     |row| {
                         Ok((
                             row.get::<_, i64>(0)?,
@@ -688,17 +641,17 @@ fn apply_site_metadata(
             else {
                 return Err(OpError::Failed(format!("Published text changed for {key}")));
             };
-            let seo_title = item.get("seo_title").and_then(Value::as_str);
-            let expected_seo = item.get("expected_seo_title");
+            let seo_title = item.seo_title.as_deref();
             if let Some(seo_title) = seo_title.filter(|title| !title.is_empty())
                 && Some(seo_title) != row.seo_title.as_deref()
             {
-                if let Some(expected) = expected_seo
-                    && expected.as_str() != row.seo_title.as_deref()
+                if let Some(expected) = &item.expected_seo_title
+                    && expected.as_deref() != row.seo_title.as_deref()
                 {
                     return Err(OpError::Failed(format!("SEO title changed for {key}")));
                 }
-                if row.seo_title.as_deref().is_some_and(|title| !title.is_empty()) && expected_seo.is_none() {
+                if row.seo_title.as_deref().is_some_and(|title| !title.is_empty()) && item.expected_seo_title.is_none()
+                {
                     return Err(OpError::Failed(format!("SEO title already edited for {key}")));
                 }
             }
@@ -711,12 +664,8 @@ fn apply_site_metadata(
                     .unwrap_or_default(),
             };
             let mut paths = HashSet::new();
-            for image in item["images"].as_array().into_iter().flatten() {
-                let path = image["path"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .trim_start_matches('/')
-                    .to_owned();
+            for image in &item.images {
+                let path = image.path.trim_start_matches('/').to_owned();
                 if !paths.insert(path.clone()) {
                     return Err(OpError::Failed(format!("Duplicate image for {key}: {path}")));
                 }
@@ -729,9 +678,8 @@ fn apply_site_metadata(
                 let Some(Value::Object(asset)) = asset else {
                     return Err(OpError::Failed(format!("Published image changed for {key}: {path}")));
                 };
-                let alt = &image["alt"];
-                if asset.get("alt") != Some(alt) {
-                    if let Some(expected) = image.get("expected_alt") {
+                if asset.get("alt").and_then(Value::as_str) != Some(image.alt.as_str()) {
+                    if let Some(expected) = &image.expected_alt {
                         let current = asset
                             .get("alt")
                             .filter(|alt| !alt.is_null())
@@ -745,11 +693,11 @@ fn apply_site_metadata(
                         .get("alt")
                         .and_then(Value::as_str)
                         .is_some_and(|alt| !alt.is_empty())
-                        && image.get("expected_alt").is_none()
+                        && image.expected_alt.is_none()
                     {
                         return Err(OpError::Failed(format!("Alt already edited for {key}: {path}")));
                     }
-                    asset.insert("alt".into(), alt.clone());
+                    asset.insert("alt".into(), image.alt.clone().into());
                     images += 1;
                 }
             }
@@ -764,7 +712,7 @@ fn apply_site_metadata(
                 continue;
             }
             changed += 1;
-            let publication = format!("post:{}", item["post_id"]);
+            let publication = format!("post:{}", item.post_id);
             if !keys.contains(&publication) {
                 keys.push(publication);
             }
@@ -776,7 +724,7 @@ fn apply_site_metadata(
                         domain::json::stringify(&media),
                         now,
                         row.draft_id,
-                        item["locale"].as_str(),
+                        item.locale.as_str(),
                         1,
                         current["text"].as_str(),
                         row.media_raw.clone().map_or(SqlValue::Null, SqlValue::Text),
@@ -791,7 +739,7 @@ fn apply_site_metadata(
         let result = json!({
             "ok": true,
             "apply": apply,
-            "locales": items.len(),
+            "locales": plan.items.len(),
             "changed": changed,
             "images": images,
             "publication_keys": keys,
@@ -819,9 +767,9 @@ pub fn site_metadata<'a>(context: &'a OperationContext<'a>, input: &'a Input) ->
         if content.encode_utf16().count() > 5_000_000 {
             return Err(OpError::failed("Site metadata exceeds 5 MB"));
         }
-        let raw: Value = serde_json::from_str(&content)?;
+        let plan = MetadataPlan::parse(content.as_bytes())?;
         let feed = reader.load(context.db()?, context.clock)?;
-        let (result, keys) = apply_site_metadata(context, &feed, &raw, apply)?;
+        let (result, keys) = apply_site_metadata(context, &feed, &plan, apply)?;
         if apply && !keys.is_empty() {
             let queued = site_urls_for_index_now(context.db()?, &config, context.clock, &keys)
                 .map_err(|error| error.to_string())

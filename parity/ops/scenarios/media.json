@@ -1627,7 +1627,7 @@
       {
         "error": {
           "input": false,
-          "message": "[\n  {\n    \"code\": \"invalid_value\",\n    \"values\": [\n      1\n    ],\n    \"path\": [\n      \"version\"\n    ],\n    \"message\": \"Invalid input: expected 1\"\n  },\n  {\n    \"expected\": \"number\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"dates\",\n      0,\n      \"post_id\"\n    ],\n    \"message\": \"Invalid input: expected number, received string\"\n  },\n  {\n    \"code\": \"invalid_value\",\n    \"values\": [\n      \"ru\",\n      \"en\"\n    ],\n    \"path\": [\n      \"dates\",\n      0,\n      \"locale\"\n    ],\n    \"message\": \"Invalid option: expected one of \\\"ru\\\"|\\\"en\\\"\"\n  },\n  {\n    \"origin\": \"string\",\n    \"code\": \"invalid_format\",\n    \"format\": \"datetime\",\n    \"pattern\": \"/^(?:(?:\\\\d\\\\d[2468][048]|\\\\d\\\\d[13579][26]|\\\\d\\\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\\\d|30)|(?:02)-(?:0[1-9]|1\\\\d|2[0-8])))T(?:(?:[01]\\\\d|2[0-3]):[0-5]\\\\d:[0-5]\\\\d(?:\\\\.\\\\d+)?(?:Z|([+-](?:[01]\\\\d|2[0-3]):[0-5]\\\\d)))$/\",\n    \"path\": [\n      \"dates\",\n      0,\n      \"expected_updated_at\"\n    ],\n    \"message\": \"Invalid ISO datetime\"\n  },\n  {\n    \"origin\": \"string\",\n    \"code\": \"invalid_format\",\n    \"format\": \"regex\",\n    \"pattern\": \"/^[a-f0-9]{64}$/\",\n    \"path\": [\n      \"dates\",\n      0,\n      \"content_sha256\"\n    ],\n    \"message\": \"Invalid string: must match pattern /^[a-f0-9]{64}$/\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"extra\"\n    ],\n    \"path\": [\n      \"dates\",\n      0\n    ],\n    \"message\": \"Unrecognized key: \\\"extra\\\"\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"more\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"more\\\"\"\n  }\n]"
+          "message": "Invalid plan: invalid type: string \"1\", expected i64 at line 1 column 36"
         }
       },
       {
@@ -2334,13 +2334,13 @@
       {
         "error": {
           "input": false,
-          "message": "[\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_small\",\n    \"minimum\": 1,\n    \"inclusive\": true,\n    \"path\": [\n      \"items\"\n    ],\n    \"message\": \"Too small: expected array to have >=1 items\"\n  }\n]"
+          "message": "Invalid plan: items must name at least one locale"
         }
       },
       {
         "error": {
           "input": false,
-          "message": "[\n  {\n    \"expected\": \"int\",\n    \"format\": \"safeint\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"items\",\n      0,\n      \"post_id\"\n    ],\n    \"message\": \"Invalid input: expected int, received number\"\n  },\n  {\n    \"origin\": \"string\",\n    \"code\": \"too_small\",\n    \"minimum\": 1,\n    \"inclusive\": true,\n    \"path\": [\n      \"items\",\n      0,\n      \"seo_title\"\n    ],\n    \"message\": \"Too small: expected string to have >=1 characters\"\n  },\n  {\n    \"origin\": \"string\",\n    \"code\": \"too_big\",\n    \"maximum\": 65,\n    \"inclusive\": true,\n    \"path\": [\n      \"items\",\n      0,\n      \"expected_seo_title\"\n    ],\n    \"message\": \"Too big: expected string to have <=65 characters\"\n  },\n  {\n    \"origin\": \"string\",\n    \"code\": \"too_small\",\n    \"minimum\": 1,\n    \"inclusive\": true,\n    \"path\": [\n      \"items\",\n      0,\n      \"images\",\n      0,\n      \"path\"\n    ],\n    \"message\": \"Too small: expected string to have >=1 characters\"\n  },\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"x\"\n    ],\n    \"path\": [\n      \"items\",\n      0,\n      \"images\",\n      0\n    ],\n    \"message\": \"Unrecognized key: \\\"x\\\"\"\n  }\n]"
+          "message": "Invalid plan: invalid type: floating point `1.5`, expected i64 at line 1 column 36"
         }
       },
       {
