@@ -54,6 +54,8 @@ fn run_step(step: &str, root: &Path, jobs: Option<&str>) -> Result<(), String> {
         command.args(args);
         command
     };
+    // nextest's `-j` is test threads; its build jobs are `--build-jobs`.
+    let build_jobs: Vec<&str> = jobs.map(|jobs| vec!["--build-jobs", jobs]).unwrap_or_default();
     let jobs: Vec<&str> = jobs.map(|jobs| vec!["-j", jobs]).unwrap_or_default();
     match step {
         "language" => language_gate(root).map(|checked| println!("Language gate passed: {checked} sources allowed.")),
@@ -72,8 +74,10 @@ fn run_step(step: &str, root: &Path, jobs: Option<&str>) -> Result<(), String> {
         "test" => {
             // The tests write their scratch files under _trash-rust/tmp.
             std::fs::create_dir_all(root.join("_trash-rust/tmp")).map_err(|error| error.to_string())?;
+            // nextest runs every test binary at once where `cargo test` runs
+            // them one after another; it does not run doctests, and there are none.
             run(
-                &mut cargo(&[&["test", "--workspace", "--locked"], &jobs[..]].concat()),
+                &mut cargo(&[&["nextest", "run", "--workspace", "--locked"], &build_jobs[..]].concat()),
                 root,
             )
         }

@@ -56,7 +56,7 @@ is data. Convert Russian comments in lines already being edited; do not open fil
 Work on `main`. The pre-push hook runs the language gate, `cargo fmt --check` and clippy
 (`cargo xtask check language fmt clippy`); tests and the release build run in CI, which gates the
 deploy. `cargo xtask check` with no steps runs all of them locally when wanted (`--jobs N` is
-passed to cargo). The hooks live in `.githooks/` (pre-commit is gitleaks, which must be
+passed to cargo); its test step is `cargo nextest run`, so cargo-nextest must be installed. The hooks live in `.githooks/` (pre-commit is gitleaks, which must be
 installed); enable them once per clone with `git config core.hooksPath .githooks`. CI/CD deploys
 the primary production revision (alex) from `main`.
 
